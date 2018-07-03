@@ -1,3 +1,5 @@
+OpenCRAVAT is a local, modular, and light-weight variant annotation tool.
+
 To install open CRAVAT you need Python 3.5 or newer.
 
 ### Installing Core
