@@ -67,7 +67,7 @@ class InstallCommand(install):
         install.run(self)
 
 def readme ():
-    with open('README.rst') as f:
+    with open('README.md') as f:
         return f.read()
 
 #f = open('d:\\log.txt', 'w')
@@ -92,7 +92,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'annotator_template')):
 setup(
     name='CRAVAT',
     packages=['cravat'],
-    version='0.0.71',
+    version='0.0.73',
     description='Cancer-Related Analysis of VAriants Toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
