@@ -1,0 +1,14 @@
+publish_url: http://localhost:8060
+store_url: http://karchinlab.org/cravatstore
+
+base_modules:
+- cravat-converter
+- vcf-converter
+- oldcravat-converter
+- aggregator
+- textreporter
+- excelreporter
+- wgbase
+- tagsampler
+- vcfinfo
+- hg38

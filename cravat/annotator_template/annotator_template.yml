@@ -1,0 +1,35 @@
+# 'title' is the name of the module that will be displayed to the user
+title: Annotator Template
+
+# 'version' is the version of the annotator. It is primarily used when 
+# publishing a module, but is required for all modules.
+version: 0.0.1
+
+# 'type' is the type of module described by this .yml file. In this case it is
+# 'annotator'
+type: annotator
+
+# 'level' is 'variant' or 'gene'
+level: variant
+
+# output_columns has the columns that will be included in the output file.
+# The columns are defined in a list. Each column has three required keys:
+# name, title, and type.
+output_columns:
+  # name is the internal name and is the key used to identify the column in the
+  # dictionary returned by the annotate method of annotator_name.py
+- name: placeholder_annotation
+  # title is the display name of this column, similar to the title of the module.
+  # It can be changed without affecting the functionality of CRAVAT
+  title: Placeholder Annotation
+  # type is the data type of the value. It is primarily used when storing the 
+  # results in a database. It may be one of string, int, or float.
+  type: string
+
+# description is a short description of what the annotator does. Try to limit it
+# to around 80 characters.
+description: Template annotator. If you see this description in production, someone is wrong.
+
+# developer is you!
+developer: you@yourorganization.com
+

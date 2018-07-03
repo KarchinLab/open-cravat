@@ -1,0 +1,10 @@
+title: Web Viewer
+version: 1.0.0
+data_version: 1.0.0
+type: viewer
+description: Web Viewer
+developer: rkim@mail.insilico.us.com
+
+version: 1.0.0
+widgetorder:
+- base

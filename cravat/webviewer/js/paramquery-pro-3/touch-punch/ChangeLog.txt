@@ -1,0 +1,29 @@
+Version 3.0.0 (05/27/2016)
+============================
+Bump in version without any changes.
+
+
+Additions/Changes made by Paramvir Dhindsa (http://www.paramquery.com) in version 0.2.3
+
+Version 0.2.3.1 (03/17/2016)
+============================
+
+Fix for stop working of touch punch ( keeps returning in _touchStart ) when more than 1 pointer used on the grid or any other mouse based jQueryUI control like draggable.
+Support for DnD and and other mouse events like (dblclick to edit) in virtual mode by removing _mouseCapture check for pqGrid.
+Distance between 2 taps increased for better double tap response.
+
+
+Version PQ_0.2.3 (02/04/2015)
+=============================
+
+Support for double tap/click, 
+multiple jQueryUI widgets on same element vis-a-vis touch-punch,
+namespacing of events while init and destroy.
+removal of selective preventDefault.
+
+
+Version 0.2.3.a (05/23/2014)
+============================
+
+Changes: prevent touch on jqueryui cancel & allow native click (to support focus on dynamic controls) by selective preventDefault.
+

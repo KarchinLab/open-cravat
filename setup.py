@@ -1,0 +1,122 @@
+from setuptools import setup
+from setuptools.command.install import install
+import sys
+import os
+import time
+import atexit
+import traceback
+import shutil
+
+class InstallCommand(install):
+    
+    user_options = install.user_options + [
+            ('modules-dir=', 'm', 'Modules directory'),
+            ('install-defaults=','d','Install default')
+    ]
+    
+    def initialize_options (self):
+        install.initialize_options(self)
+        self.modules_dir = None
+        self.install_defaults = 'True'
+    
+    def finalize_options (self):
+        install.finalize_options(self)
+    
+    def run(self):
+        """
+        Using method found at https://stackoverflow.com/a/43078078
+        Needed because pip runs install commands 
+        """
+        def _post_install():
+            f = open('d:\\log.txt', 'w')
+            from cravat import constants as c
+            def find_cravat_path():
+                for p in sys.path:
+                    if os.path.isdir(p) and 'cravat' in os.listdir(p):
+                        return os.path.join(p, 'cravat')
+            install_path = find_cravat_path()
+            f.write('install path=' + install_path + '\n')
+            system_conf_path = os.path.join(install_path,
+                                            c.system_conf_fname)
+            f.write('system_conf_path=' + system_conf_path + '\n')
+            system_template_conf_path = c.system_conf_template_path
+            f.write('system_template_conf_path=' + system_template_conf_path)
+            if self.modules_dir == None:
+                default_modules_dir = os.path.join(
+                    install_path, c.default_modules_dir_relative)
+            else:
+                default_modules_dir = self.modules_dir
+            f.write('default_modules_dir=' + default_modules_dir + '\n')
+            from cravat import admin_util as au
+            au.set_modules_dir(default_modules_dir)
+            if not(os.path.exists(c.system_conf_path)):
+                
+                shutil.copy(system_template_conf_path,
+                            system_conf_path)
+            else:
+                shutil.copy(c.system_conf_path, system_conf_path)
+            f.close()
+            # Installs default converter, aggregator, and reporter.
+            #if self.install_defaults == 'True':
+            #    cl = ConfigLoader()
+            #    au.install_module(cl.get_cravat_conf_value('converter'), verbose=False)
+            #    au.install_module(cl.get_cravat_conf_value('aggregator'), verbose=False)
+            #    au.install_module(cl.get_cravat_conf_value('reporter'), verbose=False)
+            
+        atexit.register(_post_install)
+        install.run(self)
+
+def readme ():
+    with open('README.rst') as f:
+        return f.read()
+
+#f = open('d:\\log.txt', 'w')
+#f.write('### '+os.getcwd()+'\n')
+data_files = ['cravat.yml', 
+              'cravat-system.template.yml', 
+              'cravat-system.yml', 
+              'modules/cravat.yml', 
+              'example_input.tsv']
+for root, dirs, files in os.walk(os.path.join('cravat', 'webviewer')):
+    root_files = [os.path.join('..', root, f) for f in files]
+    data_files.extend(root_files)
+for root, dirs, files in os.walk(os.path.join('cravat', 'liftover')):
+    root_files = [os.path.join('..', root, f) for f in files]
+    data_files.extend(root_files)
+for root, dirs, files in os.walk(os.path.join('cravat', 'annotator_template')):
+    root_files = [os.path.join('..', root, f) for f in files]
+    data_files.extend(root_files)
+#f.write('\n'.join(data_files))
+#f.close()
+
+setup(
+    name='CRAVAT',
+    packages=['cravat'],
+    version='0.0.71',
+    description='Cancer-Related Analysis of VAriants Toolkit',
+    long_description=readme(),
+    author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
+    author_email='rkim@insilico.us.com',
+    url='http://www.cravat.us',
+    license='',
+    package_data={
+        'cravat': data_files
+    },
+    entry_points={
+        'console_scripts': [
+            'cravat-admin=cravat.cravat_admin:main',
+            'cravat=cravat.runcravat:main',
+            'cravat-view=cravat.cravat_view:main',
+            'cravat-view-test=cravat.cravat_view_test:main',
+            'cravat-filter=cravat.cravat_filter:main',
+            'cravat-report=cravat.cravat_report:main',
+            'cravat-test=cravat.cravat_test:main',
+            'cv=cravat.runcravat:main',
+            'cva=cravat.cravat_admin:main',
+        ]
+    },
+    cmdclass={
+              'install':InstallCommand,
+              },
+    install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'openpyxl'],
+)
