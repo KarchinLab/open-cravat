@@ -19,9 +19,9 @@ class BaseMapper(object):
     It handles command line arguments, option parsing and file io for the
     mapping process.
     """
-    def __init__(self):
+    def __init__(self, cmd_args):
         try:
-            main_fpath = sys.modules[self.__module__].__file__
+            main_fpath = cmd_args[0]
             self.mapper_dir = os.path.dirname(main_fpath)
             self.cmd_parser = None
             self.cmd_args = None
@@ -42,13 +42,15 @@ class BaseMapper(object):
             self.written_primary_transc = set([])
             self._define_main_cmd_args()
             self._define_additional_cmd_args()
-            self._parse_cmd_args()
+            self._parse_cmd_args(cmd_args)
             self._setup_logger()
         except Exception as e:
             self.__handle_exception(e)
             
     def _define_main_cmd_args(self):
         self.cmd_parser = argparse.ArgumentParser()
+        self.cmd_parser.add_argument('path',
+                                    help='Path to this mapper\'s python module')
         self.cmd_parser.add_argument('input',
                                      help='Input crv file')
         self.cmd_parser.add_argument('-n',
@@ -61,10 +63,11 @@ class BaseMapper(object):
                                           +'Default is input file directory.')
     
     def _define_additional_cmd_args(self):
+        """This method allows sub-classes to override and provide addittional command line args"""
         pass
     
-    def _parse_cmd_args(self):
-        self.cmd_args = self.cmd_parser.parse_args()
+    def _parse_cmd_args(self, args):
+        self.cmd_args = self.cmd_parser.parse_args(args)
         self.input_path = os.path.abspath(self.cmd_args.input)
         self.input_dir, self.input_fname = os.path.split(self.input_path)
         if self.cmd_args.output_dir:

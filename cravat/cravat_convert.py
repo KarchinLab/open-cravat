@@ -53,8 +53,9 @@ class MasterCravatConverter(object):
     
     ALREADYCRV = 2
     
-    def __init__(self):
+    def __init__(self, args=None):
         try:
+            args = args if args else sys.argv
             self.input_path = None
             self.f = None
             self.input_format = None
@@ -72,14 +73,16 @@ class MasterCravatConverter(object):
             self.output_dir = None
             self.output_base_fname = None
             self.vtracker = VTracker();
-            self._parse_cmd_args()
+            self._parse_cmd_args(args)
             self._setup_logger()
         except Exception as e:
             self.__handle_exception(e)
         
-    def _parse_cmd_args(self):
+    def _parse_cmd_args(self, args):
         """ Parse the arguments in sys.argv """
         parser = argparse.ArgumentParser()
+        parser.add_argument('path',
+                            help='Path to this converter\s python module')
         parser.add_argument('input',
                             help='File to be converted to .crv')
         parser.add_argument('-f',
@@ -97,7 +100,7 @@ class MasterCravatConverter(object):
                             choices=['hg38']+list(liftover_chain_paths.keys()),
                             default='hg38',
                             help='Input gene assembly. Will be lifted over to hg38')
-        parsed_args = parser.parse_args()
+        parsed_args = parser.parse_args(args)
         self.input_path = os.path.abspath(parsed_args.input)
         if parsed_args.format:
             self.input_format = parsed_args.format
