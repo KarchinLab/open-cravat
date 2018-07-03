@@ -1,4 +1,4 @@
 .pydevproject
 .project
 .vscode/**
-**/.pyc
+**.pyc
