@@ -148,3 +148,10 @@ def get_caller_name (path):
     else:
         module_name = basename
     return module_name
+
+def load_class(class_name, path):
+    """Load a class from the class's name and path. (dynamic importing)"""
+    spec = importlib.util.spec_from_file_location(class_name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return getattr(mod, class_name)

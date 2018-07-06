@@ -11,7 +11,6 @@ from .constants import crg_def
 from .constants import all_mappings_col_name
 from .constants import mapping_parser_name
 from .exceptions import InvalidData
-
 import sqlite3
 
 class BaseAnnotator(object):
@@ -28,7 +27,7 @@ class BaseAnnotator(object):
     def __init__(self, cmd_args):
         try:
             self.logger = None
-            main_fpath = os.path.abspath(sys.modules[self.__module__].__file__)
+            main_fpath = cmd_args[0]
             main_basename = os.path.basename(main_fpath)
             if '.' in main_basename:
                 self.annotator_name = '.'.join(main_basename.split('.')[:-1])
