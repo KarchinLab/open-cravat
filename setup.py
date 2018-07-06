@@ -56,22 +56,17 @@ class InstallCommand(install):
             else:
                 shutil.copy(c.system_conf_path, system_conf_path)
             f.close()
-            # Installs default converter, aggregator, and reporter.
-            #if self.install_defaults == 'True':
-            #    cl = ConfigLoader()
-            #    au.install_module(cl.get_cravat_conf_value('converter'), verbose=False)
-            #    au.install_module(cl.get_cravat_conf_value('aggregator'), verbose=False)
-            #    au.install_module(cl.get_cravat_conf_value('reporter'), verbose=False)
             
         atexit.register(_post_install)
         install.run(self)
 
 def readme ():
-    with open('README.md') as f:
-        return f.read()
-
-#f = open('d:\\log.txt', 'w')
-#f.write('### '+os.getcwd()+'\n')
+    try:
+        with open('README.md') as f:
+            return f.read()
+    except IOError:
+        return ''
+    
 data_files = ['cravat.yml', 
               'cravat-system.template.yml', 
               'cravat-system.yml', 
@@ -86,13 +81,11 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'liftover')):
 for root, dirs, files in os.walk(os.path.join('cravat', 'annotator_template')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
-#f.write('\n'.join(data_files))
-#f.close()
 
 setup(
     name='CRAVAT',
     packages=['cravat'],
-    version='0.0.73',
+    version='0.0.76',
     description='Cancer-Related Analysis of VAriants Toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
