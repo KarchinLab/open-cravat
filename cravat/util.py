@@ -1,5 +1,7 @@
 import re
 import os
+import importlib
+import sys
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -151,7 +153,10 @@ def get_caller_name (path):
 
 def load_class(class_name, path):
     """Load a class from the class's name and path. (dynamic importing)"""
+    path_dir = os.path.dirname(path)
+    sys.path = [path_dir] + sys.path
     spec = importlib.util.spec_from_file_location(class_name, path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    del sys.path[0]
     return getattr(mod, class_name)
