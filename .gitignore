@@ -2,3 +2,5 @@
 .project
 .vscode/**
 **.pyc
+/dist/**
+CRAVAT.egg-info/**
