@@ -168,7 +168,8 @@ function makeSummaryTab (rightDiv) {
 	});
 	var $widgets = $($widgetDiv.packery('getItemElements'));
 	$widgets.draggable({
-		grid: [widgetGridSize, widgetGridSize]
+		grid: [widgetGridSize, widgetGridSize],
+		handle: '.detailwidgettitle',
 	}).resizable({
 		grid: [widgetGridSize, widgetGridSize]
 	});
@@ -406,21 +407,26 @@ function toggleWidgetSelectorPanel () {
 }
 
 function drawSummaryWidget (widgetName, tabName, rightContentDiv) {
-	$.get('rest/widgetservice/' + widgetName, 
-			{dbpath: dbPath}).done(function (response) {
-		if (response == {}) {
-			return;
-		}
-		var data = response.data;
-		[widgetDiv, widgetContentDiv] = 
-			getDetailWidgetDivs(
-					tabName, 
-					widgetName, 
-					widgetGenerators[widgetName][tabName]['name']);
-		addEl(rightContentDiv, widgetDiv);
-		widgetGenerators[widgetName][tabName]['function'](
-				widgetContentDiv, data);
-    });
+	console.log(widgetName);
+	[widgetDiv, widgetContentDiv] = 
+		getDetailWidgetDivs(
+				tabName, 
+				widgetName, 
+				widgetGenerators[widgetName][tabName]['name']);
+	addEl(rightContentDiv, widgetDiv);
+	var callServer = widgetGenerators[widgetName][tabName]['callserver'];
+	if (callServer) {
+		var divToDraw = widgetContentDiv;
+		$.get('rest/widgetservice/' + widgetName, {dbpath: dbPath}).done(function (response) {
+			if (response == {}) {
+				return;
+			}
+			var data = response.data;
+			widgetGenerators[widgetName][tabName]['function'](divToDraw, data);
+	    });
+	} else {
+		widgetGenerators[widgetName][tabName]['function'](widgetContentDiv);
+	}
 }
 
 function setupEvents (tabName) {

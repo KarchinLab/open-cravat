@@ -114,7 +114,7 @@ class MyHandler (CGIHTTPRequestHandler):
             self.send_header('Content-type', 'text/css')
             self.end_headers()
             self.wfile.write(bytes('', 'UTF-8'))
-            
+    
     def serve_widgetservice (self, path, query, post_data):
         path = 'wg' + path
         queries = urllib.parse.parse_qs(query)
@@ -123,7 +123,6 @@ class MyHandler (CGIHTTPRequestHandler):
                           'webviewerwidgets', path)])
         m = imp.load_module(path, f, fn, d)
         ret = m.get_data(queries)
-        
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
@@ -367,6 +366,7 @@ class MyHandler (CGIHTTPRequestHandler):
                 content.append({'name': module_name, 
                                 'title': module.title, 
                                 'required_annotator': req})
+            print('@@@@', content)
         elif path == 'status':
             dbpath = urllib.parse.unquote(queries['dbpath'][0])
             conn = sqlite3.connect(dbpath)
