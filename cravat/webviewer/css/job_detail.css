@@ -44,6 +44,7 @@ body {
 	left: -3px;
 	background-color: #c8c8c8;
 	width: 150px;
+	border: 1px solid #888888;
 }
 
 .menu3 {
@@ -79,6 +80,7 @@ body {
 
 .menu3 > div {
 	display: none;
+	border: 1px solid #888888;
 }
 
 .menu3:hover > div {
@@ -256,13 +258,13 @@ div.tabContent.hide {
 	display: inline-block;
 	width: 100%;
 	position: relative;
-	top: -20px;
-	left: 7px;
+	top: 0px;
+	left: 0px;
 }
 
 .detailwidgettitle {
 	display: inline-block;
-	width: calc(100% - 32px);
+	width: calc(100% - 40px);
 	background: #c5dbdb;
 	font-size: 13px;
 	font-weight: bold;
@@ -315,7 +317,8 @@ div.tabContent.hide {
 	display: inline-block;
 	width: 32px;
 	position: absolute;
-	right: 2px;
+	right: 0px;
+	top: 0px;
 }
 
 .detailwidgetclosebutton {
