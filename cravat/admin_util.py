@@ -581,13 +581,6 @@ def get_main_default_path():
     """
     return os.path.join(constants.packagedir, constants.main_conf_fname)
 
-def get_module_size(module_name):
-    """
-    Gets the total installed size of a module
-    """
-    module_info = get_local_module_info(module_name)
-    return get_directory_size(module_info.directory)
-                
 def publish_module(module_name, user, password, include_data=True):
     sys_conf = get_system_conf()
     publish_url = sys_conf['publish_url']

@@ -32,8 +32,11 @@ class PathBuilder(object):
     def base(self):
         return self._build_path(self._base)
     
+    def modules_dir(self):
+        return self._build_path(self.base(),'modules')
+    
     def module_dir(self, module_name):
-        return self._build_path(self.base(), 'modules', module_name)
+        return self._build_path(self.modules_dir(), module_name)
     
     def module_version_dir(self, module_name, version):
         return self._build_path(self.module_dir(module_name), version)
@@ -180,7 +183,7 @@ class ModuleArchiveBuilder(object):
     
     def close(self):
         self._archive.close()
-    
+        
 def add_to_zipfile(full_path, zf, start=os.curdir, compress_type=zipfile.ZIP_DEFLATED):
     """
     Recursively add files to a zipfile. Optionally making the path within
@@ -211,20 +214,6 @@ def nest_value_in_dict(d, v, keys):
         if top_key not in d:
             d[top_key] = {}
         nest_value_in_dict(d[top_key], v, keys[1:])
-    
-def dir_checksums(dirpath):
-    """
-    Get a nested dictionary containing filenames and checksum values. Dirs 
-    create a new level to the dictionary.
-    """
-    d = {}
-    for iname in os.listdir(dirpath):
-        ipath = os.path.join(dirpath, iname)
-        if os.path.isfile(ipath):
-            d[iname] = file_checksum(ipath)
-        else:
-            d[iname] = dir_checksums(ipath)
-    return d
 
 def verify_against_manifest(dirpath, manifest):
     """
