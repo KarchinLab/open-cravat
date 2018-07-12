@@ -11,9 +11,7 @@ import json
 class PathBuilder(object):
     """
     Used to get routes to certain resources in the cravat-store download area.
-    Returns list of the path from the base location, to the resource. Lists
-    can be joined in any way (eg into a filepath or into a url) by the calling
-    function. FileRouter should not have knowledge of the intended path format.
+    Returns path string in either url of file format.
     """
     
     _valid_path_types = set(['url','file'])
