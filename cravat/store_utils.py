@@ -32,11 +32,8 @@ class PathBuilder(object):
     def base(self):
         return self._build_path(self._base)
     
-    def modules_dir(self):
-        return self._build_path(self.base(),'modules')
-    
     def module_dir(self, module_name):
-        return self._build_path(self.modules_dir(), module_name)
+        return self._build_path(self.base(), 'modules', module_name)
     
     def module_version_dir(self, module_name, version):
         return self._build_path(self.module_dir(module_name), version)
