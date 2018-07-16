@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import os
 import sys
@@ -10,6 +8,8 @@ import sqlite3
 import datetime
 from types import SimpleNamespace
 from cravat.constants import liftover_chain_paths
+
+#test
 
 class Cravat (object):
     def __init__ (self, cmd_args):
@@ -179,7 +179,6 @@ class Cravat (object):
         if self.should_run_reporter:
             print('Running reporter...')
             self.run_reporter()
-        
     def parse_cmd_args(self, cmd_args):
         self.args = self.cmd_arg_parser.parse_args(cmd_args)
         self.annotator_names = self.args.annotators
@@ -474,8 +473,7 @@ class Cravat (object):
         annotator_class = util.load_class("CravatAnnotator", module.script_path)
         annotator = annotator_class(cmd)
         annotator.run()
-        # return exitcode
-    
+        
     def table_exists (self, cursor, table):
         sql = 'select name from sqlite_master where type="table" and ' +\
             'name="' + table + '"'

@@ -1,4 +1,5 @@
 /cravat-system.yml
 /cravat-system-dev.yml
 /cravat_view_test.py
-/cravat.yml
+*.bak
+.vscode

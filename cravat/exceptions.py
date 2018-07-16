@@ -15,3 +15,7 @@ class LiftoverFailure(InvalidData):
 class FileIntegrityError(Exception):
     def __init__(self, path):
         super().__init__(path)
+        
+class CravatProfileException():
+    def __init__(self, msg):
+        super().__init__(msg)
