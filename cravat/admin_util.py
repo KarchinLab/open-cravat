@@ -7,6 +7,7 @@ import copy
 import json
 from . import constants
 from . import store_utils as su
+from . import util
 import requests
 import traceback
 
@@ -98,6 +99,7 @@ class LocalModuleInfo (object):
             self.title = self.conf['title']
         else:
             self.title = self.name
+        self.disk_size = None
 
     def is_valid_module(self):
         r = self.exists
@@ -106,6 +108,14 @@ class LocalModuleInfo (object):
         r = r and self.version is not None
         r = r and self.type is not None
         return r
+
+    def get_size(self):
+        """
+        Gets the total installed size of a module
+        """
+        if self.disk_size is None:
+            self.disk_size = util.get_directory_size(self.directory)
+        return self.disk_size
 
 class RemoteModuleInfo(object):
     def __init__(self, name):
@@ -116,6 +126,7 @@ class RemoteModuleInfo(object):
         self.description = None
         self.developer = None
         self.title = None
+        self.size = None
     
 class ModuleInfoCache(object):
     def __init__(self):
@@ -248,6 +259,7 @@ def get_remote_module_info(module_name):
         module.title = mdict.get('title')
         module.description = mdict.get('description')
         module.developer = mdict.get('developer')
+        module.size = mdict.get('size',0)
         return module
     else:
         return None
@@ -495,10 +507,10 @@ def set_modules_dir (path, overwrite=False):
     
 #return a list of module types (e.g. annotators) in the local install
 def get_local_module_types():
-    types = [];
+    types = []
     for module in mic.local:
         if mic.local[module].type not in types:
-            types.append(mic.local[module].type);
+            types.append(mic.local[module].type)
     return types
     
 def get_local_module_infos_of_type (t):
@@ -569,24 +581,6 @@ def get_main_default_path():
     """
     return os.path.join(constants.packagedir, constants.main_conf_fname)
 
-def get_directory_size(start_path):
-    """
-    Recursively get directory filesize.
-    """
-    total_size = 0
-    for dirpath, _, filenames in os.walk(start_path):
-        for fname in filenames:
-            fp = os.path.join(dirpath, fname)
-            total_size += os.path.getsize(fp)
-    return total_size
-
-def get_module_size(module_name):
-    """
-    Gets the total installed size of a module
-    """
-    module_info = mic.get_local_module_info(module_name)
-    return get_directory_size(module_info.directory)
-                
 def publish_module(module_name, user, password, include_data=True):
     sys_conf = get_system_conf()
     publish_url = sys_conf['publish_url']

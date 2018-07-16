@@ -160,3 +160,14 @@ def load_class(class_name, path):
     spec.loader.exec_module(mod)
     del sys.path[0]
     return getattr(mod, class_name)
+
+def get_directory_size(start_path):
+    """
+    Recursively get directory filesize.
+    """
+    total_size = 0
+    for dirpath, _, filenames in os.walk(start_path):
+        for fname in filenames:
+            fp = os.path.join(dirpath, fname)
+            total_size += os.path.getsize(fp)
+    return total_size

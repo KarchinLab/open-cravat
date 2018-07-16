@@ -11,9 +11,7 @@ import json
 class PathBuilder(object):
     """
     Used to get routes to certain resources in the cravat-store download area.
-    Returns list of the path from the base location, to the resource. Lists
-    can be joined in any way (eg into a filepath or into a url) by the calling
-    function. FileRouter should not have knowledge of the intended path format.
+    Returns path string in either url of file format.
     """
     
     _valid_path_types = set(['url','file'])
@@ -182,7 +180,7 @@ class ModuleArchiveBuilder(object):
     
     def close(self):
         self._archive.close()
-    
+        
 def add_to_zipfile(full_path, zf, start=os.curdir, compress_type=zipfile.ZIP_DEFLATED):
     """
     Recursively add files to a zipfile. Optionally making the path within
@@ -213,20 +211,6 @@ def nest_value_in_dict(d, v, keys):
         if top_key not in d:
             d[top_key] = {}
         nest_value_in_dict(d[top_key], v, keys[1:])
-    
-def dir_checksums(dirpath):
-    """
-    Get a nested dictionary containing filenames and checksum values. Dirs 
-    create a new level to the dictionary.
-    """
-    d = {}
-    for iname in os.listdir(dirpath):
-        ipath = os.path.join(dirpath, iname)
-        if os.path.isfile(ipath):
-            d[iname] = file_checksum(ipath)
-        else:
-            d[iname] = dir_checksums(ipath)
-    return d
 
 def verify_against_manifest(dirpath, manifest):
     """
