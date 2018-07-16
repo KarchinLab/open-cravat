@@ -12,3 +12,13 @@ base_modules:
 - tagsampler
 - vcfinfo
 - hg38
+- wgcodingvsnoncodingsummary
+- wggosummary
+- wgsosamplessummary
+- wgsosummary
+- wgtopgenessummary
+- wgbase
+- wglollipop
+- wgncbigene
+- wgncrna
+- wgndex
