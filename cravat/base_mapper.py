@@ -4,7 +4,7 @@ import argparse
 import logging
 import time
 from .inout import CravatReader, CravatWriter, AllMappingsParser
-from .constants import crx_def, crg_def, crt_def
+from .constants import crx_def, crx_idx, crg_def, crg_idx, crt_def, crt_idx
 from .util import most_severe_so
 from .exceptions import InvalidData
 import sys
@@ -88,16 +88,16 @@ class BaseMapper(object):
     def setup(self):
         raise NotImplementedError('Mapper must have a setup() method.')
     
-    def __handle_exception(self, e, exit=True):
+    def __handle_exception(self, e, should_exit=True):
         """
         Handles exceptions in standard cravat method
         """
         sys.stderr.write(traceback.format_exc())
         if hasattr(self, 'logger') and self.logger is not None:
                 self.logger.exception(e)
-                if exit: sys.exit(2)
+                if should_exit: sys.exit(2)
         else:
-            if exit: sys.exit(1)
+            if should_exit: sys.exit(1)
     
     def _setup_logger(self):
         self.log_path = os.path.join(self.output_dir, 
@@ -135,6 +135,8 @@ class BaseMapper(object):
         self.crx_writer.add_columns(crx_def)
         self.logger.info('CRX Path: %s' %self.crx_path)
         self.crx_writer.write_definition()
+        for index_columns in crx_idx:
+            self.crx_writer.add_index(index_columns)
         self.logger.info('CRX Path: %s' %self.crx_path)
         # .crg
         crg_fname = '.'.join(output_toks) + '.crg'
@@ -143,6 +145,8 @@ class BaseMapper(object):
         self.crg_writer.add_columns(crg_def)
         self.logger.info('CRG Path: %s' %self.crg_path)
         self.crg_writer.write_definition()
+        for index_columns in crg_idx:
+            self.crg_writer.add_index(index_columns)
         self.logger.info('CRG Path: %s' %self.crg_path)
         #.crt
         crt_fname = '.'.join(output_toks) + '.crt'
@@ -150,6 +154,8 @@ class BaseMapper(object):
         self.crt_writer = CravatWriter(self.crt_path)
         self.crt_writer.add_columns(crt_def)
         self.crt_writer.write_definition()
+        for index_columns in crt_idx:
+            self.crt_writer.add_index(index_columns)
         self.logger.info('CRT Path: %s' %self.crt_path)
         # .err
         self.err_path = output_base_path + '.map.err'

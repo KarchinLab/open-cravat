@@ -167,7 +167,7 @@ function saveLayoutSetting (name, callback) {
 
 function saveFilterSettingAs () {
 	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
-		var names = '' + JSON.parse(response.replace(/'/g, '"'));
+		var names = '' + response;
 		var msg = 'Please enter layout name to save.';
 		if (names != '') {
 			msg = msg + ' Saved layout names are ' + names;
@@ -180,7 +180,7 @@ function saveFilterSettingAs () {
 }
 function saveLayoutSettingAs () {
 	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
-		var names = '' + JSON.parse(response.replace(/'/g, '"'));
+		var names = '' + response;
 		var msg = 'Please enter layout name to save.';
 		if (names != '') {
 			msg = msg + ' Saved layout names are ' + names;
@@ -275,7 +275,6 @@ function saveTableSetting (name) {
 		saveData['tableSettings']['gene'] = data;
 	}
 	var saveDataStr = JSON.stringify(saveData);
-	console.log(saveData);
 	$.ajax({
 		url: 'rest/service/savetablesetting', 
 		type: 'get',
@@ -332,8 +331,7 @@ function showTab (tabName) {
 function loadFilterSetting (name, callback) {
 	$.get('rest/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Filter setting loaded');
-		response = response.replace(/'/g, '"');
-		var data = JSON.parse(response);
+		var data = response;
 		var loadedFilterSet = data['filterSet'];
 		filterSet = loadedFilterSet;
 		showFilterSet();
@@ -343,20 +341,6 @@ function loadFilterSetting (name, callback) {
 			callback();
 		}
     });
-}
-
-function onClickOpenResult () {
-	 var input = getEl('input');
-     input.type = 'file';
-     input.onchange = function (evt, ui) {
-    	 onOpenResult(this);
-     }
-     $(input).trigger('click');
-     return false;
-}
-
-function onOpenResult (input) {
-	console.log(URL.createObjectURL(input.files[0]));
 }
 
 function getWidget (tabName, widgetName, widgetTitle) {
@@ -434,7 +418,6 @@ function applyTableSetting (level) {
 			}
 		}
 	}
-	console.log(newColModel);
 	$grid.pqGrid('option', 'colModel', newColModel);
 	$grid.pqGrid('refresh');
 }
@@ -446,23 +429,22 @@ function loadLayoutSetting (name, callback) {
 }
 
 function loadLayoutSettingAs () {
-	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
-		var names = '' + JSON.parse(response.replace(/'/g, '"'));
-		var name = null;
-		if (names != '') {
-			name = prompt('Please enter layout name to load. Saved layout names are ' + names, lastUsedLayoutName);
-			if (name != null) {
-				loadLayoutSetting(name, null);
-			}
-		} else {
-			alert('No layout has been saved.');
-		}
-	});
+	var div = document.getElementById('load_layout_select_div');
+	emptyElement(div);
+	for (var i = 0; i < savedLayoutNames.length; i++) {
+		var name = savedLayoutNames[i];
+		var a = getEl('a');
+		a.textContent = name;
+		a.addEventListener('click', function (evt) {
+			loadLayoutSetting(evt.target.textContent, null)
+		});
+		addEl(div, a);
+	}
 }
 
 function loadFilterSettingAs () {
 	$.get('rest/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
-		var names = '' + JSON.parse(response.replace(/'/g, '"'));
+		var names = '' + response;
 		var name = null;
 		if (names != '') {
 			name = prompt('Please enter filter name to load. Saved filter names are ' + names, lastUsedLayoutName);
@@ -478,8 +460,7 @@ function loadFilterSettingAs () {
 function loadWidgetSetting (name, callback) {
 	$.get('rest/service/loadwidgetsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Widget setting loaded');
-		response = response.replace(/'/g, '"');
-		var data = JSON.parse(response);
+		var data = response;
 		loadedViewerWidgetSettings = data['widgetSettings'];
 		viewerWidgetSettings = loadedViewerWidgetSettings;
 		if (currentTab == 'variant' || currentTab == 'gene') {
@@ -494,8 +475,7 @@ function loadWidgetSetting (name, callback) {
 function loadTableSetting (name, callback) {
 	$.get('rest/service/loadtablesetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Table setting loaded');
-		response = response.replace(/'/g, '"');
-		var data = JSON.parse(response);
+		var data = response;
 		loadedTableSettings = data['tableSettings'];
 		tableSettings = loadedTableSettings;
 		if (currentTab == 'variant' || currentTab == 'gene') {

@@ -5,8 +5,8 @@ import logging
 import argparse
 import time
 import traceback
-import cravat.util
-from cravat.constants import crv_def, crs_def, crm_def, liftover_chain_paths
+import cravat.constants as constants
+from cravat import CravatWriter
 from cravat.exceptions import LiftoverFailure, InvalidData, BadFormatError
 import cravat.admin_util as au
 from pyliftover import LiftOver
@@ -60,7 +60,7 @@ class MasterCravatConverter(object):
             self.f = None
             self.input_format = None
             self.logger = None
-            self.writer = None
+            self.crv_writer = None
             self.crs_writer = None
             self.crm_writer = None
             self.crl_writer = None
@@ -97,7 +97,7 @@ class MasterCravatConverter(object):
                                  +'Default is input file directory.')
         parser.add_argument('-l','--liftover',
                             dest='liftover',
-                            choices=['hg38']+list(liftover_chain_paths.keys()),
+                            choices=['hg38']+list(constants.liftover_chain_paths.keys()),
                             default='hg38',
                             help='Input gene assembly. Will be lifted over to hg38')
         parsed_args = parser.parse_args(args)
@@ -118,7 +118,7 @@ class MasterCravatConverter(object):
         self.input_assembly = parsed_args.liftover
         self.do_liftover = self.input_assembly != 'hg38'
         if self.do_liftover:
-            self.lifter = LiftOver(liftover_chain_paths[self.input_assembly])
+            self.lifter = LiftOver(constants.liftover_chain_paths[self.input_assembly])
         else:
             self.lifter = None
         
@@ -222,8 +222,11 @@ class MasterCravatConverter(object):
         # Setup CravatWriter
         self.wpath = os.path.join(self.output_dir,
                                   self.output_base_fname + '.crv')
-        self.writer = cravat.CravatWriter(self.wpath)
-        self.writer.add_columns(crv_def)
+        self.crv_writer = CravatWriter(self.wpath)
+        self.crv_writer.add_columns(constants.crv_def)
+        self.crv_writer.write_definition()
+        for index_columns in constants.crv_idx:
+            self.crv_writer.add_index(index_columns)
         self.logger.info('Output file: %s' %self.wpath)
         # Setup err file
         self.err_path = os.path.join(self.output_dir,
@@ -232,36 +235,34 @@ class MasterCravatConverter(object):
         self.logger.info('Error file: %s' %self.err_path)
         
         # Setup crm line mappings file
-        self.map_path = os.path.join(self.output_dir, self.output_base_fname +'.crm')
-        self.crm_writer = cravat.CravatWriter(self.map_path)
-        self.crm_writer.add_columns(crm_def)
-        self.logger.info('Map file: %s' %self.map_path)
+        self.crm_path = os.path.join(self.output_dir, self.output_base_fname +'.crm')
+        self.crm_writer = CravatWriter(self.crm_path)
+        self.crm_writer.add_columns(constants.crm_def)
+        self.crm_writer.write_definition()
+        for index_columns in constants.crm_idx:
+            self.crm_writer.add_index(index_columns)
+        self.logger.info('Map file: %s' %self.crm_path)
         
         # Setup crs sample file
         self.crs_path = os.path.join(self.output_dir, self.output_base_fname +'.crs')
-        self.crs_writer = cravat.CravatWriter(self.crs_path)
-        self.crs_writer.add_columns(crs_def)
+        self.crs_writer = CravatWriter(self.crs_path)
         if hasattr(self.primary_converter, 'addl_cols'):
             self.crs_writer.add_columns(self.primary_converter.addl_cols, append=True)
-            crs_def.extend(self.primary_converter.addl_cols)
+            constants.crs_def.extend(self.primary_converter.addl_cols)
+        self.crs_writer.add_columns(constants.crs_def)
+        self.crs_writer.write_definition()
+        for index_columns in constants.crs_idx:
+            self.crs_writer.add_index(index_columns)
         self.logger.info('Sample crs file: %s' %self.crs_path)
         
         # Setup liftover var file
         if self.do_liftover:
             self.crl_path = '.'.join([self.wpath,self.input_assembly,'var'])
-            self.crl_writer = cravat.CravatWriter(self.crl_path)
-            self.crl_writer.add_column(0,
-                                       'UID',
-                                       'uid',
-                                       'string')
-            self.crl_writer.add_column(1,
-                                       self.input_assembly.title()+' Chrom',
-                                       'chrom',
-                                       'string')
-            self.crl_writer.add_column(2,
-                                       self.input_assembly.title()+' Position',
-                                       'pos',
-                                       'int')
+            self.crl_writer = CravatWriter(self.crl_path)
+            assm_crl_def = copy.deepcopy(constants.crl_def)
+            assm_crl_def[1]['title'] = '{0} Chrom'.format(self.input_assembly.title())
+            assm_crl_def[2]['title'] = '{0} Position'.format(self.input_assembly.title())
+            self.crl_writer.add_columns(assm_crl_def)
             self.crl_writer.write_definition()
             self.crl_writer.write_names(self.input_assembly,
                                         self.input_assembly.title())
@@ -313,7 +314,7 @@ class MasterCravatConverter(object):
                         wdict['uid'] = UID
                         if unique:
                             write_lnum += 1
-                            self.writer.write_data(wdict)
+                            self.crv_writer.write_data(wdict)
                             if self.do_liftover:
                                 prelift_wdict['uid'] = UID
                                 self.crl_writer.write_data(prelift_wdict)
@@ -368,7 +369,7 @@ class MasterCravatConverter(object):
     def _close_files(self):
         """ Close the input and output files. """
         self.f.close()
-        self.writer.close()
+        self.crv_writer.close()
         self.crm_writer.close()
         self.crs_writer.close()
         self.err_file.close()

@@ -26,11 +26,16 @@ function getWidgetTableHead (headers) {
 	return thead;
 }
 
-function getWidgetTableTr (values) {
+function getWidgetTableTr (values, colWidths) {
 	var numBorder = values.length - 1;
 	var tr = getEl('tr');
 	for (var i = 0; i < values.length; i++) {
 		var td = getEl('td');
+		var p = getEl('p');
+		p.style.wordWrap = 'break-word';
+		if (colWidths != undefined) {
+			p.style.width = colWidths[i] + 'px';
+		}
 		if (i < numBorder) {
 			td.style.borderRight = widgetTableBorderStyle;
 		}
@@ -38,7 +43,7 @@ function getWidgetTableTr (values) {
 		if (value == null) {
 			value = '';
 		}
-		addEl(td, getTn(value));
+		addEl(td, addEl(p, getTn(value)));
 		addEl(tr, td);
 	}
 	return tr;
