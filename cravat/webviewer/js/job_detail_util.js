@@ -77,7 +77,7 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	var titleDiv = getEl('legend');
 	titleDiv.className = 'detailwidgettitle';
 	titleDiv.style.cursor = 'move';
-	addEl(div, addEl(titleDiv, getTn(title)));
+	addEl(header, addEl(titleDiv, getTn(title)));
 	
 	// Div for pin and x icons
 	var iconDiv = getEl('div');

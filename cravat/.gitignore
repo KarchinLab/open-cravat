@@ -1,7 +1,5 @@
 /cravat-system.yml
 /cravat-system-dev.yml
-<<<<<<< HEAD
-/cravat_view_test.py
-=======
->>>>>>> branch 'next_release' of git@github.com:KarchinLab/OpenCRAVAT.git
 /cravat.yml
+*.bak
+.vscode

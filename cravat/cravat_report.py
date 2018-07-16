@@ -6,6 +6,7 @@ import json
 from cravat.cravat_filter import CravatFilter
 from cravat import admin_util as au
 from cravat.config_loader import ConfigLoader
+from cravat import util
 
 class CravatReport:
 
@@ -204,8 +205,10 @@ class CravatReport:
                 conf = mi.conf
                 if 'can_summarize_by_gene' in conf and module_name in done_var_annotators:
                     sys.path = sys.path + [os.path.dirname(mi.script_path)]
-                    m = __import__(module_name)
-                    o = m.CravatAnnotator(['', '__dummy__'])
+                    annot_cls = util.load_class('CravatAnnotator', mi.script_path)
+                    annot = annot_cls([mi.script_path, '__dummy__'])
+                    #m = __import__(module_name)
+                    #o = m.CravatAnnotator(['', '__dummy__'])
                     cols = conf['gene_summary_output_columns']
                     for col in cols:
                         col['name'] = col['name'] 
@@ -219,8 +222,8 @@ class CravatReport:
                                   'col_title': col['title'],
                                   'col_type': col['type']}
                         columns.append(column)
-                    self.summarizing_modules.append([mi, o, cols])
-                    o.remove_log_file()
+                    self.summarizing_modules.append([mi, annot, cols])
+                    annot.remove_log_file()
         colno = 0
         for colgroup in self.columngroups[level]:
             colno += colgroup['count']

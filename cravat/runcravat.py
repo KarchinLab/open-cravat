@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
-
 import argparse
 import os
 import sys
-import subprocess
 from cravat import admin_util as au
+from cravat import util
 from cravat import ConfigLoader
 import sqlite3
 import datetime
@@ -21,6 +19,8 @@ class Cravat (object):
         self.pythonpath = sys.executable
         self.annotators = {}
         parser = argparse.ArgumentParser()
+        parser.add_argument('path',
+                            help='Path to the Cravat python module, or cravat executable')
         parser.add_argument('input',
                             help='path to input file')
         parser.add_argument('-a',
@@ -177,9 +177,8 @@ class Cravat (object):
         if self.should_run_reporter:
             print('Running reporter...')
             self.run_reporter()
-        
     def parse_cmd_args(self, cmd_args):
-        self.args = self.cmd_arg_parser.parse_args(cmd_args[1:])
+        self.args = self.cmd_arg_parser.parse_args(cmd_args)
         self.annotator_names = self.args.annotators
         if self.annotator_names == None:
             self.annotators = au.get_local_module_infos_of_type('annotator')
@@ -307,43 +306,45 @@ class Cravat (object):
                 primary_module.secondary_module_names]
         return secondary_modules
     
-    def run_converter (self):
+    def run_converter(self):
         converter_path = os.path.join(os.path.dirname(__file__),'cravat_convert.py')
         module = SimpleNamespace(title='Converter',
                                  name='converter',
                                  script_path=converter_path)
-        cmd = [self.pythonpath,
-               module.script_path,
-               self.input,
+        cmd = [module.script_path,
+                self.input,
                '-n', self.run_name,
                '-d', self.output_dir,
                '-l', self.input_assembly]
         self.announce_module(module)
         if self.verbose:
             print('    '.join(cmd))
-        subprocess.call(cmd)
-    
+        converter_class = util.load_class('MasterCravatConverter', module.script_path)
+        converter = converter_class(cmd)
+        converter.run()
+
     def run_genemapper (self):
         module = au.get_local_module_info(
             self.conf.get_cravat_conf()['genemapper'])
-        cmd = [self.pythonpath, 
-               module.script_path, 
+        cmd = [module.script_path, 
                self.crvinput,
                '-n', self.run_name,
                '-d', self.output_dir]
         self.announce_module(module)
         if self.verbose:
             print('    '.join(cmd))
-        subprocess.call(cmd)
+        genemapper_class = util.load_class('Mapper', module.script_path)
+        genemapper = genemapper_class(cmd)
+        genemapper.run()
         
     def run_aggregator (self):
         module = au.get_local_module_info(
             self.conf.get_cravat_conf()['aggregator'])
-        
+        aggregator_cls = util.load_class('Aggregator', module.script_path)
+
         # Variant level
         print('    Variants')
-        cmd = [self.pythonpath, 
-               module.script_path, 
+        cmd = [module.script_path, 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'variant',
@@ -352,56 +353,59 @@ class Cravat (object):
             cmd.append('-x')
         if self.verbose:
             print('    '.join(cmd))
-        subprocess.call(cmd)
+        v_aggregator = aggregator_cls(cmd)
+        v_aggregator.run() 
         
         # Gene level
         print('    Genes')
-        cmd = [self.pythonpath, 
-               module.script_path, 
+        cmd = [module.script_path, 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'gene',
                '-n', self.run_name]
         if self.verbose:
             print('    '.join(cmd))
-        subprocess.call(cmd)
+        g_aggregator = aggregator_cls(cmd)
+        g_aggregator.run()
+        
         
         # Sample level
         print('    Samples')
-        cmd = [self.pythonpath, 
-               module.script_path, 
+        cmd = [module.script_path, 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'sample',
                '-n', self.run_name]
         if self.verbose:
             print('    '.join(cmd))
-        subprocess.call(cmd)
+        s_aggregator = aggregator_cls(cmd)
+        s_aggregator.run()
         
         # Mapping level
         print('    Tags')
-        cmd = [self.pythonpath, 
-               module.script_path, 
+        cmd = [module.script_path, 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'mapping',
                '-n', self.run_name]
         if self.verbose:
             print('    '.join(cmd))
-        subprocess.call(cmd)
+        m_aggregator = aggregator_cls(cmd)
+        m_aggregator.run()
     
     def run_postaggregators (self):
         modules = au.get_local_module_infos_of_type('postaggregator')
         for module_name in modules:
             module = modules[module_name]
             self.announce_module(module)
-            cmd = [self.pythonpath, 
-                   module.script_path, 
+            cmd = [module.script_path, 
                    '-d', self.output_dir, 
                    '-n', self.run_name]
             if self.verbose:
                 print('    '.join(cmd))
-            subprocess.call(cmd)
+            post_agg_cls = util.load_class('CravatPostAggregator', module.script_path)
+            post_agg = post_agg_cls(cmd)
+            post_agg.run()
     
     def run_reporter (self):
         if self.reports != None:
@@ -411,15 +415,16 @@ class Cravat (object):
         for module_name in module_names:
             module = au.get_local_module_info(module_name)
             self.announce_module(module)
-            cmd = [self.pythonpath, 
-                   module.script_path, 
+            cmd = [module.script_path, 
                    '-s', os.path.join(self.output_dir, self.run_name),
                    os.path.join(self.output_dir, self.run_name + '.sqlite'),
                    '-c', self.run_conf_path]
             if self.verbose:
                 print('     '.join(cmd))
-            subprocess.call(cmd)
-    
+            reporter_cls = util.load_class('Reporter', module.script_path)
+            reporter = reporter_cls(cmd)
+            reporter.run()
+
     def run_annotators (self):
         for module in self.ordered_annotators:
             self.announce_module(module)
@@ -454,7 +459,7 @@ class Cravat (object):
                         '-s', 
                         secondary_module.name + '@' +\
                             os.path.join(self.output_dir, secondary_output_path)])
-        cmd = [self.pythonpath, module.script_path, inputpath]
+        cmd = [module.script_path, inputpath]
         cmd.extend(opts)
         cmd.extend(secondary_opts)
         if self.run_name != None:
@@ -463,8 +468,9 @@ class Cravat (object):
             cmd.extend(['-d', self.output_dir])
         if self.verbose:
             print('    '.join(cmd))
-        exitcode = subprocess.call(cmd)
-        return exitcode
+        annotator_class = util.load_class("CravatAnnotator", module.script_path)
+        annotator = annotator_class(cmd)
+        annotator.run()
     
     def table_exists (self, cursor, table):
         sql = 'select name from sqlite_master where type="table" and ' +\
@@ -519,15 +525,16 @@ class Cravat (object):
             self.run_summarizer(module)
     
     def run_summarizer (self, module):
-        cmd = [self.pythonpath, module.script_path, '-l', 'variant']
+        cmd = [module.script_path, '-l', 'variant']
         if self.run_name != None:
             cmd.extend(['-n', self.run_name])
         if self.output_dir != None:
             cmd.extend(['-d', self.output_dir])
         if self.verbose:
             print('    '.join(cmd))
-        exitcode = subprocess.call(cmd)
-        return exitcode
+        summarizer_cls = util.load_class('', module.script_path)
+        summarizer = summarizer_cls(cmd)
+        summarizer.run()
     
     def announce_module (self, module):
         print('    ' + module.title + ' (' + module.name + ')')
