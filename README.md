@@ -1,37 +1,4 @@
-OpenCRAVAT is a local, modular, and light-weight variant annotation tool.
+Open-CRAVAT is a python package that performs genomic variant interpretation including variant impact, annotation, and scoring.  It has a modular architecture with a wide variety of analysis modules that are developed both by the CRAVAT team and the broader variant analysis community. Open-CRAVAT is a product of the [Karchin Lab](http://karchinlab.org/) at Johns Hopkins University in collaboration with [In Silico Solutions](http://insilico.us.com) with funding provided by the National Cancer Institute's [ITCR](https://itcr.cancer.gov/) program.
 
-To install open CRAVAT you need Python 3.5 or newer.
+Please see: [Open-CRAVAT Docs](https://github.com/KarchinLab/open-cravat/wiki) for installation instructions and software documentation.
 
-### Installing Core
-
-`pip install cravat`
-
-### Installing Base Components
-
-Then you need some base components. One is big so will take ~15 minutes to install.
-
-`cravat-admin install-base`
-
-### Installing Annotators
-
-Then you can search for annotators to install with the command
-
-`cravat-admin ls –a`
-
-This also tells you wich annotators you have installed.
-
-To install a new one:
-
-`cravat-admin install <annotator name>`
-
-For example: `cravat-admin install clinvar`
-
-Depending on the size of the data for the annotator, it may take some time to download and install.
-
-### Running Analysis
-
-To run your analysis you then can just type:
-
-`cravat <input file>`
-
-This command has lots of command line options you can see by typing cravat –h.  By default, it will create text, excel, and sqlite output in the current directoy and will run all of the installed annotators.  Command line options can be used to select specific output or to run a subset of the installed annotators.
