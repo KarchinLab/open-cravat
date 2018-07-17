@@ -66,7 +66,7 @@ def readme ():
             return f.read()
     except IOError:
         return ''
-    
+
 data_files = ['cravat.yml', 
               'cravat-system.template.yml', 
               'cravat-system.yml', 
@@ -85,7 +85,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'annotator_template')):
 setup(
     name='CRAVAT',
     packages=['cravat'],
-    version='0.0.80',
+    version='0.0.81',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
