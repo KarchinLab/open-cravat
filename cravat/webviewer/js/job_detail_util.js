@@ -227,6 +227,21 @@ function saveWidgetSetting (name) {
 					'height': widget.style.height});
 		};
 	}
+	var detailContainerDiv = document.getElementById('detailcontainerdiv_info');
+	if (detailContainerDiv != null) {
+		saveData['widgetSettings']['info'] = [];
+		widgets = $(detailContainerDiv).packery('getItemElements');
+		for (var i = 0; i < widgets.length; i++) {
+			var widget = widgets[i];
+			saveData['widgetSettings']['info'].push(
+					{'id': widget.id,
+					'widgetkey': widget.getAttribute('widgetkey'),
+					'top': widget.style.top, 
+					'left': widget.style.left, 
+					'width': widget.style.width, 
+					'height': widget.style.height});
+		};
+	}
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
 		url: 'rest/service/savewidgetsetting', 
@@ -463,7 +478,7 @@ function loadWidgetSetting (name, callback) {
 		var data = response;
 		loadedViewerWidgetSettings = data['widgetSettings'];
 		viewerWidgetSettings = loadedViewerWidgetSettings;
-		if (currentTab == 'variant' || currentTab == 'gene') {
+		if (currentTab == 'variant' || currentTab == 'gene' || currentTab == 'info') {
 			applyWidgetSetting(currentTab);
 		}
 		if (callback != null) {

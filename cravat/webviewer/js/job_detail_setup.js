@@ -155,7 +155,7 @@ function makeInfoTab (rightDiv) {
 	
 	// Widgets
 	var widgetDiv = getEl('div');
-	widgetDiv.id = 'summary_widgets_div';
+	widgetDiv.id = 'detailcontainerdiv_info';
 	addEl(rightContentDiv, widgetDiv);
 }
 
@@ -177,7 +177,7 @@ function toggleFilterDiv () {
 
 function populateSummaryWidgetDiv () {
 	var tabName = 'info';
-	var widgetDiv = document.getElementById('summary_widgets_div');
+	var widgetDiv = document.getElementById('detailcontainerdiv_info');
 	if (widgetDiv.innerHTML != '') {
 		$(widgetDiv).packery('destroy');
 		emptyElement(widgetDiv);
