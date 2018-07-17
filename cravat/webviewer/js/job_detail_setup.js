@@ -10,21 +10,6 @@ function setupTab (tabName) {
 		return;
 	}
 	
-	var level = '', coding = '';
-	if (tabName == 'variant') {
-		level = 'variant';
-		coding = 'true';
-	} else if (tabName == 'noncoding') {
-		level = 'noncoding';
-		coding = 'false';
-	} else if (tabName == 'gene') {
-		level = 'gene';
-		coding = 'true';
-	} else if (tabName == 'summary') {
-		level = 'summary';
-		coding = 'false';
-	}
-	
 	var tabDiv = document.getElementById("tab_" + tabName);
 	
 	var rightDivId = 'rightdiv_' + tabName;

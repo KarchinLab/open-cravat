@@ -281,7 +281,11 @@ function makeTabHeadTabBody (resultTableLevel) {
 		span.className += 'hide';
 		div.className += 'hide';
 	}
-	span.textContent = resultTableLevel[0].toUpperCase() + resultTableLevel.substring(1);
+	var tabTitle = resultTableLevel;
+	if (tabTitle == 'info') {
+		tabTitle = 'summary';
+	}
+	span.textContent = tabTitle[0].toUpperCase() + tabTitle.substring(1);
 	addEl(tabHeadsDiv, span);
 	addEl(body, div);
 }
