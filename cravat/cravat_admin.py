@@ -5,6 +5,7 @@ import yaml
 import sys
 import traceback
 from cravat import admin_util as au
+from cravat import util
 from cravat import constants
 from types import SimpleNamespace
 import re
@@ -177,8 +178,8 @@ def main ():
             if installed:
                 current_version = local_info.conf['version']
                 print('INSTALLED')
-                dump = yaml.dump(local_info, default_flow_style=False)
-                print('\n'.join(dump.split('\n')[1:])) #Drop the extra line identifying it as an object
+                dump = util.yaml_string(local_info)
+                print(dump)
             else:
                 print('NOT INSTALLED')
             # Remote
@@ -203,8 +204,8 @@ def main ():
                 else:
                     print('NEWER VERSION EXISTS')
             if available:
-                    dump = yaml.dump(remote_info, default_flow_style=False)
-                    print('\n'.join(dump.split('\n')[1:])) #Drop the extra line identifying it as an object
+                    dump = util.yaml_string(remote_info)
+                    print(dump)
     
     def set_modules_dir(args):
         if args.directory:
