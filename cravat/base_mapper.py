@@ -4,7 +4,7 @@ import argparse
 import logging
 import time
 from .inout import CravatReader, CravatWriter, AllMappingsParser
-from .constants import crx_def, crg_def, crt_def
+from .constants import crx_def, crx_idx, crg_def, crg_idx, crt_def, crt_idx
 from .util import most_severe_so
 from .exceptions import InvalidData
 import sys
@@ -19,9 +19,9 @@ class BaseMapper(object):
     It handles command line arguments, option parsing and file io for the
     mapping process.
     """
-    def __init__(self):
+    def __init__(self, cmd_args):
         try:
-            main_fpath = sys.modules[self.__module__].__file__
+            main_fpath = cmd_args[0]
             self.mapper_dir = os.path.dirname(main_fpath)
             self.cmd_parser = None
             self.cmd_args = None
@@ -42,13 +42,15 @@ class BaseMapper(object):
             self.written_primary_transc = set([])
             self._define_main_cmd_args()
             self._define_additional_cmd_args()
-            self._parse_cmd_args()
+            self._parse_cmd_args(cmd_args)
             self._setup_logger()
         except Exception as e:
             self.__handle_exception(e)
             
     def _define_main_cmd_args(self):
         self.cmd_parser = argparse.ArgumentParser()
+        self.cmd_parser.add_argument('path',
+                                    help='Path to this mapper\'s python module')
         self.cmd_parser.add_argument('input',
                                      help='Input crv file')
         self.cmd_parser.add_argument('-n',
@@ -61,10 +63,11 @@ class BaseMapper(object):
                                           +'Default is input file directory.')
     
     def _define_additional_cmd_args(self):
+        """This method allows sub-classes to override and provide addittional command line args"""
         pass
     
-    def _parse_cmd_args(self):
-        self.cmd_args = self.cmd_parser.parse_args()
+    def _parse_cmd_args(self, args):
+        self.cmd_args = self.cmd_parser.parse_args(args)
         self.input_path = os.path.abspath(self.cmd_args.input)
         self.input_dir, self.input_fname = os.path.split(self.input_path)
         if self.cmd_args.output_dir:
@@ -85,16 +88,16 @@ class BaseMapper(object):
     def setup(self):
         raise NotImplementedError('Mapper must have a setup() method.')
     
-    def __handle_exception(self, e, exit=True):
+    def __handle_exception(self, e, should_exit=True):
         """
         Handles exceptions in standard cravat method
         """
         sys.stderr.write(traceback.format_exc())
         if hasattr(self, 'logger') and self.logger is not None:
                 self.logger.exception(e)
-                if exit: sys.exit(2)
+                if should_exit: sys.exit(2)
         else:
-            if exit: sys.exit(1)
+            if should_exit: sys.exit(1)
     
     def _setup_logger(self):
         self.log_path = os.path.join(self.output_dir, 
@@ -132,6 +135,8 @@ class BaseMapper(object):
         self.crx_writer.add_columns(crx_def)
         self.logger.info('CRX Path: %s' %self.crx_path)
         self.crx_writer.write_definition()
+        for index_columns in crx_idx:
+            self.crx_writer.add_index(index_columns)
         self.logger.info('CRX Path: %s' %self.crx_path)
         # .crg
         crg_fname = '.'.join(output_toks) + '.crg'
@@ -140,6 +145,8 @@ class BaseMapper(object):
         self.crg_writer.add_columns(crg_def)
         self.logger.info('CRG Path: %s' %self.crg_path)
         self.crg_writer.write_definition()
+        for index_columns in crg_idx:
+            self.crg_writer.add_index(index_columns)
         self.logger.info('CRG Path: %s' %self.crg_path)
         #.crt
         crt_fname = '.'.join(output_toks) + '.crt'
@@ -147,6 +154,8 @@ class BaseMapper(object):
         self.crt_writer = CravatWriter(self.crt_path)
         self.crt_writer.add_columns(crt_def)
         self.crt_writer.write_definition()
+        for index_columns in crt_idx:
+            self.crt_writer.add_index(index_columns)
         self.logger.info('CRT Path: %s' %self.crt_path)
         # .err
         self.err_path = output_base_path + '.map.err'

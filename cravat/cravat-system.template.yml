@@ -1,4 +1,4 @@
-publish_url: http://localhost:8060
+publish_url: http://staging.cravat.us
 store_url: http://karchinlab.org/cravatstore
 
 base_modules:
@@ -12,3 +12,12 @@ base_modules:
 - tagsampler
 - vcfinfo
 - hg38
+- wgcodingvsnoncodingsummary
+- wggosummary
+- wgsosamplessummary
+- wgsosummary
+- wgtopgenessummary
+- wgbase
+- wglollipop
+- wgncrna
+- wgndex

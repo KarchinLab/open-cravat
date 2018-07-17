@@ -14,7 +14,8 @@ class BasePostAggregator (object):
     
     def __init__(self, cmd_args):
         try:
-            self.module_name = get_caller_name(sys.modules[self.__module__].__file__)
+            # self.module_name = get_caller_name(sys.modules[self.__module__].__file__)
+            self.module_name = get_caller_name(cmd_args[0])
             self.parse_cmd_args(cmd_args)
             self._setup_logger()
             config_loader = ConfigLoader()
@@ -24,8 +25,17 @@ class BasePostAggregator (object):
             self.cursor = None
             self.cursor_w = None
             self.logger.info('Initialized')
+            self._open_db_connection()
+            self.should_run_annotate = self.check()
         except Exception as e:
             self._log_exception(e)
+
+    def check(self):
+        """
+        Return boolean indicating whether main 'annotate' loop should be run.
+        Should be overridden in sub-classes.
+        """
+        return True
     
     def fix_col_names (self):
         for col in self.conf['output_columns']:
@@ -71,10 +81,11 @@ class BasePostAggregator (object):
         self.dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
 
     def run(self):
+        if not self.should_run_annotate:
+            return
         try:
             start_time = time.time()
             self.logger.info('Running')
-            
             self.base_setup()
             
             for input_data in self._get_input():
@@ -85,6 +96,7 @@ class BasePostAggregator (object):
                         fixed_output[self.module_name + '__' + k] = v
                     self.write_output(input_data, fixed_output)
                 except Exception as e:
+                    print(input_data)
                     self._log_runtime_exception(input_data, e)
             self.dbconn.commit()
             self.base_cleanup()
@@ -128,7 +140,6 @@ class BasePostAggregator (object):
     # Setup function for the base_annotator, different from self.setup() 
     # which is intended to be for the derived annotator.
     def base_setup(self):
-        self._open_db_connection()
         self._alter_tables()
         self.setup()
     

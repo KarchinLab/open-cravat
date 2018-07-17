@@ -1,5 +1,8 @@
 import re
 import os
+import importlib
+import sys
+import yaml
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -148,3 +151,30 @@ def get_caller_name (path):
     else:
         module_name = basename
     return module_name
+
+def load_class(class_name, path):
+    """Load a class from the class's name and path. (dynamic importing)"""
+    path_dir = os.path.dirname(path)
+    sys.path = [path_dir] + sys.path
+    spec = importlib.util.spec_from_file_location(class_name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    del sys.path[0]
+    return getattr(mod, class_name)
+
+def get_directory_size(start_path):
+    """
+    Recursively get directory filesize.
+    """
+    total_size = 0
+    for dirpath, _, filenames in os.walk(start_path):
+        for fname in filenames:
+            fp = os.path.join(dirpath, fname)
+            total_size += os.path.getsize(fp)
+    return total_size
+
+def yaml_string(x):
+    s = yaml.dump(x, default_flow_style = False)
+    s = re.sub('!!.*', '', s)
+    s = s.strip('\r\n')
+    return s

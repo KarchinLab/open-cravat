@@ -10,21 +10,6 @@ function setupTab (tabName) {
 		return;
 	}
 	
-	var level = '', coding = '';
-	if (tabName == 'variant') {
-		level = 'variant';
-		coding = 'true';
-	} else if (tabName == 'noncoding') {
-		level = 'noncoding';
-		coding = 'false';
-	} else if (tabName == 'gene') {
-		level = 'gene';
-		coding = 'true';
-	} else if (tabName == 'summary') {
-		level = 'summary';
-		coding = 'false';
-	}
-	
 	var tabDiv = document.getElementById("tab_" + tabName);
 	
 	var rightDivId = 'rightdiv_' + tabName;
@@ -114,12 +99,6 @@ function makeInfoTab (rightDiv) {
 	rightContentDiv.className = 'rightcontentdiv';
 	addEl(rightDiv, rightContentDiv);
 	
-	// Info
-	var infoDiv = getEl('fieldset');
-	infoDiv.id = 'info_div';
-	addEl(rightContentDiv, infoDiv);
-	populateInfoDiv(infoDiv);
-	
 	// Notice
 	var noticeDiv = getEl('div');
 	noticeDiv.className = 'infonoticediv';
@@ -127,11 +106,105 @@ function makeInfoTab (rightDiv) {
 	noticeDiv.textContent = ' ';
 	addEl(rightContentDiv, noticeDiv);
 	
+	/*
+	var table = getEl('table');
+	table.style.widgt = '100%';
+	addEl(rightContentDiv, table);
+	var tr = getEl('tr');
+	var td = getEl('td');
+	td.style.verticalAlign = 'top';
+	td.style.width = '45%';
+	*/
+	// Info
+	var infoDiv = getEl('fieldset');
+	infoDiv.id = 'info_div';
+	infoDiv.style.display = 'inline-block';
+	addEl(rightContentDiv, infoDiv);
+
+	/*
+	addEl(tr, td);
+	
+	td = getEl('td');
+	td.style.verticalAlign = 'top';
+	td.style.width = '45%';
+	*/
+	
 	// Filter
-	var filterDiv = getEl('fieldset');
-	filterDiv.id = 'filter_div';
-	addEl(rightContentDiv, filterDiv);
+	var filterDiv = document.getElementById('filterdiv');
 	populateLoadDiv('info', filterDiv);
+	
+	/*
+	addEl(tr, td);
+	addEl(table, tr);
+	*/
+	
+	// Widgets
+	var widgetDiv = getEl('div');
+	widgetDiv.id = 'detailcontainerdiv_info';
+	addEl(rightContentDiv, widgetDiv);
+}
+
+function toggleFilterDiv () {
+	var filterDiv = document.getElementById('filterdiv');
+	var filterButton = document.getElementById('filterbutton');
+	var display = filterDiv.style.display;
+	if (display == 'none') {
+		display = 'block';
+		filterButton.style.backgroundColor = 'black';
+		filterButton.style.color = 'white';
+	} else {
+		display = 'none';
+		filterButton.style.backgroundColor = 'white';
+		filterButton.style.color = 'black';
+	}
+	filterDiv.style.display = display;
+}
+
+function populateSummaryWidgetDiv () {
+	var tabName = 'info';
+	var widgetDiv = document.getElementById('detailcontainerdiv_info');
+	if (widgetDiv.innerHTML != '') {
+		$(widgetDiv).packery('destroy');
+		emptyElement(widgetDiv);
+	}
+	var widgetNames = Object.keys(widgetGenerators);
+	if (widgetNames.length == 0) {
+		var el = getEl('p');
+		el.textContent = 'No summary wigdet';
+		addEl(widgetDiv, el);
+	} else {
+		for (var i = 0; i < widgetNames.length; i++) {
+			var widgetName = widgetNames[i];
+			if (widgetGenerators[widgetName][tabName] == undefined || 
+				widgetGenerators[widgetName][tabName]['function'] == undefined) {
+				continue;
+			}
+			drawSummaryWidget(widgetName, tabName, widgetDiv);
+		}
+	}
+	
+	$widgetDiv = $(widgetDiv);
+	$widgetDiv.packery({
+		columnWidth: widgetGridSize,
+		rowHeight: widgetGridSize
+	});
+	var $widgets = $($widgetDiv.packery('getItemElements'));
+	$widgets.draggable({
+		grid: [widgetGridSize, widgetGridSize],
+		handle: '.detailwidgettitle',
+	}).resizable({
+		grid: [widgetGridSize, widgetGridSize]
+	});
+	$widgetDiv.packery('bindUIDraggableEvents', $widgets);
+	var resizeTimeout;
+	$widgets.on('resize', function (evt, ui) {
+		if (resizeTimeout) {
+			clearTimeout(resizeTimeout);
+		}
+		resizeTimeout = setTimeout(function () {
+			$widgetDiv.packery('fit', ui.element[0]);
+		}, 100);
+	});
 }
 
 function makeSummaryTab (rightDiv) {
@@ -168,7 +241,8 @@ function makeSummaryTab (rightDiv) {
 	});
 	var $widgets = $($widgetDiv.packery('getItemElements'));
 	$widgets.draggable({
-		grid: [widgetGridSize, widgetGridSize]
+		grid: [widgetGridSize, widgetGridSize],
+		handle: '.detailwidgettitle',
 	}).resizable({
 		grid: [widgetGridSize, widgetGridSize]
 	});
@@ -406,21 +480,25 @@ function toggleWidgetSelectorPanel () {
 }
 
 function drawSummaryWidget (widgetName, tabName, rightContentDiv) {
-	$.get('rest/widgetservice/' + widgetName, 
-			{dbpath: dbPath}).done(function (response) {
-		if (response == {}) {
-			return;
-		}
-		var data = response.data;
-		[widgetDiv, widgetContentDiv] = 
-			getDetailWidgetDivs(
-					tabName, 
-					widgetName, 
-					widgetGenerators[widgetName][tabName]['name']);
-		addEl(rightContentDiv, widgetDiv);
-		widgetGenerators[widgetName][tabName]['function'](
-				widgetContentDiv, data);
-    });
+	[widgetDiv, widgetContentDiv] = 
+		getDetailWidgetDivs(
+				tabName, 
+				widgetName, 
+				widgetGenerators[widgetName][tabName]['name']);
+	addEl(rightContentDiv, widgetDiv);
+	var callServer = widgetGenerators[widgetName][tabName]['callserver'];
+	if (callServer) {
+		var divToDraw = widgetContentDiv;
+		$.get('rest/widgetservice/' + widgetName, {dbpath: dbPath}).done(function (response) {
+			if (response == {}) {
+				return;
+			}
+			var data = response.data;
+			widgetGenerators[widgetName][tabName]['function'](divToDraw, data);
+	    });
+	} else {
+		widgetGenerators[widgetName][tabName]['function'](widgetContentDiv);
+	}
 }
 
 function setupEvents (tabName) {
@@ -876,6 +954,8 @@ function checkFilterSet (col) {
 }
 
 function populateLoadDiv (tabName, filterDiv) {
+	var tabName = 'info';
+	
 	// Title
 	var legend = getEl('legend');
 	legend.className = 'section_header';

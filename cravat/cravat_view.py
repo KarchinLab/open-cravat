@@ -19,7 +19,7 @@ class MyHandler (CGIHTTPRequestHandler):
     def do_POST (self):
         if hasattr(self, 'conf') == False:
             self.conf = ConfigLoader()
-        print('POST path=', self.path)
+        #print('POST path=', self.path)
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
         urltoks = urllib.parse.urlparse(self.path)
@@ -33,7 +33,7 @@ class MyHandler (CGIHTTPRequestHandler):
     def do_GET (self):
         if hasattr(self, 'conf') == False:
             self.conf = ConfigLoader()
-        print('path=', self.path)
+        #print('path=', self.path)
         urltoks = urllib.parse.urlparse(self.path)
         self.request_path = urltoks.path
         self.request_query = urltoks.query
@@ -114,7 +114,7 @@ class MyHandler (CGIHTTPRequestHandler):
             self.send_header('Content-type', 'text/css')
             self.end_headers()
             self.wfile.write(bytes('', 'UTF-8'))
-            
+    
     def serve_widgetservice (self, path, query, post_data):
         path = 'wg' + path
         queries = urllib.parse.parse_qs(query)
@@ -123,7 +123,6 @@ class MyHandler (CGIHTTPRequestHandler):
                           'webviewerwidgets', path)])
         m = imp.load_module(path, f, fn, d)
         ret = m.get_data(queries)
-        
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
@@ -247,7 +246,7 @@ class MyHandler (CGIHTTPRequestHandler):
             conf = yaml.load(f)
         return conf
     
-    def get_variant_cols (self, dbpath, confpath, filterstring):
+    def get_colinfo (self, dbpath, confpath, filterstring):
         reporter_name = 'jsonreporter'
         f, fn, d = imp.find_module(
             reporter_name, 
@@ -267,115 +266,23 @@ class MyHandler (CGIHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        print(path)
-        print(queries)
+        #print('queries=', queries)
         if path == 'variantcols':
-            dbpath = urllib.parse.unquote(queries['dbpath'][0])
-            if 'confpath' in queries:
-                confpath = queries['confpath'][0]
-            else:
-                confpath = None
-            if 'filter' in queries:
-                filterstring = queries['filter'][0]
-            else:
-                filterstring = None
-            data = {}
-            data['data'] = {}
-            data['stat'] = {}
-            data['status'] = {}
-            colinfo = self.get_variant_cols(dbpath, confpath, filterstring)
-            data['columns'] = {}
-            if 'variant' in colinfo:
-                data['columns']['variant'] = self.get_colmodel('variant', colinfo)
-            if 'gene' in colinfo:
-                data['columns']['gene'] = self.get_colmodel('gene', colinfo)
-            content = data
+            content = self.get_variant_cols(queries)
         if path == 'conf':
             content = self.get_webviewerconf()
         elif path == 'getsummarywidgetnames':
             content = self.get_summary_widget_names(queries)
         elif path == 'getresulttablelevels':
-            conn = sqlite3.connect(queries['dbpath'][0])
-            cursor = conn.cursor()
-            sql = 'select name from sqlite_master where type="table" and ' +\
-                'name like "%_header"'
-            cursor.execute(sql)
-            ret = cursor.fetchall()
-            if len(ret) > 0:
-                content = [v[0].split('_')[0] for v in ret]
-                content.insert(0, 'summary')
-                content.insert(0, 'info')
-            else:
-                content = []
+            content = self.get_result_levels(queries)
         elif path == 'result':
-            dbpath = urllib.parse.unquote(queries['dbpath'][0])
-            tab = queries['tab'][0]
-            if 'filter' in queries:
-                filterstring = queries['filter'][0]
-            else:
-                filterstring = None
-            if 'confpath' in queries:
-                confpath = queries['confpath'][0]
-            else:
-                confpath = None
-            print('filter=', filterstring)
-            reporter_name = 'jsonreporter'
-            f, fn, d = imp.find_module(
-                reporter_name, 
-                [os.path.join(os.path.dirname(__file__), 'webviewer')])
-            m = imp.load_module(reporter_name, f, fn, d)
-            args = ['', dbpath]
-            if confpath != None:
-                args.extend(['-c', confpath])
-            if filterstring != None:
-                args.extend(['--filterstring', filterstring])
-            reporter = m.Reporter(args)
-            data = reporter.run(tab=tab)
-            content = {}
-            content['stat'] = {'rowsreturned': True, 
-                           'wherestr':'', 
-                           'filtered': True,
-                           'filteredresultmessage': '',
-                           'maxnorows': 100000,
-                           'norows': data['info']['norows']}
-            content['columns'] = self.get_colmodel(tab, data['colinfo'])
-            content["data"] = self.get_datamodel(data[tab])
-            content["status"] = "normal"
+            content = self.get_result(queries)
         elif path == 'count':
-            dbpath = urllib.parse.unquote(queries['dbpath'][0])
-            tab = queries['tab'][0]
-            if 'filter' in queries:
-                filterstring = queries['filter'][0]
-            else:
-                filterstring = None
-            cf = CravatFilter(dbpath=dbpath, 
-                              mode='sub', 
-                              filterstring=filterstring)
-            n = cf.getcount(level=tab)
-            content = {'n': n}           
+            content = self.get_count(queries)
         elif path == 'widgetlist':
-            content = []
-            modules = au.get_local_module_infos_of_type('webviewerwidget')
-            for module_name in modules:
-                module = modules[module_name]
-                conf = module.conf
-                if 'required_annotator' in conf:
-                    req = conf['required_annotator']
-                else: 
-                    # Removes wg.
-                    req = module_name[2:]
-                content.append({'name': module_name, 
-                                'title': module.title, 
-                                'required_annotator': req})
+            content = self.get_widgetlist()
         elif path == 'status':
-            dbpath = urllib.parse.unquote(queries['dbpath'][0])
-            conn = sqlite3.connect(dbpath)
-            cursor = conn.cursor()
-            q = 'select * from info'
-            cursor.execute(q)
-            content = {}
-            for row in cursor.fetchall():
-                content[row[0]] = row[1]
+            content = self.get_status(queries)
         elif path == 'savefiltersetting':
             content = self.save_filter_setting(queries)
         elif path == 'savewidgetsetting':
@@ -383,89 +290,221 @@ class MyHandler (CGIHTTPRequestHandler):
         elif path == 'savetablesetting':
             content = self.save_table_setting(queries)
         elif path == 'loadfiltersetting':
-            dbpath = urllib.parse.unquote(queries['dbpath'][0])
-            name = urllib.parse.unquote(queries['name'][0])
-            conn = sqlite3.connect(dbpath)
-            cursor = conn.cursor()
-            table = 'viewersetup'
-            if self.table_exists(cursor, table) == False:
-                content = '{"filterSet": []}'
-            else:
-                q = 'select viewersetup from ' + table + ' where datatype="filter" and name="' + name + '"'
-                cursor.execute(q)
-                r = cursor.fetchone()
-                if r != None:
-                    data = r[0]
-                    content = data
-                else:
-                    content = '{"filterSet": []}'
-            cursor.close()
-            conn.close()
+            content = self.load_filtersetting(queries)
         elif path == 'loadwidgetsetting':
-            dbpath = urllib.parse.unquote(queries['dbpath'][0])
-            name = urllib.parse.unquote(queries['name'][0])
-            conn = sqlite3.connect(dbpath)
-            cursor = conn.cursor()
-            table = 'viewersetup'
-            if self.table_exists(cursor, table) == False:
-                content = '{"widgetSettings": []}'
-            else:
-                q = 'select viewersetup from ' + table + ' where datatype="widget" and name="' + name + '"'
-                cursor.execute(q)
-                r = cursor.fetchone()
-                if r != None:
-                    data = r[0]
-                    content = data
-                else:
-                    content = '{"widgetSettings": []}'
-            cursor.close()
-            conn.close()
+            content = self.load_widget_setting(queries)
         elif path == 'loadtablesetting':
-            dbpath = urllib.parse.unquote(queries['dbpath'][0])
-            name = urllib.parse.unquote(queries['name'][0])
-            conn = sqlite3.connect(dbpath)
-            cursor = conn.cursor()
-            table = 'viewersetup'
-            if self.table_exists(cursor, table) == False:
-                content = '{"tableSettings": []}'
-            else:
-                q = 'select viewersetup from ' + table + ' where datatype="table" and name="' + name + '"'
-                cursor.execute(q)
-                r = cursor.fetchone()
-                data = r[0]
-                content = data
-            cursor.close()
-            conn.close()
+            content = self.load_table_setting(queries)
         elif path == 'getlayoutsavenames':
-            dbpath = urllib.parse.unquote(queries['dbpath'][0])
-            conn = sqlite3.connect(dbpath)
-            cursor = conn.cursor()
-            table = 'viewersetup'
-            if self.table_exists(cursor, table) == False:
-                content = '[]'
-            else:
-                q = 'select distinct name from ' + table
-                cursor.execute(q)
-                r = cursor.fetchall()
-                content = str([v[0] for v in r])
-            cursor.close()
-            conn.close()
+            content = self.get_layoutsavenames(queries)
         elif path == 'getfiltersavenames':
-            dbpath = urllib.parse.unquote(queries['dbpath'][0])
-            conn = sqlite3.connect(dbpath)
-            cursor = conn.cursor()
-            table = 'viewersetup'
-            if self.table_exists(cursor, table) == False:
-                content = '[]'
-            else:
-                q = 'select distinct name from ' + table + ' where datatype="filter"'
-                cursor.execute(q)
-                r = cursor.fetchall()
-                content = str([v[0] for v in r])
-            cursor.close()
-            conn.close()
+            content = self.get_filter_save_names(queries)
         response = bytes(json.dumps(content), 'UTF-8')
         self.wfile.write(response)
+    
+    def get_layoutsavenames (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        table = 'viewersetup'
+        content = []
+        if self.table_exists(cursor, table):
+            q = 'select distinct name from ' + table
+            cursor.execute(q)
+            r = cursor.fetchall()
+            content = [v[0] for v in r]
+        cursor.close()
+        conn.close()
+        return content
+    
+    def load_filtersetting (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        name = urllib.parse.unquote(queries['name'][0])
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        table = 'viewersetup'
+        if self.table_exists(cursor, table) == False:
+            content = {"filterSet": []}
+        else:
+            q = 'select viewersetup from ' + table + ' where datatype="filter" and name="' + name + '"'
+            cursor.execute(q)
+            r = cursor.fetchone()
+            if r != None:
+                data = r[0]
+                content = json.loads(data)
+            else:
+                content = {"filterSet": []}
+        cursor.close()
+        conn.close()
+        return content
+    
+    def get_status (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        q = 'select * from info'
+        cursor.execute(q)
+        content = {}
+        for row in cursor.fetchall():
+            content[row[0]] = row[1]
+        return content
+    
+    def get_widgetlist (self):
+        content = []
+        modules = au.get_local_module_infos_of_type('webviewerwidget')
+        for module_name in modules:
+            module = modules[module_name]
+            conf = module.conf
+            if 'required_annotator' in conf:
+                req = conf['required_annotator']
+            else: 
+                # Removes wg.
+                req = module_name[2:]
+            content.append({'name': module_name, 
+                            'title': module.title, 
+                            'required_annotator': req})
+        return content
+    
+    def get_count (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        tab = queries['tab'][0]
+        if 'filter' in queries:
+            filterstring = queries['filter'][0]
+        else:
+            filterstring = None
+        cf = CravatFilter(dbpath=dbpath, 
+                          mode='sub', 
+                          filterstring=filterstring)
+        n = cf.getcount(level=tab)
+        content = {'n': n}        
+        return content   
+        
+    def get_filter_save_names (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        table = 'viewersetup'
+        if self.table_exists(cursor, table) == False:
+            content = []
+        else:
+            q = 'select distinct name from ' + table + ' where datatype="filter"'
+            cursor.execute(q)
+            r = cursor.fetchall()
+            content = str([v[0] for v in r])
+        cursor.close()
+        conn.close()
+        return content
+        
+    def get_result (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        tab = queries['tab'][0]
+        if 'filter' in queries:
+            filterstring = queries['filter'][0]
+        else:
+            filterstring = None
+        if 'confpath' in queries:
+            confpath = queries['confpath'][0]
+        else:
+            confpath = None
+        reporter_name = 'jsonreporter'
+        f, fn, d = imp.find_module(
+            reporter_name, 
+            [os.path.join(os.path.dirname(__file__), 'webviewer')])
+        m = imp.load_module(reporter_name, f, fn, d)
+        args = ['', dbpath]
+        if confpath != None:
+            args.extend(['-c', confpath])
+        if filterstring != None:
+            args.extend(['--filterstring', filterstring])
+        reporter = m.Reporter(args)
+        data = reporter.run(tab=tab)
+        content = {}
+        content['stat'] = {'rowsreturned': True, 
+                       'wherestr':'', 
+                       'filtered': True,
+                       'filteredresultmessage': '',
+                       'maxnorows': 100000,
+                       'norows': data['info']['norows']}
+        content['columns'] = self.get_colmodel(tab, data['colinfo'])
+        content["data"] = self.get_datamodel(data[tab])
+        content["status"] = "normal"
+        return content
+            
+    def get_variant_cols (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        if 'confpath' in queries:
+            confpath = queries['confpath'][0]
+        else:
+            confpath = None
+        if 'filter' in queries:
+            filterstring = queries['filter'][0]
+        else:
+            filterstring = None
+        data = {}
+        data['data'] = {}
+        data['stat'] = {}
+        data['status'] = {}
+        colinfo = self.get_colinfo(dbpath, confpath, filterstring)
+        data['columns'] = {}
+        if 'variant' in colinfo:
+            data['columns']['variant'] = self.get_colmodel('variant', colinfo)
+        if 'gene' in colinfo:
+            data['columns']['gene'] = self.get_colmodel('gene', colinfo)
+        content = data
+        return content
+        
+    def get_result_levels (self, queries):
+        conn = sqlite3.connect(queries['dbpath'][0])
+        cursor = conn.cursor()
+        sql = 'select name from sqlite_master where type="table" and ' +\
+            'name like "%_header"'
+        cursor.execute(sql)
+        ret = cursor.fetchall()
+        if len(ret) > 0:
+            content = [v[0].split('_')[0] for v in ret]
+            content.insert(0, 'info')
+        else:
+            content = []
+        return content
+    
+    def load_table_setting (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        name = urllib.parse.unquote(queries['name'][0])
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        table = 'viewersetup'
+        if self.table_exists(cursor, table) == False:
+            content = {"tableSettings": []}
+        else:
+            q = 'select viewersetup from ' + table + ' where datatype="table" and name="' + name + '"'
+            cursor.execute(q)
+            r = cursor.fetchone()
+            data = r[0]
+            content = json.loads(data)
+        cursor.close()
+        conn.close()
+        return content
+    
+    def load_widget_setting (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        name = urllib.parse.unquote(queries['name'][0])
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        table = 'viewersetup'
+        if self.table_exists(cursor, table) == False:
+            content = {"widgetSettings": []}
+        else:
+            q = 'select viewersetup from ' + table + ' where datatype="widget" and name="' + name + '"'
+            cursor.execute(q)
+            r = cursor.fetchone()
+            if r != None:
+                data = r[0]
+                content = json.loads(data)
+            else:
+                content = {"widgetSettings": []}
+        cursor.close()
+        conn.close()
+        return content
     
     def save_filter_setting (self, queries):
         dbpath = urllib.parse.unquote(queries['dbpath'][0])
@@ -477,8 +516,7 @@ class MyHandler (CGIHTTPRequestHandler):
         if self.table_exists(cursor, table) == False:
             q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
             cursor.execute(q)
-        savedata = savedata.replace('"', "'")
-        q = 'replace into ' + table + ' values ("filter", "' + name + '", "' + savedata + '")'
+        q = 'replace into ' + table + ' values ("filter", "' + name + '", \'' + savedata + '\')'
         cursor.execute(q)
         conn.commit()
         cursor.close()
@@ -496,8 +534,7 @@ class MyHandler (CGIHTTPRequestHandler):
         if self.table_exists(cursor, table) == False:
             q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
             cursor.execute(q)
-        savedata = savedata.replace('"', "'")
-        q = 'replace into ' + table + ' values ("widget", "' + name + '", "' + savedata + '")'
+        q = 'replace into ' + table + ' values ("widget", "' + name + '", \'' + savedata + '\')'
         cursor.execute(q)
         conn.commit()
         cursor.close()
@@ -515,8 +552,7 @@ class MyHandler (CGIHTTPRequestHandler):
         if self.table_exists(cursor, table) == False:
             q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
             cursor.execute(q)
-        savedata = savedata.replace('"', "'")
-        q = 'replace into ' + table + ' values ("table", "' + name + '", "' + savedata + '")'
+        q = 'replace into ' + table + ' values ("table", "' + name + '", \'' + savedata + '\')'
         cursor.execute(q)
         conn.commit()
         cursor.close()

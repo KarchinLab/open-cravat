@@ -91,6 +91,12 @@ class CravatWriter(CravatFile):
         self.wf.write(line)
         line = '#displayname={:}\n'.format(annotator_display_name)
         self.wf.write(line)
+        
+    def add_index (self, index_columns):
+        """
+        On aggregation, an index will be created across the supplied columns.
+        """
+        self.write_meta_line('index',','.join(index_columns))
     
     def write_meta_line(self, key, value):
         line = '#{:}={:}\n'.format(key,value)
@@ -218,9 +224,7 @@ class AllMappingsParser (object):
         mapping = CrxMapping()
         mapping.transcript = self.none_to_empty(t[self._transc_index])
         mapping.so = self.none_to_empty(t[self._so_index])
-#         mapping.tchange = self.none_to_empty(t[self._tchange_index])
         mapping.load_tchange(self.none_to_empty(t[self._tchange_index]))
-#         mapping.achange = self.none_to_empty(t[self._achange_index])
         mapping.load_achange(self.none_to_empty(t[self._achange_index]))
         mapping.protein = self.none_to_empty(t[self._protein_index])
         return mapping
@@ -259,7 +263,7 @@ class CravatReader (CravatFile):
         self.no_aggregate_cols = []
         self.valid_modes = ['line','list','dict']
         self.default_mode = 'dict'
-        self.colidxs = []
+        self.index_columns = []
         self._setup_definition()
         
     def _setup_definition (self):
@@ -271,7 +275,8 @@ class CravatReader (CravatFile):
             elif l.startswith('#no_aggregate='):
                 self.no_aggregate_cols = l.split('=')[1].split(',')
             elif l.startswith('#index='):
-                self.colidxs.append(l.split('=')[1])
+                cols = l.split('=')[1].split(',')
+                self.index_columns.append(cols)
             elif l.startswith('#column='):
                 col_info = l.split('=')[1].split(',')
                 col_index = int(col_info[0])
@@ -284,6 +289,9 @@ class CravatReader (CravatFile):
                                            'type':col_type}
             else:
                 continue
+        
+    def get_index_columns(self):
+        return self.index_columns
     
     def override_column(self, index, name, title=None, data_type=None):
         if title == None:
