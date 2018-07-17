@@ -178,8 +178,10 @@ function toggleFilterDiv () {
 function populateSummaryWidgetDiv () {
 	var tabName = 'info';
 	var widgetDiv = document.getElementById('summary_widgets_div');
-	$(widgetDiv).packery('destroy');
-	emptyElement(widgetDiv);
+	if (widgetDiv.innerHTML != '') {
+		$(widgetDiv).packery('destroy');
+		emptyElement(widgetDiv);
+	}
 	var widgetNames = Object.keys(widgetGenerators);
 	if (widgetNames.length == 0) {
 		var el = getEl('p');

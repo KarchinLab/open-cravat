@@ -308,7 +308,10 @@ def main ():
         module_info = au.get_local_module_info(args.annotator_name)
         print('Annotator {0} created at {1}'.format(args.annotator_name,
                                                     module_info.directory))
-            
+    
+    def report_issue (args):
+        au.report_issue()
+        
     ###################################################################################################
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     subparsers = parser.add_subparsers(title='Commands')
@@ -496,6 +499,11 @@ def main ():
     parser_new_annotator.add_argument('annotator_name',
                                    help='Annotator name')
     parser_new_annotator.set_defaults(func=new_annotator)
+    
+    # open issue report
+    parser_new_annotator = subparsers.add_parser('report-issue',
+                                               help='opens a browser window to report issues')
+    parser_new_annotator.set_defaults(func=report_issue)
     
     ###########################################################################
     
