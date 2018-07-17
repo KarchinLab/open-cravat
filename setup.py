@@ -86,7 +86,7 @@ setup(
     name='CRAVAT',
     packages=['cravat'],
     version='0.0.78',
-    description='Cancer-Related Analysis of VAriants Toolkit',
+    description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
     author_email='rkim@insilico.us.com',
