@@ -238,7 +238,6 @@ function resizesTheWindow () {
 	var rightDivHeight = browserHeight - 50;
 	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 60;
 	var tableDivWidth = 'calc(100% - 38px)';
-	console.log(tableDivHeight);
 	var cellValueDivTop = tableDivHeight + 20 ;
 	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 6;
 	
@@ -320,6 +319,7 @@ function loadData (alertFlag, finalcallback) {
 			finalcallback();
 		}
 		unlockTabs();
+		populateSummaryWidgetDiv();
 	}
 	var loadMappingResult = function () {
 		if (resultLevels.indexOf('mapping') != -1) {
@@ -578,10 +578,6 @@ function writeLogDiv (msg) {
 	$(div).stop(true, true).css({backgroundColor: "#ff0000"}).animate({backgroundColor: "#ffffff"}, 1000);
 }
 
-function onClickMenu (evt) {
-	console.log(evt);
-}
-
 function turnOffMenu (elemId) {
 	document.getElementById(elemId).style.display = 'none';
 }
@@ -648,6 +644,10 @@ function run () {
     window.onbeforeunload = function () {
     	saveLayoutSetting(defaultSaveName, doNothing);
     }
+    
+    $.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+    	savedLayoutNames = response;
+    });
     
     $.get('rest/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];

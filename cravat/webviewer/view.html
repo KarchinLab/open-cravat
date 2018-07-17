@@ -24,7 +24,6 @@
 	<script src='js/raphael-min.js'></script>
 	
 	<!-- Javascript -->
-	<script src='js/common_functions.js'></script>
 	<script src='js/job_detail_infomgr.js'></script>
 	<script src='js/job_detail_variables.js'></script>
 	<script src='js/job_detail_util.js'></script>
@@ -50,7 +49,9 @@
 	<div class='menu1' id='layout_menu'>Layout
 		<div class='menu2'>
 			<a href='#' onclick="saveLayoutSettingAs();">Save as...</a>
-			<a href='#' onclick="loadLayoutSettingAs();">Load...</a>
+			<div class='menu3' onmouseenter="loadLayoutSettingAs();">Load...
+				<div id='load_layout_select_div'></div>
+			</div>
 			<div class='menu3' id='layout_columns_menu'>Columns...
 				<div id='columns_showhide_select_div'></div>
 			</div>
@@ -59,10 +60,15 @@
 			</div>
 		</div>
 	</div>
-	<div class='menu1'><a href='help.html' target='_blank'>Help</a></div>
+	<div class='menu1'><a href='https://github.com/KarchinLab/open-cravat/wiki/3.-Results' target='_blank'>Help</a></div>
 </div>
 
-<div style='display: inline-block;'>Show tabs:
+<div style='display: inline-block;'>
+	<button id='filterbutton' onclick='toggleFilterDiv()'>Filter</button>
+	<div id='filterdiv' style='display: none; position: absolute; z-index: 2; background: #e8e8e8; padding: 16px; border: 1px solid gray;'></div>
+</div>
+
+<div style='display: inline-block;'>Show tab:
 <div id='tabheads' style='position: relative; display: inline-block;'></div>
 </div>
 

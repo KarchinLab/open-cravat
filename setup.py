@@ -66,7 +66,7 @@ def readme ():
             return f.read()
     except IOError:
         return ''
-
+    
 data_files = ['cravat.yml', 
               'cravat-system.template.yml', 
               'cravat-system.yml', 

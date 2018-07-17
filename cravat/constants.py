@@ -1,4 +1,5 @@
 import os
+import copy
 
 packagedir = os.path.dirname(os.path.abspath(__file__))
 system_conf_fname = 'cravat-system-dev.yml'
@@ -26,10 +27,10 @@ liftover_chain_paths = {
 crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int'},
            {'name':'tags', 'title':'User Tags', 'type':'string'},
            {'name':'uid', 'title':'UID', 'type':'int'}]
-crm_idx = [['tags'], ['uid']]
+crm_idx = [['uid'],['tags']]
 crs_def = [{'name':'uid', 'title':'UID', 'type':'string'},
            {'name':'sample_id', 'title':'Sample', 'type':'string'}]
-crs_idx = [['uid', 'sample_id']]
+crs_idx = [['uid'], ['sample_id']]
 crv_def = [{'name':'uid', 'title':'UID', 'type':'int'},
            {'name':'chrom', 'title':'Chrom', 'type':'string'},
            {'name':'pos', 'title':'Position', 'type':'int'},
@@ -56,6 +57,11 @@ crt_def = [{'name':'primary_transcript', 'title':'Primary transcript',
            {'name':'alt_transcript', 'title':'Alternate transcript',
             'type':'string'}]
 crt_idx = [['primary_transcript']]
+crl_def = [{'name':'uid', 'title':'UID', 'type':'int'},
+           {'name':'chrom', 'title':'Chrom', 'type':'string'},
+           {'name':'pos', 'title':'Pos', 'type':'int'},
+           ]
+
 
 exit_codes = {
     'alreadycrv':2,
