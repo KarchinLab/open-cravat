@@ -727,7 +727,10 @@ def make_example_input (d):
     ofn = os.path.join(d, fn)
     shutil.copyfile(ifn, ofn)
     print(fn + ' has been created at ' + os.path.abspath(d))
-    
+
+def report_issue ():
+    import webbrowser
+    webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info
