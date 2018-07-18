@@ -31,5 +31,10 @@ output_columns:
 description: Template annotator. If you see this description in production, someone is wrong.
 
 # developer is you!
-developer: you@yourorganization.com
+developer:
+  name: ''
+  organization: ''
+  email: ''
+  website: ''
+  citation: ''
 
