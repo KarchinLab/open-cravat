@@ -162,8 +162,6 @@ var loadedFilterJson = {};
 
 var filterSet = [];
 
-var summaryWidgetNames = [];
-
 var resetTab = {};
 
 var spinner = null;

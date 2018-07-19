@@ -227,7 +227,7 @@ function showVariantDetail (row, tabName) {
 		}
 		if (widgetGenerators[colGroupKey][tabName] != undefined && 
 			widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
-			var generator = widgetGenerators[colGroupKey];
+			var generator = widgetGenerators[colGroupKey][tabName];
 			var widgetDiv = null;
 			var detailContentDiv = null;
 			if (reuseWidgets) {
@@ -236,13 +236,13 @@ function showVariantDetail (row, tabName) {
 				if (generator['donterase'] != true) {
 					$(widgetContentDiv).empty();
 				}
-				generator[tabName]['function'](widgetContentDiv, row, tabName);
+				generator['function'](widgetContentDiv, row, tabName);
 			} else {
 				[widgetDiv, widgetContentDiv] = 
 					getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
-				generator[tabName]['function'](widgetContentDiv, row, tabName);
-				widgetDiv.clientWidth = generator[tabName]['width'];
-				widgetDiv.clientHeight = generator[tabName]['height'];
+				generator['function'](widgetContentDiv, row, tabName);
+				widgetDiv.clientWidth = generator['width'];
+				widgetDiv.clientHeight = generator['height'];
 				addEl(outerDiv, widgetDiv);
 			}
 		}
