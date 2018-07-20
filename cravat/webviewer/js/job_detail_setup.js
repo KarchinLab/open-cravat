@@ -156,6 +156,7 @@ function populateSummaryWidgetDiv () {
 			}
 			if (widgetGenerators[colGroupKey][tabName] != undefined && 
 				widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
+				console.log('@@@', colGroupKey, 'available');
 				var generator = widgetGenerators[colGroupKey][tabName];
 				var widgetDiv = null;
 				var widgetContentDiv = null;
@@ -179,6 +180,8 @@ function populateSummaryWidgetDiv () {
 				}
 				addEl(outerDiv, widgetDiv);
 				drawSummaryWidget(colGroupKey);
+			} else {
+				console.log(colGroupKey, 'not available');
 			}
 		}
 	}

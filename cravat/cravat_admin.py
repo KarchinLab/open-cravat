@@ -215,22 +215,31 @@ def main ():
     def install_modules(args):
         mvers = args.modules
         available_modules = au.list_remote()
+        local_modules = au.list_local()
+        modules_to_install = {}
         for mver in mvers:
             toks = mver.split(':')
             module_name = toks[0]
-            if module_name not in available_modules:
-                sys.stderr.write('%s not available, skipping\n' %module_name)
-                continue
             if len(toks) > 1 and toks[1] != '' and toks[1] != 'latest':
                 module_version = toks[1]
             else:
                 module_version = None
-            if module_version is not None and module_version not in au.get_remote_module_info(module_name).versions:
-                sys.stderr.write('%s version %s not available, skipping\n' %(module_name, module_version))
-                continue
+            module_re = module_name + '$'
+            for available_module in available_modules:
+                if re.match(module_re, available_module):
+                    if args.skip_installed == True and available_module in local_modules:
+                        continue
+                    else:
+                        if module_version is not None and module_version not in au.get_remote_module_info(available_module).versions:
+                            #sys.stderr.write('%s version %s not available, skipping\n' %(module_name, module_version))
+                            continue
+                        else:
+                            modules_to_install[available_module] = module_version
+        for module_name in modules_to_install:
+            module_version = modules_to_install[module_name]
             stage_handler = InstallProgressStdout(module_name, module_version)
             au.install_module(module_name, version=module_version, force_data=args.force_data, stage_handler=stage_handler)
-        
+                    
     def update_modules(args):
         requested_modules = args.modules
         if len(requested_modules) == 0:
@@ -354,6 +363,9 @@ def main ():
                                 '--force-data',
                                 action='store_true',
                                 help='Force download new data even if not needed.')
+    parser_install.add_argument('--skip-installed',
+                                action='store_true',
+                                help='skips already installed modules.')
     parser_install.set_defaults(func=install_modules)
     
     # update
@@ -448,9 +460,9 @@ def main ():
     parser_create_account = subparsers.add_parser('create-account',
                                                   help='creates a CRAVAT store developer account.')
     parser_create_account.add_argument('username',
-                                       help='username')
+                                       help='use your email as your username.')
     parser_create_account.add_argument('password',
-                                       help='password')
+                                       help='this is your password.')
     parser_create_account.set_defaults(func=create_account)
     
     # change-password

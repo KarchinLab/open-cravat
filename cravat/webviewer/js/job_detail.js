@@ -477,6 +477,7 @@ function firstLoadData () {
 	    			(usedAnnotators['gene'] && usedAnnotators['gene'].includes(requiredAnnotator)))) {
 	    			detailWidgetOrder['info'][Object.keys(detailWidgetOrder['info']).length] = widgetName;
 	    		}
+	    		console.log('###', widget, requiredAnnotator);
 	    	}
 	    });
 	}
@@ -634,7 +635,7 @@ function run () {
     	if (detailContainer != null && detailContainer.innerHTML == '') {
     		setupTab(tabName);
     	}
-    	if (tabName == 'variant' || tabName == 'gene') {
+    	if (tabName == 'variant' || tabName == 'gene' || tabName == 'info') {
     		$(document.getElementById('detailcontainerdiv_' + tabName)).packery();
     	}
     	
