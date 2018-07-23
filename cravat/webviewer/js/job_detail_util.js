@@ -62,10 +62,35 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	var div = document.createElement('fieldset');
 	div.id = 'detailwidget_' + tabName + '_' + widgetName;
 	div.className = 'detailwidget';
-	div.clientWidth = widgetGenerators[widgetName][tabName]['width'];
-	div.clientHeight = widgetGenerators[widgetName][tabName]['height'];
-	div.style.width = widgetGenerators[widgetName][tabName]['width'] + 'px';
-	div.style.height = widgetGenerators[widgetName][tabName]['height'] + 'px';
+	var width = null;
+	var height = null;
+	var top = null;
+	var left = null;
+	if (viewerWidgetSettings['info'] != undefined) {
+		for (var i = 0; i < viewerWidgetSettings['info'].length; i++) {
+			var setting = viewerWidgetSettings['info'][i];
+			if (setting['widgetkey'] == widgetName) {
+				width = parseInt(setting['width'].replace('px', ''));
+				height = parseInt(setting['height'].replace('px', ''));
+				top = setting['top'];
+				left = setting['left'];
+				break;
+			}
+		}
+	} else {
+		width = widgetGenerators[widgetName][tabName]['width'];
+		height = widgetGenerators[widgetName][tabName]['height'];
+	}
+	div.clientWidth = width;
+	div.clientHeight = height;
+	div.style.width = width + 'px';
+	div.style.height = height + 'px';
+	if (top) {
+		div.style.top = top;
+	}
+	if (left) {
+		div.style.left = left;
+	}
 	div.setAttribute('widgetkey', widgetName);
 	
 	// Header

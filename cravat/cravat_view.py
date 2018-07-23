@@ -479,7 +479,10 @@ class MyHandler (CGIHTTPRequestHandler):
             q = 'select viewersetup from ' + table + ' where datatype="table" and name="' + name + '"'
             cursor.execute(q)
             r = cursor.fetchone()
-            data = r[0]
+            if r != None:
+                data = r[0]
+            else:
+                data = {}
             content = json.loads(data)
         cursor.close()
         conn.close()

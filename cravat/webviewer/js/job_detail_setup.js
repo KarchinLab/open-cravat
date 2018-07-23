@@ -27,8 +27,6 @@ function setupTab (tabName) {
 	var detailDiv = null;
 	if (tabName == 'info') {
 		makeInfoTab(rightDiv);
-	} else if (tabName == 'summary') {
-		makeSummaryTab(rightDiv);
 	} else if (tabName == 'variant' || tabName == 'gene') {
 		makeVariantGeneTab(tabName, rightDiv);
 	} else if (tabName == 'sample' || tabName == 'mapping') {
@@ -38,7 +36,7 @@ function setupTab (tabName) {
 	
 	setupEvents(tabName);
 
-	if (tabName != 'info' && tabName != 'summary') {
+	if (tabName != 'info') {
 		var stat = infomgr.getStat(tabName);
 		var columns = infomgr.getColumns(tabName);
 		var data = infomgr.getData(tabName);
@@ -55,16 +53,6 @@ function setupTab (tabName) {
 		}
 	}
 
-	summaryWidgetNames = [];
-	var widgetNames = Object.keys(widgetGenerators);
-	for (var i = 0; i < widgetNames.length; i++) {
-		var widgetName = widgetNames[i];
-		var widget = widgetGenerators[widgetName];
-		if (widget['summary'] != undefined) {
-			summaryWidgetNames.push(widgetName);
-		}
-	}
-	
 	resetTab[tabName] = false;
 	
 	placeDragNSBar(tabName);
@@ -106,37 +94,15 @@ function makeInfoTab (rightDiv) {
 	noticeDiv.textContent = ' ';
 	addEl(rightContentDiv, noticeDiv);
 	
-	/*
-	var table = getEl('table');
-	table.style.widgt = '100%';
-	addEl(rightContentDiv, table);
-	var tr = getEl('tr');
-	var td = getEl('td');
-	td.style.verticalAlign = 'top';
-	td.style.width = '45%';
-	*/
 	// Info
 	var infoDiv = getEl('fieldset');
 	infoDiv.id = 'info_div';
 	infoDiv.style.display = 'inline-block';
 	addEl(rightContentDiv, infoDiv);
 
-	/*
-	addEl(tr, td);
-	
-	td = getEl('td');
-	td.style.verticalAlign = 'top';
-	td.style.width = '45%';
-	*/
-	
 	// Filter
 	var filterDiv = document.getElementById('filterdiv');
 	populateLoadDiv('info', filterDiv);
-	
-	/*
-	addEl(tr, td);
-	addEl(table, tr);
-	*/
 	
 	// Widgets
 	var widgetDiv = getEl('div');
@@ -162,51 +128,92 @@ function toggleFilterDiv () {
 
 function populateSummaryWidgetDiv () {
 	var tabName = 'info';
-	var widgetDiv = document.getElementById('detailcontainerdiv_info');
-	if (widgetDiv.innerHTML != '') {
+	var outerDiv = document.getElementById('detailcontainerdiv_info');
+	var widgetDivs = outerDiv.children;
+	var reuseWidgets = true;
+	if (widgetDivs.length == 0) {
+		reuseWidgets = false;
 		$(widgetDiv).packery('destroy');
-		emptyElement(widgetDiv);
+		emptyElement(outerDiv);
+	} else {
+		widgetDivs = $(outerDiv).packery('getItemElements');
 	}
 	var widgetNames = Object.keys(widgetGenerators);
 	if (widgetNames.length == 0) {
 		var el = getEl('p');
 		el.textContent = 'No summary wigdet';
-		addEl(widgetDiv, el);
+		addEl(outerDiv, el);
 	} else {
-		for (var i = 0; i < widgetNames.length; i++) {
-			var widgetName = widgetNames[i];
-			if (widgetGenerators[widgetName][tabName] == undefined || 
-				widgetGenerators[widgetName][tabName]['function'] == undefined) {
+		var orderNums = Object.keys(detailWidgetOrder[tabName]);
+		for (var i = 0; i < orderNums.length; i++) {
+			var colGroupKey = detailWidgetOrder[tabName][orderNums[i]];
+			if (widgetGenerators[colGroupKey] == undefined) {
 				continue;
 			}
-			drawSummaryWidget(widgetName, tabName, widgetDiv);
+			var colGroupTitle = infomgr.colgroupkeytotitle[colGroupKey];
+			if (colGroupTitle == undefined) {
+				colGroupTitle = widgetGenerators[colGroupKey]['name'];
+			}
+			if (widgetGenerators[colGroupKey][tabName] != undefined && 
+				widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
+				console.log('@@@', colGroupKey, 'available');
+				var generator = widgetGenerators[colGroupKey][tabName];
+				var widgetDiv = null;
+				var widgetContentDiv = null;
+				if (reuseWidgets) {
+					widgetDiv = document.getElementById(
+							'detailwidget_' + tabName + '_' + widgetName);
+					widgetContentDiv = document.getElementById(
+						'widgetcontentdiv_' + colGroupKey + '_' + tabName);
+					if (generator['donterase'] != true) {
+						$(widgetContentDiv).empty();
+					}
+				} else {
+					[widgetDiv, widgetContentDiv] = 
+						getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
+				}
+				if (reuseWidgets != true) {
+					widgetDiv.clientWidth = generator['width'];
+					widgetDiv.clientHeight = generator['height'];
+					widgetDiv.style.width = generator['width'] + 'px';
+					widgetDiv.style.height = generator['height'] + 'px';
+				}
+				addEl(outerDiv, widgetDiv);
+				drawSummaryWidget(colGroupKey);
+			} else {
+				console.log(colGroupKey, 'not available');
+			}
 		}
 	}
 	
-	$widgetDiv = $(widgetDiv);
-	$widgetDiv.packery({
+	$outerDiv = $(outerDiv);
+	$outerDiv.packery({
 		columnWidth: widgetGridSize,
 		rowHeight: widgetGridSize
 	});
-	var $widgets = $($widgetDiv.packery('getItemElements'));
+	var $widgets = $($outerDiv.packery('getItemElements'));
 	$widgets.draggable({
 		grid: [widgetGridSize, widgetGridSize],
 		handle: '.detailwidgettitle',
 	}).resizable({
 		grid: [widgetGridSize, widgetGridSize]
 	});
-	$widgetDiv.packery('bindUIDraggableEvents', $widgets);
+	$outerDiv.packery('bindUIDraggableEvents', $widgets);
 	var resizeTimeout;
 	$widgets.on('resize', function (evt, ui) {
 		if (resizeTimeout) {
 			clearTimeout(resizeTimeout);
 		}
 		resizeTimeout = setTimeout(function () {
-			$widgetDiv.packery('fit', ui.element[0]);
+			$outerDiv.packery('fit', ui.element[0]);
 		}, 100);
 	});
+	if (reuseWidgets != true) {
+		applyWidgetSetting('info');
+	}
 }
 
+/*
 function makeSummaryTab (rightDiv) {
 	var tabName = 'summary';
 	var rightContentDiv = getEl('div');
@@ -257,6 +264,7 @@ function makeSummaryTab (rightDiv) {
 		}, 100);
 	});
 }
+*/
 
 function onClickTableColumnButton () {
 	if (currentTab != 'variant' && currentTab != 'gene') {
@@ -467,37 +475,23 @@ function toggleWidgetSelectorPanel () {
 		return;
 	}
 	populateWidgetSelectorPanel();
-	/*
-	var panel = document.getElementById('widgets_showhide_select_div');
-	var display = panel.style.display;
-	if (display == 'none') {
-		display = 'block';
-	} else {
-		display = 'none';
-	}
-	panel.style.display = display;
-	*/
 }
 
-function drawSummaryWidget (widgetName, tabName, rightContentDiv) {
-	[widgetDiv, widgetContentDiv] = 
-		getDetailWidgetDivs(
-				tabName, 
-				widgetName, 
-				widgetGenerators[widgetName][tabName]['name']);
-	addEl(rightContentDiv, widgetDiv);
-	var callServer = widgetGenerators[widgetName][tabName]['callserver'];
+function drawSummaryWidget (widgetName) {
+	var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
+	emptyElement(widgetContentDiv);
+	var generator = widgetGenerators[widgetName]['info'];
+	var callServer = generator['callserver'];
 	if (callServer) {
-		var divToDraw = widgetContentDiv;
 		$.get('rest/widgetservice/' + widgetName, {dbpath: dbPath}).done(function (response) {
-			if (response == {}) {
-				return;
+			var data = response['data'];
+			if (data == {}) {
+			} else {
+				generator['function'](widgetContentDiv, data);
 			}
-			var data = response.data;
-			widgetGenerators[widgetName][tabName]['function'](divToDraw, data);
-	    });
+		});
 	} else {
-		widgetGenerators[widgetName][tabName]['function'](widgetContentDiv);
+		generator['function'](widgetContentDiv);
 	}
 }
 
