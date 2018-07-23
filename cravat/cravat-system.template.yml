@@ -1,4 +1,4 @@
-publish_url: http://localhost:8060
+publish_url: http://staging.cravat.us
 store_url: http://karchinlab.org/cravatstore
 
 base_modules:
@@ -19,6 +19,5 @@ base_modules:
 - wgtopgenessummary
 - wgbase
 - wglollipop
-- wgncbigene
 - wgncrna
 - wgndex

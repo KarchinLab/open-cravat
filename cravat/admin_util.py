@@ -118,15 +118,24 @@ class LocalModuleInfo (object):
         return self.disk_size
 
 class RemoteModuleInfo(object):
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
         self.name = name
-        self.versions = None
-        self.latest_version = None
-        self.type = None
-        self.description = None
-        self.developer = None
-        self.title = None
-        self.size = None
+        self.versions = kwargs.get('versions',[])
+        self.latest_version = kwargs.get('latest_version','')
+        self.type = kwargs.get('type','')
+        self.title = kwargs.get('title','')
+        self.description = kwargs.get('description','')
+        self.developer = kwargs.get('developer','')
+        self.size = kwargs.get('size',0)
+        self.developer = ModuleDeveloper(**kwargs.get('developer',{}))
+
+class ModuleDeveloper(object):
+    def __init__(self, **kwargs):
+        self.name = kwargs.get('name','')
+        self.email = kwargs.get('email','')
+        self.organization = kwargs.get('organization','')
+        self.citation = kwargs.get('citation','')
+        self.website = kwargs.get('website','')
     
 class ModuleInfoCache(object):
     def __init__(self):
@@ -251,15 +260,8 @@ def get_remote_module_info(module_name):
     """
     mic.update_remote()
     if module_exists_remote(module_name, version=None):
-        module = RemoteModuleInfo(module_name)
         mdict = mic.remote[module_name]
-        module.versions = mdict.get('versions')
-        module.latest_version = mdict.get('latest_version')
-        module.type = mdict.get('type')
-        module.title = mdict.get('title')
-        module.description = mdict.get('description')
-        module.developer = mdict.get('developer')
-        module.size = mdict.get('size',0)
+        module = RemoteModuleInfo(module_name, **mdict)
         return module
     else:
         return None
@@ -727,7 +729,10 @@ def make_example_input (d):
     ofn = os.path.join(d, fn)
     shutil.copyfile(ifn, ofn)
     print(fn + ' has been created at ' + os.path.abspath(d))
-    
+
+def report_issue ():
+    import webbrowser
+    webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info

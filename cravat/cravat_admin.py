@@ -5,10 +5,12 @@ import yaml
 import sys
 import traceback
 from cravat import admin_util as au
+from cravat import util
 from cravat import constants
 from types import SimpleNamespace
 import re
 import textwrap
+import math
 
 class ExampleCommandsFormatter(object,):
     def __init__(self, prefix='',  cmd_indent=' '*2, desc_indent=' '*8, width=70):
@@ -46,10 +48,42 @@ class InstallProgressStdout(au.InstallProgressHandler):
     def stage_progress(self, cur_chunk, total_chunks, cur_size, total_size):
         rem_chunks = total_chunks - cur_chunk
         perc = cur_size/total_size*100
-        out = '\r[{1}{2}] {0:.0f}% '.format(perc, '*'*cur_chunk,' '*rem_chunks)
+        # trailing spaces needed to avoid leftover characters on resize
+        out = '\r[{cur_prog}{rem_prog}] {cur_size} / {total_size} ({perc:.0f}%)  '\
+            .format(cur_prog='*'*cur_chunk,
+                    rem_prog=' '*rem_chunks,
+                    cur_size = humanize_bytes(cur_size),
+                    total_size = humanize_bytes(total_size),
+                    perc = perc)
         sys.stdout.write(out)
         if cur_chunk == total_chunks:
             sys.stdout.write('\n')
+            
+def humanize_bytes(num, binary=False):
+    """Human friendly file size"""
+    exp2unit_dec = {0:'B',1:'kB',2:'MB',3:'GB'}
+    exp2unit_bin = {0:'B',1:'KiB',2:'MiB',3:'GiB'}
+    max_exponent = 3
+    if binary:
+        base = 1024
+    else:
+        base = 1000
+    if num > 0:
+        exponent = math.floor(math.log(num, base))
+        if exponent > max_exponent:
+            exponent = max_exponent
+    else:
+        exponent = 0
+    quotient = float(num) / base**exponent
+    if binary:
+        unit = exp2unit_bin[exponent]
+    else:
+        unit = exp2unit_dec[exponent]
+    quot_str = '{:.1f}'.format(quotient)
+    # No decimal for byte level sizes
+    if exponent == 0:
+        quot_str = quot_str.rstrip('0').rstrip('.')
+    return '{quotient} {unit}'.format(quotient=quot_str, unit=unit)
     
 def main ():
     # Print usage if no args
@@ -83,8 +117,8 @@ def main ():
             module_info = au.get_local_module_info(module_name)
             if len(types) > 0 and module_info.type not in types:
                 continue
-            size_mb = module_info.get_size()
-            toks = [module_name, module_info.type, module_info.version, size_mb]
+            size = module_info.get_size()
+            toks = [module_name, module_info.type, module_info.version, humanize_bytes(size)]
             all_toks.append(toks)
         print_tabular_lines(all_toks)
                 
@@ -110,7 +144,7 @@ def main ():
                     installed,
                     local_version,
                     up_to_date,
-                    remote_info.size]
+                    humanize_bytes(remote_info.size)]
             all_toks.append(toks)
         print_tabular_lines(all_toks)
     
@@ -144,8 +178,8 @@ def main ():
             if installed:
                 current_version = local_info.conf['version']
                 print('INSTALLED')
-                dump = yaml.dump(local_info, default_flow_style=False)
-                print('\n'.join(dump.split('\n')[1:])) #Drop the extra line identifying it as an object
+                dump = util.yaml_string(local_info)
+                print(dump)
             else:
                 print('NOT INSTALLED')
             # Remote
@@ -170,8 +204,8 @@ def main ():
                 else:
                     print('NEWER VERSION EXISTS')
             if available:
-                    dump = yaml.dump(remote_info, default_flow_style=False)
-                    print('\n'.join(dump.split('\n')[1:])) #Drop the extra line identifying it as an object
+                    dump = util.yaml_string(remote_info)
+                    print(dump)
     
     def set_modules_dir(args):
         if args.directory:
@@ -275,7 +309,10 @@ def main ():
         module_info = au.get_local_module_info(args.annotator_name)
         print('Annotator {0} created at {1}'.format(args.annotator_name,
                                                     module_info.directory))
-            
+    
+    def report_issue (args):
+        au.report_issue()
+        
     ###################################################################################################
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     subparsers = parser.add_subparsers(title='Commands')
@@ -463,6 +500,11 @@ def main ():
     parser_new_annotator.add_argument('annotator_name',
                                    help='Annotator name')
     parser_new_annotator.set_defaults(func=new_annotator)
+    
+    # open issue report
+    parser_new_annotator = subparsers.add_parser('report-issue',
+                                               help='opens a browser window to report issues')
+    parser_new_annotator.set_defaults(func=report_issue)
     
     ###########################################################################
     

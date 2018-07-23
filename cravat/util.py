@@ -2,6 +2,7 @@ import re
 import os
 import importlib
 import sys
+import yaml
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -171,3 +172,9 @@ def get_directory_size(start_path):
             fp = os.path.join(dirpath, fname)
             total_size += os.path.getsize(fp)
     return total_size
+
+def yaml_string(x):
+    s = yaml.dump(x, default_flow_style = False)
+    s = re.sub('!!.*', '', s)
+    s = s.strip('\r\n')
+    return s
