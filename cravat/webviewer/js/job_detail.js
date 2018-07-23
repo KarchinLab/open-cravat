@@ -442,9 +442,9 @@ function firstLoadData () {
 	resetTab = {'info': infoReset};
 	
 	var loadWidgets = function () {
-		detailWidgetOrder = {'variant': {}, 'gene': {}};
+		detailWidgetOrder = {'variant': {}, 'gene': {}, 'info': {}};
 		$.get('rest/service/widgetlist', {}).done(function (jsonResponseData) {
-			writeLogDiv('Widget list loaded')
+			writeLogDiv('Widget list loaded');
 	    	var widgets = jsonResponseData;
 	    	var widgetLoadCount = 0;
 	    	for (var i = 0; i < widgets.length; i++) {
@@ -459,7 +459,6 @@ function firstLoadData () {
 	    			writeLogDiv(widgetName + ' script loaded');
 	    			widgetLoadCount += 1;
 	    			if (widgetLoadCount == widgets.length) {
-	    				//populateWidgetSelectorPanel();
 	    				setupTab('info');
 	        			if (flagNotifyToUseFilter) {
 	        				notifyToUseFilter();
@@ -474,6 +473,11 @@ function firstLoadData () {
 	    		if (usedAnnotators['gene'] && usedAnnotators['gene'].includes(requiredAnnotator)) {
 	    			detailWidgetOrder['gene'][Object.keys(detailWidgetOrder['gene']).length] = widgetName;
 	    		}
+	    		if (((usedAnnotators['variant'] && usedAnnotators['variant'].includes(requiredAnnotator)) || 
+	    			(usedAnnotators['gene'] && usedAnnotators['gene'].includes(requiredAnnotator)))) {
+	    			detailWidgetOrder['info'][Object.keys(detailWidgetOrder['info']).length] = widgetName;
+	    		}
+	    		console.log('###', widget, requiredAnnotator);
 	    	}
 	    });
 	}
@@ -631,7 +635,7 @@ function run () {
     	if (detailContainer != null && detailContainer.innerHTML == '') {
     		setupTab(tabName);
     	}
-    	if (tabName == 'variant' || tabName == 'gene') {
+    	if (tabName == 'variant' || tabName == 'gene' || tabName == 'info') {
     		$(document.getElementById('detailcontainerdiv_' + tabName)).packery();
     	}
     	

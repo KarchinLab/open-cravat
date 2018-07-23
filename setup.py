@@ -62,11 +62,11 @@ class InstallCommand(install):
 
 def readme ():
     try:
-        with open('README.md') as f:
+        with open('README.rst') as f:
             return f.read()
     except IOError:
         return ''
-    
+
 data_files = ['cravat.yml', 
               'cravat-system.template.yml', 
               'cravat-system.yml', 
@@ -83,10 +83,10 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'annotator_template')):
     data_files.extend(root_files)
 
 setup(
-    name='CRAVAT',
+    name='cravat',
     packages=['cravat'],
-    version='0.0.79',
-    description='Cancer-Related Analysis of VAriants Toolkit',
+    version='0.0.88',
+    description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
     author_email='rkim@insilico.us.com',
