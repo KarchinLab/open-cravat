@@ -9,8 +9,6 @@ import datetime
 from types import SimpleNamespace
 from cravat.constants import liftover_chain_paths
 
-#test
-
 class Cravat (object):
     def __init__ (self, cmd_args):
         self.should_run_converter = False

@@ -241,8 +241,8 @@ function showVariantDetail (row, tabName) {
 				[widgetDiv, widgetContentDiv] = 
 					getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
 				generator['function'](widgetContentDiv, row, tabName);
-				widgetDiv.clientWidth = generator['width'];
-				widgetDiv.clientHeight = generator['height'];
+				widgetDiv.style.width = generator['width'] + 'px';
+				widgetDiv.style.height = generator['height'] + 'px';
 				addEl(outerDiv, widgetDiv);
 			}
 		}

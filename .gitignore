@@ -5,4 +5,5 @@
 /dist/**
 CRAVAT.egg-info/**
 **/__pycache__/**
+cravat/__pycache__/*
 .settings

@@ -181,15 +181,6 @@ function saveFilterSetting (name) {
     });
 }
 
-function saveLayoutSetting (name, callback) {
-	saveTableSetting(name);
-	saveWidgetSetting(name);
-	lastUsedLayoutName = name;
-	if (callback != null) {
-		callback();
-	}
-}
-
 function saveFilterSettingAs () {
 	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
 		var names = '' + response;
@@ -212,8 +203,7 @@ function saveLayoutSettingAs () {
 		}
 		var name = prompt(msg, lastUsedLayoutName);
 		if (name != null) {
-			saveTableSetting(name);
-			saveWidgetSetting(name);
+			saveLayoutSetting(name, null);
 		}
 	});
 }
@@ -279,8 +269,10 @@ function saveWidgetSetting (name) {
     });
 }
 
-function saveTableSetting (name) {
+function saveLayoutSetting (name, callback) {
 	var saveData = {};
+	
+	// Table layout
 	saveData['tableSettings'] = {};
 	if ($grids['variant'] != undefined) {
 		var colGroupModel = $grids['variant'].pqGrid('option', 'colModel');
@@ -314,14 +306,68 @@ function saveTableSetting (name) {
 		}
 		saveData['tableSettings']['gene'] = data;
 	}
+	
+	// Widget layout
+	saveData['widgetSettings'] = {};
+	var widgets = {};
+	var detailContainerDiv = document.getElementById('detailcontainerdiv_variant');
+	if (detailContainerDiv != null) {
+		saveData['widgetSettings']['variant'] = [];
+		widgets = $(detailContainerDiv).packery('getItemElements');
+		for (var i = 0; i < widgets.length; i++) {
+			var widget = widgets[i];
+			saveData['widgetSettings']['variant'].push(
+					{'id': widget.id,
+					'widgetkey': widget.getAttribute('widgetkey'),
+					'top': widget.style.top, 
+					'left': widget.style.left, 
+					'width': widget.style.width, 
+					'height': widget.style.height});
+		};
+	}
+	var detailContainerDiv = document.getElementById('detailcontainerdiv_gene');
+	if (detailContainerDiv != null) {
+		saveData['widgetSettings']['gene'] = [];
+		widgets = $(detailContainerDiv).packery('getItemElements');
+		for (var i = 0; i < widgets.length; i++) {
+			var widget = widgets[i];
+			saveData['widgetSettings']['gene'].push(
+					{'id': widget.id,
+					'widgetkey': widget.getAttribute('widgetkey'),
+					'top': widget.style.top, 
+					'left': widget.style.left, 
+					'width': widget.style.width, 
+					'height': widget.style.height});
+		};
+	}
+	var detailContainerDiv = document.getElementById('detailcontainerdiv_info');
+	if (detailContainerDiv != null) {
+		saveData['widgetSettings']['info'] = [];
+		widgets = $(detailContainerDiv).packery('getItemElements');
+		for (var i = 0; i < widgets.length; i++) {
+			var widget = widgets[i];
+			saveData['widgetSettings']['info'].push(
+					{'id': widget.id,
+					'widgetkey': widget.getAttribute('widgetkey'),
+					'top': widget.style.top, 
+					'left': widget.style.left, 
+					'width': widget.style.width, 
+					'height': widget.style.height});
+		};
+	}
+	
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
-		url: 'rest/service/savetablesetting', 
+		url: 'rest/service/savelayoutsetting', 
 		type: 'get',
 		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr}, 
 		async: false,
 		success: function (response) {
-			writeLogDiv('Table setting has been saved.');
+			lastUsedLayoutName = name;
+			writeLogDiv('Layout setting has been saved.');
+			if (callback) {
+				callback();
+			}
 		}
     });
 }
@@ -462,24 +508,21 @@ function applyTableSetting (level) {
 	$grid.pqGrid('refresh');
 }
 
-function loadLayoutSetting (name, callback) {
-	loadTableSetting(name, null);
-	loadWidgetSetting(name, callback);
-	lastUsedLayoutName = name;
-}
-
 function loadLayoutSettingAs () {
 	var div = document.getElementById('load_layout_select_div');
 	emptyElement(div);
-	for (var i = 0; i < savedLayoutNames.length; i++) {
-		var name = savedLayoutNames[i];
-		var a = getEl('a');
-		a.textContent = name;
-		a.addEventListener('click', function (evt) {
-			loadLayoutSetting(evt.target.textContent, null)
-		});
-		addEl(div, a);
-	}
+	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+    	savedLayoutNames = response;
+    	for (var i = 0; i < savedLayoutNames.length; i++) {
+    		var name = savedLayoutNames[i];
+    		var a = getEl('a');
+    		a.textContent = name;
+    		a.addEventListener('click', function (evt) {
+    			loadLayoutSetting(evt.target.textContent, null)
+    		});
+    		addEl(div, a);
+    	}
+    });
 }
 
 function loadFilterSettingAs () {
@@ -497,32 +540,23 @@ function loadFilterSettingAs () {
 	});
 }
 
-function loadWidgetSetting (name, callback) {
-	$.get('rest/service/loadwidgetsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
-		writeLogDiv('Widget setting loaded');
+function loadLayoutSetting (name, callback) {
+	$.get('rest/service/loadlayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		var data = response;
+		loadedTableSettings = data['tableSettings'];
+		tableSettings = loadedTableSettings;
+		if ((currentTab == 'variant' || currentTab == 'gene') && tableSettings[currentTab] != undefined) {
+			applyTableSetting(currentTab);
+		}
 		loadedViewerWidgetSettings = data['widgetSettings'];
 		viewerWidgetSettings = loadedViewerWidgetSettings;
-		if (currentTab == 'variant' || currentTab == 'gene' || currentTab == 'info') {
+		if ((currentTab == 'variant' || currentTab == 'gene' || currentTab == 'info') && viewerWidgetSettings[currentTab] != undefined) {
 			applyWidgetSetting(currentTab);
 		}
 		if (callback != null) {
 			callback();
 		}
-    });
-}
-
-function loadTableSetting (name, callback) {
-	$.get('rest/service/loadtablesetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
-		writeLogDiv('Table setting loaded');
-		var data = response;
-		loadedTableSettings = data['tableSettings'];
-		tableSettings = loadedTableSettings;
-		if (currentTab == 'variant' || currentTab == 'gene') {
-			applyTableSetting(currentTab);
-		}
-		if (callback != null) {
-			callback();
-		}
+		lastUsedLayoutName = name;
+		writeLogDiv('Layout setting loaded');
     });
 }
