@@ -733,6 +733,19 @@ def make_example_input (d):
 def report_issue ():
     import webbrowser
     webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
+
+def show_system_conf ():
+    if os.path.exists(constants.system_conf_path):
+        confpath = constants.system_conf_path
+        conf = load_yml_conf(constants.system_conf_path)
+    else:
+        confpath = 'Does not exist'
+        conf = {}
+    if constants.modules_dir_key not in conf:
+        conf[constants.modules_dir_key] = constants.default_modules_dir
+    print('Configuration file path:', confpath)
+    print(yaml.dump(conf, default_flow_style=False))
+
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info

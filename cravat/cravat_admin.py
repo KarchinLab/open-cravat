@@ -321,7 +321,10 @@ def main ():
     
     def report_issue (args):
         au.report_issue()
-        
+    
+    def show_system_conf (args):
+        au.show_system_conf()
+    
     ###################################################################################################
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     subparsers = parser.add_subparsers(title='Commands')
@@ -449,12 +452,14 @@ def main ():
                                 help='password for the user.')
     parser_publish.set_defaults(func=publish_module)
     
+    '''
     # store-url
     parser_store_url = subparsers.add_parser('store-url',
                                              help='sets CRAVAT store URL.')
     parser_store_url.add_argument('url',
                                   help='URL for CRAVAT store')
     parser_store_url.set_defaults(func=set_store_url)
+    '''
     
     # create-account
     parser_create_account = subparsers.add_parser('create-account',
@@ -513,10 +518,15 @@ def main ():
                                    help='Annotator name')
     parser_new_annotator.set_defaults(func=new_annotator)
     
-    # open issue report
+    # opens issue report
     parser_new_annotator = subparsers.add_parser('report-issue',
                                                help='opens a browser window to report issues')
     parser_new_annotator.set_defaults(func=report_issue)
+    
+    # shows system conf content.
+    parser_new_annotator = subparsers.add_parser('show-system-conf',
+                                               help='shows system configuration.')
+    parser_new_annotator.set_defaults(func=show_system_conf)
     
     ###########################################################################
     

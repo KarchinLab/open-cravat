@@ -83,9 +83,9 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'annotator_template')):
     data_files.extend(root_files)
 
 setup(
-    name='cravat',
+    name='open-cravat',
     packages=['cravat'],
-    version='0.0.88',
+    version='0.0.90',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
@@ -111,5 +111,5 @@ setup(
     cmdclass={
               'install':InstallCommand,
               },
-    install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'openpyxl'],
+    install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover'],
 )
