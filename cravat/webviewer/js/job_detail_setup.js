@@ -156,7 +156,6 @@ function populateSummaryWidgetDiv () {
 			}
 			if (widgetGenerators[colGroupKey][tabName] != undefined && 
 				widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
-				console.log('@@@', colGroupKey, 'available');
 				var generator = widgetGenerators[colGroupKey][tabName];
 				var widgetDiv = null;
 				var widgetContentDiv = null;
@@ -180,8 +179,6 @@ function populateSummaryWidgetDiv () {
 				}
 				addEl(outerDiv, widgetDiv);
 				drawSummaryWidget(colGroupKey);
-			} else {
-				console.log(colGroupKey, 'not available');
 			}
 		}
 	}
@@ -340,6 +337,22 @@ function onClickDetailRedraw () {
 	$(div).packery();
 }
 
+function onClickDetailReset () {
+	var tabName = currentTab;
+	var div = document.getElementById('detailcontainerdiv_' + tabName);
+	var widgets = div.children;
+	for (var i = 0; i < widgets.length; i++) {
+		var widget = widgets[i];
+		var widgetName = widget.getAttribute('widgetkey');
+		var generator = widgetGenerators[widgetName][currentTab];
+		widget.style.top = '0px';
+		widget.style.left = '0px';
+		widget.style.width = generator['width'] + 'px';
+		widget.style.height = generator['height'] + 'px';
+	}
+	$(div).packery();
+}
+
 function makeSampleMappingTab (tabName, rightDiv) {
 	var tableDiv = getEl('div');
 	tableDiv.id = 'tablediv_' + tabName;
@@ -383,15 +396,23 @@ function populateWidgetSelectorPanel () {
 	panelDiv.style.width = '200px';
 	panelDiv.style.maxHeight = '400px';
 	panelDiv.style.overflow = 'auto';
-	/*
+	
 	var button = getEl('button');
 	button.style.backgroundColor = 'white';
-	button.textContent = 'Refresh';
+	button.textContent = 'Redraw';
 	button.addEventListener('click', function (evt, ui) {
 		onClickDetailRedraw();
 	});
 	addEl(panelDiv, button);
-	*/
+
+	var button = getEl('button');
+	button.style.backgroundColor = 'white';
+	button.textContent = 'Reset';
+	button.addEventListener('click', function (evt, ui) {
+		onClickDetailReset();
+	});
+	addEl(panelDiv, button);
+
 	var widgetNames = Object.keys(widgetGenerators);
 	for (var i = 0; i < widgetNames.length; i++) {
 		var widgetName = widgetNames[i];
