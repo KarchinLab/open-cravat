@@ -324,6 +324,9 @@ function loadData (alertFlag, finalcallback) {
 		}
 		unlockTabs();
 		populateSummaryWidgetDiv();
+		if (currentTab == 'variant' || currentTab == 'gene') {
+			setupTab(currentTab);
+		}
 	}
 	var loadMappingResult = function () {
 		if (resultLevels.indexOf('mapping') != -1) {
@@ -477,7 +480,6 @@ function firstLoadData () {
 	    			(usedAnnotators['gene'] && usedAnnotators['gene'].includes(requiredAnnotator)))) {
 	    			detailWidgetOrder['info'][Object.keys(detailWidgetOrder['info']).length] = widgetName;
 	    		}
-	    		console.log('###', widget, requiredAnnotator);
 	    	}
 	    });
 	}
