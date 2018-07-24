@@ -285,16 +285,12 @@ class MyHandler (CGIHTTPRequestHandler):
             content = self.get_status(queries)
         elif path == 'savefiltersetting':
             content = self.save_filter_setting(queries)
-        elif path == 'savewidgetsetting':
-            content = self.save_widget_setting(queries)
-        elif path == 'savetablesetting':
-            content = self.save_table_setting(queries)
+        elif path == 'savelayoutsetting':
+            content = self.save_layout_setting(queries)
         elif path == 'loadfiltersetting':
             content = self.load_filtersetting(queries)
-        elif path == 'loadwidgetsetting':
-            content = self.load_widget_setting(queries)
-        elif path == 'loadtablesetting':
-            content = self.load_table_setting(queries)
+        elif path == 'loadlayoutsetting':
+            content = self.load_layout_setting(queries)
         elif path == 'getlayoutsavenames':
             content = self.get_layoutsavenames(queries)
         elif path == 'getfiltersavenames':
@@ -309,7 +305,7 @@ class MyHandler (CGIHTTPRequestHandler):
         table = 'viewersetup'
         content = []
         if self.table_exists(cursor, table):
-            q = 'select distinct name from ' + table
+            q = 'select distinct name from ' + table + ' where datatype="layout"'
             cursor.execute(q)
             r = cursor.fetchall()
             content = [v[0] for v in r]
@@ -467,28 +463,7 @@ class MyHandler (CGIHTTPRequestHandler):
             content = []
         return content
     
-    def load_table_setting (self, queries):
-        dbpath = urllib.parse.unquote(queries['dbpath'][0])
-        name = urllib.parse.unquote(queries['name'][0])
-        conn = sqlite3.connect(dbpath)
-        cursor = conn.cursor()
-        table = 'viewersetup'
-        if self.table_exists(cursor, table) == False:
-            content = {"tableSettings": []}
-        else:
-            q = 'select viewersetup from ' + table + ' where datatype="table" and name="' + name + '"'
-            cursor.execute(q)
-            r = cursor.fetchone()
-            if r != None:
-                data = r[0]
-            else:
-                data = {}
-            content = json.loads(data)
-        cursor.close()
-        conn.close()
-        return content
-    
-    def load_widget_setting (self, queries):
+    def load_layout_setting (self, queries):
         dbpath = urllib.parse.unquote(queries['dbpath'][0])
         name = urllib.parse.unquote(queries['name'][0])
         conn = sqlite3.connect(dbpath)
@@ -497,7 +472,7 @@ class MyHandler (CGIHTTPRequestHandler):
         if self.table_exists(cursor, table) == False:
             content = {"widgetSettings": []}
         else:
-            q = 'select viewersetup from ' + table + ' where datatype="widget" and name="' + name + '"'
+            q = 'select viewersetup from ' + table + ' where datatype="layout" and name="' + name + '"'
             cursor.execute(q)
             r = cursor.fetchone()
             if r != None:
@@ -527,7 +502,7 @@ class MyHandler (CGIHTTPRequestHandler):
         content = 'saved'
         return content
     
-    def save_widget_setting (self, queries):
+    def save_layout_setting (self, queries):
         dbpath = urllib.parse.unquote(queries['dbpath'][0])
         name = urllib.parse.unquote(queries['name'][0])
         savedata = urllib.parse.unquote(queries['savedata'][0])
@@ -537,25 +512,7 @@ class MyHandler (CGIHTTPRequestHandler):
         if self.table_exists(cursor, table) == False:
             q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
             cursor.execute(q)
-        q = 'replace into ' + table + ' values ("widget", "' + name + '", \'' + savedata + '\')'
-        cursor.execute(q)
-        conn.commit()
-        cursor.close()
-        conn.close()
-        content = 'saved'
-        return content
-    
-    def save_table_setting (self, queries):
-        dbpath = urllib.parse.unquote(queries['dbpath'][0])
-        name = urllib.parse.unquote(queries['name'][0])
-        savedata = urllib.parse.unquote(queries['savedata'][0])
-        conn = sqlite3.connect(dbpath)
-        cursor = conn.cursor()
-        table = 'viewersetup'
-        if self.table_exists(cursor, table) == False:
-            q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
-            cursor.execute(q)
-        q = 'replace into ' + table + ' values ("table", "' + name + '", \'' + savedata + '\')'
+        q = 'replace into ' + table + ' values ("layout", "' + name + '", \'' + savedata + '\')'
         cursor.execute(q)
         conn.commit()
         cursor.close()

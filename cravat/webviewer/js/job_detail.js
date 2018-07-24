@@ -655,9 +655,11 @@ function run () {
     	saveLayoutSetting(defaultSaveName, doNothing);
     }
     
+    /*
     $.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
     	savedLayoutNames = response;
     });
+    */
     
     $.get('rest/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];

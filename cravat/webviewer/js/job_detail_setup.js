@@ -48,7 +48,9 @@ function setupTab (tabName) {
 		// Selects the first row.
 		if (tabName == currentTab) {
 			if (stat['rowsreturned'] && stat['norows'] > 0) {
-				$grids[tabName].pqGrid('setSelection', {rowIndx : 0, colIndx: 0});
+				console.log($grids[tabName].pqGrid('getData')[0]);
+				selectedRowId = null;
+				$grids[tabName].pqGrid('setSelection', {rowIndx : 0, colIndx: 0, focus: true});
 			}
 		}
 	}
@@ -58,10 +60,10 @@ function setupTab (tabName) {
 	placeDragNSBar(tabName);
 	placeCellValueDiv(tabName);
 	
-	if (loadedTableSettings[currentTab] != undefined) {
+	if (loadedTableSettings != undefined && loadedTableSettings[currentTab] != undefined) {
 		applyTableSetting(currentTab);
 	}
-	if (loadedViewerWidgetSettings[currentTab] != undefined) {
+	if (loadedViewerWidgetSettings != undefined && loadedViewerWidgetSettings[currentTab] != undefined) {
 		applyWidgetSetting(currentTab);
 	}
 	
@@ -529,10 +531,6 @@ function setupEvents (tabName) {
 	   switch(button.which){
 	   case 27:
 		   if (tabName == currentTab){
-			   // This takes place even if MuPit hasn't been opened
-			   // Also ndex_single.js has a things for case27 key down
-			   // TODO THIS IS A STUPID WAY TO HANDLE IF MUPIT IS NOT OPEN.
-			   // TODO all the key down stuff should be in the same place
 			   if (document.getElementById("splashMupitBckRound_" + tabName) != null){
 				   eraseMuPITPopUp(currentTab);
 			   }
