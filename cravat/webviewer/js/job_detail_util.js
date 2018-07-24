@@ -414,21 +414,6 @@ function showTab (tabName) {
 	$('#tab_' + tabName).removeClass('hide').addClass('show');
 }
 
-function loadFilterSetting (name, callback) {
-	$.get('rest/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
-		writeLogDiv('Filter setting loaded');
-		var data = response;
-		var loadedFilterSet = data['filterSet'];
-		filterSet = loadedFilterSet;
-		showFilterSet();
-		makeFilterJson();
-		infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
-		if (callback != null) {
-			callback();
-		}
-    });
-}
-
 function getWidget (tabName, widgetName, widgetTitle) {
 	[widgetDiv, widgetContentDiv] = 
 		getDetailWidgetDivs(tabName, widgetName, widgetTitle);
@@ -508,6 +493,37 @@ function applyTableSetting (level) {
 	$grid.pqGrid('refresh');
 }
 
+function loadFilterSettingAs () {
+	$.get('rest/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+		var names = '' + response;
+		var name = null;
+		if (names != '') {
+			name = prompt('Please enter filter name to load. Saved filter names are ' + names, lastUsedLayoutName);
+			if (name != null) {
+				loadFilterSetting(name, null);
+			}
+		} else {
+			alert('No filter has been saved.');
+		}
+	});
+}
+
+
+function loadFilterSetting (name, callback) {
+	$.get('rest/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+		writeLogDiv('Filter setting loaded');
+		var data = response;
+		var loadedFilterSet = data['filterSet'];
+		filterSet = loadedFilterSet;
+		showFilterSet();
+		makeFilterJson();
+		infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
+		if (callback != null) {
+			callback();
+		}
+    });
+}
+
 function loadLayoutSettingAs () {
 	var div = document.getElementById('load_layout_select_div');
 	emptyElement(div);
@@ -523,21 +539,6 @@ function loadLayoutSettingAs () {
     		addEl(div, a);
     	}
     });
-}
-
-function loadFilterSettingAs () {
-	$.get('rest/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
-		var names = '' + response;
-		var name = null;
-		if (names != '') {
-			name = prompt('Please enter filter name to load. Saved filter names are ' + names, lastUsedLayoutName);
-			if (name != null) {
-				loadFilterSetting(name, null);
-			}
-		} else {
-			alert('No filter has been saved.');
-		}
-	});
 }
 
 function loadLayoutSetting (name, callback) {
@@ -558,5 +559,28 @@ function loadLayoutSetting (name, callback) {
 		}
 		lastUsedLayoutName = name;
 		writeLogDiv('Layout setting loaded');
+    });
+}
+
+function deleteLayoutSettingAs () {
+	var div = document.getElementById('delete_layout_select_div');
+	emptyElement(div);
+	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+    	savedLayoutNames = response;
+    	for (var i = 0; i < savedLayoutNames.length; i++) {
+    		var name = savedLayoutNames[i];
+    		var a = getEl('a');
+    		a.textContent = name;
+    		a.addEventListener('click', function (evt) {
+    			deleteLayoutSetting(evt.target.textContent, null)
+    		});
+    		addEl(div, a);
+    	}
+    });
+}
+
+function deleteLayoutSetting (name, callback) {
+	$.get('rest/service/deletelayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+		writeLogDiv('Layout setting deleted');
     });
 }
