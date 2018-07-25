@@ -283,12 +283,6 @@ def main ():
     def publish_module (args):
         au.publish_module(args.module, args.user, args.password, include_data=args.data)
         
-    def set_store_url (args):
-        url = args.url
-        if not(url.startswith('http://')):
-            url = 'http://'+url
-        au.update_system_conf_file({'store_url':url})
-        
     def install_base (args):
         sys_conf = au.get_system_conf()
         base_modules = sys_conf.get(constants.base_modules_key,[])
@@ -451,15 +445,6 @@ def main ():
                                 required=True,
                                 help='password for the user.')
     parser_publish.set_defaults(func=publish_module)
-    
-    '''
-    # store-url
-    parser_store_url = subparsers.add_parser('store-url',
-                                             help='sets CRAVAT store URL.')
-    parser_store_url.add_argument('url',
-                                  help='URL for CRAVAT store')
-    parser_store_url.set_defaults(func=set_store_url)
-    '''
     
     # create-account
     parser_create_account = subparsers.add_parser('create-account',
