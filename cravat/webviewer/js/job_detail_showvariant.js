@@ -225,6 +225,11 @@ function showVariantDetail (row, tabName) {
 		if (colGroupTitle == undefined) {
 			colGroupTitle = widgetGenerators[colGroupKey]['name'];
 		}
+		/*
+		if (colGroupKey != 'base' && colGroupKey != 'grasp') {
+			continue;
+		}
+		*/
 		if (widgetGenerators[colGroupKey][tabName] != undefined && 
 			widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
 			var generator = widgetGenerators[colGroupKey][tabName];

@@ -414,15 +414,6 @@ function showTab (tabName) {
 	$('#tab_' + tabName).removeClass('hide').addClass('show');
 }
 
-function getWidget (tabName, widgetName, widgetTitle) {
-	[widgetDiv, widgetContentDiv] = 
-		getDetailWidgetDivs(tabName, widgetName, widgetTitle);
-	generator[tabName]['function'](widgetContentDiv, row, tabName);
-	widgetDiv.clientWidth = generator[tabName]['width'];
-	widgetDiv.clientHeight = generator[tabName]['height'];
-	addEl(outerDiv, widgetDiv);
-}
-
 function applyWidgetSetting (level) {
 	var settings = viewerWidgetSettings[level];
 	if (settings == undefined)  {
@@ -583,4 +574,31 @@ function deleteLayoutSetting (name, callback) {
 	$.get('rest/service/deletelayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Layout setting deleted');
     });
+}
+
+function renameLayoutSettingAs () {
+	var div = document.getElementById('rename_layout_select_div');
+	emptyElement(div);
+	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+    	savedLayoutNames = response;
+    	for (var i = 0; i < savedLayoutNames.length; i++) {
+    		var name = savedLayoutNames[i];
+    		var a = getEl('a');
+    		a.textContent = name;
+    		a.addEventListener('click', function (evt) {
+    			renameLayoutSetting(evt.target.textContent, null)
+    		});
+    		addEl(div, a);
+    	}
+    });
+}
+
+function renameLayoutSetting (name, callback) {
+	var msg = 'Please enter a new name for layout ' + name + '.';
+	var newName = prompt(msg, lastUsedLayoutName);
+	if (newName != null) {
+		$.get('rest/service/renamelayoutsetting', {'dbpath': dbPath, 'name': name, 'newname': newName}).done(function (response) {
+			writeLogDiv('Layout name has been changed.');
+		});
+	}
 }

@@ -48,7 +48,6 @@ function setupTab (tabName) {
 		// Selects the first row.
 		if (tabName == currentTab) {
 			if (stat['rowsreturned'] && stat['norows'] > 0) {
-				console.log($grids[tabName].pqGrid('getData')[0]);
 				selectedRowId = null;
 				$grids[tabName].pqGrid('setSelection', {rowIndx : 0, colIndx: 0, focus: true});
 			}
