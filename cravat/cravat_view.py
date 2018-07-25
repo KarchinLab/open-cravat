@@ -220,7 +220,7 @@ class MyHandler (CGIHTTPRequestHandler):
                     column['retfilt'] = True
                     column['retfilttype'] = 'regexp'
                     column['multiseloptions'] = []
-                elif d['col_type'] == 'float':
+                elif d['col_type'] == 'float' or d['col_type'] == 'int':
                     column['filter'] = {
                         "type":"textbox",
                         "condition":"between",

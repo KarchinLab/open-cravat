@@ -38,12 +38,11 @@ crv_def = [{'name':'uid', 'title':'UID', 'type':'int'},
            {'name':'alt_base', 'title':'Alt Base', 'type':'string'}]
 crv_idx = [['uid']]
 crx_def = crv_def + \
-          [{'name':'coding', 'title':'Coding', 'type':'int'},
+          [{'name':'coding', 'title':'Coding', 'type':'string'},
            {'name':'hugo', 'title':'Hugo', 'type':'string'},
            {'name':'transcript', 'title':'Transcript', 'type':'string'},
            {'name':'so', 'title':'Sequence Ontology', 'type':'string'},
-           {'name':'all_mappings', 
-            'title':'All Mappings', 'type':'string'},
+           {'name':'all_mappings', 'title':'All Mappings', 'type':'string'},
            ]
 crx_idx = [['uid']]
 crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string'},
