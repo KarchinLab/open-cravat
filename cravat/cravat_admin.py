@@ -28,7 +28,7 @@ class ExampleCommandsFormatter(object,):
             self._s += self._prefix+' '
         self._s += cmd
         # Eliminate newlines in desc
-        desc = re.sub('\s*\n\s*',' ',desc)
+        desc = re.sub(r'\s*\n\s*',' ',desc)
         # Wrap the description
         desc = textwrap.fill(desc,self._width-len(self._desc_indent))
         desc = textwrap.indent(desc,self._desc_indent)
@@ -110,10 +110,10 @@ def main ():
         for line in yield_tabular_lines(l, *kwargs):
             print(line)
         
-    def list_local_modules(types=[]):
+    def list_local_modules(pattern=r'.*', types=[]):
         header = ['Name','Type','Version','Size']
         all_toks = [header]
-        for module_name in au.list_local():
+        for module_name in au.search_local(pattern):
             module_info = au.get_local_module_info(module_name)
             if len(types) > 0 and module_info.type not in types:
                 continue
@@ -122,10 +122,10 @@ def main ():
             all_toks.append(toks)
         print_tabular_lines(all_toks)
                 
-    def list_available_modules(types=[]):
+    def list_available_modules(pattern=r'.*', types=[]):
         header = ['Name','Type','Latest version','Installed','Installed version','Up-to-date','Size']
         all_toks = [header]
-        for module_name in au.list_remote():
+        for module_name in au.search_remote(pattern):
             remote_info = au.get_remote_module_info(module_name)
             if len(types) > 0 and remote_info.type not in types:
                 continue
@@ -150,9 +150,9 @@ def main ():
     
     def list_modules(args):
         if args.available:
-            list_available_modules(types=args.types)
+            list_available_modules(pattern=args.pattern, types=args.types)
         else:
-            list_local_modules(types=args.types)
+            list_local_modules(pattern=args.pattern, types=args.types)
         
     def print_info(args):
         modules = args.modules
@@ -211,39 +211,49 @@ def main ():
         if args.directory:
             au.set_modules_dir(args.directory)
         print(au.get_modules_dir())
-    
+
     def install_modules(args):
-        mvers = args.modules
-        available_modules = au.list_remote()
-        local_modules = au.list_local()
-        modules_to_install = {}
-        for mver in mvers:
-            toks = mver.split(':')
-            module_name = toks[0]
-            if len(toks) > 1 and toks[1] != '' and toks[1] != 'latest':
-                module_version = toks[1]
+        matching_names = au.search_remote(*args.modules)
+        if len(matching_names) > 1 and args.version is not None:
+            print('WARNING: Version filter applied to all matching modules')
+        to_install = {}
+        for module_name in matching_names:
+            remote_info = au.get_remote_module_info(module_name)
+            if args.version is None:
+                    to_install[module_name] = remote_info.latest_version
+            elif remote_info.has_version(args.version):
+                    to_install[module_name] = args.version
             else:
-                module_version = None
-            module_re = module_name + '$'
-            for available_module in available_modules:
-                if re.match(module_re, available_module):
-                    if args.skip_installed == True and available_module in local_modules:
-                        continue
+                continue
+        if len(to_install) > 0:
+            print('Installing: {:}'\
+                  .format(', '.join([name+':'+version for name, version in sorted(to_install.items())]))
+                  )
+            if not(args.yes):
+                while True:
+                    resp = input('Proceed? (y/n) > ')
+                    if resp == 'y':
+                        break
+                    if resp == 'n':
+                        exit()
                     else:
-                        if module_version is not None and module_version not in au.get_remote_module_info(available_module).versions:
-                            #sys.stderr.write('%s version %s not available, skipping\n' %(module_name, module_version))
-                            continue
-                        else:
-                            modules_to_install[available_module] = module_version
-        for module_name in modules_to_install:
-            module_version = modules_to_install[module_name]
-            stage_handler = InstallProgressStdout(module_name, module_version)
-            au.install_module(module_name, version=module_version, force_data=args.force_data, stage_handler=stage_handler)
+                        print('Your response (\'{:}\') was not one of the expected responses: y, n'.format(resp))
+                        continue
+            for module_name, module_version in sorted(to_install.items()):
+                stage_handler = InstallProgressStdout(module_name, module_version)
+                au.install_module(module_name,
+                                  version=module_version,
+                                  force_data=args.force_data,
+                                  stage_handler=stage_handler
+                                  )
+        else:
+            print('No modules found')
                     
     def update_modules(args):
-        requested_modules = args.modules
-        if len(requested_modules) == 0:
+        if len(args.modules) == 0:
             requested_modules = au.list_local()
+        else:
+            requested_modules = au.search_local(*args.modules)
         print('Checking status')
         needs_update = []
         status_table = [['Name','Status']]
@@ -272,22 +282,31 @@ def main ():
                 exit()
         args.modules = needs_update
         args.force_data = False
+        args.version = None
+        args.yes = True
         install_modules(args)
         
     def uninstall_modules (args):
-        module_names = args.modules
-        for module_name in module_names:
-            au.uninstall_module(module_name)
-            print('Uninstalled %s' %module_name)
+        matching_names = au.search_local(*args.modules)
+        if len(matching_names) > 0:
+            print('Uninstalling: {:}'.format(', '.join(matching_names)))
+            if not(args.yes):
+                while True:
+                    resp = input('Proceed? (y/n) > ')
+                    if resp == 'y':
+                        break
+                    elif resp == 'n':
+                        exit()
+                    else:
+                        print('Response \'{:}\' not one of (y/n).'.format(resp))
+            for module_name in matching_names:
+                au.uninstall_module(module_name)
+                print('Uninstalled %s' %module_name)
+        else:
+            print('No modules found')
             
     def publish_module (args):
         au.publish_module(args.module, args.user, args.password, include_data=args.data)
-        
-    def set_store_url (args):
-        url = args.url
-        if not(url.startswith('http://')):
-            url = 'http://'+url
-        au.update_system_conf_file({'store_url':url})
         
     def install_base (args):
         sys_conf = au.get_system_conf()
@@ -325,7 +344,9 @@ def main ():
     def show_system_conf (args):
         au.show_system_conf()
     
-    ###################################################################################################
+    ###########################################################################
+    # PARSERS START HERE
+    ###########################################################################
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     subparsers = parser.add_subparsers(title='Commands')
     
@@ -355,13 +376,31 @@ def main ():
                                                 description='installs base modules.')
     parser_install_base.set_defaults(func=install_base)
     
+    # # install
+    # parser_install = subparsers.add_parser('install',
+    #                                        help='installs modules.',
+    #                                        description='installs modules.')
+    # parser_install.add_argument('modules',
+    #                             nargs='+',
+    #                             help='Modules to install. Format as module_name:version. Leaving version blank installs the latest version.')
+    # parser_install.add_argument('-d',
+    #                             '--force-data',
+    #                             action='store_true',
+    #                             help='Force download new data even if not needed.')
+    # parser_install.add_argument('--skip-installed',
+    #                             action='store_true',
+    #                             help='skips already installed modules.')
+    # parser_install.set_defaults(func=install_modules)
+
     # install
     parser_install = subparsers.add_parser('install',
                                            help='installs modules.',
                                            description='installs modules.')
     parser_install.add_argument('modules',
                                 nargs='+',
-                                help='Modules to install. Format as module_name:version. Leaving version blank installs the latest version.')
+                                help='Modules to install. May be regular expressions.')
+    parser_install.add_argument('-v','--version',
+                                help='Version to install. Will apply to all modules. Default is latest version for each module')
     parser_install.add_argument('-d',
                                 '--force-data',
                                 action='store_true',
@@ -369,6 +408,9 @@ def main ():
     parser_install.add_argument('--skip-installed',
                                 action='store_true',
                                 help='skips already installed modules.')
+    parser_install.add_argument('-y','--yes',
+                                action='store_true',
+                                help='Proceed without prompt')
     parser_install.set_defaults(func=install_modules)
     
     # update
@@ -380,15 +422,15 @@ def main ():
     update_examples.add_example('hg38 aggregator vcf-converter',
                                 '''Only attempt update on the hg38, aggregator,
                                    and vcf-converter modules.''')
-    parser_install = subparsers.add_parser('update',
+    parser_update = subparsers.add_parser('update',
                                            help='updates modules.',
                                            description='updates modules.',
                                            epilog=str(update_examples),
                                            formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser_install.add_argument('modules',
+    parser_update.add_argument('modules',
                                 nargs='*',
                                 help='Modules to update.')
-    parser_install.set_defaults(func=update_modules)
+    parser_update.set_defaults(func=update_modules)
     
     # uninstall
     parser_uninstall = subparsers.add_parser('uninstall',
@@ -396,6 +438,9 @@ def main ():
     parser_uninstall.add_argument('modules',
                                nargs='+',
                                help='Modules to uninstall')
+    parser_uninstall.add_argument('-y','--yes',
+                                  action='store_true',
+                                  help='Proceed without prompt')
     parser_uninstall.set_defaults(func=uninstall_modules)
     
     # info
@@ -417,6 +462,10 @@ def main ():
                                        description='lists modules.',
                                        epilog=str(ls_examples),
                                        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser_ls.add_argument('pattern',
+                            nargs='?',
+                            default=r'.*',
+                            help='Regular expression for module names')
     parser_ls.add_argument('-a','--available',
                            action='store_true',
                            help='Include available modules')
@@ -451,15 +500,6 @@ def main ():
                                 required=True,
                                 help='password for the user.')
     parser_publish.set_defaults(func=publish_module)
-    
-    '''
-    # store-url
-    parser_store_url = subparsers.add_parser('store-url',
-                                             help='sets CRAVAT store URL.')
-    parser_store_url.add_argument('url',
-                                  help='URL for CRAVAT store')
-    parser_store_url.set_defaults(func=set_store_url)
-    '''
     
     # create-account
     parser_create_account = subparsers.add_parser('create-account',
