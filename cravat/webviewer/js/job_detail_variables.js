@@ -61,3 +61,4 @@ var loadedViewerWidgetSettings = {};
 var defaultSaveName = 'default';
 var lastUsedLayoutName = 'default';
 var savedLayoutNames = null;
+var autoSaveLayout = true;

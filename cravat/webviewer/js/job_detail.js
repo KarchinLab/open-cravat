@@ -652,14 +652,10 @@ function run () {
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
     
     window.onbeforeunload = function () {
-    	saveLayoutSetting(defaultSaveName, doNothing);
+    	if (autoSaveLayout) {
+    		saveLayoutSetting(defaultSaveName, doNothing);
+    	}
     }
-    
-    /*
-    $.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
-    	savedLayoutNames = response;
-    });
-    */
     
     $.get('rest/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];

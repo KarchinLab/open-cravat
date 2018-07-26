@@ -602,3 +602,17 @@ function renameLayoutSetting (name, callback) {
 		});
 	}
 }
+
+function toggleAutoLayoutSave () {
+	var a = document.getElementById('layout_autosave_title');
+	var autosave = a.getAttribute('autosave');
+	if (autoSaveLayout == false) {
+		autoSaveLayout = true;
+		a.text = 'V Autosave';
+		writeLogDiv('Layout autosave enabled');
+	} else {
+		autoSaveLayout = false;
+		a.text = 'Autosave';
+		writeLogDiv('Layout autosave disabled');
+	}
+}
