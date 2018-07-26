@@ -220,7 +220,7 @@ class MyHandler (CGIHTTPRequestHandler):
                     column['retfilt'] = True
                     column['retfilttype'] = 'regexp'
                     column['multiseloptions'] = []
-                elif d['col_type'] == 'float':
+                elif d['col_type'] == 'float' or d['col_type'] == 'int':
                     column['filter'] = {
                         "type":"textbox",
                         "condition":"between",
@@ -291,6 +291,10 @@ class MyHandler (CGIHTTPRequestHandler):
             content = self.load_filtersetting(queries)
         elif path == 'loadlayoutsetting':
             content = self.load_layout_setting(queries)
+        elif path == 'deletelayoutsetting':
+            content = self.delete_layout_setting(queries)
+        elif path == 'renamelayoutsetting':
+            content = self.rename_layout_setting(queries)
         elif path == 'getlayoutsavenames':
             content = self.get_layoutsavenames(queries)
         elif path == 'getfiltersavenames':
@@ -482,6 +486,37 @@ class MyHandler (CGIHTTPRequestHandler):
                 content = {"widgetSettings": []}
         cursor.close()
         conn.close()
+        return content
+    
+    def delete_layout_setting (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        name = urllib.parse.unquote(queries['name'][0])
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        table = 'viewersetup'
+        if self.table_exists(cursor, table) == True:
+            q = 'DELETE FROM ' + table + ' WHERE datatype="layout" and name="' + name + '"'
+            cursor.execute(q)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        content = {}
+        return content
+    
+    def rename_layout_setting (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        name = urllib.parse.unquote(queries['name'][0])
+        new_name = urllib.parse.unquote(queries['newname'][0])
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        table = 'viewersetup'
+        if self.table_exists(cursor, table) == True:
+            q = 'update ' + table + ' set name="' + new_name + '" where datatype="layout" and name="' + name + '"'
+            cursor.execute(q)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        content = {}
         return content
     
     def save_filter_setting (self, queries):
