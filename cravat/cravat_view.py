@@ -309,16 +309,25 @@ class MyHandler (CGIHTTPRequestHandler):
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()
         wgmodules = au.get_local_module_infos_of_type('webviewerwidget')
-        nowg_annot_modules = []
+        annot_modules_with_wg = []
+        for wgmodule in wgmodules:
+            conf = wgmodules[wgmodule].conf
+            print('===', wgmodule, conf)
+            if 'required_annotator' in conf:
+                if wgmodule not in annot_modules_with_wg:
+                    annot_modules_with_wg.append(wgmodule)
+        print(annot_modules_with_wg)
+        nowg_annot_modules = {}
         if self.table_exists(cursor, 'variant'):
-            q = 'select name from variant_annotator'
+            q = 'select name, displayname from variant_annotator'
             cursor.execute(q)
             for r in cursor.fetchall():
-                module = r[0]
-                if module not in wgmodules and module not in nowg_annot_modules:
-                    nowg_annot_modules.append(module)
-        print('@@@ nowg_annot_modules:', nowg_annot_modules)
+                annot_module = 'wg' + r[0]
+                displayname = r[1]
+                if annot_module not in annot_modules_with_wg and annot_module not in nowg_annot_modules:
+                    nowg_annot_modules[annot_module] = displayname
         content = nowg_annot_modules
+        print(nowg_annot_modules)
         return content
         
     def get_layoutsavenames (self, queries):
@@ -638,7 +647,7 @@ def main():
     server.start()
     
     runid = os.path.basename(dbpath).replace('.sqlite', '')
-    webbrowser.open('http://localhost:8060/view.html?job_id=' + runid + '&dbpath=' + dbpath)
+    webbrowser.open('http://localhost:8060/cravat_view.html?job_id=' + runid + '&dbpath=' + dbpath)
 
 def test ():
     server = Server()

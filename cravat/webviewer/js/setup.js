@@ -88,13 +88,6 @@ function makeInfoTab (rightDiv) {
 	rightContentDiv.className = 'rightcontentdiv';
 	addEl(rightDiv, rightContentDiv);
 	
-	// Widget Notice
-	var wgNoticeDiv = getEl('div');
-	wgNoticeDiv.className = 'wgnoticediv';
-	wgNoticeDiv.id = 'wgnoticediv';
-	wgNoticeDiv.textContext = '';
-	addEl(rightContentDiv, wgNoticeDiv);
-	
 	// Notice
 	var noticeDiv = getEl('div');
 	noticeDiv.className = 'infonoticediv';
@@ -111,6 +104,11 @@ function makeInfoTab (rightDiv) {
 	// Filter
 	var filterDiv = document.getElementById('filterdiv');
 	populateLoadDiv('info', filterDiv);
+	
+	// Widget Notice
+	var wgNoticeDiv = getEl('fieldset');
+	wgNoticeDiv.id = 'wgnoticediv';
+	addEl(rightContentDiv, wgNoticeDiv);
 	
 	// Widgets
 	var widgetDiv = getEl('div');
@@ -148,9 +146,12 @@ function populateSummaryWidgetDiv () {
 	}
 	var widgetNames = Object.keys(widgetGenerators);
 	if (widgetNames.length == 0) {
+		/*
 		var el = getEl('p');
 		el.textContent = 'No summary wigdet';
 		addEl(outerDiv, el);
+		*/
+		return;
 	} else {
 		var orderNums = Object.keys(detailWidgetOrder[tabName]);
 		for (var i = 0; i < orderNums.length; i++) {
@@ -217,59 +218,6 @@ function populateSummaryWidgetDiv () {
 		applyWidgetSetting('info');
 	}
 }
-
-/*
-function makeSummaryTab (rightDiv) {
-	var tabName = 'summary';
-	var rightContentDiv = getEl('div');
-	rightContentDiv.id = 'rightcontentdiv_' + tabName;
-	rightContentDiv.style.width = '100%';
-	rightContentDiv.overflow = 'auto';
-	addEl(rightDiv, rightContentDiv);
-	
-	// Widgets
-	var widgetDiv = getEl('div');
-	addEl(rightContentDiv, widgetDiv);
-	var widgetNames = Object.keys(widgetGenerators);
-	if (widgetNames.length == 0) {
-		var el = getEl('p');
-		el.textContent = 'No summary wigdet';
-		addEl(rightDiv, el);
-	} else {
-		for (var i = 0; i < widgetNames.length; i++) {
-			var widgetName = widgetNames[i];
-			if (widgetGenerators[widgetName][tabName] == undefined || 
-				widgetGenerators[widgetName][tabName]['function'] == undefined) {
-				continue;
-			}
-			drawSummaryWidget(widgetName, tabName, widgetDiv);
-		}
-	}
-	
-	$widgetDiv = $(widgetDiv);
-	$widgetDiv.packery({
-		columnWidth: widgetGridSize,
-		rowHeight: widgetGridSize
-	});
-	var $widgets = $($widgetDiv.packery('getItemElements'));
-	$widgets.draggable({
-		grid: [widgetGridSize, widgetGridSize],
-		handle: '.detailwidgettitle',
-	}).resizable({
-		grid: [widgetGridSize, widgetGridSize]
-	});
-	$widgetDiv.packery('bindUIDraggableEvents', $widgets);
-	var resizeTimeout;
-	$widgets.on('resize', function (evt, ui) {
-		if (resizeTimeout) {
-			clearTimeout(resizeTimeout);
-		}
-		resizeTimeout = setTimeout(function () {
-			$widgetDiv.packery('fit', ui.element[0]);
-		}, 100);
-	});
-}
-*/
 
 function onClickTableColumnButton () {
 	if (currentTab != 'variant' && currentTab != 'gene') {
@@ -369,34 +317,34 @@ function makeSampleMappingTab (tabName, rightDiv) {
 }
 
 function populateWgNoticeDiv (noWgAnnotModules) {
+	var wgNoticeDiv = document.getElementById('wgnoticediv');
 	if (noWgAnnotModules.length == 0) {
+		wgNoticeDiv.style.display = 'none';
 		return;
 	}
-	var wgNoticeDiv = document.getElementById('wgnoticediv');
-	var fieldset = getEl('fieldset');
 	var legend = getEl('legend');
+	legend.className = 'section_header';
 	addEl(legend, getTn('Missing Widgets'));
-	addEl(fieldset, legend);
-	var msg = 'Viwer widgets for the following annotator results are not installed in the system. ';
-	msg += 'If you want to install viewer widgets for them, click the links over their names.';
+	addEl(wgNoticeDiv, legend);
+	wgNoticeDiv.className = 'detailContent';
+	var msg = 'Your system does not have viwer widgets for the following annotator results are not installed in the system. ';
+	msg += 'If you want to install viewer widgets for them, click the buttons for the annotators.';
 	var span = getEl('span');
-	addEl(fieldset, addEl(span, getTn(msg)));
+	addEl(wgNoticeDiv, addEl(span, getTn(msg)));
+	addEl(wgNoticeDiv, getEl('br'));
+	addEl(wgNoticeDiv, getEl('br'));
 	var div = getEl('div');
-	for (var i = 0; i < noWgAnnotModules.length; i++) {
-		var noWgAnnotModule = noWgAnnotModules[i];
-		var span = getEl('span');
-		var a = getEl('a');
-		a.href = noWgAnnotModule;
-		a.textContent = noWgAnnotModule;
-		a.target = '_blank';
-		addEl(span, a);
-		if (i < noWgAnnotModules.length - 1) {
-			addEl(span, getTn(', '));
-		}
-		addEl(div, span);
+	var moduleKeys = Object.keys(noWgAnnotModules);
+	for (var i = 0; i < moduleKeys.length; i++) {
+		var moduleKey = moduleKeys[i];
+		var moduleTitle = noWgAnnotModules[moduleKey];
+		var button = getEl('button');
+		button.style.marginRight = '20px';
+		button.style.marginBottom = '10px';
+		button.textContent = moduleTitle;
+		addEl(div, button);
 	}
-	addEl(fieldset, div);
-	addEl(wgNoticeDiv, fieldset);
+	addEl(wgNoticeDiv, div);
 }
 
 function populateInfoDiv (infoDiv) {

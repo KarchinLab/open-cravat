@@ -93,12 +93,6 @@ body {
 	z-index: 2;
 }
 
-.isDisabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-  text-decoration: none;
-}
-
 .draggableDiv {
 	background-color: #bed4dc;
 	width: 100%;
@@ -192,16 +186,6 @@ div.tabContent.hide {
 
 .ui-widget-header .ui-icon{
 	    /* background-image: url("../js/paramquery-pro-3/images/ui-icons_222222_256x240.png"); */
-}
-
-.summaryJobInfoSection{
-	font-size : 12px;
-}
-.summaryJobInfoTitle{
-	font-weight : bold;
-}
-.summaryJobInfoContent{
-	margin-left: 5px;
 }
 
 .tablediv {

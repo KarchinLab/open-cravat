@@ -427,6 +427,7 @@ function unlockTabs () {
 function notifyToUseFilter () {
 	var div = document.getElementById('infonoticediv');
 	div.style.background = 'red';
+	div.style.display = 'block';
 	div.textContent = 
 		'Too many variants (more than ' + NUMVAR_LIMIT + ') to load into ' +
 		'the web viewer. Use the filters below to reduce the number of ' +
@@ -438,6 +439,7 @@ function notifyOfReadyToLoad () {
 	var div = document.getElementById('infonoticediv')
 	div.style.background = 'white';
 	div.textContent = ' ';
+	div.style.display = 'none';
 }
 
 function firstLoadData () {
