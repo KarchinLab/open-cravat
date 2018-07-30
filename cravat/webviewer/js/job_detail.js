@@ -489,6 +489,7 @@ function firstLoadData () {
 			'info', 
 			function () {
 				populateInfoDiv(document.getElementById('info_div'));
+				checkWidgets();
 				loadData(false, showTab('info'));
 			}, 
 			null, 
@@ -501,6 +502,13 @@ function firstLoadData () {
 	loadWidgets();
 	setupTab('info');
 	loadFilterSetting(defaultSaveName, afterLoadDefaultFilter);
+}
+
+function checkWidgets () {
+	$.get('rest/service/getnowgannotmodules', {dbpath: dbPath}).done(function (jsonResponseData) {
+		var noWgAnnotModules = jsonResponseData;
+		populateWgNoticeDiv(noWgAnnotModules);
+	});
 }
 
 function drawingRetrievingDataDiv (currentTab) {

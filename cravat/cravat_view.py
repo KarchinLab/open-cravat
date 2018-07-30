@@ -299,9 +299,28 @@ class MyHandler (CGIHTTPRequestHandler):
             content = self.get_layoutsavenames(queries)
         elif path == 'getfiltersavenames':
             content = self.get_filter_save_names(queries)
+        elif path == 'getnowgannotmodules':
+            content = self.get_nowg_annot_modules(queries)
         response = bytes(json.dumps(content), 'UTF-8')
         self.wfile.write(response)
     
+    def get_nowg_annot_modules (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        wgmodules = au.get_local_module_infos_of_type('webviewerwidget')
+        nowg_annot_modules = []
+        if self.table_exists(cursor, 'variant'):
+            q = 'select name from variant_annotator'
+            cursor.execute(q)
+            for r in cursor.fetchall():
+                module = r[0]
+                if module not in wgmodules and module not in nowg_annot_modules:
+                    nowg_annot_modules.append(module)
+        print('@@@ nowg_annot_modules:', nowg_annot_modules)
+        content = nowg_annot_modules
+        return content
+        
     def get_layoutsavenames (self, queries):
         dbpath = urllib.parse.unquote(queries['dbpath'][0])
         conn = sqlite3.connect(dbpath)

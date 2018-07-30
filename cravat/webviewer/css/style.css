@@ -1,255 +1,406 @@
-@CHARSET "ISO-8859-1";
-
 body {
-	font-family: Source Sans Pro;
-}
-
-a {
-	text-decoration:none;
-	color:#0055aa;
-}
-
-a:hover {
-	text-decoration: underline;
-}
-
-div#search {
-	clear: both;
-	font-size: 12px;
-}
-
-div#footer {
-	text-align: center;
-	height:20px;
-	background-image:url('../images/Header_RL_Sliver_short.jpg');
-	font-size: 11px;
-	width:100%;
-}
-
-.searchClass {
-	font-size: 12px;
-	font-weight: bold;
-}
-
-.searchClassWhite {
-	font-size: 12px;
-	font-weight: bold;
-	color: white;
-}
-
-h1.manual {
-	font-size: 24px;
-	color: #4e4b49;
-}
-
-.manual {
-	font-size: 14px;
-	color: #4e4b49;
-}
-
-.tooltip {
-	display:none;
-	background-color: #ddeecc;
-	padding:2px 2px 2px 2px;
-	font-size:11px;
-	color:#000000;
-}
-
-div.tooltip table {
-	border:2px solid;
-	font-size: 12px;
-	font-weight: bold;
-}
-
-html#help,body#help{
-	margin:0;
-	padding:0;
-	height:100%;
-}
-
-#help-header{
-	position:fixed;/* for good browsers*/
-	top:0;
-	left:0;
-	width:100%;
-	height:150px;/* the height you want the header to be*/
-	z-index:2;
-	clear:both;
-}
-
-#help-headerinner{/* header content goes inside here*/
-	background-image:url('../images/CravatHeader.jpg');
-	background-repeat:no-repeat;
-	background-position:center;
-	height:150px;
-	text-align:center;
-	position:relative;
-	z-index:2;
-}
-
-#help_sidemenu ul {
-	padding: 0px 0px 0px 20px;
-	margin: 0px 10px 0px 0px;
-	list-style-type: square;
-}
-
-#help_sidemenu ul li {
-	padding: 0px;
+	font-family: Roboto;
+	font-size: 10px;
 	margin: 0px;
 }
 
-#help-left{/* Bear in mind that as there is no height then scrollbars won't appear in IE and very small screens will be unable to reach the content of his fixed side - so keep content to a minimum */
-	position:fixed;
-	width:160px;
-	left:0;
-	top:150px;
-	font-size: 14px;
-	color: #4e4b49;
-	bottom:50px;/* this will enable a vertical scrollbar to appear in good browsers*/
-	overflow:auto;/* this will enable a vertical scrollbar to appear in good browsers*/
+.rightdiv {
+	height: calc(100% - 25px); 
+	width: 100%;
+    overflow: auto;
 }
 
-#help-right{
-	margin-left:161px;
-	margin-right:0px;
-	padding-left:20px;
-	padding-right:20px;
-	border-left:1px solid #000;
- 	min-height:400px;
-	bottom:50px;
-	overflow:auto;
+.rightcontentdiv {
+	width: 100%;
+	height: calc(100% - 35px);
+	overflow: auto;
 }
 
-.overlay {
-        display: none;
-        z-index: 10000;
-        background-color: #ffffff;
-        width: 800px;
-        min-height: 300px;
-        border: 1px solid #cceeee;
-        background-image: url('../images/white.png');
-}
-
-.close {
-        background-image: url(../images/close.png);
-        position: absolute;
-        right: -12px;
-        top: -12px;
-        cursor: pointer;
-        height: 24px;
-        width: 24px;
-}
-
-.overlay_details {
-        font-size: 13px;
-        color: #111111;
-        margin: 15px 15px 15px 15px;
-        height: 300px;
-        overflow-y: auto;
-}
-
-.menu_link {
-	float:left;
-	color: #0055aa;
-	cursor: pointer;
-	list-style: none;
-}
-
-.menu_link:hover {
-	text-decoration: underline;
-}
-
-.menu_divider {
-	display:none;
-	float:left;
-}
-
-.submenu_link {
-	color: #0055aa;
-	cursor: pointer;
-	list-style: none;
-}
-
-.submenu_link:hover {
-	text-decoration: underline;
-}
-
-.menu_div {
-	position: absolute;
-	float: left; 
-	z-index: 5; 
-	background-color: rgb(200,227,238); 
-	opacity: 0.96;
-	font-size: 12px;
-	box-shadow: 5px 5px 5px 0px #718c94;
-	cursor: default;
-}
-
-.triangle {
+.menu {
+	display: inline-block;
 	position: relative;
-	top: 2px;
-	width: 13px;
-	height: 13px;
+	background-color: #d1d1d1;
+	top: 0px;
+	height: 20px;
+	padding: 3px;
+	font-size: 13px;
 }
 
-.longtable tr:nth-child(5n) td {
-	border-bottom: 1px dotted;
-}
-
-.longtable tr:last-child td {
-	border-bottom: 1px solid;
-}
-
-.setup_button {
-	background-color: #51a547;
-	border: none;
-	color: white;
-	padding: 10px;
-	font-size: 16px;
+.menu1 {
+	display: inline-block;
+	position: relative;
+    color: black;
+    padding: 4px;
+    font-size: 13px;
+    border: none;
 	cursor: pointer;
 }
 
-.setup_button:disabled {
-	background-color: gray;
-	cursor: default;
+.menu2 {
+	display: none;
+	z-index: 1;
+	position: absolute;
+	top: 23px;
+	left: -3px;
+	background-color: #c8c8c8;
+	width: 150px;
+	border: 1px solid #888888;
 }
 
-/* open-sans-regular - latin */
-@font-face {
-  font-family: 'Open Sans';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Open Sans'), local('OpenSans'),
-       url('../fonts/open-sans-v13-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+ */
-       url('../fonts/open-sans-v13-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+.menu3 {
+	position: relative;
+	z-index: 1;
+	background-color: #c8c8c8;
+	color: black;
+	width: 144px;
+	padding-left: 6px;
+	padding-top: 6px;
+	padding-bottom: 6px;
 }
 
-/* lato-regular - latin */
-@font-face {
-  font-family: 'Lato';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Lato Regular'), local('Lato-Regular'),
-       url('../fonts/lato-v11-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+ */
-       url('../fonts/lato-v11-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+.menu1 a {
+	color: black;
+	text-decoration: none;
 }
 
-/* slabo-27px-regular - latin */
-@font-face {
-  font-family: 'Slabo 27px';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Slabo 27px'), local('Slabo27px-Regular'),
-       url('../fonts/slabo-27px-v3-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+ */
-       url('../fonts/slabo-27px-v3-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+.menu2 a {
+	display: block;
+	text-decoration: none;
+	padding: 4px;
 }
 
-/* source-sans-pro-regular - latin */
-@font-face {
-  font-family: 'Source Sans Pro';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Source Sans Pro'), local('SourceSansPro-Regular'),
-       url('../fonts/source-sans-pro-v9-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+ */
-       url('../fonts/source-sans-pro-v9-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+.menu1:hover .menu2 {
+	display: block;
+}
+
+.menu1:hover, .menu1 a:hover, .menu2 a:hover {
+	background-color: #555555;
+	color: #ffffff;
+}
+
+.menu3 > div {
+	display: none;
+	border: 1px solid #888888;
+}
+
+.menu3:hover > div {
+	display: block;
+	position: absolute;
+	background-color: #c1c1c1;
+	left: 150px;
+	top: 0px;
+	padding: 6px;
+	z-index: 2;
+}
+
+.isDisabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  text-decoration: none;
+}
+
+.draggableDiv {
+	background-color: #bed4dc;
+	width: 100%;
+	height:	3px;
+	text-align: center;
+	cursor: row-resize;
+	position: relative;
+}
+
+.selectedrow {
+	background: #aaaaaa;
+}
+
+table.detailtable td {
+	vertical-align: top;
+}
+
+.hiddencolumn {
+	border-radius: 4px;
+	cursor: pointer;
+	padding: 3px;
+	margin: 5px;
+	font-size: 10px;
+	font-family: Roboto;
+}
+
+.hiddencolumn[hide="true"] {
+	background: #dddddd;
+}
+
+.hiddencolumn[hide="false"] {
+	background: #8e8e8e;
+}
+
+.tabhead {
+	margin-right: 4px;
+}
+
+.tabhead:hover {
+	background-color: yellow;
+}
+
+.tabhead.show {
+	background-color: black;
+	color: white;
+}
+
+.tabhead.hide {
+	background-color: white;
+	color: black;
+}
+
+div.tabContent {
+	position: absolute;
+	top: 32px;
+	width: calc(100% - 12px);
+	/*border: 1px solid #c9c3ba;*/ 
+	padding: 0.5em; 
+	background-color: #ffffff; 
+	height: -moz-calc(100% - 60px);
+	height: -webkit-calc(100% - 60px);
+	height: calc(100% - 60px);
+}
+
+div.tabContent.show { 
+	display: block; 
+}
+
+div.tabContent.hide { 
+	display: none; 
+}
+
+.pq-grid-cell {
+	font-family: Roboto;
+	font-size: 12px;
+}
+
+.pq-grid-col {
+	font-family: Roboto;
+	font-size: 12px;
+}
+
+.ui-widget {
+	font-family: Roboto;
+	font-size: 12px;
+}
+
+.pq-grid {
+	font-size: 12px;
+}
+
+.ui-widget-header .ui-icon{
+	    /* background-image: url("../js/paramquery-pro-3/images/ui-icons_222222_256x240.png"); */
+}
+
+.summaryJobInfoSection{
+	font-size : 12px;
+}
+.summaryJobInfoTitle{
+	font-weight : bold;
+}
+.summaryJobInfoContent{
+	margin-left: 5px;
+}
+
+.tablediv {
+	position: absolute;
+	width: 100%;
+	height: 300px;
+}
+
+.tablesidebardiv {
+	position: absolute;
+	top: 30px;
+	right: 0px;
+	width: 30px;
+}
+
+.detaildiv {
+	overflow: auto;
+	position: absolute;
+	width: calc(100% - 6px);
+	bottom: 10px;
+	height: 400px;
+}
+
+.detailcontainerwrapdiv {
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	position: relative;
+}
+
+.detailcontainerdiv {
+	/*width: calc(100% - 30px);
+	height: 100%;*/
+}
+
+.detailsidebardiv {
+	width: 30px;
+	height: 100%;
+	position: absolute;
+	right: 0px;
+	top: 0px;
+}
+
+.detailwidget {
+	font-size: 12px;
+	border: 1px solid #bfbfbf;
+	padding: 5px;
+	margin: 4px;
+}
+
+.detailwidgetheader {
+	font-size: 14px;
+	font-weight: bold;
+	display: inline-block;
+	width: 100%;
+	position: relative;
+	top: 0px;
+	left: 0px;
+}
+
+.detailwidgettitle {
+	display: inline-block;
+	width: calc(100% - 40px);
+	background: #c5dbdb;
+	font-size: 13px;
+	font-weight: bold;
+}
+
+.detailcontentdiv {
+	overflow: auto;
+	height: calc(100% - 38px);
+	padding: 5px;
+}
+
+.tablecolumnselectorpanel {
+	position: absolute;
+	z-index: 1;
+	right: 30px;
+	top: 4px;
+	width: 300px;
+	height: calc(100% - 40px);
+	overflow: auto;
+	background-color: #ffffff;
+	padding: 10px;
+	border: 1px solid gray;
+	border-radius: 6px;
+}
+
+.widgetselectorpanel {
+	position: absolute;
+	z-index: 1;
+	right: 30px;
+	top: 4px;
+	width: 300px;
+	background-color: #ffffff;
+	padding: 10px;
+	border: 1px solid gray;
+	border-radius: 6px;
+}
+
+.detailsidepanelbutton {
+	cursor: pointer;
+	font-size: 16px;
+	text-align: center;
+	border: 1px solid gray;
+	width: 18px;
+	border-radius: 5px;
+	margin: auto;
+	margin-top: 3px;
+}
+
+.detailwidgeticondiv {
+	display: inline-block;
+	width: 32px;
+	position: absolute;
+	right: 0px;
+	top: 0px;
+}
+
+.detailwidgetclosebutton {
+	cursor: pointer;
+	margin-left: 4px;
+}
+
+.detailwidgetpinbutton {
+	cursor: pointer;
+	font-size: 12px;
+	text-align: center;
+	border: 1px solid gray;
+	width: 14px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.detailwidgetpinbutton.unpinned {
+	color: black;
+	background-color: white;
+}
+
+.detailwidgetpinbutton.pinned {
+	color: white;
+	background-color: #848484;
+}
+
+.detailwidgetselect {
+	font-family: Roboto;
+	font-size: 11px;
+}
+
+.detailHeader {
+	font-size: 13px;
+	font-weight: bold;
+}
+
+.detailContent {
+	font-size: 13px;
+}
+
+.section_header {
+	font-size: 16px;
+	font-weight: bold;
+}
+
+.inlineselect {
+	display: inline-block;
+    background-color: #aecbae;
+}
+
+#filterlistdiv {
+	width: 500px;
+	minHeight: 50px;
+	padding: 4px;
+	fontSize: 13px;
+}
+
+.closebutton {
+	width: 16px;
+	height: 16px;
+}
+
+p {
+	font-size: 13px;
+}
+
+.infonoticediv {
+	min-height: 2px;
+	font-size: 14px;
+	padding: 13px;
+	margin: 2px;
+	color: white;
+}
+
+.cellvaluediv {
+	position: relative;
+	height: 18px;
+	width: 100%;
+	font-size: 14px;
+}
+
+button {
+	background-color: white;
 }

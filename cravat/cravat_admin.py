@@ -349,6 +349,34 @@ def main ():
                                                 description='installs base modules.')
     parser_install_base.set_defaults(func=install_base)
     
+    # ls
+    ls_examples = ExampleCommandsFormatter(prefix='cravat-admin ls')
+    ls_examples.add_example('', 'List installed modules')
+    ls_examples.add_example('-t annotator', 'List installed annotators')
+    ls_examples.add_example('-a', 'List all modules available on the store')
+    ls_examples.add_example('-a -t mapper', 'List all mappers available on the store')
+    parser_ls = subparsers.add_parser('ls',
+                                       help='lists modules.',
+                                       description='lists modules.',
+                                       epilog=str(ls_examples),
+                                       formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser_ls.add_argument('-a','--available',
+                           action='store_true',
+                           help='Include available modules')
+    parser_ls.add_argument('-t','--types',
+                           nargs='+',
+                           default=[],
+                           help='Only list modules of certain types')
+    parser_ls.set_defaults(func=list_modules)
+    
+    # info
+    parser_info = subparsers.add_parser('info',
+                                        help='shows module information.')
+    parser_info.add_argument('modules',
+                               nargs='+',
+                               help='Modules to get info about')
+    parser_info.set_defaults(func=print_info)
+    
     # install
     parser_install = subparsers.add_parser('install',
                                            help='installs modules.',
@@ -364,6 +392,14 @@ def main ():
                                 action='store_true',
                                 help='skips already installed modules.')
     parser_install.set_defaults(func=install_modules)
+    
+    # uninstall
+    parser_uninstall = subparsers.add_parser('uninstall',
+                                          help='uninstalls modules.')
+    parser_uninstall.add_argument('modules',
+                               nargs='+',
+                               help='Modules to uninstall')
+    parser_uninstall.set_defaults(func=uninstall_modules)
     
     # update
     update_examples = ExampleCommandsFormatter(prefix='cravat-admin update')
@@ -384,41 +420,48 @@ def main ():
                                 help='Modules to update.')
     parser_install.set_defaults(func=update_modules)
     
-    # uninstall
-    parser_uninstall = subparsers.add_parser('uninstall',
-                                          help='uninstalls modules.')
-    parser_uninstall.add_argument('modules',
-                               nargs='+',
-                               help='Modules to uninstall')
-    parser_uninstall.set_defaults(func=uninstall_modules)
+    # create-account
+    parser_create_account = subparsers.add_parser('create-account',
+                                                  help='creates a CRAVAT store developer account.')
+    parser_create_account.add_argument('username',
+                                       help='use your email as your username.')
+    parser_create_account.add_argument('password',
+                                       help='this is your password.')
+    parser_create_account.set_defaults(func=create_account)
     
-    # info
-    parser_info = subparsers.add_parser('info',
-                                        help='shows module information.')
-    parser_info.add_argument('modules',
-                               nargs='+',
-                               help='Modules to get info about')
-    parser_info.set_defaults(func=print_info)
+    # verify-email
+    parser_verify_email = subparsers.add_parser('verify-email',
+                                              help='sends a verification email.')
+    parser_verify_email.add_argument('username',
+                                     help='username')
+    parser_verify_email.set_defaults(func=send_verify_email)
     
-    # ls
-    ls_examples = ExampleCommandsFormatter(prefix='cravat-admin ls')
-    ls_examples.add_example('', 'List installed modules')
-    ls_examples.add_example('-t annotator', 'List installed annotators')
-    ls_examples.add_example('-a', 'List all modules available on the store')
-    ls_examples.add_example('-a -t mapper', 'List all mappers available on the store')
-    parser_ls = subparsers.add_parser('ls',
-                                       help='lists modules.',
-                                       description='lists modules.',
-                                       epilog=str(ls_examples),
-                                       formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser_ls.add_argument('-a','--available',
-                           action='store_true',
-                           help='Include available modules')
-    parser_ls.add_argument('-t','--types',
-                           nargs='+',
-                           default=[],
-                           help='Only list modules of certain types')
-    parser_ls.set_defaults(func=list_modules)
+    # check-login
+    parser_check_login = subparsers.add_parser('check-login',
+                                               help='checks username and password.')
+    parser_check_login.add_argument('username',
+                                   help='username')
+    parser_check_login.add_argument('password',
+                                   help='password')
+    parser_check_login.set_defaults(func=check_login)
+    
+    # reset-password
+    parser_reset_pw = subparsers.add_parser('reset-password',
+                                            help='resets CRAVAT store account password.')
+    parser_reset_pw.add_argument('username',
+                                 help='username')
+    parser_reset_pw.set_defaults(func=send_reset_email)
+    
+    # change-password
+    parser_change_password = subparsers.add_parser('change-password',
+                                                   help='changes CRAVAT store account password.')
+    parser_change_password.add_argument('username',
+                                        help='username')
+    parser_change_password.add_argument('cur_pw',
+                                        help='current password')
+    parser_change_password.add_argument('new_pw',
+                                        help='new password')
+    parser_change_password.set_defaults(func=change_password)
     
     # publish
     parser_publish = subparsers.add_parser('publish',
@@ -445,49 +488,6 @@ def main ():
                                 required=True,
                                 help='password for the user.')
     parser_publish.set_defaults(func=publish_module)
-    
-    # create-account
-    parser_create_account = subparsers.add_parser('create-account',
-                                                  help='creates a CRAVAT store developer account.')
-    parser_create_account.add_argument('username',
-                                       help='use your email as your username.')
-    parser_create_account.add_argument('password',
-                                       help='this is your password.')
-    parser_create_account.set_defaults(func=create_account)
-    
-    # change-password
-    parser_change_password = subparsers.add_parser('change-password',
-                                                   help='changes CRAVAT store account password.')
-    parser_change_password.add_argument('username',
-                                        help='username')
-    parser_change_password.add_argument('cur_pw',
-                                        help='current password')
-    parser_change_password.add_argument('new_pw',
-                                        help='new password')
-    parser_change_password.set_defaults(func=change_password)
-    
-    # reset-password
-    parser_reset_pw = subparsers.add_parser('reset-password',
-                                            help='resets CRAVAT store account password.')
-    parser_reset_pw.add_argument('username',
-                                 help='username')
-    parser_reset_pw.set_defaults(func=send_reset_email)
-    
-    # verify-email
-    parser_verify_email = subparsers.add_parser('verify-email',
-                                              help='sends a verification email.')
-    parser_verify_email.add_argument('username',
-                                     help='username')
-    parser_verify_email.set_defaults(func=send_verify_email)
-    
-    # check-login
-    parser_check_login = subparsers.add_parser('check-login',
-                                               help='checks username and password.')
-    parser_check_login.add_argument('username',
-                                   help='username')
-    parser_check_login.add_argument('password',
-                                   help='password')
-    parser_check_login.set_defaults(func=check_login)
     
     # test input file
     parser_make_example_input = subparsers.add_parser('make-example-input',

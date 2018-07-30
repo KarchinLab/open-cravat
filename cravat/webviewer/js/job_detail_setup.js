@@ -88,6 +88,13 @@ function makeInfoTab (rightDiv) {
 	rightContentDiv.className = 'rightcontentdiv';
 	addEl(rightDiv, rightContentDiv);
 	
+	// Widget Notice
+	var wgNoticeDiv = getEl('div');
+	wgNoticeDiv.className = 'wgnoticediv';
+	wgNoticeDiv.id = 'wgnoticediv';
+	wgNoticeDiv.textContext = '';
+	addEl(rightContentDiv, wgNoticeDiv);
+	
 	// Notice
 	var noticeDiv = getEl('div');
 	noticeDiv.className = 'infonoticediv';
@@ -359,6 +366,37 @@ function makeSampleMappingTab (tabName, rightDiv) {
 	tableDiv.id = 'tablediv_' + tabName;
 	tableDiv.className = 'tablediv';
 	addEl(rightDiv, tableDiv);
+}
+
+function populateWgNoticeDiv (noWgAnnotModules) {
+	if (noWgAnnotModules.length == 0) {
+		return;
+	}
+	var wgNoticeDiv = document.getElementById('wgnoticediv');
+	var fieldset = getEl('fieldset');
+	var legend = getEl('legend');
+	addEl(legend, getTn('Missing Widgets'));
+	addEl(fieldset, legend);
+	var msg = 'Viwer widgets for the following annotator results are not installed in the system. ';
+	msg += 'If you want to install viewer widgets for them, click the links over their names.';
+	var span = getEl('span');
+	addEl(fieldset, addEl(span, getTn(msg)));
+	var div = getEl('div');
+	for (var i = 0; i < noWgAnnotModules.length; i++) {
+		var noWgAnnotModule = noWgAnnotModules[i];
+		var span = getEl('span');
+		var a = getEl('a');
+		a.href = noWgAnnotModule;
+		a.textContent = noWgAnnotModule;
+		a.target = '_blank';
+		addEl(span, a);
+		if (i < noWgAnnotModules.length - 1) {
+			addEl(span, getTn(', '));
+		}
+		addEl(div, span);
+	}
+	addEl(fieldset, div);
+	addEl(wgNoticeDiv, fieldset);
 }
 
 function populateInfoDiv (infoDiv) {
