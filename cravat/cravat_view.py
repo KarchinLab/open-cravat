@@ -662,7 +662,7 @@ def test ():
         sys.stderr.write(dbpath + ' does not exist.\n')
         exit(-1)
     runid = os.path.basename(dbpath).replace('.sqlite', '')
-    webbrowser.open('http://localhost:8060/view.html?job_id=' + runid + '&dbpath=' + dbpath)
+    webbrowser.open('http://localhost:8060/cravat_view.html?job_id=' + runid + '&dbpath=' + dbpath)
     
 if __name__ == '__main__':
     main()

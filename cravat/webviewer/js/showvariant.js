@@ -1,10 +1,13 @@
-function getWidgetTableFrame () {
+function getWidgetTableFrame (columnWidths) {
 	var table = getEl('table');
 	table.style.fontSize = '12px';
 	table.style.borderSpacing = '0px';
 	table.style.borderCollapse = 'collapse';
 	table.style.borderTop = widgetTableBorderStyle;
 	table.style.borderBottom = widgetTableBorderStyle;
+	table.style.tableLayout = 'fixed';
+	table.style.width = 'calc(100% - 55px)';
+	table.setAttribute('columnwidths', columnWidths);
 	return table;
 }
 
@@ -33,9 +36,6 @@ function getWidgetTableTr (values, colWidths) {
 		var td = getEl('td');
 		var p = getEl('p');
 		p.style.wordWrap = 'break-word';
-		if (colWidths != undefined) {
-			p.style.width = colWidths[i] + 'px';
-		}
 		if (i < numBorder) {
 			td.style.borderRight = widgetTableBorderStyle;
 		}
@@ -267,6 +267,7 @@ function showVariantDetail (row, tabName) {
 		$outerDiv.packery('bindUIDraggableEvents', $widgets);
 		var resizeTimeout;
 		$widgets.on('resize', function (evt, ui) {
+			//adjustWidgetTables(evt.target);
 			if (resizeTimeout) {
 				clearTimeout(resizeTimeout);
 			}
