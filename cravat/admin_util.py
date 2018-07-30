@@ -126,7 +126,6 @@ class RemoteModuleInfo(object):
         self.type = kwargs.get('type','')
         self.title = kwargs.get('title','')
         self.description = kwargs.get('description','')
-        self.developer = kwargs.get('developer','')
         self.size = kwargs.get('size',0)
         self.developer = ModuleDeveloper(**kwargs.get('developer',{}))
 
