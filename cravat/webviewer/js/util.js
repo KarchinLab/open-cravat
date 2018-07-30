@@ -562,8 +562,13 @@ function deleteLayoutSettingAs () {
     		var name = savedLayoutNames[i];
     		var a = getEl('a');
     		a.textContent = name;
+    		a.setAttribute('module', name);
     		a.addEventListener('click', function (evt) {
-    			deleteLayoutSetting(evt.target.textContent, null)
+    			var name = evt.target.getAttribute('module');
+    			var yes = confirm('Delete ' + name + '?');
+    			if (yes) {
+    				deleteLayoutSetting(evt.target.textContent, null)
+    			}
     		});
     		addEl(div, a);
     	}
