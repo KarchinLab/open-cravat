@@ -19,7 +19,6 @@ class MyHandler (CGIHTTPRequestHandler):
     def do_POST (self):
         if hasattr(self, 'conf') == False:
             self.conf = ConfigLoader()
-        #print('POST path=', self.path)
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
         urltoks = urllib.parse.urlparse(self.path)
@@ -33,7 +32,6 @@ class MyHandler (CGIHTTPRequestHandler):
     def do_GET (self):
         if hasattr(self, 'conf') == False:
             self.conf = ConfigLoader()
-        #print('path=', self.path)
         urltoks = urllib.parse.urlparse(self.path)
         self.request_path = urltoks.path
         self.request_query = urltoks.query
@@ -266,7 +264,6 @@ class MyHandler (CGIHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        #print('queries=', queries)
         if path == 'variantcols':
             content = self.get_variant_cols(queries)
         if path == 'conf':
@@ -312,11 +309,9 @@ class MyHandler (CGIHTTPRequestHandler):
         annot_modules_with_wg = []
         for wgmodule in wgmodules:
             conf = wgmodules[wgmodule].conf
-            print('===', wgmodule, conf)
             if 'required_annotator' in conf:
                 if wgmodule not in annot_modules_with_wg:
                     annot_modules_with_wg.append(wgmodule)
-        print(annot_modules_with_wg)
         nowg_annot_modules = {}
         if self.table_exists(cursor, 'variant'):
             q = 'select name, displayname from variant_annotator'
@@ -327,7 +322,6 @@ class MyHandler (CGIHTTPRequestHandler):
                 if annot_module not in annot_modules_with_wg and annot_module not in nowg_annot_modules:
                     nowg_annot_modules[annot_module] = displayname
         content = nowg_annot_modules
-        print(nowg_annot_modules)
         return content
         
     def get_layoutsavenames (self, queries):

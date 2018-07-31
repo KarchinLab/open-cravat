@@ -226,11 +226,6 @@ function showVariantDetail (row, tabName) {
 		if (colGroupTitle == undefined) {
 			colGroupTitle = widgetGenerators[colGroupKey]['name'];
 		}
-		/*
-		if (colGroupKey != 'base' && colGroupKey != 'grasp') {
-			continue;
-		}
-		*/
 		if (widgetGenerators[colGroupKey][tabName] != undefined && 
 			widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
 			var generator = widgetGenerators[colGroupKey][tabName];
@@ -268,11 +263,21 @@ function showVariantDetail (row, tabName) {
 		$outerDiv.packery('bindUIDraggableEvents', $widgets);
 		var resizeTimeout;
 		$widgets.on('resize', function (evt, ui) {
-			//adjustWidgetTables(evt.target);
 			if (resizeTimeout) {
 				clearTimeout(resizeTimeout);
 			}
 			resizeTimeout = setTimeout(function () {
+				var widgetDiv = ui.element[0];
+				var widgetKey = widgetDiv.getAttribute('widgetkey');
+				var generator = widgetGenerators[widgetKey][tabName];
+				var widgetContentDiv = document.getElementById(
+						'widgetcontentdiv_' + widgetKey + '_' + tabName);
+				if (generator['variables'] == undefined) {
+					generator['variables'] = {};
+				}
+				generator['variables']['redraw'] = true;
+				generator['function'](widgetContentDiv, row, tabName);
+				
 				$outerDiv.packery('fit', ui.element[0]);
 			}, 100);
 		});
