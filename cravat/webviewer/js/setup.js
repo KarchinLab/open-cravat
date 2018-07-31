@@ -48,7 +48,7 @@ function setupTab (tabName) {
 		// Selects the first row.
 		if (tabName == currentTab) {
 			if (stat['rowsreturned'] && stat['norows'] > 0) {
-				selectedRowId = null;
+				selectedRowIds[tabName] = null;
 				$grids[tabName].pqGrid('setSelection', {rowIndx : 0, colIndx: 0, focus: true});
 			}
 		}
@@ -1100,7 +1100,6 @@ function populateTableColumnSelectorPanel () {
 }
 
 function updateTableColumns (tabName) {
-	console.log('entered update table columns');
 	var selectorPanel = document.getElementById('columns_showhide_select_div');
 	var checkboxes = selectorPanel.getElementsByClassName('colcheckbox');
 	var colModel = $grids[tabName].pqGrid('option', 'colModel');
@@ -1210,8 +1209,9 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 			celltextel.value = valueText;
 		}
 		if (rowData != undefined) {
-			if (selectedRowId == null || selectedRowId != rowData[0]) {
-				selectedRowId = rowData[0];
+			if (selectedRowIds[tabName] == null || selectedRowIds[tabName] != rowData[0]) {
+				selectedRowIds[tabName] = rowData[0];
+				selectedRowNos[tabName] = rowNo;
 				showVariantDetail(rowData, tabName);
 			}
 		}

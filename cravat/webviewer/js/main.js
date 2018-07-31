@@ -236,9 +236,9 @@ function resizesTheWindow () {
 	}
 	
 	var rightDivHeight = browserHeight - 50;
-	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 60;
-	var tableDivWidth = 'calc(100% - 38px)';
-	var cellValueDivTop = tableDivHeight + 20 ;
+	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 56;
+	var tableDivWidth = 'calc(100% - 10px)';
+	var cellValueDivTop = tableDivHeight - 2 ;
 	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 6;
 	
 	rightDiv.style.height = rightDivHeight + 'px';

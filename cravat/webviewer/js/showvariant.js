@@ -275,7 +275,8 @@ function showVariantDetail (row, tabName) {
 				if (generator['variables'] == undefined) {
 					generator['variables'] = {};
 				}
-				generator['variables']['redraw'] = true;
+				generator['variables']['resized'] = true;
+				var row = $grids[tabName].pqGrid('getData')[selectedRowNos[tabName]];
 				generator['function'](widgetContentDiv, row, tabName);
 				
 				$outerDiv.packery('fit', ui.element[0]);
