@@ -1100,25 +1100,24 @@ function populateTableColumnSelectorPanel () {
 }
 
 function updateTableColumns (tabName) {
+	console.log('entered update table columns');
 	var selectorPanel = document.getElementById('columns_showhide_select_div');
 	var checkboxes = selectorPanel.getElementsByClassName('colcheckbox');
 	var colModel = $grids[tabName].pqGrid('option', 'colModel');
 	for (var i = 0; i < checkboxes.length; i++) {
 		var checkbox = checkboxes[i];
 		var colgroupname = checkbox.getAttribute('colgroupname');
-		var col = checkbox.getAttribute('col');
+		var colkey = checkbox.getAttribute('col');
 		var colno = checkbox.getAttribute('colno');
 		var checked =  ! checkbox.checked;
 		for (var j = 0; j < colModel.length; j++) {
-			if (colModel[j].title == colgroupname) {
-				var cols = colModel[j].colModel;
-				for (var k = 0; k < cols.length; k++) {
-					if (cols[k].col == col) {
-						cols[k].hidden = checked;
-						break;
-					}
+			var cols = colModel[j].colModel;
+			for (var k = 0; k < cols.length; k++) {
+				var col = cols[k];
+				if (col.colgroup == colgroupname && col.col == colkey) {
+					cols[k].hidden = checked;
+					break;
 				}
-				break;
 			}
 		}
 	}
@@ -1245,6 +1244,10 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.collapsible = {on: false};
 	gridObject.roundCorners = false;
 	gridObject.stripeRows = true;
+	gridObject.cellDblClick = function (evt, ui) {
+	}
+	gridObject.columnOrder = function (evt, ui) {
+	}
 	
 	return gridObject;
 }

@@ -6,7 +6,7 @@ function getWidgetTableFrame (columnWidths) {
 	table.style.borderTop = widgetTableBorderStyle;
 	table.style.borderBottom = widgetTableBorderStyle;
 	table.style.tableLayout = 'fixed';
-	table.style.width = 'calc(100% - 55px)';
+	table.style.width = 'calc(100% - 0px)';
 	table.setAttribute('columnwidths', columnWidths);
 	return table;
 }
@@ -29,9 +29,10 @@ function getWidgetTableHead (headers) {
 	return thead;
 }
 
-function getWidgetTableTr (values, colWidths) {
+function getWidgetTableTr (values) {
 	var numBorder = values.length - 1;
 	var tr = getEl('tr');
+	tr.style.borderBottom = '1px solid #cccccc';
 	for (var i = 0; i < values.length; i++) {
 		var td = getEl('td');
 		var p = getEl('p');
