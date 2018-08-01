@@ -2,6 +2,7 @@ import os
 from cravat.exceptions import BadFormatError
 import json
 import re
+from collections import OrderedDict
 
 class CravatFile(object):
     valid_types = ['string','int','float']
@@ -155,8 +156,8 @@ class CrxMapping(object):
         self.aref = None
         self.apos_start = None
         self.aalt = None
-        self.tchange_re = re.compile('([AaTtCcGgUuNn_-]+)(\d+)([AaTtCcGgUuNn_-]+)')
-        self.achange_re = re.compile('([a-zA-Z_\*]+)(\d+)([AaTtCcGgUuNn_\*]+)')
+        self.tchange_re = re.compile(r'([AaTtCcGgUuNn_-]+)(\d+)([AaTtCcGgUuNn_-]+)')
+        self.achange_re = re.compile(r'([a-zA-Z_\*]+)(\d+)([AaTtCcGgUuNn_\*]+)')
         
     def load_tchange(self, tchange):
         self.tchange = tchange
@@ -185,7 +186,7 @@ class CrxMapping(object):
 class AllMappingsParser (object):
 
     def __init__(self, s):
-        self._d = json.loads(s)
+        self._d = json.loads(s,object_pairs_hook=OrderedDict)
         self._protein_index = 0
         self._achange_index = 1
         self._so_index = 2
