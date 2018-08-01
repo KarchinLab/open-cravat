@@ -149,6 +149,7 @@ class ModuleInfoCache(object):
         self.remote = {}
         self._remote_fetched = False
         self.remote_readme = {}
+        self.remote_config = {}
         self.update_local()
         self._store_path_builder = su.PathBuilder(self._sys_conf['store_url'],'url')
     
@@ -177,13 +178,14 @@ class ModuleInfoCache(object):
             
     def get_remote_readme(self, module_name, version=None):
         self.update_remote()
+        # Resolve name and version
         if module_name not in self.remote:
             raise LookupError(module_name)
         if version != None and version not in self.remote[module_name]['versions']:
             raise LookupError(version)
-        # Check cache
         if version == None:
             version = self.remote[module_name]['latest_version']
+        # Try for cache hit
         try:
             readme = self.remote_readme[module_name][version]
             return readme
@@ -196,7 +198,37 @@ class ModuleInfoCache(object):
             self.remote_readme[module_name][version] = readme
         return readme
 
+    def get_remote_config(self, module_name, version=None):
+        self.update_remote()
+        # Resolve name and version
+        if module_name not in self.remote:
+            raise LookupError(module_name)
+        if version != None and version not in self.remote[module_name]['versions']:
+            raise LookupError(version)
+        if version == None:
+            version = self.remote[module_name]['latest_version']
+        # Check cache
+        try:
+            config = self.remote_config[module_name][version]
+            return config
+        except LookupError:
+            config_url = self._store_path_builder.module_conf(module_name, version)
+            config = yaml.load(su.get_file_to_string(config_url))
+            # add to cache
+            if module_name not in self.remote_config:
+                self.remote_config[module_name] = {}
+            self.remote_config[module_name][version] = config
+        return config
 
+def get_annotator_widget(annotator_name):
+    for widget_name in list_remote():
+        remote_info = get_remote_module_info(widget_name)
+        if remote_info.type == 'webviewerwidget':
+            widget_config = mic.get_remote_config(widget_name)
+            linked_annotator = widget_config.get('required_annotator')
+            linked_annotator = widget_name.replace('wg','')
+            if linked_annotator == annotator_name:
+                return widget_name
 
 def list_local():
     """
@@ -231,19 +263,6 @@ def search_local(*patterns):
             matching_names.append(module_name)
     return matching_names
 
-def get_remote_manifest():
-    """
-    Returns the remote manifest as a dict.
-    """
-    mic.update_remote()
-    return mic.remote
-
-def list_all():
-    """
-    Returns a list of both local and remote modules.
-    """
-    return list(set(list_local()) & set(list_remote())) 
-
 def module_exists_local(module_name):
     """
     Returns True if a module exists locally. False otherwise.
@@ -262,13 +281,6 @@ def module_exists_remote(module_name, version=None):
             return True
     else:
         return False
-    
-def get_remote_versions(module_name):
-    """
-    Returns a list of remotely available versions for a module.
-    """
-    mic.update_remote()
-    return mic.remote[module_name]['versions']
 
 def get_remote_latest_version(module_name):
     """
@@ -462,10 +474,6 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         except:
             raise
         raise
-    
-def get_store_url():
-    sys_conf = get_system_conf()
-    return sys_conf.get('store_url')
     
 def get_remote_data_version(module_name, version=None):
     mic.update_remote()
