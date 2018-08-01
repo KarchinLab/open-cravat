@@ -323,6 +323,9 @@ function loadData (alertFlag, finalcallback) {
 		}
 		unlockTabs();
 		populateSummaryWidgetDiv();
+		if (currentTab == 'info') {
+			changeMenu();
+		}
 		if (currentTab == 'variant' || currentTab == 'gene') {
 			setupTab(currentTab);
 		}
@@ -671,10 +674,12 @@ function run () {
     	usedAnnotators = {};
     	var cols = jsonResponseData['columns']['variant'];
     	usedAnnotators['variant'] = [];
+    	usedAnnotators['info'] = [];
     	for (var i = 0; i < cols.length; i++) {
     		var col = cols[i];
     		var annotator = col.colModel[0].colgroupkey;
     		usedAnnotators['variant'].push(annotator);
+    		usedAnnotators['info'].push(annotator);
     	}
     	if (jsonResponseData['columns']['gene']) {
 	    	var cols = jsonResponseData['columns']['gene'];
@@ -683,6 +688,7 @@ function run () {
 	    		var col = cols[i];
 	    		var annotator = col.colModel[0].colgroupkey;
 	    		usedAnnotators['gene'].push(annotator);
+	    		usedAnnotators['info'].push(annotator);
 	    	}
     	}
     	firstLoadData();

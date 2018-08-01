@@ -70,11 +70,15 @@ function setupTab (tabName) {
 }
 
 function changeMenu () {
-	if (currentTab == 'variant' || currentTab == 'gene') {
-		turnOnMenu('layout_columns_menu');
-		turnOnMenu('layout_widgets_menu');
-		populateTableColumnSelectorPanel();
-		populateWidgetSelectorPanel();
+	if (currentTab == 'variant' || currentTab == 'gene' || currentTab == 'info') {
+		if (currentTab == 'variant' || currentTab == 'gene') {
+			turnOnMenu('layout_columns_menu');
+			populateTableColumnSelectorPanel();
+		}
+		if (firstLoad == false) {
+			turnOnMenu('layout_widgets_menu');
+			populateWidgetSelectorPanel();
+		}
 	} else {
 		turnOffMenu('layout_columns_menu');
 		turnOffMenu('layout_widgets_menu');
@@ -476,17 +480,8 @@ function showHideWidget (tabName, widgetName, state) {
 	} else {
 		widget.style.display = 'block';
 	}
-	var $detailContainerDiv = $(document.getElementById(
-					'detaildiv_' + tabName).getElementsByClassName(
-							'detailcontainerdiv')[0]);
+	var $detailContainerDiv = $(document.getElementById('detailcontainerdiv_' + tabName));
 	$detailContainerDiv.packery('fit', widget);
-}
-
-function toggleWidgetSelectorPanel () {
-	if (currentTab != 'variant' && currentTab != 'gene') {
-		return;
-	}
-	populateWidgetSelectorPanel();
 }
 
 function drawSummaryWidget (widgetName) {
