@@ -48,7 +48,6 @@ function setupTab (tabName) {
 		// Selects the first row.
 		if (tabName == currentTab) {
 			if (stat['rowsreturned'] && stat['norows'] > 0) {
-				console.log($grids[tabName].pqGrid('getData')[0]);
 				selectedRowId = null;
 				$grids[tabName].pqGrid('setSelection', {rowIndx : 0, colIndx: 0, focus: true});
 			}
@@ -785,12 +784,10 @@ function getLoadSelectorDiv (tabName) {
 	selector.className = 'inlineselect';
 	var option = new Option('Choose a column to filter', 'none');
 	selector.options.add(option);
-	//var columnGroupNames = Object.keys(filterCols);
 	for (var i = 0; i < filterCols.length; i++) {
 		var filterCol = filterCols[i];
 		var columnGroupName = filterCol.title;
 		var colModel = filterCol.colModel;
-		//var columnNames = infomgr.getColumnGroups(tabName)[columnGroupName];
 		for (var j = 0; j < colModel.length; j++) {
 			var column = colModel[j];
 			if (column.retfilt == true) {

@@ -3,7 +3,8 @@
 .vscode/**
 **.pyc
 /dist/**
-CRAVAT.egg-info/**
+/*.egg-info/**
 **/__pycache__/**
-cravat/__pycache__/*
+# cravat/__pycache__/*
 .settings
+**/cravat_test_*

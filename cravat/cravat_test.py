@@ -237,6 +237,7 @@ def main ():
     
     passed = 0
     failed = 0
+    modules_failed = []
     for mod_type in module_types:
         if (cmd_args.mod_types is None or mod_type in cmd_args.mod_types):
             print ('\nRunning ' + mod_type + ' tests.');
@@ -255,7 +256,8 @@ def main ():
                             passed += 1
                         else:
                             failed += 1
-    
-    print ('\nTests complete.  Passed: ' + str(passed) + '  Failed: ' + str(failed))                        
+                            modules_failed.append(mod_name)
+    modules_failed.sort()
+    print ('\nTests complete.  Passed: ' + str(passed) + '  Failed: ' + str(failed) + ' [' + ', '.join(modules_failed) + ']')
 if __name__ == '__main__':
     main();       
