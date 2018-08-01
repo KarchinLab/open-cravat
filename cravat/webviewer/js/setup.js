@@ -276,6 +276,10 @@ function makeVariantGeneTab (tabName, rightDiv) {
 	detailDiv.className = 'detaildiv';
 	var detailContainerWrapDiv = getEl('div');
 	detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
+	var heightSetting = loadedHeightSettings['detail_' + tabName];
+	if (heightSetting != undefined) {
+		detailDiv.style.height = heightSetting;
+	}
 	addEl(detailDiv, detailContainerWrapDiv);
 	
 	// Detail content div
@@ -620,9 +624,7 @@ function makeGrid (columns, data, tabName) {
 	addEl(button, getTn('Export'));
 	addEl(footer, span);
 	addEl(footer, button);
-	var lenStr =
-		$grid.pqGrid('option', 'dataModel').data.length + ' out of ' 
-		+ dataLengths[tabName] + ' rows';
+	var lenStr = dataLengths[tabName] + ' total rows';
 	document.getElementById('footertext_' + tabName).textContent = lenStr;
 }
 
@@ -1168,8 +1170,15 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.title = tableTitle;
 	
 	gridObject.width = rightDivWidth;
-	gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight 
-			- ARBITRARY_HEIGHT_SUBTRACTION - 15;
+	/*
+	var loadedHeight = loadedHeightSettings[tabName];
+	if (loadedHeight != undefined) {
+		gridObject.height = parseInt(loadedHeight.substring(0, loadedHeight.length - 1));
+	} else {
+		gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight - ARBITRARY_HEIGHT_SUBTRACTION - 15;
+	}
+	*/
+	gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight - ARBITRARY_HEIGHT_SUBTRACTION - 15;
 	
 	gridObject.virtualX = false;
 	gridObject.virtualY = true;

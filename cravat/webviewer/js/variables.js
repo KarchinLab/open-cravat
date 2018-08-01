@@ -58,7 +58,8 @@ var tableSettings = {};
 var loadedTableSettings = {};
 var viewerWidgetSettings = {};
 var loadedViewerWidgetSettings = {};
-
+var heightSettings = {};
+var loadedHeightSettings = {};
 var defaultSaveName = 'default';
 var lastUsedLayoutName = 'default';
 var savedLayoutNames = null;

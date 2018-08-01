@@ -356,6 +356,25 @@ function saveLayoutSetting (name, callback) {
 		};
 	}
 	
+	// Heights
+	saveData['height'] = {};
+	var variantTable = document.getElementById('tablediv_variant');
+	if (variantTable) {
+		saveData['height']['table_variant'] = variantTable.style.height;
+	}
+	var geneTable = document.getElementById('tablediv_gene');
+	if (geneTable) {
+		saveData['height']['table_gene'] = geneTable.style.height;
+	}
+	var variantDetail = document.getElementById('detaildiv_variant');
+	if (variantDetail) {
+		saveData['height']['detail_variant'] = variantDetail.style.height;
+	}
+	var geneDetail = document.getElementById('detaildiv_gene');
+	if (geneDetail) {
+		saveData['height']['detail_gene'] = geneDetail.style.height;
+	}
+	
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
 		url: 'rest/service/savelayoutsetting', 
@@ -536,15 +555,26 @@ function loadLayoutSetting (name, callback) {
 	$.get('rest/service/loadlayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		var data = response;
 		loadedTableSettings = data['tableSettings'];
+		if (loadedTableSettings == undefined) {
+			loadedTableSettings = {};
+		}
 		tableSettings = loadedTableSettings;
 		if ((currentTab == 'variant' || currentTab == 'gene') && tableSettings[currentTab] != undefined) {
 			applyTableSetting(currentTab);
 		}
 		loadedViewerWidgetSettings = data['widgetSettings'];
+		if (loadedViewerWidgetSettings == undefined) {
+			loadedViewerWidgetSettings = {};
+		}
 		viewerWidgetSettings = loadedViewerWidgetSettings;
 		if ((currentTab == 'variant' || currentTab == 'gene' || currentTab == 'info') && viewerWidgetSettings[currentTab] != undefined) {
 			applyWidgetSetting(currentTab);
 		}
+		loadedHeightSettings = data['height'];
+		if (loadedHeightSettings == undefined) {
+			loadedHeightSettings = {};
+		}
+		heightSettings = loadedHeightSettings;
 		if (callback != null) {
 			callback();
 		}

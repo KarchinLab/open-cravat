@@ -192,14 +192,13 @@ function afterDragNSBar (self, tabName) {
 
 	var rightDiv_height = rightDiv.offsetHeight;
 	var rightDiv_top = rightDiv.offsetTop;
-	var dragBarTop_relativeRightDiv = dragBarTop - rightDiv_top;
+	var dragBarTop_relativeRightDiv = dragBarTop - rightDiv_top - 33;
 	var cellValueDivTop = dragBarTop_relativeRightDiv + 11;
-	var height_table = dragBarTop_relativeRightDiv - ARBITRARY_HEIGHT_SUBTRACTION;
-	var height_detail_div = rightDiv_height - height_table 
-			- height_bar - ARBITRARY_HEIGHT_SUBTRACTION - 15;
+	var height_table = dragBarTop_relativeRightDiv + 10;
+	var height_detail_div = rightDiv_height - height_table - height_bar - 35;
 	
 	$grids[tabName].pqGrid('option', 'height', height_table).pqGrid('refresh');
-	dragBar.style.top = height_table + 45;
+	dragBar.style.top = cellValueDivTop + 24;
 	cellValueDiv.style.top = cellValueDivTop;
    
 	detailDiv.style.height = height_detail_div;
@@ -236,7 +235,7 @@ function resizesTheWindow () {
 	}
 	
 	var rightDivHeight = browserHeight - 50;
-	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 56;
+	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 26;
 	var tableDivWidth = 'calc(100% - 10px)';
 	var cellValueDivTop = tableDivHeight - 2 ;
 	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 6;
