@@ -367,20 +367,17 @@ class CravatReader (CravatFile):
             col_name = col_def['name']
             col_type = col_def['type']
             tok = toks[col_index]
-            if col_type == 'string':
-                out[col_name] = tok
-            elif col_type == 'int':
-                if tok:
+            if tok == '':
+                out[col_name] = None
+            else:
+                if col_type == 'string':
+                    out[col_name] = tok
+                elif col_type == 'int':
                     out[col_name] = int(tok)
-                else:
-                    out[col_name] = None
-            elif col_type == 'float':
-                if tok:
+                elif col_type == 'float':
                     out[col_name] = float(tok)
                 else:
-                    out[col_name] = None
-            else:
-                out[col_name] = tok
+                    out[col_name] = tok
         return out
         
     def _loop_definition(self):
