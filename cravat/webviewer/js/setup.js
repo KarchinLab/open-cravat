@@ -48,7 +48,7 @@ function setupTab (tabName) {
 		// Selects the first row.
 		if (tabName == currentTab) {
 			if (stat['rowsreturned'] && stat['norows'] > 0) {
-				selectedRowId = null;
+				selectedRowIds[tabName] = null;
 				$grids[tabName].pqGrid('setSelection', {rowIndx : 0, colIndx: 0, focus: true});
 			}
 		}
@@ -105,6 +105,11 @@ function makeInfoTab (rightDiv) {
 	var filterDiv = document.getElementById('filterdiv');
 	populateLoadDiv('info', filterDiv);
 	
+	// Widget Notice
+	var wgNoticeDiv = getEl('fieldset');
+	wgNoticeDiv.id = 'wgnoticediv';
+	addEl(rightContentDiv, wgNoticeDiv);
+	
 	// Widgets
 	var widgetDiv = getEl('div');
 	widgetDiv.id = 'detailcontainerdiv_info';
@@ -141,9 +146,12 @@ function populateSummaryWidgetDiv () {
 	}
 	var widgetNames = Object.keys(widgetGenerators);
 	if (widgetNames.length == 0) {
+		/*
 		var el = getEl('p');
 		el.textContent = 'No summary wigdet';
 		addEl(outerDiv, el);
+		*/
+		return;
 	} else {
 		var orderNums = Object.keys(detailWidgetOrder[tabName]);
 		for (var i = 0; i < orderNums.length; i++) {
@@ -211,59 +219,6 @@ function populateSummaryWidgetDiv () {
 	}
 }
 
-/*
-function makeSummaryTab (rightDiv) {
-	var tabName = 'summary';
-	var rightContentDiv = getEl('div');
-	rightContentDiv.id = 'rightcontentdiv_' + tabName;
-	rightContentDiv.style.width = '100%';
-	rightContentDiv.overflow = 'auto';
-	addEl(rightDiv, rightContentDiv);
-	
-	// Widgets
-	var widgetDiv = getEl('div');
-	addEl(rightContentDiv, widgetDiv);
-	var widgetNames = Object.keys(widgetGenerators);
-	if (widgetNames.length == 0) {
-		var el = getEl('p');
-		el.textContent = 'No summary wigdet';
-		addEl(rightDiv, el);
-	} else {
-		for (var i = 0; i < widgetNames.length; i++) {
-			var widgetName = widgetNames[i];
-			if (widgetGenerators[widgetName][tabName] == undefined || 
-				widgetGenerators[widgetName][tabName]['function'] == undefined) {
-				continue;
-			}
-			drawSummaryWidget(widgetName, tabName, widgetDiv);
-		}
-	}
-	
-	$widgetDiv = $(widgetDiv);
-	$widgetDiv.packery({
-		columnWidth: widgetGridSize,
-		rowHeight: widgetGridSize
-	});
-	var $widgets = $($widgetDiv.packery('getItemElements'));
-	$widgets.draggable({
-		grid: [widgetGridSize, widgetGridSize],
-		handle: '.detailwidgettitle',
-	}).resizable({
-		grid: [widgetGridSize, widgetGridSize]
-	});
-	$widgetDiv.packery('bindUIDraggableEvents', $widgets);
-	var resizeTimeout;
-	$widgets.on('resize', function (evt, ui) {
-		if (resizeTimeout) {
-			clearTimeout(resizeTimeout);
-		}
-		resizeTimeout = setTimeout(function () {
-			$widgetDiv.packery('fit', ui.element[0]);
-		}, 100);
-	});
-}
-*/
-
 function onClickTableColumnButton () {
 	if (currentTab != 'variant' && currentTab != 'gene') {
 		return;
@@ -321,6 +276,10 @@ function makeVariantGeneTab (tabName, rightDiv) {
 	detailDiv.className = 'detaildiv';
 	var detailContainerWrapDiv = getEl('div');
 	detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
+	var heightSetting = loadedHeightSettings['detail_' + tabName];
+	if (heightSetting != undefined) {
+		detailDiv.style.height = heightSetting;
+	}
 	addEl(detailDiv, detailContainerWrapDiv);
 	
 	// Detail content div
@@ -359,6 +318,37 @@ function makeSampleMappingTab (tabName, rightDiv) {
 	tableDiv.id = 'tablediv_' + tabName;
 	tableDiv.className = 'tablediv';
 	addEl(rightDiv, tableDiv);
+}
+
+function populateWgNoticeDiv (noWgAnnotModules) {
+	var wgNoticeDiv = document.getElementById('wgnoticediv');
+	if (noWgAnnotModules.length == 0) {
+		wgNoticeDiv.style.display = 'none';
+		return;
+	}
+	var legend = getEl('legend');
+	legend.className = 'section_header';
+	addEl(legend, getTn('Missing Widgets'));
+	addEl(wgNoticeDiv, legend);
+	wgNoticeDiv.className = 'detailContent';
+	var msg = 'Your system does not have viwer widgets for the following annotator results are not installed in the system. ';
+	msg += 'If you want to install viewer widgets for them, click the buttons for the annotators.';
+	var span = getEl('span');
+	addEl(wgNoticeDiv, addEl(span, getTn(msg)));
+	addEl(wgNoticeDiv, getEl('br'));
+	addEl(wgNoticeDiv, getEl('br'));
+	var div = getEl('div');
+	var moduleKeys = Object.keys(noWgAnnotModules);
+	for (var i = 0; i < moduleKeys.length; i++) {
+		var moduleKey = moduleKeys[i];
+		var moduleTitle = noWgAnnotModules[moduleKey];
+		var button = getEl('button');
+		button.style.marginRight = '20px';
+		button.style.marginBottom = '10px';
+		button.textContent = moduleTitle;
+		addEl(div, button);
+	}
+	addEl(wgNoticeDiv, div);
 }
 
 function populateInfoDiv (infoDiv) {
@@ -634,9 +624,7 @@ function makeGrid (columns, data, tabName) {
 	addEl(button, getTn('Export'));
 	addEl(footer, span);
 	addEl(footer, button);
-	var lenStr =
-		$grid.pqGrid('option', 'dataModel').data.length + ' out of ' 
-		+ dataLengths[tabName] + ' rows';
+	var lenStr = dataLengths[tabName] + ' total rows';
 	document.getElementById('footertext_' + tabName).textContent = lenStr;
 }
 
@@ -1120,19 +1108,17 @@ function updateTableColumns (tabName) {
 	for (var i = 0; i < checkboxes.length; i++) {
 		var checkbox = checkboxes[i];
 		var colgroupname = checkbox.getAttribute('colgroupname');
-		var col = checkbox.getAttribute('col');
+		var colkey = checkbox.getAttribute('col');
 		var colno = checkbox.getAttribute('colno');
 		var checked =  ! checkbox.checked;
 		for (var j = 0; j < colModel.length; j++) {
-			if (colModel[j].title == colgroupname) {
-				var cols = colModel[j].colModel;
-				for (var k = 0; k < cols.length; k++) {
-					if (cols[k].col == col) {
-						cols[k].hidden = checked;
-						break;
-					}
+			var cols = colModel[j].colModel;
+			for (var k = 0; k < cols.length; k++) {
+				var col = cols[k];
+				if (col.colgroup == colgroupname && col.col == colkey) {
+					cols[k].hidden = checked;
+					break;
 				}
-				break;
 			}
 		}
 	}
@@ -1184,8 +1170,15 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.title = tableTitle;
 	
 	gridObject.width = rightDivWidth;
-	gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight 
-			- ARBITRARY_HEIGHT_SUBTRACTION - 15;
+	/*
+	var loadedHeight = loadedHeightSettings[tabName];
+	if (loadedHeight != undefined) {
+		gridObject.height = parseInt(loadedHeight.substring(0, loadedHeight.length - 1));
+	} else {
+		gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight - ARBITRARY_HEIGHT_SUBTRACTION - 15;
+	}
+	*/
+	gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight - ARBITRARY_HEIGHT_SUBTRACTION - 15;
 	
 	gridObject.virtualX = false;
 	gridObject.virtualY = true;
@@ -1225,8 +1218,9 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 			celltextel.value = valueText;
 		}
 		if (rowData != undefined) {
-			if (selectedRowId == null || selectedRowId != rowData[0]) {
-				selectedRowId = rowData[0];
+			if (selectedRowIds[tabName] == null || selectedRowIds[tabName] != rowData[0]) {
+				selectedRowIds[tabName] = rowData[0];
+				selectedRowNos[tabName] = rowNo;
 				showVariantDetail(rowData, tabName);
 			}
 		}
@@ -1259,6 +1253,10 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.collapsible = {on: false};
 	gridObject.roundCorners = false;
 	gridObject.stripeRows = true;
+	gridObject.cellDblClick = function (evt, ui) {
+	}
+	gridObject.columnOrder = function (evt, ui) {
+	}
 	
 	return gridObject;
 }

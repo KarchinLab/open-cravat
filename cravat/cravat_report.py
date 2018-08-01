@@ -82,6 +82,7 @@ class CravatReport:
                                 rnachange = '(na)'
                             newval = transcript + ':' + hugo + ':' + protid + ':' + so + ':' + protchange + ':' + rnachange
                             newvals.append(newval)
+                    newvals.sort()
                     newcell = '; '.join(newvals)
                     row[colno] = newcell
                 self.write_table_row(row)

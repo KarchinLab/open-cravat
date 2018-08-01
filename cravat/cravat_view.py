@@ -19,7 +19,6 @@ class MyHandler (CGIHTTPRequestHandler):
     def do_POST (self):
         if hasattr(self, 'conf') == False:
             self.conf = ConfigLoader()
-        #print('POST path=', self.path)
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
         urltoks = urllib.parse.urlparse(self.path)
@@ -33,7 +32,6 @@ class MyHandler (CGIHTTPRequestHandler):
     def do_GET (self):
         if hasattr(self, 'conf') == False:
             self.conf = ConfigLoader()
-        #print('path=', self.path)
         urltoks = urllib.parse.urlparse(self.path)
         self.request_path = urltoks.path
         self.request_query = urltoks.query
@@ -266,7 +264,6 @@ class MyHandler (CGIHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        #print('queries=', queries)
         if path == 'variantcols':
             content = self.get_variant_cols(queries)
         if path == 'conf':
@@ -299,9 +296,34 @@ class MyHandler (CGIHTTPRequestHandler):
             content = self.get_layoutsavenames(queries)
         elif path == 'getfiltersavenames':
             content = self.get_filter_save_names(queries)
+        elif path == 'getnowgannotmodules':
+            content = self.get_nowg_annot_modules(queries)
         response = bytes(json.dumps(content), 'UTF-8')
         self.wfile.write(response)
     
+    def get_nowg_annot_modules (self, queries):
+        dbpath = urllib.parse.unquote(queries['dbpath'][0])
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        wgmodules = au.get_local_module_infos_of_type('webviewerwidget')
+        annot_modules_with_wg = []
+        for wgmodule in wgmodules:
+            conf = wgmodules[wgmodule].conf
+            if 'required_annotator' in conf:
+                if wgmodule not in annot_modules_with_wg:
+                    annot_modules_with_wg.append(wgmodule)
+        nowg_annot_modules = {}
+        if self.table_exists(cursor, 'variant'):
+            q = 'select name, displayname from variant_annotator'
+            cursor.execute(q)
+            for r in cursor.fetchall():
+                annot_module = 'wg' + r[0]
+                displayname = r[1]
+                if annot_module not in annot_modules_with_wg and annot_module not in nowg_annot_modules:
+                    nowg_annot_modules[annot_module] = displayname
+        content = nowg_annot_modules
+        return content
+        
     def get_layoutsavenames (self, queries):
         dbpath = urllib.parse.unquote(queries['dbpath'][0])
         conn = sqlite3.connect(dbpath)
@@ -619,7 +641,7 @@ def main():
     server.start()
     
     runid = os.path.basename(dbpath).replace('.sqlite', '')
-    webbrowser.open('http://localhost:8060/view.html?job_id=' + runid + '&dbpath=' + dbpath)
+    webbrowser.open('http://localhost:8060/cravat_view.html?job_id=' + runid + '&dbpath=' + dbpath)
 
 def test ():
     server = Server()
@@ -634,7 +656,7 @@ def test ():
         sys.stderr.write(dbpath + ' does not exist.\n')
         exit(-1)
     runid = os.path.basename(dbpath).replace('.sqlite', '')
-    webbrowser.open('http://localhost:8060/view.html?job_id=' + runid + '&dbpath=' + dbpath)
+    webbrowser.open('http://localhost:8060/cravat_view.html?job_id=' + runid + '&dbpath=' + dbpath)
     
 if __name__ == '__main__':
     main()

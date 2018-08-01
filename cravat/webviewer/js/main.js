@@ -192,14 +192,13 @@ function afterDragNSBar (self, tabName) {
 
 	var rightDiv_height = rightDiv.offsetHeight;
 	var rightDiv_top = rightDiv.offsetTop;
-	var dragBarTop_relativeRightDiv = dragBarTop - rightDiv_top;
+	var dragBarTop_relativeRightDiv = dragBarTop - rightDiv_top - 33;
 	var cellValueDivTop = dragBarTop_relativeRightDiv + 11;
-	var height_table = dragBarTop_relativeRightDiv - ARBITRARY_HEIGHT_SUBTRACTION;
-	var height_detail_div = rightDiv_height - height_table 
-			- height_bar - ARBITRARY_HEIGHT_SUBTRACTION - 15;
+	var height_table = dragBarTop_relativeRightDiv + 10;
+	var height_detail_div = rightDiv_height - height_table - height_bar - 35;
 	
 	$grids[tabName].pqGrid('option', 'height', height_table).pqGrid('refresh');
-	dragBar.style.top = height_table + 45;
+	dragBar.style.top = cellValueDivTop + 24;
 	cellValueDiv.style.top = cellValueDivTop;
    
 	detailDiv.style.height = height_detail_div;
@@ -236,9 +235,9 @@ function resizesTheWindow () {
 	}
 	
 	var rightDivHeight = browserHeight - 50;
-	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 60;
-	var tableDivWidth = 'calc(100% - 38px)';
-	var cellValueDivTop = tableDivHeight + 20 ;
+	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 26;
+	var tableDivWidth = 'calc(100% - 10px)';
+	var cellValueDivTop = tableDivHeight - 2 ;
 	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 6;
 	
 	rightDiv.style.height = rightDivHeight + 'px';
@@ -427,6 +426,7 @@ function unlockTabs () {
 function notifyToUseFilter () {
 	var div = document.getElementById('infonoticediv');
 	div.style.background = 'red';
+	div.style.display = 'block';
 	div.textContent = 
 		'Too many variants (more than ' + NUMVAR_LIMIT + ') to load into ' +
 		'the web viewer. Use the filters below to reduce the number of ' +
@@ -438,6 +438,7 @@ function notifyOfReadyToLoad () {
 	var div = document.getElementById('infonoticediv')
 	div.style.background = 'white';
 	div.textContent = ' ';
+	div.style.display = 'none';
 }
 
 function firstLoadData () {
@@ -489,6 +490,7 @@ function firstLoadData () {
 			'info', 
 			function () {
 				populateInfoDiv(document.getElementById('info_div'));
+				checkWidgets();
 				loadData(false, showTab('info'));
 			}, 
 			null, 
@@ -501,6 +503,13 @@ function firstLoadData () {
 	loadWidgets();
 	setupTab('info');
 	loadFilterSetting(defaultSaveName, afterLoadDefaultFilter);
+}
+
+function checkWidgets () {
+	$.get('rest/service/getnowgannotmodules', {dbpath: dbPath}).done(function (jsonResponseData) {
+		var noWgAnnotModules = jsonResponseData;
+		populateWgNoticeDiv(noWgAnnotModules);
+	});
 }
 
 function drawingRetrievingDataDiv (currentTab) {
@@ -652,14 +661,10 @@ function run () {
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
     
     window.onbeforeunload = function () {
-    	saveLayoutSetting(defaultSaveName, doNothing);
+    	if (autoSaveLayout) {
+    		saveLayoutSetting(defaultSaveName, doNothing);
+    	}
     }
-    
-    /*
-    $.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
-    	savedLayoutNames = response;
-    });
-    */
     
     $.get('rest/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];

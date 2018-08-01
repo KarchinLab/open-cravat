@@ -24,12 +24,12 @@
 	<script src='js/raphael-min.js'></script>
 	
 	<!-- Javascript -->
-	<script src='js/job_detail_infomgr.js'></script>
-	<script src='js/job_detail_variables.js'></script>
-	<script src='js/job_detail_util.js'></script>
-	<script src='js/job_detail_setup.js'></script>
-	<script src='js/job_detail_showvariant.js'></script>
-	<script src='js/job_detail.js'></script>
+	<script src='js/infomgr.js'></script>
+	<script src='js/variables.js'></script>
+	<script src='js/util.js'></script>
+	<script src='js/setup.js'></script>
+	<script src='js/showvariant.js'></script>
+	<script src='js/main.js'></script>
 	
 	<!-- Packery -->
 	<script src='js/packery.pkgd.js'></script>
@@ -38,7 +38,7 @@
 	<script src='js/graphics.js'></script>
 	
 	<!-- CSS -->
-	<link rel='stylesheet' href='css/job_detail.css' />
+	<link rel='stylesheet' href='css/style.css' />
 
 	<title>CRAVAT: Result Viewer</title>
 </head>
@@ -63,6 +63,9 @@
 			</div>
 			<div class='menu3' id='layout_widgets_menu'>Widgets...
 				<div id='widgets_showhide_select_div'></div>
+			</div>
+			<div class='menu3'>
+				<a href='#' id='layout_autosave_title' onclick="toggleAutoLayoutSave();">V Autosave</a>
 			</div>
 		</div>
 	</div>
