@@ -1,10 +1,13 @@
-function getWidgetTableFrame () {
+function getWidgetTableFrame (columnWidths) {
 	var table = getEl('table');
 	table.style.fontSize = '12px';
 	table.style.borderSpacing = '0px';
 	table.style.borderCollapse = 'collapse';
 	table.style.borderTop = widgetTableBorderStyle;
 	table.style.borderBottom = widgetTableBorderStyle;
+	table.style.tableLayout = 'fixed';
+	table.style.width = 'calc(100% - 0px)';
+	table.setAttribute('columnwidths', columnWidths);
 	return table;
 }
 
@@ -26,16 +29,14 @@ function getWidgetTableHead (headers) {
 	return thead;
 }
 
-function getWidgetTableTr (values, colWidths) {
+function getWidgetTableTr (values) {
 	var numBorder = values.length - 1;
 	var tr = getEl('tr');
+	tr.style.borderBottom = '1px solid #cccccc';
 	for (var i = 0; i < values.length; i++) {
 		var td = getEl('td');
 		var p = getEl('p');
 		p.style.wordWrap = 'break-word';
-		if (colWidths != undefined) {
-			p.style.width = colWidths[i] + 'px';
-		}
 		if (i < numBorder) {
 			td.style.borderRight = widgetTableBorderStyle;
 		}
@@ -225,11 +226,6 @@ function showVariantDetail (row, tabName) {
 		if (colGroupTitle == undefined) {
 			colGroupTitle = widgetGenerators[colGroupKey]['name'];
 		}
-		/*
-		if (colGroupKey != 'base' && colGroupKey != 'grasp') {
-			continue;
-		}
-		*/
 		if (widgetGenerators[colGroupKey][tabName] != undefined && 
 			widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
 			var generator = widgetGenerators[colGroupKey][tabName];
@@ -271,6 +267,20 @@ function showVariantDetail (row, tabName) {
 				clearTimeout(resizeTimeout);
 			}
 			resizeTimeout = setTimeout(function () {
+				var widgetDiv = ui.element[0];
+				var widgetKey = widgetDiv.getAttribute('widgetkey');
+				var generator = widgetGenerators[widgetKey][tabName];
+				var widgetContentDiv = document.getElementById(
+						'widgetcontentdiv_' + widgetKey + '_' + tabName);
+				if (generator['variables'] == undefined) {
+					generator['variables'] = {};
+				}
+				generator['variables']['resized'] = true;
+				var row = $grids[tabName].pqGrid('getData')[selectedRowNos[tabName]];
+				if (generator['donterase'] != true) {
+					$(widgetContentDiv).empty();
+				}
+				generator['function'](widgetContentDiv, row, tabName);
 				$outerDiv.packery('fit', ui.element[0]);
 			}, 100);
 		});

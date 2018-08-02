@@ -356,6 +356,25 @@ function saveLayoutSetting (name, callback) {
 		};
 	}
 	
+	// Heights
+	saveData['height'] = {};
+	var variantTable = document.getElementById('tablediv_variant');
+	if (variantTable) {
+		saveData['height']['table_variant'] = variantTable.style.height;
+	}
+	var geneTable = document.getElementById('tablediv_gene');
+	if (geneTable) {
+		saveData['height']['table_gene'] = geneTable.style.height;
+	}
+	var variantDetail = document.getElementById('detaildiv_variant');
+	if (variantDetail) {
+		saveData['height']['detail_variant'] = variantDetail.style.height;
+	}
+	var geneDetail = document.getElementById('detaildiv_gene');
+	if (geneDetail) {
+		saveData['height']['detail_gene'] = geneDetail.style.height;
+	}
+	
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
 		url: 'rest/service/savelayoutsetting', 
@@ -536,15 +555,26 @@ function loadLayoutSetting (name, callback) {
 	$.get('rest/service/loadlayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		var data = response;
 		loadedTableSettings = data['tableSettings'];
+		if (loadedTableSettings == undefined) {
+			loadedTableSettings = {};
+		}
 		tableSettings = loadedTableSettings;
 		if ((currentTab == 'variant' || currentTab == 'gene') && tableSettings[currentTab] != undefined) {
 			applyTableSetting(currentTab);
 		}
 		loadedViewerWidgetSettings = data['widgetSettings'];
+		if (loadedViewerWidgetSettings == undefined) {
+			loadedViewerWidgetSettings = {};
+		}
 		viewerWidgetSettings = loadedViewerWidgetSettings;
 		if ((currentTab == 'variant' || currentTab == 'gene' || currentTab == 'info') && viewerWidgetSettings[currentTab] != undefined) {
 			applyWidgetSetting(currentTab);
 		}
+		loadedHeightSettings = data['height'];
+		if (loadedHeightSettings == undefined) {
+			loadedHeightSettings = {};
+		}
+		heightSettings = loadedHeightSettings;
 		if (callback != null) {
 			callback();
 		}
@@ -562,8 +592,13 @@ function deleteLayoutSettingAs () {
     		var name = savedLayoutNames[i];
     		var a = getEl('a');
     		a.textContent = name;
+    		a.setAttribute('module', name);
     		a.addEventListener('click', function (evt) {
-    			deleteLayoutSetting(evt.target.textContent, null)
+    			var name = evt.target.getAttribute('module');
+    			var yes = confirm('Delete ' + name + '?');
+    			if (yes) {
+    				deleteLayoutSetting(evt.target.textContent, null)
+    			}
     		});
     		addEl(div, a);
     	}
@@ -600,5 +635,19 @@ function renameLayoutSetting (name, callback) {
 		$.get('rest/service/renamelayoutsetting', {'dbpath': dbPath, 'name': name, 'newname': newName}).done(function (response) {
 			writeLogDiv('Layout name has been changed.');
 		});
+	}
+}
+
+function toggleAutoLayoutSave () {
+	var a = document.getElementById('layout_autosave_title');
+	var autosave = a.getAttribute('autosave');
+	if (autoSaveLayout == false) {
+		autoSaveLayout = true;
+		a.text = 'V Autosave';
+		writeLogDiv('Layout autosave enabled');
+	} else {
+		autoSaveLayout = false;
+		a.text = 'Autosave';
+		writeLogDiv('Layout autosave disabled');
 	}
 }
