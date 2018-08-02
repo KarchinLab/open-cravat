@@ -173,8 +173,4 @@ def get_directory_size(start_path):
             total_size += os.path.getsize(fp)
     return total_size
 
-def yaml_string(x):
-    s = yaml.dump(x, default_flow_style = False)
-    s = re.sub('!!.*', '', s)
-    s = s.strip('\r\n')
-    return s
+

@@ -73,7 +73,7 @@ class LocalModuleInfo (object):
         self.version = self.conf.get('version')
         self.description = self.conf.get('description')
         
-        self.developer = self.conf.get('developer')
+        self.developer = ModuleDeveloper(**self.conf.get('developer',{}))
         if 'type' not in self.conf:
             self.conf['type'] = 'unknown'
         self.type = self.conf['type']
