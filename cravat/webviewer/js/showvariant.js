@@ -277,8 +277,10 @@ function showVariantDetail (row, tabName) {
 				}
 				generator['variables']['resized'] = true;
 				var row = $grids[tabName].pqGrid('getData')[selectedRowNos[tabName]];
+				if (generator['donterase'] != true) {
+					$(widgetContentDiv).empty();
+				}
 				generator['function'](widgetContentDiv, row, tabName);
-				
 				$outerDiv.packery('fit', ui.element[0]);
 			}, 100);
 		});

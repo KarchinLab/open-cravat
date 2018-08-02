@@ -11,6 +11,7 @@ from types import SimpleNamespace
 import re
 import textwrap
 import math
+import copy
 
 class ExampleCommandsFormatter(object,):
     def __init__(self, prefix='',  cmd_indent=' '*2, desc_indent=' '*8, width=70):
@@ -28,7 +29,7 @@ class ExampleCommandsFormatter(object,):
             self._s += self._prefix+' '
         self._s += cmd
         # Eliminate newlines in desc
-        desc = re.sub('\s*\n\s*',' ',desc)
+        desc = re.sub(r'\s*\n\s*',' ',desc)
         # Wrap the description
         desc = textwrap.fill(desc,self._width-len(self._desc_indent))
         desc = textwrap.indent(desc,self._desc_indent)
@@ -110,10 +111,10 @@ def main ():
         for line in yield_tabular_lines(l, *kwargs):
             print(line)
         
-    def list_local_modules(types=[]):
+    def list_local_modules(pattern=r'.*', types=[]):
         header = ['Name','Type','Version','Size']
         all_toks = [header]
-        for module_name in au.list_local():
+        for module_name in au.search_local(pattern):
             module_info = au.get_local_module_info(module_name)
             if len(types) > 0 and module_info.type not in types:
                 continue
@@ -122,10 +123,10 @@ def main ():
             all_toks.append(toks)
         print_tabular_lines(all_toks)
                 
-    def list_available_modules(types=[]):
+    def list_available_modules(pattern=r'.*', types=[]):
         header = ['Name','Type','Latest version','Installed','Installed version','Up-to-date','Size']
         all_toks = [header]
-        for module_name in au.list_remote():
+        for module_name in au.search_remote(pattern):
             remote_info = au.get_remote_module_info(module_name)
             if len(types) > 0 and remote_info.type not in types:
                 continue
@@ -150,100 +151,113 @@ def main ():
     
     def list_modules(args):
         if args.available:
-            list_available_modules(types=args.types)
+            list_available_modules(pattern=args.pattern, types=args.types)
         else:
-            list_local_modules(types=args.types)
-        
+            list_local_modules(pattern=args.pattern, types=args.types)
+    
+    def yaml_string(x):
+        s = yaml.dump(x, default_flow_style = False)
+        s = re.sub('!!.*', '', s)
+        s = s.strip('\r\n')
+        return s
+
     def print_info(args):
-        modules = args.modules
-        for module_name in modules:
-            installed = False
-            available = False
-            up_to_date = False
-            current_version = None
-            latest_version = None
-            local_info = None
-            remote_info = None
-            print('='*5+' '+module_name + ' ' + '='*5)
-            # Local
-            try:
-                local_info = au.get_local_module_info(module_name)
-                if local_info != None:
-                    installed = True
-                    del local_info.readme
-                else:
-                    installed = False
-            except LookupError:
+        module_name = args.module
+        installed = False
+        available = False
+        up_to_date = False
+        local_info = None
+        remote_info = None
+        # Local
+        try:
+            local_info = au.get_local_module_info(module_name)
+            if local_info != None:
+                installed = True
+                del local_info.readme
+            else:
                 installed = False
-            if installed:
-                current_version = local_info.conf['version']
-                print('INSTALLED')
-                dump = util.yaml_string(local_info)
-                print(dump)
+        except LookupError:
+            installed = False
+        if installed:
+            print('INSTALLED\n')
+            li_out = copy.deepcopy(local_info)
+            del li_out.conf
+            li_out.get_size()
+            dump = yaml_string(li_out)
+            print(dump+'\n')
+        else:
+            print('NOT INSTALLED\n')
+        # Remote
+        try:
+            remote_info = au.get_remote_module_info(module_name)
+            if remote_info != None:
+                available = True
+        except LookupError:
+            available = False
+        if available:
+            print('AVAILABLE\n')
+        else:
+            print('NOT AVAILABLE\n')
+        if installed and available:
+            if installed and local_info.version == remote_info.latest_version:
+                up_to_date = True
             else:
-                print('NOT INSTALLED')
-            # Remote
-            try:
-                remote_info = au.get_remote_module_info(module_name)
-                if remote_info != None:
-                    available = True
-            except LookupError:
-                available = False
-            if available:
-                print('AVAILABLE')
-                latest_version = remote_info.latest_version
+                up_to_date = False
+            if up_to_date:
+                print('UP TO DATE\n')
             else:
-                print('NOT AVAILABLE')
-            if installed and available:
-                if installed and current_version == latest_version:
-                    up_to_date = True
-                else:
-                    up_to_date = False
-                if up_to_date:
-                    print('UP TO DATE')
-                else:
-                    print('NEWER VERSION EXISTS')
-            if available:
-                    dump = util.yaml_string(remote_info)
-                    print(dump)
+                print('NEWER VERSION EXISTS\n')
+        if available:
+                dump = yaml_string(remote_info)
+                print(dump+'\n')
     
     def set_modules_dir(args):
         if args.directory:
             au.set_modules_dir(args.directory)
         print(au.get_modules_dir())
-    
+
     def install_modules(args):
-        mvers = args.modules
-        available_modules = au.list_remote()
-        local_modules = au.list_local()
-        modules_to_install = {}
-        for mver in mvers:
-            toks = mver.split(':')
-            module_name = toks[0]
-            if len(toks) > 1 and toks[1] != '' and toks[1] != 'latest':
-                module_version = toks[1]
+        matching_names = au.search_remote(*args.modules)
+        if len(matching_names) > 1 and args.version is not None:
+            print('WARNING: Version filter applied to all matching modules')
+        to_install = {}
+        for module_name in matching_names:
+            remote_info = au.get_remote_module_info(module_name)
+            if args.version is None:
+                    to_install[module_name] = remote_info.latest_version
+            elif remote_info.has_version(args.version):
+                    to_install[module_name] = args.version
             else:
-                module_version = None
-            module_re = module_name + '$'
-            for available_module in available_modules:
-                if re.match(module_re, available_module):
-                    if args.skip_installed == True and available_module in local_modules:
-                        continue
+                continue
+        if len(to_install) > 0:
+            print('Installing: {:}'\
+                  .format(', '.join([name+':'+version for name, version in sorted(to_install.items())]))
+                  )
+            if not(args.yes):
+                while True:
+                    resp = input('Proceed? (y/n) > ')
+                    if resp == 'y':
+                        break
+                    if resp == 'n':
+                        exit()
                     else:
-                        if module_version is not None and module_version not in au.get_remote_module_info(available_module).versions:
-                            #sys.stderr.write('%s version %s not available, skipping\n' %(module_name, module_version))
-                            continue
-                        else:
-                            modules_to_install[available_module] = module_version
-        for module_name in modules_to_install:
-            module_version = modules_to_install[module_name]
-            stage_handler = InstallProgressStdout(module_name, module_version)
-            au.install_module(module_name, version=module_version, force_data=args.force_data, stage_handler=stage_handler)
+                        print('Your response (\'{:}\') was not one of the expected responses: y, n'.format(resp))
+                        continue
+            for module_name, module_version in sorted(to_install.items()):
+                stage_handler = InstallProgressStdout(module_name, module_version)
+                au.install_module(module_name,
+                                  version=module_version,
+                                  force_data=args.force_data,
+                                  stage_handler=stage_handler
+                                  )
+        else:
+            print('No modules found')
                     
     def update_modules(args):
-        requested_modules = args.modules
-        if len(requested_modules) == 0:
+        if len(args.modules) == 0:
             requested_modules = au.list_local()
+        else:
+            requested_modules = au.search_local(*args.modules)
         print('Checking status')
         needs_update = []
         status_table = [['Name','Status']]
@@ -272,13 +286,28 @@ def main ():
                 exit()
         args.modules = needs_update
         args.force_data = False
+        args.version = None
+        args.yes = True
         install_modules(args)
         
     def uninstall_modules (args):
-        module_names = args.modules
-        for module_name in module_names:
-            au.uninstall_module(module_name)
-            print('Uninstalled %s' %module_name)
+        matching_names = au.search_local(*args.modules)
+        if len(matching_names) > 0:
+            print('Uninstalling: {:}'.format(', '.join(matching_names)))
+            if not(args.yes):
+                while True:
+                    resp = input('Proceed? (y/n) > ')
+                    if resp == 'y':
+                        break
+                    elif resp == 'n':
+                        exit()
+                    else:
+                        print('Response \'{:}\' not one of (y/n).'.format(resp))
+            for module_name in matching_names:
+                au.uninstall_module(module_name)
+                print('Uninstalled %s' %module_name)
+        else:
+            print('No modules found')
             
     def publish_module (args):
         au.publish_module(args.module, args.user, args.password, include_data=args.data)
@@ -319,7 +348,9 @@ def main ():
     def show_system_conf (args):
         au.show_system_conf()
     
-    ###################################################################################################
+    ###########################################################################
+    # PARSERS START HERE
+    ###########################################################################
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     subparsers = parser.add_subparsers(title='Commands')
     
@@ -349,6 +380,80 @@ def main ():
                                                 description='installs base modules.')
     parser_install_base.set_defaults(func=install_base)
     
+    # # install
+    # parser_install = subparsers.add_parser('install',
+    #                                        help='installs modules.',
+    #                                        description='installs modules.')
+    # parser_install.add_argument('modules',
+    #                             nargs='+',
+    #                             help='Modules to install. Format as module_name:version. Leaving version blank installs the latest version.')
+    # parser_install.add_argument('-d',
+    #                             '--force-data',
+    #                             action='store_true',
+    #                             help='Force download new data even if not needed.')
+    # parser_install.add_argument('--skip-installed',
+    #                             action='store_true',
+    #                             help='skips already installed modules.')
+    # parser_install.set_defaults(func=install_modules)
+
+    # install
+    parser_install = subparsers.add_parser('install',
+                                           help='installs modules.',
+                                           description='installs modules.')
+    parser_install.add_argument('modules',
+                                nargs='+',
+                                help='Modules to install. May be regular expressions.')
+    parser_install.add_argument('-v','--version',
+                                help='Version to install. Will apply to all modules. Default is latest version for each module')
+    parser_install.add_argument('-d',
+                                '--force-data',
+                                action='store_true',
+                                help='Force download new data even if not needed.')
+    parser_install.add_argument('--skip-installed',
+                                action='store_true',
+                                help='skips already installed modules.')
+    parser_install.add_argument('-y','--yes',
+                                action='store_true',
+                                help='Proceed without prompt')
+    parser_install.set_defaults(func=install_modules)
+    
+    # update
+    update_examples = ExampleCommandsFormatter(prefix='cravat-admin update')
+    update_examples.add_example('', 
+                                '''Enter an interactive update process. Cravat 
+                                   will check to see which modules need to
+                                   be updated, and will ask you if you wish to update them.''')
+    update_examples.add_example('hg38 aggregator vcf-converter',
+                                '''Only attempt update on the hg38, aggregator,
+                                   and vcf-converter modules.''')
+    parser_update = subparsers.add_parser('update',
+                                           help='updates modules.',
+                                           description='updates modules.',
+                                           epilog=str(update_examples),
+                                           formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser_update.add_argument('modules',
+                                nargs='*',
+                                help='Modules to update.')
+    parser_update.set_defaults(func=update_modules)
+    
+    # uninstall
+    parser_uninstall = subparsers.add_parser('uninstall',
+                                          help='uninstalls modules.')
+    parser_uninstall.add_argument('modules',
+                               nargs='+',
+                               help='Modules to uninstall')
+    parser_uninstall.add_argument('-y','--yes',
+                                  action='store_true',
+                                  help='Proceed without prompt')
+    parser_uninstall.set_defaults(func=uninstall_modules)
+    
+    # info
+    parser_info = subparsers.add_parser('info',
+                                        help='shows module information.')
+    parser_info.add_argument('module',
+                               help='Module to get info about')
+    parser_info.set_defaults(func=print_info)
+    
     # ls
     ls_examples = ExampleCommandsFormatter(prefix='cravat-admin ls')
     ls_examples.add_example('', 'List installed modules')
@@ -360,6 +465,10 @@ def main ():
                                        description='lists modules.',
                                        epilog=str(ls_examples),
                                        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser_ls.add_argument('pattern',
+                            nargs='?',
+                            default=r'.*',
+                            help='Regular expression for module names')
     parser_ls.add_argument('-a','--available',
                            action='store_true',
                            help='Include available modules')
@@ -368,100 +477,6 @@ def main ():
                            default=[],
                            help='Only list modules of certain types')
     parser_ls.set_defaults(func=list_modules)
-    
-    # info
-    parser_info = subparsers.add_parser('info',
-                                        help='shows module information.')
-    parser_info.add_argument('modules',
-                               nargs='+',
-                               help='Modules to get info about')
-    parser_info.set_defaults(func=print_info)
-    
-    # install
-    parser_install = subparsers.add_parser('install',
-                                           help='installs modules.',
-                                           description='installs modules.')
-    parser_install.add_argument('modules',
-                                nargs='+',
-                                help='Modules to install. Format as module_name:version. Leaving version blank installs the latest version.')
-    parser_install.add_argument('-d',
-                                '--force-data',
-                                action='store_true',
-                                help='Force download new data even if not needed.')
-    parser_install.add_argument('--skip-installed',
-                                action='store_true',
-                                help='skips already installed modules.')
-    parser_install.set_defaults(func=install_modules)
-    
-    # uninstall
-    parser_uninstall = subparsers.add_parser('uninstall',
-                                          help='uninstalls modules.')
-    parser_uninstall.add_argument('modules',
-                               nargs='+',
-                               help='Modules to uninstall')
-    parser_uninstall.set_defaults(func=uninstall_modules)
-    
-    # update
-    update_examples = ExampleCommandsFormatter(prefix='cravat-admin update')
-    update_examples.add_example('', 
-                                '''Enter an interactive update process. Cravat 
-                                   will check to see which modules need to
-                                   be updated, and will ask you if you wish to update them.''')
-    update_examples.add_example('hg38 aggregator vcf-converter',
-                                '''Only attempt update on the hg38, aggregator,
-                                   and vcf-converter modules.''')
-    parser_install = subparsers.add_parser('update',
-                                           help='updates modules.',
-                                           description='updates modules.',
-                                           epilog=str(update_examples),
-                                           formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser_install.add_argument('modules',
-                                nargs='*',
-                                help='Modules to update.')
-    parser_install.set_defaults(func=update_modules)
-    
-    # create-account
-    parser_create_account = subparsers.add_parser('create-account',
-                                                  help='creates a CRAVAT store developer account.')
-    parser_create_account.add_argument('username',
-                                       help='use your email as your username.')
-    parser_create_account.add_argument('password',
-                                       help='this is your password.')
-    parser_create_account.set_defaults(func=create_account)
-    
-    # verify-email
-    parser_verify_email = subparsers.add_parser('verify-email',
-                                              help='sends a verification email.')
-    parser_verify_email.add_argument('username',
-                                     help='username')
-    parser_verify_email.set_defaults(func=send_verify_email)
-    
-    # check-login
-    parser_check_login = subparsers.add_parser('check-login',
-                                               help='checks username and password.')
-    parser_check_login.add_argument('username',
-                                   help='username')
-    parser_check_login.add_argument('password',
-                                   help='password')
-    parser_check_login.set_defaults(func=check_login)
-    
-    # reset-password
-    parser_reset_pw = subparsers.add_parser('reset-password',
-                                            help='resets CRAVAT store account password.')
-    parser_reset_pw.add_argument('username',
-                                 help='username')
-    parser_reset_pw.set_defaults(func=send_reset_email)
-    
-    # change-password
-    parser_change_password = subparsers.add_parser('change-password',
-                                                   help='changes CRAVAT store account password.')
-    parser_change_password.add_argument('username',
-                                        help='username')
-    parser_change_password.add_argument('cur_pw',
-                                        help='current password')
-    parser_change_password.add_argument('new_pw',
-                                        help='new password')
-    parser_change_password.set_defaults(func=change_password)
     
     # publish
     parser_publish = subparsers.add_parser('publish',
@@ -488,6 +503,49 @@ def main ():
                                 required=True,
                                 help='password for the user.')
     parser_publish.set_defaults(func=publish_module)
+    
+    # create-account
+    parser_create_account = subparsers.add_parser('create-account',
+                                                  help='creates a CRAVAT store developer account.')
+    parser_create_account.add_argument('username',
+                                       help='use your email as your username.')
+    parser_create_account.add_argument('password',
+                                       help='this is your password.')
+    parser_create_account.set_defaults(func=create_account)
+    
+    # change-password
+    parser_change_password = subparsers.add_parser('change-password',
+                                                   help='changes CRAVAT store account password.')
+    parser_change_password.add_argument('username',
+                                        help='username')
+    parser_change_password.add_argument('cur_pw',
+                                        help='current password')
+    parser_change_password.add_argument('new_pw',
+                                        help='new password')
+    parser_change_password.set_defaults(func=change_password)
+    
+    # reset-password
+    parser_reset_pw = subparsers.add_parser('reset-password',
+                                            help='resets CRAVAT store account password.')
+    parser_reset_pw.add_argument('username',
+                                 help='username')
+    parser_reset_pw.set_defaults(func=send_reset_email)
+    
+    # verify-email
+    parser_verify_email = subparsers.add_parser('verify-email',
+                                              help='sends a verification email.')
+    parser_verify_email.add_argument('username',
+                                     help='username')
+    parser_verify_email.set_defaults(func=send_verify_email)
+    
+    # check-login
+    parser_check_login = subparsers.add_parser('check-login',
+                                               help='checks username and password.')
+    parser_check_login.add_argument('username',
+                                   help='username')
+    parser_check_login.add_argument('password',
+                                   help='password')
+    parser_check_login.set_defaults(func=check_login)
     
     # test input file
     parser_make_example_input = subparsers.add_parser('make-example-input',

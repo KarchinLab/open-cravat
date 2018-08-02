@@ -10,6 +10,7 @@ from . import store_utils as su
 from . import util
 import requests
 import traceback
+import re
 
 def load_yml_conf(yml_conf_path):
     """
@@ -72,7 +73,7 @@ class LocalModuleInfo (object):
         self.version = self.conf.get('version')
         self.description = self.conf.get('description')
         
-        self.developer = self.conf.get('developer')
+        self.developer = ModuleDeveloper(**self.conf.get('developer',{}))
         if 'type' not in self.conf:
             self.conf['type'] = 'unknown'
         self.type = self.conf['type']
@@ -128,6 +129,9 @@ class RemoteModuleInfo(object):
         self.developer = kwargs.get('developer','')
         self.size = kwargs.get('size',0)
         self.developer = ModuleDeveloper(**kwargs.get('developer',{}))
+
+    def has_version(self, version):
+        return version in self.versions
 
 class ModuleDeveloper(object):
     def __init__(self, **kwargs):
@@ -207,6 +211,26 @@ def list_remote():
     """
     mic.update_remote()
     return sorted(list(mic.remote.keys()))
+
+def search_remote(*patterns):
+    """
+    Return remote module names which match any of supplied patterns
+    """
+    matching_names = []
+    for module_name in list_remote():
+        if any([re.fullmatch(pattern, module_name) for pattern in patterns]):
+            matching_names.append(module_name)
+    return matching_names
+
+def search_local(*patterns):
+    """
+    Return local module names which match any of supplied patterns
+    """
+    matching_names = []
+    for module_name in list_local():
+        if any([re.fullmatch(pattern, module_name) for pattern in patterns]):
+            matching_names.append(module_name)
+    return matching_names
 
 def get_remote_manifest():
     """
@@ -495,7 +519,7 @@ def set_modules_dir (path, overwrite=False):
     """
     Set the modules_dir to the directory in path.
     """
-    path = os.path.realpath(path)
+    path = os.path.abspath(os.path.expanduser(path))
     if not(os.path.isdir(path)):
         os.makedirs(path)
     old_conf_path = get_main_conf_path()
@@ -745,6 +769,8 @@ def show_system_conf ():
         conf[constants.modules_dir_key] = constants.default_modules_dir
     print('Configuration file path:', confpath)
     print(yaml.dump(conf, default_flow_style=False))
+
+
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

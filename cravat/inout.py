@@ -2,6 +2,7 @@ import os
 from cravat.exceptions import BadFormatError
 import json
 import re
+from collections import OrderedDict
 
 class CravatFile(object):
     valid_types = ['string','int','float']
@@ -155,8 +156,8 @@ class CrxMapping(object):
         self.aref = None
         self.apos_start = None
         self.aalt = None
-        self.tchange_re = re.compile('([AaTtCcGgUuNn_-]+)(\d+)([AaTtCcGgUuNn_-]+)')
-        self.achange_re = re.compile('([a-zA-Z_\*]+)(\d+)([AaTtCcGgUuNn_\*]+)')
+        self.tchange_re = re.compile(r'([AaTtCcGgUuNn_-]+)(\d+)([AaTtCcGgUuNn_-]+)')
+        self.achange_re = re.compile(r'([a-zA-Z_\*]+)(\d+)([AaTtCcGgUuNn_\*]+)')
         
     def load_tchange(self, tchange):
         self.tchange = tchange
@@ -185,7 +186,7 @@ class CrxMapping(object):
 class AllMappingsParser (object):
 
     def __init__(self, s):
-        self._d = json.loads(s)
+        self._d = json.loads(s,object_pairs_hook=OrderedDict)
         self._protein_index = 0
         self._achange_index = 1
         self._so_index = 2
@@ -367,20 +368,17 @@ class CravatReader (CravatFile):
             col_name = col_def['name']
             col_type = col_def['type']
             tok = toks[col_index]
-            if col_type == 'string':
-                out[col_name] = tok
-            elif col_type == 'int':
-                if tok:
+            if tok == '':
+                out[col_name] = None
+            else:
+                if col_type == 'string':
+                    out[col_name] = tok
+                elif col_type == 'int':
                     out[col_name] = int(tok)
-                else:
-                    out[col_name] = None
-            elif col_type == 'float':
-                if tok:
+                elif col_type == 'float':
                     out[col_name] = float(tok)
                 else:
-                    out[col_name] = None
-            else:
-                out[col_name] = tok
+                    out[col_name] = tok
         return out
         
     def _loop_definition(self):
