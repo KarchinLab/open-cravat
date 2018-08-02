@@ -967,10 +967,31 @@ function populateLoadDiv (tabName, filterDiv) {
 	var button = getEl('button');
 	button.style.marginLeft = '10px';
 	button.onclick = function(event) {
-		loadFilterSettingAs();
+		var filterDiv = document.getElementById('load_filter_select_div');
+		var display = filterDiv.style.display;
+		if (display == 'none') {
+			filterDiv.style.display = 'block';
+			loadFilterSettingAs();
+		} else {
+			filterDiv.style.display = 'none';
+		}
 	};
 	addEl(button, getTn('Load...'));
 	addEl(legend, button);
+	
+	// Filter name div
+	var div = getEl('div');
+	div.id = 'load_filter_select_div';
+	div.style.display = 'none';
+	div.style.position = 'absolute';
+	//div.style.width = '200px';
+	//div.style.height = '200px';
+	div.style.left = '198px';
+	div.style.padding = '6px';
+	div.style.overflow = 'auto';
+	div.style.backgroundColor = 'rgb(232, 232, 232)';
+	div.style.border = '1px solid black';
+	addEl(legend, div);
 
 	addEl(filterDiv, legend);
 	

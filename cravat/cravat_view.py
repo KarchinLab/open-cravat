@@ -293,7 +293,7 @@ class MyHandler (CGIHTTPRequestHandler):
         elif path == 'renamelayoutsetting':
             content = self.rename_layout_setting(queries)
         elif path == 'getlayoutsavenames':
-            content = self.get_layoutsavenames(queries)
+            content = self.get_layout_save_names(queries)
         elif path == 'getfiltersavenames':
             content = self.get_filter_save_names(queries)
         elif path == 'getnowgannotmodules':
@@ -324,7 +324,7 @@ class MyHandler (CGIHTTPRequestHandler):
         content = nowg_annot_modules
         return content
         
-    def get_layoutsavenames (self, queries):
+    def get_layout_save_names (self, queries):
         dbpath = urllib.parse.unquote(queries['dbpath'][0])
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()

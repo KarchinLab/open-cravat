@@ -505,16 +505,32 @@ function applyTableSetting (level) {
 
 function loadFilterSettingAs () {
 	$.get('rest/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
-		var names = '' + response;
-		var name = null;
-		if (names != '') {
-			name = prompt('Please enter filter name to load. Saved filter names are ' + names, lastUsedLayoutName);
-			if (name != null) {
-				loadFilterSetting(name, null);
-			}
-		} else {
-			alert('No filter has been saved.');
-		}
+		var savedNames = JSON.parse(response.replace(/'/g, '"'));
+		var div = document.getElementById('load_filter_select_div');
+		$(div).empty();
+		div.style.display = 'block';
+    	for (var i = 0; i < savedNames.length; i++) {
+    		var name = savedNames[i];
+    		var a = getEl('a');
+    		a.style.cursor = 'pointer';
+    		a.style.fontSize = '13px';
+    		a.style.fontWeight = 'normal';
+    		a.style.width = '100%';
+    		a.style.backgroundColor = 'rgb(232, 232, 232)';
+    		addEl(a, getTn(name));
+    		a.addEventListener('mouseover', function (evt) {
+    			evt.target.style.backgroundColor = 'yellow';
+    		});
+    		a.addEventListener('mouseleave', function (evt) {
+    			evt.target.style.backgroundColor = 'white';
+    		});
+    		a.addEventListener('click', function (evt) {
+    			loadFilterSetting(evt.target.textContent, null)
+    			div.style.display = 'none';
+    		});
+    		addEl(div, a);
+    		addEl(div, getEl('br'));
+    	}
 	});
 }
 
@@ -538,7 +554,7 @@ function loadLayoutSettingAs () {
 	var div = document.getElementById('load_layout_select_div');
 	emptyElement(div);
 	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
-    	savedLayoutNames = response;
+    	var savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {
     		var name = savedLayoutNames[i];
     		var a = getEl('a');
