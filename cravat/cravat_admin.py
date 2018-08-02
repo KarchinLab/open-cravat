@@ -11,6 +11,7 @@ from types import SimpleNamespace
 import re
 import textwrap
 import math
+import copy
 
 class ExampleCommandsFormatter(object,):
     def __init__(self, prefix='',  cmd_indent=' '*2, desc_indent=' '*8, width=70):
@@ -153,59 +154,62 @@ def main ():
             list_available_modules(pattern=args.pattern, types=args.types)
         else:
             list_local_modules(pattern=args.pattern, types=args.types)
-        
+    
+    def yaml_string(x):
+        s = yaml.dump(x, default_flow_style = False)
+        s = re.sub('!!.*', '', s)
+        s = s.strip('\r\n')
+        return s
+
     def print_info(args):
-        modules = args.modules
-        for module_name in modules:
-            installed = False
-            available = False
-            up_to_date = False
-            current_version = None
-            latest_version = None
-            local_info = None
-            remote_info = None
-            print('='*5+' '+module_name + ' ' + '='*5)
-            # Local
-            try:
-                local_info = au.get_local_module_info(module_name)
-                if local_info != None:
-                    installed = True
-                    del local_info.readme
-                else:
-                    installed = False
-            except LookupError:
+        module_name = args.module
+        installed = False
+        available = False
+        up_to_date = False
+        local_info = None
+        remote_info = None
+        # Local
+        try:
+            local_info = au.get_local_module_info(module_name)
+            if local_info != None:
+                installed = True
+                del local_info.readme
+            else:
                 installed = False
-            if installed:
-                current_version = local_info.conf['version']
-                print('INSTALLED')
-                dump = util.yaml_string(local_info)
-                print(dump)
+        except LookupError:
+            installed = False
+        if installed:
+            print('INSTALLED\n')
+            li_out = copy.deepcopy(local_info)
+            del li_out.conf
+            li_out.get_size()
+            dump = yaml_string(li_out)
+            print(dump+'\n')
+        else:
+            print('NOT INSTALLED\n')
+        # Remote
+        try:
+            remote_info = au.get_remote_module_info(module_name)
+            if remote_info != None:
+                available = True
+        except LookupError:
+            available = False
+        if available:
+            print('AVAILABLE\n')
+        else:
+            print('NOT AVAILABLE\n')
+        if installed and available:
+            if installed and local_info.version == remote_info.latest_version:
+                up_to_date = True
             else:
-                print('NOT INSTALLED')
-            # Remote
-            try:
-                remote_info = au.get_remote_module_info(module_name)
-                if remote_info != None:
-                    available = True
-            except LookupError:
-                available = False
-            if available:
-                print('AVAILABLE')
-                latest_version = remote_info.latest_version
+                up_to_date = False
+            if up_to_date:
+                print('UP TO DATE\n')
             else:
-                print('NOT AVAILABLE')
-            if installed and available:
-                if installed and current_version == latest_version:
-                    up_to_date = True
-                else:
-                    up_to_date = False
-                if up_to_date:
-                    print('UP TO DATE')
-                else:
-                    print('NEWER VERSION EXISTS')
-            if available:
-                    dump = util.yaml_string(remote_info)
-                    print(dump)
+                print('NEWER VERSION EXISTS\n')
+        if available:
+                dump = yaml_string(remote_info)
+                print(dump+'\n')
     
     def set_modules_dir(args):
         if args.directory:
@@ -446,9 +450,8 @@ def main ():
     # info
     parser_info = subparsers.add_parser('info',
                                         help='shows module information.')
-    parser_info.add_argument('modules',
-                               nargs='+',
-                               help='Modules to get info about')
+    parser_info.add_argument('module',
+                               help='Module to get info about')
     parser_info.set_defaults(func=print_info)
     
     # ls
