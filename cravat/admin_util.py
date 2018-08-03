@@ -220,15 +220,23 @@ class ModuleInfoCache(object):
             self.remote_config[module_name][version] = config
         return config
 
-def get_annotator_widget(annotator_name):
+def get_widgets_for_annotator(annotator_name, skip_installed=False):
+    """
+    Get webviewer widgets that require an annotator. Optionally skip the
+    widgets that are already installed.
+    """
+    linked_widgets = []
     for widget_name in list_remote():
-        remote_info = get_remote_module_info(widget_name)
-        if remote_info.type == 'webviewerwidget':
+        widget_info = get_remote_module_info(widget_name)
+        if widget_info.type == 'webviewerwidget':
             widget_config = mic.get_remote_config(widget_name)
             linked_annotator = widget_config.get('required_annotator')
-            linked_annotator = widget_name.replace('wg','')
             if linked_annotator == annotator_name:
-                return widget_name
+                if skip_installed and module_exists_local(widget_name):
+                    continue
+                else:
+                    linked_widgets.append(widget_info)
+    return linked_widgets
 
 def list_local():
     """
