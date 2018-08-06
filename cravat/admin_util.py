@@ -72,8 +72,10 @@ class LocalModuleInfo (object):
         self.type = self.conf.get('type')
         self.version = self.conf.get('version')
         self.description = self.conf.get('description')
-        
-        self.developer = ModuleDeveloper(**self.conf.get('developer',{}))
+        dev_dict = self.conf.get('developer')
+        if not(type(dev_dict)==dict):
+            dev_dict = {}
+        self.developer = ModuleDeveloper(**dev_dict)
         if 'type' not in self.conf:
             self.conf['type'] = 'unknown'
         self.type = self.conf['type']
@@ -128,7 +130,10 @@ class RemoteModuleInfo(object):
         self.description = kwargs.get('description','')
         self.developer = kwargs.get('developer','')
         self.size = kwargs.get('size',0)
-        self.developer = ModuleDeveloper(**kwargs.get('developer',{}))
+        dev_dict = kwargs.get('developer')
+        if not(type(dev_dict)==dict):
+            dev_dict = {}
+        self.developer = ModuleDeveloper(**dev_dict)
 
     def has_version(self, version):
         return version in self.versions
@@ -196,8 +201,6 @@ class ModuleInfoCache(object):
                 self.remote_readme[module_name] = {}
             self.remote_readme[module_name][version] = readme
         return readme
-
-
 
 def list_local():
     """
