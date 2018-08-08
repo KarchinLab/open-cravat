@@ -82,7 +82,7 @@ class MasterCravatConverter(object):
         """ Parse the arguments in sys.argv """
         parser = argparse.ArgumentParser()
         parser.add_argument('path',
-                            help='Path to this converter\s python module')
+                            help='Path to this converter\'s python module')
         parser.add_argument('input',
                             help='File to be converted to .crv')
         parser.add_argument('-f',
