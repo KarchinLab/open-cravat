@@ -307,6 +307,7 @@ def main ():
             print('No modules found')
             
     def publish_module (args):
+        print('args force yes in publish', args.force_yes)
         au.publish_module(args.module, args.user, args.password, include_data=args.data)
         
     def install_base (args):
@@ -503,6 +504,10 @@ def main ():
                                 '--password',
                                 required=True,
                                 help='password for the user.')
+    parser_publish.add_argument('--force-yes',
+                                default=False,
+                                action='store_true',
+                                help='overrides yes to overwrite question')
     parser_publish.set_defaults(func=publish_module)
     
     # create-account

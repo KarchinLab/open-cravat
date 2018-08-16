@@ -85,7 +85,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'annotator_template')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='0.0.91',
+    version='0.0.93',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
@@ -104,6 +104,7 @@ setup(
             'cravat-filter=cravat.cravat_filter:main',
             'cravat-report=cravat.cravat_report:main',
             'cravat-test=cravat.cravat_test:main',
+            'cravat-util=cravat.cravat_util:main',
             'cv=cravat.runcravat:main',
             'cva=cravat.cravat_admin:main',
         ]
