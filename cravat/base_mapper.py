@@ -5,7 +5,7 @@ import logging
 import time
 from .inout import CravatReader, CravatWriter, AllMappingsParser
 from .constants import crx_def, crx_idx, crg_def, crg_idx, crt_def, crt_idx
-from .util import most_severe_so
+from .util import most_severe_so, so_severity
 from .exceptions import InvalidData
 import sys
 
@@ -240,7 +240,10 @@ class BaseMapper(object):
                 worst_so = most_severe_so((gene['so_counts'].keys()))
             except:
                 pass
-            for so, so_count in gene['so_counts'].items():
+            sorted_counts = list(gene['so_counts'].items())
+            # Sort by SO occurence, descending
+            sorted_counts.sort(key=lambda l: so_severity.index(l[0]), reverse=True)
+            for so, so_count in sorted_counts:
                 so_count_toks.append('%s(%d)' %(so, so_count))
             crg_data['so'] = worst_so
             crg_data['all_so'] = ','.join(so_count_toks)

@@ -72,8 +72,10 @@ class LocalModuleInfo (object):
         self.type = self.conf.get('type')
         self.version = self.conf.get('version')
         self.description = self.conf.get('description')
-        
-        self.developer = ModuleDeveloper(**self.conf.get('developer',{}))
+        dev_dict = self.conf.get('developer')
+        if not(type(dev_dict)==dict):
+            dev_dict = {}
+        self.developer = ModuleDeveloper(**dev_dict)
         if 'type' not in self.conf:
             self.conf['type'] = 'unknown'
         self.type = self.conf['type']
@@ -127,7 +129,10 @@ class RemoteModuleInfo(object):
         self.title = kwargs.get('title','')
         self.description = kwargs.get('description','')
         self.size = kwargs.get('size',0)
-        self.developer = ModuleDeveloper(**kwargs.get('developer',{}))
+        dev_dict = kwargs.get('developer')
+        if not(type(dev_dict)==dict):
+            dev_dict = {}
+        self.developer = ModuleDeveloper(**dev_dict)
 
     def has_version(self, version):
         return version in self.versions
@@ -197,46 +202,6 @@ class ModuleInfoCache(object):
                 self.remote_readme[module_name] = {}
             self.remote_readme[module_name][version] = readme
         return readme
-
-    def get_remote_config(self, module_name, version=None):
-        self.update_remote()
-        # Resolve name and version
-        if module_name not in self.remote:
-            raise LookupError(module_name)
-        if version != None and version not in self.remote[module_name]['versions']:
-            raise LookupError(version)
-        if version == None:
-            version = self.remote[module_name]['latest_version']
-        # Check cache
-        try:
-            config = self.remote_config[module_name][version]
-            return config
-        except LookupError:
-            config_url = self._store_path_builder.module_conf(module_name, version)
-            config = yaml.load(su.get_file_to_string(config_url))
-            # add to cache
-            if module_name not in self.remote_config:
-                self.remote_config[module_name] = {}
-            self.remote_config[module_name][version] = config
-        return config
-
-def get_widgets_for_annotator(annotator_name, skip_installed=False):
-    """
-    Get webviewer widgets that require an annotator. Optionally skip the
-    widgets that are already installed.
-    """
-    linked_widgets = []
-    for widget_name in list_remote():
-        widget_info = get_remote_module_info(widget_name)
-        if widget_info.type == 'webviewerwidget':
-            widget_config = mic.get_remote_config(widget_name)
-            linked_annotator = widget_config.get('required_annotator')
-            if linked_annotator == annotator_name:
-                if skip_installed and module_exists_local(widget_name):
-                    continue
-                else:
-                    linked_widgets.append(widget_info)
-    return linked_widgets
 
 def list_local():
     """
