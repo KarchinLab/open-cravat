@@ -168,6 +168,16 @@ def main ():
         up_to_date = False
         local_info = None
         remote_info = None
+        # Remote
+        try:
+            remote_info = au.get_remote_module_info(module_name)
+            if remote_info != None:
+                available = True
+        except LookupError:
+            available = False
+        if available:
+            dump = yaml_string(remote_info)
+            print(dump)
         # Local
         try:
             local_info = au.get_local_module_info(module_name)
@@ -179,37 +189,24 @@ def main ():
         except LookupError:
             installed = False
         if installed:
-            print('INSTALLED\n')
-            li_out = copy.deepcopy(local_info)
-            del li_out.conf
-            li_out.get_size()
-            dump = yaml_string(li_out)
-            print(dump+'\n')
+            print('INSTALLED')
+            if args.include_local:
+                li_out = copy.deepcopy(local_info)
+                del li_out.conf
+                li_out.get_size()
+                dump = yaml_string(li_out)
+                print(dump)
         else:
-            print('NOT INSTALLED\n')
-        # Remote
-        try:
-            remote_info = au.get_remote_module_info(module_name)
-            if remote_info != None:
-                available = True
-        except LookupError:
-            available = False
-        if available:
-            print('AVAILABLE\n')
-        else:
-            print('NOT AVAILABLE\n')
+            print('NOT INSTALLED')
         if installed and available:
             if installed and local_info.version == remote_info.latest_version:
                 up_to_date = True
             else:
                 up_to_date = False
             if up_to_date:
-                print('UP TO DATE\n')
+                print('UP TO DATE')
             else:
-                print('NEWER VERSION EXISTS\n')
-        if available:
-                dump = yaml_string(remote_info)
-                print(dump+'\n')
+                print('NEWER VERSION EXISTS')
     
     def set_modules_dir(args):
         if args.directory:
@@ -451,7 +448,11 @@ def main ():
     parser_info = subparsers.add_parser('info',
                                         help='shows module information.')
     parser_info.add_argument('module',
-                               help='Module to get info about')
+                             help='Module to get info about')
+    parser_info.add_argument('-l','--include-local',
+                             dest='include_local',
+                             help='Include local info',
+                             action='store_true')
     parser_info.set_defaults(func=print_info)
     
     # ls
