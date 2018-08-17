@@ -34,7 +34,8 @@ const rebuildJobSelector = () => {
     const jobSelector = $('#job-view-selector');
     jobSelector.empty();
     for (let i=0; i<GLOBALS.allJobs.length; i++) {
-        const jobId = GLOBALS.allJobs[i];
+        const job = GLOBALS.allJobs[i];
+        const jobId = job.id;
         let opt = getEl('option')
         opt.value = jobId;
         opt.innerText = jobId;
@@ -72,7 +73,7 @@ const populateJobs = () => {
         url:'/rest/jobs',
         type: 'GET',
         success: function (data) {
-            GLOBALS.allJobs = data['jobIds']
+            GLOBALS.allJobs = data
             rebuildJobSelector();
         }
     })
