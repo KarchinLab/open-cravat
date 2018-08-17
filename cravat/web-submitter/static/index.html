@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+    <title>open-cravat submit</title>
+    <script src="submit.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+    <h1>Submit to Open-CRAVAT</h1>
+    </br>
+    <form id="submit-form">
+        <input type="file" id="input-file"></input>
+        <br>
+        <input type="button" id="submit-job-button" value="Submit"></input>
+    </form>
+    <select id="job-view-selector"></select>
+    <input type="button" id="job-view-button" value="View job"></input>
+
+
+    <script>
+        $(document).ready(function() {
+            run();
+        });
+    </script>
+</body>
+</html>
