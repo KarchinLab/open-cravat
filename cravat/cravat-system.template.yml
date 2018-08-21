@@ -1,4 +1,4 @@
-publish_url: http://staging.cravat.us
+publish_url: http://staging.cravat.us:8181
 store_url: http://karchinlab.org/cravatstore
 
 base_modules:
