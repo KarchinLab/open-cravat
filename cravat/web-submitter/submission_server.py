@@ -5,6 +5,7 @@ import datetime
 import subprocess
 import yaml
 import json
+import cravat
 
 class FileRouter(object):
 
@@ -15,7 +16,7 @@ class FileRouter(object):
         return os.path.join(self.root, 'static')
 
     def jobs_dir(self):
-        return os.path.join(self.root, 'jobs')
+        return os.path.join('C:\\','Users','Kyle','a','cravat-jobs','websubmitter')
 
     def job_dir(self, job_id):
         return os.path.join(self.jobs_dir(), job_id)
@@ -57,10 +58,6 @@ class WebJob(object):
         return vars(self.info)
 
 class JobInfo(object):
-    STATUS_QUEUED = 'queued'
-    STATUS_RUNNING = 'running'
-    STATUS_ERROR = 'error'
-    STATUS_COMPLETE = 'complete'
 
     def __init__(self, **kwargs):
         self.set_values(**kwargs)
@@ -70,14 +67,11 @@ class JobInfo(object):
         all_vars.update(kwargs)
         self.orig_input_fname = all_vars.get('orig_input_fname')
         self.submission_time = all_vars.get('submission_time')
-        self.start_time = all_vars.get('start_time')
-        self.stop_time = all_vars.get('stop_time')
         self.id = all_vars.get('id')
-        self.status = all_vars.get('status')
+        self.viewable = all_vars.get('viewable')
 
 FILE_ROUTER = FileRouter()
 VIEW_PROCESS = None
-RUN_PROCESS = None
 
 def get_next_job_id():
     return datetime.datetime.now().strftime(r'job-%Y-%m-%d-%H-%M-%S')
@@ -85,7 +79,6 @@ def get_next_job_id():
 @post('/rest/submit')
 def submit():
     global FILE_ROUTER
-    global RUN_PROCESS
     file_formpart = request.files.get('file')
     orig_input_fname = file_formpart.raw_filename
     job_id = get_next_job_id()
@@ -97,31 +90,42 @@ def submit():
     with open(input_fpath,'wb') as wf:
         wf.write(file_formpart.file.read())
     job.set_info_values(orig_input_fname=orig_input_fname,
-                        status=JobInfo.STATUS_QUEUED,
-                        submission_time=time.time())
-    job.write_info_file()
-    job.set_info_values(start_time=time.time(),
-                        status=JobInfo.STATUS_RUNNING)
-    job.write_info_file()
-    RUN_PROCESS = subprocess.run(['cravat', input_fpath])
-    job.set_info_values(stop_time=time.time())
-    if RUN_PROCESS.returncode == 0:
-        job.set_info_values(status=JobInfo.STATUS_COMPLETE)
-    else:
-        job.set_info_values(status=JobInfo.STATUS_ERROR)
+                        submission_time=datetime.datetime.now().isoformat(),
+                        viewable=False)
+    subprocess.Popen(['cravat', input_fpath])
     job.write_info_file()
     return job.get_info_dict()
+
+@get('/rest/annotators')
+def get_annotators():
+    module_names = cravat.admin_util.list_local()
+    out = {}
+    for module_name in module_names:
+        local_info = cravat.admin_util.get_local_module_info(module_name)
+        if local_info.type == 'annotator':
+            out[module_name] = {
+                                'name':module_name,
+                                'version':local_info.version,
+                                'type':local_info.type,
+                                'title':local_info.title,
+                                'description':local_info.description,
+                                'developer':vars(local_info.developer)
+                            }
+    return out
 
 @get('/rest/jobs')
 def get_all_jobs():
     global FILE_ROUTER
     ids = os.listdir(FILE_ROUTER.jobs_dir())
+    ids.sort(reverse=True)
     all_jobs = []
     for job_id in ids:
         job_dir = FILE_ROUTER.job_dir(job_id)
         job_info_fpath = FILE_ROUTER.job_info_file(job_id)
         job = WebJob(job_dir, job_info_fpath)
         job.read_info_file()
+        job_viewable = os.path.exists(FILE_ROUTER.job_output_db(job_id))
+        job.set_info_values(viewable=job_viewable)
         all_jobs.append(job)
     response.content_type = 'application/json'
     return json.dumps([job.get_info_dict() for job in all_jobs])

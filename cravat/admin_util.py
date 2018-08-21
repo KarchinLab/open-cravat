@@ -63,7 +63,8 @@ class LocalModuleInfo (object):
         self.readme_path = os.path.join(self.directory, self.name+'.md')
         self.readme_exists = os.path.exists(self.readme_path)
         if self.readme_exists:
-            self.readme = open(self.readme_path).read()
+            with open(self.readme_path) as f:
+                self.readme = f.read()
         else:
             self.readme = ''
         self.conf = {}

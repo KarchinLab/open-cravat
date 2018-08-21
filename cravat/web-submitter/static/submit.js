@@ -1,7 +1,8 @@
 console.log('submit.js');
 
 var GLOBALS = {
-    allJobs: []
+    allJobs: [],
+    annotators: {}
 }
 
 const submit = () => {
@@ -39,14 +40,13 @@ const buildJobsTable = () => {
         let viewTd = $(getEl('td'));
         jobTr.append(viewTd);
         let viewBtn = $(getEl('button')).append('View');
+        viewBtn.attr('disabled', !job.viewable);
+        viewBtn.attr('jobId', job.id);
+        viewBtn.click(jobViewButtonHandler);
         viewTd.append(viewBtn);
         jobTr.append($(getEl('td')).append(job.orig_input_fname));
-        jobTr.append($(getEl('td')).append(Date(job.submission_time)));
-        jobTr.append($(getEl('td')).append(job.status));
+        jobTr.append($(getEl('td')).append(job.submission_time.toLocaleString()));
         jobTr.append($(getEl('td')).append(job.id));
-        jobTr.append($(getEl('td')).append(parseInt(job.stop_time-job.start_time).toString()));
-        jobTr.append($(getEl('td')).append(Date(job.start_time)));
-        jobTr.append($(getEl('td')).append(Date(job.stop_time)));
     }
 }
 
@@ -54,23 +54,7 @@ const getEl = (tag) => {
     return document.createElement(tag);
 }
 
-const rebuildJobSelector = () => {
-    const jobSelector = $('#job-view-selector');
-    jobSelector.empty();
-    for (let i=0; i<GLOBALS.allJobs.length; i++) {
-        const job = GLOBALS.allJobs[i];
-        const jobId = job.id;
-        let opt = getEl('option')
-        opt.value = jobId;
-        opt.innerText = jobId;
-        jobSelector.append(opt);
-    }
-    jobSelector.val(GLOBALS.allJobs.slice(-1));
-}
-
-const jobViewButtonHandler = (event) => {
-    const jobSelector = $('#job-view-selector');
-    const jobId = jobSelector.val();
+const viewJob = (jobId) => {
     var jsonObj = {'jobId':jobId};
     $.ajax({
         url:'/rest/view',
@@ -84,10 +68,13 @@ const jobViewButtonHandler = (event) => {
     })
 }
 
+const jobViewButtonHandler = (event) => {
+    const jobId = $(event.target).attr('jobId');
+    viewJob(jobId);
+}
+
 const addListeners = () => {
-    console.log('addListeners');
     $('#submit-job-button').click(submit);
-    $('#job-view-button').click(jobViewButtonHandler);
 }
 
 var JOB_IDS = []
@@ -96,16 +83,63 @@ const populateJobs = () => {
     $.ajax({
         url:'/rest/jobs',
         type: 'GET',
-        success: function (data) {
-            GLOBALS.allJobs = data
-            rebuildJobSelector();
+        success: function (allJobs) {
+            for (var i=0; i<allJobs.length; i++) {
+                let job = allJobs[i];
+                const trueDate = new Date(job.submission_time);
+                job.submission_time = trueDate;
+            }
+            GLOBALS.allJobs = allJobs
             buildJobsTable();
         }
     })
 }
 
+const populateAnnotators = () => {
+    $.ajax({
+        url:'/rest/annotators',
+        type: 'GET',
+        success: function (data) {
+            GLOBALS.annotators = data
+            rebuildAnnotatorsSelector();
+        }
+    })
+}
+
+const rebuildAnnotatorsSelector = () => {
+    const annotSelectDiv = $('#annotator-select');
+    annotSelectDiv.empty();
+    let ul = $(getEl('ul'));
+    ul.addClass('checkbox-grid');
+    annotSelectDiv.append(ul);
+    let annotators = GLOBALS.annotators;
+    for (annot_name in annotators) {
+        let li = $(getEl('li'));
+        ul.append(li);
+        let annotCheck = makeAnnotatorCheckbox(annotators[annot_name])
+        li.append(annotCheck);
+    }
+}
+
+const makeAnnotatorCheckbox = (annotInfo) => {
+    var div = $(getEl('div'));
+    var check = $(getEl('input'));
+    div.append(check);
+    check.attr('type','checkbox');
+    check.attr('name', annotInfo.name);
+    check.attr('value', annotInfo.name)
+    check.attr('checked', 'checked');
+    var label = $(getEl('label'));
+    check.after(label);
+    label.attr('for',annotInfo.name);
+    label.append(annotInfo.title)
+    // div.append(annotInfo.title);
+    return div;
+}
+
 const run = () => {
     console.log('run');
     addListeners();
+    populateAnnotators();
     populateJobs();
 };
