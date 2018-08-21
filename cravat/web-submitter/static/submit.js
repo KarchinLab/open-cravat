@@ -22,9 +22,33 @@ const submit = () => {
             GLOBALS.allJobs.push(data);
             rebuildJobSelector();
             $('#job-view-selector').val(data);
+            buildJobsTable();
         }
     })
 };
+
+const buildJobsTable = () => {
+    let allJobs = GLOBALS.allJobs;
+    let jobsTable = $('#jobs-table');
+    // Remove all but header row
+    jobsTable.slice(1).remove();
+    for (let i = 0; i < allJobs.length; i++) {
+        job = allJobs[i];
+        let jobTr = $(getEl('tr'));
+        jobsTable.append(jobTr);
+        let viewTd = $(getEl('td'));
+        jobTr.append(viewTd);
+        let viewBtn = $(getEl('button')).append('View');
+        viewTd.append(viewBtn);
+        jobTr.append($(getEl('td')).append(job.orig_input_fname));
+        jobTr.append($(getEl('td')).append(Date(job.submission_time)));
+        jobTr.append($(getEl('td')).append(job.status));
+        jobTr.append($(getEl('td')).append(job.id));
+        jobTr.append($(getEl('td')).append(parseInt(job.stop_time-job.start_time).toString()));
+        jobTr.append($(getEl('td')).append(Date(job.start_time)));
+        jobTr.append($(getEl('td')).append(Date(job.stop_time)));
+    }
+}
 
 const getEl = (tag) => {
     return document.createElement(tag);
@@ -75,6 +99,7 @@ const populateJobs = () => {
         success: function (data) {
             GLOBALS.allJobs = data
             rebuildJobSelector();
+            buildJobsTable();
         }
     })
 }

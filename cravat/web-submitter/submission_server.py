@@ -24,6 +24,14 @@ class FileRouter(object):
         info_fname = '{}.info.yaml'.format(job_id)
         return os.path.join(self.job_dir(job_id), info_fname)
 
+    def job_input_file(self, job_id):
+        input_fname = 'input'
+        return os.path.join(self.job_dir(job_id), input_fname)
+
+    def job_output_db(self, job_id):
+        output_fname = 'input.sqlite'
+        return os.path.join(self.job_dir(job_id), output_fname)
+
 class WebJob(object):
     def __init__(self, job_dir, job_info_fpath):
         self.job_dir = job_dir
@@ -49,6 +57,11 @@ class WebJob(object):
         return vars(self.info)
 
 class JobInfo(object):
+    STATUS_QUEUED = 'queued'
+    STATUS_RUNNING = 'running'
+    STATUS_ERROR = 'error'
+    STATUS_COMPLETE = 'complete'
+
     def __init__(self, **kwargs):
         self.set_values(**kwargs)
         
@@ -56,18 +69,18 @@ class JobInfo(object):
         all_vars = vars(self)
         all_vars.update(kwargs)
         self.orig_input_fname = all_vars.get('orig_input_fname')
-        self.input_fname = all_vars.get('input_fname')
-        self.output_db = all_vars.get('output_db', str(self.input_fname)+'.sqlite')
         self.submission_time = all_vars.get('submission_time')
-        self.completion_time = all_vars.get('completion_time')
+        self.start_time = all_vars.get('start_time')
+        self.stop_time = all_vars.get('stop_time')
         self.id = all_vars.get('id')
+        self.status = all_vars.get('status')
 
 FILE_ROUTER = FileRouter()
 VIEW_PROCESS = None
 RUN_PROCESS = None
 
 def get_next_job_id():
-    return datetime.datetime.now().strftime(r'%Y-%m-%d-%H-%M-%S')
+    return datetime.datetime.now().strftime(r'job-%Y-%m-%d-%H-%M-%S')
 
 @post('/rest/submit')
 def submit():
@@ -80,14 +93,22 @@ def submit():
     job_info_fpath = FILE_ROUTER.job_info_file(job_id)
     os.mkdir(job_dir)
     job = WebJob(job_dir, job_info_fpath)
-    job.set_info_values(orig_input_fname=orig_input_fname, input_fname='input',output_db='input.sqlite')
-    input_fpath = os.path.join(job_dir, job.info.input_fname)
+    input_fpath = os.path.join(job_dir, FILE_ROUTER.job_input_file(job_id))
     with open(input_fpath,'wb') as wf:
         wf.write(file_formpart.file.read())
-    job.set_info_values(submission_time=time.time())
+    job.set_info_values(orig_input_fname=orig_input_fname,
+                        status=JobInfo.STATUS_QUEUED,
+                        submission_time=time.time())
     job.write_info_file()
-    RUN_PROCESS = subprocess.run(['cravat',input_fpath])
-    job.set_info_values(completion_time=time.time())
+    job.set_info_values(start_time=time.time(),
+                        status=JobInfo.STATUS_RUNNING)
+    job.write_info_file()
+    RUN_PROCESS = subprocess.run(['cravat', input_fpath])
+    job.set_info_values(stop_time=time.time())
+    if RUN_PROCESS.returncode == 0:
+        job.set_info_values(status=JobInfo.STATUS_COMPLETE)
+    else:
+        job.set_info_values(status=JobInfo.STATUS_ERROR)
     job.write_info_file()
     return job.get_info_dict()
 
@@ -109,18 +130,9 @@ def get_all_jobs():
 def view():
     global VIEW_PROCESS
     global FILE_ROUTER
-    reqObj = request.json
-    job_id = reqObj['jobId']
-    job_dir = FILE_ROUTER.job_dir(job_id)
-    job_info_fpath = FILE_ROUTER.job_info_file(job_id)
-    job = WebJob(job_dir, job_info_fpath)
-    job.read_info_file()
-    db_path = job.get_db_path()
-    for fname in os.listdir(job_dir):
-        if fname.endswith('.sqlite'):
-            db_path = os.path.join(job_dir, fname)
-            break
-    if db_path:
+    job_id = request.json['jobId']
+    db_path = FILE_ROUTER.job_output_db(job_id)
+    if os.path.exists(db_path):
         if type(VIEW_PROCESS) == subprocess.Popen:
             VIEW_PROCESS.kill()
         VIEW_PROCESS = subprocess.Popen(['cravat-view', db_path])
