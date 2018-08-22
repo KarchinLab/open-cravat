@@ -6,6 +6,8 @@ import subprocess
 import yaml
 import json
 import cravat
+import sys
+import traceback
 
 class FileRouter(object):
 
@@ -92,7 +94,13 @@ def submit():
     job.set_info_values(orig_input_fname=orig_input_fname,
                         submission_time=datetime.datetime.now().isoformat(),
                         viewable=False)
-    subprocess.Popen(['cravat', input_fpath])
+    job_options = json.loads(request.forms.get('options'))
+    run_args = ['cravat',
+                input_fpath]
+    run_args.append('-a')
+    for annot_name in job_options['annotators']:
+        run_args.append(annot_name)
+    subprocess.Popen(run_args)
     job.write_info_file()
     return job.get_info_dict()
 
@@ -120,13 +128,17 @@ def get_all_jobs():
     ids.sort(reverse=True)
     all_jobs = []
     for job_id in ids:
-        job_dir = FILE_ROUTER.job_dir(job_id)
-        job_info_fpath = FILE_ROUTER.job_info_file(job_id)
-        job = WebJob(job_dir, job_info_fpath)
-        job.read_info_file()
-        job_viewable = os.path.exists(FILE_ROUTER.job_output_db(job_id))
-        job.set_info_values(viewable=job_viewable)
-        all_jobs.append(job)
+        try:
+            job_dir = FILE_ROUTER.job_dir(job_id)
+            job_info_fpath = FILE_ROUTER.job_info_file(job_id)
+            job = WebJob(job_dir, job_info_fpath)
+            job.read_info_file()
+            job_viewable = os.path.exists(FILE_ROUTER.job_output_db(job_id))
+            job.set_info_values(viewable=job_viewable)
+            all_jobs.append(job)
+        except:
+            traceback.print_exc()
+            continue
     response.content_type = 'application/json'
     return json.dumps([job.get_info_dict() for job in all_jobs])
 

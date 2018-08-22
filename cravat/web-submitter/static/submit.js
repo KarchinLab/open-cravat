@@ -11,8 +11,17 @@ const submit = () => {
     const fileInputElem = $('#input-file')[0];
     const inputFile = fileInputElem.files[0];
     fd.append('file', inputFile);
-    let entries = fd.entries();
-    console.log(entries.next());
+    var submitOpts = {
+        'annotators': []
+    }
+    let annotCheckBoxes = $('.annotator-checkbox');
+    for (var i = 0; i<annotCheckBoxes.length; i++){
+        const cb = annotCheckBoxes[i];
+        if (cb.checked) {
+            submitOpts.annotators.push(cb.value);
+        }
+    }
+    fd.append('options',JSON.stringify(submitOpts));
     $.ajax({
         url:'/rest/submit',
         data: fd,
@@ -21,7 +30,6 @@ const submit = () => {
         contentType: false,
         success: function (data) {
             GLOBALS.allJobs.push(data);
-            rebuildJobSelector();
             $('#job-view-selector').val(data);
             buildJobsTable();
         }
@@ -106,29 +114,43 @@ const populateAnnotators = () => {
     })
 }
 
+// const rebuildAnnotatorsSelector = () => {
+//     let ul = $('#annotator-list');
+//     ul.empty();
+//     let annotators = GLOBALS.annotators;
+//     for (annot_name in annotators) {
+//         let li = $(getEl('li'));
+//         ul.append(li);
+//         let annotCheck = makeAnnotatorCheckbox(annotators[annot_name])
+//         li.append(annotCheck);
+//     }
+// }
 const rebuildAnnotatorsSelector = () => {
-    const annotSelectDiv = $('#annotator-select');
-    annotSelectDiv.empty();
-    let ul = $(getEl('ul'));
-    ul.addClass('checkbox-grid');
-    annotSelectDiv.append(ul);
+    let flexbox = $('#annotator-flexbox');
+    flexbox.empty();
     let annotators = GLOBALS.annotators;
+    let annotDivs = [];
     for (annot_name in annotators) {
-        let li = $(getEl('li'));
-        ul.append(li);
         let annotCheck = makeAnnotatorCheckbox(annotators[annot_name])
-        li.append(annotCheck);
+        annotDivs.push(annotCheck);
+        flexbox.append(annotCheck);
     }
+    const maxWidth = Math.max.apply(null, annotDivs.map(elem => elem.width()));
+    for (let i=0; i<annotDivs.length; i++) {
+        annotDivs[i].width(maxWidth);
+    }
+
 }
 
 const makeAnnotatorCheckbox = (annotInfo) => {
     var div = $(getEl('div'));
     var check = $(getEl('input'));
     div.append(check);
+    check.addClass('annotator-checkbox');
     check.attr('type','checkbox');
     check.attr('name', annotInfo.name);
     check.attr('value', annotInfo.name)
-    check.attr('checked', 'checked');
+    check.attr('checked', true);
     var label = $(getEl('label'));
     check.after(label);
     label.attr('for',annotInfo.name);

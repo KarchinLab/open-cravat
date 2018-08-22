@@ -1,7 +1,7 @@
-table {
+#jobs-table {
     font-family: arial, sans-serif;
     border-collapse: collapse;
-    width: 100%;
+    width: 50%;
 }
 
 td, th {
@@ -14,8 +14,17 @@ tr:nth-child(even) {
     background-color: #dddddd;
 }
 
-.checkbox-grid li {
-    display: block;
-    float: left;
-    width: 33%;
+#submit-form {
+    width: 50%;
+}
+
+#annotator-flexbox {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 10px;
+}
+
+.annotator-checkbox {
+    margin-left: 5px;
+    margin-right: 10px;
 }

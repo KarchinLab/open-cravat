@@ -10,11 +10,27 @@
     <h1>Submit to Open-CRAVAT</h1>
     </br>
     <div id="submit-form">
-        <input type="file" id="input-file"></input>
-        <br>
-        <div id="annotator-select"></div>
-        <br>
-        <input type="button" id="submit-job-button" value="Submit"></input>
+        <div>
+            <span><h3>Input Text</h3></span>
+            <textarea rows="12" cols="80" name="input-text" placeholder="Input text"></textarea>
+            <span><h3>Input File</h3></span>
+            <input type="file" id="input-file"></input>
+        </div>
+        <div>
+                <span><h3>Annotators</h3></span>
+            <div id="annotator-flexbox"></div>
+            <div>
+                <span>Assembly:</span>
+                <select id="assembly-select">
+                    <option value="hg38">Hg38</option>
+                    <option value="hg19">Hg19</option>
+                    <option value="hg18">Hg18</option>
+                </select>
+            </div>
+        </div>
+        <div>
+            <input type="button" id="submit-job-button" value="Submit"></input>
+        </div>
     </div>
     <br>
     <div id="jobs-list">
@@ -34,5 +50,7 @@
             run();
         });
     </script>
+
+    
 </body>
 </html>
