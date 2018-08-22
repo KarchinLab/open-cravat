@@ -1,4 +1,4 @@
-from bottle import app, route, get, post, request, response, run, static_file
+from bottle import app, route, get, post, request, response, run, static_file, delete
 import os
 import time
 import datetime
@@ -8,6 +8,7 @@ import json
 import cravat
 import sys
 import traceback
+import shutil
 
 class FileRouter(object):
 
@@ -144,16 +145,28 @@ def get_all_jobs():
     response.content_type = 'application/json'
     return json.dumps([job.get_info_dict() for job in all_jobs])
 
-@post('/rest/view')
-def view():
+@get('/rest/jobs/<job_id>')
+def view_job(job_id):
     global VIEW_PROCESS
     global FILE_ROUTER
-    job_id = request.json['jobId']
     db_path = FILE_ROUTER.job_output_db(job_id)
     if os.path.exists(db_path):
         if type(VIEW_PROCESS) == subprocess.Popen:
             VIEW_PROCESS.kill()
         VIEW_PROCESS = subprocess.Popen(['cravat-view', db_path])
+        response.status_code = 200
+    else:
+        response.status_code = 404
+
+@delete('/rest/jobs/<job_id>')
+def delete_job(job_id):
+    global FILE_ROUTER
+    job_dir = FILE_ROUTER.job_dir(job_id)
+    if os.path.exists(job_dir):
+        shutil.rmtree(job_dir)
+        response.status = 200
+    else:
+        response.status = 404
             
 @get('/static/<filepath:path>')
 def static(filepath):

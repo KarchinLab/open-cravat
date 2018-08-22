@@ -66,13 +66,19 @@ const buildJobsTable = () => {
         let viewTd = $(getEl('td'));
         jobTr.append(viewTd);
         let viewBtn = $(getEl('button')).append('View');
+        viewTd.append(viewBtn);
         viewBtn.attr('disabled', !job.viewable);
         viewBtn.attr('jobId', job.id);
         viewBtn.click(jobViewButtonHandler);
-        viewTd.append(viewBtn);
         jobTr.append($(getEl('td')).append(job.orig_input_fname));
         jobTr.append($(getEl('td')).append(job.submission_time.toLocaleString()));
         jobTr.append($(getEl('td')).append(job.id));
+        let deleteTd = $(getEl('td'));
+        jobTr.append(deleteTd);
+        let deleteBtn = $(getEl('button')).append('Delete');
+        deleteTd.append(deleteBtn);
+        deleteBtn.attr('jobId', job.id);
+        deleteBtn.click(jobDeleteButtonHandler);
     }
 }
 
@@ -80,12 +86,15 @@ const getEl = (tag) => {
     return document.createElement(tag);
 }
 
+const jobViewButtonHandler = (event) => {
+    const jobId = $(event.target).attr('jobId');
+    viewJob(jobId);
+}
+
 const viewJob = (jobId) => {
-    var jsonObj = {'jobId':jobId};
     $.ajax({
-        url:'/rest/view',
-        data: JSON.stringify(jsonObj),
-        type: 'POST',
+        url:'/rest/jobs/'+jobId,
+        type: 'GET',
         processData: false,
         contentType: 'application/json',
         success: function (data) {
@@ -94,10 +103,24 @@ const viewJob = (jobId) => {
     })
 }
 
-const jobViewButtonHandler = (event) => {
+const jobDeleteButtonHandler = (event) => {
     const jobId = $(event.target).attr('jobId');
-    viewJob(jobId);
+    deleteJob(jobId);
 }
+
+const deleteJob = (jobId) => {
+    $.ajax({
+        url:'/rest/jobs/'+jobId,
+        type: 'DELETE',
+        processData: false,
+        contentType: 'application/json',
+        success: function (data) {
+            console.log(data);
+            populateJobs();
+        }
+    })
+}
+
 
 const addListeners = () => {
     $('#submit-job-button').click(submit);
@@ -141,6 +164,7 @@ const populateJobs = () => {
         url:'/rest/jobs',
         type: 'GET',
         success: function (allJobs) {
+            GLOBALS.allJobs = [];
             for (var i=0; i<allJobs.length; i++) {
                 let job = allJobs[i];
                 addJob(job);
