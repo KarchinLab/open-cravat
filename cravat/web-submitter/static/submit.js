@@ -8,8 +8,16 @@ var GLOBALS = {
 const submit = () => {
     console.log('submit the form');
     let fd = new FormData();
-    const fileInputElem = $('#input-file')[0];
-    const inputFile = fileInputElem.files[0];
+    const textInputElem = $('#input-text');
+    const textVal = textInputElem.val();
+    let inputFile;
+    if (textVal.length > 0) {
+        const textBlob = new Blob([textVal], {type:'text/plain'})
+        inputFile = new File([textBlob], 'freeFormInput.txt');
+    } else {
+        const fileInputElem = $('#input-file')[0];
+        inputFile = fileInputElem.files[0];
+    }
     fd.append('file', inputFile);
     var submitOpts = {
         'annotators': []
@@ -84,6 +92,20 @@ const jobViewButtonHandler = (event) => {
 
 const addListeners = () => {
     $('#submit-job-button').click(submit);
+    $('#input-text').change(inputChangeHandler);
+    $('#input-file').change(inputChangeHandler);
+}
+
+const inputChangeHandler = (event) => {
+    const target = $(event.target);
+    const id = target.attr('id');
+    if (id === 'input-file') {
+        $('#input-text').val('');
+    } else if (id === 'input-text') {
+        const elem = $("#input-file");
+        elem.wrap('<form>').closest('form').get(0).reset();
+        elem.unwrap();
+    }
 }
 
 var JOB_IDS = []
