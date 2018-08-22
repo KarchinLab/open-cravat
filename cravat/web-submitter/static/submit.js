@@ -21,7 +21,7 @@ const submit = () => {
             submitOpts.annotators.push(cb.value);
         }
     }
-    options.assembly = $('#assembly-select').val();
+    submitOpts.assembly = $('#assembly-select').val();
     fd.append('options',JSON.stringify(submitOpts));
     $.ajax({
         url:'/rest/submit',

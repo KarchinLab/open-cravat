@@ -100,6 +100,8 @@ def submit():
     run_args.append('-a')
     for annot_name in job_options['annotators']:
         run_args.append(annot_name)
+    run_args.append('-l')
+    run_args.append(job_options['assembly'])
     subprocess.Popen(run_args)
     job.write_info_file()
     return job.get_info_dict()
