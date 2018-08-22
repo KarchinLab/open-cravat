@@ -13,7 +13,7 @@ const submit = () => {
     let inputFile;
     if (textVal.length > 0) {
         const textBlob = new Blob([textVal], {type:'text/plain'})
-        inputFile = new File([textBlob], 'freeFormInput.txt');
+        inputFile = new File([textBlob], 'raw-input.txt');
     } else {
         const fileInputElem = $('#input-file')[0];
         inputFile = fileInputElem.files[0];
@@ -38,21 +38,30 @@ const submit = () => {
         processData: false,
         contentType: false,
         success: function (data) {
-            GLOBALS.allJobs.push(data);
-            $('#job-view-selector').val(data);
+            addJob(data);
             buildJobsTable();
         }
     })
 };
 
+const addJob = jsonObj => {
+    const trueDate = new Date(jsonObj.submission_time);
+    jsonObj.submission_time = trueDate;
+    GLOBALS.allJobs.push(jsonObj);
+    GLOBALS.allJobs.sort((a, b) => {
+        return b.submission_time.getTime() - a.submission_time.getTime();
+    })
+
+}
+
 const buildJobsTable = () => {
     let allJobs = GLOBALS.allJobs;
+    $('.job-table-row').remove();
     let jobsTable = $('#jobs-table');
-    // Remove all but header row
-    jobsTable.slice(1).remove();
     for (let i = 0; i < allJobs.length; i++) {
         job = allJobs[i];
         let jobTr = $(getEl('tr'));
+        jobTr.addClass('job-table-row');
         jobsTable.append(jobTr);
         let viewTd = $(getEl('td'));
         jobTr.append(viewTd);
@@ -94,6 +103,23 @@ const addListeners = () => {
     $('#submit-job-button').click(submit);
     $('#input-text').change(inputChangeHandler);
     $('#input-file').change(inputChangeHandler);
+    $('#all-annotators-button').click(allNoAnnotatorsHandler);
+    $('#no-annotators-button').click(allNoAnnotatorsHandler);
+}
+
+const allNoAnnotatorsHandler = (event) => {
+    const elem = $(event.target);
+    let checked;
+    if (elem.attr('id') === 'all-annotators-button') {
+        checked = true;
+    } else {
+        checked = false;
+    }
+    const annotCheckBoxes = $('.annotator-checkbox');
+    for (var i = 0; i<annotCheckBoxes.length; i++){
+        const cb = annotCheckBoxes[i];
+        cb.checked = checked;
+    }
 }
 
 const inputChangeHandler = (event) => {
@@ -117,10 +143,8 @@ const populateJobs = () => {
         success: function (allJobs) {
             for (var i=0; i<allJobs.length; i++) {
                 let job = allJobs[i];
-                const trueDate = new Date(job.submission_time);
-                job.submission_time = trueDate;
+                addJob(job);
             }
-            GLOBALS.allJobs = allJobs
             buildJobsTable();
         }
     })

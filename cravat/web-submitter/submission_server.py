@@ -52,9 +52,6 @@ class WebJob(object):
     def write_info_file(self):
         with open(self.job_info_fpath,'w') as wf:
             yaml.dump(self.get_info_dict(), wf, default_flow_style=False)
-    
-    def get_db_path(self):
-        return os.path.join(self.job_dir, self.info.output_db)
 
     def get_info_dict(self):
         return vars(self.info)
@@ -97,9 +94,12 @@ def submit():
     job_options = json.loads(request.forms.get('options'))
     run_args = ['cravat',
                 input_fpath]
-    run_args.append('-a')
-    for annot_name in job_options['annotators']:
-        run_args.append(annot_name)
+    if len(job_options['annotators'] > 0):
+        run_args.append('-a')
+        for annot_name in job_options['annotators']:
+            run_args.append(annot_name)
+    else:
+        run_args.append('--sa')
     run_args.append('-l')
     run_args.append(job_options['assembly'])
     subprocess.Popen(run_args)
