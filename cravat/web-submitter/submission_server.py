@@ -94,7 +94,7 @@ def submit():
     job_options = json.loads(request.forms.get('options'))
     run_args = ['cravat',
                 input_fpath]
-    if len(job_options['annotators'] > 0):
+    if len(job_options['annotators']) > 0:
         run_args.append('-a')
         for annot_name in job_options['annotators']:
             run_args.append(annot_name)
