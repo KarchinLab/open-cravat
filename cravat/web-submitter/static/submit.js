@@ -14,13 +14,14 @@ const submit = () => {
     var submitOpts = {
         'annotators': []
     }
-    let annotCheckBoxes = $('.annotator-checkbox');
+    const annotCheckBoxes = $('.annotator-checkbox');
     for (var i = 0; i<annotCheckBoxes.length; i++){
         const cb = annotCheckBoxes[i];
         if (cb.checked) {
             submitOpts.annotators.push(cb.value);
         }
     }
+    options.assembly = $('#assembly-select').val();
     fd.append('options',JSON.stringify(submitOpts));
     $.ajax({
         url:'/rest/submit',
@@ -114,32 +115,33 @@ const populateAnnotators = () => {
     })
 }
 
-// const rebuildAnnotatorsSelector = () => {
-//     let ul = $('#annotator-list');
-//     ul.empty();
-//     let annotators = GLOBALS.annotators;
-//     for (annot_name in annotators) {
-//         let li = $(getEl('li'));
-//         ul.append(li);
-//         let annotCheck = makeAnnotatorCheckbox(annotators[annot_name])
-//         li.append(annotCheck);
-//     }
-// }
 const rebuildAnnotatorsSelector = () => {
     let flexbox = $('#annotator-flexbox');
     flexbox.empty();
     let annotators = GLOBALS.annotators;
+    let annotInfos = Object.values(annotators);
+    // Sort by title
+    annotInfos.sort((a,b) => {
+        var x = a.title.toLowerCase();
+        var y = b.title.toLowerCase();
+        if (x < y) {return -1;}
+        if (x > y) {return 1;}
+        return 0;
+    });
+    // Add divs
     let annotDivs = [];
-    for (annot_name in annotators) {
-        let annotCheck = makeAnnotatorCheckbox(annotators[annot_name])
-        annotDivs.push(annotCheck);
-        flexbox.append(annotCheck);
+    for (let i=0; i<annotInfos.length; i++) {
+        const annotInfo = annotInfos[i];
+        let annotDiv = makeAnnotatorCheckbox(annotInfo);
+        flexbox.append(annotDiv);
+        annotDivs.push(annotDiv);
     }
+    // Resize all to match max
     const maxWidth = Math.max.apply(null, annotDivs.map(elem => elem.width()));
     for (let i=0; i<annotDivs.length; i++) {
-        annotDivs[i].width(maxWidth);
+        let annotDiv = annotDivs[i];
+        annotDiv.width(maxWidth);
     }
-
 }
 
 const makeAnnotatorCheckbox = (annotInfo) => {

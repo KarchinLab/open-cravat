@@ -1,7 +1,7 @@
 #jobs-table {
     font-family: arial, sans-serif;
     border-collapse: collapse;
-    width: 50%;
+    width: 75%;
 }
 
 td, th {
@@ -15,7 +15,7 @@ tr:nth-child(even) {
 }
 
 #submit-form {
-    width: 50%;
+    width: 75%;
 }
 
 #annotator-flexbox {
@@ -27,4 +27,8 @@ tr:nth-child(even) {
 .annotator-checkbox {
     margin-left: 5px;
     margin-right: 10px;
+}
+
+.submit-section {
+    margin: 15px;
 }
