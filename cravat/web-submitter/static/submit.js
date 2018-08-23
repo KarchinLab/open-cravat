@@ -1,5 +1,3 @@
-console.log('submit.js');
-
 var GLOBALS = {
     jobs: [],
     annotators: {},
@@ -102,7 +100,7 @@ const buildJobsTable = () => {
         const reportSelector = $(getEl('select'));
         reportSelector.attr('jobId',job.id);
         reportTd.append(reportSelector);
-        for (let i=0; i<GLOBALS.reports.valid; i++) {
+        for (let i=0; i<GLOBALS.reports.valid.length; i++) {
             let reportType = GLOBALS.reports.valid[i];
             let typeOpt = $(getEl('option'));
             reportSelector.append(typeOpt);
@@ -209,29 +207,33 @@ const inputChangeHandler = (event) => {
 var JOB_IDS = []
 
 const populateJobs = () => {
-    $.ajax({
-        url:'/rest/jobs',
-        type: 'GET',
-        success: function (allJobs) {
-            GLOBALS.jobs = [];
-            for (var i=0; i<allJobs.length; i++) {
-                let job = allJobs[i];
-                addJob(job);
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url:'/rest/jobs',
+            type: 'GET',
+            success: function (allJobs) {
+                GLOBALS.jobs = [];
+                for (var i=0; i<allJobs.length; i++) {
+                    let job = allJobs[i];
+                    addJob(job);
+                }
+                resolve();
             }
-            buildJobsTable();
-        }
-    })
+        })
+    });
 }
 
 const populateAnnotators = () => {
-    $.ajax({
-        url:'/rest/annotators',
-        type: 'GET',
-        success: function (data) {
-            GLOBALS.annotators = data
-            buildAnnotatorsSelector();
-        }
-    })
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url:'/rest/annotators',
+            type: 'GET',
+            success: function (data) {
+                GLOBALS.annotators = data
+                resolve();
+            }
+        })
+    });
 }
 
 const buildAnnotatorsSelector = () => {
@@ -329,13 +331,15 @@ const checkBoxGroupAllNoneHandler = (event) => {
 }
 
 const populateReports = () => {
-    $.ajax({
-        url:'/rest/reports',
-        type: 'GET',
-        success: function (data) {
-            GLOBALS.reports = data
-            buildReportSelector();
-        }
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url:'/rest/reports',
+            type: 'GET',
+            success: function (data) {
+                GLOBALS.reports = data
+                resolve();
+            }
+        })
     })
 }
 
@@ -356,9 +360,17 @@ const buildReportSelector = () => {
 }
 
 const run = () => {
-    console.log('run');
-    populateJobs();
-    populateAnnotators();
-    populateReports();
     addListeners();
+    jobsPromise = populateJobs();
+    annotsPromise = populateAnnotators();
+    reportsPromise = populateReports();
+    Promise.all([jobsPromise, reportsPromise]).then(() => {
+        buildJobsTable();
+    })
+    annotsPromise.then( () => {
+        buildAnnotatorsSelector();
+    })
+    reportsPromise.then( () => {
+        buildReportSelector();
+    })
 };
