@@ -181,54 +181,107 @@ const populateAnnotators = () => {
         type: 'GET',
         success: function (data) {
             GLOBALS.annotators = data
-            rebuildAnnotatorsSelector();
+            buildAnnotatorsSelector();
         }
     })
 }
 
-const rebuildAnnotatorsSelector = () => {
-    let flexbox = $('#annotator-flexbox');
-    flexbox.empty();
+const buildAnnotatorsSelector = () => {
+    const annotCheckDiv = $('#annotator-select-div');
     let annotators = GLOBALS.annotators;
     let annotInfos = Object.values(annotators);
     // Sort by title
     annotInfos.sort((a,b) => {
-        var x = a.title.toLowerCase();
-        var y = b.title.toLowerCase();
+        const x = a.title.toLowerCase();
+        const y = b.title.toLowerCase();
         if (x < y) {return -1;}
         if (x > y) {return 1;}
         return 0;
     });
-    // Add divs
-    let annotDivs = [];
+    let checkDatas = [];
     for (let i=0; i<annotInfos.length; i++) {
         const annotInfo = annotInfos[i];
-        let annotDiv = makeAnnotatorCheckbox(annotInfo);
-        flexbox.append(annotDiv);
-        annotDivs.push(annotDiv);
+        checkDatas.push({
+            name: annotInfo.name,
+            value: annotInfo.name,
+            label: annotInfo.title
+        })
     }
-    // Resize all to match max
-    const maxWidth = Math.max.apply(null, annotDivs.map(elem => elem.width()));
-    for (let i=0; i<annotDivs.length; i++) {
-        let annotDiv = annotDivs[i];
-        annotDiv.width(maxWidth);
-    }
+    // let cbg = buildCheckBoxGroup(checkDatas, annotCheckDiv);
+    // annotCheckDiv = annotCheckDiv.replaceWith(cbg);
+    // cbg.attr('id',annotCheckDiv.attr('id'));
+    // annotcheckDiv.replace(cbg);3
+    buildCheckBoxGroup(checkDatas, annotCheckDiv);
 }
 
-const makeAnnotatorCheckbox = (annotInfo) => {
-    var div = $(getEl('div'));
-    var check = $(getEl('input'));
-    div.append(check);
-    check.addClass('annotator-checkbox');
-    check.attr('type','checkbox');
-    check.attr('name', annotInfo.name);
-    check.attr('value', annotInfo.name)
-    check.attr('checked', true);
-    var label = $(getEl('label'));
-    check.after(label);
-    label.attr('for',annotInfo.name);
-    label.append(annotInfo.title)
-    return div;
+const buildCheckBoxGroup = (checkDatas, parentDiv) => {
+    parentDiv = (parentDiv === undefined) ? $(getEl('div')) : parentDiv;
+    parentDiv.empty();
+    parentDiv.addClass('checkbox-group');
+    // all-none buttons
+    const allNoneDiv = $(getEl('div'));
+    parentDiv.append(allNoneDiv);
+    allNoneDiv.addClass('checkbox-group-all-none-div')
+    // all button
+    allButton = $(getEl('input'));
+    allNoneDiv.append(allButton);
+    allButton.attr('type','button');
+    allButton.addClass('checkbox-group-all-button');
+    allButton.attr('value','All');
+    allButton.click(checkBoxGroupAllNoneHandler);
+    // none button
+    noneButton = $(getEl('input'));
+    allNoneDiv.append(noneButton);
+    noneButton.attr('type','button');
+    noneButton.addClass('checkbox-group-none-button');
+    noneButton.attr('value','None');
+    noneButton.click(checkBoxGroupAllNoneHandler);
+    // flexbox
+    const flexbox = $(getEl('div'));
+    parentDiv.append(flexbox);
+    flexbox.addClass('checkbox-group-flexbox');
+    checkDivs = [];
+    // checks
+    for (let i=0; i<checkDatas.length; i++) {
+        const checkData = checkDatas[i];
+        const checkDiv = $(getEl('div'));
+        const check = $(getEl('input'));
+        checkDiv.append(check);
+        flexbox.append(checkDiv);
+        check.addClass('checkbox-group-check');
+        check.attr('type','checkbox');
+        check.attr('name', checkData.name);
+        check.attr('value', checkData.value)
+        check.attr('checked', true);
+        const label = $(getEl('label'));
+        check.after(label);
+        label.attr('for',checkData.name);
+        label.append(checkData.label)
+        checkDivs.push(checkDiv);
+    }
+    // resize all to match max
+    const maxWidth = Math.max.apply(null, checkDivs.map(elem => elem.width()));
+    for (let i=0; i<checkDivs.length; i++) {
+        let checkDiv = checkDivs[i];
+        checkDiv.width(maxWidth);
+    }
+    return flexbox;
+}
+
+const checkBoxGroupAllNoneHandler = (event) => {
+    const elem = $(event.target);
+    let checked;
+    if (elem.hasClass('checkbox-group-all-button')) {
+        checked = true;
+    } else {
+        checked = false;
+    }
+    const checkElems = elem.closest('.checkbox-group')
+                           .find('input.checkbox-group-check');
+    for (var i = 0; i<checkElems.length; i++){
+        const checkElem = checkElems[i];
+        checkElem.checked = checked;
+    }
 }
 
 const populateReports = () => {
@@ -237,12 +290,12 @@ const populateReports = () => {
         type: 'GET',
         success: function (data) {
             GLOBALS.reports = data
-            rebuildReportsSelector();
+            buildReportsSelector();
         }
     })
 }
 
-const rebuildReportsSelector = () => {
+const buildReportsSelector = () => {
 
 }
 
