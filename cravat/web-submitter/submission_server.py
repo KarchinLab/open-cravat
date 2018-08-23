@@ -220,7 +220,7 @@ def get_report_types():
 @post('/rest/jobs/<job_id>/reports/<report_type>')
 def generate_report(job_id, report_type):
     global FILE_ROUTER
-    if report_type in get_report_types():
+    if report_type in get_valid_report_types():
         cmd_args = ['cravat', FILE_ROUTER.job_input(job_id)]
         cmd_args.append('--str')
         cmd_args.extend(['-t', report_type])

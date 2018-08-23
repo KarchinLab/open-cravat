@@ -18,17 +18,6 @@ tr:nth-child(even) {
     width: 75%;
 }
 
-/* #annotator-flexbox {
-    display: flex;
-    flex-wrap: wrap;
-    margin: 10px;
-} */
-
-/* .annotator-checkbox {
-    margin-left: 5px;
-    margin-right: 5px;
-} */
-
 .submit-section {
     margin: 15px;
 }

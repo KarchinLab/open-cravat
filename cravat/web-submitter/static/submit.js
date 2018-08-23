@@ -5,7 +5,6 @@ var GLOBALS = {
 }
 
 const submit = () => {
-    console.log('submit the form');
     let fd = new FormData();
     const textInputElem = $('#input-text');
     const textVal = textInputElem.val();
@@ -89,24 +88,42 @@ const buildJobsTable = () => {
         // Database
         const dbTd = $(getEl('td'));
         jobTr.append(dbTd);
-        const dbButton = $(getEl('button'));
+        const dbButton = $(getEl('button'))
+            .append('Download')
+            .attr('jobId',job.id)
+            .click(jobDbDownloadButtonHandler);
         dbTd.append(dbButton);
-        dbButton.append('Download');
-        dbButton.attr('jobId',job.id);
-        dbButton.click(jobDbDownloadButtonHandler);
         // Reports
         const reportTd = $(getEl('td'));
         jobTr.append(reportTd);
-        const reportSelector = $(getEl('select'));
-        reportSelector.attr('jobId',job.id);
+        const reportSelector = $(getEl('select'))
+            .attr('jobId',job.id)
+            .addClass('report-type-selector')
+            .change(reportSelectorChangeHandler)
         reportTd.append(reportSelector);
+        jobReports = job.reports;
+        let firstExistingReport;
         for (let i=0; i<GLOBALS.reports.valid.length; i++) {
             let reportType = GLOBALS.reports.valid[i];
-            let typeOpt = $(getEl('option'));
+            if (firstExistingReport === undefined && jobReports.includes(reportType)) {
+                firstExistingReport = reportType;
+            }
+            let typeOpt = $(getEl('option'))
+            .attr('value', reportType)
+            .append(reportType[0].toUpperCase()+reportType.slice(1));
             reportSelector.append(typeOpt);
-            typeOpt.attr('value', reportType);
-            typeOpt.append(reportType[0].toUpperCase()+reportType.slice(1));
         }
+        reportSelector.val(firstExistingReport)
+        const repDwnBtn = $(getEl('button'))
+            .addClass('report-download-button')
+            .append('Download')
+            .attr('disabled', firstExistingReport === undefined)
+            .click(reportDownloadButtonHandler);
+        reportTd.append(repDwnBtn);
+        repGenBtn = $(getEl('button'))
+            .append('Generate')
+            .click(reportGenerateButtonHandler)
+        reportTd.append(repGenBtn);
         // Delete
         const deleteTd = $(getEl('td'));
         jobTr.append(deleteTd);
@@ -117,12 +134,60 @@ const buildJobsTable = () => {
     }
 }
 
+const reportSelectorChangeHandler = (event) => {
+    const selector = $(event.target);
+    const downloadBtn = selector.siblings('.report-download-button');
+    const jobId = selector.attr('jobId');
+    const reportType = selector.val();
+    let job;
+    for (let i=0; i<GLOBALS.jobs.length; i++) {
+        if (GLOBALS.jobs[i].id === jobId) {
+            job = GLOBALS.jobs[i];
+            break;
+        }
+    }
+    downloadBtn.attr('disabled',!job.reports.includes(reportType));
+}
+
+const reportDownloadButtonHandler = (event) => {
+    const btn = $(event.target);
+    const selector = btn.siblings('.report-type-selector');
+    const jobId = selector.attr('jobId');
+    const reportType = selector.val();
+    downloadReport(jobId, reportType);
+}
+
+const downloadReport = (jobId, reportType) => {
+    url = 'http://'+window.location.host+'/rest/jobs/'+jobId+'/reports/'+reportType;
+    downloadFile(url);
+}
+
+const reportGenerateButtonHandler = (event) => {
+    const btn = $(event.target);
+    const selector = btn.siblings('.report-type-selector');
+    const jobId = selector.attr('jobId');
+    const reportType = selector.val();
+    generateReport(jobId, reportType);
+}
+
+const generateReport = (jobId, reportType) => {
+    $.ajax({
+        url:'/rest/jobs/'+jobId+'/reports/'+reportType,
+        type: 'POST',
+        processData: false,
+        contentType: 'application/json',
+        success: function (data) {
+            console.log(data);
+        }
+    })
+}
+
 const jobDbDownloadButtonHandler = (event) => {
     downloadJobDb($(event.target).attr('jobId'));
 }
 
 const downloadJobDb = (jobId) => {
-    url = 'http://'+window.location.host+'/rest/jobs/'+jobId+'/db',
+    url = 'http://'+window.location.host+'/rest/jobs/'+jobId+'/db';
     downloadFile(url);
 }
 
@@ -311,7 +376,7 @@ const buildCheckBoxGroup = (checkDatas, parentDiv) => {
         let checkDiv = checkDivs[i];
         checkDiv.width(maxWidth);
     }
-    return flexbox;
+    return parentDiv;
 }
 
 const checkBoxGroupAllNoneHandler = (event) => {
