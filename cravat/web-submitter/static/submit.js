@@ -66,31 +66,70 @@ const addJob = jsonObj => {
 }
 
 const buildJobsTable = () => {
-    let allJobs = GLOBALS.jobs;
+    const allJobs = GLOBALS.jobs;
     $('.job-table-row').remove();
-    let jobsTable = $('#jobs-table');
+    const jobsTable = $('#jobs-table');
     for (let i = 0; i < allJobs.length; i++) {
         job = allJobs[i];
-        let jobTr = $(getEl('tr'));
+        const jobTr = $(getEl('tr'));
         jobTr.addClass('job-table-row');
         jobsTable.append(jobTr);
-        let viewTd = $(getEl('td'));
+        // View
+        const viewTd = $(getEl('td'));
         jobTr.append(viewTd);
-        let viewBtn = $(getEl('button')).append('View');
+        const viewBtn = $(getEl('button')).append('View');
         viewTd.append(viewBtn);
         viewBtn.attr('disabled', !job.viewable);
         viewBtn.attr('jobId', job.id);
         viewBtn.click(jobViewButtonHandler);
+        // Input file
         jobTr.append($(getEl('td')).append(job.orig_input_fname));
+        // Submission time
         jobTr.append($(getEl('td')).append(job.submission_time.toLocaleString()));
+        // Job ID
         jobTr.append($(getEl('td')).append(job.id));
-        let deleteTd = $(getEl('td'));
+        // Database
+        const dbTd = $(getEl('td'));
+        jobTr.append(dbTd);
+        const dbButton = $(getEl('button'));
+        dbTd.append(dbButton);
+        dbButton.append('Download');
+        dbButton.attr('jobId',job.id);
+        dbButton.click(jobDbDownloadButtonHandler);
+        // Reports
+        const reportTd = $(getEl('td'));
+        jobTr.append(reportTd);
+        const reportSelector = $(getEl('select'));
+        reportSelector.attr('jobId',job.id);
+        reportTd.append(reportSelector);
+        for (let i=0; i<GLOBALS.reports.valid; i++) {
+            let reportType = GLOBALS.reports.valid[i];
+            let typeOpt = $(getEl('option'));
+            reportSelector.append(typeOpt);
+            typeOpt.attr('value', reportType);
+            typeOpt.append(reportType[0].toUpperCase()+reportType.slice(1));
+        }
+        // Delete
+        const deleteTd = $(getEl('td'));
         jobTr.append(deleteTd);
-        let deleteBtn = $(getEl('button')).append('Delete');
+        const deleteBtn = $(getEl('button')).append('Delete');
         deleteTd.append(deleteBtn);
         deleteBtn.attr('jobId', job.id);
         deleteBtn.click(jobDeleteButtonHandler);
     }
+}
+
+const jobDbDownloadButtonHandler = (event) => {
+    downloadJobDb($(event.target).attr('jobId'));
+}
+
+const downloadJobDb = (jobId) => {
+    url = 'http://'+window.location.host+'/rest/jobs/'+jobId+'/db',
+    downloadFile(url);
+}
+
+const downloadFile = (url) => {
+    $('#download-area').attr('src', url);
 }
 
 const getEl = (tag) => {
@@ -131,7 +170,6 @@ const deleteJob = (jobId) => {
         }
     })
 }
-
 
 const addListeners = () => {
     $('#submit-job-button').click(submit);
@@ -230,18 +268,17 @@ const buildCheckBoxGroup = (checkDatas, parentDiv) => {
     parentDiv.append(allNoneDiv);
     allNoneDiv.addClass('checkbox-group-all-none-div')
     // all button
-    allButton = $(getEl('input'));
+    allButton = $(getEl('button'));
     allNoneDiv.append(allButton);
-    allButton.attr('type','button');
     allButton.addClass('checkbox-group-all-button');
-    allButton.attr('value','All');
+    allButton.append('All');
     allButton.click(checkBoxGroupAllNoneHandler);
     // none button
-    noneButton = $(getEl('input'));
+    noneButton = $(getEl('button'));
     allNoneDiv.append(noneButton);
     noneButton.attr('type','button');
     noneButton.addClass('checkbox-group-none-button');
-    noneButton.attr('value','None');
+    noneButton.append('None');
     noneButton.click(checkBoxGroupAllNoneHandler);
     // flexbox
     const flexbox = $(getEl('div'));
