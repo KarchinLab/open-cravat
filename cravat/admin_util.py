@@ -523,6 +523,7 @@ def get_local_module_types():
 
 def get_local_module_infos_of_type (t):
     modules = {}
+    mic.update_local()
     for module_name in mic.local:
         if mic.local[module_name].type == t:
             modules[module_name] = mic.local[module_name] 
