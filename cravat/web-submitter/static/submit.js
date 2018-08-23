@@ -248,8 +248,8 @@ const rebuildReportsSelector = () => {
 
 const run = () => {
     console.log('run');
-    addListeners();
-    populateAnnotators();
     populateJobs();
+    populateAnnotators();
     populateReports();
+    addListeners();
 };
