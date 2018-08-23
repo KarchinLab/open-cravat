@@ -30,7 +30,7 @@ function getExclamationTd (flag) {
 	td.style.width = 50;
 	if (flag == true) {
 		var img = new Image();
-		img.src = 'images/exclamation.png';
+		img.src = '/result/images/exclamation.png';
 		img.width = 14;
 		img.height = 14;
 		td.appendChild(img);
@@ -111,7 +111,7 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 
 	// Pin button
 	var pinButton = getEl('img');
-	pinButton.src = '/images/pin.png';
+	pinButton.src = '/result/images/pin.png';
 	pinButton.className = 'detailwidgetpinbutton';
 	pinButton.classList.add('unpinned');
 	pinButton.setAttribute('widgetname', widgetName);
@@ -122,7 +122,7 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 
 	// Close button
 	var closeButton = getEl('img');
-	closeButton.src = 'images/close-button.png';
+	closeButton.src = '/result/images/close-button.png';
 	closeButton.className = 'closebutton';
 	//closeButton.className = 'detailwidgetclosebutton';
 	closeButton.setAttribute('widgetname', widgetName);
@@ -154,7 +154,7 @@ function addSpinner(parentDiv, scaleFactor, minDim, spinnerDivId){
 	spinnerDiv.style.position = 'absolute';
 	spinnerDiv.style.textAlign = 'center';
 	var spinnerImg = getEl('img');
-	spinnerImg.src = "images/bigSpinner.gif";
+	spinnerImg.src = "/result/images/bigSpinner.gif";
 	spinnerImg.style.width = spinnerDim + 'px';
 	spinnerImg.style.height = spinnerDim + 'px';
 	addEl(spinnerDiv, spinnerImg);
@@ -176,13 +176,13 @@ function saveFilterSetting (name) {
 	var saveData = {};
 	saveData['filterSet'] = filterSet;
 	var saveDataStr = JSON.stringify(saveData);
-	$.get('rest/service/savefiltersetting', {'dbpath': dbPath, name: name, 'savedata': saveDataStr}).done(function (response) {
+	$.get('/result/service/savefiltersetting', {'dbpath': dbPath, name: name, 'savedata': saveDataStr}).done(function (response) {
 		writeLogDiv('Filter setting has been saved.');
     });
 }
 
 function saveFilterSettingAs () {
-	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
 		var names = '' + response;
 		var msg = 'Please enter layout name to save.';
 		if (names != '') {
@@ -195,7 +195,7 @@ function saveFilterSettingAs () {
 	});
 }
 function saveLayoutSettingAs () {
-	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
 		var names = '' + response;
 		var msg = 'Please enter layout name to save.';
 		if (names != '') {
@@ -259,7 +259,7 @@ function saveWidgetSetting (name) {
 	}
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
-		url: 'rest/service/savewidgetsetting', 
+		url: '/result/service/savewidgetsetting', 
 		type: 'get',
 		async: false,
 		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
@@ -377,7 +377,7 @@ function saveLayoutSetting (name, callback) {
 	
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
-		url: 'rest/service/savelayoutsetting', 
+		url: '/result/service/savelayoutsetting', 
 		type: 'get',
 		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr}, 
 		async: false,
@@ -504,7 +504,7 @@ function applyTableSetting (level) {
 }
 
 function loadFilterSettingAs () {
-	$.get('rest/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
 		var savedNames = JSON.parse(response.replace(/'/g, '"'));
 		var div = document.getElementById('load_filter_select_div');
 		$(div).empty();
@@ -536,7 +536,7 @@ function loadFilterSettingAs () {
 
 
 function loadFilterSetting (name, callback) {
-	$.get('rest/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+	$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Filter setting loaded');
 		var data = response;
 		var loadedFilterSet = data['filterSet'];
@@ -553,7 +553,7 @@ function loadFilterSetting (name, callback) {
 function loadLayoutSettingAs () {
 	var div = document.getElementById('load_layout_select_div');
 	emptyElement(div);
-	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
     	var savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {
     		var name = savedLayoutNames[i];
@@ -568,7 +568,7 @@ function loadLayoutSettingAs () {
 }
 
 function loadLayoutSetting (name, callback) {
-	$.get('rest/service/loadlayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+	$.get('/result/service/loadlayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		var data = response;
 		loadedTableSettings = data['tableSettings'];
 		if (loadedTableSettings == undefined) {
@@ -602,7 +602,7 @@ function loadLayoutSetting (name, callback) {
 function deleteLayoutSettingAs () {
 	var div = document.getElementById('delete_layout_select_div');
 	emptyElement(div);
-	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
     	savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {
     		var name = savedLayoutNames[i];
@@ -622,7 +622,7 @@ function deleteLayoutSettingAs () {
 }
 
 function deleteLayoutSetting (name, callback) {
-	$.get('rest/service/deletelayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+	$.get('/result/service/deletelayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Layout setting deleted');
     });
 }
@@ -630,7 +630,7 @@ function deleteLayoutSetting (name, callback) {
 function renameLayoutSettingAs () {
 	var div = document.getElementById('rename_layout_select_div');
 	emptyElement(div);
-	$.get('rest/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
     	savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {
     		var name = savedLayoutNames[i];
@@ -648,7 +648,7 @@ function renameLayoutSetting (name, callback) {
 	var msg = 'Please enter a new name for layout ' + name + '.';
 	var newName = prompt(msg, lastUsedLayoutName);
 	if (newName != null) {
-		$.get('rest/service/renamelayoutsetting', {'dbpath': dbPath, 'name': name, 'newname': newName}).done(function (response) {
+		$.get('/result/service/renamelayoutsetting', {'dbpath': dbPath, 'name': name, 'newname': newName}).done(function (response) {
 			writeLogDiv('Layout name has been changed.');
 		});
 	}

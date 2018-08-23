@@ -13,52 +13,55 @@ class PathBuilder(object):
     Used to get routes to certain resources in the cravat-store download area.
     Returns path string in either url of file format.
     """
-    
+
     _valid_path_types = set(['url','file'])
-    
+
     def __init__(self, base, path_type):
         self._base = base
         if path_type in self._valid_path_types:
             self.path_type = path_type
         else:
             raise RuntimeError('Invalid path type: %s' %path_type)
-        
+
     def _build_path(self, *path_toks):
         if self.path_type == 'url':
             return '/'.join(path_toks)
         elif self.path_type == 'file':
             return os.path.join(*path_toks)
-        
+
     def base(self):
         return self._build_path(self._base)
-    
+
     def module_dir(self, module_name):
         return self._build_path(self.base(), 'modules', module_name)
-    
+
     def module_version_dir(self, module_name, version):
         return self._build_path(self.module_dir(module_name), version)
-    
+
     def module_conf(self, module_name, version):
         return self._build_path(self.module_version_dir(module_name, version), module_name+'.yml')
-    
+
     def module_readme(self, module_name, version):
         return self._build_path(self.module_version_dir(module_name, version), module_name+'.md')
-    
+
     def module_code(self, module_name, version):
         return self._build_path(self.module_version_dir(module_name, version), module_name+'.code.zip')
-    
+
     def module_code_manifest(self, module_name, version):
         return self._build_path(self.module_version_dir(module_name, version), module_name+'.code.manifest.yml')
-    
+
     def module_data(self, module_name, version):
         return self._build_path(self.module_version_dir(module_name, version), module_name+'.data.zip')
-    
+
     def module_data_manifest(self, module_name, version):
         return self._build_path(self.module_version_dir(module_name, version), module_name+'.data.manifest.yml')
-    
+
+    def module_logo (self, module_name, version):
+        return self._build_path(self.module_version_dir(module_name, version), 'logo.png')
+
     def manifest(self):
         return self._build_path(self.base(), 'manifest.yml')
-    
+
 def blank_stage_handler(*args,**kwargs):
     pass
 
@@ -76,13 +79,13 @@ class ProgressStager(object):
         self.cur_size = 0
         self.cur_stage = 0
         self.stage_handler = stage_handler
-            
+
     def get_cur_state(self):
         return (self.cur_stage,
                 self.total_stages,
                 self.cur_size,
                 self.total_size)
-    
+
     def increase_cur_size(self, dsize):
         self.cur_size += dsize
         self._update_stage()
@@ -90,7 +93,7 @@ class ProgressStager(object):
     def set_cur_size(self, cur_size):
         self.cur_size = cur_size
         self._update_stage()
-        
+
     def _update_stage(self):
         old_stage = self.cur_stage
         self.cur_stage = math.floor(self.cur_size/self.total_size 
@@ -136,12 +139,13 @@ def stream_to_file(url, fpath, stage_handler=None, stages=50):
     return r
 
 def get_file_to_string(url):
+    print('@@@ url=', url)
     r = requests.get(url)
     if r.status_code == 200:
         return r.text
     else:
         raise RuntimeError('URL: %s responded with %d' %(url,r.status_code))
-        
+
 def file_checksum(path):
     """
     Get the md5 checksum of a file.
@@ -155,14 +159,14 @@ def file_checksum(path):
     return hasher.hexdigest()
 
 class ModuleArchiveBuilder(object):
-    
+
     def __init__(self, archive_path, base_path=os.getcwd()):
         self._archive = zipfile.ZipFile(archive_path,
                                         compression=zipfile.ZIP_DEFLATED,
                                         mode='w')
         self._base_path = base_path
         self._manifest = {}
-        
+
     def add_item(self, item_path):
         rel_path = os.path.relpath(item_path, start=self._base_path)
         self._archive.write(item_path, rel_path)
@@ -174,13 +178,13 @@ class ModuleArchiveBuilder(object):
             checksum = file_checksum(item_path)
             path_list = rel_path.split(os.sep)
             nest_value_in_dict(self._manifest, checksum, path_list)
-            
+
     def get_manifest(self):
         return self._manifest
-    
+
     def close(self):
         self._archive.close()
-        
+
 def add_to_zipfile(full_path, zf, start=os.curdir, compress_type=zipfile.ZIP_DEFLATED):
     """
     Recursively add files to a zipfile. Optionally making the path within
@@ -199,7 +203,7 @@ def nest_value_in_dict(d, v, keys):
     """
     Put the value v, into dictionary d at the location defined by the list of
     keys in keys.
-    
+
     Ex: d = {'a':{'b':{'c':1}}}, v = 2, keys = ['a','b','d']
         results in:
         d = {'a':{'b':{'c':1,'d':2}}}

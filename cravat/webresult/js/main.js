@@ -258,7 +258,7 @@ function resizesTheWindow () {
 
 function getResultLevels () {
 	var request = new XMLHttpRequest();
-	request.open('GET', 'rest/service/getresulttablelevels?dbpath=' + dbPath, false);
+	request.open('GET', '/result/service/getresulttablelevels?dbpath=' + dbPath, false);
 	request.send(null);
 	resultLevels = JSON.parse(request.responseText);
 }
@@ -450,7 +450,7 @@ function firstLoadData () {
 	
 	var loadWidgets = function () {
 		detailWidgetOrder = {'variant': {}, 'gene': {}, 'info': {}};
-		$.get('rest/service/widgetlist', {}).done(function (jsonResponseData) {
+		$.get('/result/service/widgetlist', {}).done(function (jsonResponseData) {
 			writeLogDiv('Widget list loaded');
 	    	var widgets = jsonResponseData;
 	    	var widgetLoadCount = 0;
@@ -462,7 +462,7 @@ function firstLoadData () {
 	    		var req = widget['required_annotator'];
 	    		infomgr.colgroupkeytotitle[widgetName] = title;
 	    		infomgr.widgetReq[widgetName] = req;
-	    		$.getScript('/widgets/' + widgetName + '.js', function () {
+	    		$.getScript('/result/widgetfile/' + 'wg' + widgetName + '/wg' + widgetName + '.js', function () {
 	    			writeLogDiv(widgetName + ' script loaded');
 	    			widgetLoadCount += 1;
 	    			if (widgetLoadCount == widgets.length) {
@@ -509,7 +509,7 @@ function firstLoadData () {
 }
 
 function checkWidgets () {
-	$.get('rest/service/getnowgannotmodules', {dbpath: dbPath}).done(function (jsonResponseData) {
+	$.get('/result/service/getnowgannotmodules', {dbpath: dbPath}).done(function (jsonResponseData) {
 		var noWgAnnotModules = jsonResponseData;
 		populateWgNoticeDiv(noWgAnnotModules);
 	});
@@ -669,7 +669,7 @@ function run () {
     	}
     }
     
-    $.get('rest/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
+    $.get('/result/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];
     	usedAnnotators = {};
     	var cols = jsonResponseData['columns']['variant'];
