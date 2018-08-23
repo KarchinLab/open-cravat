@@ -1,0 +1,10 @@
+<html>
+<body>
+<script>
+var ws = new WebSocket('ws://localhost:8500/');
+ws.onmessage = function (e) {
+    console.log(e.data);
+};
+</script>
+</body>
+</html>

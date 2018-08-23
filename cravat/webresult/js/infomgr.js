@@ -9,7 +9,6 @@ function InfoMgr () {
 	this.stats = {};
 	this.statuss = {};
 	this.jobinfo = {};
-	this.apiUrl = 'rest/service';
 	this.widgetReq = {};
 }
 
@@ -20,7 +19,7 @@ InfoMgr.prototype.getStatus = function (jobId) {
 
 
 InfoMgr.prototype.count = function (dbPath, tabName, callback) {
-	$.get('rest/service/count', {tab: tabName, dbpath: dbPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
+	$.get('/result/service/count', {tab: tabName, dbpath: dbPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
 		var msg = jsonResponseData['n'] + ' variants';
 		callback(msg);
     });
@@ -44,7 +43,7 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 			drawingRetrievingDataDiv(tabName);
 		}
 		$.ajax({
-			url: 'rest/service/result', 
+			url: '/result/service/result', 
 			type: 'get',
 			async: true,
 			data: {job_id: loadKey, tab: tabName, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(fJson)},
@@ -54,7 +53,7 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 			}
 	    });
 	} else if (this.fetchtype == 'single') {
-		$.get('rest/service/query', {mutation: onemut, dbcolumn: true}).done(function (jsonResponseData) {
+		$.get('/result/service/query', {mutation: onemut, dbcolumn: true}).done(function (jsonResponseData) {
 	    	self.datas[tabName] = [jsonResponseData];
 	    	self.jobinfo = {}
 	    	self.jobinfo['inputcoordinate'] = 'genomic';
@@ -63,7 +62,7 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 	    	}
 		});
 	} else if (this.fetchtype == 'info') {
-		$.get(this.apiUrl + '/status', {jobid: jobId, dbpath: dbPath}).done(function (jsonResponseData) {
+		$.get('/result/service/status', {jobid: jobId, dbpath: dbPath}).done(function (jsonResponseData) {
 			self.jobinfo = jsonResponseData;
 			if (callback != null) {
 				callback(callbackArgs);

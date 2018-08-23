@@ -75,7 +75,7 @@ class LocalModuleInfo (object):
         dev_dict = self.conf.get('developer')
         if not(type(dev_dict)==dict):
             dev_dict = {}
-        self.developer = ModuleDeveloper(**dev_dict)
+        self.developer = get_developer_dict(**dev_dict)
         if 'type' not in self.conf:
             self.conf['type'] = 'unknown'
         self.type = self.conf['type']
@@ -132,19 +132,20 @@ class RemoteModuleInfo(object):
         dev_dict = kwargs.get('developer')
         if not(type(dev_dict)==dict):
             dev_dict = {}
-        self.developer = ModuleDeveloper(**dev_dict)
+        self.developer = get_developer_dict(**dev_dict)
 
     def has_version(self, version):
         return version in self.versions
 
-class ModuleDeveloper(object):
-    def __init__(self, **kwargs):
-        self.name = kwargs.get('name','')
-        self.email = kwargs.get('email','')
-        self.organization = kwargs.get('organization','')
-        self.citation = kwargs.get('citation','')
-        self.website = kwargs.get('website','')
-    
+def get_developer_dict (**kwargs):
+    d = {}
+    d['name'] = kwargs.get('name', '')
+    d['email'] = kwargs.get('email', '')
+    d['organization'] = kwargs.get('organization')
+    d['citation'] = kwargs.get('citation', '')
+    d['website'] = kwargs.get('website', '')
+    return d
+
 class ModuleInfoCache(object):
     def __init__(self):
         self._sys_conf = get_system_conf()
@@ -157,7 +158,7 @@ class ModuleInfoCache(object):
         self.remote_config = {}
         self.update_local()
         self._store_path_builder = su.PathBuilder(self._sys_conf['store_url'],'url')
-    
+
     def update_local(self):
         self.local = {}
         if not(os.path.exists(self._modules_dir)):
@@ -172,7 +173,7 @@ class ModuleInfoCache(object):
                     local_info = LocalModuleInfo(module_dir)
                     if local_info.is_valid_module():
                         self.local[module_name] = local_info
-            
+
     def update_remote(self, force=False):
         if force or not(self._remote_fetched):
             self._remote_url = self._store_path_builder.manifest()
@@ -180,7 +181,7 @@ class ModuleInfoCache(object):
             manifest_str = su.get_file_to_string(self._remote_url)
             self.remote = yaml.load(manifest_str)
             self._remote_fetched = True
-            
+
     def get_remote_readme(self, module_name, version=None):
         self.update_remote()
         # Resolve name and version
@@ -273,7 +274,7 @@ def get_remote_module_info(module_name):
         return module
     else:
         return None
-    
+
 def get_remote_module_readme(module_name, version=None):
     """
     Get the detailed description file about a module as a string.
@@ -311,7 +312,7 @@ def get_local_module_info(module_name):
         return mic.local[module_name]
     else:
         return None
-    
+
 def print_stage_handler(cur_stage, total_stages, cur_size, total_size):
     rem_stages = total_stages - cur_stage
     perc = cur_stage/total_stages*100
@@ -326,25 +327,25 @@ class InstallProgressHandler(object):
         self.module_version = module_version
         self._make_display_name()
         self.cur_stage = None
-        
+
     def _make_display_name(self):
         ver_str = self.module_version if self.module_version is not None else ''
         self.display_name = ':'.join([self.module_name,ver_str])
-        
+
     def stage_start(self, stage):
         pass
-    
+
     def stage_progress(self, cur_chunk, total_chunks, cur_size, total_size):
         pass
-    
+
     def set_module_version(self, module_version):
         self.module_version = module_version
         self._make_display_name()
-    
+
     def set_module_name(self, module_name):
         self.module_name = module_name
         self._make_display_name()
-    
+
     def _stage_msg(self, stage):
         if stage is None or stage=='':
             return ''
@@ -366,7 +367,7 @@ class InstallProgressHandler(object):
             return 'Finished install of %s' %self.display_name
         else:
             raise ValueError(stage)
-    
+
 def install_module (module_name, version=None, force_data=False, stage_handler=None, **kwargs):
     """
     Installs a module.
@@ -404,6 +405,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             uninstall_module_code(module_name)
         zipfile_path = os.path.join(module_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
+        print('kwargs=', **kwargs)
         r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, **kwargs)
         if r.status_code != 200:
             raise(requests.HTTPError(r))
@@ -447,7 +449,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         except:
             raise
         raise
-    
+
 def get_remote_data_version(module_name, version=None):
     mic.update_remote()
     if version is None:
@@ -494,7 +496,7 @@ def uninstall_module_data (module_name):
                     shutil.rmtree(item_path)
                 else:
                     os.remove(item_path)
-        
+
 def set_modules_dir (path, overwrite=False):
     """
     Set the modules_dir to the directory in path.
@@ -510,7 +512,7 @@ def set_modules_dir (path, overwrite=False):
         else:
             overwrite_conf_path = get_main_default_path()
         shutil.copy(overwrite_conf_path, get_main_conf_path())
-    
+
 #return a list of module types (e.g. annotators) in the local install
 def get_local_module_types():
     types = []
@@ -518,7 +520,7 @@ def get_local_module_types():
         if mic.local[module].type not in types:
             types.append(mic.local[module].type)
     return types
-    
+
 def get_local_module_infos_of_type (t):
     modules = {}
     for module_name in mic.local:
@@ -567,14 +569,14 @@ def write_system_conf_file(d):
     """
     with open(constants.system_conf_path,'w') as wf:
         wf.write(yaml.dump(d, default_flow_style=False))
-        
+
 def update_system_conf_file(d):
     """
     Recursively update the system config and re-write to disk.
     """
     sys_conf = recursive_update(get_system_conf(), d)
     write_system_conf_file(sys_conf)
-    
+
 def get_main_conf_path():
     """
     Get the path to where the main cravat config (cravat.yml) should be.
@@ -656,7 +658,7 @@ def publish_module(module_name, user, password, include_data=True):
         print(r.text)
     if r.text:
         print(r.text)
-        
+
 def create_account(username, password):
     sys_conf = get_system_conf()
     publish_url = sys_conf['publish_url']
@@ -670,7 +672,7 @@ def create_account(username, password):
         print('Server error')
     if r.text:
         print(r.text)
-        
+
 def change_password(username, cur_pw, new_pw):
     sys_conf = get_system_conf()
     publish_url = sys_conf['publish_url']
@@ -682,7 +684,7 @@ def change_password(username, cur_pw, new_pw):
         print('Incorrect username and password')
     if r.text:
         print(r.text)
-        
+
 def send_reset_email(username):
     sys_conf = get_system_conf()
     publish_url = sys_conf['publish_url']
@@ -702,7 +704,7 @@ def send_verify_email(username):
         print('Server error')
     if r.text:
         print(r.text)
-        
+
 def check_login(username, password):
     sys_conf = get_system_conf()
     publish_url = sys_conf['publish_url']
@@ -714,7 +716,7 @@ def check_login(username, password):
         print('Server error')
     else:
         print('Incorrect username and password')
-        
+
 def new_annotator(annot_name):
     annot_root = os.path.join(get_modules_dir(),'annotators',annot_name)
     template_root = os.path.join(constants.packagedir,'annotator_template')
@@ -749,7 +751,6 @@ def show_system_conf ():
         conf[constants.modules_dir_key] = constants.default_modules_dir
     print('Configuration file path:', confpath)
     print(yaml.dump(conf, default_flow_style=False))
-
 
 
 """

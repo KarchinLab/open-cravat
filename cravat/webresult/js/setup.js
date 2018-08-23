@@ -112,6 +112,7 @@ function makeInfoTab (rightDiv) {
 	// Widget Notice
 	var wgNoticeDiv = getEl('fieldset');
 	wgNoticeDiv.id = 'wgnoticediv';
+    wgNoticeDiv.style.display = 'none';
 	addEl(rightContentDiv, wgNoticeDiv);
 	
 	// Widgets
@@ -329,7 +330,9 @@ function populateWgNoticeDiv (noWgAnnotModules) {
 	if (noWgAnnotModules.length == 0) {
 		wgNoticeDiv.style.display = 'none';
 		return;
-	}
+	} else {
+        wgNoticeDiv.style.display = 'block';
+    }
 	var legend = getEl('legend');
 	legend.className = 'section_header';
 	addEl(legend, getTn('Missing Widgets'));
@@ -441,10 +444,10 @@ function onClickWidgetPinButton (evt, tabName) {
 	if (pinned) {
 		button.classList.remove('pinned');
 		button.classList.add('unpinned');
-		button.src = '/images/pin.png';
+		button.src = '/result/images/pin.png';
 		$(container).packery('unstamp', widget);
 	} else {
-		button.src = '/images/pin-2.png';
+		button.src = '/result/images/pin-2.png';
 		button.classList.remove('unpinned');
 		button.classList.add('pinned');
 		$(container).packery('stamp', widget);
@@ -490,7 +493,7 @@ function drawSummaryWidget (widgetName) {
 	var generator = widgetGenerators[widgetName]['info'];
 	var callServer = generator['callserver'];
 	if (callServer) {
-		$.get('rest/widgetservice/' + widgetName, {dbpath: dbPath}).done(function (response) {
+		$.get('/result/runwidget/' + widgetName, {dbpath: dbPath}).done(function (response) {
 			var data = response['data'];
 			if (data == {}) {
 			} else {
@@ -555,7 +558,7 @@ function addLeftPanelFieldSet (tabName, parent, fieldSetName) {
 	legend.style.fontWeight = 'bold';
 	addEl(legend, getTn(fieldSetName));
 	var img = getEl('img');
-	img.src = 'images/minus.png';
+	img.src = '/result/images/minus.png';
 	img.style.width = '11px';
 	img.style.height = '11px';
 	addEl(legend, img);
@@ -1142,7 +1145,7 @@ function updateTableColumns (tabName) {
 }
 function showSpinner (tabName, elem) {
 	spinner = getEl('img');
-	spinner.src = 'images/spinner.gif';
+	spinner.src = '/result/images/spinner.gif';
 	spinner.style.width = '15px';
 	addEl(elem.parentElement, spinner);
 }
