@@ -17,7 +17,7 @@ class FileRouter(object):
         self.root = os.path.dirname(__file__)
         self.input_fname = 'input'
         self.report_extensions = {
-            'text':'.txt',
+            'text':'.tsv',
             'excel':'.xlsx'
         }
         self.db_extension = '.sqlite'
@@ -105,16 +105,25 @@ def submit():
                         submission_time=datetime.datetime.now().isoformat(),
                         viewable=False)
     job_options = json.loads(request.forms.get('options'))
+    # Subprocess arguments
     run_args = ['cravat',
                 input_fpath]
+    # Annotators
     if len(job_options['annotators']) > 0:
         run_args.append('-a')
-        for annot_name in job_options['annotators']:
-            run_args.append(annot_name)
+        run_args.extend(job_options['annotators'])
     else:
         run_args.append('--sa')
+    # Liftover assembly
     run_args.append('-l')
     run_args.append(job_options['assembly'])
+    # Reports
+    if len(job_options['reports']) > 0:
+        run_args.append('-t')
+        run_args.extend(job_options['reports'])
+    else:
+        run_args.append('--sr')
+    print('Run command: \''+' '.join(run_args)+'\'')
     subprocess.Popen(run_args)
     job.write_info_file()
     return job.get_info_dict()

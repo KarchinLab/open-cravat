@@ -21,13 +21,23 @@ const submit = () => {
     }
     fd.append('file', inputFile);
     var submitOpts = {
-        'annotators': []
+        annotators: [],
+        reports: []
     }
-    const annotCheckBoxes = $('.annotator-checkbox');
-    for (var i = 0; i<annotCheckBoxes.length; i++){
-        const cb = annotCheckBoxes[i];
+    const annotChecks = $('#annotator-select-div')
+                        .find('.checkbox-group-check');
+    for (var i = 0; i<annotChecks.length; i++){
+        const cb = annotChecks[i];
         if (cb.checked) {
             submitOpts.annotators.push(cb.value);
+        }
+    }
+    const reportChecks = $('#report-select-div')
+                         .find('.checkbox-group-check');
+    for (var i = 0; i<reportChecks.length; i++){
+        const cb = reportChecks[i];
+        if (cb.checked) {
+            submitOpts.reports.push(cb.value);
         }
     }
     submitOpts.assembly = $('#assembly-select').val();
@@ -204,13 +214,10 @@ const buildAnnotatorsSelector = () => {
         checkDatas.push({
             name: annotInfo.name,
             value: annotInfo.name,
-            label: annotInfo.title
+            label: annotInfo.title,
+            checked: true
         })
     }
-    // let cbg = buildCheckBoxGroup(checkDatas, annotCheckDiv);
-    // annotCheckDiv = annotCheckDiv.replaceWith(cbg);
-    // cbg.attr('id',annotCheckDiv.attr('id'));
-    // annotcheckDiv.replace(cbg);3
     buildCheckBoxGroup(checkDatas, annotCheckDiv);
 }
 
@@ -252,7 +259,7 @@ const buildCheckBoxGroup = (checkDatas, parentDiv) => {
         check.attr('type','checkbox');
         check.attr('name', checkData.name);
         check.attr('value', checkData.value)
-        check.attr('checked', true);
+        check.attr('checked', checkData.checked);
         const label = $(getEl('label'));
         check.after(label);
         label.attr('for',checkData.name);
@@ -290,13 +297,25 @@ const populateReports = () => {
         type: 'GET',
         success: function (data) {
             GLOBALS.reports = data
-            buildReportsSelector();
+            buildReportSelector();
         }
     })
 }
 
-const buildReportsSelector = () => {
-
+const buildReportSelector = () => {
+    const validReports = GLOBALS.reports.valid;
+    const checkData = [];
+    for (var i=0; i<validReports.length; i++) {
+        reportName = validReports[i];
+        checkData.push({
+            name: reportName,
+            value: reportName,
+            label: reportName[0].toUpperCase()+reportName.slice(1),
+            checked: reportName === GLOBALS.reports.default
+        })
+    }
+    const reportDiv = $('#report-select-div');
+    buildCheckBoxGroup(checkData, reportDiv);
 }
 
 const run = () => {
