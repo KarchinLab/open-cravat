@@ -5,7 +5,8 @@ import datetime
 import subprocess
 import yaml
 import json
-import cravat
+from cravat import admin_util as au
+from cravat import ConfigLoader
 import sys
 import traceback
 import shutil
@@ -14,6 +15,12 @@ class FileRouter(object):
 
     def __init__(self):
         self.root = os.path.dirname(__file__)
+        self.input_fname = 'input'
+        self.report_extensions = {
+            'text':'.txt',
+            'excel':'.xlsx'
+        }
+        self.db_extension = '.sqlite'
 
     def static_dir(self):
         return os.path.join(self.root, 'static')
@@ -28,13 +35,17 @@ class FileRouter(object):
         info_fname = '{}.info.yaml'.format(job_id)
         return os.path.join(self.job_dir(job_id), info_fname)
 
-    def job_input_file(self, job_id):
-        input_fname = 'input'
-        return os.path.join(self.job_dir(job_id), input_fname)
+    def job_input(self, job_id):
+        return os.path.join(self.job_dir(job_id), self.input_fname)
 
-    def job_output_db(self, job_id):
-        output_fname = 'input.sqlite'
+    def job_db(self, job_id):
+        output_fname = self.input_fname+self.db_extension
         return os.path.join(self.job_dir(job_id), output_fname)
+
+    def job_report(self, job_id, report_type):
+        ext = self.report_extensions.get(report_type, '.'+report_type)
+        report_fname = self.input_fname+ext
+        return os.path.join(self.job_dir(job_id), report_fname)
 
 class WebJob(object):
     def __init__(self, job_dir, job_info_fpath):
@@ -68,7 +79,8 @@ class JobInfo(object):
         self.orig_input_fname = all_vars.get('orig_input_fname')
         self.submission_time = all_vars.get('submission_time')
         self.id = all_vars.get('id')
-        self.viewable = all_vars.get('viewable')
+        self.viewable = all_vars.get('viewable',False)
+        self.reports = all_vars.get('reports',[])
 
 FILE_ROUTER = FileRouter()
 VIEW_PROCESS = None
@@ -86,7 +98,7 @@ def submit():
     job_info_fpath = FILE_ROUTER.job_info_file(job_id)
     os.mkdir(job_dir)
     job = WebJob(job_dir, job_info_fpath)
-    input_fpath = os.path.join(job_dir, FILE_ROUTER.job_input_file(job_id))
+    input_fpath = os.path.join(job_dir, FILE_ROUTER.job_input(job_id))
     with open(input_fpath,'wb') as wf:
         wf.write(file_formpart.file.read())
     job.set_info_values(orig_input_fname=orig_input_fname,
@@ -109,10 +121,10 @@ def submit():
 
 @get('/rest/annotators')
 def get_annotators():
-    module_names = cravat.admin_util.list_local()
+    module_names = au.list_local()
     out = {}
     for module_name in module_names:
-        local_info = cravat.admin_util.get_local_module_info(module_name)
+        local_info = au.get_local_module_info(module_name)
         if local_info.type == 'annotator':
             out[module_name] = {
                                 'name':module_name,
@@ -136,8 +148,14 @@ def get_all_jobs():
             job_info_fpath = FILE_ROUTER.job_info_file(job_id)
             job = WebJob(job_dir, job_info_fpath)
             job.read_info_file()
-            job_viewable = os.path.exists(FILE_ROUTER.job_output_db(job_id))
+            job_viewable = os.path.exists(FILE_ROUTER.job_db(job_id))
             job.set_info_values(viewable=job_viewable)
+            existing_reports = []
+            for report_type in get_valid_report_types():
+                report_file = FILE_ROUTER.job_report(job_id, report_type)
+                if os.path.exists(report_file):
+                    existing_reports.append(report_type)
+            job.set_info_values(reports=existing_reports)
             all_jobs.append(job)
         except:
             traceback.print_exc()
@@ -149,7 +167,7 @@ def get_all_jobs():
 def view_job(job_id):
     global VIEW_PROCESS
     global FILE_ROUTER
-    db_path = FILE_ROUTER.job_output_db(job_id)
+    db_path = FILE_ROUTER.job_db(job_id)
     if os.path.exists(db_path):
         if type(VIEW_PROCESS) == subprocess.Popen:
             VIEW_PROCESS.kill()
@@ -167,7 +185,46 @@ def delete_job(job_id):
         response.status = 200
     else:
         response.status = 404
-            
+
+@get('/rest/jobs/<job_id>/db')
+def download_db(job_id):
+    global FILE_ROUTER
+    db_path = FILE_ROUTER.job_db(job_id)
+    root_dir, fname = os.path.split(db_path)
+    ret_fname = job_id+'.'+fname.split('.')[-1]
+    return static_file(fname, root=root_dir, download=ret_fname)
+
+def get_valid_report_types():
+    reporter_infos = au.get_local_module_infos(types=['reporter'])
+    report_types = [x.name.split('reporter')[0] for x in reporter_infos]
+    return report_types
+
+@get('/rest/reports')
+def get_report_types():
+    cfl = ConfigLoader()
+    default_reporter = cfl.get_cravat_conf_value('reporter')
+    default_type = default_reporter.split('reporter')[0]
+    valid_types = get_valid_report_types()
+    return {'valid': valid_types, 'default': default_type}
+
+
+@post('/rest/jobs/<job_id>/reports/<report_type>')
+def generate_report(job_id, report_type):
+    global FILE_ROUTER
+    if report_type in get_report_types():
+        cmd_args = ['cravat', FILE_ROUTER.job_input(job_id)]
+        cmd_args.append('--str')
+        cmd_args.extend(['-t', report_type])
+        subprocess.Popen(cmd_args)
+
+@get('/rest/jobs/<job_id>/reports/<report_type>')
+def download_report(job_id, report_type):
+    global FILE_ROUTER
+    report_path = FILE_ROUTER.job_report(job_id, report_type)
+    root_dir, fname = os.path.split(report_path)
+    ret_fname = job_id+'.'+fname.split('.')[-1]
+    return static_file(fname, root=root_dir, download=ret_fname)
+
 @get('/static/<filepath:path>')
 def static(filepath):
     return static_file(filepath, root=FILE_ROUTER.static_dir())

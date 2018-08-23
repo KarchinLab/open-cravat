@@ -1,8 +1,9 @@
 console.log('submit.js');
 
 var GLOBALS = {
-    allJobs: [],
-    annotators: {}
+    jobs: [],
+    annotators: {},
+    reports: {}
 }
 
 const submit = () => {
@@ -47,15 +48,15 @@ const submit = () => {
 const addJob = jsonObj => {
     const trueDate = new Date(jsonObj.submission_time);
     jsonObj.submission_time = trueDate;
-    GLOBALS.allJobs.push(jsonObj);
-    GLOBALS.allJobs.sort((a, b) => {
+    GLOBALS.jobs.push(jsonObj);
+    GLOBALS.jobs.sort((a, b) => {
         return b.submission_time.getTime() - a.submission_time.getTime();
     })
 
 }
 
 const buildJobsTable = () => {
-    let allJobs = GLOBALS.allJobs;
+    let allJobs = GLOBALS.jobs;
     $('.job-table-row').remove();
     let jobsTable = $('#jobs-table');
     for (let i = 0; i < allJobs.length; i++) {
@@ -164,7 +165,7 @@ const populateJobs = () => {
         url:'/rest/jobs',
         type: 'GET',
         success: function (allJobs) {
-            GLOBALS.allJobs = [];
+            GLOBALS.jobs = [];
             for (var i=0; i<allJobs.length; i++) {
                 let job = allJobs[i];
                 addJob(job);
@@ -227,8 +228,22 @@ const makeAnnotatorCheckbox = (annotInfo) => {
     check.after(label);
     label.attr('for',annotInfo.name);
     label.append(annotInfo.title)
-    // div.append(annotInfo.title);
     return div;
+}
+
+const populateReports = () => {
+    $.ajax({
+        url:'/rest/reports',
+        type: 'GET',
+        success: function (data) {
+            GLOBALS.reports = data
+            rebuildReportsSelector();
+        }
+    })
+}
+
+const rebuildReportsSelector = () => {
+
 }
 
 const run = () => {
@@ -236,4 +251,5 @@ const run = () => {
     addListeners();
     populateAnnotators();
     populateJobs();
+    populateReports();
 };

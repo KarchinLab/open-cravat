@@ -217,6 +217,18 @@ def list_remote():
     mic.update_remote()
     return sorted(list(mic.remote.keys()))
 
+def get_local_module_infos(types=[], names=[]):
+    all_infos = list(mic.local.values())
+    return_infos = []
+    for minfo in all_infos:
+        if types and minfo.type not in types:
+            continue
+        elif names and minfo.name not in names:
+            continue
+        else:
+            return_infos.append(minfo)
+    return return_infos
+
 def search_remote(*patterns):
     """
     Return remote module names which match any of supplied patterns
