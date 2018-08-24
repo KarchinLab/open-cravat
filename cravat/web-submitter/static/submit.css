@@ -8,9 +8,6 @@ h3 {
     margin-bottom: 2px;
     margin-top: 2px;
 }
-h1,h2 {
-    margin-bottom: 5px;
-}
 .submit-section1 {
     margin-bottom: 5px;
 }
@@ -37,8 +34,6 @@ h1,h2 {
 .flexbox-row-wrap {
     display: flex;
     flex-wrap: wrap;
-}
-#jobs-list {
 }
 #jobs-table {
     border-collapse: collapse;

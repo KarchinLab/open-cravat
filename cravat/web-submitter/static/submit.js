@@ -69,17 +69,17 @@ const buildJobsTable = () => {
     const jobsTable = $('#jobs-table');
     for (let i = 0; i < allJobs.length; i++) {
         job = allJobs[i];
-        const jobTr = $(getEl('tr'));
-        jobTr.addClass('job-table-row');
+        const jobTr = $(getEl('tr'))
+            .addClass('job-table-row');
         jobsTable.append(jobTr);
         // View
         const viewTd = $(getEl('td'));
         jobTr.append(viewTd);
-        const viewBtn = $(getEl('button')).append('View');
+        const viewBtn = $(getEl('button')).append('View')
+            .attr('disabled', !job.viewable)
+            .attr('jobId', job.id)
+            .click(jobViewButtonHandler);
         viewTd.append(viewBtn);
-        viewBtn.attr('disabled', !job.viewable);
-        viewBtn.attr('jobId', job.id);
-        viewBtn.click(jobViewButtonHandler);
         // Input file
         jobTr.append($(getEl('td')).append(job.orig_input_fname));
         // Submission time
@@ -92,6 +92,7 @@ const buildJobsTable = () => {
         const dbButton = $(getEl('button'))
             .append('Download')
             .attr('jobId',job.id)
+            .attr('disabled',!job.viewable)
             .click(jobDbDownloadButtonHandler);
         dbTd.append(dbButton);
         // Reports
@@ -383,17 +384,16 @@ const buildCheckBoxGroup = (checkDatas, parentDiv) => {
     for (let i=0; i<checkDatas.length; i++) {
         const checkData = checkDatas[i];
         const checkDiv = $(getEl('div'));
-        const check = $(getEl('input'));
-        checkDiv.append(check);
         flexbox.append(checkDiv);
-        check.addClass('checkbox-group-check');
-        check.attr('type','checkbox');
-        check.attr('name', checkData.name);
-        check.attr('value', checkData.value)
-        check.attr('checked', checkData.checked);
         const label = $(getEl('label'));
-        check.after(label);
-        label.attr('for',checkData.name);
+        checkDiv.append(label);
+        const check = $(getEl('input'))
+            .addClass('checkbox-group-check')
+            .attr('type','checkbox')
+            .attr('name', checkData.name)
+            .attr('value', checkData.value)
+            .attr('checked', checkData.checked)
+        label.append(check);
         label.append(checkData.label)
         checkDivs.push(checkDiv);
     }
