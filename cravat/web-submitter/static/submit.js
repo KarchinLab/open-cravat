@@ -1,7 +1,8 @@
 var GLOBALS = {
     jobs: [],
     annotators: {},
-    reports: {}
+    reports: {},
+    inputExamples: {}
 }
 
 const submit = () => {
@@ -208,7 +209,6 @@ const viewJob = (jobId) => {
     $.ajax({
         url:'/rest/jobs/'+jobId,
         type: 'GET',
-        processData: false,
         contentType: 'application/json',
         success: function (data) {
             console.log(data);
@@ -225,7 +225,6 @@ const deleteJob = (jobId) => {
     $.ajax({
         url:'/rest/jobs/'+jobId,
         type: 'DELETE',
-        processData: false,
         contentType: 'application/json',
         success: function (data) {
             console.log(data);
@@ -240,6 +239,34 @@ const addListeners = () => {
     $('#input-file').change(inputChangeHandler);
     $('#all-annotators-button').click(allNoAnnotatorsHandler);
     $('#no-annotators-button').click(allNoAnnotatorsHandler);
+    $('.input-example-button').click(inputExampleChangeHandler)
+}
+
+const inputExampleChangeHandler = (event) => {
+    const elem = $(event.target);
+    const val = elem.val();
+    const getExampleText = new Promise((resolve, reject) => {
+        const cachedText = GLOBALS.inputExamples[val];
+        if (cachedText === undefined) {
+            const fname = val+'.txt'
+            $.ajax({
+                url:'input-examples/'+fname,
+                type: 'GET',
+                contentType: 'application/json',
+                success: function (data) {
+                    GLOBALS.inputExamples[val] = data;
+                    resolve(data);
+                }
+            })
+        } else {
+            resolve(cachedText);
+        }
+    });
+    getExampleText.then((text) => {
+        const inputArea = $('#input-text');
+        inputArea.val(text);
+        inputArea.change();
+    })
 }
 
 const allNoAnnotatorsHandler = (event) => {
