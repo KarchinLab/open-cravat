@@ -229,7 +229,9 @@ const deleteJob = (jobId) => {
         contentType: 'application/json',
         success: function (data) {
             console.log(data);
-            populateJobs();
+            populateJobs().then(() => {
+                buildJobsTable();
+            });
         }
     })
 }
