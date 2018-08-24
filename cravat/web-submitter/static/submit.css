@@ -1,65 +1,53 @@
 body {
-	font-family: Roboto;
+    font-family: Roboto;
 }
-
-button, input[file] {
-	background-color: white;
+button {
+    background-color: white;
 }
-
-input[type="file"] {
-	background-color: white;
+h3 {
+    margin-bottom: 2px;
+    margin-top: 2px;
 }
-
+h1,h2 {
+    margin-bottom: 5px;
+}
+.submit-section1 {
+    margin-bottom: 5px;
+}
+.submit-section2 {
+    margin-right: 10px;
+}
+#annotator-select-div {
+    min-width: 400px;
+    max-width: 800px
+}
+.checkbox-group-flexbox {
+    display: flex;
+    flex-wrap: wrap;
+}
+.checkbox-group-check {
+    margin-left: 15px;
+}
+.checkbox-group-all-button, .checkbox-group-none-button {
+    margin: 2px;
+}
+#submit-job-button {
+    font-size: 20px
+}
+.flexbox-row-wrap {
+    display: flex;
+    flex-wrap: wrap;
+}
+#jobs-list {
+}
 #jobs-table {
     border-collapse: collapse;
 }
-
 #jobs-table td, th {
     border: 1px solid #dddddd;
     text-align: left;
     padding: 8px;
 }
-
 #jobs-table tr:nth-child(even) {
     background-color: #dddddd;
-}
-
-.submit-section1 {
-    margin-bottom: 5px;
-    display: flex;
-    flex-wrap: wrap;
-}
-.submit-section2 {
-    margin: 5px;
-    min-width: 200px;
-}
-.submit-section3 {
-    display: inline;
-}
-#submit-form {
-    width: 100%;
-    max-width: 1000px;
-}
-#annotator-wrapper-div {
-    width: 75%;
-}
-#options-wrapper-div {
-    width: 15%;
-}
-
-.checkbox-group-flexbox {
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.checkbox-group-check {
-    margin-left: 5px;
-    margin-right: 5px;
-}
-
-h3 {
-    margin-bottom: 2px;
-}
-h1 {
-    margin-bottom: 5px;
 }
