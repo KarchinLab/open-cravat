@@ -11,7 +11,6 @@ from . import util
 import requests
 import traceback
 import re
-import platform
 
 def load_yml_conf(yml_conf_path):
     """
