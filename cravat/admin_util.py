@@ -11,6 +11,7 @@ from . import util
 import requests
 import traceback
 import re
+import platform
 
 def load_yml_conf(yml_conf_path):
     """
@@ -228,6 +229,13 @@ def get_local_module_infos(types=[], names=[]):
         else:
             return_infos.append(minfo)
     return return_infos
+
+def get_jobs_dir():
+    home_dir = os.path.expanduser('~')
+    jobs_dir = os.path.join(home_dir,'.open-cravat','jobs')
+    if not(os.path.isdir(jobs_dir)):
+        os.makedirs(jobs_dir)
+    return jobs_dir
 
 def search_remote(*patterns):
     """
@@ -770,3 +778,6 @@ Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info
 """
 mic = ModuleInfoCache()
+
+if __name__ == '__main__':
+    get_jobs_dir()

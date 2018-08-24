@@ -21,12 +21,13 @@ class FileRouter(object):
             'excel':'.xlsx'
         }
         self.db_extension = '.sqlite'
+        self._jobs_dir = au.get_jobs_dir()
 
     def static_dir(self):
         return os.path.join(self.root, 'static')
 
     def jobs_dir(self):
-        return os.path.join('C:\\','Users','Kyle','a','cravat-jobs','websubmitter')
+        return self._jobs_dir
 
     def job_dir(self, job_id):
         return os.path.join(self.jobs_dir(), job_id)
