@@ -12,7 +12,7 @@ const submit = () => {
     let inputFile;
     if (textVal.length > 0) {
         const textBlob = new Blob([textVal], {type:'text/plain'})
-        inputFile = new File([textBlob], 'raw-input.txt');
+        inputFile = new File([textBlob], 'manual-input.txt');
     } else {
         const fileInputElem = $('#input-file')[0];
         inputFile = fileInputElem.files[0];

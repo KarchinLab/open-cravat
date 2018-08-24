@@ -1,25 +1,50 @@
-#jobs-table {
-    font-family: arial, sans-serif;
-    border-collapse: collapse;
-    width: 75%;
+body {
+	font-family: Roboto;
 }
 
-td, th {
+button, input[file] {
+	background-color: white;
+}
+
+input[type="file"] {
+	background-color: white;
+}
+
+#jobs-table {
+    border-collapse: collapse;
+}
+
+#jobs-table td, th {
     border: 1px solid #dddddd;
     text-align: left;
     padding: 8px;
 }
 
-tr:nth-child(even) {
+#jobs-table tr:nth-child(even) {
     background-color: #dddddd;
 }
 
+.submit-section1 {
+    margin-bottom: 5px;
+    display: flex;
+    flex-wrap: wrap;
+}
+.submit-section2 {
+    margin: 5px;
+    min-width: 200px;
+}
+.submit-section3 {
+    display: inline;
+}
 #submit-form {
+    width: 100%;
+    max-width: 1000px;
+}
+#annotator-wrapper-div {
     width: 75%;
 }
-
-.submit-section {
-    margin: 15px;
+#options-wrapper-div {
+    width: 15%;
 }
 
 .checkbox-group-flexbox {
@@ -30,4 +55,11 @@ tr:nth-child(even) {
 .checkbox-group-check {
     margin-left: 5px;
     margin-right: 5px;
+}
+
+h3 {
+    margin-bottom: 2px;
+}
+h1 {
+    margin-bottom: 5px;
 }
