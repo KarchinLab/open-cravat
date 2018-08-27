@@ -171,12 +171,8 @@ def install_module (handler):
 def install_widgets_for_module (handler):
     print('queries=', handler.request_queries)
     queries = urllib.parse.unquote(handler.request_queries)
-    module_name = queries['name'][0]
-    if 'version' in queries:
-        module_version = queries['version'][0]
-    else:
-        module_version = None
-    au.install_module(module_name, version=module_version)
+    module_name = queries['module'][0]
+    au.install_widgets_for_module('wg' + module_name)
     content = 'success'
     handler.send_response(200)
     handler.send_header('Content-type', 'application/json')
