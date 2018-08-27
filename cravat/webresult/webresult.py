@@ -91,8 +91,10 @@ def get_nowg_annot_modules (queries):
     for wgmodule in wgmodules:
         conf = wgmodules[wgmodule].conf
         if 'required_annotator' in conf:
-            if wgmodule not in annot_modules_with_wg:
-                annot_modules_with_wg.append(wgmodule)
+            annot_module = conf['required_annotator']
+            if annot_module not in annot_modules_with_wg:
+                annot_modules_with_wg.append(annot_module)
+    print('@@@', annot_modules_with_wg)
     nowg_annot_modules = {}
     if table_exists(cursor, 'variant'):
         q = 'select name, displayname from variant_annotator'
@@ -101,11 +103,12 @@ def get_nowg_annot_modules (queries):
             m = r[0]
             if m in ['example_annotator', 'testannot', 'tagsampler']:
                 continue
-            annot_module = 'wg' + r[0]
+            annot_module = r[0]
             displayname = r[1]
             if annot_module not in annot_modules_with_wg and annot_module not in nowg_annot_modules:
                 nowg_annot_modules[annot_module] = displayname
     content = nowg_annot_modules
+    print('@@@ content=', content)
     return content
 
 def get_filter_save_names (queries):
