@@ -46,11 +46,12 @@ var filterCols = null;
 
 var shouldResizeScreen = {};
 
-var NUMVAR_LIMIT = 100000;
+var NUMVAR_LIMIT = 100
 
 var firstLoad = true;
 
 var flagNotifyToUseFilter = false;
+var missingWidgets = {};
 
 var confPath = null;
 

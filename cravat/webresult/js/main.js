@@ -372,42 +372,49 @@ function loadData (alertFlag, finalcallback) {
 		}
 	}
 	var loadVariantResult = function () {
+        function callLoadVariant () {
+            var callback = null;
+            if (usedAnnotators['gene']) {
+                callback = loadGeneResult;
+            } else {
+                callback = loadSampleResult;
+            }
+            if (resultLevels.indexOf('variant') != -1) {
+                infomgr.load(jobId, 'variant', callback, null, filterJson);
+            } else {
+                callback();
+            }
+        }
 		if (firstLoad) {
 			firstLoad = false;
-			var numvar = Number(infomgr.jobinfo['Number of unique input variants']);
-			if (numvar > NUMVAR_LIMIT) {
-				lockTabs();
-				flagNotifyToUseFilter = true;
-				if (document.getElementById('infonoticediv')) {
-					notifyToUseFilter();
-					flagNotifyToUseFilter = false;
-				} else {
-					flagNotifyToUseFilter = true;
-				}
-				removeLoadingDiv();
-				return;
-			} else {
-				if (flagNotifyToUseFilter) {
-					notifyOfReadyToLoad();
-					flagNotifyToUseFilter = false;
-				}
-				removeLoadingDiv();
-			}
-		}
-		var callback = null;
-		if (usedAnnotators['gene']) {
-			callback = loadGeneResult;
+            infomgr.count(dbPath, 'variant', function (numvar) {
+                if (numvar > NUMVAR_LIMIT) {
+                    lockTabs();
+                    flagNotifyToUseFilter = true;
+                    if (document.getElementById('infonoticediv')) {
+                        notifyToUseFilter();
+                        flagNotifyToUseFilter = false;
+                    } else {
+                        flagNotifyToUseFilter = true;
+                    }
+                    removeLoadingDiv();
+                    return;
+                } else {
+                    if (flagNotifyToUseFilter) {
+                        notifyOfReadyToLoad();
+                        flagNotifyToUseFilter = false;
+                    }
+                    removeLoadingDiv();
+                    callLoadVariant();
+                }
+            });
 		} else {
-			callback = loadSampleResult;
-		}
-		if (resultLevels.indexOf('variant') != -1) {
-			infomgr.load(jobId, 'variant', callback, null, filterJson);
-		} else {
-			callback();
-		}
+            callLoadVariant();
+        }
 	}
 	lockTabs();
 	loadedFilterJson = filterJson;
+    makeFilterJson();
 	loadVariantResult();
 }
 
@@ -437,8 +444,13 @@ function notifyToUseFilter () {
 		'click "Load Variants".';
 }
 
+function hideWgnoticediv () {
+    var div = document.getElementById('wgnoticediv');
+    div.style.display = 'none';
+}
+
 function notifyOfReadyToLoad () {
-	var div = document.getElementById('infonoticediv')
+	var div = document.getElementById('infonoticediv');
 	div.style.background = 'white';
 	div.textContent = ' ';
 	div.style.display = 'none';
@@ -467,6 +479,7 @@ function firstLoadData () {
 	    			widgetLoadCount += 1;
 	    			if (widgetLoadCount == widgets.length) {
 	    				setupTab('info');
+                        missingWidgets = {};
 	        			if (flagNotifyToUseFilter) {
 	        				notifyToUseFilter();
 	        				flagNotifyToUseFilter = false;

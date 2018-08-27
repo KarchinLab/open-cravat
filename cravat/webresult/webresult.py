@@ -16,7 +16,6 @@ from cravat import admin_util as au
 from cravat import CravatFilter
 
 def get (handler):
-    print('@ entered get of webresult')
     head = handler.trim_path_head()
     if head == 'service':
         serve_service(handler)
@@ -43,7 +42,6 @@ def get_filepath (path):
 ### service ###
 
 def serve_service (handler):
-    print('@serve_service: path=', handler.request_path)
     head = handler.trim_path_head()
     queries = handler.request_queries
     handler.send_response(200)

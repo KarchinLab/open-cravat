@@ -22,6 +22,8 @@ def get (handler):
         get_local_manifest(handler)
     elif head == 'install':
         install_module(handler)
+    elif head == 'installwidgetsformodule':
+        install_widgets_for_module(handler)
     elif head == 'uninstall':
         uninstall_module(handler)
     elif head == 'installstream':
@@ -152,9 +154,28 @@ def get_module_readme(request):
     return response
 
 def install_module (handler):
+    queries = urllib.parse.unquote(handler.request_queries)
+    module_name = queries['name'][0]
+    if 'version' in queries:
+        module_version = queries['version'][0]
+    else:
+        module_version = None
+    au.install_module(module_name, version=module_version)
+    content = 'success'
+    handler.send_response(200)
+    handler.send_header('Content-type', 'application/json')
+    handler.end_headers()
+    handler.response = bytes(json.dumps(content), 'UTF-8')
+    handler.wfile.write(handler.response)
+
+def install_widgets_for_module (handler):
     print('queries=', handler.request_queries)
-    module_name = urllib.parse.unquote(handler.request_queries['name'][0])
-    module_version = urllib.parse.unquote(handler.request_queries['version'][0])
+    queries = urllib.parse.unquote(handler.request_queries)
+    module_name = queries['name'][0]
+    if 'version' in queries:
+        module_version = queries['version'][0]
+    else:
+        module_version = None
     au.install_module(module_name, version=module_version)
     content = 'success'
     handler.send_response(200)
