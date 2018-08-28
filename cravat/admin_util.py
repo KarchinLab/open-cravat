@@ -63,7 +63,8 @@ class LocalModuleInfo (object):
         self.readme_path = os.path.join(self.directory, self.name+'.md')
         self.readme_exists = os.path.exists(self.readme_path)
         if self.readme_exists:
-            self.readme = open(self.readme_path).read()
+            with open(self.readme_path) as f:
+                self.readme = f.read()
         else:
             self.readme = ''
         self.conf = {}
@@ -216,6 +217,25 @@ def list_remote():
     """
     mic.update_remote()
     return sorted(list(mic.remote.keys()))
+
+def get_local_module_infos(types=[], names=[]):
+    all_infos = list(mic.local.values())
+    return_infos = []
+    for minfo in all_infos:
+        if types and minfo.type not in types:
+            continue
+        elif names and minfo.name not in names:
+            continue
+        else:
+            return_infos.append(minfo)
+    return return_infos
+
+def get_jobs_dir():
+    home_dir = os.path.expanduser('~')
+    jobs_dir = os.path.join(home_dir,'.open-cravat','jobs')
+    if not(os.path.isdir(jobs_dir)):
+        os.makedirs(jobs_dir)
+    return jobs_dir
 
 def search_remote(*patterns):
     """

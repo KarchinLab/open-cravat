@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+    <title>open-cravat submit</title>
+    <script src="submit.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="submit.css">
+    <script>
+        $(document).ready(function() {
+            run();
+        });
+    </script> 
+</head>
+<body>
+    <div class="flexbox-row-wrap">
+        <div>
+            <div id="submit-form">
+                <h1>Submit Job</h1>
+                <div class="submit-section1">
+                    <h3>Input Text</h3>
+                    <div id="input-examples-div">
+                        <span>Examples: </span>
+                        <button class="input-example-button" value="cravat">CRAVAT Format</input>
+                        <button class="input-example-button" value="vcf">VCF Format</input>
+                    </div>
+                    <textarea rows="12" cols="80" id="input-text" placeholder="Input text"></textarea>
+                    <h3>Input File</h3>
+                    <input type="file" name="input-file" id="input-file">
+                </div>
+                <div class="submit-section1">
+                    <h3>Annotators</h3>
+                    <div id="annotator-select-div"></div>
+                </div>
+                <div class="submit-section1 flexbox-row-wrap">
+                    <div class="submit-section2">
+                        <h3>Assembly</h3>
+                        <select id="assembly-select">
+                            <option value="hg38">Hg38</option>
+                            <option value="hg19">Hg19</option>
+                            <option value="hg18">Hg18</option>
+                        </select>
+                    </div>
+                    <div class="submit-section2">
+                        <h3>Reports</h3>
+                        <div id="report-select-div"></div>
+                    </div>
+                </div>
+                <div class="submit-section1">
+                    <button id="submit-job-button">Submit</button>
+                </div>
+            </div>
+        </div>
+        <div id="jobs-list">
+            <h1>View Jobs</h1>
+            <table id="jobs-table">
+                <tr>
+                    <th>View</th>
+                    <th>Input File</th>
+                    <th>Submission Time</th>
+                        <th>Job ID</th>
+                        <th>Database</th>
+                        <th>Reports</th>
+                        <th>Delete</th>
+                    </tr>
+                </table>
+        </div>  
+    </div>
+      
+    <iframe id="download-area" style="display:none;"></iframe>
+</body>
+</html>
