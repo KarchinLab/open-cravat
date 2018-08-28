@@ -90,6 +90,16 @@ class Cravat (object):
                             action='store_true',
                             default=False,
                             help='forces re-running of annotator if it is in the run chain.')
+        parser.add_argument('--rg',
+                            dest='rg',
+                            action='store_true',
+                            default=False,
+                            help='forces re-running of aggregator if it is in the run chain.')
+        parser.add_argument('--rp',
+                            dest='rp',
+                            action='store_true',
+                            default=False,
+                            help='forces re-running of post-aggregator if it is in the run chain.')
         parser.add_argument('--ec',
                             dest='ec',
                             action='store_true',
@@ -217,7 +227,7 @@ class Cravat (object):
         if self.args.sg == False and \
             (
                 self.runlevel <= self.runlevels['aggregator'] or
-                self.rg
+                self.args.rg
             ):
             stime = time.time()
             print('Running aggregator...')
@@ -228,7 +238,7 @@ class Cravat (object):
         if self.args.sp == False and \
             (
                 self.runlevel <= self.runlevels['postaggregator'] or
-                self.rp
+                self.args.rp
             ):
             stime = time.time()
             print('Running post-aggregators...')
@@ -238,7 +248,7 @@ class Cravat (object):
         if self.args.sr == False and \
             (
                 self.runlevel <= self.runlevels['reporter'] or
-                self.rr
+                self.args.rr
             ):
             stime = time.time()
             print('Running reporter...')
