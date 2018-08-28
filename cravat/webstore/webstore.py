@@ -14,7 +14,6 @@ import websockets
 install_queue = Queue()
 
 def get (handler):
-    print('store path=', handler.request_path)
     head = handler.trim_path_head()
     if head == 'remote':
         get_remote_manifest(handler)
@@ -28,7 +27,7 @@ def get (handler):
         uninstall_module(handler)
     elif head == 'installstream':
         get_install_stream(handler)
-    elif head == 'modules':
+    elif head == 'getmodulereadme':
         get_module_readme(handler)
     elif head == 'getstoreurl':
         get_storeurl(handler)
@@ -139,19 +138,22 @@ def get_storeurl (handler):
     handler.response = bytes(json.dumps(content), 'UTF-8')
     handler.wfile.write(handler.response)
 
-def get_module_readme(request):
-    module_name = request.match_info['module']
-    version = request.match_info['version']
-    if version == 'latest': version=None
+def get_module_readme(handler):
+    queries = handler.request_queries
+    module_name = queries['module']
+    version = queries['version']
+    if version == 'latest': 
+        version=None
     readme_md = au.get_readme(module_name, version=version)
+    handler.send_response(200)
+    handler.send_header('Content-type', 'text/html')
+    handler.end_headers()
     if readme_md is None:
-        response = web.Response()
-        response.status = 404
+        content = ''
     else:
-        readme_html = markdown.markdown(readme_md)
-        response = web.Response(body=readme_html,
-                                content_type='text/html')
-    return response
+        content = markdown.markdown(readme_md)
+    handler.response = bytes(content, 'UTF-8')
+    handler.wfile.write(handler.response)
 
 def install_module (handler):
     queries = urllib.parse.unquote(handler.request_queries)
