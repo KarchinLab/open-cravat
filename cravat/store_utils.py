@@ -139,7 +139,6 @@ def stream_to_file(url, fpath, stage_handler=None, stages=50):
     return r
 
 def get_file_to_string(url):
-    print('@@@ url=', url)
     r = requests.get(url)
     if r.status_code == 200:
         return r.text

@@ -260,6 +260,7 @@ function getResultLevels () {
 	var request = new XMLHttpRequest();
 	request.open('GET', '/result/service/getresulttablelevels?dbpath=' + dbPath, false);
 	request.send(null);
+    console.log(request.responseText);
 	resultLevels = JSON.parse(request.responseText);
 }
 

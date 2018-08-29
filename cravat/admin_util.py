@@ -429,7 +429,6 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             uninstall_module_code(module_name)
         zipfile_path = os.path.join(module_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
-        print('kwargs=', **kwargs)
         r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, **kwargs)
         if r.status_code != 200:
             raise(requests.HTTPError(r))

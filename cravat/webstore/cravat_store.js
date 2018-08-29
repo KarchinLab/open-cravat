@@ -6,7 +6,7 @@ var remoteModuleInfo = {};
 var localModuleInfo = {};
 var storeUrl = null;
 var storeurl = $.get('/store/getstoreurl').done(function(response) {
-    storeUrl = JSON.parse(response);
+    storeUrl = response;
 });
 
 function getEl(tag){
