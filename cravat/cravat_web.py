@@ -75,10 +75,10 @@ class Server(multiprocessing.Process):
             print('Stopped')
             exit()
 
-server = Server()
-server.start()
 
 def result ():
+    server = Server()
+    server.start()
     parser = argparse.ArgumentParser()
     parser.add_argument('dbpath',
                         help='path to a CRAVAT result SQLite file')
@@ -96,6 +96,8 @@ def result ():
     webbrowser.open('http://localhost:8060/result/index.html?job_id=' + runid + '&dbpath=' + dbpath)
 
 def store ():
+    server = Server()
+    server.start()
     '''
     manager = Manager()
     install_state = manager.dict()
