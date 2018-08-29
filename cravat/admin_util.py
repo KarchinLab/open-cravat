@@ -388,6 +388,10 @@ class InstallProgressHandler(object):
         else:
             raise ValueError(stage)
 
+def install_widgets_for_module (module_name):
+    widget_name = 'wg' + module_name
+    install_module(widget_name)
+
 def install_module (module_name, version=None, force_data=False, stage_handler=None, **kwargs):
     """
     Installs a module.
@@ -461,6 +465,8 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             os.remove(data_path)
         mic.update_local()
         stage_handler.stage_start('finish')
+        if module_name.startswith('wg') == False:
+            install_module('wg' + module_name)
     except:
         try:
             shutil.rmtree(module_dir)
@@ -543,6 +549,7 @@ def get_local_module_types():
 
 def get_local_module_infos_of_type (t):
     modules = {}
+    mic.update_local()
     for module_name in mic.local:
         if mic.local[module_name].type == t:
             modules[module_name] = mic.local[module_name] 

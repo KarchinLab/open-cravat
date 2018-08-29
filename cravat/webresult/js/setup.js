@@ -9,9 +9,9 @@ function setupTab (tabName) {
 	if (resetTab[tabName] == false) {
 		return;
 	}
-	
+
 	var tabDiv = document.getElementById("tab_" + tabName);
-	
+
 	var rightDivId = 'rightdiv_' + tabName;
 	var rightDiv = document.getElementById(rightDivId);
 	if (rightDiv == null) {
@@ -22,7 +22,7 @@ function setupTab (tabName) {
 	} else {
 		emptyElement(rightDiv);
 	}
-	
+
 	// Populates the right panel.
 	var detailDiv = null;
 	if (tabName == 'info') {
@@ -33,7 +33,7 @@ function setupTab (tabName) {
 		makeSampleMappingTab(tabName, rightDiv);
 	}
 	addEl(tabDiv, rightDiv);
-	
+
 	setupEvents(tabName);
 
 	if (tabName != 'info') {
@@ -41,10 +41,10 @@ function setupTab (tabName) {
 		var columns = infomgr.getColumns(tabName);
 		var data = infomgr.getData(tabName);
 		dataLengths[tabName] = data.length;
-		
+
 		makeGrid(columns, data, tabName);
 		$grids[tabName].pqGrid('refresh');
-		
+
 		// Selects the first row.
 		if (tabName == currentTab) {
 			if (stat['rowsreturned'] && stat['norows'] > 0) {
@@ -55,17 +55,17 @@ function setupTab (tabName) {
 	}
 
 	resetTab[tabName] = false;
-	
+
 	placeDragNSBar(tabName);
 	placeCellValueDiv(tabName);
-	
+
 	if (loadedTableSettings != undefined && loadedTableSettings[currentTab] != undefined) {
 		applyTableSetting(currentTab);
 	}
 	if (loadedViewerWidgetSettings != undefined && loadedViewerWidgetSettings[currentTab] != undefined) {
 		applyWidgetSetting(currentTab);
 	}
-	
+
 	changeMenu();
 }
 
@@ -91,14 +91,14 @@ function makeInfoTab (rightDiv) {
 	rightContentDiv.id = 'rightcontentdiv_' + tabName;
 	rightContentDiv.className = 'rightcontentdiv';
 	addEl(rightDiv, rightContentDiv);
-	
+
 	// Notice
 	var noticeDiv = getEl('div');
 	noticeDiv.className = 'infonoticediv';
 	noticeDiv.id = 'infonoticediv';
 	noticeDiv.textContent = ' ';
 	addEl(rightContentDiv, noticeDiv);
-	
+
 	// Info
 	var infoDiv = getEl('fieldset');
 	infoDiv.id = 'info_div';
@@ -108,13 +108,15 @@ function makeInfoTab (rightDiv) {
 	// Filter
 	var filterDiv = document.getElementById('filterdiv');
 	populateLoadDiv('info', filterDiv);
-	
+
 	// Widget Notice
 	var wgNoticeDiv = getEl('fieldset');
 	wgNoticeDiv.id = 'wgnoticediv';
     wgNoticeDiv.style.display = 'none';
 	addEl(rightContentDiv, wgNoticeDiv);
-	
+    if (Object.keys(missingWidgets).length == 0) {
+        hideWgnoticediv();
+    }
 	// Widgets
 	var widgetDiv = getEl('div');
 	widgetDiv.id = 'detailcontainerdiv_info';
@@ -196,7 +198,7 @@ function populateSummaryWidgetDiv () {
 			}
 		}
 	}
-	
+
 	$outerDiv = $(outerDiv);
 	$outerDiv.packery({
 		columnWidth: widgetGridSize,
@@ -242,7 +244,7 @@ function onClickTableColumnButton () {
 }
 
 function onClickTableColumnSaveButton (tabName, evt) {
-	
+
 }
 
 function makeVariantGeneTab (tabName, rightDiv) {
@@ -250,20 +252,20 @@ function makeVariantGeneTab (tabName, rightDiv) {
 	var tableContainerDiv = getEl('div');
 	tableContainerDiv.id = 'tablecontainerdiv_' + tabName;
 	addEl(rightDiv, tableContainerDiv);
-	
+
 	// Table div
 	var tableDiv = getEl('div');
 	tableDiv.id = 'tablediv_' + tabName;
 	tableDiv.className = 'tablediv';
 	addEl(tableContainerDiv, tableDiv);
-	
+
 	// Drag bar
 	var northSouthDraggableDiv = getEl('div');
 	northSouthDraggableDiv.id = 'dragNorthSouthDiv_' + tabName;
 	northSouthDraggableDiv.className = 'draggableDiv';
 	$(northSouthDraggableDiv).draggable({axis:"y"});
 	addEl(rightDiv, northSouthDraggableDiv);
-	
+
 	// Cell value div
 	var cellValueDiv = getEl('div');
 	cellValueDiv.id = 'cellvaluediv_' + tabName;
@@ -274,7 +276,7 @@ function makeVariantGeneTab (tabName, rightDiv) {
 	input.style.width = '100%';
 	addEl(cellValueDiv, input);
 	addEl(rightDiv, cellValueDiv);
-	
+
 	// Detail div
 	var detailDiv = getEl('div');
 	detailDiv.id = 'detaildiv_' + tabName;
@@ -286,13 +288,13 @@ function makeVariantGeneTab (tabName, rightDiv) {
 		detailDiv.style.height = heightSetting;
 	}
 	addEl(detailDiv, detailContainerWrapDiv);
-	
+
 	// Detail content div
 	var detailContainerDiv = getEl('div');
 	detailContainerDiv.id = 'detailcontainerdiv_' + tabName;
 	detailContainerDiv.className = 'detailcontainerdiv';
 	addEl(detailContainerWrapDiv, detailContainerDiv);
-	
+
 	addEl(rightDiv, detailDiv);
 }
 
@@ -327,7 +329,7 @@ function makeSampleMappingTab (tabName, rightDiv) {
 
 function populateWgNoticeDiv (noWgAnnotModules) {
 	var wgNoticeDiv = document.getElementById('wgnoticediv');
-	if (noWgAnnotModules.length == 0) {
+	if (Object.keys(noWgAnnotModules).length == 0) {
 		wgNoticeDiv.style.display = 'none';
 		return;
 	} else {
@@ -350,12 +352,25 @@ function populateWgNoticeDiv (noWgAnnotModules) {
 		var moduleKey = moduleKeys[i];
 		var moduleTitle = noWgAnnotModules[moduleKey];
 		var button = getEl('button');
+        button.setAttribute('module', moduleKey);
 		button.style.marginRight = '20px';
 		button.style.marginBottom = '10px';
 		button.textContent = moduleTitle;
+        button.addEventListener('click', function (evt) {
+            installWidgetsForModule(evt.target.getAttribute('module'));
+            console.log('installed widgets for', evt.target.getAttribute('module'));
+        });
 		addEl(div, button);
 	}
 	addEl(wgNoticeDiv, div);
+}
+
+function installWidgetsForModule (moduleKey) {
+    console.log(moduleKey);
+    $.get('/store/installwidgetsformodule', {'name': moduleKey}).done(function () {
+        console.log('installed widgets for', moduleKey);
+        checkWidgets();
+    });
 }
 
 function populateInfoDiv (infoDiv) {
@@ -364,7 +379,7 @@ function populateInfoDiv (infoDiv) {
 	span.className = 'section_header';
 	addEl(span, getTn('Result Information'));
 	addEl(infoDiv, span);
-	
+
 	var keys = Object.keys(infomgr.jobinfo);
 	var table = getEl('table');
 	var tbody = getEl('tbody');
@@ -394,7 +409,7 @@ function populateWidgetSelectorPanel () {
 	panelDiv.style.width = '200px';
 	panelDiv.style.maxHeight = '400px';
 	panelDiv.style.overflow = 'auto';
-	
+
 	var button = getEl('button');
 	button.style.backgroundColor = 'white';
 	button.textContent = 'Redraw';
@@ -509,11 +524,11 @@ function setupEvents (tabName) {
     $("#dragNorthSouthDiv_" + tabName).on('dragstop', function(){
 	    afterDragNSBar(this, tabName);
     });
-   
+
     $('.ui-icon-circle-triangle-n').on('click', function(){
 	    minimizeOrMaxmimizeTheDetailsDiv(this, 'minimize');
     });
-   
+
    $(document).keydown(function(button){
 	   switch(button.which){
 	   case 27:
@@ -572,16 +587,16 @@ function addLeftPanelFieldSet (tabName, parent, fieldSetName) {
 
 function makeGrid (columns, data, tabName) {
 	dataLengths[tabName] = data.length;
-	
+
 	var $tableDiv = $('#tablediv_' + tabName);
-	
+
 	var gridObj = loadGridObject(columns, data, tabName, jobId, 'main');
 	if (gridObj == undefined) {
 		return;
 	}
-	
+
 	gridObj.filterModel = {on: true, header: true, type: 'local'};
-	
+
 	gridObj.headerCellClick = function (evt, ui) {
 		var $grid = $grids[tabName];
 		var sortModel = $grid.pqGrid('option', 'sortModel');
@@ -592,17 +607,17 @@ function makeGrid (columns, data, tabName) {
 		}
 		$grid.pqGrid('option', 'sortModel', sortModel);
 	};
-	
+
 	// Empties if grid exists.
 	if ($grids[tabName] != undefined) {
 		$grids[tabName].pqGrid('destroy');
 	}
-	
+
 	// Creates the grid.
 	var $grid = $tableDiv.pqGrid(gridObj);
 	$grids[tabName] = $grid;
 	gridObjs[tabName] = gridObj;
-	
+
 	// Adds the footer.
 	var footer = $grid.find('.pq-grid-footer')[0];
 	var span = getEl('span');
@@ -660,11 +675,11 @@ function onChangeFilterSelector (col, retFiltType, val1, val2, checked) {
 	if (columnKey != 'none') {
 		var column = getFilterCol(columnKey);
 		emptyElement(selectDetailDiv);
-	    
+
 		if (retFiltType == null) {
 			retFiltType = column['retfilttype'];
 		}
-		
+
 		// Operator
 		var operatorStr = '';
 		if (retFiltType == 'string') {
@@ -685,7 +700,7 @@ function onChangeFilterSelector (col, retFiltType, val1, val2, checked) {
 			operatorStr = retFiltType;
 		}
 		addEl(selectDetailDiv, getTn('\xA0\xA0' + operatorStr + '\xA0\xA0'));
-		
+
 		// Value box
 		var input1 = {};
 		var input2 = {};
@@ -723,19 +738,19 @@ function onChangeFilterSelector (col, retFiltType, val1, val2, checked) {
 			addEl(selectDetailDiv, getTn(' - '));
 			addEl(selectDetailDiv, input2);
 		}
-		
+
 		if (val1 != null || val2 != undefined) {
 			input1.value = val1;
 		}
 		if (val2 != null || val2 != undefined) {
 			input2.value = val2;
 		}
-		
+
 		// space
 		var span = getEl('span');
 		addEl(span, getTn('\xa0\xa0'));
 		addEl(selectDetailDiv, span);
-		
+
 		// Add button
 		var addButton = getEl('button');
 		if (col != null) {
@@ -763,7 +778,7 @@ function onChangeFilterSelector (col, retFiltType, val1, val2, checked) {
 
 function getLoadSelectorDiv (tabName) {
 	var div = getEl('div');
-	
+
 	// Selector
 	var selector = getEl('select');
 	selector.id = 'filterselect';
@@ -782,12 +797,12 @@ function getLoadSelectorDiv (tabName) {
 			}
 		}
 	}
-	
+
 	selector.onchange = function (evt) {
 		onChangeFilterSelector(null, null, null, null);
 	}
 	addEl(div, selector);
-	
+
 	// Select detail div
 	var selectDetailDiv = getEl('div');
 	selectDetailDiv.id = 'selectdetaildiv';
@@ -825,7 +840,7 @@ function showFilterSet () {
 	var needBorder = false;
 	for (var i = 0; i < filterSet.length; i++) {
 		var div = getEl('div');
-		
+
 		var filter = filterSet[i];
 		var column = filter[0];
 		var val1 = filter[1];
@@ -836,7 +851,7 @@ function showFilterSet () {
 		div.setAttribute('val1', val1);
 		div.setAttribute('val2', val2);
 		div.setAttribute('checked', checked);
-		
+
 		// Checkbox
 		var c = getEl('input');
 		c.type = 'checkbox';
@@ -864,7 +879,7 @@ function showFilterSet () {
 			infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
 		});
 		addEl(div, c);
-		
+
 		// Text
 		var title = column.colgroup + ' | ' + column.title;
 		var opStr = '';
@@ -884,7 +899,7 @@ function showFilterSet () {
 		});
 		span.style.cursor = 'pointer';
 		addEl(div, span);
-		
+
 		// Remove button
 		var x = getEl('button');
 		addEl(x, getTn('Remove'));
@@ -951,7 +966,7 @@ function checkFilterSet (col) {
 
 function populateLoadDiv (tabName, filterDiv) {
 	var tabName = 'info';
-	
+
 	// Title
 	var legend = getEl('legend');
 	legend.className = 'section_header';
@@ -965,7 +980,7 @@ function populateLoadDiv (tabName, filterDiv) {
 	};
 	addEl(button, getTn('Save...'));
 	addEl(legend, button);
-	
+
 	// Load Filter Set button
 	var button = getEl('button');
 	button.style.marginLeft = '10px';
@@ -981,7 +996,7 @@ function populateLoadDiv (tabName, filterDiv) {
 	};
 	addEl(button, getTn('Load...'));
 	addEl(legend, button);
-	
+
 	// Filter name div
 	var div = getEl('div');
 	div.id = 'load_filter_select_div';
@@ -997,7 +1012,7 @@ function populateLoadDiv (tabName, filterDiv) {
 	addEl(legend, div);
 
 	addEl(filterDiv, legend);
-	
+
 	// Description
 	var div = getEl('div');
 	var p = getEl('p');
@@ -1014,17 +1029,17 @@ function populateLoadDiv (tabName, filterDiv) {
 		'the variant filters.';
 	addEl(div, addEl(p, getTn(desc)));
 	addEl(filterDiv, div);
-	
+
 	// Selector
 	var selectorDiv = getLoadSelectorDiv(tabName);
 	addEl(filterDiv, selectorDiv);
-	
+
 	// Filter list
 	var filterListDiv = getEl('div');
 	filterListDiv.id = 'filterlistdiv';
 	filterListDiv.className = 'filterlistdiv';
 	addEl(filterDiv, filterListDiv);
-	
+
 	// Message
 	var div = getEl('div');
 	div.id = prefixLoadDiv + 'msg_' + tabName;
@@ -1032,7 +1047,7 @@ function populateLoadDiv (tabName, filterDiv) {
 	div.style.fontFamily = 'Verdana';
 	div.style.fontSize = '12px';
 	addEl(filterDiv, div);
-	
+
 	// Load button
 	var button = getEl('button');
 	button.id = 'load_button';
@@ -1041,6 +1056,7 @@ function populateLoadDiv (tabName, filterDiv) {
 		resetTab = {'info': infoReset};
 		showSpinner(tabName, this);
 		loadData(false, null);
+        toggleFilterDiv();
 	};
 	addEl(button, getTn('Update'));
 	addEl(filterDiv, button);
@@ -1060,7 +1076,7 @@ function populateTableColumnSelectorPanel () {
 		var colGroupNo = i;
 		var columnGroupName = columnGroupNames[i];
 		var columnGroupColumnKeys = columnGroupsForTab[columnGroupName];
-		
+
 		// Group div
 		var groupDiv = document.createElement('fieldset');
 		groupDiv.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_id';
@@ -1087,7 +1103,7 @@ function populateTableColumnSelectorPanel () {
 		addEl(legend, checkbox);
 		addEl(legend, getTn(columnGroupName));
 		addEl(groupDiv, legend);
-		
+
 		// Columns
 		var columnsDiv = document.createElement('div');
 		for (var columnKeyNo = 0; columnKeyNo < columnGroupColumnKeys.length; 
@@ -1169,7 +1185,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	var detailDiv = document.getElementById('detaildiv_' + tabName);
 	var dragBar = document.getElementById('dragNorthSouthDiv_' + tabName);
 	var rightDiv = document.getElementById('rightdiv_' + tabName);
-	
+
 	if (rightDiv == null) {
 		return;
 	}
@@ -1184,10 +1200,10 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	if (detailDiv) {
 		detailDivHeight = detailDiv.offsetHeight;
 	}
-	
+
 	var gridObject = new Object();
 	gridObject.title = tableTitle;
-	
+
 	gridObject.width = rightDivWidth;
 	/*
 	var loadedHeight = loadedHeightSettings[tabName];
@@ -1198,7 +1214,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	}
 	*/
 	gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight - ARBITRARY_HEIGHT_SUBTRACTION - 15;
-	
+
 	gridObject.virtualX = false;
 	gridObject.virtualY = true;
 	gridObject.wrap = false;
@@ -1206,7 +1222,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.sortable = true;
 	gridObject.numberCell = {show: false};
 	gridObject.showTitle = false;
-	
+
 	gridObject.selectionModel = {type: 'cell', mode: 'block'};
 	gridObject.hoverMode = 'row';
 	gridObject.colModel = infomgr.getColModel(tabName);
@@ -1276,14 +1292,14 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	}
 	gridObject.columnOrder = function (evt, ui) {
 	}
-	
+
 	return gridObject;
 }
 
 function minimizeOrMaxmimizeTheDetailsDiv (minimizeOrMaximizeButton, action) {
     var tableBeingAffected = minimizeOrMaximizeButton.parentElement.parentElement.parentElement.parentElement;
     var idOfTableAffected = tableBeingAffected.id;
-   
+
     var minimizeAttributeOfTableBeforeClick = tableBeingAffected.getAttribute(
 		    "minimized");
     var setMinimizeAttributeOfTableTo = null;
@@ -1301,14 +1317,14 @@ function minimizeOrMaxmimizeTheDetailsDiv (minimizeOrMaximizeButton, action) {
 	    tableBeingAffected.setAttribute('minimized', 
 			    setMinimizeAttributeOfTableTo);
     }
-    
+
     var tabAffected = idOfTableAffected.split('_')[1];
     var rightDivWithPiecesChanging = null;
     rightDivWithPiecesChanging = document.getElementById(
 		    'rightdiv_' + tabAffected);
     var heightRightDivChanging = parseInt(
 		    rightDivWithPiecesChanging.offsetHeight, 10);
-   
+
     var changeHeightOfDetailsDiv = true;
 
     changeHeightOfDetailsDiv = true;

@@ -14,7 +14,6 @@ import websockets
 install_queue = Queue()
 
 def get (handler):
-    print('store path=', handler.request_path)
     head = handler.trim_path_head()
     if head == 'remote':
         get_remote_manifest(handler)
@@ -22,11 +21,13 @@ def get (handler):
         get_local_manifest(handler)
     elif head == 'install':
         install_module(handler)
+    elif head == 'installwidgetsformodule':
+        install_widgets_for_module(handler)
     elif head == 'uninstall':
         uninstall_module(handler)
     elif head == 'installstream':
         get_install_stream(handler)
-    elif head == 'modules':
+    elif head == 'getmodulereadme':
         get_module_readme(handler)
     elif head == 'getstoreurl':
         get_storeurl(handler)
@@ -137,25 +138,42 @@ def get_storeurl (handler):
     handler.response = bytes(json.dumps(content), 'UTF-8')
     handler.wfile.write(handler.response)
 
-def get_module_readme(request):
-    module_name = request.match_info['module']
-    version = request.match_info['version']
-    if version == 'latest': version=None
+def get_module_readme(handler):
+    queries = handler.request_queries
+    module_name = queries['module']
+    version = queries['version']
+    if version == 'latest': 
+        version=None
     readme_md = au.get_readme(module_name, version=version)
+    handler.send_response(200)
+    handler.send_header('Content-type', 'text/html')
+    handler.end_headers()
     if readme_md is None:
-        response = web.Response()
-        response.status = 404
+        content = ''
     else:
-        readme_html = markdown.markdown(readme_md)
-        response = web.Response(body=readme_html,
-                                content_type='text/html')
-    return response
+        content = markdown.markdown(readme_md)
+    handler.response = bytes(content, 'UTF-8')
+    handler.wfile.write(handler.response)
 
 def install_module (handler):
-    print('queries=', handler.request_queries)
-    module_name = urllib.parse.unquote(handler.request_queries['name'][0])
-    module_version = urllib.parse.unquote(handler.request_queries['version'][0])
+    queries = urllib.parse.unquote(handler.request_queries)
+    module_name = queries['name'][0]
+    if 'version' in queries:
+        module_version = queries['version'][0]
+    else:
+        module_version = None
     au.install_module(module_name, version=module_version)
+    content = 'success'
+    handler.send_response(200)
+    handler.send_header('Content-type', 'application/json')
+    handler.end_headers()
+    handler.response = bytes(json.dumps(content), 'UTF-8')
+    handler.wfile.write(handler.response)
+
+def install_widgets_for_module (handler):
+    queries = handler.request_queries
+    module_name = queries['name'][0]
+    au.install_widgets_for_module(module_name)
     content = 'success'
     handler.send_response(200)
     handler.send_header('Content-type', 'application/json')
