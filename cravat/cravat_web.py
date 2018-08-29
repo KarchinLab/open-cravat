@@ -17,6 +17,7 @@ from cravat import CravatFilter
 from cravat.webresult import webresult as wr
 from cravat.webstore import webstore as ws
 import websockets
+from aiohttp import web
 
 class CravatWebHandler (CGIHTTPRequestHandler):
     def do_POST (self):
@@ -122,5 +123,13 @@ def store ():
     '''
     webbrowser.open('http://localhost:8060/store/index.html')
 
+from webstore.webstore import routes as webstore_routes
+
+def main ():
+    app = web.Application()
+    app.router.add_route('GET', '/store/{tail:.*}', webstore_route
+
 if __name__ == '__main__':
+    app = web.Application()
+    app.router.add_route('GET', '/store/{tail:.*}', ws)
     main()

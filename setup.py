@@ -107,6 +107,7 @@ setup(
             'cravat=cravat.runcravat:main',
             'cravat-view=cravat.cravat_web:result',
             'cravat-store=cravat.cravat_web:store',
+            'cravat-web=cravat.cravat_web:main',
             'cravat-filter=cravat.cravat_filter:main',
             'cravat-report=cravat.cravat_report:main',
             'cravat-test=cravat.cravat_test:main',
