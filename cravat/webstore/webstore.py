@@ -83,7 +83,6 @@ def send_json_sse(sse, value):
     sse.send(json.dumps(dict(value)))
 
 def get_install_stream(request):
-    print('Install stream requested')
     with sse_response(request) as resp:
         send_json_sse(resp, install_state)
         last_update_time = install_state['update_time']
@@ -106,22 +105,18 @@ def get_storeurl (request):
     conf = au.get_system_conf()
     return web.Response(text=conf['store_url'])
 
-def get_module_readme(handler):
-    queries = handler.request_queries
+def get_module_readme (request):
+    queries = request.rel_url.query
     module_name = queries['module']
     version = queries['version']
     if version == 'latest': 
         version=None
     readme_md = au.get_readme(module_name, version=version)
-    handler.send_response(200)
-    handler.send_header('Content-type', 'text/html')
-    handler.end_headers()
     if readme_md is None:
         content = ''
     else:
         content = markdown.markdown(readme_md)
-    handler.response = bytes(content, 'UTF-8')
-    handler.wfile.write(handler.response)
+    return web.Response(content)
 
 def install_module (request):
     queries = request.rel_url.query
@@ -134,20 +129,15 @@ def install_module (request):
     content = 'success'
     return web.Response(text=content)
 
-def install_widgets_for_module (handler):
-    queries = handler.request_queries
-    module_name = queries['name'][0]
+def install_widgets_for_module (request):
+    queries = request.rel_url.query
+    module_name = queries['name']
     au.install_widgets_for_module(module_name)
     content = 'success'
-    handler.send_response(200)
-    handler.send_header('Content-type', 'application/json')
-    handler.end_headers()
-    handler.response = bytes(json.dumps(content), 'UTF-8')
-    handler.wfile.write(handler.response)
+    return web.json_response(content)
 
 def uninstall_module(request):
     module = request.json()
-    print('Uninstall requested for %s' %str(module))
     module_name = module['name']
     au.uninstall_module(module_name)
     return web.Response()

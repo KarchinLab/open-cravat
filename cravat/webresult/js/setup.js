@@ -335,6 +335,7 @@ function populateWgNoticeDiv (noWgAnnotModules) {
 	} else {
         wgNoticeDiv.style.display = 'block';
     }
+    emptyElement(wgNoticeDiv);
 	var legend = getEl('legend');
 	legend.className = 'section_header';
 	addEl(legend, getTn('Missing Widgets'));
@@ -358,7 +359,6 @@ function populateWgNoticeDiv (noWgAnnotModules) {
 		button.textContent = moduleTitle;
         button.addEventListener('click', function (evt) {
             installWidgetsForModule(evt.target.getAttribute('module'));
-            console.log('installed widgets for', evt.target.getAttribute('module'));
         });
 		addEl(div, button);
 	}

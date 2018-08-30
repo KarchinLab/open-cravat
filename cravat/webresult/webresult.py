@@ -422,7 +422,6 @@ def serve_runwidget (request):
                       'webviewerwidgets', path)])
     m = imp.load_module(path, f, fn, d)
     content = m.get_data(queries)
-    print('@@@@@@', content)
     return web.json_response(content)
 
 routes = []
