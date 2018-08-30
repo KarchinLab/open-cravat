@@ -1,5 +1,3 @@
-from http.server import HTTPServer, CGIHTTPRequestHandler
-from socketserver import TCPServer
 import os
 import webbrowser
 import multiprocessing
@@ -14,23 +12,7 @@ import re
 from cravat import ConfigLoader
 from cravat import admin_util as au
 from cravat import CravatFilter
-
-def get (handler):
-    print('@ entered get of webresult')
-    head = handler.trim_path_head()
-    if head == 'service':
-        serve_service(handler)
-    elif head == 'widgetfile':
-        serve_widgetfile(handler)
-    elif head == 'runwidget':
-        serve_runwidget(handler)
-    else:
-        handler.request_path = head + '/' + handler.request_path
-        handler.request_path = handler.request_path.rstrip('/')
-        filepath = get_filepath(handler.request_path)
-        handler.serve_view(filepath)
-
-### files ###
+from aiohttp import web
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -40,52 +22,9 @@ def get_filepath (path):
         )
     return filepath
 
-### service ###
-
-def serve_service (handler):
-    print('@serve_service: path=', handler.request_path)
-    head = handler.trim_path_head()
-    queries = handler.request_queries
-    handler.send_response(200)
-    handler.send_header('Content-type', 'application/json')
-    handler.end_headers()
-    if head == 'variantcols':
-        content = get_variant_cols(queries)
-    elif head == 'getsummarywidgetnames':
-        content = get_summary_widget_names(queries)
-    elif head == 'getresulttablelevels':
-        content = get_result_levels(queries)
-    elif head == 'result':
-        content = get_result(queries)
-    elif head == 'count':
-        content = get_count(queries)
-    elif head == 'widgetlist':
-        content = get_widgetlist()
-    elif head == 'status':
-        content = get_status(queries)
-    elif head == 'savefiltersetting':
-        content = save_filter_setting(queries)
-    elif head == 'savelayoutsetting':
-        content = save_layout_setting(queries)
-    elif head == 'loadfiltersetting':
-        content = load_filtersetting(queries)
-    elif head == 'loadlayoutsetting':
-        content = load_layout_setting(queries)
-    elif head == 'deletelayoutsetting':
-        content = delete_layout_setting(queries)
-    elif head == 'renamelayoutsetting':
-        content = rename_layout_setting(queries)
-    elif head == 'getlayoutsavenames':
-        content = get_layout_save_names(queries)
-    elif head == 'getfiltersavenames':
-        content = get_filter_save_names(queries)
-    elif head == 'getnowgannotmodules':
-        content = get_nowg_annot_modules(queries)
-    handler.response = bytes(json.dumps(content), 'UTF-8')
-    handler.wfile.write(handler.response)
-
-def get_nowg_annot_modules (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
+def get_nowg_annot_modules (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     wgmodules = au.get_local_module_infos_of_type('webviewerwidget')
@@ -93,8 +32,9 @@ def get_nowg_annot_modules (queries):
     for wgmodule in wgmodules:
         conf = wgmodules[wgmodule].conf
         if 'required_annotator' in conf:
-            if wgmodule not in annot_modules_with_wg:
-                annot_modules_with_wg.append(wgmodule)
+            annot_module = conf['required_annotator']
+            if annot_module not in annot_modules_with_wg:
+                annot_modules_with_wg.append(annot_module)
     nowg_annot_modules = {}
     if table_exists(cursor, 'variant'):
         q = 'select name, displayname from variant_annotator'
@@ -103,15 +43,16 @@ def get_nowg_annot_modules (queries):
             m = r[0]
             if m in ['example_annotator', 'testannot', 'tagsampler']:
                 continue
-            annot_module = 'wg' + r[0]
+            annot_module = r[0]
             displayname = r[1]
             if annot_module not in annot_modules_with_wg and annot_module not in nowg_annot_modules:
                 nowg_annot_modules[annot_module] = displayname
     content = nowg_annot_modules
-    return content
+    return web.json_response(content)
 
-def get_filter_save_names (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
+def get_filter_save_names (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     table = 'viewersetup'
@@ -124,10 +65,11 @@ def get_filter_save_names (queries):
         content = str([v[0] for v in r])
     cursor.close()
     conn.close()
-    return content
+    return web.json_response(content)
 
-def get_layout_save_names (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
+def get_layout_save_names (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     table = 'viewersetup'
@@ -139,12 +81,13 @@ def get_layout_save_names (queries):
         content = [v[0] for v in r]
     cursor.close()
     conn.close()
-    return content
+    return web.json_response(content)
 
-def rename_layout_setting (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
-    name = urllib.parse.unquote(queries['name'][0])
-    new_name = urllib.parse.unquote(queries['newname'][0])
+def rename_layout_setting (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    name = queries['name']
+    new_name = queries['newname']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     table = 'viewersetup'
@@ -155,11 +98,12 @@ def rename_layout_setting (queries):
     cursor.close()
     conn.close()
     content = {}
-    return content
+    return web.json_response(content)
 
-def delete_layout_setting (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
-    name = urllib.parse.unquote(queries['name'][0])
+def delete_layout_setting (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    name = queries['name']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     table = 'viewersetup'
@@ -170,11 +114,12 @@ def delete_layout_setting (queries):
     cursor.close()
     conn.close()
     content = {}
-    return content
+    return web.json_response(content)
 
-def load_layout_setting (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
-    name = urllib.parse.unquote(queries['name'][0])
+def load_layout_setting (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    name = queries['name']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     table = 'viewersetup'
@@ -191,11 +136,12 @@ def load_layout_setting (queries):
             content = {"widgetSettings": []}
     cursor.close()
     conn.close()
-    return content
+    return web.json_response(content)
 
-def load_filtersetting (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
-    name = urllib.parse.unquote(queries['name'][0])
+def load_filter_setting (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    name = queries['name']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     table = 'viewersetup'
@@ -212,12 +158,13 @@ def load_filtersetting (queries):
             content = {"filterSet": []}
     cursor.close()
     conn.close()
-    return content
+    return web.json_response(content)
 
-def save_layout_setting (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
-    name = urllib.parse.unquote(queries['name'][0])
-    savedata = urllib.parse.unquote(queries['savedata'][0])
+def save_layout_setting (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    name = queries['name']
+    savedata = queries['savedata']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     table = 'viewersetup'
@@ -230,12 +177,13 @@ def save_layout_setting (queries):
     cursor.close()
     conn.close()
     content = 'saved'
-    return content
+    return web.json_response(content)
 
-def save_filter_setting (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
-    name = urllib.parse.unquote(queries['name'][0])
-    savedata = urllib.parse.unquote(queries['savedata'][0])
+def save_filter_setting (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    name = queries['name']
+    savedata = queries['savedata']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     table = 'viewersetup'
@@ -248,10 +196,11 @@ def save_filter_setting (queries):
     cursor.close()
     conn.close()
     content = 'saved'
-    return content
+    return web.json_response(content)
 
-def get_status (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
+def get_status (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     q = 'select * from info'
@@ -259,9 +208,10 @@ def get_status (queries):
     content = {}
     for row in cursor.fetchall():
         content[row[0]] = row[1]
-    return content
+    return web.json_response(content)
 
-def get_widgetlist ():
+def get_widgetlist (request):
+    queries = request.rel_url.query
     content = []
     modules = au.get_local_module_infos_of_type('webviewerwidget')
     for module_name in modules:
@@ -275,13 +225,14 @@ def get_widgetlist ():
         content.append({'name': module_name, 
                         'title': module.title, 
                         'required_annotator': req})
-    return content
+    return web.json_response(content)
 
-def get_count (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
-    tab = queries['tab'][0]
+def get_count (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    tab = queries['tab']
     if 'filter' in queries:
-        filterstring = queries['filter'][0]
+        filterstring = queries['filter']
     else:
         filterstring = None
     cf = CravatFilter(dbpath=dbpath, 
@@ -289,17 +240,19 @@ def get_count (queries):
                       filterstring=filterstring)
     n = cf.getcount(level=tab)
     content = {'n': n}        
-    return content   
+    return web.json_response(content)
 
-def get_result (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
-    tab = queries['tab'][0]
+def get_result (request):
+    queries = request.rel_url.query
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    tab = queries['tab']
     if 'filter' in queries:
-        filterstring = queries['filter'][0]
+        filterstring = queries['filter']
     else:
         filterstring = None
     if 'confpath' in queries:
-        confpath = queries['confpath'][0]
+        confpath = queries['confpath']
     else:
         confpath = None
     reporter_name = 'jsonreporter'
@@ -324,10 +277,12 @@ def get_result (queries):
     content['columns'] = get_colmodel(tab, data['colinfo'])
     content["data"] = get_datamodel(data[tab])
     content["status"] = "normal"
-    return content
+    return web.json_response(content)
 
-def get_result_levels (queries):
-    conn = sqlite3.connect(queries['dbpath'][0])
+def get_result_levels (request):
+    queries = request.rel_url.query
+    queries = request.rel_url.query
+    conn = sqlite3.connect(queries['dbpath'])
     cursor = conn.cursor()
     sql = 'select name from sqlite_master where type="table" and ' +\
         'name like "%_header"'
@@ -338,16 +293,17 @@ def get_result_levels (queries):
         content.insert(0, 'info')
     else:
         content = []
-    return content
+    return web.json_response(content)
 
-def get_variant_cols (queries):
-    dbpath = urllib.parse.unquote(queries['dbpath'][0])
+def get_variant_cols (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
     if 'confpath' in queries:
-        confpath = queries['confpath'][0]
+        confpath = queries['confpath']
     else:
         confpath = None
     if 'filter' in queries:
-        filterstring = queries['filter'][0]
+        filterstring = queries['filter']
     else:
         filterstring = None
     data = {}
@@ -361,9 +317,10 @@ def get_variant_cols (queries):
     if 'gene' in colinfo:
         data['columns']['gene'] = get_colmodel('gene', colinfo)
     content = data
-    return content
+    return web.json_response(content)
 
-def get_summary_widget_names (queries):
+def get_summary_widget_names (request):
+    queries = request.rel_url.query
     runid = queries['jobid'][0]
 
 def get_datamodel (data):
@@ -445,31 +402,44 @@ def table_exists (cursor, table):
 
 ### widgetfiles ###
 
-def serve_widgetfile (handler):
-    module_name, ext = os.path.splitext(handler.request_path)
+def serve_widgetfile (request):
     filepath = os.path.join(
         au.get_modules_dir(),
         'webviewerwidgets',
-        handler.request_path)
-        #module_name,
-        #module_name + ext)
+        request.match_info['module_dir'],
+        request.match_info['filename']
+        )
     if os.path.exists(filepath):
-        handler.serve_view(filepath)
+        return web.FileResponse(filepath)
 
 ### runwidget ###
 
-def serve_runwidget (handler):
-    path = 'wg' + handler.request_path
-    queries = handler.request_queries
+def serve_runwidget (request):
+    path = 'wg' + request.match_info['module']
+    queries = request.rel_url.query
     f, fn, d = imp.find_module(path, 
         [os.path.join(au.get_modules_dir(), 
                       'webviewerwidgets', path)])
     m = imp.load_module(path, f, fn, d)
-    ret = m.get_data(queries)
-    handler.send_response(200)
-    handler.send_header('Content-type', 'application/json')
-    handler.end_headers()
-    content = json.dumps(ret)
-    response = bytes(content, 'UTF-8')
-    handler.wfile.write(response)
+    content = m.get_data(queries)
+    return web.json_response(content)
 
+routes = []
+routes.append(['GET', '/result/service/variantcols', get_variant_cols])
+routes.append(['GET', '/result/service/getsummarywidgetnames', get_summary_widget_names])
+routes.append(['GET', '/result/service/getresulttablelevels', get_result_levels])
+routes.append(['GET', '/result/service/result', get_result])
+routes.append(['GET', '/result/service/count', get_count])
+routes.append(['GET', '/result/service/widgetlist', get_widgetlist])
+routes.append(['GET', '/result/service/status', get_status])
+routes.append(['GET', '/result/service/savefiltersetting', save_filter_setting])
+routes.append(['GET', '/result/service/savelayoutsetting', save_layout_setting])
+routes.append(['GET', '/result/service/loadfiltersetting', load_filter_setting])
+routes.append(['GET', '/result/service/loadlayoutsetting', load_layout_setting])
+routes.append(['GET', '/result/service/deletelayoutsetting', delete_layout_setting])
+routes.append(['GET', '/result/service/renamelayoutsetting', rename_layout_setting])
+routes.append(['GET', '/result/service/getlayoutsavenames', get_layout_save_names])
+routes.append(['GET', '/result/service/getfiltersavenames', get_filter_save_names])
+routes.append(['GET', '/result/service/getnowgannotmodules', get_nowg_annot_modules])
+routes.append(['GET', '/result/widgetfile/{module_dir}/{filename}', serve_widgetfile])
+routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])

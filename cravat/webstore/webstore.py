@@ -10,31 +10,9 @@ import sys
 import urllib
 import asyncio
 import websockets
+from aiohttp import web
 
 install_queue = Queue()
-
-def get (handler):
-    print('store path=', handler.request_path)
-    head = handler.trim_path_head()
-    if head == 'remote':
-        get_remote_manifest(handler)
-    elif head == 'local':
-        get_local_manifest(handler)
-    elif head == 'install':
-        install_module(handler)
-    elif head == 'uninstall':
-        uninstall_module(handler)
-    elif head == 'installstream':
-        get_install_stream(handler)
-    elif head == 'modules':
-        get_module_readme(handler)
-    elif head == 'getstoreurl':
-        get_storeurl(handler)
-    else:
-        handler.request_path = head + '/' + handler.request_path
-        handler.request_path = handler.request_path.rstrip('/')
-        filepath = get_filepath(handler.request_path)
-        handler.serve_view(filepath)
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -105,7 +83,6 @@ def send_json_sse(sse, value):
     sse.send(json.dumps(dict(value)))
 
 def get_install_stream(request):
-    print('Install stream requested')
     with sse_response(request) as resp:
         send_json_sse(resp, install_state)
         last_update_time = install_state['update_time']
@@ -119,59 +96,92 @@ def get_install_stream(request):
 import cravat.admin_util as au
 import markdown
 
-def get_remote_manifest(handler):
+def get_remote_manifest(request):
     au.mic.update_remote()
     content = au.mic.remote
-    handler.send_response(200)
-    handler.send_header('Content-type', 'application/json')
-    handler.end_headers()
-    handler.response = bytes(json.dumps(content), 'UTF-8')
-    handler.wfile.write(handler.response)
+    return web.json_response(content)
 
-def get_storeurl (handler):
+def get_storeurl (request):
     conf = au.get_system_conf()
-    content = conf['store_url']
-    handler.send_response(200)
-    handler.send_header('Content-type', 'text/plain')
-    handler.end_headers()
-    handler.response = bytes(json.dumps(content), 'UTF-8')
-    handler.wfile.write(handler.response)
+    return web.Response(text=conf['store_url'])
 
-def get_module_readme(request):
-    module_name = request.match_info['module']
-    version = request.match_info['version']
-    if version == 'latest': version=None
+def get_module_readme (request):
+    queries = request.rel_url.query
+    module_name = queries['module']
+    version = queries['version']
+    if version == 'latest': 
+        version=None
     readme_md = au.get_readme(module_name, version=version)
     if readme_md is None:
-        response = web.Response()
-        response.status = 404
+        content = ''
     else:
-        readme_html = markdown.markdown(readme_md)
-        response = web.Response(body=readme_html,
-                                content_type='text/html')
-    return response
+        content = markdown.markdown(readme_md)
+    return web.Response(content)
 
-def install_module (handler):
-    print('queries=', handler.request_queries)
-    module_name = urllib.parse.unquote(handler.request_queries['name'][0])
-    module_version = urllib.parse.unquote(handler.request_queries['version'][0])
+def install_module (request):
+    queries = request.rel_url.query
+    module_name = queries['name']
+    if 'version' in queries:
+        module_version = queries['version'][0]
+    else:
+        module_version = None
     au.install_module(module_name, version=module_version)
     content = 'success'
-    handler.send_response(200)
-    handler.send_header('Content-type', 'application/json')
-    handler.end_headers()
-    handler.response = bytes(json.dumps(content), 'UTF-8')
-    handler.wfile.write(handler.response)
+    return web.Response(text=content)
+
+def install_widgets_for_module (request):
+    queries = request.rel_url.query
+    module_name = queries['name']
+    au.install_widgets_for_module(module_name)
+    content = 'success'
+    return web.json_response(content)
 
 def uninstall_module(request):
     module = request.json()
-    print('Uninstall requested for %s' %str(module))
     module_name = module['name']
     au.uninstall_module(module_name)
     return web.Response()
 
-###################################### end from store_handler #######################
+'''
+def get (handler):
+    head = handler.trim_path_head()
+    if head == 'remote':
+        get_remote_manifest(handler)
+    elif head == 'local':
+        get_local_manifest(handler)
+    elif head == 'install':
+        install_module(handler)
+    elif head == 'installwidgetsformodule':
+        install_widgets_for_module(handler)
+    elif head == 'uninstall':
+        uninstall_module(handler)
+    elif head == 'installstream':
+        get_install_stream(handler)
+    elif head == 'getmodulereadme':
+        get_module_readme(handler)
+    elif head == 'getstoreurl':
+        get_storeurl(handler)
+    else:
+        handler.request_path = head + '/' + handler.request_path
+        handler.request_path = handler.request_path.rstrip('/')
+        filepath = get_filepath(handler.request_path)
+        handler.serve_view(filepath)
+'''
 
+###################################### end from store_handler #######################
+'''
+routes = (
+    {'GET', '/store/remote', get_remote_manifest},
+    {'GET', '/store/install', install_module},
+    {'GET', '/store/installwidgetsformodule', install_widgets_for_module},
+)
+'''
+routes = []
+routes.append(['GET', '/store/remote', get_remote_manifest])
+routes.append(['GET', '/store/install', install_module])
+routes.append(['GET', '/store/installwidgetsformodule', install_widgets_for_module])
+routes.append(['GET', '/store/getstoreurl', get_storeurl])
+'''
 if __name__ == '__main__':
     manager = Manager()
     install_state = manager.dict()
@@ -194,3 +204,4 @@ if __name__ == '__main__':
     conf = conf_loader.get_cravat_conf()
     port = conf['gui_port']
     web.run_app(app, host='localhost', port=port)
+'''

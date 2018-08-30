@@ -63,7 +63,8 @@ class LocalModuleInfo (object):
         self.readme_path = os.path.join(self.directory, self.name+'.md')
         self.readme_exists = os.path.exists(self.readme_path)
         if self.readme_exists:
-            self.readme = open(self.readme_path).read()
+            with open(self.readme_path) as f:
+                self.readme = f.read()
         else:
             self.readme = ''
         self.conf = {}
@@ -217,6 +218,25 @@ def list_remote():
     mic.update_remote()
     return sorted(list(mic.remote.keys()))
 
+def get_local_module_infos(types=[], names=[]):
+    all_infos = list(mic.local.values())
+    return_infos = []
+    for minfo in all_infos:
+        if types and minfo.type not in types:
+            continue
+        elif names and minfo.name not in names:
+            continue
+        else:
+            return_infos.append(minfo)
+    return return_infos
+
+def get_jobs_dir():
+    home_dir = os.path.expanduser('~')
+    jobs_dir = os.path.join(home_dir,'.open-cravat','jobs')
+    if not(os.path.isdir(jobs_dir)):
+        os.makedirs(jobs_dir)
+    return jobs_dir
+
 def search_remote(*patterns):
     """
     Return remote module names which match any of supplied patterns
@@ -368,6 +388,10 @@ class InstallProgressHandler(object):
         else:
             raise ValueError(stage)
 
+def install_widgets_for_module (module_name):
+    widget_name = 'wg' + module_name
+    install_module(widget_name)
+
 def install_module (module_name, version=None, force_data=False, stage_handler=None, **kwargs):
     """
     Installs a module.
@@ -405,7 +429,6 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             uninstall_module_code(module_name)
         zipfile_path = os.path.join(module_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
-        print('kwargs=', **kwargs)
         r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, **kwargs)
         if r.status_code != 200:
             raise(requests.HTTPError(r))
@@ -441,6 +464,8 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             os.remove(data_path)
         mic.update_local()
         stage_handler.stage_start('finish')
+        if module_name.startswith('wg') == False:
+            install_module('wg' + module_name)
     except:
         try:
             shutil.rmtree(module_dir)
@@ -523,6 +548,7 @@ def get_local_module_types():
 
 def get_local_module_infos_of_type (t):
     modules = {}
+    mic.update_local()
     for module_name in mic.local:
         if mic.local[module_name].type == t:
             modules[module_name] = mic.local[module_name] 

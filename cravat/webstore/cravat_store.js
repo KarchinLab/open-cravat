@@ -6,7 +6,7 @@ var remoteModuleInfo = {};
 var localModuleInfo = {};
 var storeUrl = null;
 var storeurl = $.get('/store/getstoreurl').done(function(response) {
-    storeUrl = JSON.parse(response);
+    storeUrl = response;
 });
 
 function getEl(tag){
@@ -50,8 +50,15 @@ function updateRemotePanels () {
     emptyElement(div);
     var remoteModuleNames = Object.keys(remoteModuleInfo);
     for (var i = 0; i < remoteModuleNames.length; i++) {
-        var panel = getRemoteModulePanel(remoteModuleNames[i]);
-        addEl(div, panel);
+        var remoteModuleName = remoteModuleNames[i];
+        if (remoteModuleName.startsWith('chasmplus_')) {
+            continue;
+        }
+        var remoteModule = remoteModuleInfo[remoteModuleName];
+        if (remoteModule['type'] == 'annotator') {
+            var panel = getRemoteModulePanel(remoteModuleName);
+            addEl(div, panel);
+        }
     }
 }
 
@@ -73,11 +80,13 @@ function getRemoteModulePanel (moduleName) {
     div.style.display = 'inline-block';
     div.style.width = '300px';
     div.style.height = '300px';
-    div.style.border = '1px solid gray';
+    div.style.borderWidth = '2px';
+    div.style.borderColor = '#dddddd';
+    div.style.borderStyle = 'ridge';
     div.style.verticalAlign = 'top';
     div.style.margin = '2px';
     div.style.padding = '2px';
-    div.style.backgroundColor = '#ffffaa';
+    //div.style.backgroundColor = '#ffffaa';
     div.style.position = 'relative';
     div.setAttribute('module', moduleName);
     var span = getEl('span');
@@ -178,13 +187,17 @@ function activateDetailDialog (moduleName) {
     addEl(tr, td);
     td = getEl('td');
     var span = getEl('span');
-    span.style.fontSize = '20px';
+    span.style.fontSize = '30px';
     span.textContent = moduleInfo.title;
     addEl(td, span);
     addEl(tr, td);
     td = getEl('td');
     var button = getEl('button');
     button.textContent = 'ADD TO CRAVAT';
+    button.style.backgroundColor = '#82b7ef';
+    button.style.border = '0px';
+    button.style.boxShadow = '3px 3px 2px #888888';
+    button.style.padding = '8px';
     button.setAttribute('module', moduleName);
     button.addEventListener('click', function (evt) {
         installModule(evt.target.getAttribute('module'));
@@ -198,8 +211,12 @@ function activateDetailDialog (moduleName) {
     tr = getEl('tr');
     td = getEl('td');
     td.style.width = '70%';
-    td.textContent = 'screenshots';
+    var mdDiv = getEl('div');
+    addEl(td, mdDiv);
     addEl(tr, td);
+	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
+		mdDiv.html(data);
+	});
     td = getEl('td');
     td.style.width = '30%';
     var infodiv = getEl('div');
