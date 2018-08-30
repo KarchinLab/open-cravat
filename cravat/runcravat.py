@@ -27,7 +27,7 @@ class Cravat (object):
         self.annotators = {}
         parser = argparse.ArgumentParser()
         parser.add_argument('path',
-                            help='Path to the Cravat python module, or cravat executable')
+                            help=argparse.SUPPRESS)
         parser.add_argument('input',
                             help='path to input file')
         parser.add_argument('-a',
