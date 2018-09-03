@@ -5,12 +5,14 @@
 	<script src="cravat_store.js"></script>
 	<link rel="stylesheet" href="cravat_store.css">
 </head>
-<body style='font-family: monospace'>
+<body style='font-family: sans-serif'>
 <table style='border: 0px'>
  <tr>
-  <td><img src='logo.png' style='width: 200px' /><span style='font-size: 40px'>Open-CRAVAT Web Store</span></td>
-  <td>Search the Store</td>
-  <td><img src='hamburger.png' style='height: 60px' /></td>
+  <td><img src='logo.png' style='width: 200px' /><span style='font-size: 40px'>Store</span></td>
+  <td>
+    <select id='typefilter' onchange='updateFilter()'></select>
+    <input type='text' id='namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()' />
+  </td>
  </tr>
 </table>
 

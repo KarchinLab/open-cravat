@@ -1,9 +1,12 @@
 var available;
 var installed;
+var currentDetailModule = null;
 
-//
 var remoteModuleInfo = {};
 var localModuleInfo = {};
+var filter = {'type': 'annotator'};
+var installQueue = [];
+
 var storeUrl = null;
 var storeurl = $.get('/store/getstoreurl').done(function(response) {
     storeUrl = response;
@@ -26,16 +29,49 @@ function addEl (pelem, child) {
 
 function getLocal () {
 	$.get('/store/local').done(function(data){
-        moduleInfoLocal = data;
-
+        localModuleInfo = data;
+        var div = document.getElementById('moduledetaildiv');
+        if (div != null) {
+            if (div.style.display != 'none') {
+                activateDetailDialog(currentDetailModule);
+            }
+        }
 	});
 }
 
 function getRemote () {
 	$.get('/store/remote').done(function(data){
         remoteModuleInfo = data;
+        populateTypeFilter();
         updateRemotePanels();
 	});
+}
+
+function populateTypeFilter () {
+    var moduleNames = Object.keys(remoteModuleInfo);
+    var types = [''];
+    var select = document.getElementById('typefilter');
+    for (var i = 0; i < moduleNames.length; i++) {
+        var moduleName = moduleNames[i];
+        var info = remoteModuleInfo[moduleName];
+        var type = info['type'];
+        if (types.includes(type)) {
+            continue;
+        } else {
+            types.push(type);
+        }
+    }
+    types.sort();
+    for (var i = 0; i < types.length; i++) {
+        var option = getEl('option');
+        var type = types[i];
+        option.value = type;
+        option.innerText = type;
+        if (type == filter['type']) {
+            option.selected = true;
+        }
+        addEl(select, option);
+    }
 }
 
 function emptyElement (elem) {
@@ -45,20 +81,74 @@ function emptyElement (elem) {
     }
 }
 
+function updateFilter () {
+    var nameinput = document.getElementById('namefilter');
+    var nameStr = nameinput.value;
+    filter = {};
+    if (nameStr != '') {
+        filter['name'] = [nameStr];
+    }
+    var typeStr = document.getElementById('typefilter').value;
+    if (typeStr != '') {
+        filter['type'] = typeStr;
+    }
+    updateRemotePanels();
+}
+
+function getFilteredRemoteModules () {
+    var filteredRemoteModules = {};
+    var remoteModuleNames = Object.keys(remoteModuleInfo);
+    var hasFilter = Object.keys(filter).length > 0;
+    for (var i = 0; i < remoteModuleNames.length; i++) {
+        var remoteModuleName = remoteModuleNames[i];
+        var remoteModule = remoteModuleInfo[remoteModuleName];
+        if (hasFilter) {
+            var typeYes = false;
+            var nameYes = false;
+            if (filter['type'] != undefined && filter['type'] != '') {
+                if (filter['type'].includes(remoteModule['type'])) {
+                    typeYes = true;
+                } else {
+                    typeYes = false;
+                }
+            } else {
+                typeYes = true;
+            }
+            if (filter['name'] != undefined && filter['name'] != '') {
+                var nameYes = false;
+                for (var j = 0; j < filter['name'].length; j++) {
+                    var queryStr = filter['name'][j].toLowerCase();
+                    if (remoteModule['title'].toLowerCase().includes(queryStr) || remoteModule['description'].toLowerCase().includes(queryStr)) {
+                        nameYes = true;
+                        break;
+                    }
+                }
+            } else {
+                nameYes = true;
+            }
+        } else {
+            typeYes = true;
+            nameYes = true;
+        }
+        if (typeYes && nameYes) {
+            filteredRemoteModules[remoteModuleName] = remoteModule;
+        }
+    }
+    return filteredRemoteModules;
+}
+
 function updateRemotePanels () {
     var div = document.getElementById('remotemodulepanels');
     emptyElement(div);
-    var remoteModuleNames = Object.keys(remoteModuleInfo);
+    var remoteModuleNames = Object.keys(getFilteredRemoteModules());
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
         if (remoteModuleName.startsWith('chasmplus_')) {
             continue;
         }
         var remoteModule = remoteModuleInfo[remoteModuleName];
-        if (remoteModule['type'] == 'annotator') {
-            var panel = getRemoteModulePanel(remoteModuleName);
-            addEl(div, panel);
-        }
+        var panel = getRemoteModulePanel(remoteModuleName);
+        addEl(div, panel);
     }
 }
 
@@ -117,6 +207,7 @@ function getRemoteModulePanel (moduleName) {
             console.log(moduleName);
             var dialog = activateDetailDialog(moduleName);
             addEl(document.body, dialog);
+            evt.stopPropagation();
         }
         addEl(div, span);
     }
@@ -138,6 +229,7 @@ function getRemoteModulePanel (moduleName) {
             console.log(moduleName);
             var dialog = activateDetailDialog(moduleName);
             addEl(document.body, dialog);
+            evt.stopPropagation();
         }
         addEl(div, img);
     }
@@ -152,8 +244,8 @@ function activateDetailDialog (moduleName) {
         div = getEl('div');
         div.id = 'moduledetaildiv';
         div.style.position = 'fixed';
-        div.style.width = '90%';
-        div.style.height = '90%';
+        div.style.width = '80%';
+        div.style.height = '80%';
         div.style.margin = 'auto';
         div.style.zIndex = '1';
         div.style.backgroundColor = 'white';
@@ -166,6 +258,8 @@ function activateDetailDialog (moduleName) {
         div.style.borderStyle = 'groove';
         div.style.padding = '10px';
     }
+    currentDetailModule = moduleName;
+    div.style.display = 'block';
     var moduleInfo = remoteModuleInfo[moduleName];
     var table = getEl('table');
     table.style.height = '100px';
@@ -186,22 +280,58 @@ function activateDetailDialog (moduleName) {
     }
     addEl(tr, td);
     td = getEl('td');
-    var span = getEl('span');
+    var span = getEl('div');
     span.style.fontSize = '30px';
     span.textContent = moduleInfo.title;
+    addEl(td, span);
+    addEl(td, getEl('br'));
+    span = getEl('span');
+    span.style.fontSize = '12px';
+    span.style.color = 'green';
+    span.textContent = moduleInfo.type;
+    addEl(td, span);
+    span = getEl('span');
+    span.style.fontSize = '12px';
+    span.style.color = 'green';
+    span.textContent = ' | ' + moduleInfo.developer.organization;
     addEl(td, span);
     addEl(tr, td);
     td = getEl('td');
     var button = getEl('button');
-    button.textContent = 'ADD TO CRAVAT';
+    var localInfo = localModuleInfo[moduleName];
+    var buttonText = null;
+    if (localInfo != undefined && localInfo.exists) {
+        buttonText = 'Uninstall';
+        button.addEventListener('click', function (evt) {
+            var btn = evt.target;
+            btn.textContent = 'Uninstalling...';
+            btn.style.color = 'red';
+            uninstallModule(btn.getAttribute('module'));
+        });
+    } else {
+        buttonText = 'Install';
+        button.addEventListener('click', function (evt) {
+            var btn = evt.target;
+            var btnModuleName = btn.getAttribute('module');
+            var btnText = null;
+            if (installQueue.length == 0) {
+                queueInstall(btnModuleName);
+                //installModule(btnModuleName);
+                btnText = 'Installing...';
+            } else {
+                btnText = 'Queued';
+            }
+            installQueue.push(btnModuleName);
+            btn.textContent = btnText;
+            btn.style.color = 'red';
+        });
+    }
+    button.textContent = buttonText;
     button.style.backgroundColor = '#82b7ef';
     button.style.border = '0px';
     button.style.boxShadow = '3px 3px 2px #888888';
     button.style.padding = '8px';
     button.setAttribute('module', moduleName);
-    button.addEventListener('click', function (evt) {
-        installModule(evt.target.getAttribute('module'));
-    });
     addEl(td, button);
     addEl(tr, td);
     addEl(table, tr);
@@ -306,6 +436,17 @@ function activateDetailDialog (moduleName) {
     return div;
 }
 
+function queueInstall (moduleName) {
+    console.log('queuing ', moduleName);
+    $.get('/store/queueinstall', {'module': moduleName}).done(
+        function (response) {
+            console.log('queue install response:', response);
+            getLocal();
+            updateRemotePanels();
+        }
+    );
+}
+
 function installModule (moduleName) {
 	var version = remoteModuleInfo[moduleName]['latest_version'];
 	$.ajax({
@@ -317,8 +458,19 @@ function installModule (moduleName) {
 	});
 }
 
+function uninstallModule(moduleName) {
+	console.log('Uninstall '+moduleName);
+	$.ajax({
+			type:'GET',
+			url:'/store/uninstall',
+			data: {name: moduleName},
+			dataType: 'json',
+			complete: moduleChange
+	});
+}
+
 function moduleChange(data) {
-	//getLocal();
+	getLocal();
 }
 
 function mainTableRowClickHandler (event) {
@@ -533,21 +685,16 @@ function uninstallModuleCallback(event) {
 	uninstallModule(moduleName);
 }
 
-function uninstallModule(moduleName) {
-	console.log('Uninstall '+moduleName);
-	var d = {name:moduleName};
-	$.ajax({
-			type:'POST',
-			url:'/uninstall',
-			data:JSON.stringify(d),
-			dataType:'json',
-			complete: moduleChange
-	});
-}
-
 function connectInstallStream(clbk) {
-	var evtSource = new EventSource("/store/installstream");
-	evtSource.onmessage = clbk;
+    console.log('entered connect');
+    var ws = new WebSocket('ws://localhost:8060/store/connectwebsocket');
+    console.log('ws=', ws);
+    ws.onopen = function (evt) {
+        console.log('ws connected');
+    }
+    ws.onmessage = function (evt) {
+        console.log('ws message:', evt.data);
+    }
 }
 
 function logInstallStream() {
@@ -571,7 +718,16 @@ function logInstallStream() {
 }
 
 function run () {
+    document.addEventListener('click', function (evt) {
+        console.log(evt.target.closest('#moduledetaildiv'));
+        if (evt.target.closest('#moduledetaildiv') == null) {
+            var div = document.getElementById('moduledetaildiv');
+            if (div != null) {
+                div.style.display = 'none';
+            }
+        }
+    });
+    getLocal();
 	getRemote();
-    //getLocal();
 	//logInstallStream()
 }

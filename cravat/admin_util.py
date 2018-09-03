@@ -121,6 +121,9 @@ class LocalModuleInfo (object):
             self.disk_size = util.get_directory_size(self.directory)
         return self.disk_size
 
+    def serialize (self):
+        return self.__dict__
+
 class RemoteModuleInfo(object):
     def __init__(self, name, **kwargs):
         self.name = name
@@ -209,6 +212,7 @@ def list_local():
     """
     Returns a list of locally installed modules.
     """
+    mic.update_local()
     return sorted(list(mic.local.keys()))
 
 def list_remote():
