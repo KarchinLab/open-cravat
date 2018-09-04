@@ -91,7 +91,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'webstore')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='0.0.105',
+    version='0.0.106',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
