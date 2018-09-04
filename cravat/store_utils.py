@@ -11,7 +11,7 @@ import json
 class PathBuilder(object):
     """
     Used to get routes to certain resources in the cravat-store download area.
-    Returns path string in either url of file format.
+    Returns path string in either url or file format.
     """
 
     _valid_path_types = set(['url','file'])
