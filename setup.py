@@ -119,5 +119,5 @@ setup(
     cmdclass={
               'install':InstallCommand,
               },
-    install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown'],
+    install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp'],
 )
