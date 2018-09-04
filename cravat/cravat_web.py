@@ -20,6 +20,8 @@ import websockets
 from aiohttp import web
 
 def result ():
+    server = Server()
+    server.start()
     parser = argparse.ArgumentParser()
     parser.add_argument('dbpath',
                         help='path to a CRAVAT result SQLite file')
@@ -74,6 +76,4 @@ def main ():
         app.router.add_route(method, path, func_name)
     app.router.add_static('/store', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webstore'))
     app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
-    #app.add_routes([web.static('/result', '.')])
-    #web.static('/store', '.', show_index=True)
     web.run_app(app, port=8060)

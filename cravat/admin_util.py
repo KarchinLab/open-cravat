@@ -465,7 +465,10 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         mic.update_local()
         stage_handler.stage_start('finish')
         if module_name.startswith('wg') == False:
-            install_module('wg' + module_name)
+            try:
+                install_module('wg' + module_name)
+            except:
+                pass
     except:
         try:
             shutil.rmtree(module_dir)
