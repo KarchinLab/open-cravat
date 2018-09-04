@@ -6,6 +6,7 @@ var remoteModuleInfo = {};
 var localModuleInfo = {};
 var filter = {'type': 'annotator'};
 var installQueue = [];
+var installInfo = {};
 
 var storeUrl = null;
 var storeurl = $.get('/store/getstoreurl').done(function(response) {
@@ -36,6 +37,7 @@ function getLocal () {
                 activateDetailDialog(currentDetailModule);
             }
         }
+        updateRemotePanels();
 	});
 }
 
@@ -233,6 +235,24 @@ function getRemoteModulePanel (moduleName) {
         }
         addEl(div, img);
     }
+    var installStatus = '';
+    if (installInfo[moduleName] != undefined) {
+        var msg = installInfo[moduleName]['msg'];
+        if (msg == 'uninstalling') {
+            installStatus = 'Uninstalling...';
+        } else {
+            installStatus = 'Installing...';
+        }
+    } else {
+        if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName]['exists']) {
+            installStatus = 'Installed';
+        } else {
+            installStatus = '';
+        }
+    }
+    var sdiv = getEl('div');
+    sdiv.textContent = installStatus;
+    addEl(div, sdiv);
     return div
 }
 
@@ -333,6 +353,12 @@ function activateDetailDialog (moduleName) {
     button.style.padding = '8px';
     button.setAttribute('module', moduleName);
     addEl(td, button);
+    var sdiv = getEl('div');
+    sdiv.id = 'installstatdiv_' + moduleName;
+    if (installInfo[moduleName] != undefined) {
+        sdiv.textContent = installInfo[moduleName]['msg'];
+    }
+    addEl(td, sdiv);
     addEl(tr, td);
     addEl(table, tr);
     addEl(div, table);
@@ -345,7 +371,7 @@ function activateDetailDialog (moduleName) {
     addEl(td, mdDiv);
     addEl(tr, td);
 	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
-		mdDiv.html(data);
+		mdDiv.innerHTML = data;
 	});
     td = getEl('td');
     td.style.width = '30%';
@@ -438,10 +464,11 @@ function activateDetailDialog (moduleName) {
 
 function queueInstall (moduleName) {
     console.log('queuing ', moduleName);
+    installInfo[moduleName] = {};
     $.get('/store/queueinstall', {'module': moduleName}).done(
         function (response) {
             console.log('queue install response:', response);
-            getLocal();
+            //getLocal();
             updateRemotePanels();
         }
     );
@@ -454,22 +481,27 @@ function installModule (moduleName) {
 		url:'/store/install',
 		data: {name:moduleName, version:version},
 		dataType:'json',
-		complete: moduleChange
 	});
 }
 
 function uninstallModule(moduleName) {
 	console.log('Uninstall '+moduleName);
+    installInfo[moduleName] = {};
+    installInfo[moduleName]['msg'] = 'uninstalling';
+    updateRemotePanels();
 	$.ajax({
 			type:'GET',
 			url:'/store/uninstall',
 			data: {name: moduleName},
 			dataType: 'json',
-			complete: moduleChange
+			complete: function (response) {
+                delete installInfo[moduleName];
+                moduleChange(response);
+            }
 	});
 }
 
-function moduleChange(data) {
+function moduleChange (data) {
 	getLocal();
 }
 
@@ -685,7 +717,7 @@ function uninstallModuleCallback(event) {
 	uninstallModule(moduleName);
 }
 
-function connectInstallStream(clbk) {
+function connectWebSocket () {
     console.log('entered connect');
     var ws = new WebSocket('ws://localhost:8060/store/connectwebsocket');
     console.log('ws=', ws);
@@ -694,27 +726,17 @@ function connectInstallStream(clbk) {
     }
     ws.onmessage = function (evt) {
         console.log('ws message:', evt.data);
+        var data = JSON.parse(evt.data);
+        var module = data['module'];
+        var msg = data['msg'];
+        installInfo[module]['msg'] = msg;
+        document.getElementById('installstatdiv_' + module).textContent = msg;
+        if (msg.startsWith('Finished installation of')) {
+            delete installInfo[module];
+            installQueue = installQueue.filter(e => e != module);
+            moduleChange(null);
+        }
     }
-}
-
-function logInstallStream() {
-	function logIt (e) {
-		console.log(e.data);
-	}
-	var div = document.getElementById('install_stream');
-	function updateDiv (e) {
-		var stage = JSON.parse(e.data);
-		var lastUpdate = new Date(stage.update_time);
-		var t = stage.message;
-		t += '\nChunks: '+stage.cur_chunk+'/'+stage.total_chunks;
-		t += '\nBytes: '+stage.cur_size+'/'+stage.total_size;
-		t += '\nLast Update: '+lastUpdate.toTimeString();
-		div.innerText = t;
-		if (stage.stage=='finish') {
-			getLocal();
-		}
-	}
-	connectInstallStream(updateDiv);
 }
 
 function run () {
@@ -727,6 +749,7 @@ function run () {
             }
         }
     });
+    connectWebSocket();
     getLocal();
 	getRemote();
 	//logInstallStream()
