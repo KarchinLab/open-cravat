@@ -169,7 +169,7 @@ async def connect_websocket (request):
     last_update_time = install_state['update_time']
     while True:
         await asyncio.sleep(1)
-        print('@@@ ' + str(last_update_time) + ':' + str(install_state['update_time']))
+        #print('@@@ ' + str(last_update_time) + ':' + str(install_state['update_time']))
         if last_update_time < install_state['update_time']:
             data = {}
             data['module'] = install_state['module_name']
