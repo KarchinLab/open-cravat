@@ -189,6 +189,13 @@ function getRemoteModulePanel (moduleName) {
     sdiv.style.display = 'flex';
     sdiv.style.alignItems = 'center';
     sdiv.style.backgroundColor = 'white';
+    sdiv.setAttribute('module', moduleName);
+    sdiv.onclick = function (evt) {
+        var moduleName = this.getAttribute('module');
+        var dialog = activateDetailDialog(moduleName);
+        addEl(document.body, dialog);
+        evt.stopPropagation();
+    }
     var img = getLogo(moduleName);
     img.onerror = function () {
         var span = getEl('div');
@@ -200,14 +207,6 @@ function getRemoteModulePanel (moduleName) {
         span.style.maxWidth = '100%';
         span.style.maxHeight = '100%';
         span.style.textAlign = 'center';
-        span.onclick = function (evt) {
-            var pdiv = evt.target.parentElement;
-            var moduleName = div.getAttribute('module');
-            var dialog = activateDetailDialog(moduleName);
-            addEl(document.body, dialog);
-            evt.stopPropagation();
-        }
-        var sdiv = document.getElementById('logodiv_' + moduleName);
         addEl(sdiv, span);
     }
     img.onload = function () {
@@ -233,11 +232,13 @@ function getRemoteModulePanel (moduleName) {
     }
     addEl(div, sdiv);
     var span = null;
-    /*
     span = getEl('div');
+    span.style.height = '5px';
+    addEl(div, span);
+    span = getEl('div');
+    span.style.fontWeight = 'bold';
     addEl(span, getTn(moduleInfo.title));
     addEl(div, span);
-    */
     span = getEl('span');
     span.style.color = 'green';
     span.style.fontSize = '12px';
@@ -275,6 +276,11 @@ function getRemoteModulePanel (moduleName) {
         img2.style.width = '20px';
         img2.title = 'Installed';
         addEl(div, img2);
+    } else {
+        var span = getEl('span');
+        span.id = 'panelinstallstatus_' + moduleName;
+        span.style.fontSize = '12px';
+        addEl(div, span);
     }
     return div
 }
@@ -298,18 +304,23 @@ function activateDetailDialog (moduleName) {
         div.style.bottom = '0';
         div.style.zIndex = '1';
         div.style.border = '6px';
-        div.style.borderStyle = 'groove';
         div.style.padding = '10px';
+        div.style.paddingBottom = '23px';
+        div.style.border = '1px solid black';
+        div.style.boxShadow = '0px 0px 20px';
     }
     currentDetailModule = moduleName;
     div.style.display = 'block';
     var moduleInfo = remoteModuleInfo[moduleName];
     var table = getEl('table');
     table.style.height = '100px';
+    table.style.border = '0px';
     var tr = getEl('tr');
+    tr.style.border = '0px';
     var td = getEl('td');
     td.id = 'moduledetaillogotd';
     td.style.width = '120px';
+    td.style.border = '0px';
     var img = getLogo(moduleName);
     img.onerror = function () {
         var span = getEl('div');
@@ -323,6 +334,7 @@ function activateDetailDialog (moduleName) {
     }
     addEl(tr, td);
     td = getEl('td');
+    td.style.border = '0px';
     var span = getEl('div');
     span.style.fontSize = '30px';
     span.textContent = moduleInfo.title;
@@ -340,11 +352,15 @@ function activateDetailDialog (moduleName) {
     addEl(td, span);
     addEl(tr, td);
     td = getEl('td');
+    td.style.border = '0px';
+    td.style.verticalAlign = 'top';
+    td.style.textAlign = 'right';
     var button = getEl('button');
     var localInfo = localModuleInfo[moduleName];
     var buttonText = null;
     if (localInfo != undefined && localInfo.exists) {
         buttonText = 'Uninstall';
+        button.style.backgroundColor = '#ffd3be';
         button.addEventListener('click', function (evt) {
             var btn = evt.target;
             btn.textContent = 'Uninstalling...';
@@ -353,6 +369,7 @@ function activateDetailDialog (moduleName) {
         });
     } else {
         buttonText = 'Install';
+        button.style.backgroundColor = '#beeaff';
         button.addEventListener('click', function (evt) {
             var btn = evt.target;
             var btnModuleName = btn.getAttribute('module');
@@ -370,14 +387,24 @@ function activateDetailDialog (moduleName) {
         });
     }
     button.textContent = buttonText;
-    button.style.backgroundColor = '#82b7ef';
     button.style.border = '0px';
     button.style.boxShadow = '3px 3px 2px #888888';
     button.style.padding = '8px';
+    button.style.borderRadius = '3px';
     button.setAttribute('module', moduleName);
+    if (buttonText == 'Uninstall') {
+        var img2 = getEl('img');
+        img2.src = '/store/done.png';
+        img2.style.width = '20px';
+        img2.title = 'Installed';
+        addEl(td, img2);
+    }
+    addEl(td, getEl('br'));
     addEl(td, button);
     var sdiv = getEl('div');
     sdiv.id = 'installstatdiv_' + moduleName;
+    sdiv.style.marginTop = '10px';
+    sdiv.style.fontSize = '12px';
     if (installInfo[moduleName] != undefined) {
         sdiv.textContent = installInfo[moduleName]['msg'];
     }
@@ -385,11 +412,16 @@ function activateDetailDialog (moduleName) {
     addEl(tr, td);
     addEl(table, tr);
     addEl(div, table);
+    addEl(div, getEl('hr'));
     table = getEl('table');
     table.style.height = 'calc(100% - 100px)';
+    table.style.border = '0px';
     tr = getEl('tr');
+    tr.style.border = '0px';
     td = getEl('td');
+    td.style.border = '0px';
     td.style.width = '70%';
+    td.style.verticalAlign = 'top';
     var mdDiv = getEl('div');
     addEl(td, mdDiv);
     addEl(tr, td);
@@ -398,6 +430,8 @@ function activateDetailDialog (moduleName) {
 	});
     td = getEl('td');
     td.style.width = '30%';
+    td.style.border = '0px';
+    td.style.verticalAlign = 'top';
     var infodiv = getEl('div');
     var d = getEl('div');
     span = getEl('span');
@@ -792,6 +826,7 @@ function connectWebSocket () {
         var msg = data['msg'];
         installInfo[module]['msg'] = msg;
         document.getElementById('installstatdiv_' + module).textContent = msg;
+        document.getElementById('panelinstallstatus_' + module).textContent = msg;
         if (msg.startsWith('Finished installation of')) {
             delete installInfo[module];
             installQueue = installQueue.filter(e => e != module);
