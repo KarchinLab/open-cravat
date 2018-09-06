@@ -1,4 +1,3 @@
-from bottle import app, route, get, post, request, response, run, static_file, delete
 import os
 import time
 import datetime
@@ -239,5 +238,5 @@ def download_report(job_id, report_type):
 def static(filepath):
     return static_file(filepath, root=FILE_ROUTER.static_dir())
 
-if __name__ == '__main__':
-    run(host='localhost', port=8080, debug=True)
+routes = []
+routes.append(['GET','/static/{path}'])

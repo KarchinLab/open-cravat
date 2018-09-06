@@ -50,5 +50,6 @@ def main ():
         app.router.add_route(method, path, func_name)
     app.router.add_static('/store', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webstore'))
     app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
+    app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
     ws.start_worker()
     web.run_app(app, port=8060)
