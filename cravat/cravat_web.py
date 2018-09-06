@@ -20,8 +20,6 @@ import websockets
 from aiohttp import web
 
 def result ():
-    server = Server()
-    server.start()
     parser = argparse.ArgumentParser()
     parser.add_argument('dbpath',
                         help='path to a CRAVAT result SQLite file')
@@ -41,30 +39,6 @@ def result ():
 
 def store ():
     webbrowser.open('http://localhost:8060/store/index.html')
-    main()
-    '''
-    manager = Manager()
-    install_state = manager.dict()
-    sse_update_condition = manager.Condition()
-    sse_update_event = manager.Event()
-    install_state['stage'] = ''
-    install_state['message'] = ''
-    install_state['module_name'] = ''
-    install_state['module_version'] = ''
-    install_state['cur_chunk'] = 0
-    install_state['total_chunks'] = 0
-    install_state['cur_size'] = 0
-    install_state['total_size'] = 0
-    install_state['update_time'] = time.time()
-    install_worker = Process(target=install_from_queue, args=(install_queue, install_state, sse_update_event))
-    install_worker.start()
-    app = web.Application()
-    add_routes(app)
-    conf_loader = ConfigLoader()
-    conf = conf_loader.get_cravat_conf()
-    port = conf['gui_port']
-    web.run_app(app, host='localhost', port=port)
-    '''
 
 def main ():
     app = web.Application()
@@ -76,4 +50,5 @@ def main ():
         app.router.add_route(method, path, func_name)
     app.router.add_static('/store', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webstore'))
     app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
+    ws.start_worker()
     web.run_app(app, port=8060)

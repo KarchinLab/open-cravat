@@ -5,16 +5,21 @@
 	<script src="cravat_store.js"></script>
 	<link rel="stylesheet" href="cravat_store.css">
 </head>
-<body style='font-family: monospace'>
-<table style='border: 0px'>
- <tr>
-  <td><img src='logo.png' style='width: 200px' /><span style='font-size: 40px'>Open-CRAVAT Web Store</span></td>
-  <td>Search the Store</td>
-  <td><img src='hamburger.png' style='height: 60px' /></td>
- </tr>
-</table>
+<body style='font-family: sans-serif; background-color: #fff8f1;'>
 
-<div id='remotemodulepanels'></div>
+<div style='position: fixed; top: 0px; background-color: #ffffff; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px;'>
+    <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
+        <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
+        <!-- <span style='font-size: 40px'>Open-CRAVAT Store</span> -->
+    </div>
+    <div style='position: absolute; right: 25px; vertical-align: bottom; bottom: 10px;'>
+        Module type:
+        <select id='typefilter' onchange='updateFilter()' style='font-size: 16px'></select>
+        <input type='text' id='namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()' style='font-size: 16px'/>
+    </div>
+</div>
+
+<div id='remotemodulepanels' style='display: flex; flex-wrap: wrap; justify-content: center; position: relative; top: 120px;'></div>
 
 <script>
 $(document).ready(function() {

@@ -1,9 +1,13 @@
 var available;
 var installed;
+var currentDetailModule = null;
 
-//
 var remoteModuleInfo = {};
 var localModuleInfo = {};
+var filter = {'type': 'annotator'};
+var installQueue = [];
+var installInfo = {};
+
 var storeUrl = null;
 var storeurl = $.get('/store/getstoreurl').done(function(response) {
     storeUrl = response;
@@ -26,16 +30,49 @@ function addEl (pelem, child) {
 
 function getLocal () {
 	$.get('/store/local').done(function(data){
-        moduleInfoLocal = data;
-
+        localModuleInfo = data;
+        var div = document.getElementById('moduledetaildiv');
+        if (div != null) {
+            if (div.style.display != 'none') {
+                activateDetailDialog(currentDetailModule);
+            }
+        }
+        updateRemotePanels();
 	});
 }
 
 function getRemote () {
 	$.get('/store/remote').done(function(data){
         remoteModuleInfo = data;
-        updateRemotePanels();
+        populateTypeFilter();
 	});
+}
+
+function populateTypeFilter () {
+    var moduleNames = Object.keys(remoteModuleInfo);
+    var types = [''];
+    var select = document.getElementById('typefilter');
+    for (var i = 0; i < moduleNames.length; i++) {
+        var moduleName = moduleNames[i];
+        var info = remoteModuleInfo[moduleName];
+        var type = info['type'];
+        if (types.includes(type)) {
+            continue;
+        } else {
+            types.push(type);
+        }
+    }
+    types.sort();
+    for (var i = 0; i < types.length; i++) {
+        var option = getEl('option');
+        var type = types[i];
+        option.value = type;
+        option.innerText = type;
+        if (type == filter['type']) {
+            option.selected = true;
+        }
+        addEl(select, option);
+    }
 }
 
 function emptyElement (elem) {
@@ -45,20 +82,77 @@ function emptyElement (elem) {
     }
 }
 
+function updateFilter () {
+    var nameinput = document.getElementById('namefilter');
+    var nameStr = nameinput.value;
+    filter = {};
+    if (nameStr != '') {
+        filter['name'] = [nameStr];
+    }
+    var typeStr = document.getElementById('typefilter').value;
+    if (typeStr != '') {
+        filter['type'] = typeStr;
+    }
+    updateRemotePanels();
+}
+
+function getFilteredRemoteModules () {
+    var filteredRemoteModules = {};
+    var remoteModuleNames = Object.keys(remoteModuleInfo);
+    var hasFilter = Object.keys(filter).length > 0;
+    for (var i = 0; i < remoteModuleNames.length; i++) {
+        var remoteModuleName = remoteModuleNames[i];
+        var remoteModule = remoteModuleInfo[remoteModuleName];
+        if (hasFilter) {
+            var typeYes = false;
+            var nameYes = false;
+            if (filter['type'] != undefined && filter['type'] != '') {
+                if (filter['type'].includes(remoteModule['type'])) {
+                    typeYes = true;
+                } else {
+                    typeYes = false;
+                }
+            } else {
+                typeYes = true;
+            }
+            if (filter['name'] != undefined && filter['name'] != '') {
+                var nameYes = false;
+                for (var j = 0; j < filter['name'].length; j++) {
+                    var queryStr = filter['name'][j].toLowerCase();
+                    if (remoteModule['title'].toLowerCase().includes(queryStr) || remoteModule['description'].toLowerCase().includes(queryStr)) {
+                        nameYes = true;
+                        break;
+                    }
+                }
+            } else {
+                nameYes = true;
+            }
+        } else {
+            typeYes = true;
+            nameYes = true;
+        }
+        if (typeYes && nameYes) {
+            filteredRemoteModules[remoteModuleName] = remoteModule;
+        }
+    }
+    return filteredRemoteModules;
+}
+
 function updateRemotePanels () {
     var div = document.getElementById('remotemodulepanels');
     emptyElement(div);
-    var remoteModuleNames = Object.keys(remoteModuleInfo);
+    var remoteModuleNames = Object.keys(getFilteredRemoteModules());
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
         if (remoteModuleName.startsWith('chasmplus_')) {
             continue;
         }
-        var remoteModule = remoteModuleInfo[remoteModuleName];
-        if (remoteModule['type'] == 'annotator') {
-            var panel = getRemoteModulePanel(remoteModuleName);
-            addEl(div, panel);
+        if (remoteModuleName == 'example_annotator' || remoteModuleName == 'template') {
+            continue;
         }
+        var remoteModule = remoteModuleInfo[remoteModuleName];
+        var panel = getRemoteModulePanel(remoteModuleName);
+        addEl(div, panel);
     }
 }
 
@@ -84,62 +178,109 @@ function getRemoteModulePanel (moduleName) {
     div.style.borderColor = '#dddddd';
     div.style.borderStyle = 'ridge';
     div.style.verticalAlign = 'top';
-    div.style.margin = '2px';
-    div.style.padding = '2px';
-    //div.style.backgroundColor = '#ffffaa';
+    div.style.margin = '10px';
+    div.style.padding = '10px';
     div.style.position = 'relative';
     div.setAttribute('module', moduleName);
-    var span = getEl('span');
-    addEl(span, getTn(moduleInfo.title));
-    addEl(div, span);
+    var sdiv = getEl('div');
+    sdiv.id = 'logodiv_' + moduleName;
+    sdiv.style.width = '100%';
+    sdiv.style.height = '70%';
+    sdiv.style.display = 'flex';
+    sdiv.style.alignItems = 'center';
+    sdiv.style.backgroundColor = 'white';
+    sdiv.setAttribute('module', moduleName);
+    sdiv.onclick = function (evt) {
+        var moduleName = this.getAttribute('module');
+        var dialog = activateDetailDialog(moduleName);
+        addEl(document.body, dialog);
+        evt.stopPropagation();
+    }
     var img = getLogo(moduleName);
     img.onerror = function () {
         var span = getEl('div');
         span.style.fontSize = '42px';
         span.style.fontWeight = 'bold';
         span.textContent = moduleInfo.title;
-        span.style.display = 'inline-table';
-        span.style.position = 'absolute';
-        span.style.bottom = '0';
-        span.style.top = '0';
-        span.style.left = '0';
-        span.style.right = '0';
-        span.style.margin = 'auto';
         span.style.width = '100%';
         span.style.height = 'auto';
         span.style.maxWidth = '100%';
         span.style.maxHeight = '100%';
         span.style.textAlign = 'center';
-        span.onclick = function (evt) {
-            console.log(evt);
-            var pdiv = evt.target.parentElement;
-            var moduleName = pdiv.getAttribute('module');
-            console.log(moduleName);
-            var dialog = activateDetailDialog(moduleName);
-            addEl(document.body, dialog);
-        }
-        addEl(div, span);
+        addEl(sdiv, span);
     }
     img.onload = function () {
+        this.onload = null;
         img.style.top = '0';
         img.style.bottom = '0';
         img.style.left = '0';
         img.style.right = '0';
         img.style.margin = 'auto';
-        img.style.position = 'absolute';
-        img.style.width = 'auto';
+        img.style.width = '100%';
         img.style.height = 'auto';
         img.style.maxWidth = '100%';
         img.style.maxHeight = '100%';
         img.onclick = function (evt) {
-            console.log(evt);
             var pdiv = evt.target.parentElement;
-            var moduleName = pdiv.getAttribute('module');
-            console.log(moduleName);
+            var moduleName = div.getAttribute('module');
             var dialog = activateDetailDialog(moduleName);
             addEl(document.body, dialog);
+            evt.stopPropagation();
         }
-        addEl(div, img);
+        var sdiv = document.getElementById('logodiv_' + moduleName);
+        addEl(sdiv, img);
+    }
+    addEl(div, sdiv);
+    var span = null;
+    span = getEl('div');
+    span.style.height = '5px';
+    addEl(div, span);
+    span = getEl('div');
+    span.style.fontWeight = 'bold';
+    addEl(span, getTn(moduleInfo.title));
+    addEl(div, span);
+    span = getEl('span');
+    span.style.color = 'green';
+    span.style.fontSize = '12px';
+    span.textContent = moduleInfo['developer']['organization'];
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    span = getEl('span');
+    span.style.fontSize = '14px';
+    span.style.color = 'lightcoral';
+    span.textContent = moduleInfo['type'];
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    span = getEl('span');
+    span.textContent = getSizeText(moduleInfo['size']);
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    var installStatus = '';
+    if (installInfo[moduleName] != undefined) {
+        var msg = installInfo[moduleName]['msg'];
+        if (msg == 'uninstalling') {
+            installStatus = 'Uninstalling...';
+        } else {
+            installStatus = 'Installing...';
+        }
+    } else {
+        if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName]['exists']) {
+            installStatus = 'Installed';
+        } else {
+            installStatus = '';
+        }
+    }
+    if (installStatus == 'Installed') {
+        var img2 = getEl('img');
+        img2.src = '/store/done.png';
+        img2.style.width = '20px';
+        img2.title = 'Installed';
+        addEl(div, img2);
+    } else {
+        var span = getEl('span');
+        span.id = 'panelinstallstatus_' + moduleName;
+        span.style.fontSize = '12px';
+        addEl(div, span);
     }
     return div
 }
@@ -152,8 +293,8 @@ function activateDetailDialog (moduleName) {
         div = getEl('div');
         div.id = 'moduledetaildiv';
         div.style.position = 'fixed';
-        div.style.width = '90%';
-        div.style.height = '90%';
+        div.style.width = '80%';
+        div.style.height = '80%';
         div.style.margin = 'auto';
         div.style.zIndex = '1';
         div.style.backgroundColor = 'white';
@@ -163,16 +304,23 @@ function activateDetailDialog (moduleName) {
         div.style.bottom = '0';
         div.style.zIndex = '1';
         div.style.border = '6px';
-        div.style.borderStyle = 'groove';
         div.style.padding = '10px';
+        div.style.paddingBottom = '23px';
+        div.style.border = '1px solid black';
+        div.style.boxShadow = '0px 0px 20px';
     }
+    currentDetailModule = moduleName;
+    div.style.display = 'block';
     var moduleInfo = remoteModuleInfo[moduleName];
     var table = getEl('table');
     table.style.height = '100px';
+    table.style.border = '0px';
     var tr = getEl('tr');
+    tr.style.border = '0px';
     var td = getEl('td');
     td.id = 'moduledetaillogotd';
     td.style.width = '120px';
+    td.style.border = '0px';
     var img = getLogo(moduleName);
     img.onerror = function () {
         var span = getEl('div');
@@ -186,39 +334,104 @@ function activateDetailDialog (moduleName) {
     }
     addEl(tr, td);
     td = getEl('td');
-    var span = getEl('span');
+    td.style.border = '0px';
+    var span = getEl('div');
     span.style.fontSize = '30px';
     span.textContent = moduleInfo.title;
     addEl(td, span);
+    addEl(td, getEl('br'));
+    span = getEl('span');
+    span.style.fontSize = '12px';
+    span.style.color = 'green';
+    span.textContent = moduleInfo.type;
+    addEl(td, span);
+    span = getEl('span');
+    span.style.fontSize = '12px';
+    span.style.color = 'green';
+    span.textContent = ' | ' + moduleInfo.developer.organization;
+    addEl(td, span);
     addEl(tr, td);
     td = getEl('td');
+    td.style.border = '0px';
+    td.style.verticalAlign = 'top';
+    td.style.textAlign = 'right';
     var button = getEl('button');
-    button.textContent = 'ADD TO CRAVAT';
-    button.style.backgroundColor = '#82b7ef';
+    var localInfo = localModuleInfo[moduleName];
+    var buttonText = null;
+    if (localInfo != undefined && localInfo.exists) {
+        buttonText = 'Uninstall';
+        button.style.backgroundColor = '#ffd3be';
+        button.addEventListener('click', function (evt) {
+            var btn = evt.target;
+            btn.textContent = 'Uninstalling...';
+            btn.style.color = 'red';
+            uninstallModule(btn.getAttribute('module'));
+        });
+    } else {
+        buttonText = 'Install';
+        button.style.backgroundColor = '#beeaff';
+        button.addEventListener('click', function (evt) {
+            var btn = evt.target;
+            var btnModuleName = btn.getAttribute('module');
+            var btnText = null;
+            if (installQueue.length == 0) {
+                queueInstall(btnModuleName);
+                //installModule(btnModuleName);
+                btnText = 'Installing...';
+            } else {
+                btnText = 'Queued';
+            }
+            installQueue.push(btnModuleName);
+            btn.textContent = btnText;
+            btn.style.color = 'red';
+        });
+    }
+    button.textContent = buttonText;
     button.style.border = '0px';
     button.style.boxShadow = '3px 3px 2px #888888';
     button.style.padding = '8px';
+    button.style.borderRadius = '3px';
     button.setAttribute('module', moduleName);
-    button.addEventListener('click', function (evt) {
-        installModule(evt.target.getAttribute('module'));
-    });
+    if (buttonText == 'Uninstall') {
+        var img2 = getEl('img');
+        img2.src = '/store/done.png';
+        img2.style.width = '20px';
+        img2.title = 'Installed';
+        addEl(td, img2);
+    }
+    addEl(td, getEl('br'));
     addEl(td, button);
+    var sdiv = getEl('div');
+    sdiv.id = 'installstatdiv_' + moduleName;
+    sdiv.style.marginTop = '10px';
+    sdiv.style.fontSize = '12px';
+    if (installInfo[moduleName] != undefined) {
+        sdiv.textContent = installInfo[moduleName]['msg'];
+    }
+    addEl(td, sdiv);
     addEl(tr, td);
     addEl(table, tr);
     addEl(div, table);
+    addEl(div, getEl('hr'));
     table = getEl('table');
     table.style.height = 'calc(100% - 100px)';
+    table.style.border = '0px';
     tr = getEl('tr');
+    tr.style.border = '0px';
     td = getEl('td');
+    td.style.border = '0px';
     td.style.width = '70%';
+    td.style.verticalAlign = 'top';
     var mdDiv = getEl('div');
     addEl(td, mdDiv);
     addEl(tr, td);
 	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
-		mdDiv.html(data);
+		mdDiv.innerHTML = data;
 	});
     td = getEl('td');
     td.style.width = '30%';
+    td.style.border = '0px';
+    td.style.verticalAlign = 'top';
     var infodiv = getEl('div');
     var d = getEl('div');
     span = getEl('span');
@@ -229,7 +442,7 @@ function activateDetailDialog (moduleName) {
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
-    span.textContent = 'Version:';
+    span.textContent = 'Version: ';
     addEl(d, span);
     span = getEl('span');
     span.textContent = moduleInfo['latest_version'];
@@ -237,25 +450,18 @@ function activateDetailDialog (moduleName) {
     addEl(infodiv, d);
     addEl(infodiv, getEl('br'));
     d = getEl('div');
-    /*
     span = getEl('span');
     span.style.fontWeight = 'bold';
-    span.style.fontSize = '16px';
-    span.textContent = 'Developer';
-    addEl(d, span);
-    addEl(d, getEl('br'));
-    */
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Maintainer:';
+    span.textContent = 'Maintainer: ';
     addEl(d, span);
     span = getEl('span');
     span.textContent = moduleInfo['developer']['name'];
     addEl(d, span);
     addEl(d, getEl('br'));
+    addEl(d, getEl('br'));
     span = getEl('span');
     span.style.fontWeight = 'bold';
-    span.textContent = 'e-mail:';
+    span.textContent = 'e-mail: ';
     addEl(d, span);
     span = getEl('span');
     span.textContent = moduleInfo['developer']['email'];
@@ -266,21 +472,31 @@ function activateDetailDialog (moduleName) {
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
-    span.textContent = 'Citation:';
+    span.textContent = 'Citation: ';
     addEl(d, span);
     span = getEl('span');
     span.style.display = 'inline-block';
     span.style.width = 'calc(100% - 120px)';
     span.style.wordWrap = 'break-word';
     span.style.verticalAlign = 'text-top';
-    span.textContent = moduleInfo['developer']['citation'];
+    var citation = moduleInfo['developer']['citation'];
+    console.log(citation);
+    if (citation.startsWith('http')) {
+        var a = getEl('a');
+        a.href = citation;
+        a.target = '_blank';
+        a.textContent = citation;
+        addEl(span, a);
+    } else {
+        span.textContent = citation;
+    }
     addEl(d, span);
     addEl(infodiv, d);
     addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
-    span.textContent = 'Organization:';
+    span.textContent = 'Organization: ';
     addEl(d, span);
     span = getEl('span');
     span.textContent = moduleInfo['developer']['organization'];
@@ -299,11 +515,62 @@ function activateDetailDialog (moduleName) {
     addEl(d, span);
     addEl(infodiv, d);
     addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Type: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = moduleInfo['type'];
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Size: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = getSizeText(moduleInfo['size']);
+    addEl(d, span);
+    addEl(infodiv, d);
     addEl(td, infodiv);
     addEl(tr, td);
     addEl(table, tr);
     addEl(div, table);
     return div;
+}
+
+function getSizeText (size) {
+    size = parseInt(size);
+    console.log(size);
+    if (size < 1024) {
+        size = size + ' B';
+    } else {
+        size = size / 1024;
+        if (size < 1024) {
+            size = size.toFixed(0) + ' KB';
+        } else {
+            size = size / 1024;
+            if (size < 1024) {
+                size = size.toFixed(0) + ' MB';
+            } else {
+                size = size / 1024;
+                size = size.toFixed(0) + ' GB';
+            }
+        }
+    }
+    console.log('size str=', size);
+    return size;
+}
+
+function queueInstall (moduleName) {
+    installInfo[moduleName] = {};
+    $.get('/store/queueinstall', {'module': moduleName}).done(
+        function (response) {
+            updateRemotePanels();
+        }
+    );
 }
 
 function installModule (moduleName) {
@@ -313,12 +580,27 @@ function installModule (moduleName) {
 		url:'/store/install',
 		data: {name:moduleName, version:version},
 		dataType:'json',
-		complete: moduleChange
 	});
 }
 
-function moduleChange(data) {
-	//getLocal();
+function uninstallModule(moduleName) {
+    installInfo[moduleName] = {};
+    installInfo[moduleName]['msg'] = 'uninstalling';
+    updateRemotePanels();
+	$.ajax({
+			type:'GET',
+			url:'/store/uninstall',
+			data: {name: moduleName},
+			dataType: 'json',
+			complete: function (response) {
+                delete installInfo[moduleName];
+                moduleChange(response);
+            }
+	});
+}
+
+function moduleChange (data) {
+	getLocal();
 }
 
 function mainTableRowClickHandler (event) {
@@ -533,45 +815,37 @@ function uninstallModuleCallback(event) {
 	uninstallModule(moduleName);
 }
 
-function uninstallModule(moduleName) {
-	console.log('Uninstall '+moduleName);
-	var d = {name:moduleName};
-	$.ajax({
-			type:'POST',
-			url:'/uninstall',
-			data:JSON.stringify(d),
-			dataType:'json',
-			complete: moduleChange
-	});
-}
-
-function connectInstallStream(clbk) {
-	var evtSource = new EventSource("/store/installstream");
-	evtSource.onmessage = clbk;
-}
-
-function logInstallStream() {
-	function logIt (e) {
-		console.log(e.data);
-	}
-	var div = document.getElementById('install_stream');
-	function updateDiv (e) {
-		var stage = JSON.parse(e.data);
-		var lastUpdate = new Date(stage.update_time);
-		var t = stage.message;
-		t += '\nChunks: '+stage.cur_chunk+'/'+stage.total_chunks;
-		t += '\nBytes: '+stage.cur_size+'/'+stage.total_size;
-		t += '\nLast Update: '+lastUpdate.toTimeString();
-		div.innerText = t;
-		if (stage.stage=='finish') {
-			getLocal();
-		}
-	}
-	connectInstallStream(updateDiv);
+function connectWebSocket () {
+    var ws = new WebSocket('ws://localhost:8060/store/connectwebsocket');
+    ws.onopen = function (evt) {
+    }
+    ws.onmessage = function (evt) {
+        console.log('ws message:', evt.data);
+        var data = JSON.parse(evt.data);
+        var module = data['module'];
+        var msg = data['msg'];
+        installInfo[module]['msg'] = msg;
+        document.getElementById('installstatdiv_' + module).textContent = msg;
+        document.getElementById('panelinstallstatus_' + module).textContent = msg;
+        if (msg.startsWith('Finished installation of')) {
+            delete installInfo[module];
+            installQueue = installQueue.filter(e => e != module);
+            moduleChange(null);
+        }
+    }
 }
 
 function run () {
+    document.addEventListener('click', function (evt) {
+        if (evt.target.closest('#moduledetaildiv') == null) {
+            var div = document.getElementById('moduledetaildiv');
+            if (div != null) {
+                div.style.display = 'none';
+            }
+        }
+    });
+    connectWebSocket();
+    getLocal();
 	getRemote();
-    //getLocal();
 	//logInstallStream()
 }

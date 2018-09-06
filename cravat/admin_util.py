@@ -42,7 +42,6 @@ def recursive_update(d1, d2):
 class LocalModuleInfo (object):
     def __init__(self, dir_path, name=None):
         self.directory = dir_path
-        self.exists = os.path.isdir(dir_path)
         if name is None:
             self.name = os.path.basename(self.directory)
         else:
@@ -51,6 +50,7 @@ class LocalModuleInfo (object):
         self.script_exists = os.path.exists(self.script_path)
         self.conf_path = os.path.join(self.directory, self.name+'.yml')
         self.conf_exists = os.path.exists(self.conf_path)
+        self.exists = self.conf_exists
         self.data_dir = os.path.join(dir_path, 'data')
         self.data_dir_exists = os.path.isdir(self.data_dir)
         self.has_data = self.data_dir_exists \
@@ -120,6 +120,9 @@ class LocalModuleInfo (object):
         if self.disk_size is None:
             self.disk_size = util.get_directory_size(self.directory)
         return self.disk_size
+
+    def serialize (self):
+        return self.__dict__
 
 class RemoteModuleInfo(object):
     def __init__(self, name, **kwargs):
@@ -249,6 +252,7 @@ def list_local():
     """
     Returns a list of locally installed modules.
     """
+    mic.update_local()
     return sorted(list(mic.local.keys()))
 
 def list_remote():
@@ -424,7 +428,7 @@ class InstallProgressHandler(object):
         elif stage=='verify_data':
             return 'Verifying %s data integrity' %self.display_name
         elif stage=='finish':
-            return 'Finished install of %s' %self.display_name
+            return 'Finished installation of %s' %self.display_name
         else:
             raise ValueError(stage)
 
