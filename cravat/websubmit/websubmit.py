@@ -84,6 +84,7 @@ class JobInfo(object):
         self.id = all_vars.get('id')
         self.viewable = all_vars.get('viewable',False)
         self.reports = all_vars.get('reports',[])
+        self.db_path = all_vars.get('db_path')
 
 FILE_ROUTER = FileRouter()
 VIEW_PROCESS = None
@@ -169,8 +170,11 @@ def get_all_jobs(request):
             job_info_fpath = FILE_ROUTER.job_info_file(job_id)
             job = WebJob(job_dir, job_info_fpath)
             job.read_info_file()
-            job_viewable = os.path.exists(FILE_ROUTER.job_db(job_id))
-            job.set_info_values(viewable=job_viewable)
+            db_path = FILE_ROUTER.job_db(job_id)
+            job_viewable = os.path.exists(db_path)
+            job.set_info_values(viewable=job_viewable,
+                                db_path=db_path
+                                )
             existing_reports = []
             for report_type in get_valid_report_types():
                 report_file = FILE_ROUTER.job_report(job_id, report_type)

@@ -204,7 +204,19 @@ const getEl = (tag) => {
 
 const jobViewButtonHandler = (event) => {
     const jobId = $(event.target).attr('jobId');
-    viewJob(jobId);
+    let dbPath;
+    const jobs = GLOBALS.jobs;
+    for (let i=0; i<jobs.length; i++) {
+        job = jobs[i];
+        if (job.id === jobId) {
+            dbPath = job.db_path;
+            break;
+        }
+    }
+    url = '/result/index.html?dbpath='+dbPath;
+    var win = window.open(url, '_blank');
+    win.focus()
+    // viewJob(jobId);
 }
 
 const viewJob = (jobId) => {
