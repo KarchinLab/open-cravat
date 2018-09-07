@@ -260,8 +260,10 @@ function getRemoteModulePanel (moduleName) {
         var msg = installInfo[moduleName]['msg'];
         if (msg == 'uninstalling') {
             installStatus = 'Uninstalling...';
-        } else {
+        } else if (msg == 'installing') {
             installStatus = 'Installing...';
+        } else if (msg == 'queued') {
+            installStatus = 'Queued';
         }
     } else {
         if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName]['exists']) {
@@ -281,6 +283,12 @@ function getRemoteModulePanel (moduleName) {
         span.id = 'panelinstallstatus_' + moduleName;
         span.style.fontSize = '12px';
         addEl(div, span);
+        if (installStatus == 'Queued') {
+            span.textContent = 'Queued';
+            span.style.color = 'red';
+        } else {
+            span.style.color = 'black';
+        }
     }
     return div
 }
@@ -366,6 +374,7 @@ function activateDetailDialog (moduleName) {
             btn.textContent = 'Uninstalling...';
             btn.style.color = 'red';
             uninstallModule(btn.getAttribute('module'));
+            document.getElementById('moduledetaildiv').style.display = 'none';
         });
     } else {
         buttonText = 'Install';
@@ -373,24 +382,25 @@ function activateDetailDialog (moduleName) {
         button.addEventListener('click', function (evt) {
             var btn = evt.target;
             var btnModuleName = btn.getAttribute('module');
-            var btnText = null;
+            var buttonText = null;
             if (installQueue.length == 0) {
-                queueInstall(btnModuleName);
-                //installModule(btnModuleName);
-                btnText = 'Installing...';
+                buttonText = 'Installing...';
             } else {
-                btnText = 'Queued';
+                buttonText = 'Queued';
             }
-            installQueue.push(btnModuleName);
-            btn.textContent = btnText;
+            queueInstall(btnModuleName);
+            btn.textContent = buttonText;
             btn.style.color = 'red';
+            document.getElementById('moduledetaildiv').style.display = 'none';
         });
     }
     button.textContent = buttonText;
-    button.style.border = '0px';
-    button.style.boxShadow = '3px 3px 2px #888888';
+    //button.style.border = '0px';
+    //button.style.boxShadow = '3px 3px 2px #888888';
     button.style.padding = '8px';
-    button.style.borderRadius = '3px';
+    //button.style.borderRadius = '3px';
+    button.style.fontSize = '18px';
+    button.style.fontWeight = 'bold';
     button.setAttribute('module', moduleName);
     if (buttonText == 'Uninstall') {
         var img2 = getEl('img');
@@ -480,7 +490,6 @@ function activateDetailDialog (moduleName) {
     span.style.wordWrap = 'break-word';
     span.style.verticalAlign = 'text-top';
     var citation = moduleInfo['developer']['citation'];
-    console.log(citation);
     if (citation.startsWith('http')) {
         var a = getEl('a');
         a.href = citation;
@@ -543,7 +552,6 @@ function activateDetailDialog (moduleName) {
 
 function getSizeText (size) {
     size = parseInt(size);
-    console.log(size);
     if (size < 1024) {
         size = size + ' B';
     } else {
@@ -560,14 +568,14 @@ function getSizeText (size) {
             }
         }
     }
-    console.log('size str=', size);
     return size;
 }
 
 function queueInstall (moduleName) {
-    installInfo[moduleName] = {};
     $.get('/store/queueinstall', {'module': moduleName}).done(
         function (response) {
+            installInfo[moduleName] = {'msg': 'queued'};
+            installQueue.push(moduleName);
             updateRemotePanels();
         }
     );
@@ -584,8 +592,7 @@ function installModule (moduleName) {
 }
 
 function uninstallModule(moduleName) {
-    installInfo[moduleName] = {};
-    installInfo[moduleName]['msg'] = 'uninstalling';
+    installInfo[moduleName] = {'msg': 'uninstalling'};
     updateRemotePanels();
 	$.ajax({
 			type:'GET',
@@ -603,218 +610,6 @@ function moduleChange (data) {
 	getLocal();
 }
 
-function mainTableRowClickHandler (event) {
-	var td = event.target;
-	if (td.nodeName=='TD') {
-		var tr = td.parentNode;
-		var moduleName = tr.getAttribute('moduleName');
-		showModuleInfo(moduleName, selectedVersions[moduleName]);
-	}
-}
-
-function addModuleInfoDivCloseListener() {
-	var close_div = $('#module_info_closer');
-	close_div.on('click',hideModuleInfoDiv);
-}
-
-function showModuleInfo (moduleName, version) {
-	showModuleInfoDiv(moduleName, version);
-}
-
-function loadModuleInfo(moduleName, version, callback) {
-	$.get('/store/remote/'+moduleName+'/'+version).done(function(data){
-		remote[moduleName].versionInfo[version] = data;
-		callback();
-	});
-}
-
-function showModuleInfoDiv (moduleName, version) {
-	var moduleInfo = remote[moduleName];
-	var moduleInfoDiv = $('#module_info_div');
-	addModuleInfoDivCloseListener();
-	var content = $('#module_info_content');
-	var titleDiv = $('#module_info_title');
-	titleDiv.empty();
-	titleDiv.html(moduleInfo.title);
-	var summaryDiv = $('#module_info_summary');
-	summaryDiv.empty();
-	// Summary
-	// Installed
-	var installed = local.hasOwnProperty(moduleName)
-	if (installed) {
-		summaryDiv.append(getTn('Installed'));
-		summaryDiv.append(getEl('br'));
-		summaryDiv.append(getTn('Version: '+local[moduleName].version));
-	} else {
-		summaryDiv.append(getTn('Not Installed'));
-	}
-	summaryDiv.append(getEl('br'));
-	// Latest Version
-	summaryDiv.append(getTn('Latest version: '+remote[moduleName].latest_version));
-	summaryDiv.append(getEl('br'));
-	// Version Select
-	var select = getEl('select');
-	select.classList.add('version_selector');
-	select.setAttribute('module_name',moduleName);
-	var versions = remote[moduleName]['versions'];
-	for (var i=0; i<versions.length; i++) {
-		var v = versions[i];
-		var opt = getEl('option');
-		addEl(select, opt);
-		opt.value = v;
-		opt.innerText = v;
-	}
-	select.value=version;
-	select.addEventListener('change',versionSelectChange);
-	summaryDiv.append(select);
-	// Install/Update
-	var btn = getEl('button');
-	btn.id = moduleName+'_install_btn';
-	btn.classList.add('install_uninstall_btn');
-	btn.setAttribute('module_name',moduleName);
-	btn.innerText = 'Install';
-	btn.addEventListener('click',installUpdateCallback);
-	summaryDiv.append(btn);
-	summaryDiv.append(getEl('br'));
-	// Uninstall
-	var btn = getEl('button');
-	btn.id = moduleName+'_uninstall_btn';
-	btn.classList.add('install_uninstall_btn');
-	btn.setAttribute('module_name',moduleName);
-	btn.innerText = 'Uninstall';
-	btn.addEventListener('click',uninstallModuleCallback);
-	btn.disabled = !(local.hasOwnProperty(moduleName));
-	summaryDiv.append(btn);
-	moduleInfoDiv.show()
-	// Details
-	var detailDiv = $('#module_info_details');
-	detailDiv.empty();
-	$.get('/store/modules/'+moduleName+'/'+version+'/readme').done(function(data){
-		detailDiv.html(data);
-	});
-}
-
-function hideModuleInfoDiv () {
-	var moduleInfoDiv = $('#module_info_div')
-	moduleInfoDiv.hide()
-}
-
-var selectedVersions = {};
-
-function buildTable () {
-	var table = document.getElementById('status_table');
-	while(table.firstChild) {
-		table.removeChild(table.firstChild);
-	}
-	var headers = ['Module',
-	               'Installed',
-	               'Installed Version',
-	               'Latest Version',
-	               'Install',
-	               'Uninstall'];
-	var tr = getEl('tr')
-	addEl(table, tr);
-	for (var i=0; i<headers.length; i++) {
-		var th = getEl('th');
-		addEl(tr, th)
-		th.innerText = headers[i];
-	}
-	for (var moduleName in remote) {
-		var tr = getEl('tr');
-		addEl(table, tr);
-		tr.classList.add('main_table_row');
-		tr.addEventListener('click',mainTableRowClickHandler)
-		tr.setAttribute('modulename',moduleName);
-		tr.id = moduleName+'_info_row'
-		// Module
-		var td = getEl('td');
-		addEl(tr, td);
-		td.innerText = moduleName;
-		// Installed
-		var td = getEl('td');
-		addEl(tr, td);
-		var installed = local.hasOwnProperty(moduleName)
-		if (installed) {
-			td.innerText = 'Yes';
-		} else {
-			td.innerText = 'No';
-		}
-		// Installed Version
-		var td = getEl('td');
-		addEl(tr, td);
-		if (installed) {
-			td.innerText = local[moduleName].version;
-		}
-		// Latest Version
-		var td = getEl('td');
-		addEl(tr, td);
-		td.innerText = remote[moduleName].latest_version;
-		
-		// Install/Update
-		var td = getEl('td');
-		addEl(tr, td);
-		var select = getEl('select');
-		addEl(td, select);
-		select.classList.add('version_selector');
-		select.setAttribute('module_name',moduleName);
-		var versions = remote[moduleName]['versions'];
-		for (var i=0; i<versions.length; i++) {
-			var v = versions[i];
-			var opt = getEl('option');
-			addEl(select, opt);
-			opt.value = v;
-			opt.innerText = v;
-		}
-		if (selectedVersions.hasOwnProperty(moduleName)) {
-			select.value = selectedVersions[moduleName];
-		} else {
-			var latestVersion = remote[moduleName]['latest_version'];
-			select.value = latestVersion;
-			selectedVersions[moduleName]= latestVersion;
-		}
-		select.addEventListener('change',versionSelectChange);
-		var btn = getEl('button');
-		addEl(td, btn);
-		btn.id = moduleName+'_install_btn';
-		btn.classList.add('install_uninstall_btn');
-		btn.setAttribute('module_name',moduleName);
-		btn.innerText = 'Install';
-		btn.addEventListener('click',installUpdateCallback);
-		
-		// Uninstall
-		var td = getEl('td');
-		addEl(tr, td);
-		var btn = getEl('button');
-		addEl(td, btn);
-		btn.id = moduleName+'_uninstall_btn';
-		btn.classList.add('install_uninstall_btn');
-		btn.setAttribute('module_name',moduleName);
-		btn.innerText = 'Uninstall';
-		btn.addEventListener('click',uninstallModuleCallback);
-		btn.disabled = !(local.hasOwnProperty(moduleName));
-	}
-}
-
-
-function versionSelectChange(event) {
-	var selector = event.target;
-	var version = selector.value;
-	var moduleName = selector.getAttribute('module_name');
-	selectedVersions[moduleName] = version;
-}
-
-function installUpdateCallback(event) {
-	var btn = event.target;
-	var moduleName = btn.getAttribute('module_name');
-	installModule(moduleName);
-}
-
-function uninstallModuleCallback(event) {
-	var btn = event.target;
-	var moduleName = btn.getAttribute('module_name');
-	uninstallModule(moduleName);
-}
-
 function connectWebSocket () {
     var ws = new WebSocket('ws://localhost:8060/store/connectwebsocket');
     ws.onopen = function (evt) {
@@ -825,12 +620,22 @@ function connectWebSocket () {
         var module = data['module'];
         var msg = data['msg'];
         installInfo[module]['msg'] = msg;
-        document.getElementById('installstatdiv_' + module).textContent = msg;
-        document.getElementById('panelinstallstatus_' + module).textContent = msg;
+        var installstatdiv = document.getElementById('installstatdiv_' + module);
+        if (installstatdiv != null) {
+            installstatdiv.textContent = msg;
+        }
+        var sdiv = document.getElementById('panelinstallstatus_' + module);
+        sdiv.style.color = 'black';
+        sdiv.textContent = msg;
         if (msg.startsWith('Finished installation of')) {
             delete installInfo[module];
             installQueue = installQueue.filter(e => e != module);
             moduleChange(null);
+            if (installQueue.length > 0) {
+                var module = installQueue.shift();
+                installInfo[module] = {'msg': 'installing'};
+                queueInstall(module);
+            }
         }
     }
 }

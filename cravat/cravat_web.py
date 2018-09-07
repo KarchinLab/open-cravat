@@ -38,6 +38,7 @@ def result ():
     main()
 
 def store ():
+    ws.start_install_queue_manager()
     webbrowser.open('http://localhost:8060/store/index.html')
 
 def main ():

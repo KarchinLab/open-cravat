@@ -10,6 +10,7 @@ import sys
 import urllib
 import asyncio
 from aiohttp import web
+from html.parser import HTMLParser
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -35,7 +36,6 @@ class InstallProgressMpDict(au.InstallProgressHandler):
             install_state['update_time'] = time.time()
 
     def stage_start(self, stage):
-        print('@@@ entered stage_start. stage=' + stage)
         self.cur_stage = stage
         install_state['module_name'] = self._module_name
         install_state['module_version'] = self._module_version
@@ -45,7 +45,6 @@ class InstallProgressMpDict(au.InstallProgressHandler):
         install_state['update_time'] = time.time()
 
     def stage_progress(self, cur_chunk, total_chunks, cur_size, total_size):
-        print('@@@ entered stage_progress. cur_chunk=' + str(cur_chunk))
         install_state['cur_chunk'] = cur_chunk
         install_state['total_chunks'] = total_chunks
         install_state['cur_size'] = cur_size
@@ -54,32 +53,19 @@ class InstallProgressMpDict(au.InstallProgressHandler):
 
 def fetch_install_queue ():
     global install_queue
-    print('Crawler started at pid %d' %os.getpid())
     while True:
         try:
             data = install_queue.get()
-            print('@@@ queue gotten. data=' + str(data))
             au.refresh_cache()
             module_name = data['module']
             module_version = data['version']
-            print('Crawler is installing %s:%s' %(module_name, module_version))
             stage_handler = InstallProgressMpDict(module_name, module_version)
-            print('@@@ stage_handler=' + str(stage_handler))
             au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
-            print('@@@ installed: [' + module_name + ']')
             au.refresh_cache()
         except KeyboardInterrupt:
             raise
         except:
             traceback.print_exc()
-'''
-def install_module (handler):
-    module_name = urllib.parse.unquote(queries['name'][0])
-    module_version = urllib.parse.unquote(queries['version'][0])
-    print('Install requested for %s:%s' %(module_name, module_version))
-    install_queue.put(module)
-    return web.Response()
-'''
 
 ###################### start from store_handler #####################
 import cravat.admin_util as au
@@ -111,7 +97,35 @@ def get_module_readme (request):
         content = ''
     else:
         content = markdown.markdown(readme_md)
-    return web.Response(text=content)
+    imgsrceditor = ImageSrcEditor(module_url)
+    imgsrceditor.feed(content)
+    content = imgsrceditor.get_parsed()
+    headers = {'Content-Type': 'text/html'}
+    return web.Response(body=content, headers=headers)
+
+class ImageSrcEditor(HTMLParser):
+    def __init__ (self, prefix_url):
+        super().__init__()
+        self.prefix_url = prefix_url
+        self.parsed = ''
+
+    def handle_starttag(self, tag, attrs):
+        html = '<{}'.format(tag)
+        for name, value in attrs:
+            if tag == 'img' and name == 'src':
+                value = base_url+'/'+value.lstrip('/')
+            html += ' {name}="{value}"'.format(name=name, value=value)
+        html += '>'
+        self.parsed += html
+
+    def handle_data(self, data):
+        self.parsed += data
+
+    def handle_endtag(self, tag):
+        self.parsed += '</{}>'.format(tag)
+
+    def get_parsed(self):
+        return self.parsed
 
 def install_module (request):
     queries = request.rel_url.query
@@ -121,7 +135,7 @@ def install_module (request):
     else:
         module_version = None
     #au.install_module(module_name, version=module_version)
-    queue_install(module, version)
+    queue_install(module_name, module_version)
     content = 'success'
     return web.Response(text=content)
 
@@ -136,15 +150,17 @@ def uninstall_module (request):
     queries = request.rel_url.query
     module_name = queries['name']
     au.uninstall_module(module_name)
-    print('uninstalled', module_name)
     return web.Response(text='uninstalled ' + module_name)
 
 def start_worker ():
     global install_worker
+    global install_queue
+    global install_state
+    install_queue = Queue()
+    install_state = Manager().dict()
     if install_worker == None:
         install_worker = Process(target=fetch_install_queue)
         install_worker.start()
-        print('install worker started')
     
 async def connect_websocket (request):
     global install_worker
@@ -176,7 +192,6 @@ async def connect_websocket (request):
             data['msg'] = install_state['message']
             if data['msg'].startswith('Downloading'):
                 data['msg'] = data['msg'] + ' ' + str(install_state['cur_chunk']) + '%'
-            print('@@@ data=' + json.dumps(data))
             await install_ws.send_str(json.dumps(data))
             last_update_time = install_state['update_time']
     return install_ws
@@ -190,11 +205,10 @@ def queue_install (request):
         module_version = None
     data = {'module': queries['module'], 'version': module_version}
     install_queue.put(data)
-    print('queue=', install_queue)
     return web.Response(text = 'queued ' + queries['module'])
 
-install_queue = Queue()
-install_state = Manager().dict()
+install_queue = None
+install_state = None
 install_worker = None
 install_ws = None
 routes = []
