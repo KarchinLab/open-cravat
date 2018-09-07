@@ -229,7 +229,7 @@ def generate_report(request):
         cmd_args.extend(['-t', report_type])
         subprocess.Popen(cmd_args)
     return web.Response()
-routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',genereate_report])
+routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',generate_report])
 
 def download_report(request):
     global FILE_ROUTER

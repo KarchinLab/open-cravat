@@ -16,7 +16,7 @@ from cravat import admin_util as au
 from cravat import CravatFilter
 from cravat.webresult import webresult as wr
 from cravat.webstore import webstore as ws
-# from cravat.websubmit import websubmit
+from cravat.websubmit import websubmit
 import websockets
 from aiohttp import web
 
@@ -47,7 +47,7 @@ def main ():
     routes = list()
     routes.extend(ws.routes)
     routes.extend(wr.routes)
-    # routes.extend(websubmit.routes)
+    routes.extend(websubmit.routes)
     for route in routes:
         method, path, func_name = route
         app.router.add_route(method, path, func_name)
