@@ -51,8 +51,8 @@ class InstallProgressMpDict(au.InstallProgressHandler):
         install_state['total_size'] = total_size
         install_state['update_time'] = time.time()
 
-def fetch_install_queue ():
-    global install_queue
+def fetch_install_queue (install_queue):
+    # global install_queue
     while True:
         try:
             data = install_queue.get()
@@ -159,7 +159,7 @@ def start_worker ():
     install_queue = Queue()
     install_state = Manager().dict()
     if install_worker == None:
-        install_worker = Process(target=fetch_install_queue)
+        install_worker = Process(target=fetch_install_queue, args=(install_queue,))
         install_worker.start()
     
 async def connect_websocket (request):
