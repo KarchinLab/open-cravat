@@ -9,6 +9,9 @@ from cravat import ConfigLoader
 import sys
 import traceback
 import shutil
+from aiohttp import web
+
+routes = []
 
 class FileRouter(object):
 
@@ -88,8 +91,7 @@ VIEW_PROCESS = None
 def get_next_job_id():
     return datetime.datetime.now().strftime(r'job-%Y-%m-%d-%H-%M-%S')
 
-@post('/rest/submit')
-def submit():
+def submit(request):
     global FILE_ROUTER
     file_formpart = request.files.get('file')
     orig_input_fname = file_formpart.raw_filename
@@ -127,9 +129,9 @@ def submit():
     subprocess.Popen(run_args)
     job.write_info_file()
     return job.get_info_dict()
+routes.append(['POST','/submit/jobs',submit])
 
-@get('/rest/annotators')
-def get_annotators():
+def get_annotators(request):
     module_names = au.list_local()
     out = {}
     for module_name in module_names:
@@ -143,10 +145,10 @@ def get_annotators():
                                 'description':local_info.description,
                                 'developer':vars(local_info.developer)
                             }
-    return out
+    return web.json_response(out)
+routes.append(['GET','/submit/annotators',get_annotators])
 
-@get('/rest/jobs')
-def get_all_jobs():
+def get_all_jobs(request):
     global FILE_ROUTER
     ids = os.listdir(FILE_ROUTER.jobs_dir())
     ids.sort(reverse=True)
@@ -169,74 +171,78 @@ def get_all_jobs():
         except:
             traceback.print_exc()
             continue
-    response.content_type = 'application/json'
-    return json.dumps([job.get_info_dict() for job in all_jobs])
+    return web.json_response([job.get_info_dict() for job in all_jobs])
+routes.append(['GET','/submit/jobs',get_all_jobs])
 
-@get('/rest/jobs/<job_id>')
-def view_job(job_id):
+def view_job(request):
     global VIEW_PROCESS
     global FILE_ROUTER
+    job_id = request.match_info['job_id']
     db_path = FILE_ROUTER.job_db(job_id)
     if os.path.exists(db_path):
         if type(VIEW_PROCESS) == subprocess.Popen:
             VIEW_PROCESS.kill()
         VIEW_PROCESS = subprocess.Popen(['cravat-view', db_path])
-        response.status_code = 200
+        return web.Response()
     else:
-        response.status_code = 404
+        return web.Response(status=404)
+routes.append(['GET','/submit/jobs/{job_id}',view_job])
 
-@delete('/rest/jobs/<job_id>')
-def delete_job(job_id):
+def delete_job(request):
     global FILE_ROUTER
+    job_id = request.match_info['job_id']
     job_dir = FILE_ROUTER.job_dir(job_id)
     if os.path.exists(job_dir):
         shutil.rmtree(job_dir)
-        response.status = 200
+        return web.Response()
     else:
-        response.status = 404
+        return web.Response(status=404)
+routes.append(['DELETE','/submit/rest/jobs/{job_id}',delete_job])
 
-@get('/rest/jobs/<job_id>/db')
-def download_db(job_id):
+def download_db(request):
     global FILE_ROUTER
+    job_id = request.match_info['job_id']
     db_path = FILE_ROUTER.job_db(job_id)
-    root_dir, fname = os.path.split(db_path)
-    ret_fname = job_id+'.'+fname.split('.')[-1]
-    return static_file(fname, root=root_dir, download=ret_fname)
+    return web.FileResponse(path=db_path)
+routes.append(['GET','/submit/jobs/{job_id}/db', download_db])
 
 def get_valid_report_types():
     reporter_infos = au.get_local_module_infos(types=['reporter'])
     report_types = [x.name.split('reporter')[0] for x in reporter_infos]
     return report_types
 
-@get('/rest/reports')
-def get_report_types():
+def get_report_types(request):
     cfl = ConfigLoader()
     default_reporter = cfl.get_cravat_conf_value('reporter')
     default_type = default_reporter.split('reporter')[0]
     valid_types = get_valid_report_types()
-    return {'valid': valid_types, 'default': default_type}
+    return web.json_response({'valid': valid_types, 'default': default_type})
+routes.append(['GET','/store/reports',get_report_types])
 
-
-@post('/rest/jobs/<job_id>/reports/<report_type>')
-def generate_report(job_id, report_type):
+def generate_report(request):
     global FILE_ROUTER
+    job_id = request.match_info['job_id']
+    report_type = request.match_info['report_type']
     if report_type in get_valid_report_types():
         cmd_args = ['cravat', FILE_ROUTER.job_input(job_id)]
         cmd_args.append('--str')
         cmd_args.extend(['-t', report_type])
         subprocess.Popen(cmd_args)
+    return web.Response()
+routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',genereate_report])
 
-@get('/rest/jobs/<job_id>/reports/<report_type>')
-def download_report(job_id, report_type):
+def download_report(request):
     global FILE_ROUTER
+    job_id = request.match_info['job_id']
+    report_type = request.match_info['report_type']
     report_path = FILE_ROUTER.job_report(job_id, report_type)
-    root_dir, fname = os.path.split(report_path)
-    ret_fname = job_id+'.'+fname.split('.')[-1]
-    return static_file(fname, root=root_dir, download=ret_fname)
+    return web.FileResponse(path=report_path)
 
-@get('/static/<filepath:path>')
-def static(filepath):
-    return static_file(filepath, root=FILE_ROUTER.static_dir())
+routes.append(['GET','/submit/jobs/{job_id}/reports/{report_type}',download_report])
 
-routes = []
-routes.append(['GET','/static/{path}'])
+if __name__ == '__main__':
+    app = web.Application()
+    for route in routes:
+        method, path, func_name = route
+        app.router.add_route(method, path, func_name)
+    web.run_app(app, port=8060)
