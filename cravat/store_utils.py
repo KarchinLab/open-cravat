@@ -24,7 +24,6 @@ class PathBuilder(object):
             raise RuntimeError('Invalid path type: %s' %path_type)
 
     def _build_path(self, *path_toks):
-        print('path_toks=', path_toks)
         if self.path_type == 'url':
             return '/'.join(path_toks)
         elif self.path_type == 'file':
