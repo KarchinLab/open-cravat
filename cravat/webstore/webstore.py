@@ -10,6 +10,7 @@ import sys
 import urllib
 import asyncio
 from aiohttp import web
+from html.parser import HTMLParser
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -153,6 +154,10 @@ def uninstall_module (request):
 
 def start_worker ():
     global install_worker
+    global install_queue
+    global install_state
+    install_queue = Queue()
+    install_state = Manager().dict()
     if install_worker == None:
         install_worker = Process(target=fetch_install_queue, args=(install_queue,))
         install_worker.start()
@@ -202,8 +207,6 @@ def queue_install (request):
     install_queue.put(data)
     return web.Response(text = 'queued ' + queries['module'])
 
-install_queue = Queue()
-install_state = Manager().dict()
 install_queue = None
 install_state = None
 install_worker = None
