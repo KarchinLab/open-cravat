@@ -442,7 +442,7 @@ function notifyToUseFilter () {
 		'Too many variants (more than ' + NUMVAR_LIMIT + ') to load into ' +
 		'the web viewer. Use the filters below to reduce the number of ' +
 		'variants to equal to or less than ' + NUMVAR_LIMIT + ' and ' +
-		'click "Load Variants".';
+		'use "Filter" button.';
 }
 
 function hideWgnoticediv () {
