@@ -11,6 +11,7 @@ import urllib
 import asyncio
 from aiohttp import web
 from html.parser import HTMLParser
+from cravat import store_utils as su
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -97,7 +98,9 @@ def get_module_readme (request):
         content = ''
     else:
         content = markdown.markdown(readme_md)
-    imgsrceditor = ImageSrcEditor(module_url)
+    global system_conf
+    global pathbuilder
+    imgsrceditor = ImageSrcEditor(pathbuilder.module_version_dir(module_name, au.mic.remote[module_name]['latest_version']))
     imgsrceditor.feed(content)
     content = imgsrceditor.get_parsed()
     headers = {'Content-Type': 'text/html'}
@@ -111,9 +114,11 @@ class ImageSrcEditor(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         html = '<{}'.format(tag)
+        if tag == 'img':
+            attrs.append(['style', 'width:100%'])
         for name, value in attrs:
             if tag == 'img' and name == 'src':
-                value = base_url+'/'+value.lstrip('/')
+                value = self.prefix_url + '/' + value.lstrip('/')
             html += ' {name}="{value}"'.format(name=name, value=value)
         html += '>'
         self.parsed += html
@@ -207,6 +212,8 @@ def queue_install (request):
     install_queue.put(data)
     return web.Response(text = 'queued ' + queries['module'])
 
+system_conf = au.get_system_conf()
+pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
 install_queue = None
 install_state = None
 install_worker = None

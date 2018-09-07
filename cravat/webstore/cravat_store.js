@@ -433,6 +433,8 @@ function activateDetailDialog (moduleName) {
     td.style.width = '70%';
     td.style.verticalAlign = 'top';
     var mdDiv = getEl('div');
+    mdDiv.style.height = '100%';
+    mdDiv.style.overflow = 'auto';
     addEl(td, mdDiv);
     addEl(tr, td);
 	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
@@ -615,7 +617,7 @@ function connectWebSocket () {
     ws.onopen = function (evt) {
     }
     ws.onmessage = function (evt) {
-        console.log('ws message:', evt.data);
+        //console.log('ws message:', evt.data);
         var data = JSON.parse(evt.data);
         var module = data['module'];
         var msg = data['msg'];
@@ -650,7 +652,7 @@ function run () {
         }
     });
     connectWebSocket();
-    getLocal();
 	getRemote();
+    getLocal();
 	//logInstallStream()
 }
