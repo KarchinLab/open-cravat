@@ -91,22 +91,33 @@ VIEW_PROCESS = None
 def get_next_job_id():
     return datetime.datetime.now().strftime(r'job-%Y-%m-%d-%H-%M-%S')
 
-def submit(request):
+async def submit(request):
     global FILE_ROUTER
-    file_formpart = request.files.get('file')
-    orig_input_fname = file_formpart.raw_filename
+    reader = await request.multipart()
+    input_file = None
+    job_options = None
+    while True:
+        part = await reader.next()
+        if not part: break 
+        if part.name == 'file':
+            input_file = part
+            input_data = await input_file.read()
+        elif part.name == 'options':
+            job_options = await part.json()
+        if input_file is not None and job_options is not None: break
+    orig_input_fname = input_file.filename
     job_id = get_next_job_id()
     job_dir = FILE_ROUTER.job_dir(job_id)
     job_info_fpath = FILE_ROUTER.job_info_file(job_id)
     os.mkdir(job_dir)
     job = WebJob(job_dir, job_info_fpath)
     input_fpath = os.path.join(job_dir, FILE_ROUTER.job_input(job_id))
-    with open(input_fpath,'wb') as wf:
-        wf.write(file_formpart.file.read())
+    with open(input_fpath, 'wb') as wf:
+        wf.write(input_data)
     job.set_info_values(orig_input_fname=orig_input_fname,
                         submission_time=datetime.datetime.now().isoformat(),
-                        viewable=False)
-    job_options = json.loads(request.forms.get('options'))
+                        viewable=False
+                        )
     # Subprocess arguments
     run_args = ['cravat',
                 input_fpath]
@@ -128,14 +139,13 @@ def submit(request):
     print('Run command: \''+' '.join(run_args)+'\'')
     subprocess.Popen(run_args)
     job.write_info_file()
-    return job.get_info_dict()
-routes.append(['POST','/submit/jobs',submit])
+    return web.json_response(job.get_info_dict())
+routes.append(['POST','/submit/submit',submit])
 
 def get_annotators(request):
-    module_names = au.list_local()
     out = {}
-    for module_name in module_names:
-        local_info = au.get_local_module_info(module_name)
+    for local_info in au.get_local_module_infos(types=['annotator']):
+        module_name = local_info.name
         if local_info.type == 'annotator':
             out[module_name] = {
                                 'name':module_name,
@@ -143,8 +153,8 @@ def get_annotators(request):
                                 'type':local_info.type,
                                 'title':local_info.title,
                                 'description':local_info.description,
-                                'developer':vars(local_info.developer)
-                            }
+                                'developer': local_info.developer
+                                }
     return web.json_response(out)
 routes.append(['GET','/submit/annotators',get_annotators])
 
@@ -197,13 +207,16 @@ def delete_job(request):
         return web.Response()
     else:
         return web.Response(status=404)
-routes.append(['DELETE','/submit/rest/jobs/{job_id}',delete_job])
+routes.append(['DELETE','/submit/jobs/{job_id}',delete_job])
 
 def download_db(request):
     global FILE_ROUTER
     job_id = request.match_info['job_id']
     db_path = FILE_ROUTER.job_db(job_id)
-    return web.FileResponse(path=db_path)
+    db_fname = job_id+'.sqlite'
+    with open(db_path) as f:
+        headers = {'Content-Disposition': 'attachment; filename='+db_fname}
+        return web.Response(body=db_path, headers=headers)
 routes.append(['GET','/submit/jobs/{job_id}/db', download_db])
 
 def get_valid_report_types():
@@ -217,7 +230,7 @@ def get_report_types(request):
     default_type = default_reporter.split('reporter')[0]
     valid_types = get_valid_report_types()
     return web.json_response({'valid': valid_types, 'default': default_type})
-routes.append(['GET','/store/reports',get_report_types])
+routes.append(['GET','/submit/reports',get_report_types])
 
 def generate_report(request):
     global FILE_ROUTER
@@ -229,14 +242,21 @@ def generate_report(request):
         cmd_args.extend(['-t', report_type])
         subprocess.Popen(cmd_args)
     return web.Response()
-routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',genereate_report])
+routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',generate_report])
 
 def download_report(request):
     global FILE_ROUTER
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
-    report_path = FILE_ROUTER.job_report(job_id, report_type)
-    return web.FileResponse(path=report_path)
+    report_path = FILE_ROUTER.job_report(job_id, report_type) 
+    report_name = job_id+'.'+report_path.split('.')[-1]
+    with open(report_path,'rb') as f:
+        headers = {
+            'Content-Disposition':'attachment; filename='+report_name,
+        }
+        return web.Response(body=f.read(), headers=headers)
+
+    # return web.FileResponse(path=report_path)
 
 routes.append(['GET','/submit/jobs/{job_id}/reports/{report_type}',download_report])
 
