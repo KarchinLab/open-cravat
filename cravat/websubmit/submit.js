@@ -41,7 +41,7 @@ const submit = () => {
     submitOpts.assembly = $('#assembly-select').val();
     fd.append('options',JSON.stringify(submitOpts));
     $.ajax({
-        url:'/rest/submit',
+        url:'submit',
         data: fd,
         type: 'POST',
         processData: false,
@@ -160,7 +160,8 @@ const reportDownloadButtonHandler = (event) => {
 }
 
 const downloadReport = (jobId, reportType) => {
-    url = 'http://'+window.location.host+'/rest/jobs/'+jobId+'/reports/'+reportType;
+    // url = 'http://'+window.location.host+'/rest/jobs/'+jobId+'/reports/'+reportType;
+    url = 'jobs/'+jobId+'/reports/'+reportType;
     downloadFile(url);
 }
 
@@ -174,7 +175,7 @@ const reportGenerateButtonHandler = (event) => {
 
 const generateReport = (jobId, reportType) => {
     $.ajax({
-        url:'/rest/jobs/'+jobId+'/reports/'+reportType,
+        url:'jobs/'+jobId+'/reports/'+reportType,
         type: 'POST',
         processData: false,
         contentType: 'application/json',
@@ -189,7 +190,7 @@ const jobDbDownloadButtonHandler = (event) => {
 }
 
 const downloadJobDb = (jobId) => {
-    url = 'http://'+window.location.host+'/rest/jobs/'+jobId+'/db';
+    url = 'jobs/'+jobId+'/db';
     downloadFile(url);
 }
 
@@ -208,7 +209,7 @@ const jobViewButtonHandler = (event) => {
 
 const viewJob = (jobId) => {
     $.ajax({
-        url:'/rest/jobs/'+jobId,
+        url:'jobs/'+jobId,
         type: 'GET',
         contentType: 'application/json',
         success: function (data) {
@@ -224,7 +225,7 @@ const jobDeleteButtonHandler = (event) => {
 
 const deleteJob = (jobId) => {
     $.ajax({
-        url:'/rest/jobs/'+jobId,
+        url:'jobs/'+jobId,
         type: 'DELETE',
         contentType: 'application/json',
         success: function (data) {
@@ -304,7 +305,7 @@ var JOB_IDS = []
 const populateJobs = () => {
     return new Promise((resolve, reject) => {
         $.ajax({
-            url:'/rest/jobs',
+            url:'jobs',
             type: 'GET',
             success: function (allJobs) {
                 GLOBALS.jobs = [];
@@ -321,7 +322,7 @@ const populateJobs = () => {
 const populateAnnotators = () => {
     return new Promise((resolve, reject) => {
         $.ajax({
-            url:'/rest/annotators',
+            url:'annotators',
             type: 'GET',
             success: function (data) {
                 GLOBALS.annotators = data
@@ -427,7 +428,7 @@ const checkBoxGroupAllNoneHandler = (event) => {
 const populateReports = () => {
     return new Promise((resolve, reject) => {
         $.ajax({
-            url:'/rest/reports',
+            url:'reports',
             type: 'GET',
             success: function (data) {
                 GLOBALS.reports = data
