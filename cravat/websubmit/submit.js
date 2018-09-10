@@ -64,7 +64,6 @@ const addJob = jsonObj => {
 }
 
 const buildJobsTable = () => {
-    console.log('build jobs table');
     const allJobs = GLOBALS.jobs;
     const reportSelectors = $('.report-type-selector');
     const curSelectedReports = {};
@@ -125,11 +124,12 @@ const buildJobsTable = () => {
             .append(reportType[0].toUpperCase()+reportType.slice(1));
             reportSelector.append(typeOpt);
         }
-        reportSelector.val(curSelectedReport !== undefined ? curSelectedReport : firstExistingReport);
+        const shownReportType = curSelectedReport ? curSelectedReport : firstExistingReport;
+        reportSelector.val(shownReportType);
         const repDwnBtn = $(getEl('button'))
             .addClass('report-download-button')
             .append('Download')
-            .attr('disabled', firstExistingReport === undefined)
+            .attr('disabled', !job.reports.includes(shownReportType))
             .click(reportDownloadButtonHandler);
         reportTd.append(repDwnBtn);
         repGenBtn = $(getEl('button'))
