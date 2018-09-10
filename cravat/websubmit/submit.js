@@ -64,7 +64,16 @@ const addJob = jsonObj => {
 }
 
 const buildJobsTable = () => {
+    console.log('build jobs table');
     const allJobs = GLOBALS.jobs;
+    const reportSelectors = $('.report-type-selector');
+    const curSelectedReports = {};
+    for (let i=0; i<reportSelectors.length; i++) {
+        const selector = $(reportSelectors[i]);
+        const jobId = selector.attr('jobId');
+        const val = selector.val();
+        curSelectedReports[jobId] = val;
+    }
     $('.job-table-row').remove();
     const jobsTable = $('#jobs-table');
     for (let i = 0; i < allJobs.length; i++) {
@@ -105,6 +114,7 @@ const buildJobsTable = () => {
         reportTd.append(reportSelector);
         jobReports = job.reports;
         let firstExistingReport;
+        const curSelectedReport = curSelectedReports[job.id];
         for (let i=0; i<GLOBALS.reports.valid.length; i++) {
             let reportType = GLOBALS.reports.valid[i];
             if (firstExistingReport === undefined && jobReports.includes(reportType)) {
@@ -115,7 +125,7 @@ const buildJobsTable = () => {
             .append(reportType[0].toUpperCase()+reportType.slice(1));
             reportSelector.append(typeOpt);
         }
-        reportSelector.val(firstExistingReport)
+        reportSelector.val(curSelectedReport !== undefined ? curSelectedReport : firstExistingReport);
         const repDwnBtn = $(getEl('button'))
             .addClass('report-download-button')
             .append('Download')
@@ -256,6 +266,7 @@ const addListeners = () => {
     $('#all-annotators-button').click(allNoAnnotatorsHandler);
     $('#no-annotators-button').click(allNoAnnotatorsHandler);
     $('.input-example-button').click(inputExampleChangeHandler)
+    $('#refresh-jobs-table-btn').click(refreshJobsTable);
 }
 
 const inputExampleChangeHandler = (event) => {
@@ -329,6 +340,10 @@ const populateJobs = () => {
             }
         })
     });
+}
+
+const refreshJobsTable = () => {
+    populateJobs().then(buildJobsTable());
 }
 
 const populateAnnotators = () => {
