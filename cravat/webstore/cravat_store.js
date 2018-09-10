@@ -7,6 +7,7 @@ var localModuleInfo = {};
 var filter = {'type': 'annotator'};
 var installQueue = [];
 var installInfo = {};
+var baseModuleNames = [];
 
 var storeUrl = null;
 var storeurl = $.get('/store/getstoreurl').done(function(response) {
@@ -31,14 +32,37 @@ function addEl (pelem, child) {
 function getLocal () {
 	$.get('/store/local').done(function(data){
         localModuleInfo = data;
-        var div = document.getElementById('moduledetaildiv');
-        if (div != null) {
-            if (div.style.display != 'none') {
-                activateDetailDialog(currentDetailModule);
+        var localModuleNames = Object.keys(localModuleInfo);
+        var baseInstalled = true;
+        for (var i = 0; i < baseModuleNames.length; i++) {
+            var baseModuleName = baseModuleNames[i];
+            if (localModuleNames.includes(baseModuleName) == false) {
+                baseInstalled = false;
+                var div = getEl('button');
+                div.textContent = 'Click to install the base components';
+                div.addEventListener('click', function (evt) {
+                    installBaseComponents();
+                });
+                addEl(document.getElementById('remotemodulepanels'), div);
+                break;
             }
         }
-        updateRemotePanels();
+        if (baseInstalled) {
+            var div = document.getElementById('moduledetaildiv');
+            if (div != null) {
+                if (div.style.display != 'none') {
+                    activateDetailDialog(currentDetailModule);
+                }
+            }
+            updateRemotePanels();
+        }
 	});
+}
+
+function installBaseComponents () {
+    $.get('/store/installbasemodules').done(function (evt) {
+        getLocal();
+    }
 }
 
 function getRemote () {
@@ -52,11 +76,14 @@ function populateTypeFilter () {
     var moduleNames = Object.keys(remoteModuleInfo);
     var types = [''];
     var select = document.getElementById('typefilter');
+    types.push('base');
     for (var i = 0; i < moduleNames.length; i++) {
         var moduleName = moduleNames[i];
         var info = remoteModuleInfo[moduleName];
         var type = info['type'];
         if (types.includes(type)) {
+            continue;
+        } else if (type == 'aggregator' || type == 'postaggregator') {
             continue;
         } else {
             types.push(type);
@@ -102,15 +129,24 @@ function getFilteredRemoteModules () {
     var hasFilter = Object.keys(filter).length > 0;
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
+        var remoteModuleNameLower = remoteModuleName.toLowerCase();
         var remoteModule = remoteModuleInfo[remoteModuleName];
         if (hasFilter) {
             var typeYes = false;
             var nameYes = false;
             if (filter['type'] != undefined && filter['type'] != '') {
-                if (filter['type'].includes(remoteModule['type'])) {
-                    typeYes = true;
+                if (filter['type'] == 'base') {
+                    if (baseModuleNames.includes(remoteModuleName)) {
+                        typeYes = true;
+                    } else {
+                        typeYes = false;
+                    }
                 } else {
-                    typeYes = false;
+                    if (filter['type'].includes(remoteModule['type'])) {
+                        typeYes = true;
+                    } else {
+                        typeYes = false;
+                    }
                 }
             } else {
                 typeYes = true;
@@ -642,6 +678,13 @@ function connectWebSocket () {
     }
 }
 
+function getBaseModuleNames () {
+    $.get('/store/getbasemodules').done(function (response) {
+        baseModuleNames = response;
+        console.log(response);
+    });
+}
+
 function run () {
     document.addEventListener('click', function (evt) {
         if (evt.target.closest('#moduledetaildiv') == null) {
@@ -652,6 +695,7 @@ function run () {
         }
     });
     connectWebSocket();
+    getBaseModuleNames();
 	getRemote();
     getLocal();
 	//logInstallStream()

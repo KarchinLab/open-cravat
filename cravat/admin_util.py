@@ -827,7 +827,12 @@ def show_system_conf ():
     print('Configuration file path:', confpath)
     print(yaml.dump(conf, default_flow_style=False))
 
-
+def install_base_modules ():
+    sys_conf = get_system_conf()
+    base_modules = sys_conf.get(constants.base_modules_key,[])
+    for module in base_modules:
+    args = SimpleNamespace(modules=base_modules,force_data=False,skip_installed=True,version=None,yes=True)
+    install_modules(args)
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info

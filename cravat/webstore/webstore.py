@@ -212,6 +212,13 @@ def queue_install (request):
     install_queue.put(data)
     return web.Response(text = 'queued ' + queries['module'])
 
+def get_base_modules (request):
+    global system_conf
+    base_modules = system_conf['base_modules']
+    return web.json_response(base_modules)
+
+def install_base_modules (request):
+    au.
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
 install_queue = None
@@ -228,3 +235,5 @@ routes.append(['GET', '/store/uninstall', uninstall_module])
 routes.append(['GET', '/store/connectwebsocket', connect_websocket])
 routes.append(['GET', '/store/queueinstall', queue_install])
 routes.append(['GET', '/store/modules/{module}/{version}/readme', get_module_readme])
+routes.append(['GET', '/store/getbasemodules', get_base_modules])
+routes.append(['GET', '/store/installbasemodules', install_base_modules])
