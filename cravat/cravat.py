@@ -197,7 +197,7 @@ class Cravat (object):
             rtime = time.time() - stime
             print('converter finished in', rtime)
         if self.args.ec:
-            exit()
+            return
         if self.args.sm == False and \
             (
                 self.runlevel <= self.runlevels['mapper'] or
@@ -210,7 +210,7 @@ class Cravat (object):
             rtime = time.time() - stime
             print('gene mapper finished in', rtime)
         if self.args.em:
-            exit()
+            return
         if self.args.sa == False and \
             (
                 self.runlevel <= self.runlevels['annotator'] or
@@ -222,7 +222,7 @@ class Cravat (object):
             rtime = time.time() - stime
             print('anntator(s) finished in', rtime)
         if self.args.ea:
-            exit()
+            return
         if self.args.sg == False and \
             (
                 self.runlevel <= self.runlevels['aggregator'] or
