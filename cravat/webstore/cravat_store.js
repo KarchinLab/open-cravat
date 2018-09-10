@@ -43,7 +43,11 @@ function getLocal () {
                 div.addEventListener('click', function (evt) {
                     installBaseComponents();
                 });
-                addEl(document.getElementById('remotemodulepanels'), div);
+                var panel = document.getElementById('remotemodulepanels');
+                addEl(panel, div);
+                var div = getEl('div');
+                div.id = 'installbasestatdiv';
+                addEl(panel, div);
                 break;
             }
         }
@@ -62,7 +66,7 @@ function getLocal () {
 function installBaseComponents () {
     $.get('/store/installbasemodules').done(function (evt) {
         getLocal();
-    }
+    });
 }
 
 function getRemote () {
@@ -657,22 +661,28 @@ function connectWebSocket () {
         var data = JSON.parse(evt.data);
         var module = data['module'];
         var msg = data['msg'];
+        var isbase = data['isbase'];
         installInfo[module]['msg'] = msg;
-        var installstatdiv = document.getElementById('installstatdiv_' + module);
-        if (installstatdiv != null) {
+        if (isbase != undefined && isbase == true) {
+            var installstatdiv = document.getElementById('installbasestatdiv');
             installstatdiv.textContent = msg;
-        }
-        var sdiv = document.getElementById('panelinstallstatus_' + module);
-        sdiv.style.color = 'black';
-        sdiv.textContent = msg;
-        if (msg.startsWith('Finished installation of')) {
-            delete installInfo[module];
-            installQueue = installQueue.filter(e => e != module);
-            moduleChange(null);
-            if (installQueue.length > 0) {
-                var module = installQueue.shift();
-                installInfo[module] = {'msg': 'installing'};
-                queueInstall(module);
+        } else {
+            var installstatdiv = document.getElementById('installstatdiv_' + module);
+            if (installstatdiv != null) {
+                installstatdiv.textContent = installstatdiv.textContent + '\n' + msg;
+            }
+            var sdiv = document.getElementById('panelinstallstatus_' + module);
+            sdiv.style.color = 'black';
+            sdiv.textContent = msg;
+            if (msg.startsWith('Finished installation of')) {
+                delete installInfo[module];
+                installQueue = installQueue.filter(e => e != module);
+                moduleChange(null);
+                if (installQueue.length > 0) {
+                    var module = installQueue.shift();
+                    installInfo[module] = {'msg': 'installing'};
+                    queueInstall(module);
+                }
             }
         }
     }

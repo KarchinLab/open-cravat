@@ -87,11 +87,14 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'webresult')):
 for root, dirs, files in os.walk(os.path.join('cravat', 'webstore')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
+for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
+    root_files = [os.path.join('..', root, f) for f in files]
+    data_files.extend(root_files)
 
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='0.0.108',
+    version='0.0.110',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',

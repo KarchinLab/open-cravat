@@ -12,6 +12,7 @@ import asyncio
 from aiohttp import web
 from html.parser import HTMLParser
 from cravat import store_utils as su
+from cravat import constants
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -218,7 +219,11 @@ def get_base_modules (request):
     return web.json_response(base_modules)
 
 def install_base_modules (request):
-    au.
+    base_modules = system_conf.get(constants.base_modules_key,[])
+    for module in base_modules:
+        install_queue.put({'module': module, 'version': None})
+    return web.Response(text='queued')
+    
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
 install_queue = None
