@@ -275,8 +275,10 @@ def get_local_module_infos(types=[], names=[]):
     return return_infos
 
 def get_jobs_dir():
-    home_dir = os.path.expanduser('~')
-    jobs_dir = os.path.join(home_dir,'.open-cravat','jobs')
+    jobs_dir = get_system_conf().get('jobs_dir')
+    if jobs_dir is None:
+        home_dir = os.path.expanduser('~')
+        jobs_dir = os.path.join(home_dir,'.open-cravat','jobs')
     if not(os.path.isdir(jobs_dir)):
         os.makedirs(jobs_dir)
     return jobs_dir

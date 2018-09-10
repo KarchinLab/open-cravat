@@ -25,7 +25,7 @@ class Cravat (object):
         self.should_run_reporter = True
         self.pythonpath = sys.executable
         self.annotators = {}
-        parser = argparse.ArgumentParser(usage='%(prog)s input [options]', epilog='input should precede options.')
+        parser = argparse.ArgumentParser(epilog='* input should precede any option.')
         parser.add_argument('path',
                             help=argparse.SUPPRESS)
         parser.add_argument('input',
