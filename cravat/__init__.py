@@ -19,4 +19,4 @@ from .cravat_filter import *
 from .store_utils import ProgressStager
 from .webresult.webresult import *
 from .webstore.webstore import *
-from .cravat import Cravat, cravat_cmd_parser
+from .cravat_main import Cravat, cravat_cmd_parser
