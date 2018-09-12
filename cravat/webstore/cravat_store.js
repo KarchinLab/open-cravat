@@ -7,6 +7,7 @@ var localModuleInfo = {};
 var filter = {'type': 'annotator'};
 var installQueue = [];
 var installInfo = {};
+var baseModuleNames = [];
 
 var storeUrl = null;
 var storeurl = $.get('/store/getstoreurl').done(function(response) {
@@ -31,19 +32,75 @@ function addEl (pelem, child) {
 function getLocal () {
 	$.get('/store/local').done(function(data){
         localModuleInfo = data;
-        var div = document.getElementById('moduledetaildiv');
-        if (div != null) {
-            if (div.style.display != 'none') {
-                activateDetailDialog(currentDetailModule);
+        var localModuleNames = Object.keys(localModuleInfo);
+        var baseInstalled = true;
+        for (var i = 0; i < baseModuleNames.length; i++) {
+            var baseModuleName = baseModuleNames[i];
+            if (localModuleNames.includes(baseModuleName) == false) {
+                baseInstalled = false;
+                break;
             }
         }
-        updateRemotePanels();
+        if (baseInstalled) {
+            var div = document.getElementById('messagediv');
+            div.style.top = '0px';
+            addEl(div, getTn(''));
+            div = document.getElementById('remotemodulepanels');
+            div.style.top = '120px';
+            var select = document.getElementById('typefilter');
+            select.disabled = false;
+            var input = document.getElementById('namefilter');
+            input.disabled = false;
+            var div = document.getElementById('moduledetaildiv');
+            if (div != null) {
+                if (div.style.display != 'none') {
+                    activateDetailDialog(currentDetailModule);
+                }
+            }
+            updateRemotePanels();
+        } else {
+            var div = document.getElementById('messagediv');
+            emptyElement(div);
+            div.style.top = '120px';
+            addEl(div, getTn('Below modules should be installed to use Open-CRAVAT. Click the next button to install them all: '));
+            var button = getEl('button');
+            button.textContent = 'Install base components';
+            button.addEventListener('click', function (evt) {
+                installBaseComponents();
+            });
+            addEl(div, button);
+            div = document.getElementById('remotemodulepanels');
+            div.style.top = '140px';
+            document.getElementById('typefilter').value = 'base';
+            updateFilter();
+            var select = document.getElementById('typefilter');
+            select.disabled = true;
+            var input = document.getElementById('namefilter');
+            input.disabled = true;
+        }
 	});
+}
+
+function installBaseComponents () {
+    for (var i = 0; i < baseModuleNames.length; i++) {
+        var module = baseModuleNames[i];
+        if (localModuleInfo[module] == undefined || localModuleInfo[module]['exists'] == false) {
+            queueInstall(module);
+        }
+    }
 }
 
 function getRemote () {
 	$.get('/store/remote').done(function(data){
         remoteModuleInfo = data;
+        var modules = Object.keys(remoteModuleInfo);
+        for (var i = 0; i < modules.length; i++) {
+            var module = modules[i];
+            var moduleInfo = remoteModuleInfo[module];
+            if (moduleInfo['queued'] == true) {
+                installInfo[module] = {'msg': 'queued'};
+            }
+        }
         populateTypeFilter();
 	});
 }
@@ -52,11 +109,14 @@ function populateTypeFilter () {
     var moduleNames = Object.keys(remoteModuleInfo);
     var types = [''];
     var select = document.getElementById('typefilter');
+    types.push('base');
     for (var i = 0; i < moduleNames.length; i++) {
         var moduleName = moduleNames[i];
         var info = remoteModuleInfo[moduleName];
         var type = info['type'];
         if (types.includes(type)) {
+            continue;
+        } else if (type == 'aggregator' || type == 'postaggregator') {
             continue;
         } else {
             types.push(type);
@@ -102,15 +162,24 @@ function getFilteredRemoteModules () {
     var hasFilter = Object.keys(filter).length > 0;
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
+        var remoteModuleNameLower = remoteModuleName.toLowerCase();
         var remoteModule = remoteModuleInfo[remoteModuleName];
         if (hasFilter) {
             var typeYes = false;
             var nameYes = false;
             if (filter['type'] != undefined && filter['type'] != '') {
-                if (filter['type'].includes(remoteModule['type'])) {
-                    typeYes = true;
+                if (filter['type'] == 'base') {
+                    if (baseModuleNames.includes(remoteModuleName)) {
+                        typeYes = true;
+                    } else {
+                        typeYes = false;
+                    }
                 } else {
-                    typeYes = false;
+                    if (filter['type'].includes(remoteModule['type'])) {
+                        typeYes = true;
+                    } else {
+                        typeYes = false;
+                    }
                 }
             } else {
                 typeYes = true;
@@ -272,17 +341,17 @@ function getRemoteModulePanel (moduleName) {
             installStatus = '';
         }
     }
+    var span = getEl('div');
+    span.id = 'panelinstallstatus_' + moduleName;
+    span.style.fontSize = '12px';
+    addEl(div, span);
     if (installStatus == 'Installed') {
         var img2 = getEl('img');
         img2.src = '/store/done.png';
         img2.style.width = '20px';
         img2.title = 'Installed';
-        addEl(div, img2);
+        addEl(span, img2);
     } else {
-        var span = getEl('span');
-        span.id = 'panelinstallstatus_' + moduleName;
-        span.style.fontSize = '12px';
-        addEl(div, span);
         if (installStatus == 'Queued') {
             span.textContent = 'Queued';
             span.style.color = 'red';
@@ -382,6 +451,10 @@ function activateDetailDialog (moduleName) {
         button.addEventListener('click', function (evt) {
             var btn = evt.target;
             var btnModuleName = btn.getAttribute('module');
+            if (btnModuleName == 'chasmplus') {
+                var select = document.getElementById('chasmplustissueselect');
+                btnModuleName = select.value;
+            }
             var buttonText = null;
             if (installQueue.length == 0) {
                 buttonText = 'Installing...';
@@ -410,6 +483,29 @@ function activateDetailDialog (moduleName) {
         addEl(td, img2);
     }
     addEl(td, getEl('br'));
+    if (moduleName == 'chasmplus') {
+        var span = getEl('span');
+        span.textContent = 'Select tissue:';
+        addEl(td, span);
+        var select = getEl('select');
+        select.id = 'chasmplustissueselect';
+        var option = getEl('option');
+        option.value = 'chasmplus';
+        option.text = 'Generic';
+        select.add(option);
+        var modules = Object.keys(remoteModuleInfo);
+        for (var i = 0; i < modules.length; i++) {
+            var module = modules[i];
+            if (module.startsWith('chasmplus_')) {
+                var option = getEl('option');
+                var tissue = module.replace('chasmplus_', '');
+                option.value = module;
+                option.text = tissue;
+                select.add(option);
+            }
+        }
+        addEl(td, select);
+    }
     addEl(td, button);
     var sdiv = getEl('div');
     sdiv.id = 'installstatdiv_' + moduleName;
@@ -621,25 +717,44 @@ function connectWebSocket () {
         var data = JSON.parse(evt.data);
         var module = data['module'];
         var msg = data['msg'];
-        installInfo[module]['msg'] = msg;
-        var installstatdiv = document.getElementById('installstatdiv_' + module);
-        if (installstatdiv != null) {
-            installstatdiv.textContent = msg;
+        var isbase = data['isbase'];
+        if (installInfo[module] == undefined) {
+            installInfo[module] = {};
         }
-        var sdiv = document.getElementById('panelinstallstatus_' + module);
-        sdiv.style.color = 'black';
-        sdiv.textContent = msg;
-        if (msg.startsWith('Finished installation of')) {
-            delete installInfo[module];
-            installQueue = installQueue.filter(e => e != module);
-            moduleChange(null);
-            if (installQueue.length > 0) {
-                var module = installQueue.shift();
-                installInfo[module] = {'msg': 'installing'};
-                queueInstall(module);
+        installInfo[module]['msg'] = msg;
+        if (isbase != undefined && isbase == true) {
+            var installstatdiv = document.getElementById('installbasestatdiv');
+            installstatdiv.textContent = msg;
+        } else {
+            var divModuleName = module;
+            if (module.startsWith('chasmplus_')) {
+                divModuleName = module.split('_')[0];
+            }
+            var installstatdiv = document.getElementById('installstatdiv_' + divModuleName);
+            if (installstatdiv != null) {
+                installstatdiv.textContent = msg;
+            }
+            var sdiv = document.getElementById('panelinstallstatus_' + divModuleName);
+            sdiv.style.color = 'black';
+            sdiv.textContent = msg;
+            if (msg.startsWith('Finished installation of')) {
+                delete installInfo[module];
+                installQueue = installQueue.filter(e => e != module);
+                moduleChange(null);
+                if (installQueue.length > 0) {
+                    var module = installQueue.shift();
+                    installInfo[module] = {'msg': 'installing'};
+                    queueInstall(module);
+                }
             }
         }
     }
+}
+
+function getBaseModuleNames () {
+    $.get('/store/getbasemodules').done(function (response) {
+        baseModuleNames = response;
+    });
 }
 
 function run () {
@@ -652,7 +767,7 @@ function run () {
         }
     });
     connectWebSocket();
+    getBaseModuleNames();
 	getRemote();
     getLocal();
-	//logInstallStream()
 }

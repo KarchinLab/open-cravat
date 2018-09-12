@@ -827,7 +827,6 @@ def show_system_conf ():
     print('Configuration file path:', confpath)
     print(yaml.dump(conf, default_flow_style=False))
 
-
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info

@@ -439,10 +439,9 @@ function notifyToUseFilter () {
 	div.style.background = 'red';
 	div.style.display = 'block';
 	div.textContent = 
-		'Too many variants (more than ' + NUMVAR_LIMIT + ') to load into ' +
-		'the web viewer. Use the filters below to reduce the number of ' +
-		'variants to equal to or less than ' + NUMVAR_LIMIT + ' and ' +
-		'use "Filter" button.';
+		'Number of variants exceeds viewer limit (' + NUMVAR_LIMIT + ').' +
+		'Click the Filter button to use filters to reduce the number of ' +
+		'variants to ' + NUMVAR_LIMIT + ' or less, and click Update to load filtered variants.';
 }
 
 function hideWgnoticediv () {
