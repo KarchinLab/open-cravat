@@ -64,6 +64,7 @@ def fetch_install_queue (install_queue):
             stage_handler = InstallProgressMpDict(module_name, module_version)
             au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
             au.refresh_cache()
+            time.sleep(1)
         except KeyboardInterrupt:
             raise
         except:
@@ -76,6 +77,14 @@ import markdown
 def get_remote_manifest(request):
     au.mic.update_remote()
     content = au.mic.remote
+    global install_queue
+    temp_q = []
+    while install_queue.empty() == False:
+        q = install_queue.get()
+        temp_q.append([q['module'], q['version']])
+    for module, version in temp_q:
+        content[module]['queued'] = True
+        install_queue.put({'module': module, 'version': version})
     return web.json_response(content)
 
 def get_local_manifest (request):
@@ -167,31 +176,32 @@ def start_worker ():
     if install_worker == None:
         install_worker = Process(target=fetch_install_queue, args=(install_queue,))
         install_worker.start()
-    
+
 async def connect_websocket (request):
     global install_worker
     global install_state
     global install_ws
+    global last_update_time
     #install_queue = Queue()
     #manager = Manager()
     #install_state = manager.dict()
-    install_state['stage'] = ''
-    install_state['message'] = ''
-    install_state['module_name'] = ''
-    install_state['module_version'] = ''
-    install_state['cur_chunk'] = 0
-    install_state['total_chunks'] = 0
-    install_state['cur_size'] = 0
-    install_state['total_size'] = 0
-    install_state['update_time'] = time.time()
+    if install_state == None or len(install_state.keys()) == 0:
+        install_state['stage'] = ''
+        install_state['message'] = ''
+        install_state['module_name'] = ''
+        install_state['module_version'] = ''
+        install_state['cur_chunk'] = 0
+        install_state['total_chunks'] = 0
+        install_state['cur_size'] = 0
+        install_state['total_size'] = 0
+        install_state['update_time'] = time.time()
+        last_update_time = install_state['update_time']
     if install_ws != None:
         await install_ws.close()
     install_ws = web.WebSocketResponse()
     await install_ws.prepare(request)
-    last_update_time = install_state['update_time']
     while True:
         await asyncio.sleep(1)
-        #print('@@@ ' + str(last_update_time) + ':' + str(install_state['update_time']))
         if last_update_time < install_state['update_time']:
             data = {}
             data['module'] = install_state['module_name']
@@ -230,6 +240,7 @@ install_queue = None
 install_state = None
 install_worker = None
 install_ws = None
+last_update_time = 0
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/install', install_module])
