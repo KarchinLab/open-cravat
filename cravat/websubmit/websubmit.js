@@ -148,7 +148,6 @@ function buildJobsTable () {
         var dbButton = $(getEl('button'))
             .append('Excel')
             .attr('jobId',job.id)
-        console.log('@', job.id, job.reports.includes('excel'), job.reports.includes('text'));
         if (job.reports.includes('excel') == false) {
             dbButton.css('background-color', 'red');
             dbButton.click(createJobExcelReport);
@@ -301,7 +300,7 @@ function jobViewButtonHandler (event) {
             break;
         }
     }
-    url = '/result/index.html?dbpath='+dbPath;
+    url = '/result/index.html?dbpath='+dbPath+'&job_id='+jobId;
     var win = window.open(url, '_blank');
     win.focus()
     // viewJob(jobId);

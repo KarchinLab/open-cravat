@@ -185,7 +185,6 @@ def get_all_jobs (request):
                 report_file = FILE_ROUTER.job_report(job_id, report_type)
                 if os.path.exists(report_file):
                     existing_reports.append(report_type)
-            print('@@@', job_id, existing_reports)
             job.set_info_values(reports=existing_reports)
             all_jobs.append(job)
         except:
