@@ -46,7 +46,7 @@ var filterCols = null;
 
 var shouldResizeScreen = {};
 
-var NUMVAR_LIMIT = 100000
+var NUMVAR_LIMIT = 100000;
 
 var firstLoad = true;
 
