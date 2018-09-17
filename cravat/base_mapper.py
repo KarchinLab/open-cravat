@@ -253,5 +253,5 @@ class BaseMapper(object):
         err_toks = [str(x) for x in [ln, e]]
         self.ef.write('\t'.join(err_toks)+'\n')
         if not(isinstance(e,InvalidData)):
-            self.__handle_exception(e, exit=False)
+            self.__handle_exception(e, should_exit=False)
     
