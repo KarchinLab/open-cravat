@@ -230,7 +230,7 @@ class Cravat (object):
             ):
             stime = time.time()
             print('Running aggregator...')
-            self.run_aggregator()
+            self.result_path = self.run_aggregator()
             self.write_job_info()
             rtime = time.time() - stime
             print('aggregator finished in', rtime)
@@ -477,6 +477,8 @@ class Cravat (object):
             print('    '.join(cmd))
         m_aggregator = aggregator_cls(cmd)
         m_aggregator.run()
+
+        return v_aggregator.db_path
 
     def run_postaggregators (self):
         modules = au.get_local_module_infos_of_type('postaggregator')

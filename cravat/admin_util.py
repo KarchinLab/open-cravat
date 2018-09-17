@@ -274,11 +274,14 @@ def get_local_module_infos(types=[], names=[]):
             return_infos.append(minfo)
     return return_infos
 
+def set_jobs_dir (d):
+    update_system_conf_file({'jobs_dir': d})
+
 def get_jobs_dir():
     jobs_dir = get_system_conf().get('jobs_dir')
     if jobs_dir is None:
         home_dir = os.path.expanduser('~')
-        jobs_dir = os.path.join(home_dir,'.open-cravat','jobs')
+        jobs_dir = os.path.join(home_dir,'open-cravat','jobs')
     if not(os.path.isdir(jobs_dir)):
         os.makedirs(jobs_dir)
     return jobs_dir
@@ -826,7 +829,6 @@ def show_system_conf ():
         conf[constants.modules_dir_key] = constants.default_modules_dir
     print('Configuration file path:', confpath)
     print(yaml.dump(conf, default_flow_style=False))
-
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
