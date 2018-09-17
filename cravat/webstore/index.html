@@ -2,12 +2,12 @@
 <html>
 <head>
 	<script src="jquery-3.3.1.min.js"></script>
-	<script src="cravat_store.js"></script>
+	<script src="webstore.js"></script>
 	<link rel="stylesheet" href="cravat_store.css">
 </head>
 <body style='font-family: sans-serif; background-color: #fff8f1;'>
 
-<div style='position: fixed; top: 0px; background-color: #ffffff; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px;'>
+<div style='position: fixed; top: 0px; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px; background-color: #fffdba;'>
     <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
         <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
         <!-- <span style='font-size: 40px'>Open-CRAVAT Store</span> -->
@@ -19,12 +19,12 @@
     </div>
 </div>
 
-<div id='messagediv' style='position: relative; width: 100%; text-align: center; color: white; background-color: #ff1313; font-size: 20px; height: 27px;'></div>
-<div id='remotemodulepanels' style='display: flex; flex-wrap: wrap; justify-content: center; position: relative; top: 120px;'></div>
+<div id='messagediv' style='position: fixed; width: 100%; text-align: center; color: black; background-color: yellow; font-size: 20px; height: 100px; z-index: 1; display: none;'></div>
+<div id='remotemodulepanels' style='display: flex; flex-wrap: wrap; justify-content: center; position: relative; top: 120px; background-color: #fefff0;'></div>
 
 <script>
 $(document).ready(function() {
-	run();
+	webstore_run();
 });
 </script>
 </body>

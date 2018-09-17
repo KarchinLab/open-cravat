@@ -2,71 +2,162 @@
 <html>
 <head>
     <title>open-cravat submit</title>
-    <script src="submit.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <link rel="stylesheet" href="submit.css">
+    <script src="websubmit.js"></script>
+    <script src="/submit/jquery-3.3.1.min.js"></script>
+    <link rel="stylesheet" href="websubmit.css">
+    <script src='../store/webstore.js'></script>
     <script>
         $(document).ready(function() {
-            run();
+            websubmit_run();
         });
     </script> 
 </head>
-<body>
-    <div class="flexbox-row-wrap">
-        <div>
-            <div id="submit-form">
-                <h1>Submit Job</h1>
-                <div class="submit-section1">
-                    <h3>Input Text</h3>
-                    <div id="input-examples-div">
-                        <span>Examples: </span>
-                        <button class="input-example-button" value="cravat">CRAVAT Format</input>
-                        <button class="input-example-button" value="vcf">VCF Format</input>
-                    </div>
-                    <textarea rows="12" cols="80" id="input-text" placeholder="Input text"></textarea>
-                    <h3>Input File</h3>
-                    <input type="file" name="input-file" id="input-file">
-                </div>
-                <div class="submit-section1">
-                    <h3>Annotators</h3>
-                    <div id="annotator-select-div"></div>
-                </div>
-                <div class="submit-section1 flexbox-row-wrap">
-                    <div class="submit-section2">
-                        <h3>Assembly</h3>
-                        <select id="assembly-select">
-                            <option value="hg38">Hg38</option>
-                            <option value="hg19">Hg19</option>
-                            <option value="hg18">Hg18</option>
-                        </select>
-                    </div>
-                    <div class="submit-section2">
-                        <h3>Reports</h3>
-                        <div id="report-select-div"></div>
-                    </div>
-                </div>
-                <div class="submit-section1">
-                    <button id="submit-job-button">Submit</button>
-                </div>
-            </div>
-        </div>
-        <div id="jobs-list">
-            <h1>View Jobs</h1>
-            <button id="refresh-jobs-table-btn">Refresh Table</button>
-            <table id="jobs-table">
-                <tr>
-                    <th>View</th>
-                    <th>Input File</th>
-                    <th>Submission Time</th>
-                        <th>Job ID</th>
-                        <th>Database</th>
-                        <th>Reports</th>
-                        <th>Delete</th>
-                    </tr>
-                </table>
-        </div>  
+
+<body style='font-family: sans-serif; overflow: scroll;'>
+<div id = 'headerdiv' style='position: fixed; top: 0px; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px; background-color: white;'>
+    <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
+        <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
     </div>
-      
-    <iframe id="download-area" style="display:none;"></iframe>
+    <div id='tabselectdiv'>
+        <select id='tabselect' size='2' onchange='onTabChange();'>
+            <option value='submit' selected=true>Submit</option>
+            <option value='jobs'>Jobs</option>
+        </select>
+    </div>
+</div>
+
+<div id='submitdiv' style='position: relative; top: 120px;'>
+    <br />
+    <div id="submit-form">
+        <div class='container'>
+            <span class='divtitle'>Set Genome Assembly&nbsp;</span>
+            <br />
+            <br />
+            <br />
+            <select id="assembly-select" size='3'>
+                <option value="hg38" selected=true>hg38</option>
+                <option value="hg19">hg19</option>
+                <option value="hg18">hg18</option>
+            </select>
+            <div class='divbanner'></div>
+        </div>
+        <br />
+        <div style='text-align: center;'><img src='arrow.png' /></div>
+        <br />
+        <div class='container'>
+            <span class='divtitle'>Set Variants</span>
+            <br />
+            <br />
+            <br />
+            <table style='margin-left: 50px; margin-right: 50px;'>
+                <tr>
+                    <td valign='top' style='border-right: 1px solid black; padding-right: 20px; position: relative;'>
+                        <div>
+                            Type variants
+                            <br />
+                            <textarea rows="12" cols="70" id="input-text" placeholder="Input text"></textarea>
+                        </div>
+                    </td>
+                    <td valign='top' style='border-right: 1px solid black; padding-left: 20px; position: relative;'>
+                        Upload a file
+                        <br />
+                        <input type="file" name="input-file" id="input-file">
+                        <div class='or'>OR</div>
+                    </td>
+                    <td valign='top' style='padding-left: 20px; position: relative;'>
+                        Try examples
+                        <br />
+                        <button value="cravat" class='input-example-button'>CRAVAT Format</button>
+                        <button value="vcf" class='input-example-button'>VCF Format</button>
+                        <div class='or'>OR</div>
+                    </td>
+                </tr>
+            </table>
+            <div class='divbanner'></div>
+        </div>
+        <br />
+        <div style='text-align: center;'><img src='arrow.png' /></div>
+        <br />
+        <div id='annotchoosediv' class='container'>
+            <span class='divtitle'>Pick Annotators</span>
+            <br />
+            <br />
+            <br />
+            Mouse over an annotator to see details (if the browser is connected to the internet).
+            <div id="annotator-select-div"></div>
+            <div class='divbanner'></div>
+        </div>
+        <br />
+        <div style='text-align: center;'><img src='arrow.png' /></div>
+        <br />
+        <div class='container'>
+            <span class='divtitle'>Output Setting</span>
+            <br />
+            <br />
+            <br />
+            <table><tr><td valign='top' style='width: 50%;'>
+            <div>
+                <span style='font-style: italic;'>Report types</span>
+                <div id="report-select-div"></div>
+            </div>
+            </td><td valign='top' style='width: 50%';>
+            <div>
+                <span style='font-style: italic;'>Jobs directory:</span>
+                <br />
+                <span class='jobsdirtext' style='font-family: monospace;'></span>
+                <br />
+                <input class='jobsdirinput' type='text' size='40' placeholder='Enter new jobs dir to change (if wanted)' />
+            </div>
+            </td><td valign='top'>
+            <div>
+                <span style='font-style: italic;'>Note</span>
+                <br />
+                <input id='jobnoteinput' type='text' size='40' placeholder='Enter a note for the analysis (optional)' />
+            </div>
+            </td></tr></table>
+            <div class='divbanner'></div>
+        </div>
+        <br />
+        <div style='text-align: center;'><img src='arrow.png' /></div>
+        <br />
+        <div style='text-align: center;'><button id="submit-job-button" style='font-size: 50px; padding: 30px; background-color: #ffe4c4; border-radius: 6px;'>Analyze</button></div>
+    </div>
+    <br />
+</div>
+
+<div id="jobdiv" style='position: relative; top: 120px; display: none;'>
+    <br />
+    <div id='annotchoosediv' class='container'>
+        <span class='divtitle'>Jobs</span>
+        <br />
+        <br />
+        <br />
+        <div>
+            <span style='font-style: italic;'>Jobs directory:</span>
+            <br />
+            <span class='jobsdirtext' style='font-family: monospace;'></span>
+            <br />
+            <input class='jobsdirinput' type='text' size='40' placeholder='Enter new jobs dir to change' />
+        </div>
+        <div style='width: 100%; text-align: right;'><button id="refresh-jobs-table-btn">Refresh Table</button></div>
+        <table id="jobs-table" style='width: 100%;'>
+        <!--
+            <tr>
+                <th>View</th>
+                <th>Input File</th>
+                <th>Submission Time</th>
+                <th>Job ID</th>
+                <th>Database</th>
+                <th>Reports</th>
+                <th></th>
+            </tr>
+        -->
+        </table>
+        <div class='divbanner'></div>
+    </div>
+    <br />
+</div>  
+
+<iframe id="download-area" style="display:none;"></iframe>
 </body>
 </html>
