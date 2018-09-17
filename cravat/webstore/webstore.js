@@ -169,6 +169,131 @@ function updateFilter () {
     updateRemotePanels();
 }
 
+function getRemoteModulePanel (moduleName) {
+    var moduleInfo = remoteModuleInfo[moduleName];
+    var div = getEl('div');
+    div.style.display = 'inline-block';
+    div.style.width = '300px';
+    div.style.height = '300px';
+    div.style.borderWidth = '2px';
+    div.style.borderColor = '#dddddd';
+    div.style.borderStyle = 'ridge';
+    div.style.verticalAlign = 'top';
+    div.style.margin = '10px';
+    div.style.padding = '10px';
+    div.style.position = 'relative';
+    div.setAttribute('module', moduleName);
+    var sdiv = getEl('div');
+    sdiv.id = 'logodiv_' + moduleName;
+    sdiv.style.width = '100%';
+    sdiv.style.height = '70%';
+    sdiv.style.display = 'flex';
+    sdiv.style.alignItems = 'center';
+    sdiv.style.backgroundColor = 'white';
+    sdiv.setAttribute('module', moduleName);
+    sdiv.onclick = function (evt) {
+        var moduleName = this.getAttribute('module');
+        var dialog = activateDetailDialog(moduleName);
+        addEl(document.body, dialog);
+        evt.stopPropagation();
+    }
+    var img = getLogo(moduleName);
+    img.onerror = function () {
+        var span = getEl('div');
+        span.style.fontSize = '42px';
+        span.style.fontWeight = 'bold';
+        span.textContent = moduleInfo.title;
+        span.style.width = '100%';
+        span.style.height = 'auto';
+        span.style.maxWidth = '100%';
+        span.style.maxHeight = '100%';
+        span.style.textAlign = 'center';
+        addEl(sdiv, span);
+    }
+    img.onload = function () {
+        this.onload = null;
+        img.style.top = '0';
+        img.style.bottom = '0';
+        img.style.left = '0';
+        img.style.right = '0';
+        img.style.margin = 'auto';
+        img.style.width = '100%';
+        img.style.height = 'auto';
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.onclick = function (evt) {
+            var pdiv = evt.target.parentElement;
+            var moduleName = div.getAttribute('module');
+            var dialog = activateDetailDialog(moduleName);
+            addEl(document.body, dialog);
+            evt.stopPropagation();
+        }
+        var sdiv = document.getElementById('logodiv_' + moduleName);
+        addEl(sdiv, img);
+    }
+    addEl(div, sdiv);
+    var span = null;
+    span = getEl('div');
+    span.style.height = '5px';
+    addEl(div, span);
+    span = getEl('div');
+    span.style.fontWeight = 'bold';
+    addEl(span, getTn(moduleInfo.title));
+    addEl(div, span);
+    span = getEl('span');
+    span.style.color = 'green';
+    span.style.fontSize = '12px';
+    span.textContent = moduleInfo['developer']['organization'];
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    span = getEl('span');
+    span.style.fontSize = '14px';
+    span.style.color = 'lightcoral';
+    span.textContent = moduleInfo['type'];
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    span = getEl('span');
+    span.textContent = getSizeText(moduleInfo['size']);
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    var installStatus = '';
+    if (installInfo[moduleName] != undefined) {
+        var msg = installInfo[moduleName]['msg'];
+        if (msg == 'uninstalling') {
+            installStatus = 'Uninstalling...';
+        } else if (msg == 'installing') {
+            installStatus = 'Installing...';
+        } else if (msg == 'queued') {
+            installStatus = 'Queued';
+        }
+    } else {
+        if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName]['exists']) {
+            installStatus = 'Installed';
+        } else {
+            installStatus = '';
+        }
+    }
+    var span = getEl('div');
+    span.id = 'panelinstallstatus_' + moduleName;
+    span.style.fontSize = '12px';
+    addEl(div, span);
+    if (installStatus == 'Installed') {
+        var img2 = getEl('img');
+        img2.src = '/store/done.png';
+        img2.style.width = '20px';
+        img2.title = 'Installed';
+        addEl(span, img2);
+    } else {
+        if (installStatus == 'Queued') {
+            span.textContent = 'Queued';
+            span.style.color = 'red';
+        } else {
+            span.style.color = 'black';
+        }
+    }
+    return div
+}
+
 function getFilteredRemoteModules () {
     var filteredRemoteModules = {};
     var remoteModuleNames = Object.keys(remoteModuleInfo);

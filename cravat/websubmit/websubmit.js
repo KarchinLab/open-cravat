@@ -126,6 +126,7 @@ function buildJobsTable () {
         */
         // View
         var viewTd = $(getEl('td'));
+        viewTd.css('text-align', 'center');
         jobTr.append(viewTd);
         var viewBtn = $(getEl('button')).append('Launch')
             .attr('disabled', !job.viewable)
@@ -134,6 +135,7 @@ function buildJobsTable () {
         viewTd.append(viewBtn);
         // Database
         var dbTd = $(getEl('td'));
+        dbTd.css('text-align', 'center');
         jobTr.append(dbTd);
         var dbButton = $(getEl('button'))
             .append('DB')
@@ -203,6 +205,7 @@ function buildJobsTable () {
         */
         // Delete
         var deleteTd = $(getEl('td'));
+        deleteTd.css('text-align', 'center');
         jobTr.append(deleteTd);
         var deleteBtn = $(getEl('button')).append('X');
         deleteTd.append(deleteBtn);

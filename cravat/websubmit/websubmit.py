@@ -92,7 +92,7 @@ class WebJob(object):
 def get_next_job_id():
     return datetime.datetime.now().strftime(r'CJ-%Y%m%d-%H%M%S')
 
-def submit (request):
+async def submit (request):
     global FILE_ROUTER
     reader = await request.multipart()
     input_file = None

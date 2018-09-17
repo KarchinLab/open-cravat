@@ -86,3 +86,7 @@ button {
     outline: none;
 }
 
+.tableheadercell {
+    border-bottom: 1px solid black;
+}
+
