@@ -194,7 +194,8 @@ function getRemoteModulePanel (moduleName) {
     sdiv.onclick = function (evt) {
         var moduleName = this.getAttribute('module');
         var dialog = activateDetailDialog(moduleName);
-        addEl(document.body, dialog);
+        var storediv = document.getElementById('storediv');
+        addEl(storediv, dialog);
         evt.stopPropagation();
     }
     var img = getLogo(moduleName);
@@ -224,8 +225,9 @@ function getRemoteModulePanel (moduleName) {
         img.onclick = function (evt) {
             var pdiv = evt.target.parentElement;
             var moduleName = div.getAttribute('module');
+            var storediv = document.getElementById('storediv');
             var dialog = activateDetailDialog(moduleName);
-            addEl(document.body, dialog);
+            addEl(storediv, dialog);
             evt.stopPropagation();
         }
         var sdiv = document.getElementById('logodiv_' + moduleName);

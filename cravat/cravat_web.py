@@ -16,7 +16,7 @@ from cravat import admin_util as au
 from cravat import CravatFilter
 from cravat.webresult import webresult as wr
 from cravat.webstore import webstore as ws
-from cravat.websubmit import websubmit
+from cravat.websubmit import websubmit as wu
 import websockets
 from aiohttp import web
 
@@ -42,12 +42,16 @@ def store ():
     ws.start_install_queue_manager()
     webbrowser.open('http://localhost:8060/store/index.html')
 
+def submit ():
+    webbrowser.open('http://localhost:8060/submit/index.html')
+    main()
+
 def main ():
     app = web.Application()
     routes = list()
     routes.extend(ws.routes)
     routes.extend(wr.routes)
-    routes.extend(websubmit.routes)
+    routes.extend(wu.routes)
     for route in routes:
         method, path, func_name = route
         app.router.add_route(method, path, func_name)

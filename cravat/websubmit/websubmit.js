@@ -582,14 +582,14 @@ function buildReportSelector () {
 }
 
 function onTabChange () {
-    var submitdiv = document.getElementById('submitdiv');
+    var submitcontentdiv = document.getElementById('submitcontentdiv');
     var jobdiv = document.getElementById('jobdiv');
     var tab = document.getElementById('tabselect').selectedIndex;
     if (tab == 0) {
-        submitdiv.style.display = 'block';
+        submitcontentdiv.style.display = 'block';
         jobdiv.style.display = 'none';
     } else if (tab == 1) {
-        submitdiv.style.display = 'none';
+        submitcontentdiv.style.display = 'none';
         jobdiv.style.display = 'block';
     }
 }
@@ -613,7 +613,24 @@ function setJobsDir (evt) {
     });
 }
 
+function transitionToStore () {
+    var submitdiv = document.getElementById('submitdiv');
+    var storediv = document.getElementById('storediv');
+    submitdiv.style.display = 'none';
+    storediv.style.display = 'block';
+}
+
+function transitionToSubmit () {
+    var submitdiv = document.getElementById('submitdiv');
+    var storediv = document.getElementById('storediv');
+    submitdiv.style.display = 'block';
+    storediv.style.display = 'none';
+}
+
 function websubmit_run () {
+    var storediv = document.getElementById('storediv');
+    storediv.style.display = 'none';
+
     getRemote();
     getLocal();
     document.addEventListener('click', function (evt) {

@@ -1,3 +1,14 @@
+.appdiv {
+    transition: all 0.3s ease;
+    /*
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    margin: 0px;
+    padding: 0px;
+    */
+}
+
 #tabselectdiv {
     position: absolute; 
     top: 74px; 
