@@ -367,13 +367,19 @@ function updateRemotePanels () {
 
 function getLogo (moduleName) {
     var moduleInfo = remoteModuleInfo[moduleName];
-    var img = getEl('img');
-    var logoUrl = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
-    img.src = logoUrl;
-    img.style.maxWidth = '100%';
-    img.style.maxHeight = '100%';
-    img.style.width = 'auto';
-    img.style.height = 'auto';
+    var img = null;
+    if (moduleInfo == undefined) {
+        img = getEl('span');
+        img.textContent = localModuleInfo[moduleName]['title'];
+    } else {
+        img = getEl('img');
+        var logoUrl = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
+        img.src = logoUrl;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.width = 'auto';
+        img.style.height = 'auto';
+    }
     return img;
 }
 

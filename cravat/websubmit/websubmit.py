@@ -289,6 +289,10 @@ def set_jobs_dir (request):
     FILE_ROUTER.update_jobs_dir()
     return web.json_response(d)
 
+def get_system_conf_info (request):
+    info = au.get_system_conf_info()
+    return web.json_response(info)
+
 FILE_ROUTER = FileRouter()
 VIEW_PROCESS = None
 
@@ -306,6 +310,7 @@ routes.append(['GET','/submit/reports',get_report_types])
 routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',generate_report])
 routes.append(['GET', '/submit/getjobsdir', get_jobs_dir])
 routes.append(['GET', '/submit/setjobsdir', set_jobs_dir])
+routes.append(['GET', '/submit/getsystemconfinfo', get_system_conf_info])
 
 if __name__ == '__main__':
     app = web.Application()

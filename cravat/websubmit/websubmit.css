@@ -1,12 +1,31 @@
-.appdiv {
+#pageselect {
+    position: absolute; 
+    top: 0px; 
+    right: 0px; 
+    font-size: 20px; 
+    color: #000000;
+    z-index: 2;
+    outline: none;
+}
+
+#pageselect div {
+    display: inline-block;
+    text-align: center;
+    padding: 6px;
+    height: 24px;
+    width: 80px;
+    border: 1px solid #5b8588;
     transition: all 0.3s ease;
-    /*
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    margin: 0px;
-    padding: 0px;
-    */
+}
+
+#pageselect div:hover {
+    height: 40px;
+    background-color: #c4e1ff;
+}
+
+#pageselect div[selval="t"] {
+    height: 40px;
+    background-color: #a6dde0;
 }
 
 #tabselectdiv {
@@ -38,7 +57,7 @@
     padding-right: 30px; 
     padding-top: 20px; 
     padding-bottom: 34px; 
-    box-shadow: 0px 0px 30px gray;
+    margin-right: 10px;
 }
 
 #assembly-select {
@@ -54,6 +73,10 @@
     border: 0px;
 }
 
+#assembly-select option:hover {
+    background-color: #c4e1ff;
+}
+
 .divtitle {
     font-weight: bold;
     font-size: 20px;
@@ -67,9 +90,8 @@
 
 .or {
     position: absolute;
-    z-index: 1;
-    top: 60px;
-    left: -15px;
+    top: -17px;
+    left: 30px;
     background-color: white;
     padding-top: 5px;
     padding-bottom: 5px;
@@ -88,7 +110,7 @@
 }
 
 button {
-    background-color: #ffe4c4;
+    background-color: #fbfbfb;
 }
 
 .moduledetailbutton {
@@ -99,5 +121,26 @@ button {
 
 .tableheadercell {
     border-bottom: 1px solid black;
+    box-shadow: 0px 0px 10px 0px #c7c7c7;
+    font-weight: normal;
+}
+
+#jobs-table {
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+#jobs-table tbody tr:nth-child(even) {
+    background-color: #e0e0e0;
+}
+
+#jobs-table tbody tr:hover {
+    background-color: #444444;
+    color: white;
+}
+
+#jobs-table tbody td {
+    padding: 0px;
+    cursor: pointer;
 }
 

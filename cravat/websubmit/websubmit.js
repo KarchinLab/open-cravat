@@ -70,11 +70,6 @@ function addJob (jsonObj) {
 
 }
 
-function onTabChange () {
-    var tab = document.getElementById('tabselect').selected;
-    console.log(tab);
-}
-
 function createJobExcelReport (evt) {
     var jobid = evt.target.getAttribute('jobId');
     generateReport(jobid, 'excel', function () {
@@ -108,7 +103,7 @@ function buildJobsTable () {
         curSelectedReports[jobId] = val;
     }
     $('.job-table-row').remove();
-    var jobsTable = $('#jobs-table');
+    var jobsTable = $('#jobs-table tbody');
     for (let i = 0; i < allJobs.length; i++) {
         job = allJobs[i];
         var jobTr = $(getEl('tr'))
@@ -522,6 +517,8 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
                 addEl(annotchoosediv, detaildiv);
             });
             addEl(checkDiv, question);
+        } else {
+            checkDiv.style.display = 'inline-block';
         }
         checkDivs.push(checkDiv);
     }
@@ -616,21 +613,61 @@ function setJobsDir (evt) {
 function transitionToStore () {
     var submitdiv = document.getElementById('submitdiv');
     var storediv = document.getElementById('storediv');
+    var settingsdiv = document.getElementById('settingsdiv');
     submitdiv.style.display = 'none';
     storediv.style.display = 'block';
+    settingsdiv.style.display = 'none';
 }
 
 function transitionToSubmit () {
     var submitdiv = document.getElementById('submitdiv');
     var storediv = document.getElementById('storediv');
+    var settingsdiv = document.getElementById('settingsdiv');
     submitdiv.style.display = 'block';
     storediv.style.display = 'none';
+    settingsdiv.style.display = 'none';
+}
+
+function transitionToSettings () {
+    var settingsdiv = document.getElementById('settingsdiv');
+    var submitdiv = document.getElementById('submitdiv');
+    var storediv = document.getElementById('storediv');
+    submitdiv.style.display = 'none';
+    storediv.style.display = 'none';
+    settingsdiv.style.display = 'block';
+}
+
+function changePage (selectedPageId) {
+    var pageselect = document.getElementById('pageselect');
+    var pageIdDivs = pageselect.children;
+    for (var i = 0; i < pageIdDivs.length; i++) {
+        var pageIdDiv = pageIdDivs[i];
+        var pageId = pageIdDiv.getAttribute('value');
+        var page = document.getElementById(pageId);
+        if (page.id == selectedPageId) {
+            page.style.display = 'block';
+            pageIdDiv.setAttribute('selval', 't');
+        } else {
+            page.style.display = 'none';
+            pageIdDiv.setAttribute('selval', 'f');
+        }
+    }
+}
+
+function openSubmitDiv () {
+    var div = document.getElementById('submitcontentdiv');
+    div.style.display = 'block';
+}
+
+function loadSystemConf () {
+    $.get('/submit/getsystemconfinfo').done(function (response) {
+        console.log(response);
+    });
 }
 
 function websubmit_run () {
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
-
     connectWebSocket();
     getBaseModuleNames();
     getRemote();
@@ -657,5 +694,9 @@ function websubmit_run () {
         buildReportSelector();
     })
     getJobsDir();
+    var submitcontentdiv = document.getElementById('submit-form');
+    var h = window.innerHeight - 235;
+    submitcontentdiv.style.height = h + 'px';
+    loadSystemConf();
 };
 

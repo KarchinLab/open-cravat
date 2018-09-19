@@ -808,7 +808,7 @@ def new_annotator(annot_name):
     mic.update_local()
 
 def make_example_input (d):
-    fn = 'example_input.tsv'
+    fn = 'example_input'
     ifn = os.path.join(constants.packagedir, fn)
     ofn = os.path.join(d, fn)
     shutil.copyfile(ifn, ofn)
@@ -818,17 +818,23 @@ def report_issue ():
     import webbrowser
     webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
 
-def show_system_conf ():
-    if os.path.exists(constants.system_conf_path):
-        confpath = constants.system_conf_path
-        conf = load_yml_conf(constants.system_conf_path)
+def get_system_conf_info ():
+    confpath = constants.system_conf_path
+    if os.path.exists(confpath):
+        conf = load_yml_conf(confpath)
+        confexists = True
     else:
-        confpath = 'Does not exist'
         conf = {}
+        confexists = False
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
-    print('Configuration file path:', confpath)
-    print(yaml.dump(conf, default_flow_style=False))
+    system_conf_info = {'path': confpath, 'exists': confexists, 'content': conf}
+    return system_conf_info
+
+def show_system_conf ():
+    system_conf_info = get_system_conf_info()
+    print('Configuration file path:', system_conf_info['path'])
+    print(yaml.dump(system_conf_info['content'], default_flow_style=False))
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
