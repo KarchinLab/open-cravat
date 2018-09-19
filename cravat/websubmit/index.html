@@ -30,14 +30,6 @@
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
             <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
         </div>
-        <div style='position: absolute; bottom: 0px; left: 0px;'>
-            <span style='font-style: italic;'>Jobs directory:</span>
-            <span class='jobsdirtext' style='font-family: monospace;'></span>
-            <!--
-            <br />
-            <input class='jobsdirinput' type='text' size='40' placeholder='Enter new jobs dir to change' />
-            -->
-        </div>
         <!-- <div style='position: absolute; bottom: 0px; right: 16px;'><button style='font-size: 30px; border-radius: 8px; padding: 8px; outline: none;' onclick='openSubmitDiv();'>New Analysis</button></div> -->
         <!--
         <button style='position: absolute; top: 0px; right: 16px; font-size: 20px; color: #b8860b;' onclick='transitionToStore();'>To Store</button>
@@ -140,7 +132,15 @@
     </td><td valign='top' style='padding-left: 20px; width: 100%;'>
     <div id="jobdiv" style='position: relative; top: 120px; display: block;'>
         <br />
-            <div style='width: 100%; text-align: right;'><button id="refresh-jobs-table-btn">Refresh Table</button></div>
+            <div style='width: 100%; text-align: right;'>
+                <span style='font-style: italic;'>Jobs directory:</span>
+                <span class='jobsdirtext' style='font-family: monospace;'></span>
+                <!--
+                <br />
+                <input class='jobsdirinput' type='text' size='40' placeholder='Enter new jobs dir to change' />
+                -->
+                <button id="refresh-jobs-table-btn">Refresh Table</button>
+            </div>
             <table id="jobs-table" style='width: 100%; border-spacing: 10px;'>
                 <thead>
                 <tr>
@@ -187,7 +187,9 @@
     <div style='position: relative; top: 120px;'>
         <span>System configuration file:</span><span id='sysconfpathspan'></span>
         <br />
-        <textarea cols='120' rows='30'></textarea>
+        <textarea id='sysconftextarea' cols='120' rows='30'></textarea>
+        <br />
+        <button style='font-size: 30px; padding: 11px; background-color: #d6ecff;' onclick='updateSystemConf();'>Update</button>
     </div>
 </div> <!-- settingsdiv -->
 

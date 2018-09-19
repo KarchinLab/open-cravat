@@ -776,6 +776,8 @@ function getModuleDetailDiv (moduleName) {
     td.style.border = '0px';
     td.style.verticalAlign = 'top';
     var infodiv = getEl('div');
+    infodiv.style.height = '100%';
+    infodiv.style.overflow = 'auto';
     var d = getEl('div');
     span = getEl('span');
     span.textContent = localModule.description;

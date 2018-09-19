@@ -75,8 +75,11 @@ import cravat.admin_util as au
 import markdown
 
 def get_remote_manifest(request):
-    au.mic.update_remote()
-    content = au.mic.remote
+    try:
+        au.mic.update_remote()
+        content = au.mic.remote
+    except:
+        content = {}
     global install_queue
     temp_q = []
     while install_queue.empty() == False:
@@ -85,6 +88,7 @@ def get_remote_manifest(request):
     for module, version in temp_q:
         content[module]['queued'] = True
         install_queue.put({'module': module, 'version': version})
+    print('remote=', content)
     return web.json_response(content)
 
 def get_local_manifest (request):
@@ -108,11 +112,12 @@ def get_module_readme (request):
         content = ''
     else:
         content = markdown.markdown(readme_md)
-    global system_conf
-    global pathbuilder
-    imgsrceditor = ImageSrcEditor(pathbuilder.module_version_dir(module_name, au.mic.remote[module_name]['latest_version']))
-    imgsrceditor.feed(content)
-    content = imgsrceditor.get_parsed()
+        global system_conf
+        global pathbuilder
+        if module_name in au.mic.remote:
+            imgsrceditor = ImageSrcEditor(pathbuilder.module_version_dir(module_name, au.mic.remote[module_name]['latest_version']))
+            imgsrceditor.feed(content)
+            content = imgsrceditor.get_parsed()
     headers = {'Content-Type': 'text/html'}
     return web.Response(body=content, headers=headers)
 

@@ -139,11 +139,14 @@ def stream_to_file(url, fpath, stage_handler=None, stages=50):
     return r
 
 def get_file_to_string(url):
-    r = requests.get(url)
-    if r.status_code == 200:
-        return r.text
-    else:
-        raise RuntimeError('URL: %s responded with %d' %(url,r.status_code))
+    try:
+        r = requests.get(url)
+        if r.status_code == 200:
+            return r.text
+        else:
+            raise RuntimeError('URL: %s responded with %d' %(url,r.status_code))
+    except:
+        return ''
 
 def file_checksum(path):
     """

@@ -662,6 +662,10 @@ function openSubmitDiv () {
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
         console.log(response);
+        var s = document.getElementById('sysconfpathspan');
+        s.textContent = response['path'];
+        var ta = document.getElementById('sysconftextarea');
+        ta.value = response['content'];
     });
 }
 
