@@ -18,6 +18,7 @@ body {
 
 .menu {
 	display: inline-block;
+    vertical-align: bottom;
 	position: relative;
 	background-color: #d1d1d1;
 	top: 0px;
@@ -128,21 +129,28 @@ table.detailtable td {
 }
 
 .tabhead {
-	margin-right: 4px;
+	margin-right: -1px;
+    display: inline-block;
+    height: 14px;
+    padding: 6px;
+    transition: all 0.3s ease;
+    vertical-align: bottom;
+    font-size: 13px;
+    border: 1px solid #5b8588;
+    cursor: pointer;
 }
 
 .tabhead:hover {
-	background-color: yellow;
+	background-color: #c4e1ff;
+    height: 30px;
 }
 
 .tabhead.show {
-	background-color: black;
-	color: white;
+	background-color: #a6eed0;
+    height: 30px;
 }
 
 .tabhead.hide {
-	background-color: white;
-	color: black;
 }
 
 div.tabContent {

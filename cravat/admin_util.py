@@ -678,8 +678,13 @@ def update_system_conf_file(d):
     """
     Recursively update the system config and re-write to disk.
     """
-    sys_conf = recursive_update(get_system_conf(), d)
-    write_system_conf_file(sys_conf)
+    try:
+        sys_conf = recursive_update(get_system_conf(), d)
+        write_system_conf_file(sys_conf)
+        return True
+    except:
+        raise
+        return False
 
 def get_main_conf_path():
     """
