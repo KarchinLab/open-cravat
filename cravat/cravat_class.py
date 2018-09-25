@@ -10,9 +10,9 @@ import datetime
 from types import SimpleNamespace
 from .constants import liftover_chain_paths
 
-cravat_cmd_parser = argparse.ArgumentParser(epilog='* input should precede any option.')
+cravat_cmd_parser = argparse.ArgumentParser(prog='cravat input_file_path', description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.', epilog='* input_file_path should precede any option.')
 cravat_cmd_parser.add_argument('input',
-                    help='path to input file')
+                    help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument('-a',
                     nargs="+",
                     dest='annotators',
