@@ -860,7 +860,6 @@ def get_system_conf_info ():
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
     system_conf_info = {'path': confpath, 'exists': confexists, 'content': yaml.dump(conf, default_flow_style=False)}
-    print(system_conf_info)
     return system_conf_info
 
 def show_system_conf ():

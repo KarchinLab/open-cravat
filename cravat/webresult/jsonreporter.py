@@ -30,12 +30,10 @@ def test ():
     reporter = Reporter([
         '', 'd:\\git\\cravat-newarch\\tmp\\job\\in1000.sqlite'])
     data = reporter.run()
-    print(data.keys())
     reporter = Reporter([
         '', 'd:\\git\\cravat-newarch\\tmp\\job\\in1000.sqlite',
         '--filterstring', '{"variant": {"thousandgenomes__af": ">0.1"}}'])
     data = reporter.run()
-    print(data.keys())
 
 if __name__ == '__main__':
     #main()

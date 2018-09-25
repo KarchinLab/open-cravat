@@ -88,7 +88,6 @@ def get_remote_manifest(request):
     for module, version in temp_q:
         content[module]['queued'] = True
         install_queue.put({'module': module, 'version': version})
-    print('remote=', content)
     return web.json_response(content)
 
 def get_local_manifest (request):

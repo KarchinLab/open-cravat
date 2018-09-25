@@ -297,7 +297,6 @@ def get_system_conf_info (request):
 async def update_system_conf (request):
     post = await request.post()
     sysconfstr = post['sysconfstr']
-    print(sysconfstr)
     try:
         sysconf = yaml.load(sysconfstr)
         success = au.update_system_conf_file(sysconf)

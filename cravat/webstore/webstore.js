@@ -413,6 +413,7 @@ function activateDetailDialog (moduleName) {
     var table = getEl('table');
     table.style.height = '100px';
     table.style.border = '0px';
+    table.style.width = 'calc(100% - 20px)';
     var tr = getEl('tr');
     tr.style.border = '0px';
     var td = getEl('td');
