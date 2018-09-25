@@ -17,6 +17,7 @@
     border: 1px solid #5b8588;
     transition: all 0.3s ease;
     vertical-align: bottom;
+    cursor: pointer;
 }
 
 #pageselect div:hover {

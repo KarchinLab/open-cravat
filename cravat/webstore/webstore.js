@@ -190,6 +190,7 @@ function getRemoteModulePanel (moduleName) {
     sdiv.style.display = 'flex';
     sdiv.style.alignItems = 'center';
     sdiv.style.backgroundColor = 'white';
+    sdiv.style.cursor = 'pointer';
     sdiv.setAttribute('module', moduleName);
     sdiv.onclick = function (evt) {
         var moduleName = this.getAttribute('module');
@@ -394,13 +395,12 @@ function activateDetailDialog (moduleName) {
         div.style.width = '80%';
         div.style.height = '80%';
         div.style.margin = 'auto';
-        div.style.zIndex = '1';
+        div.style.zIndex = '3';
         div.style.backgroundColor = 'white';
         div.style.left = '0';
         div.style.right = '0';
         div.style.top = '0';
         div.style.bottom = '0';
-        div.style.zIndex = '1';
         div.style.border = '6px';
         div.style.padding = '10px';
         div.style.paddingBottom = '23px';
@@ -454,6 +454,7 @@ function activateDetailDialog (moduleName) {
     td.style.verticalAlign = 'top';
     td.style.textAlign = 'right';
     var button = getEl('button');
+    button.id = 'installbutton';
     var localInfo = localModuleInfo[moduleName];
     var buttonText = null;
     if (localInfo != undefined && localInfo.exists) {
@@ -498,6 +499,7 @@ function activateDetailDialog (moduleName) {
     button.setAttribute('module', moduleName);
     if (buttonText == 'Uninstall') {
         var img2 = getEl('img');
+        img2.id = 'installedicon';
         img2.src = '/store/done.png';
         img2.style.width = '20px';
         img2.title = 'Installed';
@@ -525,6 +527,49 @@ function activateDetailDialog (moduleName) {
                 select.add(option);
             }
         }
+        select.addEventListener('change', function (evt) {
+            var value = select.options[select.selectedIndex].value;
+            console.log(value);
+            var m = localModuleInfo[value];
+            if (m != undefined && m.exists == true) {
+                var button = document.getElementById('installbutton');
+                button.textContent = 'Uninstall';
+                button.addEventListener('click', function (evt) {
+                    var btn = evt.target;
+                    btn.textContent = 'Uninstalling...';
+                    btn.style.color = 'red';
+                    uninstallModule(btn.getAttribute('module'));
+                    document.getElementById('moduledetaildiv').style.display = 'none';
+                });
+                var img2 = document.getElementById('installedicon');
+                img2.src = '/store/done.png';
+                img2.title = 'Installed';
+            } else {
+                var button = document.getElementById('installbutton');
+                button.textContent = 'Install';
+                button.addEventListener('click', function (evt) {
+                    var btn = evt.target;
+                    var btnModuleName = btn.getAttribute('module');
+                    if (btnModuleName == 'chasmplus') {
+                        var select = document.getElementById('chasmplustissueselect');
+                        btnModuleName = select.value;
+                    }
+                    var buttonText = null;
+                    if (installQueue.length == 0) {
+                        buttonText = 'Installing...';
+                    } else {
+                        buttonText = 'Queued';
+                    }
+                    queueInstall(btnModuleName);
+                    btn.textContent = buttonText;
+                    btn.style.color = 'red';
+                    document.getElementById('moduledetaildiv').style.display = 'none';
+                });
+                var img2 = document.getElementById('installedicon');
+                img2.src = '/store/empty.png';
+                img2.title = 'Uninstalled';
+            }
+        });
         addEl(td, select);
     }
     addEl(td, button);
@@ -666,6 +711,20 @@ function activateDetailDialog (moduleName) {
     addEl(tr, td);
     addEl(table, tr);
     addEl(div, table);
+    var el = getEl('div');
+    el.style.position = 'absolute';
+    el.style.top = '0px';
+    el.style.right = '0px';
+    el.style.fontSize = '20px';
+    //el.style.border = '1px solid black';
+    el.style.padding = '10px';
+    el.style.cursor = 'pointer';
+    el.textContent = 'X';
+    el.addEventListener('click', function (evt) {
+        var pel = evt.target.parentElement;
+        pel.parentElement.removeChild(pel);
+    });
+    addEl(div, el);
     return div;
 }
 
