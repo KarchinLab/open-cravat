@@ -147,10 +147,7 @@ async def submit (request):
     p = subprocess.Popen(run_args)
     # p.wait()
     status_file = FILE_ROUTER.job_status_file(job_id)
-    try:
-        with open(status_file) as f: status_d = json.load(f)
-    except IOError:
-        status_d = {'status': 'Submitted'}
+    status_d = {'status': 'Submitted'}
     job.set_info_values(status=status_d)
     job.write_info_file()
     return web.json_response(job.get_info_dict())
@@ -188,7 +185,10 @@ def get_all_jobs (request):
             db_path = FILE_ROUTER.job_db(job_id)
             job_viewable = os.path.exists(db_path)
             status_file = FILE_ROUTER.job_status_file(job_id)
-            with open(status_file) as f: status_d = json.load(f)
+            try:
+                with open(status_file) as f: status_d = json.load(f)
+            except IOError:
+                status_d = {'status':'Submitted'}
             job.set_info_values(viewable=job_viewable,
                                 db_path=db_path,
                                 status=status_d,
