@@ -53,7 +53,6 @@ function submit () {
         processData: false,
         contentType: false,
         success: function (data) {
-            console.log('success');
             addJob(data);
             buildJobsTable();
         }
@@ -300,18 +299,6 @@ function jobViewButtonHandler (event) {
     url = '/result/index.html?dbpath='+dbPath+'&job_id='+jobId;
     var win = window.open(url, '_blank');
     win.focus()
-    // viewJob(jobId);
-}
-
-function viewJob (jobId) {
-    $.ajax({
-        url:'jobs/'+jobId,
-        type: 'GET',
-        contentType: 'application/json',
-        success: function (data) {
-            console.log(data);
-        }
-    })
 }
 
 function jobDeleteButtonHandler (event) {
@@ -325,7 +312,6 @@ function deleteJob (jobId) {
         type: 'DELETE',
         contentType: 'application/json',
         success: function (data) {
-            console.log(data);
             populateJobs().then(() => {
                 buildJobsTable();
             });
@@ -664,6 +650,32 @@ function openSubmitDiv () {
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
         console.log(response);
+        var s = document.getElementById('sysconfpathspan');
+        s.textContent = response['path'];
+        var ta = document.getElementById('sysconftextarea');
+        ta.value = response['content'];
+    });
+}
+
+function updateSystemConf () {
+    var data = {'sysconfstr': document.getElementById('sysconftextarea').value};
+    console.log(data);
+    $.ajax({
+        url:'/submit/updatesystemconf',
+        data: data,
+        type: 'POST',
+        success: function (response) {
+            if (response['success'] == true) {
+                alert('System configuration has been updated.');
+            } else {
+                alert('System configuration was not successful');
+            }
+            if (response['sysconf']['jobs_dir'] != undefined) {
+                populateJobs().then(function () {
+                    buildJobsTable();
+                });
+            }
+        }
     });
 }
 

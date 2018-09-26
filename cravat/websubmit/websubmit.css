@@ -1,7 +1,7 @@
 #pageselect {
-    position: absolute; 
-    top: 0px; 
-    right: 0px; 
+    position: fixed; 
+    top: 67px; 
+    left: 0px; 
     font-size: 20px; 
     color: #000000;
     z-index: 2;
@@ -16,6 +16,8 @@
     width: 80px;
     border: 1px solid #5b8588;
     transition: all 0.3s ease;
+    vertical-align: bottom;
+    cursor: pointer;
 }
 
 #pageselect div:hover {

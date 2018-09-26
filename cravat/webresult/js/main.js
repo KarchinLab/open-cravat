@@ -267,8 +267,7 @@ function getResultLevels () {
 function makeTabHeadTabBody (resultTableLevel) {
 	var tabHeadsDiv = document.getElementById('tabheads');
 	var body = document.body;
-	
-	var span = getEl('button');
+	var span = getEl('div');
 	var div = getEl('div');
 	span.id = 'tabhead_' + resultTableLevel;
 	div.id = 'tab_' + resultTableLevel;

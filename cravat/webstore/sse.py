@@ -13,7 +13,6 @@ cur_tick = Value('i',0)
 #     loop = request.app.loop
 #     async with sse_response(request) as resp:
 #         for i in range(0, 100):
-#             print('foo')
 #             await asyncio.sleep(1, loop=loop)
 #             await resp.send('foo {}'.format(i))
 #     return resp
@@ -23,9 +22,6 @@ async def update_sse_with_tick(sse, value):
 
 async def hello(request):
     async with sse_response(request) as resp:
-        print(managed_tick_value)
-        print(managed_sse_list)
-        print(resp)
         await update_sse_with_tick(resp, managed_tick_value)
         last_value = managed_tick_value.value
         while True:

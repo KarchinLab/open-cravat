@@ -183,7 +183,10 @@ class ModuleInfoCache(object):
             self._remote_url = self._store_path_builder.manifest()
             self.remote = {}
             manifest_str = su.get_file_to_string(self._remote_url)
-            self.remote = yaml.load(manifest_str)
+            if manifest_str == '':
+                self.remote = {}
+            else:
+                self.remote = yaml.load(manifest_str)
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
@@ -350,28 +353,51 @@ def get_remote_module_readme(module_name, version=None):
     """
     return mic.get_remote_readme(module_name, version=version)
 
+def compare_version (v1, v2):
+    t1 = v1.split('.')
+    t2 = v2.split('.')
+    n11 = int(t1[0])
+    n21 = int(t2[0])
+    n12 = int(t1[1])
+    n22 = int(t2[1])
+    n13 = int(t1[2])
+    n23 = int(t2[2])
+    for i in range(3):
+        n1 = int(t1[i])
+        n2 = int(t2[i])
+        if n1 > n2:
+            return 1
+        elif n1 < n2:
+            return -1
+    return 0
+
 def get_readme(module_name, version=None):
     """
     Get the readme. Use local if available.
     """
     exists_remote = module_exists_remote(module_name, version=version)
     exists_local = module_exists_local(module_name)
-    if exists_remote or exists_local:
-        if exists_local:
-            local_info = get_local_module_info(module_name)
-            if local_info.version == version \
-                   or \
-                   (version is None
-                       and 
-                       local_info.version == get_remote_latest_version(module_name)
-                    ):
-                if local_info.readme_exists:
-                    return open(local_info.readme_path).read()
-                else:
-                    return None
-        return mic.get_remote_readme(module_name, version=version)
+    if exists_remote:
+        remote_readme = mic.get_remote_readme(module_name)
     else:
-        return None
+        remote_readme = ''
+    if exists_local:
+        local_info = get_local_module_info(module_name)
+        local_readme = open(local_info.readme_path).read()
+    else:
+        local_readme = ''
+    if exists_remote == True:
+        if exists_local:
+            remote_version = get_remote_latest_version(module_name)
+            local_version = local_info.version
+            if compare_version(remote_version, local_version) > 0:
+                return remote_readme
+            else:
+                return local_readme
+        else:
+            return remote_readme
+    else:
+        return local_readme
 
 def get_local_module_info(module_name):
     """
@@ -652,8 +678,13 @@ def update_system_conf_file(d):
     """
     Recursively update the system config and re-write to disk.
     """
-    sys_conf = recursive_update(get_system_conf(), d)
-    write_system_conf_file(sys_conf)
+    try:
+        sys_conf = recursive_update(get_system_conf(), d)
+        write_system_conf_file(sys_conf)
+        return True
+    except:
+        raise
+        return False
 
 def get_main_conf_path():
     """
@@ -828,13 +859,13 @@ def get_system_conf_info ():
         confexists = False
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
-    system_conf_info = {'path': confpath, 'exists': confexists, 'content': conf}
+    system_conf_info = {'path': confpath, 'exists': confexists, 'content': yaml.dump(conf, default_flow_style=False)}
     return system_conf_info
 
 def show_system_conf ():
     system_conf_info = get_system_conf_info()
     print('Configuration file path:', system_conf_info['path'])
-    print(yaml.dump(system_conf_info['content'], default_flow_style=False))
+    print(system_conf_info['content'])
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

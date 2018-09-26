@@ -103,7 +103,8 @@ async def submit (request):
     job_options = None
     while True:
         part = await reader.next()
-        if not part: break 
+        if not part: 
+            break 
         if part.name == 'file':
             input_file = part
             input_data = await input_file.read()
@@ -143,7 +144,6 @@ async def submit (request):
         run_args.extend(job_options['reports'])
     else:
         run_args.append('--sr')
-    print('Run command: \''+' '.join(run_args)+'\'')
     p = subprocess.Popen(run_args)
     # p.wait()
     status_file = FILE_ROUTER.job_status_file(job_id)
@@ -169,6 +169,7 @@ def get_annotators(request):
 
 def get_all_jobs (request):
     global FILE_ROUTER
+    FILE_ROUTER.update_jobs_dir()
     ids = os.listdir(FILE_ROUTER.jobs_dir())
     ids.sort(reverse=True)
     all_jobs = []
@@ -306,6 +307,18 @@ def get_system_conf_info (request):
     info = au.get_system_conf_info()
     return web.json_response(info)
 
+async def update_system_conf (request):
+    post = await request.post()
+    sysconfstr = post['sysconfstr']
+    try:
+        sysconf = yaml.load(sysconfstr)
+        success = au.update_system_conf_file(sysconf)
+    except:
+        raise
+        sysconf = {}
+        success = False
+    return web.json_response({'success': success, 'sysconf': sysconf})
+
 FILE_ROUTER = FileRouter()
 VIEW_PROCESS = None
 
@@ -324,6 +337,7 @@ routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',generate_rep
 routes.append(['GET', '/submit/getjobsdir', get_jobs_dir])
 routes.append(['GET', '/submit/setjobsdir', set_jobs_dir])
 routes.append(['GET', '/submit/getsystemconfinfo', get_system_conf_info])
+routes.append(['POST', '/submit/updatesystemconf', update_system_conf])
 
 if __name__ == '__main__':
     app = web.Application()
