@@ -113,6 +113,8 @@ function buildJobsTable () {
         jobTr.append($(getEl('td')).append(job.orig_input_fname));
         // Job ID
         jobTr.append($(getEl('td')).append(job.id));
+        // Status
+        jobTr.append($(getEl('td')).append(job.status.status));
         // Note
         jobTr.append($(getEl('td')).append(job.note));
         /*

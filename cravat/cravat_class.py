@@ -9,6 +9,7 @@ import sqlite3
 import datetime
 from types import SimpleNamespace
 from .constants import liftover_chain_paths
+import json
 
 cravat_cmd_parser = argparse.ArgumentParser(epilog='* input should precede any option.')
 cravat_cmd_parser.add_argument('input',
@@ -175,8 +176,18 @@ class Cravat (object):
         if self.args.confs != None:
             self.conf.override_cravat_conf(
                 self.args.confs.replace("'", '"'))
+    
+    def update_status(self, status):
+        status_fname = self.run_name+'.status.json'
+        status_fpath = os.path.join(self.output_dir, status_fname)
+        d = {
+            'status': status
+        }
+        with open(status_fpath,'w') as wf:
+            wf.write(json.dumps(d))
 
     def main (self):
+        self.update_status('Started')
         self.set_and_check_input_files()
         self.make_module_run_list()
         '''
@@ -254,6 +265,8 @@ class Cravat (object):
             self.run_reporter()
             rtime = time.time() - stime
             print('reporter finished in', rtime)
+        self.update_status('Finished')
+    
     def make_args_namespace(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
         full_args.update(supplied_args)
@@ -349,6 +362,7 @@ class Cravat (object):
             self.crg_present = True
         else:
             self.crg_present = False
+        
 
     def make_module_run_list (self):
         self.ordered_annotators = []
@@ -625,3 +639,7 @@ class Cravat (object):
 
     def announce_module (self, module):
         print('    ' + module.title + ' (' + module.name + ')')
+        self.update_status(
+            'Running {title} ({name})'\
+            .format(title=module.title, name=module.name)
+            )

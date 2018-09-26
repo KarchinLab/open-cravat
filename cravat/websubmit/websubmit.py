@@ -51,6 +51,10 @@ class FileRouter(object):
         report_fname = self.input_fname+ext
         return os.path.join(self.job_dir(job_id), report_fname)
 
+    def job_status_file(self, job_id):
+        status_fname = 'input.status.json'
+        return os.path.join(self.job_dir(job_id), status_fname)
+
 class WebJob(object):
     def __init__(self, job_dir, job_info_fpath):
         self.info = {}
@@ -141,7 +145,10 @@ async def submit (request):
         run_args.append('--sr')
     print('Run command: \''+' '.join(run_args)+'\'')
     p = subprocess.Popen(run_args)
-    p.wait()
+    # p.wait()
+    status_file = FILE_ROUTER.job_status_file(job_id)
+    status_d = {'status': 'Submitted'}
+    job.set_info_values(status=status_d)
     job.write_info_file()
     return web.json_response(job.get_info_dict())
 
@@ -177,8 +184,14 @@ def get_all_jobs (request):
             job.read_info_file()
             db_path = FILE_ROUTER.job_db(job_id)
             job_viewable = os.path.exists(db_path)
+            status_file = FILE_ROUTER.job_status_file(job_id)
+            try:
+                with open(status_file) as f: status_d = json.load(f)
+            except IOError:
+                status_d = {'status':'Submitted'}
             job.set_info_values(viewable=job_viewable,
-                                db_path=db_path
+                                db_path=db_path,
+                                status=status_d,
                                 )
             existing_reports = []
             for report_type in get_valid_report_types():
