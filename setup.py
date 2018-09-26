@@ -71,7 +71,7 @@ data_files = ['cravat.yml',
               'cravat-system.template.yml', 
               'cravat-system.yml', 
               'modules/cravat.yml', 
-              'example_input.tsv']
+              'example_input']
 for root, dirs, files in os.walk(os.path.join('cravat', 'webviewer')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
@@ -94,7 +94,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='0.0.120',
+    version='0.0.121',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
