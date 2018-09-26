@@ -61,8 +61,9 @@ def fetch_install_queue (install_queue):
             au.refresh_cache()
             module_name = data['module']
             module_version = data['version']
-            stage_handler = InstallProgressMpDict(module_name, module_version)
-            au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
+            # stage_handler = InstallProgressMpDict(module_name, module_version)
+            # au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
+            au.install_module(module_name, version=module_version)
             au.refresh_cache()
             time.sleep(1)
         except KeyboardInterrupt:
