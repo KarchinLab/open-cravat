@@ -698,13 +698,13 @@ def get_main_default_path():
     """
     return os.path.join(constants.packagedir, constants.main_conf_fname)
 
-def publish_module(module_name, user, password, include_data=True):
+def publish_module(module_name, user, password, overwrite_version=False, include_data=True):
     sys_conf = get_system_conf()
     publish_url = sys_conf['publish_url']
+    mic.update_local()
     local_info = get_local_module_info(module_name)
     check_url = publish_url + '/%s/%s/check' %(module_name,local_info.version)
     r = requests.get(check_url, auth=(user,password))
-    overwrite_version = False
     if r.status_code != 200:
         print('Cannot upload')
         if r.status_code == 401:
@@ -714,6 +714,8 @@ def publish_module(module_name, user, password, include_data=True):
             err = json.loads(r.text)
             if err['code'] == su.VersionExists.code:
                 while True:
+                    if overwrite_version:
+                        break
                     resp = input('Version exists. Do you wish to overwrite (y/n)? ')
                     if resp == 'y':
                         overwrite_version = True

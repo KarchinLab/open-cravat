@@ -308,7 +308,7 @@ def main ():
             
     def publish_module (args):
         print('args force yes in publish', args.force_yes)
-        au.publish_module(args.module, args.user, args.password, include_data=args.data)
+        au.publish_module(args.module, args.user, args.password, args.overwrite_same_version, include_data=args.data)
         
     def install_base (args):
         sys_conf = au.get_system_conf()
@@ -508,6 +508,10 @@ def main ():
                                 default=False,
                                 action='store_true',
                                 help='overrides yes to overwrite question')
+    parser_publish.add_argument('--overwrite-same-version',
+                                default=False,
+                                action='store_true',
+                                help='overwrites the same version already published.')
     parser_publish.set_defaults(func=publish_module)
     
     # create-account
