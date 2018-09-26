@@ -190,83 +190,80 @@ class Cravat (object):
         self.update_status('Started')
         self.set_and_check_input_files()
         self.make_module_run_list()
-        '''
-        if self.crv_present == False:
-            self.should_run_converter = True
-        if self.crx_present == False and not self.args.ra:
-            self.should_run_genemapper = True
-        '''
-        if self.args.sc == False and \
-            (
-                self.runlevel <= self.runlevels['converter'] or
-                self.crv_present == False or
-                self.args.rc
-            ):
-            stime = time.time()
-            print('Running converter...')
-            self.run_converter()
-            rtime = time.time() - stime
-            print('converter finished in', rtime)
-        if self.args.ec:
-            return
-        if self.args.sm == False and \
-            (
-                self.runlevel <= self.runlevels['mapper'] or
-                self.crx_present == False or
-                self.args.rm
-            ):
-            stime = time.time()
-            print('Running gene mapper...')
-            self.run_genemapper()
-            rtime = time.time() - stime
-            print('gene mapper finished in', rtime)
-        if self.args.em:
-            return
-        if self.args.sa == False and \
-            (
-                self.runlevel <= self.runlevels['annotator'] or
-                self.args.ra
-            ):
-            stime = time.time()
-            print('Running annotators...')
-            self.run_annotators()
-            rtime = time.time() - stime
-            print('anntator(s) finished in', rtime)
-        if self.args.ea:
-            return
-        if self.args.sg == False and \
-            (
-                self.runlevel <= self.runlevels['aggregator'] or
-                self.args.rg
-            ):
-            stime = time.time()
-            print('Running aggregator...')
-            self.result_path = self.run_aggregator()
-            self.write_job_info()
-            rtime = time.time() - stime
-            print('aggregator finished in', rtime)
-        if self.args.sp == False and \
-            (
-                self.runlevel <= self.runlevels['postaggregator'] or
-                self.args.rp
-            ):
-            stime = time.time()
-            print('Running post-aggregators...')
-            self.run_postaggregators()
-            rtime = time.time() - stime
-            print('post-aggregator finished in', rtime)
-        if self.args.sr == False and \
-            (
-                self.runlevel <= self.runlevels['reporter'] or
-                self.args.rr
-            ):
-            stime = time.time()
-            print('Running reporter...')
-            self.run_reporter()
-            rtime = time.time() - stime
-            print('reporter finished in', rtime)
-        self.update_status('Finished')
-    
+        try:
+            if self.args.sc == False and \
+                (
+                    self.runlevel <= self.runlevels['converter'] or
+                    self.crv_present == False or
+                    self.args.rc
+                ):
+                stime = time.time()
+                print('Running converter...')
+                self.run_converter()
+                rtime = time.time() - stime
+                print('converter finished in', rtime)
+            if self.args.ec:
+                return
+            if self.args.sm == False and \
+                (
+                    self.runlevel <= self.runlevels['mapper'] or
+                    self.crx_present == False or
+                    self.args.rm
+                ):
+                stime = time.time()
+                print('Running gene mapper...')
+                self.run_genemapper()
+                rtime = time.time() - stime
+                print('gene mapper finished in', rtime)
+            if self.args.em:
+                return
+            if self.args.sa == False and \
+                (
+                    self.runlevel <= self.runlevels['annotator'] or
+                    self.args.ra
+                ):
+                stime = time.time()
+                print('Running annotators...')
+                self.run_annotators()
+                rtime = time.time() - stime
+                print('anntator(s) finished in', rtime)
+            if self.args.ea:
+                return
+            if self.args.sg == False and \
+                (
+                    self.runlevel <= self.runlevels['aggregator'] or
+                    self.args.rg
+                ):
+                stime = time.time()
+                print('Running aggregator...')
+                self.result_path = self.run_aggregator()
+                self.write_job_info()
+                rtime = time.time() - stime
+                print('aggregator finished in', rtime)
+            if self.args.sp == False and \
+                (
+                    self.runlevel <= self.runlevels['postaggregator'] or
+                    self.args.rp
+                ):
+                stime = time.time()
+                print('Running post-aggregators...')
+                self.run_postaggregators()
+                rtime = time.time() - stime
+                print('post-aggregator finished in', rtime)
+            if self.args.sr == False and \
+                (
+                    self.runlevel <= self.runlevels['reporter'] or
+                    self.args.rr
+                ):
+                stime = time.time()
+                print('Running reporter...')
+                self.run_reporter()
+                rtime = time.time() - stime
+                print('reporter finished in', rtime)
+            self.update_status('Finished')
+        except:
+            self.update_status('Error')
+
     def make_args_namespace(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
         full_args.update(supplied_args)
