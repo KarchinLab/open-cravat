@@ -285,6 +285,7 @@ def get_jobs_dir():
     if jobs_dir is None:
         home_dir = os.path.expanduser('~')
         jobs_dir = os.path.join(home_dir,'open-cravat','jobs')
+        set_jobs_dir(jobs_dir)
     if not(os.path.isdir(jobs_dir)):
         os.makedirs(jobs_dir)
     return jobs_dir
@@ -852,6 +853,7 @@ def report_issue ():
     webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
 
 def get_system_conf_info ():
+    set_jobs_dir(get_jobs_dir())
     confpath = constants.system_conf_path
     if os.path.exists(confpath):
         conf = load_yml_conf(confpath)

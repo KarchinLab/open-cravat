@@ -586,13 +586,11 @@ function getJobsDir () {
 }
 
 function setJobsDir (evt) {
-    console.log(evt);
     var d = evt.target.value;
     $.get('/submit/setjobsdir', {'jobsdir': d}).done(function (response) {
         $('.jobsdirtext').text(response);
         var promise = populateJobs();
         promise.then(function (response) {
-            console.log(response);
             buildJobsTable();
         });
     });
@@ -649,7 +647,6 @@ function openSubmitDiv () {
 
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
-        console.log(response);
         var s = document.getElementById('sysconfpathspan');
         s.textContent = response['path'];
         var ta = document.getElementById('sysconftextarea');
@@ -659,7 +656,6 @@ function loadSystemConf () {
 
 function updateSystemConf () {
     var data = {'sysconfstr': document.getElementById('sysconftextarea').value};
-    console.log(data);
     $.ajax({
         url:'/submit/updatesystemconf',
         data: data,
