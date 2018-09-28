@@ -14,6 +14,14 @@ from html.parser import HTMLParser
 from cravat import store_utils as su
 from cravat import constants
 
+system_conf = au.get_system_conf()
+pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
+install_queue = None
+install_state = None
+install_worker = None
+install_ws = None
+last_update_time = 0
+
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
     filepath = os.path.join(
@@ -23,45 +31,61 @@ def get_filepath (path):
     return filepath
 
 class InstallProgressMpDict(au.InstallProgressHandler):
-    def __init__(self, module_name, module_version):
+
+    def __init__(self, module_name, module_version, install_state):
         super().__init__(module_name, module_version)
         self._module_name = module_name
         self._module_version = module_version
-        #self._d = {}
+        self.install_state = install_state
 
     def _reset_progress(self, update_time=False):
-        install_state['cur_chunk'] = 0
-        install_state['total_chunks'] = 0
-        install_state['cur_size'] = 0
-        install_state['total_size'] = 0
+        #global install_state
+        self.install_state['cur_chunk'] = 0
+        self.install_state['total_chunks'] = 0
+        self.install_state['cur_size'] = 0
+        self.install_state['total_size'] = 0
         if update_time:
-            install_state['update_time'] = time.time()
+            self.install_state['update_time'] = time.time()
 
     def stage_start(self, stage):
+        global install_worker
+        global install_ws
+        global last_update_time
+        if self.install_state == None or len(self.install_state.keys()) == 0:
+            self.install_state['stage'] = ''
+            self.install_state['message'] = ''
+            self.install_state['module_name'] = ''
+            self.install_state['module_version'] = ''
+            self.install_state['cur_chunk'] = 0
+            self.install_state['total_chunks'] = 0
+            self.install_state['cur_size'] = 0
+            self.install_state['total_size'] = 0
+            self.install_state['update_time'] = time.time()
+            last_update_time = install_state['update_time']
         self.cur_stage = stage
-        install_state['module_name'] = self._module_name
-        install_state['module_version'] = self._module_version
-        install_state['stage'] = self.cur_stage
-        install_state['message'] = self._stage_msg(self.cur_stage)
+        self.install_state['module_name'] = self._module_name
+        self.install_state['module_version'] = self._module_version
+        self.install_state['stage'] = self.cur_stage
+        self.install_state['message'] = self._stage_msg(self.cur_stage)
         self._reset_progress()
-        install_state['update_time'] = time.time()
+        self.install_state['update_time'] = time.time()
 
     def stage_progress(self, cur_chunk, total_chunks, cur_size, total_size):
-        install_state['cur_chunk'] = cur_chunk
-        install_state['total_chunks'] = total_chunks
-        install_state['cur_size'] = cur_size
-        install_state['total_size'] = total_size
-        install_state['update_time'] = time.time()
+        #global install_state
+        self.install_state['cur_chunk'] = cur_chunk
+        self.install_state['total_chunks'] = total_chunks
+        self.install_state['cur_size'] = cur_size
+        self.install_state['total_size'] = total_size
+        self.install_state['update_time'] = time.time()
 
-def fetch_install_queue (install_queue):
-    # global install_queue
+def fetch_install_queue (install_queue, install_state):
     while True:
         try:
             data = install_queue.get()
             au.refresh_cache()
             module_name = data['module']
             module_version = data['version']
-            stage_handler = InstallProgressMpDict(module_name, module_version)
+            stage_handler = InstallProgressMpDict(module_name, module_version, install_state)
             au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
             au.refresh_cache()
             time.sleep(1)
@@ -178,7 +202,7 @@ def start_worker ():
     install_queue = Queue()
     install_state = Manager().dict()
     if install_worker == None:
-        install_worker = Process(target=fetch_install_queue, args=(install_queue,))
+        install_worker = Process(target=fetch_install_queue, args=(install_queue, install_state,))
         install_worker.start()
 
 async def connect_websocket (request):
@@ -186,9 +210,6 @@ async def connect_websocket (request):
     global install_state
     global install_ws
     global last_update_time
-    #install_queue = Queue()
-    #manager = Manager()
-    #install_state = manager.dict()
     if install_state == None or len(install_state.keys()) == 0:
         install_state['stage'] = ''
         install_state['message'] = ''
@@ -237,14 +258,7 @@ def install_base_modules (request):
     for module in base_modules:
         install_queue.put({'module': module, 'version': None})
     return web.Response(text='queued')
-    
-system_conf = au.get_system_conf()
-pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
-install_queue = None
-install_state = None
-install_worker = None
-install_ws = None
-last_update_time = 0
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/install', install_module])
@@ -257,3 +271,4 @@ routes.append(['GET', '/store/queueinstall', queue_install])
 routes.append(['GET', '/store/modules/{module}/{version}/readme', get_module_readme])
 routes.append(['GET', '/store/getbasemodules', get_base_modules])
 routes.append(['GET', '/store/installbasemodules', install_base_modules])
+
