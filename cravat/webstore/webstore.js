@@ -491,10 +491,7 @@ function activateDetailDialog (moduleName) {
         });
     }
     button.textContent = buttonText;
-    //button.style.border = '0px';
-    //button.style.boxShadow = '3px 3px 2px #888888';
     button.style.padding = '8px';
-    //button.style.borderRadius = '3px';
     button.style.fontSize = '18px';
     button.style.fontWeight = 'bold';
     button.setAttribute('module', moduleName);
@@ -530,7 +527,6 @@ function activateDetailDialog (moduleName) {
         }
         select.addEventListener('change', function (evt) {
             var value = select.options[select.selectedIndex].value;
-            console.log(value);
             var m = localModuleInfo[value];
             if (m != undefined && m.exists == true) {
                 var button = document.getElementById('installbutton');
@@ -590,11 +586,13 @@ function activateDetailDialog (moduleName) {
     table.style.height = 'calc(100% - 100px)';
     table.style.border = '0px';
     tr = getEl('tr');
+    var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
     tr.style.border = '0px';
     td = getEl('td');
     td.style.border = '0px';
     td.style.width = '70%';
     td.style.verticalAlign = 'top';
+    td.style.height = tdHeight;
     var mdDiv = getEl('div');
     mdDiv.style.height = '100%';
     mdDiv.style.overflow = 'auto';
@@ -607,7 +605,10 @@ function activateDetailDialog (moduleName) {
     td.style.width = '30%';
     td.style.border = '0px';
     td.style.verticalAlign = 'top';
+    td.style.height = tdHeight;
     var infodiv = getEl('div');
+    infodiv.style.height = '100%';
+    infodiv.style.overflow = 'auto';
     var d = getEl('div');
     span = getEl('span');
     span.textContent = moduleInfo.description;
@@ -717,7 +718,6 @@ function activateDetailDialog (moduleName) {
     el.style.top = '0px';
     el.style.right = '0px';
     el.style.fontSize = '20px';
-    //el.style.border = '1px solid black';
     el.style.padding = '10px';
     el.style.cursor = 'pointer';
     el.textContent = 'X';
@@ -1001,7 +1001,6 @@ function connectWebSocket () {
     ws.onopen = function (evt) {
     }
     ws.onmessage = function (evt) {
-        //console.log('ws message:', evt.data);
         var data = JSON.parse(evt.data);
         var module = data['module'];
         var msg = data['msg'];

@@ -1,3 +1,12 @@
+html,body,address,blockquote,div,
+form,fieldset,caption,
+h1,h2,h3,h4,h5,h6,
+hr,ul,li,ol,ul,
+table,tr,td,th,p,img {
+        margin:0;
+            padding:0;
+}
+
 table {
 	border: 1px solid black;
 	border-collapse: collapse;

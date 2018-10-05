@@ -690,6 +690,16 @@ function websubmit_run () {
             }
         }
     });
+    window.addEventListener('resize', function (evt) {
+        var moduledetaildiv = document.getElementById('moduledetaildiv');
+        if (moduledetaildiv == null) {
+            return;
+        }
+        var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
+        var tds = document.getElementById('moduledetaildiv').getElementsByTagName('table')[1].getElementsByTagName('td');
+        tds[0].style.height = tdHeight;
+        tds[1].style.height = tdHeight;
+    });
     addListeners();
     jobsPromise = populateJobs();
     annotsPromise = populateAnnotators();
