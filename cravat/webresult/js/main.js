@@ -625,7 +625,8 @@ function doNothing () {
 }
 
 function webresult_run () {
-    var urlParameters = window.location.search.replace("?", "").split("&");
+    var urlParameters = window.location.search.replace("?", "").replace("%20", " ").split("&");
+    console.log(urlParameters);
 	for (var i = 0; i < urlParameters.length; i++) {
 		var keyValue = urlParameters[i].split('=');
 		var key = keyValue[0];
