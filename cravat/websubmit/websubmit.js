@@ -497,7 +497,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
             question.setAttribute('module', checkData.value);
             question.addEventListener('click', function (evt) {
                 var annotchoosediv = document.getElementById('annotchoosediv');
-                var moduledetaildiv = document.getElementById('moduledetaildiv');
+                var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
                 if (moduledetaildiv != null) {
                     annotchoosediv.removeChild(moduledetaildiv);
                 }
@@ -683,20 +683,20 @@ function websubmit_run () {
     getRemote();
     getLocal();
     document.addEventListener('click', function (evt) {
-        if (evt.target.closest('#moduledetaildiv') == null && evt.target.closest('.moduledetailbutton') == null ) {
-            var div = document.getElementById('moduledetaildiv');
+        if (evt.target.closest('#moduledetaildiv_submit') == null && evt.target.closest('.moduledetailbutton') == null ) {
+            var div = document.getElementById('moduledetaildiv_submit');
             if (div != null) {
                 div.style.display = 'none';
             }
         }
     });
     window.addEventListener('resize', function (evt) {
-        var moduledetaildiv = document.getElementById('moduledetaildiv');
+        var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
         if (moduledetaildiv == null) {
             return;
         }
         var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
-        var tds = document.getElementById('moduledetaildiv').getElementsByTagName('table')[1].getElementsByTagName('td');
+        var tds = document.getElementById('moduledetaildiv_submit').getElementsByTagName('table')[1].getElementsByTagName('td');
         tds[0].style.height = tdHeight;
         tds[1].style.height = tdHeight;
     });

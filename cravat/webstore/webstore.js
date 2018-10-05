@@ -54,7 +54,7 @@ function getLocal () {
             select.disabled = false;
             var input = document.getElementById('namefilter');
             input.disabled = false;
-            var div = document.getElementById('moduledetaildiv');
+            var div = document.getElementById('moduledetaildiv_store');
             if (div != null) {
                 if (div.style.display != 'none') {
                     activateDetailDialog(currentDetailModule);
@@ -385,12 +385,12 @@ function getLogo (moduleName) {
 }
 
 function activateDetailDialog (moduleName) {
-    var div = document.getElementById('moduledetaildiv');
+    var div = document.getElementById('moduledetaildiv_store');
     if (div) {
         emptyElement(div);
     } else {
         div = getEl('div');
-        div.id = 'moduledetaildiv';
+        div.id = 'moduledetaildiv_store';
         div.style.position = 'fixed';
         div.style.width = '80%';
         div.style.height = '80%';
@@ -466,7 +466,7 @@ function activateDetailDialog (moduleName) {
             btn.textContent = 'Uninstalling...';
             btn.style.color = 'red';
             uninstallModule(btn.getAttribute('module'));
-            document.getElementById('moduledetaildiv').style.display = 'none';
+            document.getElementById('moduledetaildiv_store').style.display = 'none';
         });
     } else {
         buttonText = 'Install';
@@ -487,7 +487,7 @@ function activateDetailDialog (moduleName) {
             queueInstall(btnModuleName);
             btn.textContent = buttonText;
             btn.style.color = 'red';
-            document.getElementById('moduledetaildiv').style.display = 'none';
+            document.getElementById('moduledetaildiv_store').style.display = 'none';
         });
     }
     button.textContent = buttonText;
@@ -536,7 +536,7 @@ function activateDetailDialog (moduleName) {
                     btn.textContent = 'Uninstalling...';
                     btn.style.color = 'red';
                     uninstallModule(btn.getAttribute('module'));
-                    document.getElementById('moduledetaildiv').style.display = 'none';
+                    document.getElementById('moduledetaildiv_store').style.display = 'none';
                 });
                 var img2 = document.getElementById('installedicon');
                 img2.src = '/store/done.png';
@@ -560,7 +560,7 @@ function activateDetailDialog (moduleName) {
                     queueInstall(btnModuleName);
                     btn.textContent = buttonText;
                     btn.style.color = 'red';
-                    document.getElementById('moduledetaildiv').style.display = 'none';
+                    document.getElementById('moduledetaildiv_store').style.display = 'none';
                 });
                 var img2 = document.getElementById('installedicon');
                 img2.src = '/store/empty.png';
@@ -730,23 +730,22 @@ function activateDetailDialog (moduleName) {
 }
 
 function getModuleDetailDiv (moduleName) {
-    var div = document.getElementById('moduledetaildiv');
+    var div = document.getElementById('moduledetaildiv_store');
     if (div) {
         emptyElement(div);
     } else {
         div = getEl('div');
-        div.id = 'moduledetaildiv';
+        div.id = 'moduledetaildiv_store';
         div.style.position = 'fixed';
         div.style.width = 'calc(90% - 200px)';
         div.style.height = '80%';
         div.style.margin = 'auto';
-        div.style.zIndex = '1';
         div.style.backgroundColor = 'white';
         div.style.left = '200px';
         div.style.right = '0';
         div.style.top = '0';
         div.style.bottom = '0';
-        div.style.zIndex = '1';
+        div.style.zIndex = '2';
         div.style.border = '6px';
         div.style.padding = '10px';
         div.style.paddingBottom = '23px';
@@ -819,10 +818,12 @@ function getModuleDetailDiv (moduleName) {
     table.style.border = '0px';
     tr = getEl('tr');
     tr.style.border = '0px';
+    var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
     td = getEl('td');
     td.style.border = '0px';
     td.style.width = '70%';
     td.style.verticalAlign = 'top';
+    td.style.height = tdHeight;
     var mdDiv = getEl('div');
     mdDiv.style.height = '100%';
     mdDiv.style.overflow = 'auto';
@@ -835,6 +836,7 @@ function getModuleDetailDiv (moduleName) {
     td.style.width = '30%';
     td.style.border = '0px';
     td.style.verticalAlign = 'top';
+    td.style.height = tdHeight;
     var infodiv = getEl('div');
     infodiv.style.height = '100%';
     infodiv.style.overflow = 'auto';
@@ -933,6 +935,19 @@ function getModuleDetailDiv (moduleName) {
     addEl(tr, td);
     addEl(table, tr);
     addEl(div, table);
+    var el = getEl('div');
+    el.style.position = 'absolute';
+    el.style.top = '0px';
+    el.style.right = '0px';
+    el.style.fontSize = '20px';
+    el.style.padding = '10px';
+    el.style.cursor = 'pointer';
+    el.textContent = 'X';
+    el.addEventListener('click', function (evt) {
+        var pel = evt.target.parentElement;
+        pel.parentElement.removeChild(pel);
+    });
+    addEl(div, el);
     return div;
 }
 
@@ -1046,8 +1061,8 @@ function getBaseModuleNames () {
 
 function webstore_run () {
     document.addEventListener('click', function (evt) {
-        if (evt.target.closest('#moduledetaildiv') == null) {
-            var div = document.getElementById('moduledetaildiv');
+        if (evt.target.closest('#moduledetaildiv_store') == null) {
+            var div = document.getElementById('moduledetaildiv_store');
             if (div != null) {
                 div.style.display = 'none';
             }
