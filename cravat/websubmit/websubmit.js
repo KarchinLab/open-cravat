@@ -9,13 +9,19 @@ function submit () {
     let fd = new FormData();
     var textInputElem = $('#input-text');
     var textVal = textInputElem.val();
-    let inputFile;
+    let inputFile = null;
     if (textVal.length > 0) {
         var textBlob = new Blob([textVal], {type:'text/plain'})
-        inputFile = new File([textBlob], 'manual-input.txt');
+        inputFile = new File([textBlob], 'input');
     } else {
         var fileInputElem = $('#input-file')[0];
-        inputFile = fileInputElem.files[0];
+        if (fileInputElem.files.length > 0) {
+            inputFile = fileInputElem.files[0];
+        }
+    }
+    if (inputFile == null) {
+        alert('Choose a input variants file, enter variants, or click an input example button.');
+        return;
     }
     fd.append('file', inputFile);
     var submitOpts = {
