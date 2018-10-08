@@ -58,21 +58,24 @@ function getLineHeader (header) {
 }
 
 function addInfoLine (div, row, header, col, tabName) {
-	addEl(div, getLineHeader(header));
 	var text = infomgr.getRowValue(tabName, row, col);
-	var spanText = document.createElement('span');
-	if (text == undefined || text == null) {
-		text = '';
-	} else {
-		var textLengthCutoff = 20;
-		if (text.length > textLengthCutoff) {
-			spanText.title = text;
-			text = text.substring(0, textLengthCutoff) + '...';
-		}
-	}
-	addEl(spanText, getTn(text));
-	addEl(div, spanText);
-	addEl(div, getEl('br'));
+    var table = getEl('table');
+    table.style.fontSize = '12px';
+    table.style.borderCollapse = 'collapse';
+    var tr = getEl('tr');
+    var td = getEl('td');
+    td.style.verticalAlign = 'top';
+    var h = getLineHeader(header);
+    addEl(td, h);
+    addEl(tr, td);
+    td = getEl('td');
+    td.style.verticalAlign = 'top';
+    var t = getEl('span');
+    t.textContent = text;
+    addEl(td, t);
+    addEl(tr, td);
+    addEl(table, tr);
+	addEl(div, table);
 }
 
 function addInfoLineText (div, header, text) {

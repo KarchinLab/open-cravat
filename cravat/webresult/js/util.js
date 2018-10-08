@@ -132,14 +132,17 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	addEl(iconDiv, closeButton);
 	
 	var hr = getEl('hr');
+    hr.style.margin = '5px';
+    hr.style.marginInlineStart = '0px';
+    hr.style.marginInlineEnd = '0px';
 	addEl(div, hr);
 	
 	// Content div
 	var detailContentDiv = getEl('div');
 	detailContentDiv.id = 'widgetcontentdiv_' + widgetName + '_' + tabName;
 	detailContentDiv.className = 'detailcontentdiv';
-	detailContentDiv.style.height = 'calc(100% - 37px)';
-	//detailContentDiv.style.height = '100%';
+	detailContentDiv.style.height = 'calc(100% - 32px)';
+    detailContentDiv.style.padding = '0px';
 	addEl(div, detailContentDiv);
 	
 	return [div, detailContentDiv];
