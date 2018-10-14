@@ -368,9 +368,7 @@ function populateWgNoticeDiv (noWgAnnotModules) {
 }
 
 function installWidgetsForModule (moduleKey) {
-    console.log(moduleKey);
     $.get('/store/installwidgetsformodule', {'name': moduleKey}).done(function () {
-        console.log('installed widgets for', moduleKey);
         checkWidgets();
     });
 }

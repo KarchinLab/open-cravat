@@ -224,11 +224,6 @@ div.tabContent.hide {
 	position: relative;
 }
 
-.detailcontainerdiv {
-	/*width: calc(100% - 30px);
-	height: 100%;*/
-}
-
 .detailsidebardiv {
 	width: 30px;
 	height: 100%;

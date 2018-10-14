@@ -195,7 +195,7 @@ function afterDragNSBar (self, tabName) {
 	var dragBarTop_relativeRightDiv = dragBarTop - rightDiv_top - 33;
 	var cellValueDivTop = dragBarTop_relativeRightDiv + 11;
 	var height_table = dragBarTop_relativeRightDiv + 10;
-	var height_detail_div = rightDiv_height - height_table - height_bar - 35;
+	var height_detail_div = rightDiv_height - height_table - height_bar - 55;
 	
 	$grids[tabName].pqGrid('option', 'height', height_table).pqGrid('refresh');
 	dragBar.style.top = cellValueDivTop + 24;
@@ -234,8 +234,8 @@ function resizesTheWindow () {
 		detailDivHeight = detailDiv.offsetHeight;
 	}
 	
-	var rightDivHeight = browserHeight - 50;
-	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 26;
+	var rightDivHeight = browserHeight - 67;
+	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 35;
 	var tableDivWidth = 'calc(100% - 10px)';
 	var cellValueDivTop = tableDivHeight - 2 ;
 	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 6;
@@ -259,7 +259,6 @@ function getResultLevels () {
 	var request = new XMLHttpRequest();
 	request.open('GET', '/result/service/getresulttablelevels?dbpath=' + dbPath, false);
 	request.send(null);
-    console.log(request.responseText);
 	resultLevels = JSON.parse(request.responseText);
 }
 
@@ -625,7 +624,6 @@ function doNothing () {
 
 function webresult_run () {
     var urlParameters = window.location.search.replace("?", "").replace("%20", " ").split("&");
-    console.log(urlParameters);
 	for (var i = 0; i < urlParameters.length; i++) {
 		var keyValue = urlParameters[i].split('=');
 		var key = keyValue[0];
@@ -668,6 +666,7 @@ function webresult_run () {
     	changeMenu();
     });
     
+    var resizeTimeout = null;
     $(window).resize(function(event) {
     	shouldResizeScreen = {};
         var curWinWidth = window.innerWidth;
@@ -675,7 +674,10 @@ function webresult_run () {
         if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
             windowWidth = curWinWidth;
             windowHeight = curWinHeight;
-            resizesTheWindow();
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                resizesTheWindow();
+            }, 200);
         }
     });
     
