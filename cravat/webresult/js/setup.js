@@ -217,8 +217,10 @@ function populateSummaryWidgetDiv () {
 		if (resizeTimeout) {
 			clearTimeout(resizeTimeout);
 		}
+        var sEvt = evt;
+        var sUi = ui;
 		resizeTimeout = setTimeout(function () {
-			$outerDiv.packery('fit', ui.element[0]);
+			$(sEvt.target.parentElement).packery('fit', sUi.element[0]);
 		}, 100);
 	});
 	if (reuseWidgets != true) {

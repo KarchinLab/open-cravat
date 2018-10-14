@@ -65,3 +65,5 @@ var defaultSaveName = 'default';
 var lastUsedLayoutName = 'default';
 var savedLayoutNames = null;
 var autoSaveLayout = true;
+var windowWidth = 0;
+var windowHeight = 0;

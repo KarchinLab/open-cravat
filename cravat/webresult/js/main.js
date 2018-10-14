@@ -243,11 +243,10 @@ function resizesTheWindow () {
 	rightDiv.style.height = rightDivHeight + 'px';
 	tableDiv.style.width = tableDivWidth;
 	tableDiv.style.height = tableDivHeight;
-	pqTable.pqGrid('option', 'width', tableDivWidth).pqGrid('option', 'height', tableDivHeight - 1).pqGrid('refresh'); // 
+	pqTable.pqGrid('option', 'width', tableDivWidth).pqGrid('option', 'height', tableDivHeight - 1).pqGrid('refresh');
 	cellValueDiv.style.top = cellValueDivTop + 'px';
 	nsDragBar.style.top = nsDragBarTop + 'px';
 	if (detailDiv) {
-		//detailDiv.style.width = 'calc(100% - 6px)';
 		$(detailDiv.getElementsByClassName('detailcontainerdiv')[0]).packery('shiftLayout');
 	}
 	
@@ -671,7 +670,13 @@ function webresult_run () {
     
     $(window).resize(function(event) {
     	shouldResizeScreen = {};
-    	resizesTheWindow();
+        var curWinWidth = window.innerWidth;
+        var curWinHeight = window.innerHeight;
+        if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
+            windowWidth = curWinWidth;
+            windowHeight = curWinHeight;
+            resizesTheWindow();
+        }
     });
     
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
