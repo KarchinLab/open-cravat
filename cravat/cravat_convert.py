@@ -295,8 +295,11 @@ class MasterCravatConverter(object):
                 if all_wdicts:
                     UIDMap = [] 
                     for wdict in all_wdicts:
-                        if wdict['ref_base'] == '' \
-                           and wdict['alt_base'] not in ['A','T','C','G']:
+                        if wdict['chrom'].startswith('chrom') == False:
+                            wdict['chrom'] = 'chr' + wdict['chrom']
+                        if wdict['chrom'] == 'chrMT':
+                            wdict['chrom'] = 'chrM'
+                        if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
                             num_errors += 1
                             e = BadFormatError('Reference base required for non SNV')
                             self._log_conversion_error(read_lnum, e)
