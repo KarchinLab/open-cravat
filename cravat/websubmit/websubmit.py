@@ -319,6 +319,15 @@ async def update_system_conf (request):
         success = False
     return web.json_response({'success': success, 'sysconf': sysconf})
 
+def reset_system_conf (request):
+    d = au.read_system_conf_template()
+    md = au.get_modules_dir()
+    jobs_dir = au.get_jobs_dir()
+    d['modules_dir'] = md
+    d['jobs_dir'] = jobs_dir
+    au.write_system_conf_file(d)
+    return web.json_response({'status':'success', 'dict':yaml.dump(d)})
+
 FILE_ROUTER = FileRouter()
 VIEW_PROCESS = None
 
@@ -338,6 +347,7 @@ routes.append(['GET', '/submit/getjobsdir', get_jobs_dir])
 routes.append(['GET', '/submit/setjobsdir', set_jobs_dir])
 routes.append(['GET', '/submit/getsystemconfinfo', get_system_conf_info])
 routes.append(['POST', '/submit/updatesystemconf', update_system_conf])
+routes.append(['GET', '/submit/resetsystemconf', reset_system_conf])
 
 if __name__ == '__main__':
     app = web.Application()

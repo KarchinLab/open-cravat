@@ -681,7 +681,26 @@ function updateSystemConf () {
     });
 }
 
+function resetSystemConf () {
+    $.get('/submit/resetsystemconf').done(function (response) {
+        var status = response['status'];
+        if (status == 'success') {
+            var d = response['dict'];
+            document.getElementById('sysconftextarea').value = d;
+        } else {
+            alert('Resetting system conf file failed.');
+        }
+    });
+}
+
+function showMd () {
+    $.get('/store/getmd').done(function (response) {
+        document.getElementById('modulesdirspan').textContent = response;
+    });
+}
+
 function websubmit_run () {
+    var md = showMd();
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
     connectWebSocket();

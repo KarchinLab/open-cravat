@@ -295,7 +295,7 @@ class MasterCravatConverter(object):
                 if all_wdicts:
                     UIDMap = [] 
                     for wdict in all_wdicts:
-                        if wdict['chrom'].startswith('chrom') == False:
+                        if wdict['chrom'].startswith('chr') == False:
                             wdict['chrom'] = 'chr' + wdict['chrom']
                         if wdict['chrom'] == 'chrMT':
                             wdict['chrom'] = 'chrM'

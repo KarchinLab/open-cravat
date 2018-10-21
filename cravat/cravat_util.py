@@ -22,10 +22,10 @@ def get_args ():
         required=True,
         help='names of the columns to convert')
     subparser.add_argument('--tables',
-        help='table(s) to convert. If omitted, all tables will be tried.')
+        help='table(s) to convert. If omitted, table name will be used as chromosome name.')
     subparser.add_argument('--chromcol',
         required=False,
-        help='chromosome column. If omitted, "chrom" will be looked for.')
+        help='chromosome column. If omitted, all tables will be tried to be converted.')
     subparser.set_defaults(func=hg19tohg38)
     args = parser.parse_args()
     return args
@@ -34,9 +34,6 @@ def hg19tohg38 (args):
     if os.path.exists(args.db) == False:
         print(args.db, 'does not exist.')
         exit()
-    if args.chromcol == None:
-        print('chromcol not given. "chrom" will be tried as the column name for chromosome.')
-        args.chromcol = 'chrom'
     liftover = pyliftover.LiftOver(constants.liftover_chain_paths['hg19'])
     print('Extracting table schema from DB...')
     cmd = ['sqlite3', args.db, '.schema']
@@ -69,8 +66,9 @@ def hg19tohg38 (args):
         c.execute('select * from ' + table + ' limit 1')
         cols = [v[0] for v in c.description]
         hit = False
-        if args.chromcol not in cols:
+        if args.chromcol is not None and args.chromcol not in cols:
             tables_tocopy.append(table)
+            continue
         for col in args.cols:
             if col in cols:
                 hit = True
@@ -91,11 +89,17 @@ def hg19tohg38 (args):
         for col in args.cols:
             if col in allcols:
                 colnos.append(allcols.index(col))
-        chromcolno = allcols.index(args.chromcol)
+        if args.chromcol is None:
+            chromcolno = None
+        else:
+            chromcolno = allcols.index(args.chromcol)
         count = 0
         for row in c.fetchall():
             row = list(row)
-            chrom = row[chromcolno]
+            if chromcolno is not None:
+                chrom = row[chromcolno]
+            else:
+                chrom = table
             if chrom.startswith('chr') == False:
                 chrom = 'chr' + chrom
             for colno in colnos:
@@ -113,8 +117,8 @@ def hg19tohg38 (args):
             newc.execute(q)
             count += 1
             if count % count_interval == 0:
-                print('  ' + chrom + ':' + str(count) + '...')
-        print('  ' + chrom + ': done.', count, 'rows converted')
+                print('  ' + str(count) + '...')
+        print('  ' + table + ': done.', count, 'rows converted')
     wf.close()
     for table in tables_tocopy:
         count = 0
@@ -126,8 +130,8 @@ def hg19tohg38 (args):
             newc.execute(q)
             count += 1
             if count % count_interval == 0:
-                print('  ' + chrom + ':' + str(count) + '...')
-        print('  ' + chrom + ': done.', count, 'rows converted')
+                print('  ' + str(count) + '...')
+        print('  ' + table + ': done.', count, 'rows converted')
     newdb.commit()
 
 def main ():

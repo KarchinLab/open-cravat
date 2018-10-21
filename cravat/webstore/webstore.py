@@ -259,6 +259,10 @@ def install_base_modules (request):
         install_queue.put({'module': module, 'version': None})
     return web.Response(text='queued')
 
+def get_md (request):
+    modules_dir = au.get_modules_dir()
+    return web.Response(text=modules_dir)
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/install', install_module])
@@ -271,4 +275,4 @@ routes.append(['GET', '/store/queueinstall', queue_install])
 routes.append(['GET', '/store/modules/{module}/{version}/readme', get_module_readme])
 routes.append(['GET', '/store/getbasemodules', get_base_modules])
 routes.append(['GET', '/store/installbasemodules', install_base_modules])
-
+routes.append(['GET', '/store/getmd', get_md])

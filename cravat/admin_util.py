@@ -687,6 +687,12 @@ def update_system_conf_file(d):
         raise
         return False
 
+def read_system_conf_template ():
+    with open(constants.system_conf_template_path) as f:
+        d = yaml.load(f)
+        return d
+    return None
+
 def get_main_conf_path():
     """
     Get the path to where the main cravat config (cravat.yml) should be.

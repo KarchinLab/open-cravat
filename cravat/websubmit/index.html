@@ -170,6 +170,8 @@
             <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
         </div>
         <div style='position: absolute; right: 25px; vertical-align: bottom; bottom: 10px;'>
+            Modules directory: <span id='modulesdirspan' style='font-family: monospace;'></span>
+            <br />
             Module type:
             <select id='typefilter' onchange='updateFilter()' style='font-size: 16px'></select>
             <input type='text' id='namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()' style='font-size: 16px'/>
@@ -191,6 +193,7 @@
         <textarea id='sysconftextarea' cols='120' rows='30'></textarea>
         <br />
         <button style='font-size: 30px; padding: 11px; background-color: #d6ecff;' onclick='updateSystemConf();'>Update</button>
+        <button style='font-size: 30px; padding: 11px; background-color: #d6ecff;' onclick='resetSystemConf();'>Reset</button>
     </div>
 </div> <!-- settingsdiv -->
 
