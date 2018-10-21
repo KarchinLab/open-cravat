@@ -184,12 +184,22 @@ function saveFilterSetting (name) {
     });
 }
 
+function deleteFilterSetting (name) {
+	$.get('/result/service/deletefiltersetting', {'dbpath': dbPath, name: name}).done(function (response) {
+        if (response == 'deleted') {
+            writeLogDiv('Filter setting has been deleted.');
+        } else {
+            alert(response);
+        }
+    });
+}
+
 function saveFilterSettingAs () {
-	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
 		var names = '' + response;
 		var msg = 'Please enter layout name to save.';
 		if (names != '') {
-			msg = msg + ' Saved layout names are ' + names;
+			msg = msg + ' Saved layout names are: ' + names;
 		}
 		var name = prompt(msg, lastUsedLayoutName);
 		if (name != null) {
@@ -197,12 +207,27 @@ function saveFilterSettingAs () {
 		}
 	});
 }
+
+function deleteFilterSettingAs () {
+	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+		var names = '' + response;
+		var msg = 'Please enter layout name to delete.';
+		if (names != '') {
+			msg = msg + ' Saved layout names are: ' + names;
+		}
+		var name = prompt(msg, lastUsedLayoutName);
+		if (name != null) {
+			deleteFilterSetting(name);
+		}
+	});
+}
+
 function saveLayoutSettingAs () {
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
 		var names = '' + response;
 		var msg = 'Please enter layout name to save.';
 		if (names != '') {
-			msg = msg + ' Saved layout names are ' + names;
+			msg = msg + ' Saved layout names are: ' + names;
 		}
 		var name = prompt(msg, lastUsedLayoutName);
 		if (name != null) {

@@ -36,10 +36,6 @@ function submit () {
             submitOpts.annotators.push(cb.value);
         }
     }
-    if (submitOpts.annotators.length == 0) {
-        alert('Choose at least one annotator');
-        return;
-    }
     var reportChecks = $('#report-select-div')
                          .find('.checkbox-group-check');
     for (var i = 0; i<reportChecks.length; i++){

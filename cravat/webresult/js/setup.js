@@ -997,6 +997,15 @@ function populateLoadDiv (tabName, filterDiv) {
 	addEl(button, getTn('Load...'));
 	addEl(legend, button);
 
+    // Delete Filter Set button
+    var button = getEl('button');
+    button.style.marginLeft = '10px';
+    button.onclick = function (evt) {
+        deleteFilterSettingAs();
+    }
+    addEl(button, getTn('Delete...'));
+    addEl(legend, button);
+
 	// Filter name div
 	var div = getEl('div');
 	div.id = 'load_filter_select_div';
