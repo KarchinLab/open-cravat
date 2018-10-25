@@ -268,12 +268,12 @@ function downloadJobDb (jobId) {
 }
 
 function downloadJobExcel (jobId) {
-    url = 'jobs/'+jobId+'/excel';
+    url = 'jobs/'+jobId+'/reports/excel';
     downloadFile(url);
 }
 
 function downloadJobText (jobId) {
-    url = 'jobs/'+jobId+'/text';
+    url = 'jobs/'+jobId+'/reports/text';
     downloadFile(url);
 }
 

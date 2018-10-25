@@ -234,27 +234,8 @@ def download_db(request):
     job_id = request.match_info['job_id']
     db_path = FILE_ROUTER.job_db(job_id)
     db_fname = job_id+'.sqlite'
-    with open(db_path) as f:
-        headers = {'Content-Disposition': 'attachment; filename='+db_fname}
-        return web.Response(body=db_path, headers=headers)
-
-def download_excel (request):
-    global FILE_ROUTER
-    job_id = request.match_info['job_id']
-    db_path = FILE_ROUTER.job_db(job_id)
-    db_fname = job_id+'.xlsx'
-    with open(db_path) as f:
-        headers = {'Content-Disposition': 'attachment; filename='+db_fname}
-        return web.Response(body=db_path, headers=headers)
-
-def download_text (request):
-    global FILE_ROUTER
-    job_id = request.match_info['job_id']
-    db_path = FILE_ROUTER.job_db(job_id)
-    db_fname = job_id+'.tsv'
-    with open(db_path) as f:
-        headers = {'Content-Disposition': 'attachment; filename='+db_fname}
-        return web.Response(body=db_path, headers=headers)
+    headers = {'Content-Disposition': 'attachment; filename='+db_fname}
+    return web.FileResponse(db_path, headers=headers)
 
 def get_valid_report_types():
     reporter_infos = au.get_local_module_infos(types=['reporter'])
@@ -286,11 +267,8 @@ def download_report(request):
     report_type = request.match_info['report_type']
     report_path = FILE_ROUTER.job_report(job_id, report_type) 
     report_name = job_id+'.'+report_path.split('.')[-1]
-    with open(report_path,'rb') as f:
-        headers = {
-            'Content-Disposition':'attachment; filename='+report_name,
-        }
-        return web.Response(body=f.read(), headers=headers)
+    headers = {'Content-Disposition':'attachment; filename='+report_name}
+    return web.FileResponse(report_path, headers=headers)
 
 def get_jobs_dir (request):
     jobs_dir = au.get_jobs_dir()
@@ -323,17 +301,15 @@ FILE_ROUTER = FileRouter()
 VIEW_PROCESS = None
 
 routes = []
-routes.append(['GET','/submit/jobs/{job_id}/reports/{report_type}',download_report])
 routes.append(['POST','/submit/submit',submit])
 routes.append(['GET','/submit/annotators',get_annotators])
 routes.append(['GET','/submit/jobs',get_all_jobs])
 routes.append(['GET','/submit/jobs/{job_id}',view_job])
 routes.append(['DELETE','/submit/jobs/{job_id}',delete_job])
 routes.append(['GET','/submit/jobs/{job_id}/db', download_db])
-routes.append(['GET','/submit/jobs/{job_id}/excel', download_excel])
-routes.append(['GET','/submit/jobs/{job_id}/text', download_text])
 routes.append(['GET','/submit/reports',get_report_types])
 routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',generate_report])
+routes.append(['GET','/submit/jobs/{job_id}/reports/{report_type}',download_report])
 routes.append(['GET', '/submit/getjobsdir', get_jobs_dir])
 routes.append(['GET', '/submit/setjobsdir', set_jobs_dir])
 routes.append(['GET', '/submit/getsystemconfinfo', get_system_conf_info])
