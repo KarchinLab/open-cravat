@@ -3,8 +3,7 @@ import os
 import subprocess
 from cravat import admin_util as au
 import time
-import sys
-import platform
+
 
 # Regression test program for CRAAT modules.  By default, it will go through all modules and
 # if the module has a test directory with an input and key file, it will test the module 
@@ -45,21 +44,16 @@ class Tester():
     def run(self):
         self._report('  Testing: ' + self.module.name);
         self.start_time = time.time()
-        if platform.system() == 'Windows':
-            cmd_list = ['python']
-        else:
-            cmd_list = []
-        cmd_list.extend([self.cravat_run, self.input_path, '-d', self.out_dir, '-t', 'text'])
+        cmd_list = ['python', self.cravat_run, self.input_path, '-d', self.out_dir, '-t', 'text']
         if (self.module.type == 'annotator'):
             cmd_list.append('-a')
             cmd_list.append(self.module.name)
         else:
             cmd_list.append('--sa')
-        p = subprocess.run(cmd_list, stdout=self.log, stderr=subprocess.STDOUT)
-        exit_code = p.returncode
-        sys.stderr.write('exit_code=' + str(exit_code) + '\n')
+        exit_code = subprocess.call(cmd_list, stdout=self.log, stderr=subprocess.STDOUT)
         if exit_code != 0:
             self._report('    CRAVAT non-zero exit code: ' + str(exit_code))
+        
         return exit_code
     
     # Read the two report header columns that define the module/column
