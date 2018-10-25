@@ -710,6 +710,9 @@ def publish_module(module_name, user, password, overwrite_version=False, include
     publish_url = sys_conf['publish_url']
     mic.update_local()
     local_info = get_local_module_info(module_name)
+    if local_info == None:
+        print(module_name + ' does not exist.')
+        return
     check_url = publish_url + '/%s/%s/check' %(module_name,local_info.version)
     r = requests.get(check_url, auth=(user,password))
     if r.status_code != 200:
