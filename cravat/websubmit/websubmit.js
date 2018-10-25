@@ -9,13 +9,19 @@ function submit () {
     let fd = new FormData();
     var textInputElem = $('#input-text');
     var textVal = textInputElem.val();
-    let inputFile;
+    let inputFile = null;
     if (textVal.length > 0) {
         var textBlob = new Blob([textVal], {type:'text/plain'})
-        inputFile = new File([textBlob], 'manual-input.txt');
+        inputFile = new File([textBlob], 'input');
     } else {
         var fileInputElem = $('#input-file')[0];
-        inputFile = fileInputElem.files[0];
+        if (fileInputElem.files.length > 0) {
+            inputFile = fileInputElem.files[0];
+        }
+    }
+    if (inputFile == null) {
+        alert('Choose a input variants file, enter variants, or click an input example button.');
+        return;
     }
     fd.append('file', inputFile);
     var submitOpts = {
@@ -497,7 +503,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
             question.setAttribute('module', checkData.value);
             question.addEventListener('click', function (evt) {
                 var annotchoosediv = document.getElementById('annotchoosediv');
-                var moduledetaildiv = document.getElementById('moduledetaildiv');
+                var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
                 if (moduledetaildiv != null) {
                     annotchoosediv.removeChild(moduledetaildiv);
                 }
@@ -586,13 +592,11 @@ function getJobsDir () {
 }
 
 function setJobsDir (evt) {
-    console.log(evt);
     var d = evt.target.value;
     $.get('/submit/setjobsdir', {'jobsdir': d}).done(function (response) {
         $('.jobsdirtext').text(response);
         var promise = populateJobs();
         promise.then(function (response) {
-            console.log(response);
             buildJobsTable();
         });
     });
@@ -649,7 +653,6 @@ function openSubmitDiv () {
 
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
-        console.log(response);
         var s = document.getElementById('sysconfpathspan');
         s.textContent = response['path'];
         var ta = document.getElementById('sysconftextarea');
@@ -659,7 +662,6 @@ function loadSystemConf () {
 
 function updateSystemConf () {
     var data = {'sysconfstr': document.getElementById('sysconftextarea').value};
-    console.log(data);
     $.ajax({
         url:'/submit/updatesystemconf',
         data: data,
@@ -687,12 +689,22 @@ function websubmit_run () {
     getRemote();
     getLocal();
     document.addEventListener('click', function (evt) {
-        if (evt.target.closest('#moduledetaildiv') == null && evt.target.closest('.moduledetailbutton') == null ) {
-            var div = document.getElementById('moduledetaildiv');
+        if (evt.target.closest('#moduledetaildiv_submit') == null && evt.target.closest('.moduledetailbutton') == null ) {
+            var div = document.getElementById('moduledetaildiv_submit');
             if (div != null) {
                 div.style.display = 'none';
             }
         }
+    });
+    window.addEventListener('resize', function (evt) {
+        var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
+        if (moduledetaildiv == null) {
+            return;
+        }
+        var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
+        var tds = document.getElementById('moduledetaildiv_submit').getElementsByTagName('table')[1].getElementsByTagName('td');
+        tds[0].style.height = tdHeight;
+        tds[1].style.height = tdHeight;
     });
     addListeners();
     jobsPromise = populateJobs();
