@@ -1069,6 +1069,19 @@ function populateLoadDiv (tabName, filterDiv) {
 	};
 	addEl(button, getTn('Update'));
 	addEl(filterDiv, button);
+
+    // Close button
+    var button = getEl('div');
+    button.style.position = 'absolute';
+    button.style.top = '2px';
+    button.style.right = '4px';
+    button.style.fontSize = '20px';
+    button.textContent = 'X';
+    button.style.cursor = 'default';
+    button.addEventListener('click', function (evt) {
+        toggleFilterDiv();
+    });
+    addEl(filterDiv, button);
 }
 
 function populateTableColumnSelectorPanel () {
