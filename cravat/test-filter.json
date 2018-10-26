@@ -1,0 +1,32 @@
+{
+    "operator":"and",
+    "groups":[
+        {
+            "operator":"or",
+            "columns":[
+                {
+                    "column":"gnomad__af",
+                    "test":"lessThanEq",
+                    "value":0.03
+                },
+                {
+                    "column":"gnomad__af_asj",
+                    "test":"greaterThanEq",
+                    "value":0.25
+                }
+            ]
+        }
+    ],
+    "columns":[
+        {
+            "column":"vest__pval",
+            "test":"lessThanEq",
+            "value":"0.05"
+        },
+        {
+            "column":"clinvar__sig",
+            "test":"noData",
+            "value":null
+        }
+    ]
+}
