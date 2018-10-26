@@ -8,9 +8,86 @@ import sqlite3
 import json
 import re
 
+class FilterColumn(object):
+
+    test2sql = {
+        'equals': '==',
+        'lessThanEq': '<=',
+        'lessThan': '<',
+        'greaterThanEq': '>=',
+        'greaterThan': '>',
+        'hasData': '!= null',
+        'noData': '== null',
+        'stringContains': 'like',
+        'stringStarts': 'like',
+        'stringEnds': 'like',
+        'between': 'between',
+        'in': 'in'
+    }
+
+    def __init__(self, d):
+        self.column = d['column']
+        self.test = d['test']
+        self.value = d['value']
+        self.negate = d.get('negate',False)
+    
+    def get_sql(self):
+        s = self.column+' '+self.test2sql[self.test]
+        if type(self.value) == str:
+            if self.test == 'stringContains':
+                sql_val = '"%{}%"'.format(self.value)
+            elif self.test == 'stringStarts':
+                sql_val = '"{}%"'.format(self.value)
+            elif self.test == 'stringEnds':
+                sql_val = '"%{}"'.format(self.value)
+            else:
+                sql_val = '"{}"'.format(self.value)
+        elif self.value is None:
+            sql_val = ''
+        elif type(self.value) == list:
+            if self.test == 'between':
+                sql_val = '{} and {}'.format(self.value[0], self.value[1])
+            else:
+                str_toks = []
+                for val in self.value:
+                    if type(val) == str:
+                        str_toks.append('"{}"'.format(val))
+                    else:
+                        str_toks.append(str(val))
+                sql_val = '('+', '.join(str_toks)+')'
+        else:
+            sql_val = str(self.value)
+        if len(sql_val) > 0:
+            s += ' '+sql_val
+        if self.negate:
+            s = 'not('+s+')'
+        return s
+
+class FilterGroup(object):
+    def __init__(self, d):
+        self.operator = d['operator']
+        self.negate = d.get('negate',False)
+        self.groups = [FilterGroup(x) for x in d.get('groups',[])]
+        self.columns = [FilterColumn(x) for x in d['columns']]
+
+    def get_sql(self):
+        all_operands = self.groups + self.columns
+        if len(all_operands) == 0:
+            return ''
+        s = '('
+        sql_operator = ' '+self.operator+' '
+        s += sql_operator.join([x.get_sql() for x in all_operands])
+        s += ')'
+        if self.negate:
+            s = 'not'+s
+        return s
+
 class CravatFilter ():
+    #newfilter
     def __init__ (self, dbpath=None, filterpath=None, filtername=None, 
-            filterstring=None, filter=None, mode='sub'):
+            filterstring=None, filter=None, mode='sub', newfilter=False):
+        #newfilter
+        self.newfilter=newfilter
         self.mode = mode
         if self.mode == 'main':
             self.stdout = True
@@ -203,6 +280,9 @@ class CravatFilter ():
         self.cursor.execute('pragma synchronous=2')
         
     def getwhere (self, level):
+        #newfilter
+        if self.newfilter:
+            return self.getwhere_new(level)
         if self.filter == None:
             return ''
         if level not in self.filter:
@@ -217,6 +297,14 @@ class CravatFilter ():
             where = ' where ' + where
             where = where.rstrip(' and ')
         return where
+
+    #newfilter
+    def getwhere_new (self, level):
+        if level != 'variant':
+            return ''
+        main_group = FilterGroup(self.filter)
+        sql = ' where '+main_group.get_sql()
+        return sql
     
     def getvariantcount (self):
         return self.getcount('variant')

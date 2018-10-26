@@ -276,8 +276,8 @@ class CravatReport:
         self.cursor = self.conn.cursor()
 
     def load_filter (self):
-        self.cf = CravatFilter(dbpath=self.dbpath)
-        self.cf.loadfilter(self.filterpath, self.filtername, self.filterstring)
+        self.cf = CravatFilter(dbpath=self.dbpath, newfilter=True)
+        self.cf.loadfilter(filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
     
     def table_exists (self, tablename):
         sql = 'select name from sqlite_master where ' + \
