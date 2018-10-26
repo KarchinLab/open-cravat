@@ -201,7 +201,9 @@ function getRemoteModulePanel (moduleName) {
     }
     var img = getLogo(moduleName);
     img.onerror = function () {
+        img.src = '/store/genericmodulelogo.png';
         var span = getEl('div');
+        span.style.position = 'absolute';
         span.style.fontSize = '42px';
         span.style.fontWeight = 'bold';
         span.textContent = moduleInfo.title;
@@ -214,25 +216,25 @@ function getRemoteModulePanel (moduleName) {
     }
     img.onload = function () {
         this.onload = null;
-        img.style.top = '0';
-        img.style.bottom = '0';
-        img.style.left = '0';
-        img.style.right = '0';
-        img.style.margin = 'auto';
-        img.style.width = '100%';
-        img.style.height = 'auto';
-        img.style.maxWidth = '100%';
-        img.style.maxHeight = '100%';
-        img.onclick = function (evt) {
-            var pdiv = evt.target.parentElement;
-            var moduleName = div.getAttribute('module');
-            var storediv = document.getElementById('storediv');
-            var dialog = activateDetailDialog(moduleName);
-            addEl(storediv, dialog);
-            evt.stopPropagation();
-        }
         var sdiv = document.getElementById('logodiv_' + moduleName);
         addEl(sdiv, img);
+    }
+    img.style.top = '0';
+    img.style.bottom = '0';
+    img.style.left = '0';
+    img.style.right = '0';
+    img.style.margin = 'auto';
+    img.style.width = '100%';
+    img.style.height = 'auto';
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.onclick = function (evt) {
+        var pdiv = evt.target.parentElement;
+        var moduleName = div.getAttribute('module');
+        var storediv = document.getElementById('storediv');
+        var dialog = activateDetailDialog(moduleName);
+        addEl(storediv, dialog);
+        evt.stopPropagation();
     }
     addEl(div, sdiv);
     var span = null;
