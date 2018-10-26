@@ -168,7 +168,7 @@ class CravatFilter ():
     def loadfilter (self, filterpath=None, filtername=None, 
             filterstring=None, filter=None):
         if filterpath != None:
-            self.filtername = filtername
+            self.filterpath = filterpath
         if filtername != None:
             self.filterpath = filterpath
         if filterstring != None:
