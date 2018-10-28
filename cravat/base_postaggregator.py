@@ -87,7 +87,6 @@ class BasePostAggregator (object):
             start_time = time.time()
             self.logger.info('Running')
             self.base_setup()
-            
             for input_data in self._get_input():
                 try:
                     output_dict = self.annotate(input_data)
@@ -96,7 +95,6 @@ class BasePostAggregator (object):
                         fixed_output[self.module_name + '__' + k] = v
                     self.write_output(input_data, fixed_output)
                 except Exception as e:
-                    print(input_data)
                     self._log_runtime_exception(input_data, e)
             self.dbconn.commit()
             self.base_cleanup()

@@ -361,6 +361,9 @@ class CravatReader (CravatFile):
     def toks_to_data_dict(self, toks):
         out = {}
         if len(toks) < len(self.columns):
+            print('too few toks')
+            print('toks=', toks)
+            print('columns=', self.columns)
             err_msg = 'Too few columns. Received %s. Expected %s' \
                 %(len(toks),len(self.columns))
             raise BadFormatError(err_msg)
