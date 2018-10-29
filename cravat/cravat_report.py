@@ -224,7 +224,7 @@ class CravatReport:
                                   'col_type': col['type']}
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
-                    annot.remove_log_file()
+                    #annot.remove_log_file()
         colno = 0
         for colgroup in self.columngroups[level]:
             colno += colgroup['count']

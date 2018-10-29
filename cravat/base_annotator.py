@@ -198,7 +198,7 @@ class BaseAnnotator(object):
         except Exception as e:
             self._log_exception(e)
     
-        self.log_handler.close()
+        #self.log_handler.close()
         #if self.output_basename == '__dummy__':
         #    os.remove(self.log_path)
             
@@ -416,7 +416,9 @@ class BaseAnnotator(object):
     # Setup the logging utility
     def _setup_logger(self):
         try:
-            self.logger = logging.getLogger(self.annotator_name)
+            #self.logger = logging.getLogger(self.annotator_name)
+            self.logger = logging.getLogger('cravat')
+            '''
             self.logger.propagate = False
             self.logger.setLevel('INFO')
             self.log_path = os.path.join(self.output_dir, 
@@ -428,6 +430,7 @@ class BaseAnnotator(object):
                 '%(name)20s%(lineno)6d   %(asctime)20s   %(message)s')
             self.log_handler.setFormatter(formatter)
             self.logger.addHandler(self.log_handler)
+            '''
         except Exception as e:
             self._log_exception(e)
 

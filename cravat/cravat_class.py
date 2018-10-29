@@ -10,6 +10,7 @@ import datetime
 from types import SimpleNamespace
 from .constants import liftover_chain_paths
 import json
+import logging
 
 cravat_cmd_parser = argparse.ArgumentParser(prog='cravat input_file_path', description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.', epilog='* input_file_path should precede any option.')
 cravat_cmd_parser.add_argument('input',
@@ -176,6 +177,21 @@ class Cravat (object):
         if self.args.confs != None:
             self.conf.override_cravat_conf(
                 self.args.confs.replace("'", '"'))
+        self.get_logger()
+    
+    def get_logger (self):
+        self.logger = logging.getLogger('cravat')
+        self.logger.setLevel('INFO')
+        self.log_path = os.path.join(self.output_dir, self.run_name + '.log')
+        self.log_handler = logging.FileHandler(self.log_path, mode='w')
+        formatter = logging.Formatter('%(name)20s%(lineno)6d   %(asctime)20s   %(message)s')
+        self.log_handler.setFormatter(formatter)
+        self.logger.addHandler(self.log_handler)
+
+    def close_logger (self):
+        self.logger.removeHandler(self.log_handler)
+        self.log_handler.flush()
+        self.log_handler.close()
 
     def update_status(self, status):
         status_fname = self.run_name+'.status.json'
@@ -257,6 +273,7 @@ class Cravat (object):
             self.update_status('Finished')
         except:
             self.update_status('Error')
+        self.close_logger()
 
     def make_args_namespace(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
@@ -388,7 +405,7 @@ class Cravat (object):
                '-l', self.input_assembly]
         self.announce_module(module)
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         converter_class = util.load_class('MasterCravatConverter', module.script_path)
         converter = converter_class(cmd)
         converter.run()
@@ -402,7 +419,7 @@ class Cravat (object):
                '-d', self.output_dir]
         self.announce_module(module)
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         genemapper_class = util.load_class('Mapper', module.script_path)
         genemapper = genemapper_class(cmd)
         genemapper.run()
@@ -423,7 +440,7 @@ class Cravat (object):
         if self.cleandb:
             cmd.append('-x')
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         v_aggregator = aggregator_cls(cmd)
         v_aggregator.run() 
         rtime = time.time() - stime
@@ -438,7 +455,7 @@ class Cravat (object):
                '-l', 'gene',
                '-n', self.run_name]
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         g_aggregator = aggregator_cls(cmd)
         g_aggregator.run()
         rtime = time.time() - stime
@@ -453,7 +470,7 @@ class Cravat (object):
                '-l', 'sample',
                '-n', self.run_name]
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         s_aggregator = aggregator_cls(cmd)
         s_aggregator.run()
         rtime = time.time() - stime
@@ -467,7 +484,7 @@ class Cravat (object):
                '-l', 'mapping',
                '-n', self.run_name]
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         m_aggregator = aggregator_cls(cmd)
         m_aggregator.run()
         rtime = time.time() - stime
@@ -484,7 +501,7 @@ class Cravat (object):
                    '-d', self.output_dir, 
                    '-n', self.run_name]
             if self.verbose:
-                print('    '.join(cmd))
+                print(' '.join(cmd))
             post_agg_cls = util.load_class('CravatPostAggregator', module.script_path)
             post_agg = post_agg_cls(cmd)
             stime = time.time()
@@ -505,7 +522,7 @@ class Cravat (object):
                    os.path.join(self.output_dir, self.run_name + '.sqlite'),
                    '-c', self.run_conf_path]
             if self.verbose:
-                print('     '.join(cmd))
+                print(' '.join(cmd))
             reporter_cls = util.load_class('Reporter', module.script_path)
             reporter = reporter_cls(cmd)
             reporter.run()
@@ -555,7 +572,7 @@ class Cravat (object):
         if self.output_dir != None:
             cmd.extend(['-d', self.output_dir])
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         annotator_class = util.load_class("CravatAnnotator", module.script_path)
         annotator = annotator_class(cmd)
         annotator.run()
@@ -619,7 +636,7 @@ class Cravat (object):
         if self.output_dir != None:
             cmd.extend(['-d', self.output_dir])
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         summarizer_cls = util.load_class('', module.script_path)
         summarizer = summarizer_cls(cmd)
         summarizer.run()

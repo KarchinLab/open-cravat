@@ -100,9 +100,11 @@ class BasePostAggregator (object):
             self.base_cleanup()
             run_time = time.time() - start_time
             self.logger.info('Completed in %s seconds' %(round(run_time,3)))
+            '''
             self.logger.removeHandler(self.handler)
             self.handler.flush()
             self.handler.close()
+            '''
         except Exception as e:
             self._log_exception(e)
     
@@ -193,7 +195,8 @@ class BasePostAggregator (object):
             
     def _setup_logger(self):
         try:
-            self.logger = logging.getLogger(self.module_name)
+            self.logger = logging.getLogger('cravat')
+            '''
             self.logger.propagate = False
             self.logger.setLevel('INFO')
             log_path = os.path.join(self.output_dir, 
@@ -204,6 +207,7 @@ class BasePostAggregator (object):
                 '%(name)20s%(lineno)6d   %(asctime)20s   %(message)s')
             self.handler.setFormatter(formatter)
             self.logger.addHandler(self.handler)
+            '''
         except Exception as e:
             self._log_exception(e)
         
