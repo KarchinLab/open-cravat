@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from cravat import Cravat, cravat_cmd_parser
 
 def main ():

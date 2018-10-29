@@ -5,7 +5,7 @@ body {
 }
 
 .rightdiv {
-	height: calc(100% - 0px); 
+	height: 100%; 
 	width: 100%;
     overflow: auto;
 }
@@ -222,11 +222,6 @@ div.tabContent.hide {
 	height: 100%;
 	overflow: auto;
 	position: relative;
-}
-
-.detailcontainerdiv {
-	/*width: calc(100% - 30px);
-	height: 100%;*/
 }
 
 .detailsidebardiv {

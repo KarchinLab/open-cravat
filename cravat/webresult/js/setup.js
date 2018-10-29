@@ -217,8 +217,10 @@ function populateSummaryWidgetDiv () {
 		if (resizeTimeout) {
 			clearTimeout(resizeTimeout);
 		}
+        var sEvt = evt;
+        var sUi = ui;
 		resizeTimeout = setTimeout(function () {
-			$outerDiv.packery('fit', ui.element[0]);
+			$(sEvt.target.parentElement).packery('fit', sUi.element[0]);
 		}, 100);
 	});
 	if (reuseWidgets != true) {
@@ -366,9 +368,7 @@ function populateWgNoticeDiv (noWgAnnotModules) {
 }
 
 function installWidgetsForModule (moduleKey) {
-    console.log(moduleKey);
     $.get('/store/installwidgetsformodule', {'name': moduleKey}).done(function () {
-        console.log('installed widgets for', moduleKey);
         checkWidgets();
     });
 }
@@ -996,6 +996,15 @@ function populateLoadDiv (tabName, filterDiv) {
 	};
 	addEl(button, getTn('Load...'));
 	addEl(legend, button);
+
+    // Delete Filter Set button
+    var button = getEl('button');
+    button.style.marginLeft = '10px';
+    button.onclick = function (evt) {
+        deleteFilterSettingAs();
+    }
+    addEl(button, getTn('Delete...'));
+    addEl(legend, button);
 
 	// Filter name div
 	var div = getEl('div');

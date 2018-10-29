@@ -174,8 +174,10 @@ class BaseAnnotator(object):
                         output_dict = self.annotate(input_data)
                     else:
                         output_dict = self.annotate(input_data, secondary_data)
+                    '''
                     if output_dict is None:
                         output_dict = {}
+                    '''
                     # This enables summarizing without writing for now.
                     if output_dict == None:
                         continue
