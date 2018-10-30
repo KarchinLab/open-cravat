@@ -16,8 +16,8 @@ class FilterColumn(object):
         'lessThan': '<',
         'greaterThanEq': '>=',
         'greaterThan': '>',
-        'hasData': '!= null',
-        'noData': '== null',
+        'hasData': 'is not null',
+        'noData': 'is null',
         'stringContains': 'like',
         'stringStarts': 'like',
         'stringEnds': 'like',
@@ -28,8 +28,8 @@ class FilterColumn(object):
     def __init__(self, d):
         self.column = d['column']
         self.test = d['test']
-        self.value = d['value']
-        self.negate = d.get('negate',False)
+        self.value = d.get('value')
+        self.negate = d.get('negate', False)
     
     def get_sql(self):
         s = self.column+' '+self.test2sql[self.test]
@@ -304,6 +304,7 @@ class CravatFilter ():
             return ''
         main_group = FilterGroup(self.filter)
         sql = ' where '+main_group.get_sql()
+        print(sql)
         return sql
     
     def getvariantcount (self):
