@@ -147,7 +147,7 @@ cravat_cmd_parser.add_argument('-t',
                     help='report types. If omitted, default one in cravat.yml is used.')
 cravat_cmd_parser.add_argument('-l',
                     dest='liftover',
-                    choices=['hg38']+list(liftover_chain_paths.keys()),
+                    choices=['hg38', 'hg19'],
                     default='hg38',
                     help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
 cravat_cmd_parser.add_argument('-x',
@@ -266,10 +266,7 @@ class Cravat (object):
                     self.args.rr
                 ):
                 print('Running reporter...')
-                stime = time.time()
                 self.run_reporter()
-                rtime = time.time() - stime
-                print('finished in {0:.3f}s'.format(rtime))
             self.update_status('Finished')
         except:
             self.update_status('Error')
@@ -525,7 +522,10 @@ class Cravat (object):
                 print(' '.join(cmd))
             reporter_cls = util.load_class('Reporter', module.script_path)
             reporter = reporter_cls(cmd)
+            stime = time.time()
             reporter.run()
+            rtime = time.time() - stime
+            print('finished in {0:.3f}s'.format(rtime))
 
     def run_annotators (self):
         for module in self.ordered_annotators:
@@ -606,6 +606,8 @@ class Cravat (object):
         q = 'insert into info values ("Result created at", "' + created + '")'
         cursor.execute(q)
         q = 'insert into info values ("Input file name", "' + self.input + '")'
+        cursor.execute(q)
+        q = 'insert into info values ("Input genome", "' + self.input_assembly + '")'
         cursor.execute(q)
         q = 'select count(*) from variant'
         cursor.execute(q)
