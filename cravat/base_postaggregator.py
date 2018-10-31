@@ -24,7 +24,6 @@ class BasePostAggregator (object):
             self.dbconn = None
             self.cursor = None
             self.cursor_w = None
-            self.logger.info('Initialized')
             self._open_db_connection()
             self.should_run_annotate = self.check()
         except Exception as e:
@@ -85,7 +84,7 @@ class BasePostAggregator (object):
             return
         try:
             start_time = time.time()
-            self.logger.info('Running')
+            self.logger.info('started: {0}'.format(time.asctime(time.localtime(start_time))))
             self.base_setup()
             for input_data in self._get_input():
                 try:
@@ -98,13 +97,10 @@ class BasePostAggregator (object):
                     self._log_runtime_exception(input_data, e)
             self.dbconn.commit()
             self.base_cleanup()
-            run_time = time.time() - start_time
-            self.logger.info('Completed in %s seconds' %(round(run_time,3)))
-            '''
-            self.logger.removeHandler(self.handler)
-            self.handler.flush()
-            self.handler.close()
-            '''
+            end_time = time.time()
+            run_time = end_time - start_time
+            self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
+            self.logger.info('runtime: {0:0.3f}'.format(run_time))
         except Exception as e:
             self._log_exception(e)
     
@@ -195,19 +191,7 @@ class BasePostAggregator (object):
             
     def _setup_logger(self):
         try:
-            self.logger = logging.getLogger('cravat')
-            '''
-            self.logger.propagate = False
-            self.logger.setLevel('INFO')
-            log_path = os.path.join(self.output_dir, 
-                                    '.'.join([self.run_name, 
-                                              self.module_name, 'log']))
-            self.handler = logging.FileHandler(log_path, mode='w')
-            formatter = logging.Formatter(
-                '%(name)20s%(lineno)6d   %(asctime)20s   %(message)s')
-            self.handler.setFormatter(formatter)
-            self.logger.addHandler(self.handler)
-            '''
+            self.logger = logging.getLogger('cravat.' + self.module_name)
         except Exception as e:
             self._log_exception(e)
         

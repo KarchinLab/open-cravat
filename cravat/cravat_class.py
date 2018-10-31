@@ -178,6 +178,8 @@ class Cravat (object):
             self.conf.override_cravat_conf(
                 self.args.confs.replace("'", '"'))
         self.get_logger()
+        self.start_time = time.time()
+        self.logger.info('started: {0}'.format(time.asctime(time.localtime(self.start_time))))
     
     def get_logger (self):
         self.logger = logging.getLogger('cravat')
@@ -189,9 +191,7 @@ class Cravat (object):
         self.logger.addHandler(self.log_handler)
 
     def close_logger (self):
-        self.logger.removeHandler(self.log_handler)
-        self.log_handler.flush()
-        self.log_handler.close()
+        logging.shutdown()
 
     def update_status(self, status):
         status_fname = self.run_name+'.status.json'
@@ -270,6 +270,9 @@ class Cravat (object):
             self.update_status('Finished')
         except:
             self.update_status('Error')
+        end_time = time.time()
+        self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
+        self.logger.info('runtime: {0:0.3f}'.format(end_time - self.start_time))
         self.close_logger()
 
     def make_args_namespace(self, supplied_args):
