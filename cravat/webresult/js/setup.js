@@ -965,110 +965,111 @@ function checkFilterSet (col) {
 }
 
 function populateLoadDiv (tabName, filterDiv) {
-	var tabName = 'info';
+	filterDiv.text = 'test';
+	// var tabName = 'info';
 
-	// Title
-	var legend = getEl('legend');
-	legend.className = 'section_header';
-	addEl(legend, getTn('Variant Filters'));
+	// // Title
+	// var legend = getEl('legend');
+	// legend.className = 'section_header';
+	// addEl(legend, getTn('Variant Filters'));
 
-	// Save Filter Set button
-	var button = getEl('button');
-	button.style.marginLeft = '10px';
-	button.onclick = function(event) {
-		saveFilterSettingAs();
-	};
-	addEl(button, getTn('Save...'));
-	addEl(legend, button);
+	// // Save Filter Set button
+	// var button = getEl('button');
+	// button.style.marginLeft = '10px';
+	// button.onclick = function(event) {
+	// 	saveFilterSettingAs();
+	// };
+	// addEl(button, getTn('Save...'));
+	// addEl(legend, button);
 
-	// Load Filter Set button
-	var button = getEl('button');
-	button.style.marginLeft = '10px';
-	button.onclick = function(event) {
-		var filterDiv = document.getElementById('load_filter_select_div');
-		var display = filterDiv.style.display;
-		if (display == 'none') {
-			filterDiv.style.display = 'block';
-			loadFilterSettingAs();
-		} else {
-			filterDiv.style.display = 'none';
-		}
-	};
-	addEl(button, getTn('Load...'));
-	addEl(legend, button);
+	// // Load Filter Set button
+	// var button = getEl('button');
+	// button.style.marginLeft = '10px';
+	// button.onclick = function(event) {
+	// 	var filterDiv = document.getElementById('load_filter_select_div');
+	// 	var display = filterDiv.style.display;
+	// 	if (display == 'none') {
+	// 		filterDiv.style.display = 'block';
+	// 		loadFilterSettingAs();
+	// 	} else {
+	// 		filterDiv.style.display = 'none';
+	// 	}
+	// };
+	// addEl(button, getTn('Load...'));
+	// addEl(legend, button);
 
-    // Delete Filter Set button
-    var button = getEl('button');
-    button.style.marginLeft = '10px';
-    button.onclick = function (evt) {
-        deleteFilterSettingAs();
-    }
-    addEl(button, getTn('Delete...'));
-    addEl(legend, button);
+    // // Delete Filter Set button
+    // var button = getEl('button');
+    // button.style.marginLeft = '10px';
+    // button.onclick = function (evt) {
+    //     deleteFilterSettingAs();
+    // }
+    // addEl(button, getTn('Delete...'));
+    // addEl(legend, button);
 
-	// Filter name div
-	var div = getEl('div');
-	div.id = 'load_filter_select_div';
-	div.style.display = 'none';
-	div.style.position = 'absolute';
-	//div.style.width = '200px';
-	//div.style.height = '200px';
-	div.style.left = '198px';
-	div.style.padding = '6px';
-	div.style.overflow = 'auto';
-	div.style.backgroundColor = 'rgb(232, 232, 232)';
-	div.style.border = '1px solid black';
-	addEl(legend, div);
+	// // Filter name div
+	// var div = getEl('div');
+	// div.id = 'load_filter_select_div';
+	// div.style.display = 'none';
+	// div.style.position = 'absolute';
+	// //div.style.width = '200px';
+	// //div.style.height = '200px';
+	// div.style.left = '198px';
+	// div.style.padding = '6px';
+	// div.style.overflow = 'auto';
+	// div.style.backgroundColor = 'rgb(232, 232, 232)';
+	// div.style.border = '1px solid black';
+	// addEl(legend, div);
 
-	addEl(filterDiv, legend);
+	// addEl(filterDiv, legend);
 
-	// Description
-	var div = getEl('div');
-	var p = getEl('p');
-	var desc = 'Add variant filters using the controls below and ' + 
-		'click \'Load Variants\' button to update the tables in all tabs ' +
-		'with the variants that meet the criteria of all the filters. '
-	addEl(div, addEl(p, getTn(desc)));
-	var p = getEl('p');
-	var desc = 'Also, this result viewer will load up to 100,000 variants ' +
-		'to the memory and show. ';
-	addEl(p, getTn(desc));
-	var desc = 'Thus, if your result has more than 100,000 ' +
-		'variants then you need to narrow down the variants to load with ' +
-		'the variant filters.';
-	addEl(div, addEl(p, getTn(desc)));
-	addEl(filterDiv, div);
+	// // Description
+	// var div = getEl('div');
+	// var p = getEl('p');
+	// var desc = 'Add variant filters using the controls below and ' + 
+	// 	'click \'Load Variants\' button to update the tables in all tabs ' +
+	// 	'with the variants that meet the criteria of all the filters. '
+	// addEl(div, addEl(p, getTn(desc)));
+	// var p = getEl('p');
+	// var desc = 'Also, this result viewer will load up to 100,000 variants ' +
+	// 	'to the memory and show. ';
+	// addEl(p, getTn(desc));
+	// var desc = 'Thus, if your result has more than 100,000 ' +
+	// 	'variants then you need to narrow down the variants to load with ' +
+	// 	'the variant filters.';
+	// addEl(div, addEl(p, getTn(desc)));
+	// addEl(filterDiv, div);
 
-	// Selector
-	var selectorDiv = getLoadSelectorDiv(tabName);
-	addEl(filterDiv, selectorDiv);
+	// // Selector
+	// var selectorDiv = getLoadSelectorDiv(tabName);
+	// addEl(filterDiv, selectorDiv);
 
-	// Filter list
-	var filterListDiv = getEl('div');
-	filterListDiv.id = 'filterlistdiv';
-	filterListDiv.className = 'filterlistdiv';
-	addEl(filterDiv, filterListDiv);
+	// // Filter list
+	// var filterListDiv = getEl('div');
+	// filterListDiv.id = 'filterlistdiv';
+	// filterListDiv.className = 'filterlistdiv';
+	// addEl(filterDiv, filterListDiv);
 
-	// Message
-	var div = getEl('div');
-	div.id = prefixLoadDiv + 'msg_' + tabName;
-	div.style.height = '20px';
-	div.style.fontFamily = 'Verdana';
-	div.style.fontSize = '12px';
-	addEl(filterDiv, div);
+	// // Message
+	// var div = getEl('div');
+	// div.id = prefixLoadDiv + 'msg_' + tabName;
+	// div.style.height = '20px';
+	// div.style.fontFamily = 'Verdana';
+	// div.style.fontSize = '12px';
+	// addEl(filterDiv, div);
 
-	// Load button
-	var button = getEl('button');
-	button.id = 'load_button';
-	button.onclick = function(event) {
-		var infoReset = resetTab['info'];
-		resetTab = {'info': infoReset};
-		showSpinner(tabName, this);
-		loadData(false, null);
-        toggleFilterDiv();
-	};
-	addEl(button, getTn('Update'));
-	addEl(filterDiv, button);
+	// // Load button
+	// var button = getEl('button');
+	// button.id = 'load_button';
+	// button.onclick = function(event) {
+	// 	var infoReset = resetTab['info'];
+	// 	resetTab = {'info': infoReset};
+	// 	showSpinner(tabName, this);
+	// 	loadData(false, null);
+    //     toggleFilterDiv();
+	// };
+	// addEl(button, getTn('Update'));
+	// addEl(filterDiv, button);
 }
 
 function populateTableColumnSelectorPanel () {
