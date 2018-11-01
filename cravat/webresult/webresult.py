@@ -57,7 +57,7 @@ def get_filter_save_names (request):
     cursor = conn.cursor()
     table = 'viewersetup'
     if table_exists(cursor, table) == False:
-        content = []
+        content = '[]'
     else:
         q = 'select distinct name from ' + table + ' where datatype="filter"'
         cursor.execute(q)
@@ -180,6 +180,7 @@ def save_layout_setting (request):
     return web.json_response(content)
 
 def save_filter_setting (request):
+    print('entered save filter')
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     name = queries['name']

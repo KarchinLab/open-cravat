@@ -686,8 +686,8 @@ function webresult_run () {
     
     window.onbeforeunload = function () {
     	if (autoSaveLayout) {
-            saveFilterSetting(defaultFilterName, doNothing);
     		saveLayoutSetting(defaultSaveName, doNothing);
+            saveFilterSetting(defaultSaveName, doNothing);
     	}
     }
     
