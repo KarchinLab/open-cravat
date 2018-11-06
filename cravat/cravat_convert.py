@@ -76,7 +76,7 @@ class MasterCravatConverter(object):
             self._setup_logger()
         except Exception as e:
             self.__handle_exception(e)
-        
+
     def _parse_cmd_args(self, args):
         """ Parse the arguments in sys.argv """
         parser = argparse.ArgumentParser()
@@ -120,7 +120,7 @@ class MasterCravatConverter(object):
             self.lifter = LiftOver(constants.liftover_chain_paths[self.input_assembly])
         else:
             self.lifter = None
-        
+
     def setup (self):
         """ Do necesarry pre-run tasks """
         if self.ready_to_convert: return
@@ -140,7 +140,7 @@ class MasterCravatConverter(object):
         # Open the output files
         self._open_output_files()
         self.ready_to_convert = True
-        
+
     def _setup_logger(self):
         """ Open a log file and set up log handler """
         self.logger = logging.getLogger('cravat.converter')
@@ -148,7 +148,7 @@ class MasterCravatConverter(object):
         self.logger.info('input file: %s' %self.input_path)
         if self.do_liftover:
             self.logger.info('liftover from %s' %self.input_assembly)
-        
+
     def _initialize_converters(self):
         """ Reads in available converters.
             
@@ -227,7 +227,6 @@ class MasterCravatConverter(object):
         self.crm_writer.write_definition()
         for index_columns in constants.crm_idx:
             self.crm_writer.add_index(index_columns)
-        
         # Setup crs sample file
         self.crs_path = os.path.join(self.output_dir, self.output_base_fname +'.crs')
         self.crs_writer = CravatWriter(self.crs_path)
@@ -238,7 +237,6 @@ class MasterCravatConverter(object):
         self.crs_writer.write_definition()
         for index_columns in constants.crs_idx:
             self.crs_writer.add_index(index_columns)
-        
         # Setup liftover var file
         if self.do_liftover:
             self.crl_path = '.'.join([self.wpath,self.input_assembly,'var'])
@@ -250,8 +248,7 @@ class MasterCravatConverter(object):
             self.crl_writer.write_definition()
             self.crl_writer.write_names(self.input_assembly,
                                         self.input_assembly.title())
-        
-        
+
     def run(self):
         """ Convert input file to a .crv file using the primary converter."""
         try:
@@ -315,6 +312,7 @@ class MasterCravatConverter(object):
             self.logger.info('finished: %s' %\
                 time.asctime(time.localtime(end_time)))
             runtime = round(end_time - start_time, 3)
+            self.logger.info('num input lines: {}'.format(read_lnum))
             self.logger.info('runtime: %s'%runtime)
         except Exception as e:
             self.__handle_exception(e)
@@ -350,7 +348,7 @@ class MasterCravatConverter(object):
         if not(isinstance(e,InvalidData)):
             self.logger.exception(e)
         '''
-            
+
     def _close_files(self):
         """ Close the input and output files. """
         self.f.close()

@@ -15,12 +15,70 @@
 
 <body style='font-family: sans-serif;'>
 
+<div id='accountdiv' style='z-index: 3; position: fixed;'>
+    <div id='userdiv' style='display: none;'></div>
+    <div id='logoutdiv' style='display: none;'>
+        <button onclick='changePassword();'>Change password</button>
+        <button onclick='logout();'>Logout</button>
+        <div id='changepassworddiv' style='display: none; position: absolute; padding: 10px; background-color: white; border: 1px solid black; font-size: 14px;'>
+            Old password: <input type='password' id='changepasswordoldpassword' />
+            <br />
+            New password: <input type='password' id='changepasswordnewpassword' />
+            <br />
+            Retype new password: <input type='password' id='changepasswordretypenewpassword' />
+            <br />
+            <button onclick='submitNewPassword();'>Submit</button>
+        </div>
+    </div>
+    <button id='loginsignupbutton' onclick='toggleloginsignupdiv();'>login/sign up</button>
+    <div id='loginsignupdialog' style='display: none; position: fixed; padding: 10px; background-color: white; border: 1px solid black; font-size: 14px;'>
+        <div id='logindiv' style='display: block;'>
+            <span style='font-weight: bold;'>Login:</span>
+            <br />
+            Email: <input type='text' id='login_username' />
+            <br />
+            Password: <input type='password' id='login_password' />
+            <br />
+            <button onclick='login();'>login</button>
+            <button onclick='forgotPassword();'>Forgot password?</button>
+            <div id='forgotpassworddiv' style='display: none;'>
+                Email: <input type='text' id='forgotpasswordemail' />
+                <br />
+                <button onclick='getPasswordQuestion();'>Get password question</button>
+                <div id='forgotpasswordquestionanswerdiv'>
+                    Question: <span id='forgotpasswordquestion'></span>
+                    <br />
+                    Answer: <input type='text' id='forgotpasswordanswer' />
+                    <br />
+                    <button onclick='submitForgotPasswordAnswer();'>Submit</button>
+                </div>
+            </div>
+        </div>
+        <div id='signupdiv'>
+            <span style='font-weight: bold;'>Sign-up:</span>
+            <br />
+            Email: <input type='text' id='signupemail' />
+            <br />
+            Password: <input type='password' id='signuppassword' />
+            <br />
+            Re-type password: <input type='password' id='signupretypepassword' />
+            <br />
+            Question: <input type='text' id='signupquestion' />
+            <br />
+            Answer: <input type='text' id='signupanswer' />
+            <br />
+            <button id='signupbutton' onclick='signupSubmit();'>Create account</button>
+        </div>
+        <div style='position: absolute; top: 6px; right: 6px; cursor: default;' onclick='closeLoginSignupDialog();'>X</div>
+    </div>
+</div>
+
 <div id='pageselect'>
     <div selval='t' value='submitdiv' onclick='changePage("submitdiv");'>
         Jobs 
     </div><div value='storediv' onclick='changePage("storediv");'>
         Store
-    </div><div value='settingsdiv' onclick='changePage("settingsdiv");'>
+    </div><div id='settingspageselect' value='settingsdiv' onclick='changePage("settingsdiv");'>
         Settings
     </div>
 </div>
@@ -30,11 +88,6 @@
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
             <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
         </div>
-        <!-- <div style='position: absolute; bottom: 0px; right: 16px;'><button style='font-size: 30px; border-radius: 8px; padding: 8px; outline: none;' onclick='openSubmitDiv();'>New Analysis</button></div> -->
-        <!--
-        <button style='position: absolute; top: 0px; right: 16px; font-size: 20px; color: #b8860b;' onclick='transitionToStore();'>To Store</button>
-        <button style='position: absolute; top: 30px; right: 16px; font-size: 20px; color: #b8860b;' onclick='transitionToSettings();'>Settings</button>
-        -->
     </div>
 
     <table><tr><td valign='top' style=''>
@@ -54,7 +107,7 @@
                             Upload a variant file<br />
                             <span style='font-size: 12px;'>(<a href=''>CRAVAT</a> or <a href=''>VCF</a> format)</span>
                             <br />
-                            <input type="file" name="input-file" id="input-file">
+                            <input type="file" name="input-file" id="input-file" />
                             </td>
                             <td style='text-align: right;'>
                                 <select id="assembly-select" size='3'>
@@ -106,15 +159,6 @@
                     <span style='font-style: italic;'>Report types</span>
                     <div id="report-select-div"></div>
                 </div>
-                <!--
-                <div>
-                    <span style='font-style: italic;'>Jobs directory:</span>
-                    <br />
-                    <span class='jobsdirtext' style='font-family: monospace;'></span>
-                    <br />
-                    <input class='jobsdirinput' type='text' size='40' placeholder='Enter new jobs dir to change (if wanted)' />
-                </div>
-                -->
                 <br />
                 <div>
                     <span style='font-style: italic; vertical-align: top;'>Note: </span>
@@ -135,10 +179,6 @@
             <div style='width: 100%; text-align: right;'>
                 <span style='font-style: italic;'>Directory (go to Setting to change):</span>
                 <span class='jobsdirtext' style='font-family: monospace;'></span>
-                <!--
-                <br />
-                <input class='jobsdirinput' type='text' size='40' placeholder='Enter new jobs dir to change' />
-                -->
                 <button id="refresh-jobs-table-btn">Refresh Table</button>
             </div>
             <table id="jobs-table" style='width: 100%; border-spacing: 10px;'>
@@ -148,6 +188,7 @@
                     <th class='tableheadercell'>Job ID</th>
                     <th class='tableheadercell'>Status</th>
                     <th class='tableheadercell'>Note</th>
+                    <th class='tableheadercell'>Genome</th>
                     <th class='tableheadercell'>Result Viewer</th>
                     <th class='tableheadercell'>Download</th>
                     <th class='tableheadercell'>Delete</th>

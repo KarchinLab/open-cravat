@@ -155,6 +155,13 @@ cravat_cmd_parser.add_argument('-x',
                     action='store_true',
                     help='deletes the existing result database and ' +
                             'creates a new one.')
+cravat_cmd_parser.add_argument('--newlog',
+                    dest='newlog',
+                    action='store_true',
+                    default=False,
+                    help='deletes the existing log file and ' +
+                            'creates a new one.')
+
 
 class Cravat (object):
     def __init__ (self, **kwargs):
@@ -180,13 +187,16 @@ class Cravat (object):
         self.get_logger()
         self.start_time = time.time()
         self.logger.info('started: {0}'.format(time.asctime(time.localtime(self.start_time))))
+        self.logger.info('input assembly: {}'.format(self.input_assembly))
+        if self.run_conf_path != '':
+            self.logger.info('conf file: {}'.format(self.run_conf_path))
     
     def get_logger (self):
         self.logger = logging.getLogger('cravat')
         self.logger.setLevel('INFO')
         self.log_path = os.path.join(self.output_dir, self.run_name + '.log')
-        self.log_handler = logging.FileHandler(self.log_path, mode='w')
-        formatter = logging.Formatter('%(name)20s%(lineno)6d   %(asctime)20s   %(message)s')
+        self.log_handler = logging.FileHandler(self.log_path, mode=self.logmode)
+        formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
         self.log_handler.setFormatter(formatter)
         self.logger.addHandler(self.log_handler)
 
@@ -323,6 +333,10 @@ class Cravat (object):
         if self.args.str:
             self.runlevel = self.runlevels['reporter']
         self.cleandb = self.args.cleandb
+        if self.args.newlog == True:
+            self.logmode = 'w'
+        else:
+            self.logmode = 'a'
 
     def set_and_check_input_files (self):
         if self.input.split('.')[-1] == 'crv':

@@ -1,3 +1,7 @@
+var servermode = false;
+var logged = false;
+var username = null;
+
 var GLOBALS = {
     jobs: [],
     annotators: {},
@@ -75,9 +79,7 @@ function createJobExcelReport (evt) {
     var jobid = evt.target.getAttribute('jobId');
     generateReport(jobid, 'excel', function () {
         populateJobs().then(function () {
-            setTimeout(function () {
-                buildJobsTable();
-            }, 500);
+            buildJobsTable();
         });
     });
 }
@@ -86,9 +88,7 @@ function createJobTextReport (evt) {
     var jobid = evt.target.getAttribute('jobId');
     generateReport(jobid, 'text', function () {
         populateJobs().then(function () {
-            setTimeout(function () {
-                buildJobsTable();
-            }, 500);
+            buildJobsTable();
         });
     });
 }
@@ -118,10 +118,8 @@ function buildJobsTable () {
         jobTr.append($(getEl('td')).append(job.status.status));
         // Note
         jobTr.append($(getEl('td')).append(job.note));
-        /*
-        // Submission time
-        jobTr.append($(getEl('td')).append(job.submission_time.toLocaleString()));
-        */
+        // Genome assembly
+        jobTr.append($(getEl('td')).append(job.assembly));
         // View
         var viewTd = $(getEl('td'));
         viewTd.css('text-align', 'center');
@@ -393,20 +391,25 @@ function populateJobs () {
         $.ajax({
             url:'jobs',
             type: 'GET',
+            async: false,
             success: function (allJobs) {
                 GLOBALS.jobs = [];
                 for (var i=0; i<allJobs.length; i++) {
                     let job = allJobs[i];
                     addJob(job);
                 }
-                resolve();
+                buildJobsTable();
+                //resolve();
+            },
+            fail: function (response) {
+                alert('fail at populate jobs');
             }
         })
     });
 }
 
 function refreshJobsTable () {
-    populateJobs().then(buildJobsTable());
+    populateJobs();//.then(buildJobsTable());
 }
 
 function populateAnnotators () {
@@ -416,7 +419,8 @@ function populateAnnotators () {
             type: 'GET',
             success: function (data) {
                 GLOBALS.annotators = data
-                resolve();
+                buildAnnotatorsSelector();
+                //resolve();
             }
         })
     });
@@ -546,7 +550,8 @@ function populateReports () {
             type: 'GET',
             success: function (data) {
                 GLOBALS.reports = data
-                resolve();
+                buildReportSelector();
+                //resolve();
             }
         })
     })
@@ -591,10 +596,13 @@ function setJobsDir (evt) {
     var d = evt.target.value;
     $.get('/submit/setjobsdir', {'jobsdir': d}).done(function (response) {
         $('.jobsdirtext').text(response);
+        populateJobsTable();
+        /*
         var promise = populateJobs();
         promise.then(function (response) {
             buildJobsTable();
         });
+        */
     });
 }
 
@@ -669,9 +677,12 @@ function updateSystemConf () {
                 alert('System configuration was not successful');
             }
             if (response['sysconf']['jobs_dir'] != undefined) {
+                populateJobs();
+                /*
                 populateJobs().then(function () {
                     buildJobsTable();
                 });
+                */
             }
         }
     });
@@ -695,7 +706,227 @@ function showMd () {
     });
 }
 
+function getServermode () {
+    $.ajax({
+        url: '/submit/servermode',
+        type: 'get',
+        success: function (response) {
+            servermode = response['servermode'];
+            if (servermode == false) {
+                setupNoServerMode();
+            } else {
+                setupServerMode();
+            }
+        }
+    });
+}
+
+function setupNoServerMode () {
+    document.getElementById('accountdiv').style.display = 'none';
+}
+
+function setupServerMode () {
+    document.getElementById('accountdiv').style.display = 'block';
+    document.getElementById('settingsdiv').style.display = 'none';
+    document.getElementById('settingspageselect').style.display = 'none';
+    checkLogged();
+}
+
+function setupAdminMode () {
+    document.getElementById('accountdiv').style.display = 'block';
+    document.getElementById('settingsdiv').style.display = 'block';
+    document.getElementById('settingspageselect').style.display = 'inline-block';
+}
+
+function showLoggedControl (username) {
+    var userDiv = document.getElementById('userdiv');
+    userDiv.textContent = username;
+    userDiv.style.display = 'inline-block';
+    document.getElementById('logoutdiv').style.display = 'inline-block';
+    document.getElementById('loginsignupbutton').style.display = 'none';
+    document.getElementById('settingspageselect').style.display = 'none';
+}
+
+function doAfterLogin () {
+    showLoggedControl(username);
+    hideloginsignupdiv();
+    if (username == 'admin') {
+        setupAdminMode();
+    }
+    populateJobs();
+}
+
+function login () {
+    var usernameSubmit = document.getElementById('login_username').value;
+    var passwordSubmit = document.getElementById('login_password').value;
+    $.ajax({
+        url: '/submit/login',
+        data: {'username':usernameSubmit, 'password':passwordSubmit},
+        success: function (response) {
+            if (response == 'success') {
+                username = usernameSubmit;
+                logged = true;
+                doAfterLogin();
+            } else if (response == 'fail') {
+                alert('Login failed');
+            }
+        }
+    });
+}
+
+function logout () {
+    $.ajax({
+        url: '/submit/logout',
+        success: function (response) {
+            if (response == 'success') {
+                username = '';
+                logged = false;
+                populateJobs();
+                var userDiv = document.getElementById('userdiv');
+                userDiv.textContent = '';
+                userDiv.style.display = 'none';
+                document.getElementById('loginsignupbutton').style.display = 'inline-block';
+                document.getElementById('logoutdiv').style.display = 'none';
+            }
+        }
+    });
+}
+
+function getPasswordQuestion () {
+    var email = document.getElementById('forgotpasswordemail').value;
+    $.ajax({
+        url: '/submit/passwordquestion',
+        data: {'email': email},
+        success: function (response) {
+            document.getElementById('forgotpasswordquestion').textContent = response;
+            document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'block';
+        }
+    });
+}
+
+function submitForgotPasswordAnswer () {
+    var email = document.getElementById('forgotpasswordemail').value;
+    var answer = document.getElementById('forgotpasswordanswer').value;
+    $.ajax({
+        url: '/submit/passwordanswer',
+        data: {'email': email, 'answer': answer},
+        success: function (response) {
+            var success = response['success'];
+            if (success == true) {
+                var tempPassword = response['password'];
+                alert('Password has been reset to ' + tempPassword);
+            }
+        }
+    });
+}
+
+function forgotPassword () {
+    document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'none';
+    document.getElementById('forgotpassworddiv').style.display = 'block';
+}
+
+function changePassword () {
+    var div = document.getElementById('changepassworddiv');
+    var display = div.style.display;
+    if (display == 'block') {
+        display = 'none';
+    } else {
+        display = 'block';
+    }
+    div.style.display = display;
+}
+
+function submitNewPassword () {
+    var oldpassword = document.getElementById('changepasswordoldpassword').value;
+    var newpassword = document.getElementById('changepasswordnewpassword').value;
+    var retypenewpassword = document.getElementById('changepasswordretypenewpassword').value;
+    if (newpassword != retypenewpassword) {
+        alert('New password mismatch');
+        return;
+    }
+    $.ajax({
+        url: '/submit/changepassword',
+        data: {'oldpassword': oldpassword,
+               'newpassword': newpassword},
+        success: function (response) {
+            if (response == 'success') {
+                alert('Password changed successfully.');
+                document.getElementById('changepassworddiv').style.display = 'none';
+            } else {
+                alert(response);
+            }
+        }
+    });
+}
+
+function hideloginsignupdiv () {
+    document.getElementById('loginsignupdialog').style.display = 'none';
+}
+
+function toggleloginsignupdiv () {
+    var dialog = document.getElementById('loginsignupdialog');
+    var display = dialog.style.display;
+    if (display == 'none') {
+        display = 'block';
+    } else {
+        display = 'none';
+    }
+    dialog.style.display = display;
+}
+
+function closeLoginSignupDialog (evt) {
+    document.getElementById("loginsignupdialog").style.display="none";
+}
+
+function signupSubmit () {
+    var username = document.getElementById('signupemail').value.trim();
+    var password = document.getElementById('signuppassword').value.trim();
+    var retypepassword = document.getElementById('signupretypepassword').value.trim();
+    var question = document.getElementById('signupquestion').value.trim();
+    var answer = document.getElementById('signupanswer').value.trim();
+    if (password != retypepassword) {
+        alert('Password mismatch');
+        return;
+    }
+    $.ajax({
+        url: '/submit/signup',
+        data: {'username': username, 'password': password, 'question': question, 'answer': answer},
+        success: function (response) {
+            if (response == 'already registered') {
+                alert('Already registered');
+            } else if (response == 'success') {
+                populateJobs();
+                alert('Account created');
+                document.getElementById('loginsignupbutton').style.display = 'none';
+                var userDiv = document.getElementById('userdiv');
+                userDiv.textContent = username;
+                userDiv.style.display = 'inline-block';
+                document.getElementById('logoutdiv').style.display = 'inline-block';
+                toggleloginsignupdiv();
+                document.getElementById('loginsignupbutton').style.display = 'none';
+            } else if (response == 'fail') {
+                alert('Signup failed');
+            }
+        }
+    });
+}
+
+function checkLogged () {
+    $.ajax({
+        url: '/submit/checklogged',
+        success: function (response) {
+            logged = response['logged'];
+            if (logged == true) {
+                username = response['email'];
+                logged = true;
+                doAfterLogin();
+            }
+        }
+    });
+}
+
 function websubmit_run () {
+    getServermode();
     var md = showMd();
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
@@ -722,18 +953,13 @@ function websubmit_run () {
         tds[1].style.height = tdHeight;
     });
     addListeners();
-    jobsPromise = populateJobs();
-    annotsPromise = populateAnnotators();
-    reportsPromise = populateReports();
-    Promise.all([jobsPromise, reportsPromise]).then(() => {
-        buildJobsTable();
-    })
-    annotsPromise.then( () => {
-        buildAnnotatorsSelector();
-    })
-    reportsPromise.then( () => {
-        buildReportSelector();
-    })
+    if (servermode == false) {
+        populateJobs();
+    }
+    populateAnnotators();
+    if (servermode == false) {
+        populateReports();
+    }
     getJobsDir();
     var submitcontentdiv = document.getElementById('submit-form');
     var h = window.innerHeight - 235;

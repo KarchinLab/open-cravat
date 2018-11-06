@@ -20,6 +20,11 @@ from cravat.websubmit import websubmit as wu
 import websockets
 from aiohttp import web
 import socket
+import base64
+from cryptography import fernet
+from aiohttp_session import setup, get_session, new_session
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
+import hashlib
 
 def result ():
     parser = argparse.ArgumentParser()
@@ -48,10 +53,39 @@ def submit ():
     main()
 
 def main ():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--server',
+                        dest='servermode',
+                        action='store_true',
+                        default=False,
+                        help='run in server mode')
+    args = parser.parse_args(sys.argv[1:])
+    global servermode
+    servermode = args.servermode
+    wu.servermode = args.servermode
+    if servermode:
+        jobs_dir = au.get_jobs_dir()
+        admin_sqlite_path = os.path.join(jobs_dir, 'admin.sqlite')
+        if os.path.exists(admin_sqlite_path) == False:
+            db = sqlite3.connect(admin_sqlite_path)
+            cursor = db.cursor()
+            cursor.execute('create table users (email text, passwordhash text, question text, answerhash text)')
+            cursor.execute('create table log (jobname text, username text, submit date, runtime integer, numinput integer, annotators text, genome text)')
+            m = hashlib.sha256()
+            adminpassword = 'admin'
+            m.update(adminpassword.encode('utf-16be'))
+            adminpasswordhash = m.hexdigest()
+            cursor.execute('insert into users values ("admin", "{}", "", "")'.format(adminpasswordhash))
+            cursor.close()
+            db.commit()
+            db.close()
     s = socket.socket()
     try:
         s.bind(('localhost', 8060))
         app = web.Application()
+        fernet_key = fernet.Fernet.generate_key()
+        secret_key = base64.urlsafe_b64decode(fernet_key)
+        setup(app, EncryptedCookieStorage(secret_key))
         routes = list()
         routes.extend(ws.routes)
         routes.extend(wr.routes)
@@ -65,7 +99,8 @@ def main ():
         ws.start_worker()
         web.run_app(app, port=8060)
     except:
-        pass
+        import traceback
+        traceback.print_exc()
 
 if __name__ == '__main__':
     main()
