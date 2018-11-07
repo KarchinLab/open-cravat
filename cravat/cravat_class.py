@@ -10,6 +10,7 @@ import datetime
 from types import SimpleNamespace
 from .constants import liftover_chain_paths
 import json
+import logging
 
 cravat_cmd_parser = argparse.ArgumentParser(prog='cravat input_file_path', description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.', epilog='* input_file_path should precede any option.')
 cravat_cmd_parser.add_argument('input',
@@ -146,7 +147,7 @@ cravat_cmd_parser.add_argument('-t',
                     help='report types. If omitted, default one in cravat.yml is used.')
 cravat_cmd_parser.add_argument('-l',
                     dest='liftover',
-                    choices=['hg38']+list(liftover_chain_paths.keys()),
+                    choices=['hg38', 'hg19'],
                     default='hg38',
                     help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
 cravat_cmd_parser.add_argument('-x',
@@ -154,10 +155,18 @@ cravat_cmd_parser.add_argument('-x',
                     action='store_true',
                     help='deletes the existing result database and ' +
                             'creates a new one.')
+cravat_cmd_parser.add_argument('--newlog',
+                    dest='newlog',
+                    action='store_true',
+                    default=False,
+                    help='deletes the existing log file and ' +
+                            'creates a new one.')
+
 
 class Cravat (object):
     def __init__ (self, **kwargs):
-        self.runlevels = {'converter': 1, 
+        self.runlevels = {
+            'converter': 1, 
             'mapper': 2, 
             'annotator': 3, 
             'aggregator': 4, 
@@ -170,13 +179,30 @@ class Cravat (object):
         self.should_run_reporter = True
         self.pythonpath = sys.executable
         self.annotators = {}
-        
         self.make_args_namespace(kwargs)
         self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
         if self.args.confs != None:
             self.conf.override_cravat_conf(
                 self.args.confs.replace("'", '"'))
+        self.get_logger()
+        self.start_time = time.time()
+        self.logger.info('started: {0}'.format(time.asctime(time.localtime(self.start_time))))
+        self.logger.info('input assembly: {}'.format(self.input_assembly))
+        if self.run_conf_path != '':
+            self.logger.info('conf file: {}'.format(self.run_conf_path))
     
+    def get_logger (self):
+        self.logger = logging.getLogger('cravat')
+        self.logger.setLevel('INFO')
+        self.log_path = os.path.join(self.output_dir, self.run_name + '.log')
+        self.log_handler = logging.FileHandler(self.log_path, mode=self.logmode)
+        formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
+        self.log_handler.setFormatter(formatter)
+        self.logger.addHandler(self.log_handler)
+
+    def close_logger (self):
+        logging.shutdown()
+
     def update_status(self, status):
         status_fname = self.run_name+'.status.json'
         status_fpath = os.path.join(self.output_dir, status_fname)
@@ -197,11 +223,11 @@ class Cravat (object):
                     self.crv_present == False or
                     self.args.rc
                 ):
-                stime = time.time()
                 print('Running converter...')
+                stime = time.time()
                 self.run_converter()
                 rtime = time.time() - stime
-                print('converter finished in', rtime)
+                print('finished in {0:.3f}s'.format(rtime))
             if self.args.ec:
                 return
             if self.args.sm == False and \
@@ -210,11 +236,11 @@ class Cravat (object):
                     self.crx_present == False or
                     self.args.rm
                 ):
-                stime = time.time()
                 print('Running gene mapper...')
+                stime = time.time()
                 self.run_genemapper()
                 rtime = time.time() - stime
-                print('gene mapper finished in', rtime)
+                print('finished in {0:.3f}s'.format(rtime))
             if self.args.em:
                 return
             if self.args.sa == False and \
@@ -222,11 +248,11 @@ class Cravat (object):
                     self.runlevel <= self.runlevels['annotator'] or
                     self.args.ra
                 ):
-                stime = time.time()
                 print('Running annotators...')
+                stime = time.time()
                 self.run_annotators()
                 rtime = time.time() - stime
-                print('anntator(s) finished in', rtime)
+                print('\tanntator(s) finished in {0:.3f}s'.format(rtime))
             if self.args.ea:
                 return
             if self.args.sg == False and \
@@ -234,35 +260,32 @@ class Cravat (object):
                     self.runlevel <= self.runlevels['aggregator'] or
                     self.args.rg
                 ):
-                stime = time.time()
                 print('Running aggregator...')
                 self.result_path = self.run_aggregator()
                 self.write_job_info()
-                rtime = time.time() - stime
-                print('aggregator finished in', rtime)
             if self.args.sp == False and \
                 (
                     self.runlevel <= self.runlevels['postaggregator'] or
                     self.args.rp
                 ):
-                stime = time.time()
                 print('Running post-aggregators...')
                 self.run_postaggregators()
-                rtime = time.time() - stime
-                print('post-aggregator finished in', rtime)
             if self.args.sr == False and \
                 (
                     self.runlevel <= self.runlevels['reporter'] or
                     self.args.rr
                 ):
-                stime = time.time()
                 print('Running reporter...')
                 self.run_reporter()
-                rtime = time.time() - stime
-                print('reporter finished in', rtime)
             self.update_status('Finished')
         except:
             self.update_status('Error')
+        end_time = time.time()
+        self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
+        runtime = end_time - self.start_time
+        self.logger.info('runtime: {0:0.3f}s'.format(runtime))
+        print('Finished. Runtime: {0:0.3f}s'.format(runtime))
+        self.close_logger()
 
     def make_args_namespace(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
@@ -298,7 +321,7 @@ class Cravat (object):
         self.verbose = self.args.verbose
         self.reports = self.args.reports
         self.input_assembly = self.args.liftover
-        self.runlevel = 0
+        self.runlevel = self.runlevels['annotator']
         if self.args.stc:
             self.runlevel = self.runlevels['converter']
         if self.args.stm:
@@ -311,27 +334,11 @@ class Cravat (object):
             self.runlevel = self.runlevels['postaggregator']
         if self.args.str:
             self.runlevel = self.runlevels['reporter']
-        '''
-        if self.args.rc:
-            self.should_run_converter = True
-            self.should_run_genemapper = True
-            self.should_run_annotator = True
-            self.should_run_aggregator = True
-            self.should_run_reporter = True
-        if self.args.rm:
-            self.should_run_converter = False
-            self.should_run_genemapper = True
-            self.should_run_annotators = True
-            self.should_run_aggregator = True
-            self.should_run_reporter = True
-        if self.args.ra:
-            self.should_run_converter = False
-            self.should_run_genemapper = False
-            self.should_run_annotators = True
-            self.should_run_aggregator = True
-            self.should_run_reporter = True
-        '''
         self.cleandb = self.args.cleandb
+        if self.args.newlog == True:
+            self.logmode = 'w'
+        else:
+            self.logmode = 'a'
 
     def set_and_check_input_files (self):
         if self.input.split('.')[-1] == 'crv':
@@ -414,7 +421,7 @@ class Cravat (object):
                '-l', self.input_assembly]
         self.announce_module(module)
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         converter_class = util.load_class('MasterCravatConverter', module.script_path)
         converter = converter_class(cmd)
         converter.run()
@@ -428,7 +435,7 @@ class Cravat (object):
                '-d', self.output_dir]
         self.announce_module(module)
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         genemapper_class = util.load_class('Mapper', module.script_path)
         genemapper = genemapper_class(cmd)
         genemapper.run()
@@ -439,7 +446,8 @@ class Cravat (object):
         aggregator_cls = util.load_class('Aggregator', module.script_path)
 
         # Variant level
-        print('    Variants')
+        print('\t{0:30s}\t'.format('Variants'), end='', flush=True)
+        stime = time.time()
         cmd = [module.script_path, 
                '-i', self.output_dir,
                '-d', self.output_dir, 
@@ -448,46 +456,55 @@ class Cravat (object):
         if self.cleandb:
             cmd.append('-x')
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         v_aggregator = aggregator_cls(cmd)
         v_aggregator.run() 
+        rtime = time.time() - stime
+        print('finished in {0:.3f}s'.format(rtime))
 
         # Gene level
-        print('    Genes')
+        print('\t{0:30s}\t'.format('Genes'), end='', flush=True)
+        stime = time.time()
         cmd = [module.script_path, 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'gene',
                '-n', self.run_name]
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         g_aggregator = aggregator_cls(cmd)
         g_aggregator.run()
-
+        rtime = time.time() - stime
+        print('finished in {0:.3f}s'.format(rtime))
 
         # Sample level
-        print('    Samples')
+        print('\t{0:30s}\t'.format('Samples'), end='', flush=True)
+        stime = time.time()
         cmd = [module.script_path, 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'sample',
                '-n', self.run_name]
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         s_aggregator = aggregator_cls(cmd)
         s_aggregator.run()
+        rtime = time.time() - stime
+        print('finished in {0:.3f}s'.format(rtime))
 
         # Mapping level
-        print('    Tags')
+        print('\t{0:30s}\t'.format('Tags'), end='', flush=True)
         cmd = [module.script_path, 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'mapping',
                '-n', self.run_name]
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         m_aggregator = aggregator_cls(cmd)
         m_aggregator.run()
+        rtime = time.time() - stime
+        print('finished in {0:.3f}s'.format(rtime))
 
         return v_aggregator.db_path
 
@@ -500,10 +517,13 @@ class Cravat (object):
                    '-d', self.output_dir, 
                    '-n', self.run_name]
             if self.verbose:
-                print('    '.join(cmd))
+                print(' '.join(cmd))
             post_agg_cls = util.load_class('CravatPostAggregator', module.script_path)
             post_agg = post_agg_cls(cmd)
+            stime = time.time()
             post_agg.run()
+            rtime = time.time() - stime
+            print('finished in {0:.3f}s'.format(rtime))
 
     def run_reporter (self):
         if self.reports != None:
@@ -518,15 +538,21 @@ class Cravat (object):
                    os.path.join(self.output_dir, self.run_name + '.sqlite'),
                    '-c', self.run_conf_path]
             if self.verbose:
-                print('     '.join(cmd))
+                print(' '.join(cmd))
             reporter_cls = util.load_class('Reporter', module.script_path)
             reporter = reporter_cls(cmd)
+            stime = time.time()
             reporter.run()
+            rtime = time.time() - stime
+            print('finished in {0:.3f}s'.format(rtime))
 
     def run_annotators (self):
         for module in self.ordered_annotators:
+            stime = time.time()
             self.announce_module(module)
             self.run_annotator(module)
+            rtime = time.time() - stime
+            print('finished in {0:.3f}s'.format(rtime))
 
     def run_annotator (self, module, opts=[]):
         if module.level == 'variant':
@@ -565,7 +591,7 @@ class Cravat (object):
         if self.output_dir != None:
             cmd.extend(['-d', self.output_dir])
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         annotator_class = util.load_class("CravatAnnotator", module.script_path)
         annotator = annotator_class(cmd)
         annotator.run()
@@ -600,6 +626,8 @@ class Cravat (object):
         cursor.execute(q)
         q = 'insert into info values ("Input file name", "' + self.input + '")'
         cursor.execute(q)
+        q = 'insert into info values ("Input genome", "' + self.input_assembly + '")'
+        cursor.execute(q)
         q = 'select count(*) from variant'
         cursor.execute(q)
         no_input = str(cursor.fetchone()[0])
@@ -629,14 +657,14 @@ class Cravat (object):
         if self.output_dir != None:
             cmd.extend(['-d', self.output_dir])
         if self.verbose:
-            print('    '.join(cmd))
+            print(' '.join(cmd))
         summarizer_cls = util.load_class('', module.script_path)
         summarizer = summarizer_cls(cmd)
         summarizer.run()
 
     def announce_module (self, module):
-        print('    ' + module.title + ' (' + module.name + ')')
+        print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
         self.update_status(
             'Running {title} ({name})'\
             .format(title=module.title, name=module.name)
-            )
+        )

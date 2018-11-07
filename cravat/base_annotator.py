@@ -59,8 +59,6 @@ class BaseAnnotator(object):
                 self.annotator_display_name = self.conf['title']
             else:
                 self.annotator_display_name = os.path.basename(self.annotator_dir).upper()
-            self.logger.info('Initialized %s' %self.annotator_name)
-            
             self.dbconn = None
             self.cursor = None
         except Exception as e:
@@ -166,7 +164,7 @@ class BaseAnnotator(object):
     def run(self):
         try:
             start_time = time.time()
-            self.logger.info('Running %s' %self.annotator_name)
+            self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
             self.base_setup()
             for lnum, input_data, secondary_data in self._get_input():
                 try:
@@ -174,10 +172,6 @@ class BaseAnnotator(object):
                         output_dict = self.annotate(input_data)
                     else:
                         output_dict = self.annotate(input_data, secondary_data)
-                    '''
-                    if output_dict is None:
-                        output_dict = {}
-                    '''
                     # This enables summarizing without writing for now.
                     if output_dict == None:
                         continue
@@ -196,13 +190,14 @@ class BaseAnnotator(object):
             self.postprocess()
             
             self.base_cleanup()
-            run_time = time.time() - start_time
-            self.logger.info('Completed %s in %s seconds' %(self.annotator_name, 
-                                                            round(run_time,3)))
+            end_time = time.time()
+            self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
+            run_time = end_time - start_time
+            self.logger.info('runtime: {0:0.3f}'.format(run_time))
         except Exception as e:
             self._log_exception(e)
     
-        self.log_handler.close()
+        #self.log_handler.close()
         #if self.output_basename == '__dummy__':
         #    os.remove(self.log_path)
             
@@ -244,9 +239,12 @@ class BaseAnnotator(object):
             err_line = '\t'.join([str(input_data[self._id_col_name]),
                                   error_classname,
                                   str(e)])
-            self.invalid_file.write(err_line + '\n')
+            #self.invalid_file.write(err_line + '\n')
+            self.logger.exception(e)
+            '''
             if not(isinstance(e,InvalidData)):
                 self._log_exception(e, halt=False)
+            '''
         except Exception as e:
             self._log_exception(e, halt=False)
 
@@ -330,10 +328,8 @@ class BaseAnnotator(object):
                 output_suffix = 'sum'
             else:
                 output_suffix = 'out'
-                
             if not(os.path.exists(self.output_dir)):
                 os.makedirs(self.output_dir)
-                
             self.output_path = os.path.join(
                 self.output_dir, 
                 '.'.join([self.output_basename, 
@@ -369,7 +365,7 @@ class BaseAnnotator(object):
                 self.output_writer.write_definition()
                 self.output_writer.write_meta_line('no_aggregate',
                                                    ','.join(skip_aggregation))
-            self.invalid_file = open(self.invalid_path, 'w')
+            #self.invalid_file = open(self.invalid_path, 'w')
         except Exception as e:
                 self._log_exception(e)
     
@@ -400,7 +396,7 @@ class BaseAnnotator(object):
     def base_cleanup(self):
         try:
             self.output_writer.close()
-            self.invalid_file.close()
+            #self.invalid_file.close()
             if self.dbconn != None:
                 self.close_db_connection()
             self.cleanup()
@@ -420,7 +416,9 @@ class BaseAnnotator(object):
     # Setup the logging utility
     def _setup_logger(self):
         try:
-            self.logger = logging.getLogger(self.annotator_name)
+            #self.logger = logging.getLogger(self.annotator_name)
+            self.logger = logging.getLogger('cravat.' + self.annotator_name)
+            '''
             self.logger.propagate = False
             self.logger.setLevel('INFO')
             self.log_path = os.path.join(self.output_dir, 
@@ -432,6 +430,7 @@ class BaseAnnotator(object):
                 '%(name)20s%(lineno)6d   %(asctime)20s   %(message)s')
             self.log_handler.setFormatter(formatter)
             self.logger.addHandler(self.log_handler)
+            '''
         except Exception as e:
             self._log_exception(e)
 

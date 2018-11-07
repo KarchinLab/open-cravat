@@ -100,18 +100,8 @@ class BaseMapper(object):
             if should_exit: sys.exit(1)
     
     def _setup_logger(self):
-        self.log_path = os.path.join(self.output_dir, 
-                                     self.output_base_fname + '.map.log')
-        self.logger = logging.getLogger('mapper_log')
-        self.logger.propagate = False
-        self.logger.setLevel('INFO')
-        handler = logging.FileHandler(self.log_path, mode='w')
-        formatter = logging.Formatter()
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-        self.logger.info('Mapper log')
-        self.logger.info('Opened %s' %time.asctime())
-        self.logger.info('Input file: %s' %self.input_path)
+        self.logger = logging.getLogger('cravat.mapper')
+        self.logger.info('input file: %s' %self.input_path)
         
     def _setup_io(self):
         """
@@ -133,21 +123,17 @@ class BaseMapper(object):
         self.crx_path = os.path.join(self.output_dir, crx_fname)
         self.crx_writer = CravatWriter(self.crx_path)
         self.crx_writer.add_columns(crx_def)
-        self.logger.info('CRX Path: %s' %self.crx_path)
         self.crx_writer.write_definition()
         for index_columns in crx_idx:
             self.crx_writer.add_index(index_columns)
-        self.logger.info('CRX Path: %s' %self.crx_path)
         # .crg
         crg_fname = '.'.join(output_toks) + '.crg'
         self.crg_path = os.path.join(self.output_dir, crg_fname)
         self.crg_writer = CravatWriter(self.crg_path)
         self.crg_writer.add_columns(crg_def)
-        self.logger.info('CRG Path: %s' %self.crg_path)
         self.crg_writer.write_definition()
         for index_columns in crg_idx:
             self.crg_writer.add_index(index_columns)
-        self.logger.info('CRG Path: %s' %self.crg_path)
         #.crt
         crt_fname = '.'.join(output_toks) + '.crt'
         self.crt_path = os.path.join(self.output_dir, crt_fname)
@@ -156,12 +142,7 @@ class BaseMapper(object):
         self.crt_writer.write_definition()
         for index_columns in crt_idx:
             self.crt_writer.add_index(index_columns)
-        self.logger.info('CRT Path: %s' %self.crt_path)
-        # .err
-        self.err_path = output_base_path + '.map.err'
-        self.ef = open(self.err_path,'w')
-        self.logger.info('ERR Path: %s' %self.err_path)
-        
+ 
     def run(self):
         """
         Read crv file and use map() function to convert to crx dict. Write the
@@ -170,7 +151,7 @@ class BaseMapper(object):
         try:
             self.base_setup()
             start_time = time.time()
-            self.logger.info('Mapping start: %s' \
+            self.logger.info('started: %s' \
                              %time.asctime(time.localtime(start_time)))
             count = 0
             for ln, crv_data in self.reader.loop_data('dict'):
@@ -185,10 +166,10 @@ class BaseMapper(object):
                 self._write_to_crt(alt_transcripts)
             self._write_crg()
             stop_time = time.time()
-            self.logger.info('Mapping finish: %s' \
+            self.logger.info('finished: %s' \
                              %time.asctime(time.localtime(stop_time)))
             runtime = stop_time - start_time
-            self.logger.info('Mapping runtime: %6.3f' %runtime)
+            self.logger.info('runtime: %6.3f' %runtime)
         except Exception as e:
             self.__handle_exception(e)
         
@@ -251,7 +232,8 @@ class BaseMapper(object):
     
     def _log_runtime_error(self, ln, e):
         err_toks = [str(x) for x in [ln, e]]
-        self.ef.write('\t'.join(err_toks)+'\n')
+        #self.ef.write('\t'.join(err_toks)+'\n')
+        self.logger.exception(e)
         if not(isinstance(e,InvalidData)):
             self.__handle_exception(e, should_exit=False)
     

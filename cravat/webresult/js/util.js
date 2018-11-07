@@ -179,8 +179,14 @@ function saveFilterSetting (name) {
 	var saveData = {};
 	saveData['filterSet'] = filterSet;
 	var saveDataStr = JSON.stringify(saveData);
-	$.get('/result/service/savefiltersetting', {'dbpath': dbPath, name: name, 'savedata': saveDataStr}).done(function (response) {
-		writeLogDiv('Filter setting has been saved.');
+	$.ajax({
+        type: 'GET',
+        async: 'false',
+        url: '/result/service/savefiltersetting', 
+        data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
+        success: function (response) {
+            writeLogDiv('Filter setting has been saved.');
+        }
     });
 }
 
@@ -406,7 +412,7 @@ function saveLayoutSetting (name, callback) {
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
 		url: '/result/service/savelayoutsetting', 
-		type: 'get',
+		type: 'post',
 		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr}, 
 		async: false,
 		success: function (response) {

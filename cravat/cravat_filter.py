@@ -120,7 +120,6 @@ class CravatFilter ():
                 self.loadfilter()
         
     def run (self, cmd=None, args=None, dbpath=None, filter=None):
-        print('filter run. cmd=', cmd, 'args=', args, 'filter=', filter)
         if args != None:
             self.parse_args(args)
         if cmd != None:
@@ -138,7 +137,6 @@ class CravatFilter ():
         elif (self.filtername != None or self.filterpath != None or 
             self.filterstring != None) and self.filter == None:
             self.loadfilter()
-        print('filter=', self.filter)
 
         ret = None
         if self.cursor != None and self.filter != None:
@@ -246,7 +244,7 @@ class CravatFilter ():
         if filterpath != None:
             self.filterpath = filterpath
         if filtername != None:
-            self.filterpath = filterpath
+            self.filtername = filtername
         if filterstring != None:
             self.filterstring = filterstring
         if filter != None:
