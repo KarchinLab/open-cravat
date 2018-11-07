@@ -70,7 +70,7 @@ def main ():
             db = sqlite3.connect(admin_sqlite_path)
             cursor = db.cursor()
             cursor.execute('create table users (email text, passwordhash text, question text, answerhash text)')
-            cursor.execute('create table log (jobname text, username text, submit date, runtime integer, numinput integer, annotators text, genome text)')
+            cursor.execute('create table jobs (jobname text, username text, submit date, runtime integer, numinput integer, annotators text, genome text)')
             m = hashlib.sha256()
             adminpassword = 'admin'
             m.update(adminpassword.encode('utf-16be'))

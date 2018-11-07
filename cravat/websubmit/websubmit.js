@@ -10,6 +10,10 @@ var GLOBALS = {
 }
 
 function submit () {
+    if (servermode && logged == false) {
+        alert('Log in before submitting a job.');
+        return;
+    }
     let fd = new FormData();
     var textInputElem = $('#input-text');
     var textVal = textInputElem.val();
