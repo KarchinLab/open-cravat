@@ -516,6 +516,7 @@ function firstLoadData () {
 	}
 	loadWidgets();
 	setupTab('info');
+	// TMPCHANGE comment out below line
 	loadFilterSetting(defaultSaveName, afterLoadDefaultFilter);
 }
 
@@ -603,6 +604,35 @@ function makeFilterJson () {
 		}
 	}
 	filterJson['variant'] = filterSubmit;
+	// TEMP
+	filterJson['variant'] = {
+		operator:'and',
+		negate: false,
+		columns: [
+			{
+				column:'base__chrom',
+				test:'equals',
+				value:'chr1'
+			}
+		],
+		groups: [
+			{
+				operator: 'or',
+				columns: [
+					{
+						column: 'chasmplus__pval',
+						test: 'lessThanEq',
+						value: 0.1
+					},
+					{
+						column: 'clinvar__sig',
+						test: 'hasData',
+						value: null
+					}
+				]
+			}
+		]
+	}
 }
 
 function writeLogDiv (msg) {

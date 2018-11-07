@@ -85,9 +85,7 @@ class FilterGroup(object):
 class CravatFilter ():
     #newfilter
     def __init__ (self, dbpath=None, filterpath=None, filtername=None, 
-            filterstring=None, filter=None, mode='sub', newfilter=False):
-        #newfilter
-        self.newfilter=newfilter
+            filterstring=None, filter=None, mode='sub'):
         self.mode = mode
         if self.mode == 'main':
             self.stdout = True
@@ -278,34 +276,19 @@ class CravatFilter ():
         self.cursor.execute(q)
         self.conn.commit()
         self.cursor.execute('pragma synchronous=2')
-        
+
     def getwhere (self, level):
-        #newfilter
-        if self.newfilter:
-            return self.getwhere_new(level)
         if self.filter == None:
             return ''
         if level not in self.filter:
             return ''
         criteria = self.filter[level]
-        columns = criteria.keys()
-        where = ''
-        for column in columns:
-            op_val = criteria[column]
-            where += column + ' ' + op_val + ' and '
-        if where != '':
-            where = ' where ' + where
-            where = where.rstrip(' and ')
-        return where
-
-    #newfilter
-    def getwhere_new (self, level):
-        if level != 'variant':
+        main_group = FilterGroup(criteria)
+        sql_criteria = main_group.get_sql()
+        if sql_criteria == '':
             return ''
-        main_group = FilterGroup(self.filter)
-        sql = ' where '+main_group.get_sql()
-        print(sql)
-        return sql
+        else:
+            return ' where '+main_group.get_sql()
     
     def getvariantcount (self):
         return self.getcount('variant')
