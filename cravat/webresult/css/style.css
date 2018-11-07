@@ -391,3 +391,14 @@ p {
 button {
 	background-color: white;
 }
+
+.filter-element-div {
+    margin: 5px;
+    padding: 3px;
+    margin-left: 20px;
+    border: 1px solid black;
+}
+
+.filter-join-operator-div {
+    margin-left: 20px;
+}

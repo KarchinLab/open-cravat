@@ -290,7 +290,7 @@ const makeGroupFilter = (groupDiv) => {
             colFilter.value = null;
         } else if (valInputs.length === 1) {
             const rawValue = $(valInputs[0]).val();
-            colFilter.value = Number(rawValue) !== NaN ? Number(rawValue) : rawValue;
+            colFilter.value = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
         } else {
             colFilter.value = [];
             for (let j=0; j<valInputs.length; j++){
@@ -318,13 +318,6 @@ const makeGroupFilter = (groupDiv) => {
     return filter;
 }
 
-const exportFilter = () => {
-    const rootGroupDiv = $('#filter-root-group-div');
-    const filter = makeGroupFilter(rootGroupDiv);
-    const json = JSON.stringify(filter, null, 2);
-    $('#filter-json').val(json);
-}
-
 const importFilter = () => {
     const json = $('#filter-json').val();
     const filter = JSON.parse(json);
@@ -336,15 +329,18 @@ const loadFilter = (filter) => {
     mainDiv.empty();
     rootGroupDiv = makeFilterGroupDiv(filter);
     mainDiv.append(rootGroupDiv);
-
 }
 
-// $(document).ready(() => {
-//     const mainDiv = $('#main-div');
-//     const groupDiv = makeFilterGroupDiv();
-//     groupDiv.attr('id','filter-root-group-div');
-//     groupDiv.children().children('.filter-group-remove-btn').attr('disabled','disabled');
-//     mainDiv.append(groupDiv);
-//     $('#export-filter-btn').click(exportFilter);
-//     $('#import-filter-btn').click(importFilter);
-// });
+const filterTests = {
+    equals: {title:'equals', inputs: 1},
+    lessThanEq: {title:'<=', inputs: 1},
+    lessThan: {title:'<', inputs:1},
+    greaterThanEq: {title:'>=', inputs:1},
+    greaterThan: {title:'>', inputs:1},
+    hasData: {title:'has data', inputs:0},
+    noData: {title:'is empty', inputs:0},
+    stringContains: {title: 'contains', inputs:1},
+    stringStarts: {title: 'starts with', inputs:1},
+    stringEnds: {title: 'ends with', inputs:1},
+    between: {title: 'in range', inputs:2}
+}

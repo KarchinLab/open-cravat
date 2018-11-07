@@ -83,7 +83,6 @@ class FilterGroup(object):
         return s
 
 class CravatFilter ():
-    #newfilter
     def __init__ (self, dbpath=None, filterpath=None, filtername=None, 
             filterstring=None, filter=None, mode='sub'):
         self.mode = mode
@@ -121,6 +120,7 @@ class CravatFilter ():
                 self.loadfilter()
         
     def run (self, cmd=None, args=None, dbpath=None, filter=None):
+        print('filter run. cmd=', cmd, 'args=', args, 'filter=', filter)
         if args != None:
             self.parse_args(args)
         if cmd != None:
@@ -138,7 +138,8 @@ class CravatFilter ():
         elif (self.filtername != None or self.filterpath != None or 
             self.filterstring != None) and self.filter == None:
             self.loadfilter()
-        
+        print('filter=', self.filter)
+
         ret = None
         if self.cursor != None and self.filter != None:
             if self.cmd == 'uidpipe':
@@ -283,7 +284,6 @@ class CravatFilter ():
         if level not in self.filter:
             return ''
         criteria = self.filter[level]
-        print(criteria)
         main_group = FilterGroup(criteria)
         sql_criteria = main_group.get_sql()
         if sql_criteria == '':

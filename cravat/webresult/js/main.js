@@ -575,64 +575,7 @@ function getCheckNoRowsMessage (tabName, noRows) {
 }
 
 function makeFilterJson () {
-	var filterSubmit = {};
-	for (var i = 0; i < filterSet.length; i++) {
-		var filter = filterSet[i];
-		var column = filter[0];
-		var val1 = filter[1];
-		var val2 = filter[2];
-		var checked = filter[3];
-		if (! checked) {
-			continue;
-		}
-		var col = column['col'];
-		var retFiltType = column['retfilttype'];
-		if ((retFiltType == '<=' || retFiltType == '>=') && val1 != '') {
-			filterSubmit[col] = retFiltType + val1;
-		} else if (retFiltType == 'string' && val1 != '') {
-			filterSubmit[col] = '="' + val1 + '"';
-		} else if (retFiltType == 'regexp') {
-			if (val1[0] == '"' && val1[val1.length - 1] == '"') {
-				val1 = '^' + val1.substring(1, val1.length - 1) + '$';
-			}
-			filterSubmit[col] = ' REGEXP "' + val1 + '"';
-		} else if (retFiltType == 'hasvalue') {
-			filterSubmit[col] = val1;
-		} else if (retFiltType == 'multisel') {
-		} else if (retFiltType == 'between') {
-			filterSubmit[col] = ' between ' + val1 + ' and ' + val2;
-		}
-	}
-	filterJson['variant'] = filterSubmit;
-	// TEMP
-	filterJson['variant'] = {
-		operator:'and',
-		negate: false,
-		columns: [
-			{
-				column:'base__chrom',
-				test:'equals',
-				value:'chr1'
-			}
-		],
-		groups: [
-			{
-				operator: 'or',
-				columns: [
-					{
-						column: 'chasmplus__pval',
-						test: 'lessThanEq',
-						value: 0.1
-					},
-					{
-						column: 'clinvar__sig',
-						test: 'hasData',
-						value: null
-					}
-				]
-			}
-		]
-	}
+    filterJson = {'variant': makeGroupFilter($('#filter-root-group-div'))};
 }
 
 function writeLogDiv (msg) {

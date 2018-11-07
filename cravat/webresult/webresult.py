@@ -262,7 +262,6 @@ def get_count (request):
 
 def get_result (request):
     queries = request.rel_url.query
-    queries = request.rel_url.query
     dbpath = queries['dbpath']
     tab = queries['tab']
     if 'filter' in queries:
