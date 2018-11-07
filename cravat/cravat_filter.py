@@ -65,10 +65,10 @@ class FilterColumn(object):
 
 class FilterGroup(object):
     def __init__(self, d):
-        self.operator = d['operator']
+        self.operator = d.get('operator', 'and')
         self.negate = d.get('negate',False)
         self.groups = [FilterGroup(x) for x in d.get('groups',[])]
-        self.columns = [FilterColumn(x) for x in d['columns']]
+        self.columns = [FilterColumn(x) for x in d.get('columns', [])]
 
     def get_sql(self):
         all_operands = self.groups + self.columns
@@ -283,6 +283,7 @@ class CravatFilter ():
         if level not in self.filter:
             return ''
         criteria = self.filter[level]
+        print(criteria)
         main_group = FilterGroup(criteria)
         sql_criteria = main_group.get_sql()
         if sql_criteria == '':
