@@ -26,6 +26,8 @@ from aiohttp_session import setup, get_session, new_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 import hashlib
 
+entrypoint = None
+
 def result ():
     parser = argparse.ArgumentParser()
     parser.add_argument('dbpath',
@@ -42,6 +44,8 @@ def result ():
     confpath = parsed_args.confpath
     runid = os.path.basename(dbpath).replace('.sqlite', '')
     webbrowser.open('http://localhost:8060/result/index.html?job_id=' + runid + '&dbpath=' + dbpath)
+    global entrypoint
+    entrypoint = 'result'
     main()
 
 def store ():
@@ -59,6 +63,9 @@ def main ():
                         action='store_true',
                         default=False,
                         help='run in server mode')
+    global entrypoint
+    if entrypoint == 'result':
+        sys.argv = sys.argv[1:]
     args = parser.parse_args(sys.argv[1:])
     global servermode
     servermode = args.servermode
