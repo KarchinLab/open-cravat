@@ -125,7 +125,6 @@ async def submit (request):
     orig_input_fname = input_file.filename
     job_id = get_next_job_id()
     jobs_dir = await filerouter.get_jobs_dir(request)
-    print('jobsdir', jobs_dir, 'jobdi', job_id)
     job_dir = os.path.join(jobs_dir, job_id)
     info_fname = '{}.info.yaml'.format(job_id)
     job_info_fpath = os.path.join(job_dir, info_fname)
@@ -171,7 +170,8 @@ async def submit (request):
         cursor = db.cursor()
         session = await get_session(request)
         username = session['username']
-        cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, job_options['assembly'], job.get_info_dict()['submission_time'], -1, -1, '', job_options['assembly']))
+        cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, username, job.get_info_dict()['submission_time'], -1, -1, '', job_options['assembly']))
+        db.commit()
     return web.json_response(job.get_info_dict())
 
 def get_annotators(request):
