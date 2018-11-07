@@ -588,21 +588,15 @@ function onTabChange () {
 
 function getJobsDir () {
     $.get('/submit/getjobsdir').done(function (response) {
-        $('.jobsdirtext').text(response);
+        document.getElementById('jobsdirtext').textContent = response;
     });
 }
 
 function setJobsDir (evt) {
     var d = evt.target.value;
     $.get('/submit/setjobsdir', {'jobsdir': d}).done(function (response) {
-        $('.jobsdirtext').text(response);
+        document.getElementById('jobsdirtext').textContent = response;
         populateJobsTable();
-        /*
-        var promise = populateJobs();
-        promise.then(function (response) {
-            buildJobsTable();
-        });
-        */
     });
 }
 
@@ -756,6 +750,13 @@ function doAfterLogin () {
     populateJobs();
 }
 
+function msgAccountDiv (msg) {
+    document.getElementById('accountmsgdiv').textContent = msg;
+    setTimeout(function () {
+        document.getElementById('accountmsgdiv').textContent = '';
+    }, 3000);
+}
+
 function login () {
     var usernameSubmit = document.getElementById('login_username').value;
     var passwordSubmit = document.getElementById('login_password').value;
@@ -768,7 +769,7 @@ function login () {
                 logged = true;
                 doAfterLogin();
             } else if (response == 'fail') {
-                alert('Login failed');
+                msgAccountDiv('Login failed');
             }
         }
     });
@@ -798,10 +799,22 @@ function getPasswordQuestion () {
         url: '/submit/passwordquestion',
         data: {'email': email},
         success: function (response) {
-            document.getElementById('forgotpasswordquestion').textContent = response;
-            document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'block';
+            var status = response['status'];
+            var msg = response['msg'];
+            if (status == 'fail') {
+                msgAccountDiv(msg);
+            } else {
+                document.getElementById('forgotpasswordgetquestiondiv').style.display = 'none';
+                document.getElementById('forgotpasswordquestion').textContent = msg;
+                document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'inline-block';
+            }
         }
     });
+}
+
+function showSignupDiv () {
+    document.getElementById('logindiv').style.display = 'none';
+    document.getElementById('signupdiv').style.display = 'block';
 }
 
 function submitForgotPasswordAnswer () {
@@ -812,15 +825,23 @@ function submitForgotPasswordAnswer () {
         data: {'email': email, 'answer': answer},
         success: function (response) {
             var success = response['success'];
+            var msg = response['msg'];
             if (success == true) {
-                var tempPassword = response['password'];
-                alert('Password has been reset to ' + tempPassword);
+                document.getElementById('forgotpassworddiv').style.display = 'none';
+                document.getElementById('forgotpasswordemail').textContent = '';
+                document.getElementById('forgotpasswordquestion').textContent = '';
+                document.getElementById('forgotpasswordanswer').textContent = '';
+                alert('Password has been reset to ' + msg);
+            } else {
+                msgAccountDiv(msg);
             }
         }
     });
 }
 
 function forgotPassword () {
+    document.getElementById('forgotpasswordquestion').textContent = '';
+    document.getElementById('forgotpasswordgetquestiondiv').style.display = 'block';
     document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'none';
     document.getElementById('forgotpassworddiv').style.display = 'block';
 }
@@ -841,7 +862,7 @@ function submitNewPassword () {
     var newpassword = document.getElementById('changepasswordnewpassword').value;
     var retypenewpassword = document.getElementById('changepasswordretypenewpassword').value;
     if (newpassword != retypenewpassword) {
-        alert('New password mismatch');
+        msgAccountDiv('New password mismatch');
         return;
     }
     $.ajax({
@@ -850,10 +871,10 @@ function submitNewPassword () {
                'newpassword': newpassword},
         success: function (response) {
             if (response == 'success') {
-                alert('Password changed successfully.');
+                msgAccountDiv('Password changed successfully.');
                 document.getElementById('changepassworddiv').style.display = 'none';
             } else {
-                alert(response);
+                msgAccountDiv(response);
             }
         }
     });
@@ -864,6 +885,8 @@ function hideloginsignupdiv () {
 }
 
 function toggleloginsignupdiv () {
+    document.getElementById('logindiv').style.display = 'block';
+    document.getElementById('signupdiv').style.display = 'none';
     var dialog = document.getElementById('loginsignupdialog');
     var display = dialog.style.display;
     if (display == 'none') {
@@ -884,8 +907,12 @@ function signupSubmit () {
     var retypepassword = document.getElementById('signupretypepassword').value.trim();
     var question = document.getElementById('signupquestion').value.trim();
     var answer = document.getElementById('signupanswer').value.trim();
+    if (username == '' || password == '' || retypepassword == '' || question == '' || answer == '') {
+        msgAccountDiv('Fill all the blanks.');
+        return;
+    }
     if (password != retypepassword) {
-        alert('Password mismatch');
+        msgAccountDiv('Password mismatch');
         return;
     }
     $.ajax({
@@ -893,10 +920,10 @@ function signupSubmit () {
         data: {'username': username, 'password': password, 'question': question, 'answer': answer},
         success: function (response) {
             if (response == 'already registered') {
-                alert('Already registered');
+                msgAccountDiv('Already registered');
             } else if (response == 'success') {
                 populateJobs();
-                alert('Account created');
+                msgAccountDiv('Account created');
                 document.getElementById('loginsignupbutton').style.display = 'none';
                 var userDiv = document.getElementById('userdiv');
                 userDiv.textContent = username;
@@ -904,8 +931,9 @@ function signupSubmit () {
                 document.getElementById('logoutdiv').style.display = 'inline-block';
                 toggleloginsignupdiv();
                 document.getElementById('loginsignupbutton').style.display = 'none';
+                document.getElementById('signupdiv').style.display = 'none';
             } else if (response == 'fail') {
-                alert('Signup failed');
+                msgAccountDiv('Signup failed');
             }
         }
     });

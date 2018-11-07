@@ -412,7 +412,7 @@ function saveLayoutSetting (name, callback) {
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
 		url: '/result/service/savelayoutsetting', 
-		type: 'get',
+		type: 'post',
 		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr}, 
 		async: false,
 		success: function (response) {

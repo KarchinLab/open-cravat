@@ -30,31 +30,37 @@
             <button onclick='submitNewPassword();'>Submit</button>
         </div>
     </div>
-    <button id='loginsignupbutton' onclick='toggleloginsignupdiv();'>login/sign up</button>
-    <div id='loginsignupdialog' style='display: none; position: fixed; padding: 10px; background-color: white; border: 1px solid black; font-size: 14px;'>
+    <button id='loginsignupbutton' onclick='toggleloginsignupdiv();'>Log in</button>
+    <div id='loginsignupdialog' style='display: none; position: fixed; padding: 10px; background-color: white; border: 1px solid black; font-size: 14px; box-shadow: 6px 6px 6px #b5b5b5;'>
         <div id='logindiv' style='display: block;'>
             <span style='font-weight: bold;'>Login:</span>
             <br />
             Email: <input type='text' id='login_username' />
             <br />
             Password: <input type='password' id='login_password' />
+            <span style='text-decoration: underline; color: blue; cursor: default;' onclick='forgotPassword();'>Forgot password?</span>
             <br />
-            <button onclick='login();'>login</button>
-            <button onclick='forgotPassword();'>Forgot password?</button>
+            <button onclick='login();'>Login</button> or <span style='text-decoration: underline; color: blue; cursor: default;' onclick='showSignupDiv();'>Sign up</span>
             <div id='forgotpassworddiv' style='display: none;'>
-                Email: <input type='text' id='forgotpasswordemail' />
                 <br />
-                <button onclick='getPasswordQuestion();'>Get password question</button>
+                <span style='font-weight: bold;'>Forgot Password:</span>
+                <br />
+                <div id='forgotpasswordgetquestiondiv'>
+                    Email: <input type='text' id='forgotpasswordemail' />
+                    <br />
+                    <button id='forgotpasswordgetquestionbutton' onclick='getPasswordQuestion();'>Get password question</button>
+                </div>
                 <div id='forgotpasswordquestionanswerdiv'>
                     Question: <span id='forgotpasswordquestion'></span>
                     <br />
                     Answer: <input type='text' id='forgotpasswordanswer' />
                     <br />
-                    <button onclick='submitForgotPasswordAnswer();'>Submit</button>
+                    <button id='forgotpasswordsubmitbutton' onclick='submitForgotPasswordAnswer();'>Submit</button>
                 </div>
             </div>
+            <br />
         </div>
-        <div id='signupdiv'>
+        <div id='signupdiv' style='display: none;'>
             <span style='font-weight: bold;'>Sign-up:</span>
             <br />
             Email: <input type='text' id='signupemail' />
@@ -69,6 +75,8 @@
             <br />
             <button id='signupbutton' onclick='signupSubmit();'>Create account</button>
         </div>
+        <br />
+        <div id='accountmsgdiv' style='color: red;'></div>
         <div style='position: absolute; top: 6px; right: 6px; cursor: default;' onclick='closeLoginSignupDialog();'>X</div>
     </div>
 </div>
@@ -177,8 +185,8 @@
     <div id="jobdiv" style='position: relative; top: 120px; display: block;'>
         <br />
             <div style='width: 100%; text-align: right;'>
-                <span style='font-style: italic;'>Directory (go to Setting to change):</span>
-                <span class='jobsdirtext' style='font-family: monospace;'></span>
+                <span style='font-style: italic;'></span>
+                <span id='jobsdirtext' style='font-family: monospace;'></span>
                 <button id="refresh-jobs-table-btn">Refresh Table</button>
             </div>
             <table id="jobs-table" style='width: 100%; border-spacing: 10px;'>

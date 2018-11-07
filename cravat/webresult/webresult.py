@@ -160,8 +160,9 @@ def load_filter_setting (request):
     conn.close()
     return web.json_response(content)
 
-def save_layout_setting (request):
-    queries = request.rel_url.query
+async def save_layout_setting (request):
+    #queries = request.rel_url.query
+    queries = await request.post()
     dbpath = queries['dbpath']
     name = queries['name']
     savedata = queries['savedata']
@@ -180,7 +181,6 @@ def save_layout_setting (request):
     return web.json_response(content)
 
 def save_filter_setting (request):
-    print('entered save filter')
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     name = queries['name']
@@ -452,7 +452,7 @@ routes.append(['GET', '/result/service/count', get_count])
 routes.append(['GET', '/result/service/widgetlist', get_widgetlist])
 routes.append(['GET', '/result/service/status', get_status])
 routes.append(['GET', '/result/service/savefiltersetting', save_filter_setting])
-routes.append(['GET', '/result/service/savelayoutsetting', save_layout_setting])
+routes.append(['POST', '/result/service/savelayoutsetting', save_layout_setting])
 routes.append(['GET', '/result/service/loadfiltersetting', load_filter_setting])
 routes.append(['GET', '/result/service/loadlayoutsetting', load_layout_setting])
 routes.append(['GET', '/result/service/deletelayoutsetting', delete_layout_setting])

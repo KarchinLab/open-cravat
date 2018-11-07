@@ -157,12 +157,19 @@ async def submit (request):
     else:
         run_args.append('--sr')
     p = subprocess.Popen(run_args)
-    # p.wait()
     status_fname = 'input.status.json'
     status_file = os.path.join(jobs_dir, status_fname)
     status_d = {'status': 'Submitted'}
     job.set_info_values(status=status_d)
     job.write_info_file()
+    # admin.sqlite
+    root_jobs_dir = au.get_jobs_dir()
+    admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
+    db = sqlite3.connect(admin_db_path)
+    cursor = db.cursor()
+    session = get_session(request)
+    username = session['username']
+    cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, job_options['assembly']))
     return web.json_response(job.get_info_dict())
 
 def get_annotators(request):
@@ -398,9 +405,9 @@ async def get_password_question (request):
     cursor.execute('select question from users where email="{}"'.format(email))
     r = cursor.fetchone()
     if r is None:
-        web.json_response(None)
+        return web.json_response({'status':'fail', 'msg':'No such email'})
     answer = r[0]
-    return web.json_response(answer)
+    return web.json_response({'status':'success', 'msg':answer})
 
 async def check_password_answer (request):
     session = await get_session(request)
@@ -423,9 +430,9 @@ async def check_password_answer (request):
         temppasswordhash = m.hexdigest()
         cursor.execute('update users set passwordhash="{}" where email="{}"'.format(temppasswordhash, email))
         db.commit()
-        return web.json_response({'success': True, 'password': temppassword})
+        return web.json_response({'success': True, 'msg': temppassword})
     else:
-        return web.json_response({'success': False, 'password': ''})
+        return web.json_response({'success': False, 'msg': 'Wrong answer'})
 
 async def change_password (request):
     session = await get_session(request)
