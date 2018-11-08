@@ -10,6 +10,8 @@ import datetime
 from types import SimpleNamespace
 from .constants import liftover_chain_paths
 import json
+from .mp_annot import run_mp_annot
+import multiprocessing as mp
 
 cravat_cmd_parser = argparse.ArgumentParser(prog='cravat input_file_path', description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.', epilog='* input_file_path should precede any option.')
 cravat_cmd_parser.add_argument('input',
@@ -224,7 +226,8 @@ class Cravat (object):
                 ):
                 stime = time.time()
                 print('Running annotators...')
-                self.run_annotators()
+                # self.run_annotators()
+                self.run_annotators_mp()
                 rtime = time.time() - stime
                 print('anntator(s) finished in', rtime)
             if self.args.ea:
@@ -527,6 +530,54 @@ class Cravat (object):
         for module in self.ordered_annotators:
             self.announce_module(module)
             self.run_annotator(module)
+
+    def run_annotators_mp (self):
+        num_workers = 6
+        all_cmds = []
+        for module in self.ordered_annotators:
+            if module.level == 'variant':
+                if 'input_format' in module.conf:
+                    input_format = module.conf['input_format']
+                    if input_format == 'crv':
+                        inputpath = self.crvinput
+                    elif input_format == 'crx':
+                        inputpath = self.crxinput
+                    else:
+                        inputpath = self.input
+                else:
+                    inputpath = self.crvinput
+            elif module.level == 'gene':
+                inputpath = self.crginput
+            secondary_opts = []
+            if 'secondary_inputs' in module.conf:
+                secondary_module_names = module.conf['secondary_inputs']
+                for secondary_module_name in secondary_module_names:
+                    secondary_module = self.modules[secondary_module_name]
+                    secondary_output_path =\
+                        self.check_module_output(secondary_module)
+                    if secondary_output_path == None:
+                        print(secondary_module.name + ' output absent')
+                        return 1
+                    else:
+                        secondary_opts.extend([
+                            '-s', 
+                            secondary_module.name + '@' +\
+                                os.path.join(self.output_dir, secondary_output_path)])
+            cmd = [module.script_path, inputpath]
+            cmd.extend(secondary_opts)
+            if self.run_name != None:
+                cmd.extend(['-n', self.run_name])
+            if self.output_dir != None:
+                cmd.extend(['-d', self.output_dir])
+            all_cmds.append(cmd)
+        pool = mp.Pool(processes=num_workers)
+        pool_args = zip(self.ordered_annotators, all_cmds)
+        print('starting pool')
+        pool.map(run_mp_annot, pool_args)
+        print('Done with pool')
+
+
+
 
     def run_annotator (self, module, opts=[]):
         if module.level == 'variant':
