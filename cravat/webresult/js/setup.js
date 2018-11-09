@@ -133,7 +133,11 @@ function toggleFilterDiv () {
 		filterButton.style.color = 'white';
 	} else {
 		display = 'none';
-		filterButton.style.backgroundColor = 'white';
+        if (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0) {
+            filterButton.style.backgroundColor = 'red';
+        } else {
+            filterButton.style.backgroundColor = 'white';
+        }
 		filterButton.style.color = 'black';
 	}
 	filterDiv.style.display = display;
@@ -664,123 +668,6 @@ function getFilterCol (columnKey) {
 	return null;
 }
 
-/*
-function onChangeFilterSelector (col, retFiltType, val1, val2, checked) {
-	var select = document.getElementById('filterselect');
-	var selectDetailDiv = document.getElementById('selectdetaildiv');
-	var columnKey = null;
-	if (col != null) {
-		$(select).val(col);
-		columnKey = col;
-	} else {
-		option = select.options[select.selectedIndex];
-		columnKey = option.value;
-	}
-	if (columnKey != 'none') {
-		var column = getFilterCol(columnKey);
-		emptyElement(selectDetailDiv);
-
-		if (retFiltType == null) {
-			retFiltType = column['retfilttype'];
-		}
-
-		// Operator
-		var operatorStr = '';
-		if (retFiltType == 'string') {
-			operatorStr = 'contains';
-		} else if (retFiltType == 'multisel') {
-			operatorStr = 'is one of'
-		} else if (retFiltType == 'hasvalue') {
-			operatorStr = '';
-		} else if (retFiltType == 'regexp') {
-			operatorStr = 'contains';
-		} else if (retFiltType == '<=') {
-			operatorStr = '&le;';
-		} else if (retFiltType == '>=') {
-			operatorStr = '&ge;';
-		} else if (retFiltType == 'between') {
-			operatorStr = 'between';
-		} else {
-			operatorStr = retFiltType;
-		}
-		addEl(selectDetailDiv, getTn('\xA0\xA0' + operatorStr + '\xA0\xA0'));
-
-		// Value box
-		var input1 = {};
-		var input2 = {};
-		if (retFiltType == '<=' || 
-				retFiltType == '>=' || 
-				retFiltType == 'string' ||
-				retFiltType == 'regexp') {
-			input1 = getEl('input');
-			input1.type = 'text';
-			input1.style.width = '60px';
-			addEl(selectDetailDiv, input1);
-		} else if (retFiltType == 'hasvalue') {
-			input1 = getEl('input');
-			input1.type = 'checkbox';
-			input1.checked = true;
-			addEl(selectDetailDiv, input1);
-		} else if (retFiltType == 'multisel') {
-			input1 = getEl('select');
-			for (var i = 0; i < infomgr.getColumnByName(
-					tabName, columnKey)['multiseloptions'].length; i++) {
-				var multiselOption = infomgr.getColumnByName(
-						tabName, columnKey)['multiseloptions'][i];
-				input1.options.add(
-						new Option(multiselOption, multiselOption));
-			}
-			addEl(selectDetailDiv, input1);
-		} else if (retFiltType == 'between') {
-			input1 = getEl('input');
-			input2 = getEl('input');
-			input1.type = 'text';
-			input2.type = 'text';
-			input1.style.width = '60px';
-			input2.style.width = '60px';
-			addEl(selectDetailDiv, input1);
-			addEl(selectDetailDiv, getTn(' - '));
-			addEl(selectDetailDiv, input2);
-		}
-
-		if (val1 != null || val2 != undefined) {
-			input1.value = val1;
-		}
-		if (val2 != null || val2 != undefined) {
-			input2.value = val2;
-		}
-
-		// space
-		var span = getEl('span');
-		addEl(span, getTn('\xa0\xa0'));
-		addEl(selectDetailDiv, span);
-
-		// Add button
-		var addButton = getEl('button');
-		if (col != null) {
-			addButton.textContent = 'Update';
-		} else {
-			addButton.textContent = 'Add';
-		}
-		addButton.onclick = function (evt) {
-			var inputs = evt.target.parentElement.getElementsByTagName('input');
-			var input1 = inputs[0];
-			var input2 = inputs[1];
-			var val1 = input1.value;
-			var val2 = undefined;
-			if (input2 != undefined) {
-				val2 = input2.value;
-			}
-			addToFilterSet(column, val1, val2, true);
-			showFilterSet();
-			makeFilterJson();
-			infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
-		}
-		addEl(selectDetailDiv, addButton);
-	}
-}
-*/
-
 function getLoadSelectorDiv (tabName) {
 	var div = getEl('div');
 
@@ -817,112 +704,10 @@ function getLoadSelectorDiv (tabName) {
 	return div;
 }
 
-function addToFilterSet (column, val1, val2) {
-	// last true is checkbox flag.
-	var filter = [column, val1, val2, true];
-	var filterReplaced = false;
-	for (var i = 0; i < filterSet.length; i++) {
-		if (filterSet[i][0].col == filter[0].col) {
-			filterSet[i] = filter;
-			filterReplaced = true;
-			break;
-		}
-	}
-	if (filterReplaced == false) {
-		filterSet.push(filter);
-	}
-}
-
 function updateLoadMsgDiv (msg) {
 	var msgDiv = document.getElementById('load_innerdiv_msg_info');
 	emptyElement(msgDiv);
 	addEl(msgDiv, getTn(msg));
-}
-
-function showFilterSet () {
-	var filterListDiv = document.getElementById('filterlistdiv');
-	emptyElement(filterListDiv);
-	var needBorder = false;
-	for (var i = 0; i < filterSet.length; i++) {
-		var div = getEl('div');
-
-		var filter = filterSet[i];
-		var column = filter[0];
-		var val1 = filter[1];
-		var val2 = filter[2];
-		var checked = filter[3];
-		div.setAttribute('col', column.col);
-		div.setAttribute('retfilttype', column.retfilttype);
-		div.setAttribute('val1', val1);
-		div.setAttribute('val2', val2);
-		div.setAttribute('checked', checked);
-
-		// Checkbox
-		var c = getEl('input');
-		c.type = 'checkbox';
-		c.setAttribute('col', column.col);
-		c.checked = checked;
-		c.addEventListener('change', function (evt, ui) {
-			var c = evt.target;
-			var checked = c.checked;
-			var d = c.parentElement;
-			var col = d.getAttribute('col');
-			if (checked == false) {
-				//removeFromFilterSet(col);
-				uncheckFilterSet(col);
-			} else {
-				/*var column = infomgr.getColumnByName('info', col);
-				var var1 = d.getAttribute('val1');
-				var var2 = d.getAttribute('val2');
-				if (var2 == 'undefined') {
-					var2 = undefined;
-				}*/
-				//addToFilterSet(column, var1, var2);
-				checkFilterSet(col);
-			}
-			makeFilterJson();
-			infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
-		});
-		addEl(div, c);
-
-		// Text
-		var title = column.colgroup + ' | ' + column.title;
-		var opStr = '';
-		var valStr = '';
-		var operator = column.retfilttype;
-		if (operator == 'regexp') {
-			opStr = ' contains ';
-			valStr = val1;
-		} else if (operator == 'between') {
-			opStr = ' between ';
-			valStr = val1 + ' and ' + val2;
-		}
-		var span = getEl('span');
-		addEl(span, getTn(title + opStr + valStr + " "));
-		span.addEventListener('click', function (evt) {
-			setFilterSelect(evt.target.parentElement);
-		});
-		span.style.cursor = 'pointer';
-		addEl(div, span);
-
-		// Remove button
-		var x = getEl('button');
-		addEl(x, getTn('Remove'));
-		x.filter = filter;
-		x.addEventListener('click', function (evt, ui) {
-			this.parentElement.remove();
-			var filter = this.filter;
-			removeFromFilterSet(filter[0].col);
-			if (filterSet.length == 0) {
-				document.getElementById('filterlistdiv').style.border = '0px';
-			}
-			makeFilterJson();
-			infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
-		});
-		addEl(div, x);
-		addEl(filterListDiv, div);
-		needBorder = true;
-	}
 }
 
 function setFilterSelect (div) {
@@ -936,37 +721,15 @@ function setFilterSelect (div) {
 	onChangeFilterSelector(col, retfilttype, val1, val2, checked);
 }
 
-function removeFromFilterSet (col) {
-	for (var i = 0; i < filterSet.length; i++) {
-		if (filterSet[i][0].col == col) {
-			filterSet.splice(i, 1);
-			i--;
-			break;
-		}
-	}
-}
-
-function uncheckFilterSet (col) {
-	for (var i = 0; i < filterSet.length; i++) {
-		if (filterSet[i][0].col == col) {
-			filterSet[i][3] = false;
-			break;
-		}
-	}
-}
-
-function checkFilterSet (col) {
-	for (var i = 0; i < filterSet.length; i++) {
-		if (filterSet[i][0].col == col) {
-			filterSet[i][3] = true;
-			break;
-		}
-	}
+function makeFilterRootGroupDiv (filter) {
+    var filterRootGroupDiv = makeFilterGroupDiv(filter);
+    filterRootGroupDiv.attr('id', 'filter-root-group-div');
+    filterRootGroupDiv.css('margin-left', '0px');
+    filterRootGroupDiv.children().children('.filter-group-remove-btn').attr('disabled', 'disabled');
+    return filterRootGroupDiv;
 }
 
 function populateLoadDiv (tabName, filterDiv) {
-	// var tabName = 'info';
-
 	// Title
 	var legend = getEl('legend');
 	legend.className = 'section_header';
@@ -1011,8 +774,6 @@ function populateLoadDiv (tabName, filterDiv) {
 	div.id = 'load_filter_select_div';
 	div.style.display = 'none';
 	div.style.position = 'absolute';
-	//div.style.width = '200px';
-	//div.style.height = '200px';
 	div.style.left = '198px';
 	div.style.padding = '6px';
 	div.style.overflow = 'auto';
@@ -1025,55 +786,58 @@ function populateLoadDiv (tabName, filterDiv) {
 	// Description
 	var div = getEl('div');
 	var p = getEl('p');
-	var desc = 'Add variant filters using the controls below and ' + 
-	 	'click \'Load Variants\' button to update the tables in all tabs ' +
-	 	'with the variants that meet the criteria of all the filters. '
-	addEl(div, addEl(p, getTn(desc)));
+	p.textContent = 'Add variant filters using the controls below and ' + 
+	 	'click \'Count\' button to know the number of variants that ' +
+        'meet the filter criteria, and click \'Update\' button to ' +
+        'update the tables in all tabs ' +
+	 	'with the variants that meet the criteria of the filter. '
+	addEl(div, p);
 	var p = getEl('p');
-	var desc = 'Also, this result viewer will load up to 100,000 variants ' +
-	 	'to the memory and show. ';
-	addEl(p, getTn(desc));
-	var desc = 'Thus, if your result has more than 100,000 ' +
+	p.textContent = 'Also, this result viewer will load up to 100,000 variants ' +
+	 	'to the memory and show. Thus, if your result has more than 100,000 ' +
 	 	'variants then you need to narrow down the variants to load with ' +
 	 	'the variant filters.';
-	addEl(div, addEl(p, getTn(desc)));
+	addEl(div, p);
 	addEl(filterDiv, div);
 
-    var filterGroupDiv = makeFilterGroupDiv();
-    filterGroupDiv.attr('id', 'filter-root-group-div');
-    filterGroupDiv.children().children('.filter-group-remove-btn').attr('disabled', 'disabled');
-    $(filterDiv).append(filterGroupDiv);
+    // Filter
+    var div = getEl('div');
+    div.id = 'filterwrapdiv';
+    var filterRootGroupDiv = makeFilterRootGroupDiv();
+    $(div).append(filterRootGroupDiv);
+    $(filterDiv).append(div);
 
-	// // Selector
-	// var selectorDiv = getLoadSelectorDiv(tabName);
-	// addEl(filterDiv, selectorDiv);
+    // Message
+    var div = getEl('div');
+    div.id = prefixLoadDiv + 'msg_' + tabName;
+    div.style.height = '20px';
+    div.style.fontFamily = 'Verdana';
+    div.style.fontSize = '12px';
+    addEl(filterDiv, div);
 
-	// // Filter list
-	// var filterListDiv = getEl('div');
-	// filterListDiv.id = 'filterlistdiv';
-	// filterListDiv.className = 'filterlistdiv';
-	// addEl(filterDiv, filterListDiv);
+    // Count button
+    var button = getEl('button');
+    button.id = 'count_button';
+    button.onclick = function (evt) {
+        makeFilterJson();
+        infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
+    }
+    button.textContent = 'Count';
+    addEl(filterDiv, button);
 
-	// Message
-	var div = getEl('div');
-	div.id = prefixLoadDiv + 'msg_' + tabName;
-	div.style.height = '20px';
-	div.style.fontFamily = 'Verdana';
-	div.style.fontSize = '12px';
-	addEl(filterDiv, div);
-
-	// Load button
-	var button = getEl('button');
-	button.id = 'load_button';
-	button.onclick = function(event) {
-		var infoReset = resetTab['info'];
-	 	resetTab = {'info': infoReset};
-	 	showSpinner(tabName, this);
-	 	loadData(false, null);
+    // Load button
+    var button = getEl('button');
+    button.id = 'load_button';
+    button.onclick = function(event) {
+        var infoReset = resetTab['info'];
+        resetTab = {'info': infoReset};
+        showSpinner(tabName, this);
+        makeFilterJson();
+        loadData(false, null);
         toggleFilterDiv();
-	 };
-	addEl(button, getTn('Update'));
-	addEl(filterDiv, button);
+    };
+    addEl(button, getTn('Update'));
+    addEl(filterDiv, button);
 
     // Close button
     var button = getEl('div');

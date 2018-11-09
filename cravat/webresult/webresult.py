@@ -191,6 +191,13 @@ def save_filter_setting (request):
     if table_exists(cursor, table) == False:
         q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
         cursor.execute(q)
+    q = 'select * from {} where datatype="filter" and name="{}"'.format(table, name)
+    cursor.execute(q)
+    r = cursor.fetchone()
+    if r is not None:
+        q = 'delete from {} where datatype="filter" and name="{}"'.format(table, name)
+        cursor.execute(q)
+        conn.commit()
     q = 'replace into ' + table + ' values ("filter", "' + name + '", \'' + savedata + '\')'
     cursor.execute(q)
     conn.commit()
