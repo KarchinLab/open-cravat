@@ -28,34 +28,34 @@ class InstallCommand(install):
         Needed because pip runs install commands 
         """
         def _post_install():
-            f = open('d:\\log.txt', 'w')
-            from cravat import constants as c
-            def find_cravat_path():
-                for p in sys.path:
-                    if os.path.isdir(p) and 'cravat' in os.listdir(p):
-                        return os.path.join(p, 'cravat')
-            install_path = find_cravat_path()
-            f.write('install path=' + install_path + '\n')
-            system_conf_path = os.path.join(install_path,
-                                            c.system_conf_fname)
-            f.write('system_conf_path=' + system_conf_path + '\n')
-            system_template_conf_path = c.system_conf_template_path
-            f.write('system_template_conf_path=' + system_template_conf_path)
-            if self.modules_dir == None:
-                default_modules_dir = os.path.join(
-                    install_path, c.default_modules_dir_relative)
-            else:
-                default_modules_dir = self.modules_dir
-            f.write('default_modules_dir=' + default_modules_dir + '\n')
-            from cravat import admin_util as au
-            au.set_modules_dir(default_modules_dir)
-            if not(os.path.exists(c.system_conf_path)):
-                
-                shutil.copy(system_template_conf_path,
-                            system_conf_path)
-            else:
-                shutil.copy(c.system_conf_path, system_conf_path)
-            f.close()
+            wf = open('test.txt', 'w')
+            try:
+                from cravat import constants as c
+                def find_cravat_path():
+                    for p in sys.path:
+                        if os.path.isdir(p) and 'cravat' in os.listdir(p):
+                            return os.path.join(p, 'cravat')
+                install_path = find_cravat_path()
+                system_conf_path = os.path.join(install_path,
+                                                c.system_conf_fname)
+                system_template_conf_path = c.system_conf_template_path
+                if self.modules_dir == None:
+                    default_modules_dir = os.path.join(
+                        install_path, c.default_modules_dir_relative)
+                else:
+                    default_modules_dir = self.modules_dir
+                if not(os.path.exists(c.system_conf_path)):
+                    shutil.copy(system_template_conf_path,
+                                system_conf_path)
+                else:
+                    shutil.copy(c.system_conf_path, system_conf_path)
+                from cravat import admin_util as au
+                au.set_modules_dir(default_modules_dir)
+            except:
+                import traceback
+                wf.write(traceback.format_exc() + '\n')
+            wf.write('done\n')
+            wf.close()
             
         atexit.register(_post_install)
         install.run(self)
@@ -94,7 +94,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='0.0.132',
+    version='0.0.134',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',

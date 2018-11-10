@@ -655,7 +655,7 @@ def get_system_conf():
     if os.path.exists(constants.system_conf_path):
         conf = load_yml_conf(constants.system_conf_path)
     else:
-        conf = {}
+        conf = load_yml_conf(constants.system_conf_template_path)
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
     return conf
