@@ -34,15 +34,13 @@ var widgetGridSize = 10;
 var dbPath = null;
 
 var filterJson = {};
-var loadedFilterJson = {};
-
 var filterSet = [];
+var filterCols = null;
+var filterArmed = {};
 
 var resetTab = {};
 
 var spinner = null;
-
-var filterCols = null;
 
 var shouldResizeScreen = {};
 

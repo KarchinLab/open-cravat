@@ -190,22 +190,23 @@ const makeFilterGroupDiv = (filter) => {
     controlsDiv.append(' ').append(removeBtn);
     
     // Populate from filter
-    if (filter !== undefined) {
-        // Assign operator
-        operatorSel.val(filter.operator);
-        // Add groups
-        for (let i=0; i<filter.groups.length; i++) {
-            addFilterElement(elemsDiv,'group',filter.groups[i]);
+    if (filter !== undefined && filter.variant != undefined) {
+        filter = filter.variant;
+        if (filter.operator != undefined) {
+            // Assign operator
+            operatorSel.val(filter.operator);
+            // Add groups
+            for (let i=0; i<filter.groups.length; i++) {
+                addFilterElement(elemsDiv,'group',filter.groups[i]);
+            }
+            // Add columns
+            for (let i=0; i<filter.columns.length; i++) {
+                addFilterElement(elemsDiv,'column',filter.columns[i]);
+            }
+            // Check negate
+            negateCheck[0].checked = filter.negate;
         }
-        // Add columns
-        for (let i=0; i<filter.columns.length; i++) {
-            addFilterElement(elemsDiv,'column',filter.columns[i]);
-        }
-        // Check negate
-        negateCheck[0].checked = filter.negate;
     }
-
-
     return groupDiv;
 }
 

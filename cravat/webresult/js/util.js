@@ -175,9 +175,12 @@ function addSpinnerById(parentDivId, scaleFactor, minDim, spinnerDivId){
 	return spinnerDiv;
 }
 
-function saveFilterSetting (name) {
+function saveFilterSetting (name, useFilterJson) {
 	var saveData = {};
-	saveData['filterSet'] = filterSet;
+    if (useFilterJson == undefined) {
+        makeFilterJson();
+    }
+	saveData['filterSet'] = filterJson;
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
         type: 'GET',
@@ -237,7 +240,7 @@ function saveLayoutSettingAs () {
 		}
 		var name = prompt(msg, lastUsedLayoutName);
 		if (name != null) {
-			saveLayoutSetting(name, null);
+			saveLayoutSetting(name);
 		}
 	});
 }
@@ -303,7 +306,7 @@ function saveWidgetSetting (name) {
     });
 }
 
-function saveLayoutSetting (name, callback) {
+function saveLayoutSetting (name) {
 	var saveData = {};
 	
 	// Table layout
@@ -418,9 +421,6 @@ function saveLayoutSetting (name, callback) {
 		success: function (response) {
 			lastUsedLayoutName = name;
 			writeLogDiv('Layout setting has been saved.');
-			if (callback) {
-				callback();
-			}
 		}
     });
 }
@@ -568,15 +568,15 @@ function loadFilterSettingAs () {
 	});
 }
 
-
 function loadFilterSetting (name, callback) {
 	$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Filter setting loaded');
 		var data = response;
-		var loadedFilterSet = data['filterSet'];
-		filterSet = loadedFilterSet;
-		showFilterSet();
-		makeFilterJson();
+		filterJson = data['filterSet'];
+		var filterWrapDiv = $('#filterwrapdiv');
+		filterWrapDiv.empty();
+		var filterRootGroupDiv = makeFilterRootGroupDiv(filterJson);
+		filterWrapDiv.append(filterRootGroupDiv);
 		infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
 		if (callback != null) {
 			callback();
