@@ -21,9 +21,9 @@ import websockets
 from aiohttp import web
 import socket
 import base64
-from cryptography import fernet
-from aiohttp_session import setup, get_session, new_session
-from aiohttp_session.cookie_storage import EncryptedCookieStorage
+#from cryptography import fernet
+#from aiohttp_session import setup, get_session, new_session
+#from aiohttp_session.cookie_storage import EncryptedCookieStorage
 import hashlib
 
 entrypoint = None
@@ -90,9 +90,11 @@ def main ():
     try:
         s.bind(('localhost', 8060))
         app = web.Application()
+        '''
         fernet_key = fernet.Fernet.generate_key()
         secret_key = base64.urlsafe_b64decode(fernet_key)
         setup(app, EncryptedCookieStorage(secret_key))
+        '''
         routes = list()
         routes.extend(ws.routes)
         routes.extend(wr.routes)

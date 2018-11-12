@@ -13,7 +13,7 @@ from aiohttp import web
 from html.parser import HTMLParser
 from cravat import store_utils as su
 from cravat import constants
-from aiohttp_session import get_session, new_session
+#from aiohttp_session import get_session, new_session
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
@@ -172,11 +172,14 @@ class ImageSrcEditor(HTMLParser):
         return self.parsed
 
 async def check_admin_priv (request):
+    '''
     session = await get_session(request)
     if 'logged' in session and 'username' in session and session['username'] == 'admin' and session['logged'] == True:
         response = True
     else:
         response = False
+    '''
+    response = True
     return response
 
 async def install_module (request):
