@@ -1,101 +1,3 @@
-function updateFilter (tabName) {
-	var filterObject = [];
-	$('#filter_innerdiv_' + tabName).find('.filtertext').each(function() {
-		var $this = $(this);
-		var colName = $this.attr('colName');
-		var condition = $this.attr('condition');
-		var value = this.value;
-		var columnnos = infomgr.getColumnNos(tabName);
-		filterObject.push({dataIndx: columnnos[colName], condition: condition, value: value});
-	});
-	$('#filter_innerdiv_' + tabName).find('.filtercheckbox').each(function() {
-		var $this = $(this);
-		var colName = $this.attr('colName');
-		var condition = $this.attr('condition');
-		var value = $this.attr('value');
-		var columnnos = infomgr.getColumnNos(tabName);
-		if (this.checked == true) {
-			filterObject.push({dataIndx: columnnos[colName], condition: condition, value: value});
-		}
-	});
-	if ($grids.hasOwnProperty(tabName)) {
-		var $grid = $grids[tabName];
-		$grid.pqGrid('filter', {
-			oper: 'replace',
-			data: filterObject
-		});
-		var numRows = $grid.pqGrid('option', 'dataModel').data.length;
-		var lenStr = numRows + ' out of ' + dataLengths[tabName];
-		if (tabName == 'gene') {
-			lenStr += ' genes';
-		} else {
-			lenStr += ' variants';
-		}
-		document.getElementById('footertext_' + tabName).textContent = lenStr;
-	}
-};
-
-function getClinVarXrefInsert (text) {
-	var toks = text.split(';').join(',').split(',');
-	var insert = getEl('div');
-	insert.style.display = 'inline-block';
-	
-	for (var i = 0; i < toks.length; i++) {
-		var tok = toks[i];
-		var toks2 = tok.split(':');
-		var source = toks2[0];
-		var entry = toks2[1];
-		var div = getEl('div');
-		div.style.display = 'inline-block';
-		addEl(div, getTn(source + ':'));
-		var link = null;
-		if (source == 'OMIM') {
-			link = getEl('a');
-			link.href = 'http://omim.org/entry/' + entry;
-			link.target = '_blank';
-			link.style.color = 'red';
-			addEl(link, getTn(entry));
-		} else if (source == 'MedGen') {
-			link = getEl('a');
-			link.href = 'http://www.ncbi.nlm.nih.gov/medgen/' + entry;
-			link.target = '_blank';
-			link.style.color = 'red';
-			addEl(link, getTn(entry));
-		} else if (source == 'SNOMED CT') {
-			link = getEl('a');
-			link.href = 'http://www.snomedbrowser.com/Codes/Details/' + entry;
-			link.target = '_blank';
-			link.style.color = 'red';
-			addEl(link, getTn(entry));
-		} else if (source == 'ORPHA' || source == 'Orphanet') {
-			link = getEl('a');
-			link.href = 'http://www.orpha.net/consor/cgi-bin/OC_Exp.php?Expert=' + entry;
-			link.target = '_blank';
-			link.style.color = 'red';
-			addEl(link, getTn(entry));
-		} else if (source == 'Gene') {
-			link = getEl('a');
-			link.href = 'http://www.ncbi.nlm.nih.gov/gene/' + entry;
-			link.target = '_blank';
-			link.style.color = 'red';
-			addEl(link, getTn(entry));
-		} else if (source == 'GeneTests') {
-			link = getEl('a');
-			link.href = 'https://www.genetests.org/disorders/?disid=' + entry + '&ps=chld';
-			link.target = '_blank';
-			link.style.color = 'red';
-			addEl(link, getTn(entry));
-		} else {
-			link = getTn(source);
-		}
-		addEl(div, link);
-		addEl(div, getTn('\xA0'));
-		addEl(insert, div);
-	}
-	
-	return insert;
-}
-
 function getExportContent (tabName) {
 	var conditionDic = {'contain':'contains', 'lte':'less than', 'gte':'greater than'};
 	
@@ -106,6 +8,7 @@ function getExportContent (tabName) {
 	content += '# Report section (tab): ' + tabName + '\n';
 	
 	// Writes filters.
+	/*
 	content += '# Filters\n';
 	for (var i = 0; i < filterSet.length; i++) {
 		var filterData = filterSet[i];
@@ -156,6 +59,7 @@ function getExportContent (tabName) {
 		}
 	}
 	content += '\n';
+	*/
 	
 	// Writes data headers.
 	content += colTitles[0];
@@ -195,7 +99,7 @@ function afterDragNSBar (self, tabName) {
 	var dragBarTop_relativeRightDiv = dragBarTop - rightDiv_top - 33;
 	var cellValueDivTop = dragBarTop_relativeRightDiv + 11;
 	var height_table = dragBarTop_relativeRightDiv + 10;
-	var height_detail_div = rightDiv_height - height_table - height_bar - 35;
+	var height_detail_div = rightDiv_height - height_table - height_bar - 55;
 	
 	$grids[tabName].pqGrid('option', 'height', height_table).pqGrid('refresh');
 	dragBar.style.top = cellValueDivTop + 24;
@@ -234,8 +138,9 @@ function resizesTheWindow () {
 		detailDivHeight = detailDiv.offsetHeight;
 	}
 	
-	var rightDivHeight = browserHeight - 50;
-	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 26;
+	var rightDivHeight = browserHeight - 67;
+    console.log('rightdiv height=', rightDivHeight);
+	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 35;
 	var tableDivWidth = 'calc(100% - 10px)';
 	var cellValueDivTop = tableDivHeight - 2 ;
 	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 6;
@@ -243,11 +148,10 @@ function resizesTheWindow () {
 	rightDiv.style.height = rightDivHeight + 'px';
 	tableDiv.style.width = tableDivWidth;
 	tableDiv.style.height = tableDivHeight;
-	pqTable.pqGrid('option', 'width', tableDivWidth).pqGrid('option', 'height', tableDivHeight - 1).pqGrid('refresh'); // 
+	pqTable.pqGrid('option', 'width', tableDivWidth).pqGrid('option', 'height', tableDivHeight - 1).pqGrid('refresh');
 	cellValueDiv.style.top = cellValueDivTop + 'px';
 	nsDragBar.style.top = nsDragBarTop + 'px';
 	if (detailDiv) {
-		//detailDiv.style.width = 'calc(100% - 6px)';
 		$(detailDiv.getElementsByClassName('detailcontainerdiv')[0]).packery('shiftLayout');
 	}
 	
@@ -260,7 +164,6 @@ function getResultLevels () {
 	var request = new XMLHttpRequest();
 	request.open('GET', '/result/service/getresulttablelevels?dbpath=' + dbPath, false);
 	request.send(null);
-    console.log(request.responseText);
 	resultLevels = JSON.parse(request.responseText);
 }
 
@@ -298,7 +201,6 @@ function addTabHeadsAndTabContentDivs () {
 }
 
 function loadData (alertFlag, finalcallback) {
-	makeFilterJson();
 	var infoReset = resetTab['info'];
 	resetTab = {'info': infoReset};
 	resetTab['summary'] = true;
@@ -372,50 +274,55 @@ function loadData (alertFlag, finalcallback) {
 		}
 	}
 	var loadVariantResult = function () {
-        function callLoadVariant () {
-            var callback = null;
-            if (usedAnnotators['gene']) {
-                callback = loadGeneResult;
-            } else {
-                callback = loadSampleResult;
-            }
-            if (resultLevels.indexOf('variant') != -1) {
-                infomgr.load(jobId, 'variant', callback, null, filterJson);
-            } else {
-                callback();
-            }
-        }
+		function callLoadVariant () {
+		    var callback = null;
+		    if (usedAnnotators['gene']) {
+			callback = loadGeneResult;
+		    } else {
+			callback = loadSampleResult;
+		    }
+		    if (resultLevels.indexOf('variant') != -1) {
+			infomgr.load(jobId, 'variant', callback, null, filterJson);
+		    } else {
+			callback();
+		    }
+		}
 		if (firstLoad) {
 			firstLoad = false;
-            infomgr.count(dbPath, 'variant', function (numvar) {
+			infomgr.count(dbPath, 'variant', function (numvar) {
                 if (numvar > NUMVAR_LIMIT) {
                     lockTabs();
                     flagNotifyToUseFilter = true;
                     if (document.getElementById('infonoticediv')) {
-                        notifyToUseFilter();
-                        flagNotifyToUseFilter = false;
+                    notifyToUseFilter();
+                    flagNotifyToUseFilter = false;
                     } else {
-                        flagNotifyToUseFilter = true;
+                    flagNotifyToUseFilter = true;
                     }
                     removeLoadingDiv();
                     return;
                 } else {
                     if (flagNotifyToUseFilter) {
-                        notifyOfReadyToLoad();
-                        flagNotifyToUseFilter = false;
+                    notifyOfReadyToLoad();
+                    flagNotifyToUseFilter = false;
                     }
                     removeLoadingDiv();
                     callLoadVariant();
                 }
-            });
+		    });
 		} else {
-            callLoadVariant();
-        }
+		    callLoadVariant();
+		}
 	}
 	lockTabs();
-	loadedFilterJson = filterJson;
-    makeFilterJson();
 	loadVariantResult();
+    filterArmed = filterJson;
+    var filterButton = document.getElementById('filterbutton');
+    if (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0) {
+        filterButton.style.backgroundColor = 'red';
+    } else {
+        filterButton.style.backgroundColor = 'white';
+    }
 }
 
 function removeLoadingDiv () {
@@ -575,35 +482,9 @@ function getCheckNoRowsMessage (tabName, noRows) {
 }
 
 function makeFilterJson () {
-	var filterSubmit = {};
-	for (var i = 0; i < filterSet.length; i++) {
-		var filter = filterSet[i];
-		var column = filter[0];
-		var val1 = filter[1];
-		var val2 = filter[2];
-		var checked = filter[3];
-		if (! checked) {
-			continue;
-		}
-		var col = column['col'];
-		var retFiltType = column['retfilttype'];
-		if ((retFiltType == '<=' || retFiltType == '>=') && val1 != '') {
-			filterSubmit[col] = retFiltType + val1;
-		} else if (retFiltType == 'string' && val1 != '') {
-			filterSubmit[col] = '="' + val1 + '"';
-		} else if (retFiltType == 'regexp') {
-			if (val1[0] == '"' && val1[val1.length - 1] == '"') {
-				val1 = '^' + val1.substring(1, val1.length - 1) + '$';
-			}
-			filterSubmit[col] = ' REGEXP "' + val1 + '"';
-		} else if (retFiltType == 'hasvalue') {
-			filterSubmit[col] = val1;
-		} else if (retFiltType == 'multisel') {
-		} else if (retFiltType == 'between') {
-			filterSubmit[col] = ' between ' + val1 + ' and ' + val2;
-		}
-	}
-	filterJson['variant'] = filterSubmit;
+    var filterRootGroupDiv = $('#filter-root-group-div');
+    var filter = makeGroupFilter(filterRootGroupDiv);
+    filterJson = {'variant': filter};
 }
 
 function writeLogDiv (msg) {
@@ -626,7 +507,6 @@ function doNothing () {
 
 function webresult_run () {
     var urlParameters = window.location.search.replace("?", "").replace("%20", " ").split("&");
-    console.log(urlParameters);
 	for (var i = 0; i < urlParameters.length; i++) {
 		var keyValue = urlParameters[i].split('=');
 		var key = keyValue[0];
@@ -669,16 +549,28 @@ function webresult_run () {
     	changeMenu();
     });
     
+    var resizeTimeout = null;
     $(window).resize(function(event) {
     	shouldResizeScreen = {};
-    	resizesTheWindow();
+        var curWinWidth = window.innerWidth;
+        var curWinHeight = window.innerHeight;
+        if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
+            windowWidth = curWinWidth;
+            windowHeight = curWinHeight;
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                resizesTheWindow();
+            }, 200);
+        }
     });
     
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
     
     window.onbeforeunload = function () {
     	if (autoSaveLayout) {
-    		saveLayoutSetting(defaultSaveName, doNothing);
+            filterJson = filterArmed;
+    		saveLayoutSetting(defaultSaveName);
+            saveFilterSetting(defaultSaveName, true);
     	}
     }
     

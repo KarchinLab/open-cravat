@@ -1,3 +1,7 @@
+var servermode = false;
+var logged = false;
+var username = null;
+
 var GLOBALS = {
     jobs: [],
     annotators: {},
@@ -6,6 +10,10 @@ var GLOBALS = {
 }
 
 function submit () {
+    if (servermode && logged == false) {
+        alert('Log in before submitting a job.');
+        return;
+    }
     let fd = new FormData();
     var textInputElem = $('#input-text');
     var textVal = textInputElem.val();
@@ -35,10 +43,6 @@ function submit () {
         if (cb.checked) {
             submitOpts.annotators.push(cb.value);
         }
-    }
-    if (submitOpts.annotators.length == 0) {
-        alert('Choose at least one annotator');
-        return;
     }
     var reportChecks = $('#report-select-div')
                          .find('.checkbox-group-check');
@@ -79,9 +83,7 @@ function createJobExcelReport (evt) {
     var jobid = evt.target.getAttribute('jobId');
     generateReport(jobid, 'excel', function () {
         populateJobs().then(function () {
-            setTimeout(function () {
-                buildJobsTable();
-            }, 500);
+            buildJobsTable();
         });
     });
 }
@@ -90,9 +92,7 @@ function createJobTextReport (evt) {
     var jobid = evt.target.getAttribute('jobId');
     generateReport(jobid, 'text', function () {
         populateJobs().then(function () {
-            setTimeout(function () {
-                buildJobsTable();
-            }, 500);
+            buildJobsTable();
         });
     });
 }
@@ -122,10 +122,8 @@ function buildJobsTable () {
         jobTr.append($(getEl('td')).append(job.status.status));
         // Note
         jobTr.append($(getEl('td')).append(job.note));
-        /*
-        // Submission time
-        jobTr.append($(getEl('td')).append(job.submission_time.toLocaleString()));
-        */
+        // Genome assembly
+        jobTr.append($(getEl('td')).append(job.assembly));
         // View
         var viewTd = $(getEl('td'));
         viewTd.css('text-align', 'center');
@@ -397,20 +395,25 @@ function populateJobs () {
         $.ajax({
             url:'jobs',
             type: 'GET',
+            async: false,
             success: function (allJobs) {
                 GLOBALS.jobs = [];
                 for (var i=0; i<allJobs.length; i++) {
                     let job = allJobs[i];
                     addJob(job);
                 }
-                resolve();
+                buildJobsTable();
+                //resolve();
+            },
+            fail: function (response) {
+                alert('fail at populate jobs');
             }
         })
     });
 }
 
 function refreshJobsTable () {
-    populateJobs().then(buildJobsTable());
+    populateJobs();//.then(buildJobsTable());
 }
 
 function populateAnnotators () {
@@ -420,7 +423,8 @@ function populateAnnotators () {
             type: 'GET',
             success: function (data) {
                 GLOBALS.annotators = data
-                resolve();
+                buildAnnotatorsSelector();
+                //resolve();
             }
         })
     });
@@ -550,7 +554,8 @@ function populateReports () {
             type: 'GET',
             success: function (data) {
                 GLOBALS.reports = data
-                resolve();
+                buildReportSelector();
+                //resolve();
             }
         })
     })
@@ -587,18 +592,15 @@ function onTabChange () {
 
 function getJobsDir () {
     $.get('/submit/getjobsdir').done(function (response) {
-        $('.jobsdirtext').text(response);
+        document.getElementById('jobsdirtext').textContent = response;
     });
 }
 
 function setJobsDir (evt) {
     var d = evt.target.value;
     $.get('/submit/setjobsdir', {'jobsdir': d}).done(function (response) {
-        $('.jobsdirtext').text(response);
-        var promise = populateJobs();
-        promise.then(function (response) {
-            buildJobsTable();
-        });
+        document.getElementById('jobsdirtext').textContent = response;
+        populateJobsTable();
     });
 }
 
@@ -673,15 +675,291 @@ function updateSystemConf () {
                 alert('System configuration was not successful');
             }
             if (response['sysconf']['jobs_dir'] != undefined) {
+                populateJobs();
+                /*
                 populateJobs().then(function () {
                     buildJobsTable();
                 });
+                */
+            }
+        }
+    });
+}
+
+function resetSystemConf () {
+    $.get('/submit/resetsystemconf').done(function (response) {
+        var status = response['status'];
+        if (status == 'success') {
+            var d = response['dict'];
+            document.getElementById('sysconftextarea').value = d;
+        } else {
+            alert('Resetting system conf file failed.');
+        }
+    });
+}
+
+function showMd () {
+    $.get('/store/getmd').done(function (response) {
+        document.getElementById('modulesdirspan').textContent = response;
+    });
+}
+
+function getServermode () {
+    $.ajax({
+        url: '/submit/servermode',
+        type: 'get',
+        success: function (response) {
+            servermode = response['servermode'];
+            if (servermode == false) {
+                setupNoServerMode();
+            } else {
+                setupServerMode();
+            }
+        }
+    });
+}
+
+function setupNoServerMode () {
+    document.getElementById('accountdiv').style.display = 'none';
+}
+
+function setupServerMode () {
+    document.getElementById('accountdiv').style.display = 'block';
+    document.getElementById('settingsdiv').style.display = 'none';
+    document.getElementById('settingspageselect').style.display = 'none';
+    checkLogged();
+}
+
+function setupAdminMode () {
+    document.getElementById('accountdiv').style.display = 'block';
+    document.getElementById('settingsdiv').style.display = 'block';
+    document.getElementById('settingspageselect').style.display = 'inline-block';
+}
+
+function showLoggedControl (username) {
+    var userDiv = document.getElementById('userdiv');
+    userDiv.textContent = username;
+    userDiv.style.display = 'inline-block';
+    document.getElementById('logoutdiv').style.display = 'inline-block';
+    document.getElementById('loginsignupbutton').style.display = 'none';
+    document.getElementById('settingspageselect').style.display = 'none';
+}
+
+function doAfterLogin () {
+    showLoggedControl(username);
+    hideloginsignupdiv();
+    if (username == 'admin') {
+        setupAdminMode();
+    }
+    populateJobs();
+}
+
+function msgAccountDiv (msg) {
+    document.getElementById('accountmsgdiv').textContent = msg;
+    setTimeout(function () {
+        document.getElementById('accountmsgdiv').textContent = '';
+    }, 3000);
+}
+
+function login () {
+    var usernameSubmit = document.getElementById('login_username').value;
+    var passwordSubmit = document.getElementById('login_password').value;
+    $.ajax({
+        url: '/submit/login',
+        data: {'username':usernameSubmit, 'password':passwordSubmit},
+        success: function (response) {
+            if (response == 'success') {
+                username = usernameSubmit;
+                logged = true;
+                doAfterLogin();
+            } else if (response == 'fail') {
+                msgAccountDiv('Login failed');
+            }
+        }
+    });
+}
+
+function logout () {
+    $.ajax({
+        url: '/submit/logout',
+        success: function (response) {
+            if (response == 'success') {
+                username = '';
+                logged = false;
+                populateJobs();
+                var userDiv = document.getElementById('userdiv');
+                userDiv.textContent = '';
+                userDiv.style.display = 'none';
+                document.getElementById('loginsignupbutton').style.display = 'inline-block';
+                document.getElementById('logoutdiv').style.display = 'none';
+            }
+        }
+    });
+}
+
+function getPasswordQuestion () {
+    var email = document.getElementById('forgotpasswordemail').value;
+    $.ajax({
+        url: '/submit/passwordquestion',
+        data: {'email': email},
+        success: function (response) {
+            var status = response['status'];
+            var msg = response['msg'];
+            if (status == 'fail') {
+                msgAccountDiv(msg);
+            } else {
+                document.getElementById('forgotpasswordgetquestiondiv').style.display = 'none';
+                document.getElementById('forgotpasswordquestion').textContent = msg;
+                document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'inline-block';
+            }
+        }
+    });
+}
+
+function showSignupDiv () {
+    document.getElementById('logindiv').style.display = 'none';
+    document.getElementById('signupdiv').style.display = 'block';
+}
+
+function submitForgotPasswordAnswer () {
+    var email = document.getElementById('forgotpasswordemail').value;
+    var answer = document.getElementById('forgotpasswordanswer').value;
+    $.ajax({
+        url: '/submit/passwordanswer',
+        data: {'email': email, 'answer': answer},
+        success: function (response) {
+            var success = response['success'];
+            var msg = response['msg'];
+            if (success == true) {
+                document.getElementById('forgotpassworddiv').style.display = 'none';
+                document.getElementById('forgotpasswordemail').textContent = '';
+                document.getElementById('forgotpasswordquestion').textContent = '';
+                document.getElementById('forgotpasswordanswer').textContent = '';
+                alert('Password has been reset to ' + msg);
+            } else {
+                msgAccountDiv(msg);
+            }
+        }
+    });
+}
+
+function forgotPassword () {
+    document.getElementById('forgotpasswordquestion').textContent = '';
+    document.getElementById('forgotpasswordgetquestiondiv').style.display = 'block';
+    document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'none';
+    document.getElementById('forgotpassworddiv').style.display = 'block';
+}
+
+function changePassword () {
+    var div = document.getElementById('changepassworddiv');
+    var display = div.style.display;
+    if (display == 'block') {
+        display = 'none';
+    } else {
+        display = 'block';
+    }
+    div.style.display = display;
+}
+
+function submitNewPassword () {
+    var oldpassword = document.getElementById('changepasswordoldpassword').value;
+    var newpassword = document.getElementById('changepasswordnewpassword').value;
+    var retypenewpassword = document.getElementById('changepasswordretypenewpassword').value;
+    if (newpassword != retypenewpassword) {
+        msgAccountDiv('New password mismatch');
+        return;
+    }
+    $.ajax({
+        url: '/submit/changepassword',
+        data: {'oldpassword': oldpassword,
+               'newpassword': newpassword},
+        success: function (response) {
+            if (response == 'success') {
+                msgAccountDiv('Password changed successfully.');
+                document.getElementById('changepassworddiv').style.display = 'none';
+            } else {
+                msgAccountDiv(response);
+            }
+        }
+    });
+}
+
+function hideloginsignupdiv () {
+    document.getElementById('loginsignupdialog').style.display = 'none';
+}
+
+function toggleloginsignupdiv () {
+    document.getElementById('logindiv').style.display = 'block';
+    document.getElementById('signupdiv').style.display = 'none';
+    var dialog = document.getElementById('loginsignupdialog');
+    var display = dialog.style.display;
+    if (display == 'none') {
+        display = 'block';
+    } else {
+        display = 'none';
+    }
+    dialog.style.display = display;
+}
+
+function closeLoginSignupDialog (evt) {
+    document.getElementById("loginsignupdialog").style.display="none";
+}
+
+function signupSubmit () {
+    var username = document.getElementById('signupemail').value.trim();
+    var password = document.getElementById('signuppassword').value.trim();
+    var retypepassword = document.getElementById('signupretypepassword').value.trim();
+    var question = document.getElementById('signupquestion').value.trim();
+    var answer = document.getElementById('signupanswer').value.trim();
+    if (username == '' || password == '' || retypepassword == '' || question == '' || answer == '') {
+        msgAccountDiv('Fill all the blanks.');
+        return;
+    }
+    if (password != retypepassword) {
+        msgAccountDiv('Password mismatch');
+        return;
+    }
+    $.ajax({
+        url: '/submit/signup',
+        data: {'username': username, 'password': password, 'question': question, 'answer': answer},
+        success: function (response) {
+            if (response == 'already registered') {
+                msgAccountDiv('Already registered');
+            } else if (response == 'success') {
+                populateJobs();
+                msgAccountDiv('Account created');
+                document.getElementById('loginsignupbutton').style.display = 'none';
+                var userDiv = document.getElementById('userdiv');
+                userDiv.textContent = username;
+                userDiv.style.display = 'inline-block';
+                document.getElementById('logoutdiv').style.display = 'inline-block';
+                toggleloginsignupdiv();
+                document.getElementById('loginsignupbutton').style.display = 'none';
+                document.getElementById('signupdiv').style.display = 'none';
+            } else if (response == 'fail') {
+                msgAccountDiv('Signup failed');
+            }
+        }
+    });
+}
+
+function checkLogged () {
+    $.ajax({
+        url: '/submit/checklogged',
+        success: function (response) {
+            logged = response['logged'];
+            if (logged == true) {
+                username = response['email'];
+                logged = true;
+                doAfterLogin();
             }
         }
     });
 }
 
 function websubmit_run () {
+    getServermode();
+    var md = showMd();
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
     connectWebSocket();
@@ -707,18 +985,13 @@ function websubmit_run () {
         tds[1].style.height = tdHeight;
     });
     addListeners();
-    jobsPromise = populateJobs();
-    annotsPromise = populateAnnotators();
-    reportsPromise = populateReports();
-    Promise.all([jobsPromise, reportsPromise]).then(() => {
-        buildJobsTable();
-    })
-    annotsPromise.then( () => {
-        buildAnnotatorsSelector();
-    })
-    reportsPromise.then( () => {
-        buildReportSelector();
-    })
+    if (servermode == false) {
+        populateJobs();
+    }
+    populateAnnotators();
+    if (servermode == false) {
+        populateReports();
+    }
     getJobsDir();
     var submitcontentdiv = document.getElementById('submit-form');
     var h = window.innerHeight - 235;

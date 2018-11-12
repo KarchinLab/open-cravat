@@ -201,7 +201,9 @@ function getRemoteModulePanel (moduleName) {
     }
     var img = getLogo(moduleName);
     img.onerror = function () {
+        img.src = '/store/genericmodulelogo.png';
         var span = getEl('div');
+        span.style.position = 'absolute';
         span.style.fontSize = '42px';
         span.style.fontWeight = 'bold';
         span.textContent = moduleInfo.title;
@@ -214,25 +216,25 @@ function getRemoteModulePanel (moduleName) {
     }
     img.onload = function () {
         this.onload = null;
-        img.style.top = '0';
-        img.style.bottom = '0';
-        img.style.left = '0';
-        img.style.right = '0';
-        img.style.margin = 'auto';
-        img.style.width = '100%';
-        img.style.height = 'auto';
-        img.style.maxWidth = '100%';
-        img.style.maxHeight = '100%';
-        img.onclick = function (evt) {
-            var pdiv = evt.target.parentElement;
-            var moduleName = div.getAttribute('module');
-            var storediv = document.getElementById('storediv');
-            var dialog = activateDetailDialog(moduleName);
-            addEl(storediv, dialog);
-            evt.stopPropagation();
-        }
         var sdiv = document.getElementById('logodiv_' + moduleName);
         addEl(sdiv, img);
+    }
+    img.style.top = '0';
+    img.style.bottom = '0';
+    img.style.left = '0';
+    img.style.right = '0';
+    img.style.margin = 'auto';
+    img.style.width = '100%';
+    img.style.height = 'auto';
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.onclick = function (evt) {
+        var pdiv = evt.target.parentElement;
+        var moduleName = div.getAttribute('module');
+        var storediv = document.getElementById('storediv');
+        var dialog = activateDetailDialog(moduleName);
+        addEl(storediv, dialog);
+        evt.stopPropagation();
     }
     addEl(div, sdiv);
     var span = null;
@@ -454,130 +456,132 @@ function activateDetailDialog (moduleName) {
     td.style.border = '0px';
     td.style.verticalAlign = 'top';
     td.style.textAlign = 'right';
-    var button = getEl('button');
-    button.id = 'installbutton';
-    var localInfo = localModuleInfo[moduleName];
-    var buttonText = null;
-    if (localInfo != undefined && localInfo.exists) {
-        buttonText = 'Uninstall';
-        button.style.backgroundColor = '#ffd3be';
-        button.addEventListener('click', function (evt) {
-            var btn = evt.target;
-            btn.textContent = 'Uninstalling...';
-            btn.style.color = 'red';
-            uninstallModule(btn.getAttribute('module'));
-            document.getElementById('moduledetaildiv_store').style.display = 'none';
-        });
-    } else {
-        buttonText = 'Install';
-        button.style.backgroundColor = '#beeaff';
-        button.addEventListener('click', function (evt) {
-            var btn = evt.target;
-            var btnModuleName = btn.getAttribute('module');
-            if (btnModuleName == 'chasmplus') {
-                var select = document.getElementById('chasmplustissueselect');
-                btnModuleName = select.value;
-            }
-            var buttonText = null;
-            if (installQueue.length == 0) {
-                buttonText = 'Installing...';
-            } else {
-                buttonText = 'Queued';
-            }
-            queueInstall(btnModuleName);
-            btn.textContent = buttonText;
-            btn.style.color = 'red';
-            document.getElementById('moduledetaildiv_store').style.display = 'none';
-        });
-    }
-    button.textContent = buttonText;
-    button.style.padding = '8px';
-    button.style.fontSize = '18px';
-    button.style.fontWeight = 'bold';
-    button.setAttribute('module', moduleName);
-    if (buttonText == 'Uninstall') {
-        var img2 = getEl('img');
-        img2.id = 'installedicon';
-        img2.src = '/store/done.png';
-        img2.style.width = '20px';
-        img2.title = 'Installed';
-        addEl(td, img2);
-    }
-    addEl(td, getEl('br'));
-    if (moduleName == 'chasmplus') {
-        var span = getEl('span');
-        span.textContent = 'Select tissue:';
-        addEl(td, span);
-        var select = getEl('select');
-        select.id = 'chasmplustissueselect';
-        var option = getEl('option');
-        option.value = 'chasmplus';
-        option.text = 'Generic';
-        select.add(option);
-        var modules = Object.keys(remoteModuleInfo);
-        for (var i = 0; i < modules.length; i++) {
-            var module = modules[i];
-            if (module.startsWith('chasmplus_')) {
-                var option = getEl('option');
-                var tissue = module.replace('chasmplus_', '');
-                option.value = module;
-                option.text = tissue;
-                select.add(option);
-            }
+    if (servermode == false || (logged == true && username == 'admin')) {
+        var button = getEl('button');
+        button.id = 'installbutton';
+        var localInfo = localModuleInfo[moduleName];
+        var buttonText = null;
+        if (localInfo != undefined && localInfo.exists) {
+            buttonText = 'Uninstall';
+            button.style.backgroundColor = '#ffd3be';
+            button.addEventListener('click', function (evt) {
+                var btn = evt.target;
+                btn.textContent = 'Uninstalling...';
+                btn.style.color = 'red';
+                uninstallModule(btn.getAttribute('module'));
+                document.getElementById('moduledetaildiv_store').style.display = 'none';
+            });
+        } else {
+            buttonText = 'Install';
+            button.style.backgroundColor = '#beeaff';
+            button.addEventListener('click', function (evt) {
+                var btn = evt.target;
+                var btnModuleName = btn.getAttribute('module');
+                if (btnModuleName == 'chasmplus') {
+                    var select = document.getElementById('chasmplustissueselect');
+                    btnModuleName = select.value;
+                }
+                var buttonText = null;
+                if (installQueue.length == 0) {
+                    buttonText = 'Installing...';
+                } else {
+                    buttonText = 'Queued';
+                }
+                queueInstall(btnModuleName);
+                btn.textContent = buttonText;
+                btn.style.color = 'red';
+                document.getElementById('moduledetaildiv_store').style.display = 'none';
+            });
         }
-        select.addEventListener('change', function (evt) {
-            var value = select.options[select.selectedIndex].value;
-            var m = localModuleInfo[value];
-            if (m != undefined && m.exists == true) {
-                var button = document.getElementById('installbutton');
-                button.textContent = 'Uninstall';
-                button.addEventListener('click', function (evt) {
-                    var btn = evt.target;
-                    btn.textContent = 'Uninstalling...';
-                    btn.style.color = 'red';
-                    uninstallModule(btn.getAttribute('module'));
-                    document.getElementById('moduledetaildiv_store').style.display = 'none';
-                });
-                var img2 = document.getElementById('installedicon');
-                img2.src = '/store/done.png';
-                img2.title = 'Installed';
-            } else {
-                var button = document.getElementById('installbutton');
-                button.textContent = 'Install';
-                button.addEventListener('click', function (evt) {
-                    var btn = evt.target;
-                    var btnModuleName = btn.getAttribute('module');
-                    if (btnModuleName == 'chasmplus') {
-                        var select = document.getElementById('chasmplustissueselect');
-                        btnModuleName = select.value;
-                    }
-                    var buttonText = null;
-                    if (installQueue.length == 0) {
-                        buttonText = 'Installing...';
-                    } else {
-                        buttonText = 'Queued';
-                    }
-                    queueInstall(btnModuleName);
-                    btn.textContent = buttonText;
-                    btn.style.color = 'red';
-                    document.getElementById('moduledetaildiv_store').style.display = 'none';
-                });
-                var img2 = document.getElementById('installedicon');
-                img2.src = '/store/empty.png';
-                img2.title = 'Uninstalled';
+        button.textContent = buttonText;
+        button.style.padding = '8px';
+        button.style.fontSize = '18px';
+        button.style.fontWeight = 'bold';
+        button.setAttribute('module', moduleName);
+        if (buttonText == 'Uninstall') {
+            var img2 = getEl('img');
+            img2.id = 'installedicon';
+            img2.src = '/store/done.png';
+            img2.style.width = '20px';
+            img2.title = 'Installed';
+            addEl(td, img2);
+        }
+        addEl(td, getEl('br'));
+        if (moduleName == 'chasmplus') {
+            var span = getEl('span');
+            span.textContent = 'Select tissue:';
+            addEl(td, span);
+            var select = getEl('select');
+            select.id = 'chasmplustissueselect';
+            var option = getEl('option');
+            option.value = 'chasmplus';
+            option.text = 'Generic';
+            select.add(option);
+            var modules = Object.keys(remoteModuleInfo);
+            for (var i = 0; i < modules.length; i++) {
+                var module = modules[i];
+                if (module.startsWith('chasmplus_')) {
+                    var option = getEl('option');
+                    var tissue = module.replace('chasmplus_', '');
+                    option.value = module;
+                    option.text = tissue;
+                    select.add(option);
+                }
             }
-        });
-        addEl(td, select);
+            select.addEventListener('change', function (evt) {
+                var value = select.options[select.selectedIndex].value;
+                var m = localModuleInfo[value];
+                if (m != undefined && m.exists == true) {
+                    var button = document.getElementById('installbutton');
+                    button.textContent = 'Uninstall';
+                    button.addEventListener('click', function (evt) {
+                        var btn = evt.target;
+                        btn.textContent = 'Uninstalling...';
+                        btn.style.color = 'red';
+                        uninstallModule(btn.getAttribute('module'));
+                        document.getElementById('moduledetaildiv_store').style.display = 'none';
+                    });
+                    var img2 = document.getElementById('installedicon');
+                    img2.src = '/store/done.png';
+                    img2.title = 'Installed';
+                } else {
+                    var button = document.getElementById('installbutton');
+                    button.textContent = 'Install';
+                    button.addEventListener('click', function (evt) {
+                        var btn = evt.target;
+                        var btnModuleName = btn.getAttribute('module');
+                        if (btnModuleName == 'chasmplus') {
+                            var select = document.getElementById('chasmplustissueselect');
+                            btnModuleName = select.value;
+                        }
+                        var buttonText = null;
+                        if (installQueue.length == 0) {
+                            buttonText = 'Installing...';
+                        } else {
+                            buttonText = 'Queued';
+                        }
+                        queueInstall(btnModuleName);
+                        btn.textContent = buttonText;
+                        btn.style.color = 'red';
+                        document.getElementById('moduledetaildiv_store').style.display = 'none';
+                    });
+                    var img2 = document.getElementById('installedicon');
+                    img2.src = '/store/empty.png';
+                    img2.title = 'Uninstalled';
+                }
+            });
+            addEl(td, select);
+        }
+        addEl(td, button);
+        var sdiv = getEl('div');
+        sdiv.id = 'installstatdiv_' + moduleName;
+        sdiv.style.marginTop = '10px';
+        sdiv.style.fontSize = '12px';
+        if (installInfo[moduleName] != undefined) {
+            sdiv.textContent = installInfo[moduleName]['msg'];
+        }
+        addEl(td, sdiv);
     }
-    addEl(td, button);
-    var sdiv = getEl('div');
-    sdiv.id = 'installstatdiv_' + moduleName;
-    sdiv.style.marginTop = '10px';
-    sdiv.style.fontSize = '12px';
-    if (installInfo[moduleName] != undefined) {
-        sdiv.textContent = installInfo[moduleName]['msg'];
-    }
-    addEl(td, sdiv);
     addEl(tr, td);
     addEl(table, tr);
     addEl(div, table);
@@ -988,7 +992,9 @@ function installModule (moduleName) {
 		type:'GET',
 		url:'/store/install',
 		data: {name:moduleName, version:version},
-		dataType:'json',
+        success: function (response) {
+            console.log(response);
+        }
 	});
 }
 
@@ -996,14 +1002,14 @@ function uninstallModule(moduleName) {
     installInfo[moduleName] = {'msg': 'uninstalling'};
     updateRemotePanels();
 	$.ajax({
-			type:'GET',
-			url:'/store/uninstall',
-			data: {name: moduleName},
-			dataType: 'json',
-			complete: function (response) {
-                delete installInfo[moduleName];
-                moduleChange(response);
-            }
+        type:'GET',
+        url:'/store/uninstall',
+        data: {name: moduleName},
+        complete: function (response) {
+            console.log(response);
+            delete installInfo[moduleName];
+            moduleChange(response);
+        }
 	});
 }
 

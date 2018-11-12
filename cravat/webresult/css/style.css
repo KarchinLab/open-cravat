@@ -5,7 +5,7 @@ body {
 }
 
 .rightdiv {
-	height: calc(100% - 0px); 
+	height: 100%; 
 	width: 100%;
     overflow: auto;
 }
@@ -224,11 +224,6 @@ div.tabContent.hide {
 	position: relative;
 }
 
-.detailcontainerdiv {
-	/*width: calc(100% - 30px);
-	height: 100%;*/
-}
-
 .detailsidebardiv {
 	width: 30px;
 	height: 100%;
@@ -395,4 +390,15 @@ p {
 
 button {
 	background-color: white;
+}
+
+.filter-element-div {
+    margin: 5px;
+    padding: 3px;
+    margin-left: 20px;
+    border: 1px solid black;
+}
+
+.filter-join-operator-div {
+    margin-left: 20px;
 }

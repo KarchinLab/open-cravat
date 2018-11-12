@@ -13,6 +13,7 @@ from aiohttp import web
 from html.parser import HTMLParser
 from cravat import store_utils as su
 from cravat import constants
+from aiohttp_session import get_session, new_session
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
@@ -170,17 +171,29 @@ class ImageSrcEditor(HTMLParser):
     def get_parsed(self):
         return self.parsed
 
-def install_module (request):
-    queries = request.rel_url.query
-    module_name = queries['name']
-    if 'version' in queries:
-        module_version = queries['version']
+async def check_admin_priv (request):
+    session = await get_session(request)
+    if 'logged' in session and 'username' in session and session['username'] == 'admin' and session['logged'] == True:
+        response = True
     else:
-        module_version = None
-    #au.install_module(module_name, version=module_version)
-    queue_install(module_name, module_version)
-    content = 'success'
-    return web.Response(text=content)
+        response = False
+    return response
+
+async def install_module (request):
+    isadmin = await check_admin_priv(request)
+    if isadmin:
+        queries = request.rel_url.query
+        module_name = queries['name']
+        if 'version' in queries:
+            module_version = queries['version']
+        else:
+            module_version = None
+        #au.install_module(module_name, version=module_version)
+        queue_install(module_name, module_version)
+        response = 'success'
+    else:
+        response = 'failure'
+    return web.json_response(content)
 
 def install_widgets_for_module (request):
     queries = request.rel_url.query
@@ -189,11 +202,15 @@ def install_widgets_for_module (request):
     content = 'success'
     return web.json_response(content)
 
-def uninstall_module (request):
-    queries = request.rel_url.query
-    module_name = queries['name']
-    au.uninstall_module(module_name)
-    return web.Response(text='uninstalled ' + module_name)
+async def uninstall_module (request):
+    isadmin = await check_admin_priv(request)
+    if isadmin:
+        queries = request.rel_url.query
+        module_name = queries['name']
+        au.uninstall_module(module_name)
+        return web.json_response('uninstalled ' + module_name)
+    else:
+        return web.json_response('failure')
 
 def start_worker ():
     global install_worker
@@ -253,11 +270,20 @@ def get_base_modules (request):
     base_modules = system_conf['base_modules']
     return web.json_response(base_modules)
 
-def install_base_modules (request):
-    base_modules = system_conf.get(constants.base_modules_key,[])
-    for module in base_modules:
-        install_queue.put({'module': module, 'version': None})
-    return web.Response(text='queued')
+async def install_base_modules (request):
+    isadmin = await check_admin_priv(request)
+    if isadmin:
+        base_modules = system_conf.get(constants.base_modules_key,[])
+        for module in base_modules:
+            install_queue.put({'module': module, 'version': None})
+        response = 'queued'
+    else:
+        response = 'failed'
+    return web.json_response(response)
+
+def get_md (request):
+    modules_dir = au.get_modules_dir()
+    return web.Response(text=modules_dir)
 
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
@@ -271,4 +297,4 @@ routes.append(['GET', '/store/queueinstall', queue_install])
 routes.append(['GET', '/store/modules/{module}/{version}/readme', get_module_readme])
 routes.append(['GET', '/store/getbasemodules', get_base_modules])
 routes.append(['GET', '/store/installbasemodules', install_base_modules])
-
+routes.append(['GET', '/store/getmd', get_md])

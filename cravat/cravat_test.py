@@ -50,7 +50,8 @@ class Tester():
             cmd_list.append(self.module.name)
         else:
             cmd_list.append('--sa')
-        exit_code = subprocess.call(cmd_list, stdout=self.log, stderr=subprocess.STDOUT)
+        print(' '.join(cmd_list))
+        exit_code = subprocess.call(' '.join(cmd_list), shell=True, stdout=self.log, stderr=subprocess.STDOUT)
         if exit_code != 0:
             self._report('    CRAVAT non-zero exit code: ' + str(exit_code))
         

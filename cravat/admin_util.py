@@ -655,7 +655,7 @@ def get_system_conf():
     if os.path.exists(constants.system_conf_path):
         conf = load_yml_conf(constants.system_conf_path)
     else:
-        conf = {}
+        conf = load_yml_conf(constants.system_conf_template_path)
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
     return conf
@@ -687,6 +687,12 @@ def update_system_conf_file(d):
         raise
         return False
 
+def read_system_conf_template ():
+    with open(constants.system_conf_template_path) as f:
+        d = yaml.load(f)
+        return d
+    return None
+
 def get_main_conf_path():
     """
     Get the path to where the main cravat config (cravat.yml) should be.
@@ -704,6 +710,9 @@ def publish_module(module_name, user, password, overwrite_version=False, include
     publish_url = sys_conf['publish_url']
     mic.update_local()
     local_info = get_local_module_info(module_name)
+    if local_info == None:
+        print(module_name + ' does not exist.')
+        return
     check_url = publish_url + '/%s/%s/check' %(module_name,local_info.version)
     r = requests.get(check_url, auth=(user,password))
     if r.status_code != 200:

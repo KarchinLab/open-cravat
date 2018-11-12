@@ -224,7 +224,6 @@ class CravatReport:
                                   'col_type': col['type']}
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
-                    annot.remove_log_file()
         colno = 0
         for colgroup in self.columngroups[level]:
             colno += colgroup['count']
@@ -277,7 +276,7 @@ class CravatReport:
 
     def load_filter (self):
         self.cf = CravatFilter(dbpath=self.dbpath)
-        self.cf.loadfilter(self.filterpath, self.filtername, self.filterstring)
+        self.cf.loadfilter(filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
     
     def table_exists (self, tablename):
         sql = 'select name from sqlite_master where ' + \

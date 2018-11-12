@@ -57,7 +57,7 @@ def get_filter_save_names (request):
     cursor = conn.cursor()
     table = 'viewersetup'
     if table_exists(cursor, table) == False:
-        content = []
+        content = '[]'
     else:
         q = 'select distinct name from ' + table + ' where datatype="filter"'
         cursor.execute(q)
@@ -160,8 +160,9 @@ def load_filter_setting (request):
     conn.close()
     return web.json_response(content)
 
-def save_layout_setting (request):
-    queries = request.rel_url.query
+async def save_layout_setting (request):
+    #queries = request.rel_url.query
+    queries = await request.post()
     dbpath = queries['dbpath']
     name = queries['name']
     savedata = queries['savedata']
@@ -190,12 +191,37 @@ def save_filter_setting (request):
     if table_exists(cursor, table) == False:
         q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
         cursor.execute(q)
+    q = 'select * from {} where datatype="filter" and name="{}"'.format(table, name)
+    cursor.execute(q)
+    r = cursor.fetchone()
+    if r is not None:
+        q = 'delete from {} where datatype="filter" and name="{}"'.format(table, name)
+        cursor.execute(q)
+        conn.commit()
     q = 'replace into ' + table + ' values ("filter", "' + name + '", \'' + savedata + '\')'
     cursor.execute(q)
     conn.commit()
     cursor.close()
     conn.close()
     content = 'saved'
+    return web.json_response(content)
+
+def delete_filter_setting (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    name = queries['name']
+    conn = sqlite3.connect(dbpath)
+    cursor = conn.cursor()
+    table = 'viewersetup'
+    if table_exists(cursor, table):
+        q = 'delete from ' + table + ' where name="' + name + '" and datatype="filter"'
+        cursor.execute(q)
+        conn.commit()
+        content = 'deleted'
+    else:
+        content = 'no such table'
+    cursor.close()
+    conn.close()
     return web.json_response(content)
 
 def get_status (request):
@@ -243,7 +269,6 @@ def get_count (request):
     return web.json_response(content)
 
 def get_result (request):
-    queries = request.rel_url.query
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     tab = queries['tab']
@@ -392,9 +417,9 @@ def get_colinfo (dbpath, confpath, filterstring):
     return colinfo
 
 def table_exists (cursor, table):
-    sql = 'select name from sqlite_master where type="table" and ' +\
+    q = 'select name from sqlite_master where type="table" and ' +\
         'name="' + table + '"'
-    cursor.execute(sql)
+    cursor.execute(q)
     if cursor.fetchone() == None:
         return False
     else:
@@ -433,7 +458,7 @@ routes.append(['GET', '/result/service/count', get_count])
 routes.append(['GET', '/result/service/widgetlist', get_widgetlist])
 routes.append(['GET', '/result/service/status', get_status])
 routes.append(['GET', '/result/service/savefiltersetting', save_filter_setting])
-routes.append(['GET', '/result/service/savelayoutsetting', save_layout_setting])
+routes.append(['POST', '/result/service/savelayoutsetting', save_layout_setting])
 routes.append(['GET', '/result/service/loadfiltersetting', load_filter_setting])
 routes.append(['GET', '/result/service/loadlayoutsetting', load_layout_setting])
 routes.append(['GET', '/result/service/deletelayoutsetting', delete_layout_setting])
@@ -443,3 +468,5 @@ routes.append(['GET', '/result/service/getfiltersavenames', get_filter_save_name
 routes.append(['GET', '/result/service/getnowgannotmodules', get_nowg_annot_modules])
 routes.append(['GET', '/result/widgetfile/{module_dir}/{filename}', serve_widgetfile])
 routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])
+routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
+

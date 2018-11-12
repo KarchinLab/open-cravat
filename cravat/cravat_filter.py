@@ -8,6 +8,80 @@ import sqlite3
 import json
 import re
 
+class FilterColumn(object):
+
+    test2sql = {
+        'equals': '==',
+        'lessThanEq': '<=',
+        'lessThan': '<',
+        'greaterThanEq': '>=',
+        'greaterThan': '>',
+        'hasData': 'is not null',
+        'noData': 'is null',
+        'stringContains': 'like',
+        'stringStarts': 'like',
+        'stringEnds': 'like',
+        'between': 'between',
+        'in': 'in'
+    }
+
+    def __init__(self, d):
+        self.column = d['column']
+        self.test = d['test']
+        self.value = d.get('value')
+        self.negate = d.get('negate', False)
+    
+    def get_sql(self):
+        s = self.column+' '+self.test2sql[self.test]
+        if type(self.value) == str:
+            if self.test == 'stringContains':
+                sql_val = '"%{}%"'.format(self.value)
+            elif self.test == 'stringStarts':
+                sql_val = '"{}%"'.format(self.value)
+            elif self.test == 'stringEnds':
+                sql_val = '"%{}"'.format(self.value)
+            else:
+                sql_val = '"{}"'.format(self.value)
+        elif self.value is None:
+            sql_val = ''
+        elif type(self.value) == list:
+            if self.test == 'between':
+                sql_val = '{} and {}'.format(self.value[0], self.value[1])
+            else:
+                str_toks = []
+                for val in self.value:
+                    if type(val) == str:
+                        str_toks.append('"{}"'.format(val))
+                    else:
+                        str_toks.append(str(val))
+                sql_val = '('+', '.join(str_toks)+')'
+        else:
+            sql_val = str(self.value)
+        if len(sql_val) > 0:
+            s += ' '+sql_val
+        if self.negate:
+            s = 'not('+s+')'
+        return s
+
+class FilterGroup(object):
+    def __init__(self, d):
+        self.operator = d.get('operator', 'and')
+        self.negate = d.get('negate',False)
+        self.groups = [FilterGroup(x) for x in d.get('groups',[])]
+        self.columns = [FilterColumn(x) for x in d.get('columns', [])]
+
+    def get_sql(self):
+        all_operands = self.groups + self.columns
+        if len(all_operands) == 0:
+            return ''
+        s = '('
+        sql_operator = ' '+self.operator+' '
+        s += sql_operator.join([x.get_sql() for x in all_operands])
+        s += ')'
+        if self.negate:
+            s = 'not'+s
+        return s
+
 class CravatFilter ():
     def __init__ (self, dbpath=None, filterpath=None, filtername=None, 
             filterstring=None, filter=None, mode='sub'):
@@ -63,7 +137,7 @@ class CravatFilter ():
         elif (self.filtername != None or self.filterpath != None or 
             self.filterstring != None) and self.filter == None:
             self.loadfilter()
-        
+
         ret = None
         if self.cursor != None and self.filter != None:
             if self.cmd == 'uidpipe':
@@ -168,9 +242,9 @@ class CravatFilter ():
     def loadfilter (self, filterpath=None, filtername=None, 
             filterstring=None, filter=None):
         if filterpath != None:
-            self.filtername = filtername
-        if filtername != None:
             self.filterpath = filterpath
+        if filtername != None:
+            self.filtername = filtername
         if filterstring != None:
             self.filterstring = filterstring
         if filter != None:
@@ -187,7 +261,11 @@ class CravatFilter ():
                 self.filter = json.loads(criteria[0])
         elif self.filterpath != None and os.path.exists(self.filterpath):
             with open(self.filterpath) as f:
-                self.filter = yaml.load(f)
+                ftype = self.filterpath.split('.')[-1]
+                if ftype in ['yml','yaml']:
+                    self.filter = yaml.load(f)
+                elif ftype in ['json']:
+                    self.filter = json.load(f)
             
     def delete_filtered_uid_table (self):
         self.cursor.execute('pragma synchronous=0')
@@ -197,22 +275,19 @@ class CravatFilter ():
         self.cursor.execute(q)
         self.conn.commit()
         self.cursor.execute('pragma synchronous=2')
-        
+
     def getwhere (self, level):
         if self.filter == None:
             return ''
         if level not in self.filter:
             return ''
         criteria = self.filter[level]
-        columns = criteria.keys()
-        where = ''
-        for column in columns:
-            op_val = criteria[column]
-            where += column + ' ' + op_val + ' and '
-        if where != '':
-            where = ' where ' + where
-            where = where.rstrip(' and ')
-        return where
+        main_group = FilterGroup(criteria)
+        sql_criteria = main_group.get_sql()
+        if sql_criteria == '':
+            return ''
+        else:
+            return ' where '+main_group.get_sql()
     
     def getvariantcount (self):
         return self.getcount('variant')

@@ -20,7 +20,7 @@ InfoMgr.prototype.getStatus = function (jobId) {
 
 InfoMgr.prototype.count = function (dbPath, tabName, callback) {
 	$.get('/result/service/count', {tab: tabName, dbpath: dbPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
-		var msg = jsonResponseData['n'];
+		var msg = jsonResponseData['n'] + ' variants meet the criteria';
 		callback(msg);
     });
 }
@@ -46,7 +46,7 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 			url: '/result/service/result', 
 			type: 'get',
 			async: true,
-			data: {job_id: loadKey, tab: tabName, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(fJson)},
+			data: {job_id: loadKey, tab: tabName, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)},
 			success: function (jsonResponseData) {
 				self.store(self, tabName, jsonResponseData, callback, callbackArgs);
 				writeLogDiv(tabName + ' data loaded');

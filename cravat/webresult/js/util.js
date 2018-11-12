@@ -132,14 +132,17 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	addEl(iconDiv, closeButton);
 	
 	var hr = getEl('hr');
+    hr.style.margin = '5px';
+    hr.style.marginInlineStart = '0px';
+    hr.style.marginInlineEnd = '0px';
 	addEl(div, hr);
 	
 	// Content div
 	var detailContentDiv = getEl('div');
 	detailContentDiv.id = 'widgetcontentdiv_' + widgetName + '_' + tabName;
 	detailContentDiv.className = 'detailcontentdiv';
-	detailContentDiv.style.height = 'calc(100% - 37px)';
-	//detailContentDiv.style.height = '100%';
+	detailContentDiv.style.height = 'calc(100% - 32px)';
+    detailContentDiv.style.padding = '0px';
 	addEl(div, detailContentDiv);
 	
 	return [div, detailContentDiv];
@@ -172,21 +175,40 @@ function addSpinnerById(parentDivId, scaleFactor, minDim, spinnerDivId){
 	return spinnerDiv;
 }
 
-function saveFilterSetting (name) {
+function saveFilterSetting (name, useFilterJson) {
 	var saveData = {};
-	saveData['filterSet'] = filterSet;
+    if (useFilterJson == undefined) {
+        makeFilterJson();
+    }
+	saveData['filterSet'] = filterJson;
 	var saveDataStr = JSON.stringify(saveData);
-	$.get('/result/service/savefiltersetting', {'dbpath': dbPath, name: name, 'savedata': saveDataStr}).done(function (response) {
-		writeLogDiv('Filter setting has been saved.');
+	$.ajax({
+        type: 'GET',
+        async: 'false',
+        url: '/result/service/savefiltersetting', 
+        data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
+        success: function (response) {
+            writeLogDiv('Filter setting has been saved.');
+        }
+    });
+}
+
+function deleteFilterSetting (name) {
+	$.get('/result/service/deletefiltersetting', {'dbpath': dbPath, name: name}).done(function (response) {
+        if (response == 'deleted') {
+            writeLogDiv('Filter setting has been deleted.');
+        } else {
+            alert(response);
+        }
     });
 }
 
 function saveFilterSettingAs () {
-	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
 		var names = '' + response;
 		var msg = 'Please enter layout name to save.';
 		if (names != '') {
-			msg = msg + ' Saved layout names are ' + names;
+			msg = msg + ' Saved layout names are: ' + names;
 		}
 		var name = prompt(msg, lastUsedLayoutName);
 		if (name != null) {
@@ -194,16 +216,31 @@ function saveFilterSettingAs () {
 		}
 	});
 }
+
+function deleteFilterSettingAs () {
+	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+		var names = '' + response;
+		var msg = 'Please enter layout name to delete.';
+		if (names != '') {
+			msg = msg + ' Saved layout names are: ' + names;
+		}
+		var name = prompt(msg, lastUsedLayoutName);
+		if (name != null) {
+			deleteFilterSetting(name);
+		}
+	});
+}
+
 function saveLayoutSettingAs () {
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
 		var names = '' + response;
 		var msg = 'Please enter layout name to save.';
 		if (names != '') {
-			msg = msg + ' Saved layout names are ' + names;
+			msg = msg + ' Saved layout names are: ' + names;
 		}
 		var name = prompt(msg, lastUsedLayoutName);
 		if (name != null) {
-			saveLayoutSetting(name, null);
+			saveLayoutSetting(name);
 		}
 	});
 }
@@ -269,7 +306,7 @@ function saveWidgetSetting (name) {
     });
 }
 
-function saveLayoutSetting (name, callback) {
+function saveLayoutSetting (name) {
 	var saveData = {};
 	
 	// Table layout
@@ -378,15 +415,12 @@ function saveLayoutSetting (name, callback) {
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
 		url: '/result/service/savelayoutsetting', 
-		type: 'get',
+		type: 'post',
 		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr}, 
 		async: false,
 		success: function (response) {
 			lastUsedLayoutName = name;
 			writeLogDiv('Layout setting has been saved.');
-			if (callback) {
-				callback();
-			}
 		}
     });
 }
@@ -534,15 +568,15 @@ function loadFilterSettingAs () {
 	});
 }
 
-
 function loadFilterSetting (name, callback) {
 	$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Filter setting loaded');
 		var data = response;
-		var loadedFilterSet = data['filterSet'];
-		filterSet = loadedFilterSet;
-		showFilterSet();
-		makeFilterJson();
+		filterJson = data['filterSet'];
+		var filterWrapDiv = $('#filterwrapdiv');
+		filterWrapDiv.empty();
+		var filterRootGroupDiv = makeFilterRootGroupDiv(filterJson);
+		filterWrapDiv.append(filterRootGroupDiv);
 		infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
 		if (callback != null) {
 			callback();

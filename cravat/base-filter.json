@@ -1,0 +1,37 @@
+{
+    "operator":"and",
+    "groups":[
+        {
+            "operator":"or",
+            "columns":[
+                {
+                    "column":"base__so",
+                    "test": "stringStarts",
+                    "value": "FD"
+                },
+                {
+                    "column":"base__so",
+                    "test": "stringStarts",
+                    "value": "FI"
+                },
+                {
+                    "column":"base__so",
+                    "test": "equals",
+                    "value": "MIS"
+                }
+            ]
+        }
+    ],
+    "columns":[
+        {
+            "column": "base__chrom",
+            "test": "in",
+            "value": ["chr1","chr2"]
+        },
+        {
+            "column":"base__pos",
+            "test": "between",
+            "value": [1000000,150000000]
+        }
+    ]
+}

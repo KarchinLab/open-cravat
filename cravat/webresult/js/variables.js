@@ -34,15 +34,13 @@ var widgetGridSize = 10;
 var dbPath = null;
 
 var filterJson = {};
-var loadedFilterJson = {};
-
 var filterSet = [];
+var filterCols = null;
+var filterArmed = {};
 
 var resetTab = {};
 
 var spinner = null;
-
-var filterCols = null;
 
 var shouldResizeScreen = {};
 
@@ -65,3 +63,5 @@ var defaultSaveName = 'default';
 var lastUsedLayoutName = 'default';
 var savedLayoutNames = null;
 var autoSaveLayout = true;
+var windowWidth = 0;
+var windowHeight = 0;
