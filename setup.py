@@ -45,7 +45,6 @@ class InstallCommand(install):
                 else:
                     default_modules_dir = self.modules_dir
                 if not(os.path.exists(c.system_conf_path)):
-                    print('@@@@@ copying', system_conf_path)
                     shutil.copy(system_template_conf_path,
                                 system_conf_path)
                 else:
@@ -95,7 +94,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='0.0.136',
+    version='0.0.137',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
