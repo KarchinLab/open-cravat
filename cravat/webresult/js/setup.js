@@ -198,7 +198,11 @@ function populateSummaryWidgetDiv () {
 					widgetDiv.style.height = generator['height'] + 'px';
 				}
 				addEl(outerDiv, widgetDiv);
-				drawSummaryWidget(colGroupKey);
+                try {
+                    drawSummaryWidget(colGroupKey);
+                } catch (err) {
+                    console.log(err);
+                }
 			}
 		}
 	}

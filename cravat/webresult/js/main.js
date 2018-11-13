@@ -8,28 +8,9 @@ function getExportContent (tabName) {
 	content += '# Report section (tab): ' + tabName + '\n';
 	
 	// Writes filters.
-	/*
-	content += '# Filters\n';
-	for (var i = 0; i < filterSet.length; i++) {
-		var filterData = filterSet[i];
-		var col = filterData[0];
-		var condition = col.filter.condition;
-		var value = filterData[1];
-		var value2 = filterData[2];
-		var filterOn = filterData[3];
-		if (filterOn) {
-			if (value != '') {
-				if (condition in conditionDic) {
-					condition = conditionDic[condition];
-					content += '#     ' + col.title + ': ' + condition + ' ' + value + '\n';
-				} else if (condition == 'between') {
-					content += '#     ' + col.title + ': ' + condition + ' ' + value + ' and ' + value2 + '\n';
-				} else {
-					content += '#     ' + col.title + ': ' + condition + ' ' + value + '\n';
-				}
-			}
-		}
-	}
+	content += '# Filters: ';
+    content += JSON.stringify(filterJson) + '\n';
+
 	var colTitles = [];
 	var colGroups = $grids[tabName].pqGrid('option', 'colModel');
 	for (var colGroupNo = 0; colGroupNo < colGroups.length; colGroupNo++) {
@@ -59,7 +40,6 @@ function getExportContent (tabName) {
 		}
 	}
 	content += '\n';
-	*/
 	
 	// Writes data headers.
 	content += colTitles[0];
