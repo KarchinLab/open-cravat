@@ -70,6 +70,7 @@ def main ():
     global servermode
     servermode = args.servermode
     wu.servermode = args.servermode
+    '''
     if servermode:
         jobs_dir = au.get_jobs_dir()
         admin_sqlite_path = os.path.join(jobs_dir, 'admin.sqlite')
@@ -87,8 +88,11 @@ def main ():
             db.commit()
             db.close()
     s = socket.socket()
+    '''
     try:
+        '''
         s.bind(('localhost', 8060))
+        '''
         app = web.Application()
         '''
         fernet_key = fernet.Fernet.generate_key()

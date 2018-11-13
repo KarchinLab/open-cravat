@@ -45,6 +45,7 @@ class InstallCommand(install):
                 else:
                     default_modules_dir = self.modules_dir
                 if not(os.path.exists(c.system_conf_path)):
+                    print('@@@@@ copying', system_conf_path)
                     shutil.copy(system_template_conf_path,
                                 system_conf_path)
                 else:

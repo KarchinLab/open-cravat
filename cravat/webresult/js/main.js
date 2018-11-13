@@ -139,7 +139,6 @@ function resizesTheWindow () {
 	}
 	
 	var rightDivHeight = browserHeight - 67;
-    console.log('rightdiv height=', rightDivHeight);
 	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 35;
 	var tableDivWidth = 'calc(100% - 10px)';
 	var cellValueDivTop = tableDivHeight - 2 ;
@@ -206,6 +205,21 @@ function loadData (alertFlag, finalcallback) {
 	resetTab['summary'] = true;
 	infomgr.datas = {};
 	
+    var makeVariantByGene = function () {
+        if (infomgr.datas.variant != undefined) {
+            varByGene = {};
+            var variantRows = infomgr.datas.variant;
+            var hugoColNo = infomgr.getColumnNo('variant', 'base__hugo');
+            for (var i = 0; i < variantRows.length; i++) {
+                var row = variantRows[i];
+                var hugo = row[hugoColNo];
+                if (varByGene[hugo] == undefined) {
+                    varByGene[hugo] = [];
+                }
+                varByGene[hugo].push(i);
+            }
+        }
+    };
 	var removeSpinner = function () {
 		if (spinner != null) {
 			spinner.remove();
@@ -231,6 +245,7 @@ function loadData (alertFlag, finalcallback) {
 		if (currentTab == 'variant' || currentTab == 'gene') {
 			setupTab(currentTab);
 		}
+        makeVariantByGene();
 	}
 	var loadMappingResult = function () {
 		if (resultLevels.indexOf('mapping') != -1) {
