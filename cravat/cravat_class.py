@@ -10,10 +10,14 @@ import datetime
 from types import SimpleNamespace
 from .constants import liftover_chain_paths
 import json
-from .mp_annot import run_mp_annot
+import logging
+from .mp_runners import run_annotator_mp
 import multiprocessing as mp
+from logging.handlers import QueueListener
 
-cravat_cmd_parser = argparse.ArgumentParser(prog='cravat input_file_path', description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.', epilog='* input_file_path should precede any option.')
+cravat_cmd_parser = argparse.ArgumentParser(prog='cravat input_file_path',
+    description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.',
+    epilog='* input_file_path should precede any option.')
 cravat_cmd_parser.add_argument('input',
                     help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument('-a',
@@ -556,9 +560,12 @@ class Cravat (object):
             print('finished in {0:.3f}s'.format(rtime))
 
     def run_annotators_mp (self):
-        num_workers = 6
+        num_workers = self.conf.get_cravat_conf().get('num_workers',2)
+        print(num_workers)
         all_cmds = []
+        log_queues = []
         for module in self.ordered_annotators:
+            # Make command
             if module.level == 'variant':
                 if 'input_format' in module.conf:
                     input_format = module.conf['input_format']
@@ -594,14 +601,19 @@ class Cravat (object):
             if self.output_dir != None:
                 cmd.extend(['-d', self.output_dir])
             all_cmds.append(cmd)
-        pool = mp.Pool(processes=num_workers)
-        pool_args = zip(self.ordered_annotators, all_cmds)
-        print('starting pool')
-        pool.map(run_mp_annot, pool_args)
-        print('Done with pool')
-
-
-
+        # Logging queue
+        manager = mp.Manager()
+        annot_log_queue = manager.Queue()
+        pool_args = zip(
+            self.ordered_annotators,
+            all_cmds,
+            len(self.ordered_annotators)*[annot_log_queue]
+            )
+        ql = QueueListener(annot_log_queue, self.logger.handlers)
+        with mp.Pool(processes=num_workers) as pool:
+            ql.start()
+            pool.starmap(run_annotator_mp, pool_args)
+            ql.stop()
 
     def run_annotator (self, module, opts=[]):
         if module.level == 'variant':
