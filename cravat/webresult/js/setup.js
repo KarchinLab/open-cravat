@@ -133,7 +133,7 @@ function toggleFilterDiv () {
 		filterButton.style.color = 'white';
 	} else {
 		display = 'none';
-        if (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0) {
+        if (filterArmed.variant != undefined && (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0)) {
             filterButton.style.backgroundColor = 'red';
         } else {
             filterButton.style.backgroundColor = 'white';
