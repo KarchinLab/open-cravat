@@ -257,7 +257,7 @@ class Cravat (object):
                 # self.run_annotators()
                 self.run_annotators_mp()
                 rtime = time.time() - stime
-                print('\tanntator(s) finished in {0:.3f}s'.format(rtime))
+                print('\tannotator(s) finished in {0:.3f}s'.format(rtime))
             if self.args.ea:
                 return
             if self.args.sg == False and \
@@ -561,9 +561,8 @@ class Cravat (object):
 
     def run_annotators_mp (self):
         num_workers = self.conf.get_cravat_conf().get('num_workers',2)
-        print(num_workers)
+        self.logger.info('num_workers: {}'.format(num_workers))
         all_cmds = []
-        log_queues = []
         for module in self.ordered_annotators:
             # Make command
             if module.level == 'variant':
@@ -609,7 +608,7 @@ class Cravat (object):
             all_cmds,
             len(self.ordered_annotators)*[annot_log_queue]
             )
-        ql = QueueListener(annot_log_queue, self.logger.handlers)
+        ql = QueueListener(annot_log_queue, *self.logger.handlers)
         with mp.Pool(processes=num_workers) as pool:
             ql.start()
             pool.starmap(run_annotator_mp, pool_args)
