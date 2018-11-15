@@ -296,6 +296,22 @@ function getRemoteModulePanel (moduleName) {
             span.style.color = 'black';
         }
     }
+    if (installStatus == 'Installed') {
+        var localVersion = localModuleInfo[moduleName].version;
+        var remoteVersion = getHighestVersionForRemoteModule(moduleName);
+        console.log(moduleName, localVersion, remoteVersion);
+        c = compareVersion(remoteVersion, localVersion);
+        if (c > 0) {
+            var img3 = getEl('img');
+            img3.src = '/store/new.png';
+            img3.style.width = '50px';
+            img3.title = 'New module available';
+            img3.style.position = 'absolute';
+            img3.style.bottom = '0px';
+            img3.style.right = '0px';
+            addEl(div, img3);
+        }
+    }
     return div
 }
 
@@ -625,8 +641,52 @@ function activateDetailDialog (moduleName) {
     span.textContent = 'Version: ';
     addEl(d, span);
     span = getEl('span');
-    span.textContent = moduleInfo['latest_version'];
+    var remoteVersion = moduleInfo['latest_version']; 
+    span.textContent = remoteVersion;
     addEl(d, span);
+    if (localModuleInfo[moduleName] != undefined) {
+        var localVersion = localModuleInfo[moduleName].version;
+        if (localVersion != remoteVersion) {
+            var span = getEl('span');
+            span.textContent = ' (' + localVersion + ' installed)';
+            addEl(d, span);
+            if (compareVersion(remoteVersion, localVersion) > 0) {
+                addEl(d, getEl('br'));
+                var span = getEl('span');
+                span.style.color = 'red';
+                span.textContent = 'New version available!';
+                addEl(d, span);
+                var button = getEl('button');
+                button.id = 'updatebutton';
+                buttonText = 'Update';
+                button.style.backgroundColor = '#beeaff';
+                button.addEventListener('click', function (evt) {
+                    var btn = evt.target;
+                    var btnModuleName = btn.getAttribute('module');
+                    if (btnModuleName == 'chasmplus') {
+                        var select = document.getElementById('chasmplustissueselect');
+                        btnModuleName = select.value;
+                    }
+                    var buttonText = null;
+                    if (installQueue.length == 0) {
+                        buttonText = 'Updating...';
+                    } else {
+                        buttonText = 'Queued';
+                    }
+                    queueInstall(btnModuleName);
+                    btn.textContent = buttonText;
+                    btn.style.color = 'red';
+                    document.getElementById('moduledetaildiv_store').style.display = 'none';
+                });
+                button.textContent = buttonText;
+                button.style.padding = '8px';
+                button.style.fontSize = '18px';
+                button.style.fontWeight = 'bold';
+                button.setAttribute('module', moduleName);
+                addEl(d, button);
+            }
+        }
+    }
     addEl(infodiv, d);
     addEl(infodiv, getEl('br'));
     d = getEl('div');
@@ -731,6 +791,49 @@ function activateDetailDialog (moduleName) {
     });
     addEl(div, el);
     return div;
+}
+
+function compareVersion (ver1, ver2) {
+    var tok1 = ver1.split('.');
+    var tok2 = ver2.split('.');
+    var first1 = Number(tok1[0]);
+    var first2 = Number(tok2[0]);
+    if (first1 < first2) {
+        return -1;
+    } else if (first1 > first2) {
+        return 1;
+    } else {
+        var second1 = Number(tok1[1]);
+        var second2 = Number(tok2[1]);
+        if (second1 < second2) {
+            return -1;
+        } else if (second1 > second2) {
+            return 1;
+        } else {
+            var third1 = Number(tok1[2]);
+            var third2 = Number(tok2[2]);
+            if (third1 < third2) {
+                return -1;
+            } else if (third1 > third2) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+}
+
+function getHighestVersionForRemoteModule (module) {
+    var versions = remoteModuleInfo[module].versions;
+    var highestVersion = '0.0.0';
+    for (var i = 0; i < versions.length; i++) {
+        var version = versions[i];
+        var c = compareVersion(version, highestVersion);
+        if (c > 0) {
+            highestVersion = version;
+        }
+    }
+    return highestVersion;
 }
 
 function getModuleDetailDiv (moduleName) {

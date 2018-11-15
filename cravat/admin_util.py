@@ -384,7 +384,10 @@ def get_readme(module_name, version=None):
         remote_readme = ''
     if exists_local:
         local_info = get_local_module_info(module_name)
-        local_readme = open(local_info.readme_path).read()
+        if os.path.exists(local_info.readme_path):
+            local_readme = open(local_info.readme_path).read()
+        else:
+            local_readme = ''
     else:
         local_readme = ''
     if exists_remote == True:
