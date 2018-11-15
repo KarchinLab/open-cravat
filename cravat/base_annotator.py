@@ -1,4 +1,8 @@
-import logging, os, time, traceback, argparse
+import logging
+import os
+import time
+import traceback
+import argparse
 from .exceptions import ConfigurationError
 from .inout import CravatReader
 from .inout import CravatWriter
@@ -12,6 +16,8 @@ from .constants import all_mappings_col_name
 from .constants import mapping_parser_name
 from .exceptions import InvalidData
 import sqlite3
+
+
 
 class BaseAnnotator(object):
     
