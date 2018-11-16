@@ -11,6 +11,7 @@ from types import SimpleNamespace
 from .constants import liftover_chain_paths
 import json
 import logging
+import traceback
 from .mp_runners import run_annotator_mp
 import multiprocessing as mp
 from logging.handlers import QueueListener
