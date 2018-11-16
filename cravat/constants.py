@@ -69,7 +69,7 @@ exit_codes = {
 
 all_mappings_col_name = 'all_mappings'
 mapping_parser_name = 'mapping_parser'
-nrotsnorast
+
 VARIANT = 0
 GENE = 1
 LEVELS = {'variant': VARIANT, 'gene': GENE}
