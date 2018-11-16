@@ -11,9 +11,14 @@ from types import SimpleNamespace
 from .constants import liftover_chain_paths
 import json
 import logging
-import traceback
+from .mp_runners import run_annotator_mp
+import multiprocessing as mp
+from logging.handlers import QueueListener
 
-cravat_cmd_parser = argparse.ArgumentParser(prog='cravat input_file_path', description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.', epilog='* input_file_path should precede any option.')
+cravat_cmd_parser = argparse.ArgumentParser(
+    prog='cravat input_file_path',
+    description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.',
+    epilog='* input_file_path should precede any option.')
 cravat_cmd_parser.add_argument('input',
                     help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument('-a',
@@ -163,7 +168,6 @@ cravat_cmd_parser.add_argument('--newlog',
                     help='deletes the existing log file and ' +
                             'creates a new one.')
 
-
 class Cravat (object):
     def __init__ (self, **kwargs):
         self.runlevels = {
@@ -179,7 +183,7 @@ class Cravat (object):
         self.should_run_aggregator = True
         self.should_run_reporter = True
         self.pythonpath = sys.executable
-        self.annotators = {}
+        self.annotators = {}        
         self.make_args_namespace(kwargs)
         self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
         if self.args.confs != None:
@@ -203,7 +207,7 @@ class Cravat (object):
 
     def close_logger (self):
         logging.shutdown()
-
+    
     def update_status(self, status):
         status_fname = self.run_name+'.status.json'
         status_fpath = os.path.join(self.output_dir, status_fname)
@@ -251,9 +255,9 @@ class Cravat (object):
                 ):
                 print('Running annotators...')
                 stime = time.time()
-                self.run_annotators()
+                self.run_annotators_mp()
                 rtime = time.time() - stime
-                print('\tanntator(s) finished in {0:.3f}s'.format(rtime))
+                print('\tannotator(s) finished in {0:.3f}s'.format(rtime))
             if self.args.ea:
                 return
             if self.args.sg == False and \
@@ -470,7 +474,7 @@ class Cravat (object):
         v_aggregator = aggregator_cls(cmd)
         v_aggregator.run()
         rtime = time.time() - stime
-        print('finished in {0:.3f}s'.format(rtime))
+        print('finished in {0:.3f}s'.format(rtime)) 
 
         # Gene level
         print('\t{0:30s}\t'.format('Genes'), end='', flush=True)
@@ -515,6 +519,8 @@ class Cravat (object):
         m_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
+
+        return v_aggregator.db_path
 
     def run_postaggregators (self):
         modules = au.get_local_module_infos_of_type('postaggregator')
@@ -562,47 +568,62 @@ class Cravat (object):
             rtime = time.time() - stime
             print('finished in {0:.3f}s'.format(rtime))
 
-    def run_annotator (self, module, opts=[]):
-        if module.level == 'variant':
-            if 'input_format' in module.conf:
-                input_format = module.conf['input_format']
-                if input_format == 'crv':
+    def run_annotators_mp (self):
+        default_workers = mp.cpu_count() - 2
+        if default_workers < 1: default_workers = 1
+        num_workers = self.conf.get_cravat_conf().get('num_workers', default_workers)
+        self.logger.info('num_workers: {}'.format(num_workers))
+        all_cmds = []
+        for module in self.ordered_annotators:
+            # Make command
+            if module.level == 'variant':
+                if 'input_format' in module.conf:
+                    input_format = module.conf['input_format']
+                    if input_format == 'crv':
+                        inputpath = self.crvinput
+                    elif input_format == 'crx':
+                        inputpath = self.crxinput
+                    else:
+                        inputpath = self.input
+                else:
                     inputpath = self.crvinput
-                elif input_format == 'crx':
-                    inputpath = self.crxinput
-                else:
-                    inputpath = self.input
-            else:
-                inputpath = self.crvinput
-        elif module.level == 'gene':
-            inputpath = self.crginput
-        secondary_opts = []
-        if 'secondary_inputs' in module.conf:
-            secondary_module_names = module.conf['secondary_inputs']
-            for secondary_module_name in secondary_module_names:
-                secondary_module = self.modules[secondary_module_name]
-                secondary_output_path =\
-                    self.check_module_output(secondary_module)
-                if secondary_output_path == None:
-                    print(secondary_module.name + ' output absent')
-                    return 1
-                else:
-                    secondary_opts.extend([
-                        '-s', 
-                        secondary_module.name + '@' +\
-                            os.path.join(self.output_dir, secondary_output_path)])
-        cmd = [module.script_path, inputpath]
-        cmd.extend(opts)
-        cmd.extend(secondary_opts)
-        if self.run_name != None:
-            cmd.extend(['-n', self.run_name])
-        if self.output_dir != None:
-            cmd.extend(['-d', self.output_dir])
-        if self.verbose:
-            print(' '.join(cmd))
-        annotator_class = util.load_class("CravatAnnotator", module.script_path)
-        annotator = annotator_class(cmd)
-        annotator.run()
+            elif module.level == 'gene':
+                inputpath = self.crginput
+            secondary_opts = []
+            if 'secondary_inputs' in module.conf:
+                secondary_module_names = module.conf['secondary_inputs']
+                for secondary_module_name in secondary_module_names:
+                    secondary_module = self.modules[secondary_module_name]
+                    secondary_output_path =\
+                        self.check_module_output(secondary_module)
+                    if secondary_output_path == None:
+                        print(secondary_module.name + ' output absent')
+                        return 1
+                    else:
+                        secondary_opts.extend([
+                            '-s', 
+                            secondary_module.name + '@' +\
+                                os.path.join(self.output_dir, secondary_output_path)])
+            cmd = [module.script_path, inputpath]
+            cmd.extend(secondary_opts)
+            if self.run_name != None:
+                cmd.extend(['-n', self.run_name])
+            if self.output_dir != None:
+                cmd.extend(['-d', self.output_dir])
+            all_cmds.append(cmd)
+        # Logging queue
+        manager = mp.Manager()
+        annot_log_queue = manager.Queue()
+        pool_args = zip(
+            self.ordered_annotators,
+            all_cmds,
+            len(self.ordered_annotators)*[annot_log_queue]
+            )
+        ql = QueueListener(annot_log_queue, *self.logger.handlers)
+        with mp.Pool(processes=num_workers) as pool:
+            ql.start()
+            pool.starmap(run_annotator_mp, pool_args)
+            ql.stop()
 
     def table_exists (self, cursor, table):
         sql = 'select name from sqlite_master where type="table" and ' +\
@@ -675,4 +696,4 @@ class Cravat (object):
         self.update_status(
             'Running {title} ({name})'\
             .format(title=module.title, name=module.name)
-        )
+            )
