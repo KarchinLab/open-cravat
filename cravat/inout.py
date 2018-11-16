@@ -3,6 +3,7 @@ from cravat.exceptions import BadFormatError
 import json
 import re
 from collections import OrderedDict
+import yaml
 
 class CravatFile(object):
     valid_types = ['string','int','float']
@@ -103,7 +104,7 @@ class CravatWriter(CravatFile):
         line = '#{:}={:}\n'.format(key,value)
         self.wf.write(line)
         
-    def write_definition(self):
+    def write_definition(self, conf=None):
         self._prep_for_write()
         for col_index, col_def in enumerate(self.ordered_columns):
             col_def_line = '#column=%d,%s,%s,%s\n' %(col_index,
@@ -111,8 +112,13 @@ class CravatWriter(CravatFile):
                                                      col_def['name'],
                                                      col_def['type'])
             self.wf.write(col_def_line)
+        if conf and 'report_substitution' in conf:
+            self.wf.write('#report_substitution={}\n'.format(
+                json.dumps(conf['report_substitution'])))
         self._definition_written = True
     
+    def write_report_substitution (self):
+        self._prep_for_write()
     def write_titles(self):
         self._prep_for_write()
         title_line = self.titles_prefix+'\t'.join(self.title_toks) + '\n'
@@ -265,6 +271,7 @@ class CravatReader (CravatFile):
         self.valid_modes = ['line','list','dict']
         self.default_mode = 'dict'
         self.index_columns = []
+        self.report_substitution = None
         self._setup_definition()
         
     def _setup_definition (self):
@@ -288,6 +295,8 @@ class CravatReader (CravatFile):
                 self.columns[col_index] = {'title':col_title,
                                            'name':col_name,
                                            'type':col_type}
+            elif l.startswith('#report_substitution='):
+                self.report_substitution = json.loads(l.split('=')[1])
             else:
                 continue
         
@@ -361,9 +370,6 @@ class CravatReader (CravatFile):
     def toks_to_data_dict(self, toks):
         out = {}
         if len(toks) < len(self.columns):
-            print('too few toks')
-            print('toks=', toks)
-            print('columns=', self.columns)
             err_msg = 'Too few columns. Received %s. Expected %s' \
                 %(len(toks),len(self.columns))
             raise BadFormatError(err_msg)

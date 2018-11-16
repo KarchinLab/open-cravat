@@ -7,6 +7,7 @@ from .inout import CravatReader, CravatWriter, AllMappingsParser
 from .constants import crx_def, crx_idx, crg_def, crg_idx, crt_def, crt_idx
 from .util import most_severe_so, so_severity
 from .exceptions import InvalidData
+from cravat.config_loader import ConfigLoader
 import sys
 
 class BaseMapper(object):
@@ -22,6 +23,11 @@ class BaseMapper(object):
     def __init__(self, cmd_args):
         try:
             main_fpath = cmd_args[0]
+            main_basename = os.path.basename(main_fpath)
+            if '.' in main_basename:
+                self.module_name = '.'.join(main_basename.split('.')[:-1])
+            else:
+                self.module_name = main_basename
             self.mapper_dir = os.path.dirname(main_fpath)
             self.cmd_parser = None
             self.cmd_args = None
@@ -44,6 +50,8 @@ class BaseMapper(object):
             self._define_additional_cmd_args()
             self._parse_cmd_args(cmd_args)
             self._setup_logger()
+            config_loader = ConfigLoader()
+            self.conf = config_loader.get_module_conf(self.module_name)
         except Exception as e:
             self.__handle_exception(e)
             
@@ -123,7 +131,7 @@ class BaseMapper(object):
         self.crx_path = os.path.join(self.output_dir, crx_fname)
         self.crx_writer = CravatWriter(self.crx_path)
         self.crx_writer.add_columns(crx_def)
-        self.crx_writer.write_definition()
+        self.crx_writer.write_definition(self.conf)
         for index_columns in crx_idx:
             self.crx_writer.add_index(index_columns)
         # .crg

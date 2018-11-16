@@ -11,6 +11,7 @@ from types import SimpleNamespace
 from .constants import liftover_chain_paths
 import json
 import logging
+import traceback
 
 cravat_cmd_parser = argparse.ArgumentParser(prog='cravat input_file_path', description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.', epilog='* input_file_path should precede any option.')
 cravat_cmd_parser.add_argument('input',
@@ -279,12 +280,21 @@ class Cravat (object):
                 self.run_reporter()
             self.update_status('Finished')
         except:
+            self.logger.exception('<Exception>')
             self.update_status('Error')
+            traceback.print_exc()
+            end_time = time.time()
+            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
+            runtime = end_time - self.start_time
+            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
+            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            self.close_logger()
+            return
         end_time = time.time()
         self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
         runtime = end_time - self.start_time
         self.logger.info('runtime: {0:0.3f}s'.format(runtime))
-        print('Finished. Runtime: {0:0.3f}s'.format(runtime))
+        print('Normally Finished. Runtime: {0:0.3f}s'.format(runtime))
         self.close_logger()
 
     def make_args_namespace(self, supplied_args):
@@ -458,7 +468,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         v_aggregator = aggregator_cls(cmd)
-        v_aggregator.run() 
+        v_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
 
@@ -505,8 +515,6 @@ class Cravat (object):
         m_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
-
-        return v_aggregator.db_path
 
     def run_postaggregators (self):
         modules = au.get_local_module_infos_of_type('postaggregator')

@@ -47,7 +47,7 @@ class BaseAnnotator(object):
             # Make output dir if it doesn't exist
             if not(os.path.exists(self.output_dir)):
                 os.makedirs(self.output_dir)
-            
+
             self._setup_logger()
             config_loader = ConfigLoader(self.job_conf_path)
             self.conf = config_loader.get_module_conf(self.annotator_name)
@@ -63,7 +63,7 @@ class BaseAnnotator(object):
             self.cursor = None
         except Exception as e:
             self._log_exception(e)
-        
+
     def _log_exception(self, e, halt=True):
         if self.logger:
             self.logger.exception(e)
@@ -351,8 +351,6 @@ class BaseAnnotator(object):
                                                    self.annotator_name)
                 self.output_writer.write_meta_line('displayname',
                                                    self.annotator_display_name)
-#                 self.output_writer.write_names(self.annotator_name,
-#                                                self.annotator_display_name)
             skip_aggregation = []
             for col_index, col_def in enumerate(self.conf['output_columns']):
                 self.output_writer.add_column(col_index,
@@ -362,10 +360,9 @@ class BaseAnnotator(object):
                 if not(col_def.get('aggregate', True)):
                     skip_aggregation.append(col_def['name'])
             if not(self.plain_output):
-                self.output_writer.write_definition()
+                self.output_writer.write_definition(self.conf)
                 self.output_writer.write_meta_line('no_aggregate',
                                                    ','.join(skip_aggregation))
-            #self.invalid_file = open(self.invalid_path, 'w')
         except Exception as e:
                 self._log_exception(e)
     
