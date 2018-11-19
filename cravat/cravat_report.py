@@ -20,7 +20,7 @@ class CravatReport:
         self.var_added_cols = []
         self.summarizing_modules = []
         self.columngroups = {}
-        
+        self.column_subs = {}
         self.connect_db()
         self.load_filter()
     
@@ -29,7 +29,17 @@ class CravatReport:
         if self.table_exists(level) == False:
             return ret
         for row in self.cf.getiterator(level):
+            row = self.substitute_val(level, row)
             return json.dumps(row) 
+
+    def substitute_val (self, level, row):
+        if level in self.column_subs:
+            for i in self.column_subs[level]:
+                val = row[i]
+                sub = self.column_subs[level][i]
+                if val in sub:
+                    row[i] = sub[val]
+        return row
 
     def run_level (self, level):
         if self.table_exists(level):
@@ -41,7 +51,6 @@ class CravatReport:
                 for mi, o, cols in self.summarizing_modules:
                     gene_summary_data = o.get_gene_summary_data(self.cf)
                     gene_summary_datas[mi.name] = [gene_summary_data, cols]
-                    #o.remove_log()
             self.write_preface(level)
             self.write_header(level)
             if level == 'variant':
@@ -58,7 +67,7 @@ class CravatReport:
                             else:
                                 colval = generow[self.colnos['gene'][colname]]
                             row.append(colval)
-                if level == 'gene':
+                elif level == 'gene':
                     row = list(row)
                     hugo = row[0]
                     for module_name in gene_summary_datas:
@@ -67,6 +76,7 @@ class CravatReport:
                             row.extend([gene_summary_data[hugo][col['name']] for col in cols])
                         else:
                             row.extend([None for v in cols])
+                row = self.substitute_val(level, row)
                 if hasattr(self, 'keep_json_all_mapping') == False and level == 'variant':
                     colno = self.colnos['variant']['base__all_mappings']
                     all_map = json.loads(row[colno])
@@ -134,7 +144,6 @@ class CravatReport:
     
     def make_col_info (self, level):
         self.colnos[level] = {}
-        
         # Columns from aggregator
         self.columngroups[level] = []
         sql = 'select name, displayname from ' + level + '_annotator'
@@ -229,6 +238,25 @@ class CravatReport:
             colno += colgroup['count']
             colgroup['lastcol'] = colno
         self.colinfo[level] = {'colgroups': self.columngroups[level], 'columns': columns}
+        # report substitution
+        if level in ['variant', 'gene']:
+            q = 'select * from {}_reportsub'.format(level)
+            self.cursor.execute(q)
+            rs = self.cursor.fetchall()
+            self.report_substitution = {}
+            for r in rs:
+                module = r[0]
+                sub = json.loads(r[1])
+                self.report_substitution[module] = sub
+            self.column_subs[level] = {}
+            columns = self.colinfo[level]['columns']
+            for i in range(len(columns)):
+                column = columns[i]
+                [module, col] = column['col_name'].split('__')
+                if module in self.report_substitution:
+                    sub = self.report_substitution[module]
+                    if col in sub:
+                        self.column_subs[level][i] = sub[col]
     
     def parse_cmd_args (self, cmd_args):
         parser = argparse.ArgumentParser()
