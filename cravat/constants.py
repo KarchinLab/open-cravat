@@ -42,6 +42,7 @@ crx_def = crv_def + \
            {'name':'hugo', 'title':'Hugo', 'type':'string'},
            {'name':'transcript', 'title':'Transcript', 'type':'string'},
            {'name':'so', 'title':'Sequence Ontology', 'type':'string'},
+           {'name':'achange', 'title':'Protein Change', 'type':'string'},
            {'name':'all_mappings', 'title':'All Mappings', 'type':'string'},
            ]
 crx_idx = [['uid']]
