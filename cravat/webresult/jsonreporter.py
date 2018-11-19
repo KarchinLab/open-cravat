@@ -13,6 +13,7 @@ class Reporter (CravatReport):
         self.level = level
     
     def write_table_row (self, row):
+        row = self.substitute_val(self.level, row)
         self.table.append(list(row))
     
     def end (self):
