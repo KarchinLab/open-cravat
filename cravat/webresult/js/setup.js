@@ -1019,7 +1019,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.showTitle = false;
 
 	gridObject.selectionModel = {type: 'cell', mode: 'block'};
-	gridObject.hoverMode = 'row';
+	gridObject.hoverMode = 'cell';
 	gridObject.colModel = infomgr.getColModel(tabName);
 	gridObject.dataModel = {data: data};
 	var sortColumnToUse = 'input_line_number';
@@ -1047,6 +1047,12 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 		if (celltextel) {
 			celltextel.value = valueText;
 		}
+        if (selectedRowNos[tabName] != undefined) {
+            var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: selectedRowNos[tabName]});
+            row.css('background-color', 'white');
+        }
+        var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: rowNo});
+        row.css('background-color', '#ffc500');
 		if (rowData != undefined) {
 			if (selectedRowIds[tabName] == null || selectedRowIds[tabName] != rowData[0]) {
 				selectedRowIds[tabName] = rowData[0];
