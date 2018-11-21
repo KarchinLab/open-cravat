@@ -15,6 +15,7 @@ import traceback
 from .mp_runners import run_annotator_mp
 import multiprocessing as mp
 from logging.handlers import QueueListener
+from .aggregator import Aggregator
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
@@ -456,14 +457,10 @@ class Cravat (object):
         genemapper.run()
 
     def run_aggregator (self):
-        module = au.get_local_module_info(
-            self.conf.get_cravat_conf()['aggregator'])
-        aggregator_cls = util.load_class('Aggregator', module.script_path)
-
         # Variant level
         print('\t{0:30s}\t'.format('Variants'), end='', flush=True)
         stime = time.time()
-        cmd = [module.script_path, 
+        cmd = ['donotremove',
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'variant',
@@ -472,7 +469,7 @@ class Cravat (object):
             cmd.append('-x')
         if self.verbose:
             print(' '.join(cmd))
-        v_aggregator = aggregator_cls(cmd)
+        v_aggregator = Aggregator(cmd)
         v_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime)) 
@@ -480,14 +477,14 @@ class Cravat (object):
         # Gene level
         print('\t{0:30s}\t'.format('Genes'), end='', flush=True)
         stime = time.time()
-        cmd = [module.script_path, 
+        cmd = ['donotremove', 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'gene',
                '-n', self.run_name]
         if self.verbose:
             print(' '.join(cmd))
-        g_aggregator = aggregator_cls(cmd)
+        g_aggregator = Aggregator(cmd)
         g_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -495,28 +492,28 @@ class Cravat (object):
         # Sample level
         print('\t{0:30s}\t'.format('Samples'), end='', flush=True)
         stime = time.time()
-        cmd = [module.script_path, 
+        cmd = ['donotremove', 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'sample',
                '-n', self.run_name]
         if self.verbose:
             print(' '.join(cmd))
-        s_aggregator = aggregator_cls(cmd)
+        s_aggregator = Aggregator(cmd)
         s_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
 
         # Mapping level
         print('\t{0:30s}\t'.format('Tags'), end='', flush=True)
-        cmd = [module.script_path, 
+        cmd = ['donotremove', 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'mapping',
                '-n', self.run_name]
         if self.verbose:
             print(' '.join(cmd))
-        m_aggregator = aggregator_cls(cmd)
+        m_aggregator = Aggregator(cmd)
         m_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
