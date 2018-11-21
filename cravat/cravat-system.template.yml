@@ -5,7 +5,6 @@ base_modules:
 - cravat-converter
 - vcf-converter
 - oldcravat-converter
-- aggregator
 - textreporter
 - excelreporter
 - tagsampler
