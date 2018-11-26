@@ -641,7 +641,7 @@ def refresh_cache ():
     Refresh the local modules cache
     """
     global mic
-    mic.update_local()
+    mic = ModuleInfoCache()
 
 def get_local_module_infos_by_names (module_names):
     modules = {}
@@ -685,6 +685,7 @@ def update_system_conf_file(d):
     try:
         sys_conf = recursive_update(get_system_conf(), d)
         write_system_conf_file(sys_conf)
+        refresh_cache()
         return True
     except:
         raise
