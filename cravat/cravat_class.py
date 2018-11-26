@@ -570,7 +570,7 @@ class Cravat (object):
             print('finished in {0:.3f}s'.format(rtime))
 
     def run_annotators_mp (self):
-        default_workers = mp.cpu_count() - 2
+        default_workers = mp.cpu_count() - 1
         if default_workers < 1: default_workers = 1
         num_workers = self.conf.get_cravat_conf().get('num_workers', default_workers)
         self.logger.info('num_workers: {}'.format(num_workers))
