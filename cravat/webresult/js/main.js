@@ -501,19 +501,23 @@ function doNothing () {
 }
 
 function webresult_run () {
-    var urlParameters = window.location.search.replace("?", "").replace("%20", " ").split("&");
-	for (var i = 0; i < urlParameters.length; i++) {
-		var keyValue = urlParameters[i].split('=');
-		var key = keyValue[0];
-		var value = keyValue[1];
-		if (key == 'job_id') {
-			jobId = value;
-		} else if (key == 'dbpath') {
-			dbPath = value;
-		} else if (key == 'confpath') {
-			confPath = value;
-		}
-	}
+	var urlParams = new URLSearchParams(window.location.search);
+	jobId = urlParams.get('job_id');
+	dbPath = urlParams.get('dbpath');
+	confPath = urlParams.get('confpath');
+    // var urlParameters = window.location.search.replace("?", "").replace("%20", " ").split("&");
+	// for (var i = 0; i < urlParameters.length; i++) {
+	// 	var keyValue = urlParameters[i].split('=');
+	// 	var key = keyValue[0];
+	// 	var value = keyValue[1];
+	// 	if (key == 'job_id') {
+	// 		jobId = value;
+	// 	} else if (key == 'dbpath') {
+	// 		dbPath = value;
+	// 	} else if (key == 'confpath') {
+	// 		confPath = value;
+	// 	}
+	// }
 	
 	$grids = {};
 	gridObjs = {};
