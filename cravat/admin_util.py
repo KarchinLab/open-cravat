@@ -360,7 +360,7 @@ def compare_version (v1, v2):
     sv2 = StrictVersion(v2)
     if sv1 == sv2:
         return 0
-    elif max([sv1,sv2]) == sv1:
+    elif sv1 > sv2:
         return 1
     else:
         return -1
