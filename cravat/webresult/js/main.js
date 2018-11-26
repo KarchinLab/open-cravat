@@ -561,13 +561,16 @@ function webresult_run () {
     
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
     
-    window.onbeforeunload = function () {
-    	if (autoSaveLayout) {
+    // Chrome won't let you directly set this as window.onbeforeunload = function(){}
+	// it wont work on a refresh then.
+	function triggerAutosave() {
+		if (autoSaveLayout) {
             filterJson = filterArmed;
     		saveLayoutSetting(defaultSaveName);
-            saveFilterSetting(defaultSaveName, true);
+			saveFilterSetting(defaultSaveName, true);
     	}
-    }
+	}
+    window.onbeforeunload = triggerAutosave;
     
     $.get('/result/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];
