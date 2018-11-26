@@ -9,3 +9,4 @@ cravat/__pycache__/*
 .settings
 **/cravat_test_*
 *.swp
+cravat/modules/**
