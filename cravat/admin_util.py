@@ -11,6 +11,7 @@ from . import util
 import requests
 import traceback
 import re
+from distutils.version import StrictVersion
 
 def load_yml_conf(yml_conf_path):
     """
@@ -355,22 +356,14 @@ def get_remote_module_readme(module_name, version=None):
     return mic.get_remote_readme(module_name, version=version)
 
 def compare_version (v1, v2):
-    t1 = v1.split('.')
-    t2 = v2.split('.')
-    n11 = int(t1[0])
-    n21 = int(t2[0])
-    n12 = int(t1[1])
-    n22 = int(t2[1])
-    n13 = int(t1[2])
-    n23 = int(t2[2])
-    for i in range(3):
-        n1 = int(t1[i])
-        n2 = int(t2[i])
-        if n1 > n2:
-            return 1
-        elif n1 < n2:
-            return -1
-    return 0
+    sv1 = StrictVersion(v1)
+    sv2 = StrictVersion(v2)
+    if sv1 == sv2:
+        return 0
+    elif sv1 > sv2:
+        return 1
+    else:
+        return -1
 
 def get_readme(module_name, version=None):
     """
@@ -641,7 +634,7 @@ def refresh_cache ():
     Refresh the local modules cache
     """
     global mic
-    mic.update_local()
+    mic = ModuleInfoCache()
 
 def get_local_module_infos_by_names (module_names):
     modules = {}
@@ -685,6 +678,7 @@ def update_system_conf_file(d):
     try:
         sys_conf = recursive_update(get_system_conf(), d)
         write_system_conf_file(sys_conf)
+        refresh_cache()
         return True
     except:
         raise

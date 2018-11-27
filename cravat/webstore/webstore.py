@@ -116,7 +116,7 @@ def get_remote_manifest(request):
     return web.json_response(content)
 
 def get_local_manifest (request):
-    au.mic.update_local()
+    au.refresh_cache()
     content = {}
     for k, v in au.mic.local.items():
         content[k] = v.serialize()

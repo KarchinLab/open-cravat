@@ -110,6 +110,7 @@ def main ():
         app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
         app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
         ws.start_worker()
+        print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
         web.run_app(app, port=8060)
     except:
         import traceback

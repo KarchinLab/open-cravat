@@ -50,6 +50,7 @@ function setupTab (tabName) {
 			if (stat['rowsreturned'] && stat['norows'] > 0) {
 				selectedRowIds[tabName] = null;
 				$grids[tabName].pqGrid('setSelection', {rowIndx : 0, colIndx: 0, focus: true});
+                selectedRowNos[tabName] = 0;
 			}
 		}
 	}
@@ -998,18 +999,8 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 
 	var gridObject = new Object();
 	gridObject.title = tableTitle;
-
 	gridObject.width = rightDivWidth;
-	/*
-	var loadedHeight = loadedHeightSettings[tabName];
-	if (loadedHeight != undefined) {
-		gridObject.height = parseInt(loadedHeight.substring(0, loadedHeight.length - 1));
-	} else {
-		gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight - ARBITRARY_HEIGHT_SUBTRACTION - 15;
-	}
-	*/
 	gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight - ARBITRARY_HEIGHT_SUBTRACTION - 15;
-
 	gridObject.virtualX = false;
 	gridObject.virtualY = true;
 	gridObject.wrap = false;
@@ -1017,9 +1008,8 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.sortable = true;
 	gridObject.numberCell = {show: false};
 	gridObject.showTitle = false;
-
 	gridObject.selectionModel = {type: 'cell', mode: 'block'};
-	gridObject.hoverMode = 'row';
+	gridObject.hoverMode = 'cell';
 	gridObject.colModel = infomgr.getColModel(tabName);
 	gridObject.dataModel = {data: data};
 	var sortColumnToUse = 'input_line_number';
@@ -1047,6 +1037,12 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 		if (celltextel) {
 			celltextel.value = valueText;
 		}
+        if (selectedRowNos[tabName] != undefined) {
+            var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: selectedRowNos[tabName]});
+            row.css('background-color', 'white');
+        }
+        var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: rowNo});
+        row.css('background-color', '#ffc500');
 		if (rowData != undefined) {
 			if (selectedRowIds[tabName] == null || selectedRowIds[tabName] != rowData[0]) {
 				selectedRowIds[tabName] = rowData[0];
@@ -1087,7 +1083,13 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	}
 	gridObject.columnOrder = function (evt, ui) {
 	}
-
+    gridObject.refresh = function (evt, ui) {
+        var selRowNo = selectedRowNos[tabName];
+        if (selRowNo >= ui.initV && selRowNo <= ui.finalV) {
+            var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: selRowNo});
+            row.css('background-color', '#ffc500');
+        }
+    }
 	return gridObject;
 }
 
