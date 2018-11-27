@@ -501,19 +501,10 @@ function doNothing () {
 }
 
 function webresult_run () {
-    var urlParameters = window.location.search.replace("?", "").replace("%20", " ").split("&");
-	for (var i = 0; i < urlParameters.length; i++) {
-		var keyValue = urlParameters[i].split('=');
-		var key = keyValue[0];
-		var value = keyValue[1];
-		if (key == 'job_id') {
-			jobId = value;
-		} else if (key == 'dbpath') {
-			dbPath = value;
-		} else if (key == 'confpath') {
-			confPath = value;
-		}
-	}
+	var urlParams = new URLSearchParams(window.location.search);
+	jobId = urlParams.get('job_id');
+	dbPath = urlParams.get('dbpath');
+	confPath = urlParams.get('confpath');
 	
 	$grids = {};
 	gridObjs = {};
@@ -561,13 +552,16 @@ function webresult_run () {
     
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
     
-    window.onbeforeunload = function () {
-    	if (autoSaveLayout) {
+    // Chrome won't let you directly set this as window.onbeforeunload = function(){}
+	// it wont work on a refresh then.
+	function triggerAutosave() {
+		if (autoSaveLayout) {
             filterJson = filterArmed;
     		saveLayoutSetting(defaultSaveName);
-            saveFilterSetting(defaultSaveName, true);
+			saveFilterSetting(defaultSaveName, true);
     	}
-    }
+	}
+    window.onbeforeunload = triggerAutosave;
     
     $.get('/result/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];
