@@ -26,7 +26,26 @@ import base64
 #from aiohttp_session.cookie_storage import EncryptedCookieStorage
 import hashlib
 
-entrypoint = None
+donotopenbrowser = False
+
+def check_donotopenbrowser ():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--server',
+                        dest='servermode',
+                        action='store_true',
+                        default=False,
+                        help='run in server mode')
+    parser.add_argument('--donotopenbrowser',
+                        dest='donotopenbrowser',
+                        action='store_true',
+                        default=False,
+                        help='do not open the cravat web page')
+    args = parser.parse_args(sys.argv[1:])
+    global donotopenbrowser
+    donotopenbrowser = args.donotopenbrowser
+    global servermode
+    servermode = args.servermode
+    wu.servermode = args.servermode
 
 def result ():
     parser = argparse.ArgumentParser()
@@ -43,33 +62,28 @@ def result ():
         exit(-1)
     confpath = parsed_args.confpath
     runid = os.path.basename(dbpath).replace('.sqlite', '')
-    webbrowser.open('http://localhost:8060/result/index.html?job_id=' + runid + '&dbpath=' + dbpath)
-    global entrypoint
-    entrypoint = 'result'
+    sys.argv = sys.argv[1:]
+    check_donotopenbrowser()
+    global donotopenbrowser
+    if not donotopenbrowser:
+        webbrowser.open('http://localhost:8060/result/index.html?job_id=' + runid + '&dbpath=' + dbpath)
     main()
 
 def store ():
+    check_donotopenbrowser()
     ws.start_install_queue_manager()
-    webbrowser.open('http://localhost:8060/store/index.html')
+    global donotopenbrowser
+    if not donotopenbrowser:
+        webbrowser.open('http://localhost:8060/store/index.html')
 
 def submit ():
-    webbrowser.open('http://localhost:8060/submit/index.html')
+    check_donotopenbrowser()
+    global donotopenbrowser
+    if not donotopenbrowser:
+        webbrowser.open('http://localhost:8060/submit/index.html')
     main()
 
 def main ():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--server',
-                        dest='servermode',
-                        action='store_true',
-                        default=False,
-                        help='run in server mode')
-    global entrypoint
-    if entrypoint == 'result':
-        sys.argv = sys.argv[1:]
-    args = parser.parse_args(sys.argv[1:])
-    global servermode
-    servermode = args.servermode
-    wu.servermode = args.servermode
     '''
     if servermode:
         jobs_dir = au.get_jobs_dir()
@@ -88,17 +102,12 @@ def main ():
             db.commit()
             db.close()
     s = socket.socket()
-    '''
     try:
-        '''
         s.bind(('localhost', 8060))
-        '''
         app = web.Application()
-        '''
         fernet_key = fernet.Fernet.generate_key()
         secret_key = base64.urlsafe_b64decode(fernet_key)
         setup(app, EncryptedCookieStorage(secret_key))
-        '''
         routes = list()
         routes.extend(ws.routes)
         routes.extend(wr.routes)
@@ -112,9 +121,35 @@ def main ():
         ws.start_worker()
         print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
         web.run_app(app, port=8060)
+    except KeyboardInterrupt:
+        print('@@@@@@@ keyboard interrupt')
+    except BrokenPipeError:
+        print('@@@@@@@ broken pipe')
     except:
         import traceback
         traceback.print_exc()
+    '''
+    app = web.Application()
+    routes = list()
+    routes.extend(ws.routes)
+    routes.extend(wr.routes)
+    routes.extend(wu.routes)
+    for route in routes:
+        method, path, func_name = route
+        app.router.add_route(method, path, func_name)
+    app.router.add_static('/store', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webstore'))
+    app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
+    app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
+    ws.start_worker()
+    print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
+    try:
+        web.run_app(app, port=8060)
+    except KeyboardInterrupt:
+        print('@ interrupted')
+    except BrokenPipeError:
+        print('@ broken pipe')
+    except ConnectionResetError:
+        print('@ connection reset error')
 
 if __name__ == '__main__':
     main()
