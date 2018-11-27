@@ -240,23 +240,25 @@ class CravatReport:
         self.colinfo[level] = {'colgroups': self.columngroups[level], 'columns': columns}
         # report substitution
         if level in ['variant', 'gene']:
-            q = 'select * from {}_reportsub'.format(level)
-            self.cursor.execute(q)
-            rs = self.cursor.fetchall()
-            self.report_substitution = {}
-            for r in rs:
-                module = r[0]
-                sub = json.loads(r[1])
-                self.report_substitution[module] = sub
-            self.column_subs[level] = {}
-            columns = self.colinfo[level]['columns']
-            for i in range(len(columns)):
-                column = columns[i]
-                [module, col] = column['col_name'].split('__')
-                if module in self.report_substitution:
-                    sub = self.report_substitution[module]
-                    if col in sub:
-                        self.column_subs[level][i] = sub[col]
+            reportsubtable = level + '_reportsub'
+            if self.table_exists(reportsubtable):
+                q = 'select * from {}'.format(reportsubtable)
+                self.cursor.execute(q)
+                rs = self.cursor.fetchall()
+                self.report_substitution = {}
+                for r in rs:
+                    module = r[0]
+                    sub = json.loads(r[1])
+                    self.report_substitution[module] = sub
+                self.column_subs[level] = {}
+                columns = self.colinfo[level]['columns']
+                for i in range(len(columns)):
+                    column = columns[i]
+                    [module, col] = column['col_name'].split('__')
+                    if module in self.report_substitution:
+                        sub = self.report_substitution[module]
+                        if col in sub:
+                            self.column_subs[level][i] = sub[col]
     
     def parse_cmd_args (self, cmd_args):
         parser = argparse.ArgumentParser()
