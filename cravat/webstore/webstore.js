@@ -306,6 +306,9 @@ function getRemoteModulePanel (moduleName) {
             img3.src = '/store/new.png';
             img3.style.width = '50px';
             img3.title = 'New module available';
+            img3.style.position = 'absolute';
+            img3.style.bottom = '0px';
+            img3.style.right = '0px';
             addEl(div, img3);
         }
     }
@@ -638,8 +641,52 @@ function activateDetailDialog (moduleName) {
     span.textContent = 'Version: ';
     addEl(d, span);
     span = getEl('span');
-    span.textContent = moduleInfo['latest_version'];
+    var remoteVersion = moduleInfo['latest_version'];
+    span.textContent = remoteVersion;
     addEl(d, span);
+    if (localModuleInfo[moduleName] != undefined) {
+        var localVersion = localModuleInfo[moduleName].version;
+        if (localVersion != remoteVersion) {
+            var span = getEl('span');
+            span.textContent = ' (' + localVersion + ' installed)';
+            addEl(d, span);
+            if (compareVersion(remoteVersion, localVersion) > 0) {
+                addEl(d, getEl('br'));
+                var span = getEl('span');
+                span.style.color = 'red';
+                span.textContent = 'New version available!';
+                addEl(d, span);
+                var button = getEl('button');
+                button.id = 'updatebutton';
+                buttonText = 'Update';
+                button.style.backgroundColor = '#beeaff';
+                button.addEventListener('click', function (evt) {
+                    var btn = evt.target;
+                    var btnModuleName = btn.getAttribute('module');
+                    if (btnModuleName == 'chasmplus') {
+                        var select = document.getElementById('chasmplustissueselect');
+                        btnModuleName = select.value;
+                    }
+                    var buttonText = null;
+                    if (installQueue.length == 0) {
+                        buttonText = 'Updating...';
+                    } else {
+                        buttonText = 'Queued';
+                    }
+                    queueInstall(btnModuleName);
+                    btn.textContent = buttonText;
+                    btn.style.color = 'red';
+                    document.getElementById('moduledetaildiv_store').style.display = 'none';
+                });
+                button.textContent = buttonText;
+                button.style.padding = '8px';
+                button.style.fontSize = '18px';
+                button.style.fontWeight = 'bold';
+                button.setAttribute('module', moduleName);
+                addEl(d, button);
+            }
+        }
+    }
     addEl(infodiv, d);
     addEl(infodiv, getEl('br'));
     d = getEl('div');
