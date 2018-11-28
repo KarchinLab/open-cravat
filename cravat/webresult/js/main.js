@@ -272,14 +272,14 @@ function loadData (alertFlag, finalcallback) {
 		function callLoadVariant () {
 		    var callback = null;
 		    if (usedAnnotators['gene']) {
-			callback = loadGeneResult;
+                callback = loadGeneResult;
 		    } else {
-			callback = loadSampleResult;
+                callback = loadSampleResult;
 		    }
 		    if (resultLevels.indexOf('variant') != -1) {
-			infomgr.load(jobId, 'variant', callback, null, filterJson);
+                infomgr.load(jobId, 'variant', callback, null, filterJson);
 		    } else {
-			callback();
+                callback();
 		    }
 		}
 		if (firstLoad) {
@@ -289,17 +289,17 @@ function loadData (alertFlag, finalcallback) {
                     lockTabs();
                     flagNotifyToUseFilter = true;
                     if (document.getElementById('infonoticediv')) {
-                    notifyToUseFilter();
-                    flagNotifyToUseFilter = false;
+                        notifyToUseFilter();
+                        flagNotifyToUseFilter = false;
                     } else {
-                    flagNotifyToUseFilter = true;
+                        flagNotifyToUseFilter = true;
                     }
                     removeLoadingDiv();
                     return;
                 } else {
                     if (flagNotifyToUseFilter) {
-                    notifyOfReadyToLoad();
-                    flagNotifyToUseFilter = false;
+                        notifyOfReadyToLoad();
+                        flagNotifyToUseFilter = false;
                     }
                     removeLoadingDiv();
                     callLoadVariant();

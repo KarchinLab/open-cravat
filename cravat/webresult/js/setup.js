@@ -403,6 +403,9 @@ function populateInfoDiv (infoDiv) {
 		addEl(tr, addEl(td, addEl(span, getTn(key))));
 		var td = getEl('td');
 		var span = getEl('span');
+        if (key == 'Number of unique input variants') {
+            span.id = 'numberofuniqueinputvariants_span';
+        }
 		span.className = 'detailContent';
 		addEl(tr, addEl(td, addEl(span, getTn(val))));
 		addEl(tbody, tr);

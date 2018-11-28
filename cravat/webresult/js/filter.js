@@ -323,7 +323,6 @@ const makeGroupFilter = (groupDiv) => {
     // Negate
     filter.negate = groupDiv.children().children('.filter-group-negate-check').is(':checked');
 
-
     return filter;
 }
 
