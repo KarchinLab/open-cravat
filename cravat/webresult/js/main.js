@@ -500,21 +500,22 @@ function doNothing () {
 	alert('saved');
 }
 
+function quicksave () {
+    filterJson = filterArmed;
+    saveLayoutSetting(defaultSaveName);
+    saveFilterSetting(defaultSaveName, true);
+}
+
 function webresult_run () {
 	var urlParams = new URLSearchParams(window.location.search);
 	jobId = urlParams.get('job_id');
 	dbPath = urlParams.get('dbpath');
 	confPath = urlParams.get('confpath');
-	
 	$grids = {};
 	gridObjs = {};
-	
 	document.title = 'CRAVAT: ' + jobId;
-	
 	addTabHeadsAndTabContentDivs();
-	
 	currentTab = 'info';
-	
     $('#tabheads .tabhead').click(function(event) {
     	var targetTab = "#" + this.id.replace('head', '');
     	var tabName = targetTab.split('_')[1];
@@ -531,10 +532,8 @@ function webresult_run () {
     	if (tabName == 'variant' || tabName == 'gene' || tabName == 'info') {
     		$(document.getElementById('detailcontainerdiv_' + tabName)).packery();
     	}
-    	
     	changeMenu();
     });
-    
     var resizeTimeout = null;
     $(window).resize(function(event) {
     	shouldResizeScreen = {};
@@ -549,9 +548,7 @@ function webresult_run () {
             }, 200);
         }
     });
-    
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
-    
     // Chrome won't let you directly set this as window.onbeforeunload = function(){}
 	// it wont work on a refresh then.
 	function triggerAutosave() {
@@ -561,8 +558,7 @@ function webresult_run () {
 			saveFilterSetting(defaultSaveName, true);
     	}
 	}
-    window.onbeforeunload = triggerAutosave;
-    
+    //window.onbeforeunload = triggerAutosave;
     $.get('/result/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];
     	usedAnnotators = {};
