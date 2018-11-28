@@ -190,8 +190,7 @@ const makeFilterGroupDiv = (filter) => {
     controlsDiv.append(' ').append(removeBtn);
     
     // Populate from filter
-    if (filter !== undefined && filter.variant != undefined) {
-        filter = filter.variant;
+    if (filter !== undefined) {
         if (filter.operator != undefined) {
             // Assign operator
             operatorSel.val(filter.operator);
