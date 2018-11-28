@@ -203,6 +203,7 @@ function populateSummaryWidgetDiv () {
                     drawSummaryWidget(colGroupKey);
                 } catch (err) {
                     console.log(err);
+                    console.log('### continuing to the next widget ###');
                 }
 			}
 		}
