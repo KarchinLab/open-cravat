@@ -727,7 +727,11 @@ function setFilterSelect (div) {
 }
 
 function makeFilterRootGroupDiv (filter) {
-    var filterRootGroupDiv = makeFilterGroupDiv(filter);
+    var filterToShow = filter;
+    if (filter != undefined && filter.variant != undefined) {
+        filterToShow = filter.variant;
+    }
+    var filterRootGroupDiv = makeFilterGroupDiv(filterToShow);
     filterRootGroupDiv.attr('id', 'filter-root-group-div');
     filterRootGroupDiv.css('margin-left', '0px');
     filterRootGroupDiv.children().children('.filter-group-remove-btn').attr('disabled', 'disabled');
