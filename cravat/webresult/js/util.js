@@ -210,6 +210,9 @@ function saveFilterSettingAs () {
 		if (names != '') {
 			msg = msg + ' Saved layout names are: ' + names;
 		}
+        if (lastUsedLayoutName == defaultSaveName) {
+            lastUsedLayoutName = '';
+        }
 		var name = prompt(msg, lastUsedLayoutName);
 		if (name != null) {
 			saveFilterSetting(name);
@@ -238,6 +241,9 @@ function saveLayoutSettingAs () {
 		if (names != '') {
 			msg = msg + ' Saved layout names are: ' + names;
 		}
+        if (lastUsedLayoutName == defaultSaveName) {
+            lastUsedLayoutName = '';
+        }
 		var name = prompt(msg, lastUsedLayoutName);
 		if (name != null) {
 			saveLayoutSetting(name);
