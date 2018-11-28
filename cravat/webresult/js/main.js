@@ -184,7 +184,6 @@ function loadData (alertFlag, finalcallback) {
 	resetTab = {'info': infoReset};
 	resetTab['summary'] = true;
 	infomgr.datas = {};
-	
     var makeVariantByGene = function () {
         if (infomgr.datas.variant != undefined) {
             varByGene = {};
@@ -226,6 +225,7 @@ function loadData (alertFlag, finalcallback) {
 			setupTab(currentTab);
 		}
         makeVariantByGene();
+        document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.';
 	}
 	var loadMappingResult = function () {
 		if (resultLevels.indexOf('mapping') != -1) {
@@ -272,14 +272,14 @@ function loadData (alertFlag, finalcallback) {
 		function callLoadVariant () {
 		    var callback = null;
 		    if (usedAnnotators['gene']) {
-			callback = loadGeneResult;
+                callback = loadGeneResult;
 		    } else {
-			callback = loadSampleResult;
+                callback = loadSampleResult;
 		    }
 		    if (resultLevels.indexOf('variant') != -1) {
-			infomgr.load(jobId, 'variant', callback, null, filterJson);
+                infomgr.load(jobId, 'variant', callback, null, filterJson);
 		    } else {
-			callback();
+                callback();
 		    }
 		}
 		if (firstLoad) {
@@ -289,17 +289,17 @@ function loadData (alertFlag, finalcallback) {
                     lockTabs();
                     flagNotifyToUseFilter = true;
                     if (document.getElementById('infonoticediv')) {
-                    notifyToUseFilter();
-                    flagNotifyToUseFilter = false;
+                        notifyToUseFilter();
+                        flagNotifyToUseFilter = false;
                     } else {
-                    flagNotifyToUseFilter = true;
+                        flagNotifyToUseFilter = true;
                     }
                     removeLoadingDiv();
                     return;
                 } else {
                     if (flagNotifyToUseFilter) {
-                    notifyOfReadyToLoad();
-                    flagNotifyToUseFilter = false;
+                        notifyOfReadyToLoad();
+                        flagNotifyToUseFilter = false;
                     }
                     removeLoadingDiv();
                     callLoadVariant();
@@ -415,11 +415,11 @@ function firstLoadData () {
 		);
 	}
 	var afterLoadDefaultFilter = function (args) {
-		loadLayoutSetting(defaultSaveName, afterLoadDefaultWidgetSetting);
+		loadLayoutSetting(quickSaveName, afterLoadDefaultWidgetSetting);
 	}
 	loadWidgets();
 	setupTab('info');
-	loadFilterSetting(defaultSaveName, afterLoadDefaultFilter);
+	loadFilterSetting(quickSaveName, afterLoadDefaultFilter);
 }
 
 function checkWidgets () {
@@ -500,21 +500,22 @@ function doNothing () {
 	alert('saved');
 }
 
+function quicksave () {
+    filterJson = filterArmed;
+    saveLayoutSetting(quickSaveName);
+    saveFilterSetting(quickSaveName, true);
+}
+
 function webresult_run () {
 	var urlParams = new URLSearchParams(window.location.search);
 	jobId = urlParams.get('job_id');
 	dbPath = urlParams.get('dbpath');
 	confPath = urlParams.get('confpath');
-	
 	$grids = {};
 	gridObjs = {};
-	
 	document.title = 'CRAVAT: ' + jobId;
-	
 	addTabHeadsAndTabContentDivs();
-	
 	currentTab = 'info';
-	
     $('#tabheads .tabhead').click(function(event) {
     	var targetTab = "#" + this.id.replace('head', '');
     	var tabName = targetTab.split('_')[1];
@@ -531,10 +532,8 @@ function webresult_run () {
     	if (tabName == 'variant' || tabName == 'gene' || tabName == 'info') {
     		$(document.getElementById('detailcontainerdiv_' + tabName)).packery();
     	}
-    	
     	changeMenu();
     });
-    
     var resizeTimeout = null;
     $(window).resize(function(event) {
     	shouldResizeScreen = {};
@@ -549,20 +548,17 @@ function webresult_run () {
             }, 200);
         }
     });
-    
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
-    
     // Chrome won't let you directly set this as window.onbeforeunload = function(){}
 	// it wont work on a refresh then.
 	function triggerAutosave() {
 		if (autoSaveLayout) {
             filterJson = filterArmed;
-    		saveLayoutSetting(defaultSaveName);
-			saveFilterSetting(defaultSaveName, true);
+    		saveLayoutSetting(quickSaveName);
+			saveFilterSetting(quickSaveName, true);
     	}
 	}
-    window.onbeforeunload = triggerAutosave;
-    
+    //window.onbeforeunload = triggerAutosave;
     $.get('/result/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];
     	usedAnnotators = {};

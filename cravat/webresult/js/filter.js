@@ -190,8 +190,7 @@ const makeFilterGroupDiv = (filter) => {
     controlsDiv.append(' ').append(removeBtn);
     
     // Populate from filter
-    if (filter !== undefined && filter.variant != undefined) {
-        filter = filter.variant;
+    if (filter !== undefined) {
         if (filter.operator != undefined) {
             // Assign operator
             operatorSel.val(filter.operator);
@@ -224,7 +223,12 @@ const filterColRemoveHandler = (event) => {
 
 const removeFilterElem = (elemDiv) => {
     // Remove preceding join operator
-    elemDiv.prev().remove()
+    const prevJoinOp = elemDiv.prev('.filter-join-operator-div');
+    if (prevJoinOp.length > 0) {
+        prevJoinOp.remove();
+    } else {
+        elemDiv.next('.filter-join-operator-div').remove();
+    }
     // Remove element
     elemDiv.remove();
 }
@@ -318,7 +322,6 @@ const makeGroupFilter = (groupDiv) => {
     
     // Negate
     filter.negate = groupDiv.children().children('.filter-group-negate-check').is(':checked');
-
 
     return filter;
 }

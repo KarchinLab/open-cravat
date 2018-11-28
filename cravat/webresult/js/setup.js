@@ -203,6 +203,7 @@ function populateSummaryWidgetDiv () {
                     drawSummaryWidget(colGroupKey);
                 } catch (err) {
                     console.log(err);
+                    console.log('### continuing to the next widget ###');
                 }
 			}
 		}
@@ -403,6 +404,9 @@ function populateInfoDiv (infoDiv) {
 		addEl(tr, addEl(td, addEl(span, getTn(key))));
 		var td = getEl('td');
 		var span = getEl('span');
+        if (key == 'Number of unique input variants') {
+            span.id = 'numberofuniqueinputvariants_span';
+        }
 		span.className = 'detailContent';
 		addEl(tr, addEl(td, addEl(span, getTn(val))));
 		addEl(tbody, tr);
@@ -727,7 +731,11 @@ function setFilterSelect (div) {
 }
 
 function makeFilterRootGroupDiv (filter) {
-    var filterRootGroupDiv = makeFilterGroupDiv(filter);
+    var filterToShow = filter;
+    if (filter != undefined && filter.variant != undefined) {
+        filterToShow = filter.variant;
+    }
+    var filterRootGroupDiv = makeFilterGroupDiv(filterToShow);
     filterRootGroupDiv.attr('id', 'filter-root-group-div');
     filterRootGroupDiv.css('margin-left', '0px');
     filterRootGroupDiv.children().children('.filter-group-remove-btn').attr('disabled', 'disabled');
