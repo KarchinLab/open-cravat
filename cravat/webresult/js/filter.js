@@ -223,7 +223,15 @@ const filterColRemoveHandler = (event) => {
 
 const removeFilterElem = (elemDiv) => {
     // Remove preceding join operator
-    elemDiv.prev().remove()
+    var prev = elemDiv.prev();
+    if (prev[0] != undefined) {
+        prev.remove();
+    } else {
+        var next = elemDiv.next();
+        if (next[0] != undefined && next[0].className == 'filter-join-operator-div') {
+            next.remove();
+        }
+    }
     // Remove element
     elemDiv.remove();
 }
