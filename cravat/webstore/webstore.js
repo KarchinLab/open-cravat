@@ -299,7 +299,6 @@ function getRemoteModulePanel (moduleName) {
     if (installStatus == 'Installed') {
         var localVersion = localModuleInfo[moduleName].version;
         var remoteVersion = getHighestVersionForRemoteModule(moduleName);
-        console.log(moduleName, localVersion, remoteVersion);
         c = compareVersion(remoteVersion, localVersion);
         if (c > 0) {
             var img3 = getEl('img');
@@ -1096,7 +1095,6 @@ function installModule (moduleName) {
 		url:'/store/install',
 		data: {name:moduleName, version:version},
         success: function (response) {
-            console.log(response);
         }
 	});
 }
@@ -1109,9 +1107,9 @@ function uninstallModule(moduleName) {
         url:'/store/uninstall',
         data: {name: moduleName},
         complete: function (response) {
-            console.log(response);
             delete installInfo[moduleName];
             moduleChange(response);
+            populateAnnotators();
         }
 	});
 }
@@ -1152,6 +1150,7 @@ function connectWebSocket () {
                 delete installInfo[module];
                 installQueue = installQueue.filter(e => e != module);
                 moduleChange(null);
+                populateAnnotators();
                 if (installQueue.length > 0) {
                     var module = installQueue.shift();
                     installInfo[module] = {'msg': 'installing'};
