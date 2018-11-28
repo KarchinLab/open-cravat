@@ -415,11 +415,11 @@ function firstLoadData () {
 		);
 	}
 	var afterLoadDefaultFilter = function (args) {
-		loadLayoutSetting(defaultSaveName, afterLoadDefaultWidgetSetting);
+		loadLayoutSetting(quickSaveName, afterLoadDefaultWidgetSetting);
 	}
 	loadWidgets();
 	setupTab('info');
-	loadFilterSetting(defaultSaveName, afterLoadDefaultFilter);
+	loadFilterSetting(quickSaveName, afterLoadDefaultFilter);
 }
 
 function checkWidgets () {
@@ -502,8 +502,8 @@ function doNothing () {
 
 function quicksave () {
     filterJson = filterArmed;
-    saveLayoutSetting(defaultSaveName);
-    saveFilterSetting(defaultSaveName, true);
+    saveLayoutSetting(quickSaveName);
+    saveFilterSetting(quickSaveName, true);
 }
 
 function webresult_run () {
@@ -554,8 +554,8 @@ function webresult_run () {
 	function triggerAutosave() {
 		if (autoSaveLayout) {
             filterJson = filterArmed;
-    		saveLayoutSetting(defaultSaveName);
-			saveFilterSetting(defaultSaveName, true);
+    		saveLayoutSetting(quickSaveName);
+			saveFilterSetting(quickSaveName, true);
     	}
 	}
     //window.onbeforeunload = triggerAutosave;

@@ -56,13 +56,15 @@ def get_filter_save_names (request):
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     table = 'viewersetup'
+    content = []
     if table_exists(cursor, table) == False:
-        content = '[]'
+        pass
     else:
         q = 'select distinct name from ' + table + ' where datatype="filter"'
         cursor.execute(q)
-        r = cursor.fetchall()
-        content = str([v[0] for v in r])
+        rs = cursor.fetchall()
+        for r in rs:
+            content.append(r)
     cursor.close()
     conn.close()
     return web.json_response(content)
@@ -77,8 +79,9 @@ def get_layout_save_names (request):
     if table_exists(cursor, table):
         q = 'select distinct name from ' + table + ' where datatype="layout"'
         cursor.execute(q)
-        r = cursor.fetchall()
-        content = [v[0] for v in r]
+        rs = cursor.fetchall()
+        for r in rs:
+            content.append(r)
     cursor.close()
     conn.close()
     return web.json_response(content)
