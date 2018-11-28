@@ -184,7 +184,6 @@ function loadData (alertFlag, finalcallback) {
 	resetTab = {'info': infoReset};
 	resetTab['summary'] = true;
 	infomgr.datas = {};
-	
     var makeVariantByGene = function () {
         if (infomgr.datas.variant != undefined) {
             varByGene = {};
@@ -226,6 +225,7 @@ function loadData (alertFlag, finalcallback) {
 			setupTab(currentTab);
 		}
         makeVariantByGene();
+        document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.';
 	}
 	var loadMappingResult = function () {
 		if (resultLevels.indexOf('mapping') != -1) {
