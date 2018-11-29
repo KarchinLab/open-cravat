@@ -309,7 +309,6 @@ def get_result (request):
 
 def get_result_levels (request):
     queries = request.rel_url.query
-    queries = request.rel_url.query
     conn = sqlite3.connect(queries['dbpath'])
     cursor = conn.cursor()
     sql = 'select name from sqlite_master where type="table" and ' +\

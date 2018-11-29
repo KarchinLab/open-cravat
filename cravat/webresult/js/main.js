@@ -139,11 +139,17 @@ function resizesTheWindow () {
 	onClickDetailRedraw();
 }
 
-function getResultLevels () {
-	var request = new XMLHttpRequest();
-	request.open('GET', '/result/service/getresulttablelevels?dbpath=' + dbPath, false);
-	request.send(null);
-	resultLevels = JSON.parse(request.responseText);
+function getResultLevels (callback) {
+    $.ajax({
+        method: 'GET',
+        url: '/result/service/getresulttablelevels',
+        async: true,
+        data: {'dbpath': dbPath},
+        success: function (response) {
+            resultLevels = response;
+            callback();
+        },
+    });
 }
 
 function makeTabHeadTabBody (resultTableLevel) {
@@ -172,7 +178,6 @@ function makeTabHeadTabBody (resultTableLevel) {
 }
 
 function addTabHeadsAndTabContentDivs () {
-	getResultLevels();
 	for (var i = 0; i < resultLevels.length; i++) {
 		var resultTableLevel = resultLevels[i];
 		makeTabHeadTabBody(resultTableLevel);
@@ -506,14 +511,7 @@ function quicksave () {
     saveFilterSetting(quickSaveName, true);
 }
 
-function webresult_run () {
-	var urlParams = new URLSearchParams(window.location.search);
-	jobId = urlParams.get('job_id');
-	dbPath = urlParams.get('dbpath');
-	confPath = urlParams.get('confpath');
-	$grids = {};
-	gridObjs = {};
-	document.title = 'CRAVAT: ' + jobId;
+function afterGetResultLevels () {
 	addTabHeadsAndTabContentDivs();
 	currentTab = 'info';
     $('#tabheads .tabhead').click(function(event) {
@@ -534,31 +532,7 @@ function webresult_run () {
     	}
     	changeMenu();
     });
-    var resizeTimeout = null;
-    $(window).resize(function(event) {
-    	shouldResizeScreen = {};
-        var curWinWidth = window.innerWidth;
-        var curWinHeight = window.innerHeight;
-        if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
-            windowWidth = curWinWidth;
-            windowHeight = curWinHeight;
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function () {
-                resizesTheWindow();
-            }, 200);
-        }
-    });
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
-    // Chrome won't let you directly set this as window.onbeforeunload = function(){}
-	// it wont work on a refresh then.
-	function triggerAutosave() {
-		if (autoSaveLayout) {
-            filterJson = filterArmed;
-    		saveLayoutSetting(quickSaveName);
-			saveFilterSetting(quickSaveName, true);
-    	}
-	}
-    //window.onbeforeunload = triggerAutosave;
     $.get('/result/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];
     	usedAnnotators = {};
@@ -583,4 +557,39 @@ function webresult_run () {
     	}
     	firstLoadData();
     });
+}
+
+function webresult_run () {
+	var urlParams = new URLSearchParams(window.location.search);
+	jobId = urlParams.get('job_id');
+	dbPath = urlParams.get('dbpath');
+	confPath = urlParams.get('confpath');
+	$grids = {};
+	gridObjs = {};
+	document.title = 'CRAVAT: ' + jobId;
+    getResultLevels(afterGetResultLevels);
+    var resizeTimeout = null;
+    $(window).resize(function(event) {
+    	shouldResizeScreen = {};
+        var curWinWidth = window.innerWidth;
+        var curWinHeight = window.innerHeight;
+        if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
+            windowWidth = curWinWidth;
+            windowHeight = curWinHeight;
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                resizesTheWindow();
+            }, 200);
+        }
+    });
+    // Chrome won't let you directly set this as window.onbeforeunload = function(){}
+	// it wont work on a refresh then.
+	function triggerAutosave() {
+		if (autoSaveLayout) {
+            filterJson = filterArmed;
+    		saveLayoutSetting(quickSaveName);
+			saveFilterSetting(quickSaveName, true);
+    	}
+	}
+    //window.onbeforeunload = triggerAutosave;
 }
