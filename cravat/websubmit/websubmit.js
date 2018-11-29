@@ -131,7 +131,7 @@ function buildJobsTable () {
         var viewLink = $(getEl('a'))
             .attr('href',`/result/index.html?dbpath=${job.db_path}&job_id=${job.id}`)
             .attr('target','_blank')
-            .append($(getEl('button')).append('Launch'))
+            .append($(getEl('button')).append('Launch').attr('disabled', !job.viewable))
         viewTd.append(viewLink);
         // Database
         var dbTd = $(getEl('td'));
