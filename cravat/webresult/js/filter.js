@@ -297,7 +297,10 @@ const makeGroupFilter = (groupDiv) => {
             var rawValue = $(valInputs[0]).val();
             // Below is temporary. Implement categorical column type and remove this.
             if (colFilter.column == 'base__so') {
-                rawValue = soDic[rawValue];
+				subValue = soDic[rawValue];
+                if (subValue != undefined) {
+                    rawValue = subValue;
+                }
             }
             colFilter.value = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
         } else {
