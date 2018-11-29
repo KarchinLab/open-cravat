@@ -62,6 +62,7 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	var div = document.createElement('fieldset');
 	div.id = 'detailwidget_' + tabName + '_' + widgetName;
 	div.className = 'detailwidget';
+    div.style.wordBreak = 'break-all';
 	var width = null;
 	var height = null;
 	var top = null;
