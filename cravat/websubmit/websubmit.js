@@ -125,8 +125,8 @@ function buildJobsTable () {
         // Genome assembly
         jobTr.append($(getEl('td')).append(job.assembly));
         // View
-        var viewTd = $(getEl('td'));
-        viewTd.css('text-align', 'center');
+        var viewTd = $(getEl('td'))
+            .css('text-align', 'center');
         jobTr.append(viewTd);
         var viewBtn = $(getEl('button')).append('Launch')
             .attr('disabled', !job.viewable)
@@ -145,28 +145,34 @@ function buildJobsTable () {
         dbTd.append(dbButton);
         // Excel
         jobTr.append(dbTd);
-        var dbButton = $(getEl('button'))
+        var excelButton = $(getEl('button'))
             .append('Excel')
             .attr('jobId',job.id)
         if (job.reports.includes('excel') == false) {
-            dbButton.css('background-color', 'red');
-            dbButton.click(createJobExcelReport);
+            excelButton.css('background-color', 'red');
+            excelButton.click(createJobExcelReport);
         } else {
-            dbButton.click(jobExcelDownloadButtonHandler);
+            excelButton.click(jobExcelDownloadButtonHandler);
         }
-        dbTd.append(dbButton);
+        dbTd.append(excelButton);
         // Text
-        jobTr.append(dbTd);
-        var dbButton = $(getEl('button'))
+        var textButton = $(getEl('button'))
             .append('Text')
             .attr('jobId',job.id)
         if (job.reports.includes('text') == false) {
-            dbButton.css('background-color', 'red');
-            dbButton.click(createJobTextReport);
+            textButton.css('background-color', 'red');
+            textButton.click(createJobTextReport);
         } else {
-            dbButton.click(jobTextDownloadButtonHandler);
+            textButton.click(jobTextDownloadButtonHandler);
         }
-        dbTd.append(dbButton);
+        dbTd.append(textButton);
+        // Log
+        var logLink = $(getEl('a'))
+            .attr('href','jobs/'+job.id+'/log')
+            .attr('target','_blank')
+            .append($(getEl('button')).append('Log'))
+        dbTd.append(logLink);
+
         /*
         // Reports
         var reportTd = $(getEl('td'));
