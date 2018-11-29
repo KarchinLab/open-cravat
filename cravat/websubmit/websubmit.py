@@ -25,6 +25,7 @@ class FileRouter(object):
             'excel':'.xlsx'
         }
         self.db_extension = '.sqlite'
+        self.log_extension = '.log'
 
     async def get_jobs_dir (self, request):
         root_jobs_dir = au.get_jobs_dir()
@@ -76,6 +77,12 @@ class FileRouter(object):
         status_fname = 'input.status.json'
         jobs_dir = await self.job_dir(request, job_id)
         return os.path.join(jobs_dir, status_fname)
+
+    async def job_log(self, request, job_id):
+        job_dir = await self.job_dir(request, job_id)
+        log_fname = self.input_fname+self.log_extension
+        return os.path.join(job_dir, log_fname)
+
 
 class WebJob(object):
     def __init__(self, job_dir, job_info_fpath):
@@ -273,6 +280,13 @@ async def download_db(request):
     db_fname = job_id+'.sqlite'
     headers = {'Content-Disposition': 'attachment; filename='+db_fname}
     return web.FileResponse(db_path, headers=headers)
+
+async def get_job_log (request):
+    global filerouter
+    job_id = request.match_info['job_id']
+    log_path = await filerouter.job_log(request, job_id)
+    with open(log_path) as f:
+        return web.Response(text=f.read())
 
 def get_valid_report_types():
     reporter_infos = au.get_local_module_infos(types=['reporter'])
@@ -514,6 +528,7 @@ async def logout (request):
 def get_servermode (request):
     return web.json_response({'servermode': servermode})
 
+
 filerouter = FileRouter()
 VIEW_PROCESS = None
 
@@ -527,6 +542,7 @@ routes.append(['GET','/submit/jobs/{job_id}/db', download_db])
 routes.append(['GET','/submit/reports',get_report_types])
 routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',generate_report])
 routes.append(['GET','/submit/jobs/{job_id}/reports/{report_type}',download_report])
+routes.append(['GET','/submit/jobs/{job_id}/log',get_job_log])
 routes.append(['GET', '/submit/getjobsdir', get_jobs_dir])
 routes.append(['GET', '/submit/setjobsdir', set_jobs_dir])
 routes.append(['GET', '/submit/getsystemconfinfo', get_system_conf_info])
