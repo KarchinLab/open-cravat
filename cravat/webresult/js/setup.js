@@ -621,11 +621,6 @@ function makeGrid (columns, data, tabName) {
 		$grid.pqGrid('option', 'sortModel', sortModel);
 	};
 
-	// Empties if grid exists.
-	if ($grids[tabName] != undefined) {
-		$grids[tabName].pqGrid('destroy');
-	}
-
 	// Creates the grid.
 	var $grid = $tableDiv.pqGrid(gridObj);
 	$grids[tabName] = $grid;
