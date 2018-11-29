@@ -340,7 +340,11 @@ function saveLayoutSetting (name) {
 			var cols = colGroup.colModel;
 			for (var j = 0; j < cols.length; j++) {
 				var col = cols[j];
-				group.cols.push({'col': col.col, 'dataIndx': col.dataIndx, 'width': col.width});
+				group.cols.push({
+                    'col': col.col, 
+                    'dataIndx': col.dataIndx, 
+                    'width': col.width,
+                    'hidden': col.hidden});
 			}
 			data.push(group);
 		}
@@ -544,6 +548,7 @@ function applyTableSetting (level) {
 						var col = cols[l];
 						if (col.col == colSetting.col) {
 							col.width = colSetting.width;
+                            col.hidden = colSetting.hidden;
 							newColModel.colModel.push(col);
 							break;
 						}

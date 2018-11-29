@@ -921,7 +921,7 @@ function populateTableColumnSelectorPanel () {
 			checkbox.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_' + column.col + '_' + '_checkbox';
 			checkbox.className = 'colcheckbox';
 			checkbox.type = 'checkbox';
-			checkbox.checked = true;
+			checkbox.checked = !column.hidden;
 			checkbox.setAttribute('colgroupname', columnGroupName);
 			checkbox.setAttribute('col', column.col);
 			checkbox.setAttribute('colno', columnKeyNo);
