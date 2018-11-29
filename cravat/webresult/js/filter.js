@@ -190,8 +190,7 @@ const makeFilterGroupDiv = (filter) => {
     controlsDiv.append(' ').append(removeBtn);
     
     // Populate from filter
-    if (filter !== undefined && filter.variant != undefined) {
-        filter = filter.variant;
+    if (filter !== undefined) {
         if (filter.operator != undefined) {
             // Assign operator
             operatorSel.val(filter.operator);
@@ -224,7 +223,12 @@ const filterColRemoveHandler = (event) => {
 
 const removeFilterElem = (elemDiv) => {
     // Remove preceding join operator
-    elemDiv.prev().remove()
+    const prevJoinOp = elemDiv.prev('.filter-join-operator-div');
+    if (prevJoinOp.length > 0) {
+        prevJoinOp.remove();
+    } else {
+        elemDiv.next('.filter-join-operator-div').remove();
+    }
     // Remove element
     elemDiv.remove();
 }
@@ -290,7 +294,14 @@ const makeGroupFilter = (groupDiv) => {
         if (valInputs.length === 0) {
             colFilter.value = null;
         } else if (valInputs.length === 1) {
-            const rawValue = $(valInputs[0]).val();
+            var rawValue = $(valInputs[0]).val();
+            // Below is temporary. Implement categorical column type and remove this.
+            if (colFilter.column == 'base__so') {
+                subValue = soDic[rawValue];
+                if (subValue != undefined) {
+                    rawValue = subValue;
+                }
+            }
             colFilter.value = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
         } else {
             colFilter.value = [];
@@ -314,7 +325,6 @@ const makeGroupFilter = (groupDiv) => {
     
     // Negate
     filter.negate = groupDiv.children().children('.filter-group-negate-check').is(':checked');
-
 
     return filter;
 }

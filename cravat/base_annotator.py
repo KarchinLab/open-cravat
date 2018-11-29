@@ -74,9 +74,7 @@ class BaseAnnotator(object):
         if self.logger:
             self.logger.exception(e)
         if halt:
-            sys.exit(traceback.format_exc())
-        else:
-            traceback.print_exc()
+            raise e
     
     def _verify_conf(self):
         try:

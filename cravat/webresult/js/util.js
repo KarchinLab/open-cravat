@@ -62,6 +62,7 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	var div = document.createElement('fieldset');
 	div.id = 'detailwidget_' + tabName + '_' + widgetName;
 	div.className = 'detailwidget';
+    div.style.wordBreak = 'break-all';
 	var width = null;
 	var height = null;
 	var top = null;
@@ -205,11 +206,18 @@ function deleteFilterSetting (name) {
 
 function saveFilterSettingAs () {
 	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
-		var names = '' + response;
+        var quickSaveNameIdx = response.indexOf(quickSaveName);
+        if (quickSaveNameIdx >= 0) {
+            response = response.splice(quickSaveNameIdx, 1);
+        }
+		var names = response.join(', ');
 		var msg = 'Please enter layout name to save.';
 		if (names != '') {
 			msg = msg + ' Saved layout names are: ' + names;
 		}
+        if (lastUsedLayoutName == quickSaveName) {
+            lastUsedLayoutName = '';
+        }
 		var name = prompt(msg, lastUsedLayoutName);
 		if (name != null) {
 			saveFilterSetting(name);
@@ -219,12 +227,16 @@ function saveFilterSettingAs () {
 
 function deleteFilterSettingAs () {
 	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
-		var names = '' + response;
+        var quickSaveNameIdx = response.indexOf(quickSaveName);
+        if (quickSaveNameIdx >= 0) {
+            response = response.splice(quickSaveNameIdx, 1);
+        }
+		var names = response.join(', ');
 		var msg = 'Please enter layout name to delete.';
 		if (names != '') {
 			msg = msg + ' Saved layout names are: ' + names;
 		}
-		var name = prompt(msg, lastUsedLayoutName);
+		var name = prompt(msg, '');
 		if (name != null) {
 			deleteFilterSetting(name);
 		}
@@ -233,11 +245,18 @@ function deleteFilterSettingAs () {
 
 function saveLayoutSettingAs () {
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
-		var names = '' + response;
+        var quickSaveNameIdx = response.indexOf(quickSaveName);
+        if (quickSaveNameIdx >= 0) {
+            response = response.splice(quickSaveNameIdx, 1);
+        }
+		var names = response.join(', ');
 		var msg = 'Please enter layout name to save.';
 		if (names != '') {
 			msg = msg + ' Saved layout names are: ' + names;
 		}
+        if (lastUsedLayoutName == quickSaveName) {
+            lastUsedLayoutName = '';
+        }
 		var name = prompt(msg, lastUsedLayoutName);
 		if (name != null) {
 			saveLayoutSetting(name);
@@ -321,7 +340,11 @@ function saveLayoutSetting (name) {
 			var cols = colGroup.colModel;
 			for (var j = 0; j < cols.length; j++) {
 				var col = cols[j];
-				group.cols.push({'col': col.col, 'dataIndx': col.dataIndx, 'width': col.width});
+				group.cols.push({
+                    'col': col.col, 
+                    'dataIndx': col.dataIndx, 
+                    'width': col.width,
+                    'hidden': col.hidden});
 			}
 			data.push(group);
 		}
@@ -525,6 +548,7 @@ function applyTableSetting (level) {
 						var col = cols[l];
 						if (col.col == colSetting.col) {
 							col.width = colSetting.width;
+                            col.hidden = colSetting.hidden;
 							newColModel.colModel.push(col);
 							break;
 						}
@@ -539,12 +563,16 @@ function applyTableSetting (level) {
 
 function loadFilterSettingAs () {
 	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
-		var savedNames = JSON.parse(response.replace(/'/g, '"'));
+        var quickSaveNameIdx = response.indexOf(quickSaveName);
+        if (quickSaveNameIdx >= 0) {
+            response = response.splice(quickSaveNameIdx, 1);
+        }
+		//var savedNames = JSON.parse(response.replace(/'/g, '"'));
 		var div = document.getElementById('load_filter_select_div');
 		$(div).empty();
 		div.style.display = 'block';
-    	for (var i = 0; i < savedNames.length; i++) {
-    		var name = savedNames[i];
+    	for (var i = 0; i < response.length; i++) {
+    		var name = response[i];
     		var a = getEl('a');
     		a.style.cursor = 'pointer';
     		a.style.fontSize = '13px';
@@ -588,6 +616,10 @@ function loadLayoutSettingAs () {
 	var div = document.getElementById('load_layout_select_div');
 	emptyElement(div);
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+        var quickSaveNameIdx = response.indexOf(quickSaveName);
+        if (quickSaveNameIdx >= 0) {
+            response = response.splice(quickSaveNameIdx, 1);
+        }
     	var savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {
     		var name = savedLayoutNames[i];
@@ -637,6 +669,10 @@ function deleteLayoutSettingAs () {
 	var div = document.getElementById('delete_layout_select_div');
 	emptyElement(div);
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+        var quickSaveNameIdx = response.indexOf(quickSaveName);
+        if (quickSaveNameIdx >= 0) {
+            response = response.splice(quickSaveNameIdx, 1);
+        }
     	savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {
     		var name = savedLayoutNames[i];
@@ -665,6 +701,10 @@ function renameLayoutSettingAs () {
 	var div = document.getElementById('rename_layout_select_div');
 	emptyElement(div);
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+        var quickSaveNameIdx = response.indexOf(quickSaveName);
+        if (quickSaveNameIdx >= 0) {
+            response = response.splice(quickSaveNameIdx, 1);
+        }
     	savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {
     		var name = savedLayoutNames[i];

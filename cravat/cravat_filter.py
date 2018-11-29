@@ -57,6 +57,8 @@ class FilterColumn(object):
                 sql_val = '('+', '.join(str_toks)+')'
         else:
             sql_val = str(self.value)
+        if sql_val == '':
+            return ''
         if len(sql_val) > 0:
             s += ' '+sql_val
         if self.negate:
@@ -76,10 +78,12 @@ class FilterGroup(object):
             return ''
         s = '('
         sql_operator = ' '+self.operator+' '
-        s += sql_operator.join([x.get_sql() for x in all_operands])
+        s += sql_operator.join([x.get_sql() for x in all_operands if x.get_sql() != ''])
         s += ')'
         if self.negate:
             s = 'not'+s
+        if s == '()' or s == 'not()':
+            s = ''
         return s
 
 class CravatFilter ():
