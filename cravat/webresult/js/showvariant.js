@@ -180,6 +180,99 @@ function addBarComponent (outerDiv, row, header, col, tabName) {
 	addEl(outerDiv, div);
 }
 
+function addRobustBarComponent (outerDiv, row, header, col, tabName, colors) {
+	console.log("I found the thing")
+	var cutoff = 0.01;
+	var barStyle = {
+		"top": 0,
+		"height": lineHeight,
+		"width": 1,
+		"fill": 'black',
+		"stroke": 'black',
+		"round_edge": 1
+	};
+
+	var orderedPivots = [];
+	for (pivot in colors){
+		orderedPivots.push(pivot)
+	}
+	orderedPivots.sort()
+	
+	// Value
+	var value = infomgr.getRowValue(tabName, row, col);
+	if (value == null) {
+		value = '';
+	} else {
+		value = value.toFixed(3);
+	}
+	
+	// Div
+	var div = getEl('div');
+	div.style.display = 'inline-block';
+	div.style.margin = '2px';
+
+	// Header
+	addEl(div, addEl(getEl('span'), getTn(header + ': ')));
+	addEl(div, addEl(getEl('span'), getTn(value)));
+	addEl(div, getEl('br'));
+	
+	// Paper
+	var barWidth = 108;
+	var barHeight = 12;
+	var lineOverhang = 3;
+	var lineHeight = barHeight + (2 * lineOverhang);
+	var paperHeight = lineHeight + 4;
+	var subDiv = document.createElement('div');
+	addEl(div, subDiv);
+	subDiv.style.width = (barWidth + 10) + 'px';
+	subDiv.style.height = paperHeight + 'px';
+	var allele_frequencies_map_config = {};
+	var paper = Raphael(subDiv, barWidth, paperHeight);
+	
+	// Box.
+	var box = paper.rect(0, lineOverhang, barWidth, barHeight, 4);
+	var c = [];
+	if (value != '') {
+		if(value <= orderedPivots[0]){
+			c = colors.orderedPivots[0];
+		}
+		else if(value>=orderedPivots[orderedPivots.length-1]){
+			c = colors.orderedPivots[orderedPivots.length-1];
+		}
+		else{
+			var boundColors = {color1:[], color2:[]};
+			var boundPivots = [];
+			for (var i=0; i<(orderedPivots.length-1); i++){
+				if (orderedPivots[i] <= value && value < orderedPivots[i+1]){
+					boundPivots[0] = orderedPivots[i];
+					boundPivots[1] = orderedPivots[i+1];
+					boundColors.color1 = colors[boundPivots[0]];
+					boundColors.color2 = colors[boundPivots[1]];
+					break;
+				}
+			}
+			var ratio = (value - boundPivots[0])/(boundPivots[1]-boundPivots[0]);
+			c[0] = Math.round(boundColors.color1[0] * (1.0 - ratio) + boundColors.color2[0] * ratio);
+			c[1] = Math.round(boundColors.color1[1] * (1.0 - ratio) + boundColors.color2[1] * ratio);
+			c[2] = Math.round(boundColors.color1[2] * (1.0 - ratio) + boundColors.color2[2] * ratio);
+		}
+		
+	} else {
+		c = [255, 255, 255];
+	}
+	box.attr('fill', 'rgb('+c.toString()+')');
+	box.attr('stroke', 'black');
+	
+	// Bar
+	if (value != '') {
+		var bar = paper.rect(value * barWidth, 0, 1, lineHeight, 1);
+		bar.attr('fill', 'black');
+		bar.attr('stroke', 'black');
+	}
+	
+	addEl(outerDiv, div);
+}
+
 function showVariantDetail (row, tabName) {
 	if (row == undefined) {
 		return;
