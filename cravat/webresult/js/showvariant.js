@@ -180,8 +180,7 @@ function addBarComponent (outerDiv, row, header, col, tabName) {
 	addEl(outerDiv, div);
 }
 
-function addRobustBarComponent (outerDiv, row, header, col, tabName, colors) {
-	console.log("I found the thing")
+function addRobustBarComponent (outerDiv, row, header, col, tabName, colors, percentile=false) {
 	var cutoff = 0.01;
 	var barStyle = {
 		"top": 0,
@@ -192,6 +191,7 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors) {
 		"round_edge": 1
 	};
 
+	var dtype = null;
 	var orderedPivots = [];
 	for (pivot in colors){
 		orderedPivots.push(pivot)
@@ -202,8 +202,19 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors) {
 	var value = infomgr.getRowValue(tabName, row, col);
 	if (value == null) {
 		value = '';
-	} else {
+		var dispvalue = value.toString();
+	}
+	else if(typeof value == 'string'){
+		dtype = 'string'
+		var dispvalue = value.toString();
+	}
+	else if(percentile){
+		var dispvalue = value.toFixed(3);
+		value = value * 0.01;
+	}
+	else {
 		value = value.toFixed(3);
+		var dispvalue = value.toString();
 	}
 	
 	// Div
@@ -213,7 +224,7 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors) {
 
 	// Header
 	addEl(div, addEl(getEl('span'), getTn(header + ': ')));
-	addEl(div, addEl(getEl('span'), getTn(value)));
+	addEl(div, addEl(getEl('span'), getTn(dispvalue)));
 	addEl(div, getEl('br'));
 	
 	// Paper
@@ -234,10 +245,12 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors) {
 	var c = [];
 	if (value != '') {
 		if(value <= orderedPivots[0]){
-			c = colors.orderedPivots[0];
+			var piv = orderedPivots[0];
+			c = colors['%s',piv];
 		}
 		else if(value>=orderedPivots[orderedPivots.length-1]){
-			c = colors.orderedPivots[orderedPivots.length-1];
+			var piv = orderedPivots[orderedPivots.length-1];
+			c = colors['%s',piv];
 		}
 		else{
 			var boundColors = {color1:[], color2:[]};
@@ -264,7 +277,7 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors) {
 	box.attr('stroke', 'black');
 	
 	// Bar
-	if (value != '') {
+	if (value != '' && dtype != 'string') {
 		var bar = paper.rect(value * barWidth, 0, 1, lineHeight, 1);
 		bar.attr('fill', 'black');
 		bar.attr('stroke', 'black');
