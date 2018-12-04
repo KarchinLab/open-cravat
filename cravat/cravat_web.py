@@ -132,9 +132,12 @@ def main ():
     s = socket.socket()
     try:
         s.bind(('localhost', 8060))
+        s.close()
+        s.bind(('0.0.0.0', 8060))
+        s.close()
     except:
+        s.close()
         return
-    s.close()
     app = web.Application()
     routes = list()
     routes.extend(ws.routes)
