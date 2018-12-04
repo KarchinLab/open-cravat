@@ -357,10 +357,7 @@ class BaseAnnotator(object):
                                                    self.annotator_display_name)
             skip_aggregation = []
             for col_index, col_def in enumerate(self.conf['output_columns']):
-                self.output_writer.add_column(col_index,
-                                              col_def['title'],
-                                              col_def['name'],
-                                              col_def['type'])
+                self.output_writer.add_column(col_index, col_def)
                 if not(col_def.get('aggregate', True)):
                     skip_aggregation.append(col_def['name'])
             if not(self.plain_output):

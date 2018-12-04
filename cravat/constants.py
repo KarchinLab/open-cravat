@@ -41,7 +41,11 @@ crx_def = crv_def + \
           [{'name':'coding', 'title':'Coding', 'type':'string'},
            {'name':'hugo', 'title':'Hugo', 'type':'string'},
            {'name':'transcript', 'title':'Transcript', 'type':'string'},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'string'},
+           {'name':'so', 'title':'Sequence Ontology', 'type':'category', 
+               'categories': [
+                   '2KD', '2KU', 'UT3', 'UT5', 'INT', 'UNK', 'SYN', 
+                   'MIS', 'CSS', 'IDV', 'IIV', 'STL', 'SPL', 'STG', 
+                   'FD2', 'FD1', 'FI2', 'FI1']},
            {'name':'achange', 'title':'Protein Change', 'type':'string'},
            {'name':'all_mappings', 'title':'All Mappings', 'type':'string'},
            ]

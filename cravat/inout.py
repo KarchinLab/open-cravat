@@ -6,7 +6,7 @@ from collections import OrderedDict
 import yaml
 
 class CravatFile(object):
-    valid_types = ['string','int','float']
+    valid_types = ['string', 'int', 'float', 'category']
     def __init__(self, path):
         self.path = os.path.abspath(path)
         self.columns = {}
@@ -39,12 +39,20 @@ class CravatWriter(CravatFile):
         self._titles_written = False
         self.titles_prefix = titles_prefix
         
-    def add_column(self, col_index, title, col_name, col_type, override=False):
+    def add_column(self, col_index, col_def, override=False):
         if col_index == 'append':
             col_index = len(self.columns)
         else:
             col_index = int(col_index)
-        title = str(title)
+        title = str(col_def['title'])
+        col_type = col_def['type']
+        col_name = col_def['name']
+        if col_type == 'category' and 'categories' not in col_def:
+            raise Exception('Categories are not defined for column {}.'.format(col_name))
+        if 'categories' in col_def:
+            col_cats = col_def['categories']
+        else:
+            col_cats = None
         self._validate_col_type(col_type)
         if not(override):
             try:
@@ -59,7 +67,8 @@ class CravatWriter(CravatFile):
                 raise Exception('A column with name %s already exists.' %col_name)
         self.columns[col_index] = {'name':col_name,
                                    'type':col_type,
-                                   'title':title}
+                                   'title':title,
+                                   'categories': col_cats}
         
     def add_columns(self, col_list, append=False):
         """
@@ -69,11 +78,8 @@ class CravatWriter(CravatFile):
         for col_index, col_def in enumerate(col_list):
             if append == True:
                 col_index = 'append'
-            self.add_column(col_index,
-                            col_def['title'],
-                            col_def['name'],
-                            col_def['type'])
-    
+            self.add_column(col_index, col_def)
+
     def _prep_for_write(self):
         if self._ready_to_write: return
         col_indices = sorted(self.columns.keys())
@@ -386,6 +392,8 @@ class CravatReader (CravatFile):
                     out[col_name] = int(tok)
                 elif col_type == 'float':
                     out[col_name] = float(tok)
+                elif col_type == 'category':
+                    out[col_name] = tok
                 else:
                     out[col_name] = tok
         return out
