@@ -25,6 +25,7 @@ import base64
 #from aiohttp_session import setup, get_session, new_session
 #from aiohttp_session.cookie_storage import EncryptedCookieStorage
 import hashlib
+import platform
 
 donotopenbrowser = False
 
@@ -129,14 +130,14 @@ def main ():
         import traceback
         traceback.print_exc()
     '''
-    s = socket.socket()
     try:
-        s.bind(('localhost', 8060))
-        s.close()
-        s.bind(('0.0.0.0', 8060))
-        s.close()
+        s = socket.socket()
+        pl = platform.platform()
+        if pl == 'Windows':
+            s.bind(('0.0.0.0', 8060))
+        else:
+            s.bind(('localhost', 8060))
     except:
-        s.close()
         return
     app = web.Application()
     routes = list()
