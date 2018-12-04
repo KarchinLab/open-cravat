@@ -64,7 +64,7 @@ def get_filter_save_names (request):
         cursor.execute(q)
         rs = cursor.fetchall()
         for r in rs:
-            content.append(r)
+            content.append(r[0])
     cursor.close()
     conn.close()
     return web.json_response(content)
@@ -81,7 +81,7 @@ def get_layout_save_names (request):
         cursor.execute(q)
         rs = cursor.fetchall()
         for r in rs:
-            content.append(r)
+            content.append(r[0])
     cursor.close()
     conn.close()
     return web.json_response(content)

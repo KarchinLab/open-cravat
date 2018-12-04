@@ -208,6 +208,7 @@ function loadData (alertFlag, finalcallback) {
 		if (spinner != null) {
 			spinner.remove();
 		}
+        /*
 		for (var i = 0; i < resultLevels.length; i++) {
 			var level = resultLevels[i];
 			if (level != 'info') {
@@ -215,6 +216,7 @@ function loadData (alertFlag, finalcallback) {
 				tab.innerHTML = '';
 			}
 		}
+        */
 		if (alertFlag) {
 			alert('Data has been loaded.');
 		}
