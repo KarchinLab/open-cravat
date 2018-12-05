@@ -284,7 +284,8 @@ class Aggregator (object):
             %(self.header_table_name)
         self.cursor.execute(q)
         for col_row in columns:
-            col_row[3] = json.dumps(col_row[3])
+            if col_row[3]:
+                col_row[3] = json.dumps(col_row[3])
             # use prepared statement to allow " characters in categories and desc
             insert_template = 'insert into {} values (?, ?, ?, ?, ?, ?)'.format(self.header_table_name)
             self.cursor.execute(insert_template, col_row)

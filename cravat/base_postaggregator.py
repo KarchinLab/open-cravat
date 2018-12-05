@@ -167,9 +167,9 @@ class BasePostAggregator (object):
             colname = col_def['name']
             coltitle = col_def['title']
             coltype = col_def['type']
-            colcats = col_def.get('categories','[]')
-            colwidth = col_def.get('width',None)
-            coldesc = col_def.get('desc',None)
+            colcats = col_def.get('categories')
+            colwidth = col_def.get('width')
+            coldesc = col_def.get('desc')
             # data table
             q = 'alter table ' + self.level + ' add column ' +\
                 colname + ' ' + coltype
