@@ -380,7 +380,8 @@ def get_colmodel (tab, colinfo):
                 "dataIndx": dataindx,
                 "retfilt":False,
                 "retfilttype":"None",
-                "multiseloptions":[]
+                "multiseloptions":[],
+                'categories':d['col_cats']
                 }
             if d['col_type'] == 'string':
                 column['filter'] = {
@@ -398,6 +399,16 @@ def get_colmodel (tab, colinfo):
                 column['retfilt'] = True
                 column['retfilttype'] = 'between'
                 column['multiseloptions'] = []
+            elif d['col_type'] == 'category':
+                cats = list(d['col_cats'].keys())
+                column['filter'] = {
+                    'type': 'select',
+                    'attr': 'multiple',
+                    'condition': 'equal',
+                    'options': cats}
+                column['retfilt'] = True
+                column['retfilttype'] = 'select'
+                column['multiseloptions'] = cats
             columngroupdef['colModel'].append(column)
             dataindx += 1
         colModel.append(columngroupdef)
