@@ -405,7 +405,8 @@ def get_colmodel (tab, colinfo):
                     'type': 'select',
                     'attr': 'multiple',
                     'condition': 'equal',
-                    'options': cats}
+                    'options': cats,
+                    'listeners': ['change']}
                 column['retfilt'] = True
                 column['retfilttype'] = 'select'
                 column['multiseloptions'] = cats
