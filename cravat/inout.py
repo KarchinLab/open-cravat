@@ -52,7 +52,7 @@ class CravatWriter(CravatFile):
         if 'categories' in col_def:
             col_cats = col_def['categories']
         else:
-            col_cats = None
+            col_cats = []
         self._validate_col_type(col_type)
         if not(override):
             try:
@@ -113,10 +113,19 @@ class CravatWriter(CravatFile):
     def write_definition(self, conf=None):
         self._prep_for_write()
         for col_index, col_def in enumerate(self.ordered_columns):
-            col_def_line = '#column=%d,%s,%s,%s\n' %(col_index,
-                                                     col_def['title'],
-                                                     col_def['name'],
-                                                     col_def['type'])
+            if col_def['type'] == 'category':
+                col_def_line = '#column=%d,%s,%s,%s,%s\n'%(
+                    col_index,
+                    col_def['title'],
+                    col_def['name'],
+                    col_def['type'],
+                    col_def['categories'])
+            else:
+                col_def_line = '#column=%d,%s,%s,%s\n'%(
+                    col_index,
+                    col_def['title'],
+                    col_def['name'],
+                    col_def['type'])
             self.wf.write(col_def_line)
         if conf and 'report_substitution' in conf:
             self.wf.write('#report_substitution={}\n'.format(
