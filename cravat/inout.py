@@ -57,7 +57,7 @@ class CravatReader (CravatFile):
                 col_title = col_info[1]
                 col_name = col_info[2]
                 col_type = col_info[3]
-                col_cats = json.loads(col_info[4]) if col_info[4] else []
+                col_cats = json.loads(col_info[4]) if col_info[4] else {}
                 col_width = col_info[5] if col_info[5] else None
                 col_desc = col_info[6] if col_info[6] else None
                 self._validate_col_type(col_type)

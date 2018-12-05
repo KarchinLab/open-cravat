@@ -161,8 +161,10 @@ class CravatReport:
         for row in self.cursor.fetchall():
             (colname, coltitle, col_type) = row[:3]
             if len(row) > 3:
-                print(row[3])
-                col_cats = json.loads(row[3].replace("'", '"'))
+                if row[3] == None:
+                    col_cats = {}
+                else:
+                    col_cats = json.loads(row[3].replace("'", '"'))
             else:
                 col_cats = {}
             column = {'col_name': colname,

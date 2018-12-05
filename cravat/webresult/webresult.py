@@ -370,6 +370,7 @@ def get_colmodel (tab, colinfo):
         startidx = dataindx
         endidx = startidx + col_count
         for d in colinfo[tab]['columns'][startidx:endidx]:
+            cats = [d['col_cats'][key] for key in d['col_cats'].keys()]
             column = {
                 "col": d['col_name'],
                 'colgroupkey': groupkey, 
@@ -381,7 +382,7 @@ def get_colmodel (tab, colinfo):
                 "retfilt":False,
                 "retfilttype":"None",
                 "multiseloptions":[],
-                'categories':d['col_cats']
+                'categories': d['col_cats']
                 }
             if d['col_type'] == 'string':
                 column['filter'] = {
@@ -400,7 +401,6 @@ def get_colmodel (tab, colinfo):
                 column['retfilttype'] = 'between'
                 column['multiseloptions'] = []
             elif d['col_type'] == 'category':
-                cats = list(d['col_cats'].keys())
                 column['filter'] = {
                     'type': 'select',
                     'attr': 'multiple',

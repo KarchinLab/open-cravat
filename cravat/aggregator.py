@@ -223,7 +223,7 @@ class Aggregator (object):
         self.cursor.execute(q)
         for _, col_def in self.base_reader.get_all_col_defs().items():
             col_name = self.base_prefix + '__' + col_def['name']
-            columns.append([col_name, col_def['type'], col_def['title'], col_def['categories'], col_def['width'], col_def['desc']])
+            columns.append([col_name, col_def['title'], col_def['type'], col_def['categories'], col_def['width'], col_def['desc']])
             unique_names.add(col_name)
         for annot_name in self.annotators:
             reader = self.readers[annot_name]
@@ -250,13 +250,13 @@ class Aggregator (object):
                         %(db_col_name, reader.path)
                     sys.exit(err_msg)
                 else:
-                    columns.append([db_col_name, db_type, db_col_title, db_col_cats, col_def['width'], col_def['desc']])
+                    columns.append([db_col_name, db_col_title, db_type, db_col_cats, col_def['width'], col_def['desc']])
                     unique_names.add(db_col_name)
                     
         col_def_strings = []
         for col in columns:
             name = col[0]
-            sql_type = self.cr_type_to_sql[col[1]]
+            sql_type = self.cr_type_to_sql[col[2]]
             s = name + ' ' + sql_type
             col_def_strings.append(s)
         # data table
