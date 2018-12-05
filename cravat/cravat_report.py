@@ -154,7 +154,7 @@ class CravatReport:
                 {'name': name,
                  'displayname': displayname,
                  'count': 0})
-        sql = 'select col_name, col_title, col_type, col_cast from ' + level + '_header'
+        sql = 'select col_name, col_title, col_type, col_cats from ' + level + '_header'
         self.cursor.execute(sql)
         columns = []
         colcount = 0

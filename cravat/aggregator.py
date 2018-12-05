@@ -288,7 +288,7 @@ class Aggregator (object):
         # header table
         q = 'drop table if exists %s' %self.header_table_name
         self.cursor.execute(q)
-        q = 'create table %s (col_name text, col_title text, col_type text, categories text);' \
+        q = 'create table %s (col_name text, col_title text, col_type text, col_cats text);' \
             %(self.header_table_name)
         self.cursor.execute(q)
         for col_name, col_type, col_title, col_cats in columns:
