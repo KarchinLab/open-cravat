@@ -202,11 +202,10 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors, per
 	var value = infomgr.getRowValue(tabName, row, col);
 	if (value == null) {
 		value = '';
-		var dispvalue = value.toString();
+		percentile = false;
 	}
 	else if(typeof value == 'string'){
 		dtype = 'string'
-		var dispvalue = value.toString();
 	}
 	else if(percentile){
 		var dispvalue = value.toFixed(3);
@@ -214,7 +213,6 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors, per
 	}
 	else {
 		value = value.toFixed(3);
-		var dispvalue = value.toString();
 	}
 	
 	// Div
@@ -224,7 +222,12 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors, per
 
 	// Header
 	addEl(div, addEl(getEl('span'), getTn(header + ': ')));
-	addEl(div, addEl(getEl('span'), getTn(dispvalue)));
+	if(percentile){
+		addEl(div, addEl(getEl('span'), getTn(dispvalue)));
+	}
+	else{
+		addEl(div, addEl(getEl('span'), getTn(value)));
+	}
 	addEl(div, getEl('br'));
 	
 	// Paper
