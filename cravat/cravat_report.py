@@ -154,15 +154,16 @@ class CravatReport:
                 {'name': name,
                  'displayname': displayname,
                  'count': 0})
-        sql = 'select col_name, col_title, col_type from ' + level + '_header'
+        sql = 'select col_name, col_title, col_type, col_cast from ' + level + '_header'
         self.cursor.execute(sql)
         columns = []
         colcount = 0
         for row in self.cursor.fetchall():
-            (colname, coltitle, col_type) = row
+            (colname, coltitle, col_type, col_cats) = row
             column = {'col_name': colname,
                       'col_title': coltitle,
-                      'col_type': col_type}
+                      'col_type': col_type,
+                      'col_cats': col_cats}
             self.colnos[level][colname] = colcount
             colcount += 1
             columns.append(column)
@@ -200,7 +201,8 @@ class CravatReport:
                     colname = mi.name + '__' + col['name']
                     column = {'col_name': colname,
                               'col_title': col['title'],
-                              'col_type': col['type']}
+                              'col_type': col['type'],
+                              'col_cats': col['categories']}
                     columns.append(column)
                     self.var_added_cols.append(colname)
         # Gene level summary columns
@@ -230,7 +232,8 @@ class CravatReport:
                     for col in cols:
                         column = {'col_name': conf['name'] + '__' + col['name'],
                                   'col_title': col['title'],
-                                  'col_type': col['type']}
+                                  'col_type': col['type'],
+                                  'col_cats': col['categories']}
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
         colno = 0

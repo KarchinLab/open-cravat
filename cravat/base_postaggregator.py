@@ -167,13 +167,17 @@ class BasePostAggregator (object):
             colname = col_def['name']
             coltitle = col_def['title']
             coltype = col_def['type']
+            if 'categories' in col_def:
+                colcats = col_def['categories']
+            else:
+                colcats = '[]'
             # data table
             q = 'alter table ' + self.level + ' add column ' +\
                 colname + ' ' + coltype
             self.cursor_w.execute(q)
             # header table
-            q = 'insert into {} values ("{}", "{}", "{}")'.format(
-                header_table_name, colname, coltitle, coltype)
+            q = 'insert into {} values ("{}", "{}", "{}", "{}")'.format(
+                header_table_name, colname, coltitle, coltype, colcats)
             self.cursor_w.execute(q)
         self.dbconn.commit()
         
