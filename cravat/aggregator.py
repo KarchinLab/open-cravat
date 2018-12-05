@@ -29,12 +29,10 @@ class Aggregator (object):
         self.output_base_fname = None
         self.key_name = None
         self.table_name = None
-        self.opts = None
         self.base_prefix = 'base'
         self.base_dir = os.path.abspath(__file__)
         self.parse_cmd_args(cmd_args)
         self._setup_logger()
-        self._read_opts()
         
     def parse_cmd_args(self, cmd_args):
         parser = argparse.ArgumentParser()
@@ -82,12 +80,6 @@ class Aggregator (object):
         self.logger.info('level: {0}'.format(self.level))
         self.logger.info('input directory: %s' %self.input_dir)
         
-    def _read_opts(self):
-        opt_file = open(os.path.join(os.path.dirname(__file__),
-                                     'aggregator.yml'))
-        self.opts = yaml.load(opt_file)
-        opt_file.close()        
-
     def run(self):
         self._setup()
         if self.input_base_fname == None:
