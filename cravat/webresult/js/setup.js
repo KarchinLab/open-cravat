@@ -19,8 +19,6 @@ function setupTab (tabName) {
 		rightDiv.id = rightDivId;
 		rightDiv.className = 'rightdiv';
 		addEl(tabDiv, rightDiv);
-	} else {
-		emptyElement(rightDiv);
 	}
 
 	// Populates the right panel.
@@ -260,54 +258,86 @@ function onClickTableColumnSaveButton (tabName, evt) {
 }
 
 function makeVariantGeneTab (tabName, rightDiv) {
+    var tableContainerDiv = null;
+    var tableDiv = null;
+    var northSouthDraggableDiv = null;
+    var cellValueDiv = null;
+    var detailDiv = null;
+    var detailContainerDiv = null;
+
 	// Table container div
-	var tableContainerDiv = getEl('div');
-	tableContainerDiv.id = 'tablecontainerdiv_' + tabName;
-	addEl(rightDiv, tableContainerDiv);
+    var tableContainerDivId = 'tablecontainerdiv_' + tabName;
+    var tableContainerDiv = document.getElementById(tableContainerDivId);
+    if (tableContainerDiv == null) {
+        tableContainerDiv = getEl('div');
+        tableContainerDiv.id = tableContainerDivId;
+        addEl(rightDiv, tableContainerDiv);
+    }
 
 	// Table div
-	var tableDiv = getEl('div');
-	tableDiv.id = 'tablediv_' + tabName;
-	tableDiv.className = 'tablediv';
-	addEl(tableContainerDiv, tableDiv);
+    var tableDivId = 'tablediv_' + tabName;
+	var tableDiv = document.getElementById(tableDivId);
+    if (tableDiv == null) {
+        tableDiv = getEl('div');
+        tableDiv.id = tableDivId;
+        tableDiv.className = 'tablediv';
+        addEl(tableContainerDiv, tableDiv);
+    } else {
+        //$(tableDiv).empty();
+    }
 
 	// Drag bar
-	var northSouthDraggableDiv = getEl('div');
-	northSouthDraggableDiv.id = 'dragNorthSouthDiv_' + tabName;
-	northSouthDraggableDiv.className = 'draggableDiv';
-	$(northSouthDraggableDiv).draggable({axis:"y"});
-	addEl(rightDiv, northSouthDraggableDiv);
+    var northSouthDraggableDivId = 'dragNorthSouthDiv_' + tabName;
+    var northSouthDraggableDiv = document.getElementById(northSouthDraggableDivId);
+    if (northSouthDraggableDiv == null) {
+        northSouthDraggableDiv = getEl('div');
+        northSouthDraggableDiv.id = northSouthDraggableDivId;
+        northSouthDraggableDiv.className = 'draggableDiv';
+        $(northSouthDraggableDiv).draggable({axis:"y"});
+        addEl(rightDiv, northSouthDraggableDiv);
+    }
 
 	// Cell value div
-	var cellValueDiv = getEl('div');
-	cellValueDiv.id = 'cellvaluediv_' + tabName;
-	cellValueDiv.className = 'cellvaluediv';
-	var input = getEl('input');
-	input.id = 'cellvaluetext_' + tabName;
-	input.type = 'text';
-	input.style.width = '100%';
-	addEl(cellValueDiv, input);
-	addEl(rightDiv, cellValueDiv);
+    var cellValueDivId = 'cellvaluediv_' + tabName;
+    var cellValueDiv = document.getElementById(cellValueDivId);
+    if (cellValueDiv == null) {
+        cellValueDiv = getEl('div');
+        cellValueDiv.id = cellValueDivId;
+        cellValueDiv.className = 'cellvaluediv';
+        var input = getEl('input');
+        input.id = 'cellvaluetext_' + tabName;
+        input.type = 'text';
+        input.style.width = '100%';
+        addEl(cellValueDiv, input);
+        addEl(rightDiv, cellValueDiv);
+    }
 
 	// Detail div
-	var detailDiv = getEl('div');
-	detailDiv.id = 'detaildiv_' + tabName;
-	detailDiv.className = 'detaildiv';
-	var detailContainerWrapDiv = getEl('div');
-	detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
-	var heightSetting = loadedHeightSettings['detail_' + tabName];
-	if (heightSetting != undefined) {
-		detailDiv.style.height = heightSetting;
-	}
-	addEl(detailDiv, detailContainerWrapDiv);
+    var detailDivId = 'detaildiv_' + tabName;
+    var detailDiv = document.getElementById(detailDivId);
+    if (detailDiv == null) {
+        detailDiv = getEl('div');
+        detailDiv.id = detailDivId;
+        detailDiv.className = 'detaildiv';
+        var detailContainerWrapDiv = getEl('div');
+        detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
+        var heightSetting = loadedHeightSettings['detail_' + tabName];
+        if (heightSetting != undefined) {
+            detailDiv.style.height = heightSetting;
+        }
+        addEl(detailDiv, detailContainerWrapDiv);
+    }
 
 	// Detail content div
-	var detailContainerDiv = getEl('div');
-	detailContainerDiv.id = 'detailcontainerdiv_' + tabName;
-	detailContainerDiv.className = 'detailcontainerdiv';
-	addEl(detailContainerWrapDiv, detailContainerDiv);
-
-	addEl(rightDiv, detailDiv);
+    var detailContainerDivId = 'detailcontainerdiv_' + tabName;
+    var detailContainerDiv = document.getElementById(detailContainerDivId);
+    if (detailContainerDiv == null) {
+        detailContainerDiv = getEl('div');
+        detailContainerDiv.id = detailContainerDivId;
+        detailContainerDiv.className = 'detailcontainerdiv';
+        addEl(detailContainerWrapDiv, detailContainerDiv);
+        addEl(rightDiv, detailDiv);
+    }
 }
 
 function onClickDetailRedraw () {
@@ -542,6 +572,7 @@ function setupEvents (tabName) {
 	    minimizeOrMaxmimizeTheDetailsDiv(this, 'minimize');
     });
 
+    /*
    $(document).keydown(function(button){
 	   switch(button.which){
 	   case 27:
@@ -552,6 +583,7 @@ function setupEvents (tabName) {
 		   }
 	   }
    });
+   */
 }
 
 function placeDragNSBar (tabName) {
@@ -621,12 +653,11 @@ function makeGrid (columns, data, tabName) {
 		$grid.pqGrid('option', 'sortModel', sortModel);
 	};
 
-	// Empties if grid exists.
-	if ($grids[tabName] != undefined) {
-		$grids[tabName].pqGrid('destroy');
-	}
-
 	// Creates the grid.
+    try {
+        $tableDiv.pqGrid('destroy');
+    } catch (e) {
+    }
 	var $grid = $tableDiv.pqGrid(gridObj);
 	$grids[tabName] = $grid;
 	gridObjs[tabName] = gridObj;

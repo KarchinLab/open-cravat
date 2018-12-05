@@ -260,6 +260,7 @@ class CravatWriter(CravatFile):
         self.wf.write(line)
         line = '#displayname={:}\n'.format(annotator_display_name)
         self.wf.write(line)
+        self.wf.flush()
 
     def add_index (self, index_columns):
         """
@@ -270,6 +271,7 @@ class CravatWriter(CravatFile):
     def write_meta_line(self, key, value):
         line = '#{:}={:}\n'.format(key,value)
         self.wf.write(line)
+        self.wf.flush()
 
     def write_definition(self, conf=None):
         self._prep_for_write()
@@ -292,6 +294,7 @@ class CravatWriter(CravatFile):
             self.wf.write('#report_substitution={}\n'.format(
                 json.dumps(conf['report_substitution'])))
         self._definition_written = True
+        self.wf.flush()
 
     def write_report_substitution (self):
         self._prep_for_write()
@@ -300,6 +303,7 @@ class CravatWriter(CravatFile):
         title_line = self.titles_prefix+'\t'.join(self.title_toks) + '\n'
         self.wf.write(title_line)
         self._titles_written = True
+        self.wf.flush()
 
     def write_data(self, data):
         self._prep_for_write()
