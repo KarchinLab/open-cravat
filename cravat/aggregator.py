@@ -29,12 +29,12 @@ class Aggregator (object):
         self.output_base_fname = None
         self.key_name = None
         self.table_name = None
-        # self.opts = None
+        self.opts = None
         self.base_prefix = 'base'
         self.base_dir = os.path.abspath(__file__)
         self.parse_cmd_args(cmd_args)
         self._setup_logger()
-        # self._read_opts()
+        self._read_opts()
         
     def parse_cmd_args(self, cmd_args):
         parser = argparse.ArgumentParser()
@@ -82,11 +82,11 @@ class Aggregator (object):
         self.logger.info('level: {0}'.format(self.level))
         self.logger.info('input directory: %s' %self.input_dir)
         
-    # def _read_opts(self):
-    #     opt_file = open(os.path.join(os.path.dirname(__file__),
-    #                                  'aggregator.yml'))
-    #     self.opts = yaml.load(opt_file)
-    #     opt_file.close()        
+    def _read_opts(self):
+        opt_file = open(os.path.join(os.path.dirname(__file__),
+                                     'aggregator.yml'))
+        self.opts = yaml.load(opt_file)
+        opt_file.close()        
 
     def run(self):
         self._setup()
@@ -302,24 +302,26 @@ class Aggregator (object):
             self.cursor.execute(q)
             q = 'create table {} (module text, subdict text)'.format(self.reportsub_table_name)
             self.cursor.execute(q)
-            sub = self.base_reader.report_substitution
-            if sub:
-                module = 'base'
-                q = 'insert into {} values (\'{}\', \'{}\')'.format(
-                    self.reportsub_table_name,
-                    'base',
-                    json.dumps(sub)
-                )
-                self.cursor.execute(q)
-            for module in self.readers:
-                sub = self.readers[module].report_substitution
+            if hasattr(self.base_reader, 'report_substitution'):
+                sub = self.base_reader.report_substitution
                 if sub:
-                    q = 'insert into {} values ("{}", \'{}\')'.format(
+                    module = 'base'
+                    q = 'insert into {} values (\'{}\', \'{}\')'.format(
                         self.reportsub_table_name,
-                        module,
+                        'base',
                         json.dumps(sub)
                     )
                     self.cursor.execute(q)
+            for module in self.readers:
+                if hasattr(self.base_reader, 'report_substitution'):
+                    sub = self.readers[module].report_substitution
+                    if sub:
+                        q = 'insert into {} values ("{}", \'{}\')'.format(
+                            self.reportsub_table_name,
+                            module,
+                            json.dumps(sub)
+                        )
+                        self.cursor.execute(q)
         self.dbconn.commit()
 
     def _setup_io(self):
