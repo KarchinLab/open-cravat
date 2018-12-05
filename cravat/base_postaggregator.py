@@ -167,18 +167,17 @@ class BasePostAggregator (object):
             colname = col_def['name']
             coltitle = col_def['title']
             coltype = col_def['type']
-            if 'categories' in col_def:
-                colcats = col_def['categories']
-            else:
-                colcats = '[]'
+            colcats = col_def.get('categories','[]')
+            colwidth = col_def.get('width',None)
+            coldesc = col_def.get('desc',None)
             # data table
             q = 'alter table ' + self.level + ' add column ' +\
                 colname + ' ' + coltype
             self.cursor_w.execute(q)
             # header table
-            q = 'insert into {} values ("{}", "{}", "{}", "{}")'.format(
-                header_table_name, colname, coltitle, coltype, colcats)
-            self.cursor_w.execute(q)
+            # use prepared statement to allow " characters in colcats and coldesc
+            q = 'insert into {} values (?, ?, ?, ?, ?, ?)'.format(header_table_name)
+            self.cursor_w.execute(q,[colname, coltitle, coltype, colcats, colwidth, coldesc])
         self.dbconn.commit()
         
     # Placeholder, intended to be overridded in derived class
