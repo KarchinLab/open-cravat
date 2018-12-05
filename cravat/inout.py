@@ -1,10 +1,14 @@
 import os
-from cravat.exceptions import BadFormatError
+from .exceptions import BadFormatError
 import json
 import re
 from collections import OrderedDict
 import yaml
 import json
+import csv
+from io import StringIO
+
+csv.register_dialect('cravat', delimiter=',', quotechar='@')
 
 class CravatFile(object):
     valid_types = ['string', 'int', 'float', 'category']
@@ -47,21 +51,22 @@ class CravatReader (CravatFile):
                 cols = l.split('=')[1].split(',')
                 self.index_columns.append(cols)
             elif l.startswith('#column='):
-                col_info = l.split('=')[1].split(',')
+                csv_row = l.split('=')[1]
+                col_info = list(csv.reader([csv_row], dialect='cravat'))[0]
                 col_index = int(col_info[0])
                 col_title = col_info[1]
                 col_name = col_info[2]
                 col_type = col_info[3]
-                if len(col_info) > 4:
-                    col_info[4] = ','.join(col_info[4:])
-                    col_cats = json.loads(col_info[4])
-                else:
-                    col_cats = []
+                col_cats = json.loads(col_info[4]) if col_info[4] else []
+                col_width = col_info[5] if col_info[5] else None
+                col_desc = col_info[6] if col_info[6] else None
                 self._validate_col_type(col_type)
                 self.columns[col_index] = {'title':col_title,
                                            'name':col_name,
                                            'type':col_type,
-                                           'categories': col_cats}
+                                           'categories': col_cats,
+                                           'width':col_width,
+                                           'desc':col_desc}
             elif l.startswith('#report_substitution='):
                 self.report_substitution = json.loads(l.split('=')[1])
             else:
@@ -207,14 +212,13 @@ class CravatWriter(CravatFile):
             col_index = int(col_index)
         title = str(col_def['title'])
         col_type = col_def['type']
-        col_name = col_def['name']
-        if col_type == 'category' and 'categories' not in col_def:
-            raise Exception('Categories are not defined for column {}.'.format(col_name))
-        if 'categories' in col_def:
-            col_cats = col_def['categories']
-        else:
-            col_cats = []
         self._validate_col_type(col_type)
+        col_name = col_def['name']
+        col_cats = json.dumps(col_def.get('categories'))
+        if col_type == 'category' and not(col_cats):
+            raise Exception('Categories are not defined for column {}.'.format(col_name))
+        col_width = col_def.get('width')
+        col_desc = col_def.get('desc')
         if not(override):
             try:
                 self.columns[col_index]
@@ -229,7 +233,10 @@ class CravatWriter(CravatFile):
         self.columns[col_index] = {'name':col_name,
                                    'type':col_type,
                                    'title':title,
-                                   'categories': col_cats}
+                                   'categories': col_cats,
+                                   'width': col_width,
+                                   'desc': col_desc,
+                                   }
 
     def add_columns(self, col_list, append=False):
         """
@@ -275,20 +282,13 @@ class CravatWriter(CravatFile):
 
     def write_definition(self, conf=None):
         self._prep_for_write()
+        val_order = ['title','name','type','categories','width','desc']
         for col_index, col_def in enumerate(self.ordered_columns):
-            if col_def['type'] == 'category':
-                col_def_line = '#column=%d,%s,%s,%s,%s\n'%(
-                    col_index,
-                    col_def['title'],
-                    col_def['name'],
-                    col_def['type'],
-                    json.dumps(col_def['categories']))
-            else:
-                col_def_line = '#column=%d,%s,%s,%s\n'%(
-                    col_index,
-                    col_def['title'],
-                    col_def['name'],
-                    col_def['type'])
+            ordered_vals = [col_index]+[col_def[k] for k in val_order]
+            s_buffer = StringIO()
+            csv.writer(s_buffer,dialect='cravat').writerow(ordered_vals)
+            s_buffer.seek(0)
+            col_def_line = '#column='+s_buffer.read().rstrip('\r\n')+'\n'
             self.wf.write(col_def_line)
         if conf and 'report_substitution' in conf:
             self.wf.write('#report_substitution={}\n'.format(
@@ -442,22 +442,4 @@ class AllMappingsParser (object):
         return s
 
 if __name__ == '__main__':
-    import sys
-    cw = CravatWriter(sys.argv[1])
-    cw.add_column(3, 'col1', 'string', 'String')
-    cw.add_column(2, 'col2', 'float', 'Float')
-    cw.add_column(1, 'col3', 'int', 'Int')
-    c1 = ''
-    c2 = 0.0
-    c3 = 0
-    for i in range(10):
-        c1 += 'k'
-        c2 += 0.3
-        c3 += 1
-        data = {'col1':c1, 'col2':c2, 'col3':c3}
-        cw.write_data(data)
-    cw.close()
-
-    cr = CravatReader(sys.argv[1])
-    for data in cr.loop_data():
-        print(data)
+    reader = CravatReader('example_input.clinvar.var')
