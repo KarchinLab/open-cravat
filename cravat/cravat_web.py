@@ -66,7 +66,8 @@ def result ():
     check_donotopenbrowser()
     global donotopenbrowser
     if not donotopenbrowser:
-        webbrowser.open('http://localhost:8060/result/index.html?job_id=' + runid + '&dbpath=' + dbpath)
+        server = get_server()
+        webbrowser.open('http://{host}:{port}/result/index.html?job_id='.format(host=server.get('host'), port=server.get('port')) + runid + '&dbpath=' + dbpath)
     main()
 
 def store ():
@@ -74,14 +75,25 @@ def store ():
     ws.start_install_queue_manager()
     global donotopenbrowser
     if not donotopenbrowser:
-        webbrowser.open('http://localhost:8060/store/index.html')
+        server = get_server()
+        webbrowser.open('http://{host}:{port}/store/index.html'.format(host=server.get('host'), port=server.get('port')))
 
 def submit ():
     check_donotopenbrowser()
     global donotopenbrowser
     if not donotopenbrowser:
-        webbrowser.open('http://localhost:8060/submit/index.html')
+        server = get_server()
+        webbrowser.open('http://{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port')))
     main()
+
+def get_server():
+    server = {}
+    conf = ConfigLoader()
+    host = conf.get_cravat_conf().get('gui_host', 'localhost')
+    port = conf.get_cravat_conf().get('gui_port', 8060)
+    server['host'] = host
+    server['port'] = port
+    return server
 
 def main ():
     '''
@@ -142,7 +154,8 @@ def main ():
     app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
     ws.start_worker()
     print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
-    web.run_app(app, port=8060, shutdown_timeout=0, handle_signals=False)
+    server = get_server()
+    web.run_app(app, host=server.get('host'), port=server.get('port'), shutdown_timeout=0, handle_signals=False)
 
 if __name__ == '__main__':
     main()
