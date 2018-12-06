@@ -42,6 +42,7 @@ function setupTab (tabName) {
 
 		makeGrid(columns, data, tabName);
 		$grids[tabName].pqGrid('refresh');
+		addColDescriptions(tabName);
 
 		// Selects the first row.
 		if (tabName == currentTab) {
@@ -1130,6 +1131,28 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
         }
     }
 	return gridObject;
+}
+
+function addColDescriptions(tabname) {
+	var descs = {};
+	var colModels = infomgr.colModels[tabname];
+	for (let i=0; i<colModels.length; i++) {
+		leafModels = colModels[i].colModel;
+		for (let j=0; j<leafModels.length; j++) {
+			leafModel = leafModels[j];
+			descs[leafModel.dataIndx] = leafModel.desc;
+		}
+	}
+	var grid = $grids[tabname];
+	var leafs = grid.find('.pq-grid-col-leaf');
+	for (let i=0; i<leafs.length; i++) {
+		var $leaf = $(leafs[i]);
+		var dataIndx = $leaf.attr('pq-col-indx');
+		var desc = descs[dataIndx];
+		if (desc) {
+			$leaf.attr('title', desc);
+		}
+	}
 }
 
 function minimizeOrMaxmimizeTheDetailsDiv (minimizeOrMaximizeButton, action) {
