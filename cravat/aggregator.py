@@ -14,7 +14,8 @@ class Aggregator (object):
     
     cr_type_to_sql = {'string':'text',
                       'int':'integer',
-                      'float':'real'}
+                      'float':'real',
+                      'category': 'string'}
     commit_threshold = 10000
     
     def __init__(self, cmd_args):
@@ -29,12 +30,10 @@ class Aggregator (object):
         self.output_base_fname = None
         self.key_name = None
         self.table_name = None
-        # self.opts = None
         self.base_prefix = 'base'
         self.base_dir = os.path.abspath(__file__)
         self.parse_cmd_args(cmd_args)
         self._setup_logger()
-        # self._read_opts()
         
     def parse_cmd_args(self, cmd_args):
         parser = argparse.ArgumentParser()
@@ -82,12 +81,6 @@ class Aggregator (object):
         self.logger.info('level: {0}'.format(self.level))
         self.logger.info('input directory: %s' %self.input_dir)
         
-    # def _read_opts(self):
-    #     opt_file = open(os.path.join(os.path.dirname(__file__),
-    #                                  'aggregator.yml'))
-    #     self.opts = yaml.load(opt_file)
-    #     opt_file.close()        
-
     def run(self):
         self._setup()
         if self.input_base_fname == None:
@@ -230,7 +223,7 @@ class Aggregator (object):
         self.cursor.execute(q)
         for _, col_def in self.base_reader.get_all_col_defs().items():
             col_name = self.base_prefix + '__' + col_def['name']
-            columns.append([col_name, col_def['type'], col_def['title']])
+            columns.append([col_name, col_def['title'], col_def['type'], col_def['categories'], col_def['width'], col_def['desc']])
             unique_names.add(col_name)
         for annot_name in self.annotators:
             reader = self.readers[annot_name]
@@ -251,18 +244,19 @@ class Aggregator (object):
                 db_col_name = '%s__%s' %(annot_name, reader_col_name)
                 db_type = col_def['type']
                 db_col_title = col_def['title']
+                db_col_cats = col_def['categories']
                 if db_col_name in unique_names:
                     err_msg = 'Duplicate column name %s found in %s. ' \
                         %(db_col_name, reader.path)
                     sys.exit(err_msg)
                 else:
-                    columns.append([db_col_name, db_type, db_col_title])
+                    columns.append([db_col_name, db_col_title, db_type, db_col_cats, col_def['width'], col_def['desc']])
                     unique_names.add(db_col_name)
                     
         col_def_strings = []
         for col in columns:
             name = col[0]
-            sql_type = self.cr_type_to_sql[col[1]]
+            sql_type = self.cr_type_to_sql[col[2]]
             s = name + ' ' + sql_type
             col_def_strings.append(s)
         # data table
@@ -286,40 +280,41 @@ class Aggregator (object):
         # header table
         q = 'drop table if exists %s' %self.header_table_name
         self.cursor.execute(q)
-        q = 'create table %s (col_name text, col_title text, col_type text);' \
+        q = 'create table %s (col_name text, col_title text, col_type text, col_cats text, col_width int, col_desc text);' \
             %(self.header_table_name)
         self.cursor.execute(q)
-        for col_name, col_type, col_title in columns:
-            q = 'insert into {} values ("{}", "{}", "{}")'.format(
-                self.header_table_name, 
-                col_name, 
-                col_title, 
-                col_type)
-            self.cursor.execute(q)
+        for col_row in columns:
+            if col_row[3]:
+                col_row[3] = json.dumps(col_row[3])
+            # use prepared statement to allow " characters in categories and desc
+            insert_template = 'insert into {} values (?, ?, ?, ?, ?, ?)'.format(self.header_table_name)
+            self.cursor.execute(insert_template, col_row)
         # report substitution table
         if self.level in ['variant', 'gene']:
             q = 'drop table if exists {}'.format(self.reportsub_table_name)
             self.cursor.execute(q)
             q = 'create table {} (module text, subdict text)'.format(self.reportsub_table_name)
             self.cursor.execute(q)
-            sub = self.base_reader.report_substitution
-            if sub:
-                module = 'base'
-                q = 'insert into {} values (\'{}\', \'{}\')'.format(
-                    self.reportsub_table_name,
-                    'base',
-                    json.dumps(sub)
-                )
-                self.cursor.execute(q)
-            for module in self.readers:
-                sub = self.readers[module].report_substitution
+            if hasattr(self.base_reader, 'report_substitution'):
+                sub = self.base_reader.report_substitution
                 if sub:
-                    q = 'insert into {} values ("{}", \'{}\')'.format(
+                    module = 'base'
+                    q = 'insert into {} values (\'{}\', \'{}\')'.format(
                         self.reportsub_table_name,
-                        module,
+                        'base',
                         json.dumps(sub)
                     )
                     self.cursor.execute(q)
+            for module in self.readers:
+                if hasattr(self.base_reader, 'report_substitution'):
+                    sub = self.readers[module].report_substitution
+                    if sub:
+                        q = 'insert into {} values ("{}", \'{}\')'.format(
+                            self.reportsub_table_name,
+                            module,
+                            json.dumps(sub)
+                        )
+                        self.cursor.execute(q)
         self.dbconn.commit()
 
     def _setup_io(self):

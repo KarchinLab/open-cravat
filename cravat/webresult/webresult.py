@@ -64,7 +64,7 @@ def get_filter_save_names (request):
         cursor.execute(q)
         rs = cursor.fetchall()
         for r in rs:
-            content.append(r)
+            content.append(r[0])
     cursor.close()
     conn.close()
     return web.json_response(content)
@@ -81,7 +81,7 @@ def get_layout_save_names (request):
         cursor.execute(q)
         rs = cursor.fetchall()
         for r in rs:
-            content.append(r)
+            content.append(r[0])
     cursor.close()
     conn.close()
     return web.json_response(content)
@@ -370,6 +370,7 @@ def get_colmodel (tab, colinfo):
         startidx = dataindx
         endidx = startidx + col_count
         for d in colinfo[tab]['columns'][startidx:endidx]:
+            cats = [d['col_cats'][key] for key in d['col_cats'].keys()]
             column = {
                 "col": d['col_name'],
                 'colgroupkey': groupkey, 
@@ -380,7 +381,8 @@ def get_colmodel (tab, colinfo):
                 "dataIndx": dataindx,
                 "retfilt":False,
                 "retfilttype":"None",
-                "multiseloptions":[]
+                "multiseloptions":[],
+                'categories': d['col_cats']
                 }
             if d['col_type'] == 'string':
                 column['filter'] = {
@@ -398,6 +400,16 @@ def get_colmodel (tab, colinfo):
                 column['retfilt'] = True
                 column['retfilttype'] = 'between'
                 column['multiseloptions'] = []
+            elif d['col_type'] == 'category':
+                column['filter'] = {
+                    'type': 'select',
+                    'attr': 'multiple',
+                    'condition': 'equal',
+                    'options': cats,
+                    'listeners': ['change']}
+                column['retfilt'] = True
+                column['retfilttype'] = 'select'
+                column['multiseloptions'] = cats
             columngroupdef['colModel'].append(column)
             dataindx += 1
         colModel.append(columngroupdef)

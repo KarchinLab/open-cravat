@@ -208,7 +208,7 @@ function saveFilterSettingAs () {
 	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
-            response = response.splice(quickSaveNameIdx, 1);
+            response.splice(quickSaveNameIdx, 1);
         }
 		var names = response.join(', ');
 		var msg = 'Please enter layout name to save.';
@@ -229,7 +229,7 @@ function deleteFilterSettingAs () {
 	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
-            response = response.splice(quickSaveNameIdx, 1);
+            response.splice(quickSaveNameIdx, 1);
         }
 		var names = response.join(', ');
 		var msg = 'Please enter layout name to delete.';
@@ -247,7 +247,7 @@ function saveLayoutSettingAs () {
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
-            response = response.splice(quickSaveNameIdx, 1);
+            response.splice(quickSaveNameIdx, 1);
         }
 		var names = response.join(', ');
 		var msg = 'Please enter layout name to save.';
@@ -565,7 +565,7 @@ function loadFilterSettingAs () {
 	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
-            response = response.splice(quickSaveNameIdx, 1);
+            response.splice(quickSaveNameIdx, 1);
         }
 		//var savedNames = JSON.parse(response.replace(/'/g, '"'));
 		var div = document.getElementById('load_filter_select_div');
@@ -618,7 +618,7 @@ function loadLayoutSettingAs () {
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
-            response = response.splice(quickSaveNameIdx, 1);
+            response.splice(quickSaveNameIdx, 1);
         }
     	var savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {
@@ -671,7 +671,7 @@ function deleteLayoutSettingAs () {
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
-            response = response.splice(quickSaveNameIdx, 1);
+            response.splice(quickSaveNameIdx, 1);
         }
     	savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {
@@ -703,7 +703,7 @@ function renameLayoutSettingAs () {
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
-            response = response.splice(quickSaveNameIdx, 1);
+            response.splice(quickSaveNameIdx, 1);
         }
     	savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {

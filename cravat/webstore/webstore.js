@@ -1154,7 +1154,6 @@ function connectWebSocket () {
                 if (installQueue.length > 0) {
                     var module = installQueue.shift();
                     installInfo[module] = {'msg': 'installing'};
-                    queueInstall(module);
                 }
             }
         }

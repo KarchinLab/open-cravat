@@ -153,6 +153,23 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 						val + '</a>';
 				}
 				return '<span title="' + val + '">' + content + '</span>'};
+            if (column['filter'] != undefined && column['filter']['type'] == 'select') {
+                column['filter']['condition'] = function (val, select) {
+                    var selects = select.split(',');
+                    if (selects.indexOf(val) >= 0) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                };
+                column['filter']['init'] = function () {
+                    $(this).pqSelect({
+                        checkbox: true, 
+                        radio: true, 
+                        maxDisplay: 0,
+                        width: '100%',});
+                };
+            }
 			var columnKey = column['col'];
 			var columnNo = column['dataIndx'];
 			columnnos[columnKey] = columnNo;
