@@ -149,6 +149,7 @@ def main ():
             s.bind(('0.0.0.0', 8060))
         else:
             s.bind(('localhost', 8060))
+        s.close()
     except:
         return
     app = web.Application()
