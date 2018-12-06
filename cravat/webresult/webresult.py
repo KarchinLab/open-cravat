@@ -382,7 +382,9 @@ def get_colmodel (tab, colinfo):
                 "retfilt":False,
                 "retfilttype":"None",
                 "multiseloptions":[],
-                'categories': d['col_cats']
+                'categories': d['col_cats'],
+                'width': d['col_width'],
+                'desc': d['col_desc'],
                 }
             if d['col_type'] == 'string':
                 column['filter'] = {
