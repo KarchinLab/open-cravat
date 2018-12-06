@@ -180,7 +180,7 @@ function addBarComponent (outerDiv, row, header, col, tabName) {
 	addEl(outerDiv, div);
 }
 
-function addRobustBarComponent (outerDiv, row, header, col, tabName, colors, percentile=false) {
+function addRobustBarComponent (outerDiv, row, header, col, tabName, colors={'0.0':[255,255,255],'1.0':[255,0,0]}, minval=0.0, maxval=1.0) {
 	var cutoff = 0.01;
 	var barStyle = {
 		"top": 0,
@@ -196,20 +196,15 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors, per
 	for (pivot in colors){
 		orderedPivots.push(pivot)
 	}
-	orderedPivots.sort()
+	orderedPivots.sort(function(a,b){return a-b})
 	
 	// Value
 	var value = infomgr.getRowValue(tabName, row, col);
 	if (value == null) {
 		value = '';
-		percentile = false;
 	}
 	else if(typeof value == 'string'){
 		dtype = 'string'
-	}
-	else if(percentile){
-		var dispvalue = value.toFixed(3);
-		value = value * 0.01;
 	}
 	else {
 		value = value.toFixed(3);
@@ -222,14 +217,12 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors, per
 
 	// Header
 	addEl(div, addEl(getEl('span'), getTn(header + ': ')));
-	if(percentile){
-		addEl(div, addEl(getEl('span'), getTn(dispvalue)));
-	}
-	else{
-		addEl(div, addEl(getEl('span'), getTn(value)));
-	}
+	addEl(div, addEl(getEl('span'), getTn(value)));
 	addEl(div, getEl('br'));
-	
+	if(value !== ''){
+		value = parseFloat(value);
+	}
+
 	// Paper
 	var barWidth = 108;
 	var barHeight = 12;
@@ -246,7 +239,7 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors, per
 	// Box.
 	var box = paper.rect(0, lineOverhang, barWidth, barHeight, 4);
 	var c = [];
-	if (value != '') {
+	if (value !== '') {
 		if(value <= orderedPivots[0]){
 			var piv = orderedPivots[0];
 			c = colors['%s',piv];
@@ -267,6 +260,7 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors, per
 					break;
 				}
 			}
+			//semi-broken when values are negative
 			var ratio = (value - boundPivots[0])/(boundPivots[1]-boundPivots[0]);
 			c[0] = Math.round(boundColors.color1[0] * (1.0 - ratio) + boundColors.color2[0] * ratio);
 			c[1] = Math.round(boundColors.color1[1] * (1.0 - ratio) + boundColors.color2[1] * ratio);
@@ -280,7 +274,9 @@ function addRobustBarComponent (outerDiv, row, header, col, tabName, colors, per
 	box.attr('stroke', 'black');
 	
 	// Bar
-	if (value != '' && dtype != 'string') {
+	if (value !== '' && dtype != 'string') {
+		//Convert values onto 0 to 1 scale depending on min and max val provided (defaults to 0 and 1)
+		value = (value - parseFloat(minval))/(Math.abs(parseFloat(minval)) + Math.abs(parseFloat(maxval)));
 		var bar = paper.rect(value * barWidth, 0, 1, lineHeight, 1);
 		bar.attr('fill', 'black');
 		bar.attr('stroke', 'black');
