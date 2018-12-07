@@ -402,6 +402,3 @@ class AllMappingsParser (object):
         s = protein + ':' + achange + ':' + tr + ':' + tchange + ':' + \
             so + ':' + gene
         return s
-
-if __name__ == '__main__':
-    reader = CravatReader('example_input.clinvar.var')
