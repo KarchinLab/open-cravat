@@ -349,6 +349,9 @@ function showVariantDetail (row, tabName) {
 			} else {
 				[widgetDiv, widgetContentDiv] = 
 					getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
+                if (generator['init'] != undefined) {
+                    generator['init']();
+                }
 				generator['function'](widgetContentDiv, row, tabName);
 				widgetDiv.style.width = generator['width'] + 'px';
 				widgetDiv.style.height = generator['height'] + 'px';

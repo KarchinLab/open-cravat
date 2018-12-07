@@ -154,15 +154,21 @@ class CravatReport:
                 {'name': name,
                  'displayname': displayname,
                  'count': 0})
-        sql = 'select col_name, col_title, col_type from ' + level + '_header'
+        sql = 'select * from ' + level + '_header'
         self.cursor.execute(sql)
         columns = []
         colcount = 0
         for row in self.cursor.fetchall():
-            (colname, coltitle, col_type) = row
+            (colname, coltitle, col_type) = row[:3]
+            col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else {}
+            col_width = row[4] if len(row) > 4 else None
+            col_desc = row[5] if len(row) > 5 else None
             column = {'col_name': colname,
                       'col_title': coltitle,
-                      'col_type': col_type}
+                      'col_type': col_type,
+                      'col_cats': col_cats,
+                      'col_width':col_width,
+                      'col_desc':col_desc}
             self.colnos[level][colname] = colcount
             colcount += 1
             columns.append(column)
@@ -198,9 +204,19 @@ class CravatReport:
                     self.colnos[level][colname] = colcount
                     colcount += 1
                     colname = mi.name + '__' + col['name']
+                    col_cats = col.get('categories',{})
+                    # if 'categories' in cols:
+                    #     col_cats = col['categories']
+                    # else:
+                    #     col_cats = {}
+                    col_width = col.get('width')
+                    col_desc = col.get('desc')
                     column = {'col_name': colname,
                               'col_title': col['title'],
-                              'col_type': col['type']}
+                              'col_type': col['type'],
+                              'col_cats': col_cats,
+                              'col_width':col_width,
+                              'col_desc':col_desc}
                     columns.append(column)
                     self.var_added_cols.append(colname)
         # Gene level summary columns
@@ -228,9 +244,16 @@ class CravatReport:
                     columngroup['count'] = len(cols)
                     self.columngroups[level].append(columngroup)
                     for col in cols:
+                        if 'categories' in col:
+                            col_cats = col['categories']
+                        else:
+                            col_cats = {}
                         column = {'col_name': conf['name'] + '__' + col['name'],
                                   'col_title': col['title'],
-                                  'col_type': col['type']}
+                                  'col_type': col['type'],
+                                  'col_cats': col['categories'],
+                                  'col_width':col['width'],
+                                  'col_desc':col['desc']}
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
         colno = 0

@@ -25,6 +25,7 @@ import base64
 #from aiohttp_session import setup, get_session, new_session
 #from aiohttp_session.cookie_storage import EncryptedCookieStorage
 import hashlib
+import platform
 
 donotopenbrowser = False
 
@@ -66,7 +67,8 @@ def result ():
     check_donotopenbrowser()
     global donotopenbrowser
     if not donotopenbrowser:
-        webbrowser.open('http://localhost:8060/result/index.html?job_id=' + runid + '&dbpath=' + dbpath)
+        server = get_server()
+        webbrowser.open('http://{host}:{port}/result/index.html?job_id='.format(host=server.get('host'), port=server.get('port')) + runid + '&dbpath=' + dbpath)
     main()
 
 def store ():
@@ -74,14 +76,30 @@ def store ():
     ws.start_install_queue_manager()
     global donotopenbrowser
     if not donotopenbrowser:
-        webbrowser.open('http://localhost:8060/store/index.html')
+        server = get_server()
+        webbrowser.open('http://{host}:{port}/store/index.html'.format(host=server.get('host'), port=server.get('port')))
 
 def submit ():
     check_donotopenbrowser()
     global donotopenbrowser
     if not donotopenbrowser:
-        webbrowser.open('http://localhost:8060/submit/index.html')
+        server = get_server()
+        webbrowser.open('http://{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port')))
     main()
+
+def get_server():
+    server = {}
+    conf = ConfigLoader()
+    pl = platform.platform()
+    if pl == 'Windows':
+        def_host = '0.0.0.0'
+    else:
+        def_host = 'localhost'
+    host = conf.get_cravat_conf().get('gui_host', def_host)
+    port = conf.get_cravat_conf().get('gui_port', 8060)
+    server['host'] = host
+    server['port'] = port
+    return server
 
 def main ():
     '''
@@ -129,6 +147,13 @@ def main ():
         import traceback
         traceback.print_exc()
     '''
+    try:
+        s = socket.socket()
+        serv = get_server()
+        s.bind((serv.get('host'), serv.get('port')))
+    except:
+        print('Cannot bind to same host and port')
+        return
     app = web.Application()
     routes = list()
     routes.extend(ws.routes)
@@ -142,7 +167,7 @@ def main ():
     app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
     ws.start_worker()
     print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
-    web.run_app(app, port=8060, shutdown_timeout=0, handle_signals=False)
+    web.run_app(app, sock=s)
 
 if __name__ == '__main__':
     main()
