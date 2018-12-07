@@ -70,7 +70,7 @@ class MasterCravatConverter(object):
             self.cmd_args = None
             self.output_dir = None
             self.output_base_fname = None
-            self.chromdict = {'chrx': 'chrX', 'chry': 'chrY', 'chrMT': 'chrM', 'chrMt': 'chrM'}
+            self.chromdict = {'chrx': 'chrX', 'chry': 'chrY', 'chrMT': 'chrM', 'chrMt': 'chrM', 'chr23': 'chrX', 'chr24': 'chrY'}
             self.vtracker = VTracker();
             self._parse_cmd_args(args)
             self._setup_logger()
@@ -275,10 +275,8 @@ class MasterCravatConverter(object):
                     UIDMap = [] 
                     for wdict in all_wdicts:
                         chrom = wdict['chrom']
-                        if chrom.startswith('chr') == False:
-                            wdict['chrom'] = 'chr' + chrom
-                        if chrom in self.chromdict:
-                            wdict['chrom'] = self.chromdict[chrom]
+                        if not chrom.startswith('chr'): chrom = 'chr' + chrom
+                        wdict['chrom'] = self.chromdict.get(chrom, chrom)
                         if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
                             num_errors += 1
                             e = BadFormatError('Reference base required for non SNV')
