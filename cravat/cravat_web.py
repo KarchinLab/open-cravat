@@ -90,7 +90,12 @@ def submit ():
 def get_server():
     server = {}
     conf = ConfigLoader()
-    host = conf.get_cravat_conf().get('gui_host', 'localhost')
+    pl = platform.platform()
+    if pl == 'Windows':
+        def_host = '0.0.0.0'
+    else:
+        def_host = 'localhost'
+    host = conf.get_cravat_conf().get('gui_host', def_host)
     port = conf.get_cravat_conf().get('gui_port', 8060)
     server['host'] = host
     server['port'] = port
@@ -144,13 +149,10 @@ def main ():
     '''
     try:
         s = socket.socket()
-        pl = platform.platform()
-        if pl == 'Windows':
-            s.bind(('0.0.0.0', 8060))
-        else:
-            s.bind(('localhost', 8060))
-        s.close()
+        serv = get_server()
+        s.bind((serv.get('host'), serv.get('port')))
     except:
+        print('Cannot bind to same host and port')
         return
     app = web.Application()
     routes = list()
@@ -165,8 +167,7 @@ def main ():
     app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
     ws.start_worker()
     print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
-    server = get_server()
-    web.run_app(app, host=server.get('host'), port=server.get('port'))
+    web.run_app(app, sock=s)
 
 if __name__ == '__main__':
     main()
