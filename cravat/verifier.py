@@ -29,9 +29,9 @@ class AnnotatorVerifier(Verifier):
         
         failures = []
         input_by_id = {x[id_col]: x 
-                            for x in self.input_reader.get_data('dict')}
+                            for x in self.input_reader.get_data()}
         ids_checked = []
-        for key_ln, key_data in self.key_reader.loop_data('dict'):
+        for key_ln, key_data in self.key_reader.loop_data():
             key_id = key_data[id_col]
             ids_checked.append(key_id)
             try:
