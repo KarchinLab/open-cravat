@@ -317,7 +317,7 @@ class MasterCravatConverter(object):
     
     def liftover(self, old_chrom, old_pos):
         new_coords = self.lifter.convert_coordinate(old_chrom, int(old_pos))
-        if len(new_coords) > 0:
+        if new_coords != None and len(new_coords) > 0:
             new_chrom = new_coords[0][0]
             new_pos = new_coords[0][1]
             return new_chrom, new_pos
@@ -340,12 +340,7 @@ class MasterCravatConverter(object):
             traceback logged.
         """
         err_toks = [str(x) for x in [ln, e.__class__.__name__, e]]
-        #self.err_file.write('\t'.join(err_toks)+'\n')
-        self.logger.exception(e)
-        '''
-        if not(isinstance(e,InvalidData)):
-            self.logger.exception(e)
-        '''
+        self.logger.error(' '.join(err_toks))
 
     def _close_files(self):
         """ Close the input and output files. """
