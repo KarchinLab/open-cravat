@@ -170,6 +170,7 @@ def main ():
     app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
     ws.start_worker()
     print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
+    print(serv.get('port'))
     web.run_app(app, port=serv.get('port'))
 
 if __name__ == '__main__':
