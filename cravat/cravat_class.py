@@ -16,6 +16,7 @@ from .mp_runners import run_annotator_mp
 import multiprocessing as mp
 from logging.handlers import QueueListener
 from .aggregator import Aggregator
+from .exceptions import *
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
@@ -285,6 +286,32 @@ class Cravat (object):
                 print('Running reporter...')
                 self.run_reporter()
             self.update_status('Finished')
+        except LiftoverFailure:
+            end_time = time.time()
+            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
+            runtime = end_time - self.start_time
+            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
+            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            self.close_logger()
+            return
+        except InvalidData:
+            end_time = time.time()
+            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
+            runtime = end_time - self.start_time
+            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
+            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            self.close_logger()
+            return
+        except ExpectedException as e:
+            self.logger.error('Error:')
+            self.logger.error(e)
+            end_time = time.time()
+            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
+            runtime = end_time - self.start_time
+            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
+            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            self.close_logger()
+            return
         except:
             self.logger.exception('<Exception>')
             self.update_status('Error')
@@ -440,7 +467,8 @@ class Cravat (object):
             print(' '.join(cmd))
         converter_class = util.load_class('MasterCravatConverter', module.script_path)
         converter = converter_class(cmd)
-        converter.run()
+        exit = converter.run()
+        print(exit)
 
     def run_genemapper (self):
         module = au.get_local_module_info(
