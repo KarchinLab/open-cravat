@@ -133,10 +133,13 @@ def main ():
     try:
         s = socket.socket()
         pl = platform.platform()
-        if pl == 'Windows':
+        if pl.startswith('Windows'):
             s.bind(('0.0.0.0', 8060))
-        else:
+        elif pl.startswith('Linux'):
             s.bind(('localhost', 8060))
+        elif pl.startswith('Darwin'):
+            s.bind(('0.0.0.0', 8060))
+        s.close()
     except:
         return
     app = web.Application()
