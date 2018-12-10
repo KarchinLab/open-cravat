@@ -229,7 +229,6 @@ class CravatReport:
             for module_name in local_modules:
                 mi = local_modules[module_name]
                 conf = mi.conf
-                print(conf)
                 if 'can_summarize_by_gene' in conf and module_name in done_var_annotators:
                     sys.path = sys.path + [os.path.dirname(mi.script_path)]
                     annot_cls = util.load_class('CravatAnnotator', mi.script_path)
