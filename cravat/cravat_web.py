@@ -91,12 +91,10 @@ def get_server():
     server = {}
     conf = ConfigLoader()
     pl = platform.platform()
-    if pl.startswith('Windows'):
+    if pl.startswith('Darwin'):
         def_host = '0.0.0.0'
-    elif pl.startswith('Linux'):
+    else:
         def_host = 'localhost'
-    elif pl.startswith('Darwin'):
-        def_host = '0.0.0.0'
     host = conf.get_cravat_conf().get('gui_host', def_host)
     port = conf.get_cravat_conf().get('gui_port', 8060)
     server['host'] = host
@@ -170,7 +168,6 @@ def main ():
     app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
     ws.start_worker()
     print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
-    print(serv.get('port'))
     web.run_app(app, port=serv.get('port'))
 
 if __name__ == '__main__':

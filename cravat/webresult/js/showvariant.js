@@ -180,7 +180,8 @@ function addBarComponent (outerDiv, row, header, col, tabName) {
 	addEl(outerDiv, div);
 }
 
-function addRobustBarComponent (outerDiv, row, header, col, tabName, colors={'0.0':[255,255,255],'1.0':[255,0,0]}, minval=0.0, maxval=1.0) {
+//Default color gradeint is white to red from 0.0 to 1.0
+function addGradientBarComponent (outerDiv, row, header, col, tabName, colors={'0.0':[255,255,255],'1.0':[255,0,0]}, minval=0.0, maxval=1.0) {
 	var cutoff = 0.01;
 	var barStyle = {
 		"top": 0,
