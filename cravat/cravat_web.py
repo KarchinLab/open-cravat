@@ -91,12 +91,10 @@ def get_server():
     server = {}
     conf = ConfigLoader()
     pl = platform.platform()
-    if pl.startswith('Windows'):
+    if pl.startswith('Darwin'):
         def_host = '0.0.0.0'
-    elif pl.startswith('Linux'):
+    else:
         def_host = 'localhost'
-    elif pl.startswith('Darwin'):
-        def_host = '0.0.0.0'
     host = conf.get_cravat_conf().get('gui_host', def_host)
     port = conf.get_cravat_conf().get('gui_port', 8060)
     server['host'] = host
