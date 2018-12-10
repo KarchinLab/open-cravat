@@ -229,6 +229,7 @@ class CravatReport:
             for module_name in local_modules:
                 mi = local_modules[module_name]
                 conf = mi.conf
+                print(conf)
                 if 'can_summarize_by_gene' in conf and module_name in done_var_annotators:
                     sys.path = sys.path + [os.path.dirname(mi.script_path)]
                     annot_cls = util.load_class('CravatAnnotator', mi.script_path)
@@ -251,9 +252,9 @@ class CravatReport:
                         column = {'col_name': conf['name'] + '__' + col['name'],
                                   'col_title': col['title'],
                                   'col_type': col['type'],
-                                  'col_cats': col['categories'],
-                                  'col_width':col['width'],
-                                  'col_desc':col['desc']}
+                                  'col_cats': col.get('categories', {}),
+                                  'col_width':col.get('width'),
+                                  'col_desc':col.get('desc')}
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
         colno = 0
