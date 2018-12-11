@@ -92,7 +92,7 @@ def get_server():
     conf = ConfigLoader()
     pl = platform.platform()
     if pl.startswith('Windows'):
-        def_host = '0.0.0.0'
+        def_host = 'localhost'
     elif pl.startswith('Linux'):
         def_host = 'localhost'
     elif pl.startswith('Darwin'):

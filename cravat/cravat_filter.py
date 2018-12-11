@@ -22,7 +22,8 @@ class FilterColumn(object):
         'stringStarts': 'like',
         'stringEnds': 'like',
         'between': 'between',
-        'in': 'in'
+        'in': 'in',
+        'select': 'in',
     }
 
     def __init__(self, d):
@@ -32,7 +33,7 @@ class FilterColumn(object):
         self.negate = d.get('negate', False)
     
     def get_sql(self):
-        s = self.column+' '+self.test2sql[self.test]
+        s = self.column + ' ' + self.test2sql[self.test]
         if type(self.value) == str:
             if self.test == 'stringContains':
                 sql_val = '"%{}%"'.format(self.value)
@@ -54,7 +55,7 @@ class FilterColumn(object):
                         str_toks.append('"{}"'.format(val))
                     else:
                         str_toks.append(str(val))
-                sql_val = '('+', '.join(str_toks)+')'
+                sql_val = '(' + ', '.join(str_toks) + ')'
         else:
             sql_val = str(self.value)
         if sql_val == '':

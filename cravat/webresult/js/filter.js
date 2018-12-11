@@ -28,6 +28,7 @@ const makeFilterColDiv = (filter) => {
     // Column select
     const colSel = $(getEl('select'))
         .addClass('filter-column-selector');
+    colSel.on('change', onFilterColumnSelectorChange);
     colDiv.append(colSel);
     populateFilterColumnSelector(colSel, groupSel.val());
 
@@ -85,27 +86,89 @@ const makeFilterColDiv = (filter) => {
     return colDiv;
 }
 
+const onFilterColumnSelectorChange = (evt) => {
+    console.log(evt);
+    var groupName = evt.target.previousSibling.value;
+    var columns = infomgr.getVariantColumnGroupByName(groupName).colModel;
+    var columnName = evt.target.value;
+    var filter = null;
+    console.log(columnName);
+    for (var i = 0; i < columns.length; i++) {
+        var column = columns[i];
+        console.log(column.col);
+        if (column.col == columnName) {
+            filter = column.filter;
+            break;
+        }
+    }
+    if (filter != null && filter.type == 'select') {
+        var testDiv = evt.target.nextSibling;
+        var selIdx = null;
+        for (var i = 0; i < testDiv.options.length; i++) {
+            var option = testDiv.options[i];
+            if (option.value == 'select') {
+                var selIdx = i;
+                break;
+            }
+        }
+        if (selIdx) {
+            testDiv.selectedIndex = selIdx;
+            var event = new Event('change');
+            testDiv.dispatchEvent(event);
+        }
+    }
+}
+
 const filterTestChangeHandler = (event) => {
     const testSel = $(event.target);
     const valuesDiv = testSel.siblings('.filter-values-div');
     const testName = testSel.val();
     populateFilterValues(valuesDiv, testName);
-
 }
 
 const populateFilterValues = (valsContainer, testName, value) => {
     valsContainer.empty();
     const testDesc = filterTests[testName];
-    for (let i=0; i<testDesc.inputs; i++) {
-        const valueInput = $(getEl('input'))
-            .addClass('filter-value-input');
-            valsContainer.append(valueInput);
-            valsContainer.append(' ');
-        if (value !== undefined) {
-            if (Array.isArray(value)) {
-                valueInput.val(value[i]);
-            } else {
-                valueInput.val(value);
+    if (testName == 'select') {
+        var testDiv = valsContainer[0].previousSibling.previousSibling.previousSibling;
+        var groupDiv = testDiv.previousSibling;
+        var col = testDiv.value;
+        var columns = infomgr.columnss.variant;
+        var select = getEl('select');
+        select.className = 'filter-value-input';
+        select.multiple = 'multiple';
+        addEl(valsContainer[0], select);
+        for (var i = 0; i < columns.length; i++) {
+            var column = columns[i];
+            if (column.col == col) {
+                var optionValues = column.filter.options;
+                for (var j = 0; j < optionValues.length; j++) {
+                    var option = getEl('option');
+                    var optionValue = optionValues[j];
+                    option.value = optionValue;
+                    option.textContent = optionValue;
+                    addEl(select, option);
+                }
+                break;
+            }
+        }
+        $(select).pqSelect({
+            checkbox: true, 
+            displayText: '{0} selected',
+            maxDisplay: 0,
+        });
+    } else {
+        for (let i=0; i<testDesc.inputs; i++) {
+            const valueInput = $(getEl('input'))
+                .addClass('filter-value-input');
+                valsContainer.append(valueInput);
+                valsContainer.append(' ');
+            if (value !== undefined) {
+                if (Array.isArray(value)) {
+                    valueInput.val(value[i]);
+                } else {
+                    valueInput.val(value);
+                }
             }
         }
     }
@@ -291,23 +354,42 @@ const makeGroupFilter = (groupDiv) => {
         colFilter.test = colDiv.children('.filter-test-selector').val();
         // Value
         const valInputs = colDiv.children('.filter-values-div').children();
-        if (valInputs.length === 0) {
-            colFilter.value = null;
-        } else if (valInputs.length === 1) {
-            var rawValue = $(valInputs[0]).val();
-            // Below is temporary. Implement categorical column type and remove this.
-            if (colFilter.column == 'base__so') {
-                subValue = soDic[rawValue];
-                if (subValue != undefined) {
-                    rawValue = subValue;
+        console.log(colFilter.column, colFilter.test, valInputs);
+        if (colFilter.test == 'select') {
+            var selOptions = valInputs[0].selectedOptions;
+            colFilter.value = [];
+            var categories = infomgr.getColumnByName('variant', colFilter.column).categories;
+            var catIntValues = Object.keys(categories);
+            for (var j = 0; j < selOptions.length; j++) {
+                var displayValue = selOptions[j].value;
+                for (var k = 0; k < catIntValues.length; k++) {
+                    var catIntVal = catIntValues[k];
+                    var catDisVal = categories[catIntVal];
+                    if (displayValue == catDisVal) {
+                        colFilter.value.push(catIntVal);
+                        break;
+                    }
                 }
             }
-            colFilter.value = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
         } else {
-            colFilter.value = [];
-            for (let j=0; j<valInputs.length; j++){
-                const rawValue = $(valInputs[j]).val()
-                colFilter.value.push(Number(rawValue) !== NaN ? Number(rawValue) : rawValue);
+            if (valInputs.length === 0) {
+                colFilter.value = null;
+            } else if (valInputs.length === 1) {
+                var rawValue = $(valInputs[0]).val();
+                // Below is temporary. Implement categorical column type and remove this.
+                if (colFilter.column == 'base__so') {
+                    subValue = soDic[rawValue];
+                    if (subValue != undefined) {
+                        rawValue = subValue;
+                    }
+                }
+                colFilter.value = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
+            } else {
+                colFilter.value = [];
+                for (let j=0; j<valInputs.length; j++){
+                    const rawValue = $(valInputs[j]).val()
+                    colFilter.value.push(Number(rawValue) !== NaN ? Number(rawValue) : rawValue);
+                }
             }
         }
         // Negate
@@ -353,5 +435,6 @@ const filterTests = {
     stringContains: {title: 'contains', inputs:1},
     stringStarts: {title: 'starts with', inputs:1},
     stringEnds: {title: 'ends with', inputs:1},
-    between: {title: 'in range', inputs:2}
+    between: {title: 'in range', inputs:2},
+    select: {title: 'select', inputs: 1},
 }
