@@ -93,3 +93,5 @@ mapping_parser_name = 'mapping_parser'
 VARIANT = 0
 GENE = 1
 LEVELS = {'variant': VARIANT, 'gene': GENE}
+
+viewer_effective_digits = 3

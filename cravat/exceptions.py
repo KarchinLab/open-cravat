@@ -19,3 +19,6 @@ class FileIntegrityError(Exception):
 class CravatProfileException():
     def __init__(self, msg):
         super().__init__(msg)
+
+class ExpectedException (Exception):
+    pass

@@ -21,39 +21,36 @@ class BaseMapper(object):
     mapping process.
     """
     def __init__(self, cmd_args):
-        try:
-            main_fpath = cmd_args[0]
-            main_basename = os.path.basename(main_fpath)
-            if '.' in main_basename:
-                self.module_name = '.'.join(main_basename.split('.')[:-1])
-            else:
-                self.module_name = main_basename
-            self.mapper_dir = os.path.dirname(main_fpath)
-            self.cmd_parser = None
-            self.cmd_args = None
-            self.input_path = None
-            self.input_dir = None
-            self.reader = None
-            self.output_dir = None
-            self.output_base_fname = None
-            self.crx_path = None
-            self.crg_path = None
-            self.crt_path = None
-            self.crx_writer = None
-            self.crg_writer = None
-            self.crt_writer = None
-            self.gene_sources = []
-            self.primary_gene_source = None
-            self.gene_info = {}
-            self.written_primary_transc = set([])
-            self._define_main_cmd_args()
-            self._define_additional_cmd_args()
-            self._parse_cmd_args(cmd_args)
-            self._setup_logger()
-            config_loader = ConfigLoader()
-            self.conf = config_loader.get_module_conf(self.module_name)
-        except Exception as e:
-            self.__handle_exception(e)
+        main_fpath = cmd_args[0]
+        main_basename = os.path.basename(main_fpath)
+        if '.' in main_basename:
+            self.module_name = '.'.join(main_basename.split('.')[:-1])
+        else:
+            self.module_name = main_basename
+        self.mapper_dir = os.path.dirname(main_fpath)
+        self.cmd_parser = None
+        self.cmd_args = None
+        self.input_path = None
+        self.input_dir = None
+        self.reader = None
+        self.output_dir = None
+        self.output_base_fname = None
+        self.crx_path = None
+        self.crg_path = None
+        self.crt_path = None
+        self.crx_writer = None
+        self.crg_writer = None
+        self.crt_writer = None
+        self.gene_sources = []
+        self.primary_gene_source = None
+        self.gene_info = {}
+        self.written_primary_transc = set([])
+        self._define_main_cmd_args()
+        self._define_additional_cmd_args()
+        self._parse_cmd_args(cmd_args)
+        self._setup_logger()
+        config_loader = ConfigLoader()
+        self.conf = config_loader.get_module_conf(self.module_name)
             
     def _define_main_cmd_args(self):
         self.cmd_parser = argparse.ArgumentParser()
@@ -156,30 +153,30 @@ class BaseMapper(object):
         Read crv file and use map() function to convert to crx dict. Write the
         crx dict to the crx file and add information in crx dict to gene_info
         """
-        try:
-            self.base_setup()
-            start_time = time.time()
-            self.logger.info('started: %s' \
-                             %time.asctime(time.localtime(start_time)))
-            count = 0
-            for ln, crv_data in self.reader.loop_data('dict'):
-                count += 1
-                try:
-                    crx_data, alt_transcripts = self.map(crv_data)
-                except Exception as e:
-                    self._log_runtime_error(ln, e)
+        self.base_setup()
+        start_time = time.time()
+        self.logger.info('started: %s' \
+                         %time.asctime(time.localtime(start_time)))
+        count = 0
+        for ln, crv_data in self.reader.loop_data():
+            count += 1
+            try:
+                crx_data, alt_transcripts = self.map(crv_data)
+                # Skip cases where there was no change. Can result if ref_base not in original input
+                if crx_data['ref_base'] == crx_data['alt_base']:
                     continue
-                self.crx_writer.write_data(crx_data)
-                self._add_crx_to_gene_info(crx_data)
-                self._write_to_crt(alt_transcripts)
-            self._write_crg()
-            stop_time = time.time()
-            self.logger.info('finished: %s' \
-                             %time.asctime(time.localtime(stop_time)))
-            runtime = stop_time - start_time
-            self.logger.info('runtime: %6.3f' %runtime)
-        except Exception as e:
-            self.__handle_exception(e)
+            except Exception as e:
+                self._log_runtime_error(ln, e)
+                continue
+            self.crx_writer.write_data(crx_data)
+            self._add_crx_to_gene_info(crx_data)
+            self._write_to_crt(alt_transcripts)
+        self._write_crg()
+        stop_time = time.time()
+        self.logger.info('finished: %s' \
+                         %time.asctime(time.localtime(stop_time)))
+        runtime = stop_time - start_time
+        self.logger.info('runtime: %6.3f' %runtime)
         
     def _write_to_crt(self, alt_transcripts):
         for primary, alts in alt_transcripts.items():
@@ -240,7 +237,6 @@ class BaseMapper(object):
     
     def _log_runtime_error(self, ln, e):
         err_toks = [str(x) for x in [ln, e]]
-        #self.ef.write('\t'.join(err_toks)+'\n')
         self.logger.exception(e)
         if not(isinstance(e,InvalidData)):
             self.__handle_exception(e, should_exit=False)

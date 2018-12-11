@@ -7,7 +7,7 @@ import time
 import traceback
 import cravat.constants as constants
 from cravat import CravatWriter
-from cravat.exceptions import LiftoverFailure, InvalidData, BadFormatError
+from cravat.exceptions import LiftoverFailure, InvalidData, BadFormatError, ExpectedException
 import cravat.admin_util as au
 from pyliftover import LiftOver
 import copy
@@ -52,30 +52,27 @@ class MasterCravatConverter(object):
     """
     ALREADYCRV = 2
     def __init__(self, args=None):
-        try:
-            args = args if args else sys.argv
-            self.input_path = None
-            self.f = None
-            self.input_format = None
-            self.logger = None
-            self.crv_writer = None
-            self.crs_writer = None
-            self.crm_writer = None
-            self.crl_writer = None
-            self.err_file = None
-            self.primary_converter = None
-            self.converters = {}
-            self.possible_formats = []
-            self.ready_to_convert = False
-            self.cmd_args = None
-            self.output_dir = None
-            self.output_base_fname = None
-            self.chromdict = {'chrx': 'chrX', 'chry': 'chrY', 'chrMT': 'chrM', 'chrMt': 'chrM'}
-            self.vtracker = VTracker();
-            self._parse_cmd_args(args)
-            self._setup_logger()
-        except Exception as e:
-            self.__handle_exception(e)
+        args = args if args else sys.argv
+        self.input_path = None
+        self.f = None
+        self.input_format = None
+        self.logger = None
+        self.crv_writer = None
+        self.crs_writer = None
+        self.crm_writer = None
+        self.crl_writer = None
+        self.err_file = None
+        self.primary_converter = None
+        self.converters = {}
+        self.possible_formats = []
+        self.ready_to_convert = False
+        self.cmd_args = None
+        self.output_dir = None
+        self.output_base_fname = None
+        self.chromdict = {'chrx': 'chrX', 'chry': 'chrY', 'chrMT': 'chrM', 'chrMt': 'chrM', 'chr23': 'chrX', 'chr24': 'chrY'}
+        self.vtracker = VTracker();
+        self._parse_cmd_args(args)
+        self._setup_logger()
 
     def _parse_cmd_args(self, args):
         """ Parse the arguments in sys.argv """
@@ -134,8 +131,8 @@ class MasterCravatConverter(object):
         # A correct .crv file is not processed. 
         if self.input_format == 'crv' and \
             self.input_path.split('.')[-1] == 'crv':
-            #exit(cravat.util.exit_codes['alreadycrv'])
-            exit(1)
+            self.logger.info('Input file is already a crv file. Exiting converter.')
+            exit(0)
         
         # Open the output files
         self._open_output_files()
@@ -168,7 +165,7 @@ class MasterCravatConverter(object):
             else:
                 err_msg = 'Cannot load two converters for format %s' \
                     %converter.format_name
-                raise Exception(err_msg)
+                raise ExpectedException(err_msg)
         self.possible_formats = list(self.converters.keys())
 
     def _select_primary_converter(self):
@@ -180,7 +177,7 @@ class MasterCravatConverter(object):
         """
         if self.input_format is not None:
             if self.input_format not in self.possible_formats:
-                sys.exit('Invalid input format. Please select from [%s]' \
+                raise ExpectedException ('Invalid input format. Please select from [%s]' \
                          %', '.join(self.possible_formats))
         else:
             valid_formats = []
@@ -190,10 +187,10 @@ class MasterCravatConverter(object):
                 self.f.seek(0)
                 if check_success: valid_formats.append(converter_name)
             if len(valid_formats) == 0:
-                sys.exit('Input format could not be determined. ' +\
+                raise ExpectedException('Input format could not be determined. ' +\
                     'Exiting without conversion.')
             elif len(valid_formats) > 1:
-                sys.exit('Input format ambiguous in [%s]. '\
+                raise ExpectedException('Input format ambiguous in [%s]. '\
                             %', '.join(valid_formats)\
                          +'Please specify an input format.')
             else:
@@ -251,89 +248,76 @@ class MasterCravatConverter(object):
 
     def run(self):
         """ Convert input file to a .crv file using the primary converter."""
-        try:
-            self.setup()
-            start_time = time.time()
-            self.primary_converter.setup(self.f)
-            self.f.seek(0)
-            read_lnum = 0
-            write_lnum = 0
-            num_errors = 0
-            for l in self.f:
-                read_lnum += 1
-                try:
-                    # all_wdicts is a list, since one input line can become
-                    # multiple output lines
-                    all_wdicts = self.primary_converter.convert_line(l)
-                    if all_wdicts is None:
-                        continue
-                except Exception as e:
-                    num_errors += 1
-                    self._log_conversion_error(read_lnum, e)
+        self.setup()
+        start_time = time.time()
+        self.primary_converter.setup(self.f)
+        self.f.seek(0)
+        read_lnum = 0
+        write_lnum = 0
+        num_errors = 0
+        for l in self.f:
+            read_lnum += 1
+            try:
+                # all_wdicts is a list, since one input line can become
+                # multiple output lines
+                all_wdicts = self.primary_converter.convert_line(l)
+                if all_wdicts is None:
                     continue
-                if all_wdicts:
-                    UIDMap = [] 
-                    for wdict in all_wdicts:
-                        chrom = wdict['chrom']
-                        if chrom.startswith('chr') == False:
-                            wdict['chrom'] = 'chr' + chrom
-                        if chrom in self.chromdict:
-                            wdict['chrom'] = self.chromdict[chrom]
-                        if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
+            except Exception as e:
+                num_errors += 1
+                self._log_conversion_error(read_lnum, e)
+                continue
+            if all_wdicts:
+                UIDMap = [] 
+                for wdict in all_wdicts:
+                    chrom = wdict['chrom']
+                    if not chrom.startswith('chr'): chrom = 'chr' + chrom
+                    wdict['chrom'] = self.chromdict.get(chrom, chrom)
+                    if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
+                        num_errors += 1
+                        e = BadFormatError('Reference base required for non SNV')
+                        self._log_conversion_error(read_lnum, e)
+                        continue
+                    if self.do_liftover:
+                        prelift_wdict = copy.copy(wdict)
+                        try:
+                            wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'],
+                                                                         wdict['pos'])
+                        except LiftoverFailure as e:
                             num_errors += 1
-                            e = BadFormatError('Reference base required for non SNV')
                             self._log_conversion_error(read_lnum, e)
                             continue
+                    unique, UID = self.vtracker.addVar(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])                       
+                    wdict['uid'] = UID
+                    if unique:
+                        write_lnum += 1
+                        self.crv_writer.write_data(wdict)
                         if self.do_liftover:
-                            prelift_wdict = copy.copy(wdict)
-                            try:
-                                wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'],
-                                                                             wdict['pos'])
-                            except LiftoverFailure as e:
-                                num_errors += 1
-                                self._log_conversion_error(read_lnum, e)
-                                continue
-                        unique, UID = self.vtracker.addVar(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])                       
-                        wdict['uid'] = UID
-                        if unique:
-                            write_lnum += 1
-                            self.crv_writer.write_data(wdict)
-                            if self.do_liftover:
-                                prelift_wdict['uid'] = UID
-                                self.crl_writer.write_data(prelift_wdict)
-                        if UID not in UIDMap: 
-                            #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
-                            self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID})
-                            UIDMap.append(UID)
-                        self.crs_writer.write_data(wdict)
-            self.logger.info('error lines: %d' %num_errors)
-            self._close_files()
-            end_time = time.time()
-            self.logger.info('finished: %s' %\
-                time.asctime(time.localtime(end_time)))
-            runtime = round(end_time - start_time, 3)
-            self.logger.info('num input lines: {}'.format(read_lnum))
-            self.logger.info('runtime: %s'%runtime)
-        except Exception as e:
-            self.__handle_exception(e)
+                            prelift_wdict['uid'] = UID
+                            self.crl_writer.write_data(prelift_wdict)
+                    if UID not in UIDMap: 
+                        #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
+                        self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID})
+                        UIDMap.append(UID)
+                    self.crs_writer.write_data(wdict)
+        self.logger.info('error lines: %d' %num_errors)
+        self._close_files()
+        end_time = time.time()
+        self.logger.info('finished: %s' %\
+            time.asctime(time.localtime(end_time)))
+        runtime = round(end_time - start_time, 3)
+        self.logger.info('num input lines: {}'.format(read_lnum))
+        self.logger.info('runtime: %s'%runtime)
     
     def liftover(self, old_chrom, old_pos):
         new_coords = self.lifter.convert_coordinate(old_chrom, int(old_pos))
-        if len(new_coords) > 0:
+        if new_coords != None and len(new_coords) > 0:
             new_chrom = new_coords[0][0]
             new_pos = new_coords[0][1]
             return new_chrom, new_pos
         else:
             raise LiftoverFailure(old_chrom, old_pos)
     
-    def __handle_exception(self, e):
-        sys.stderr.write(traceback.format_exc())
-        if hasattr(self, 'logger'):
-            if self.logger is not None:
-                self.logger.exception(e)
-                sys.exit(2)
-        sys.exit(1)
-                
     def _log_conversion_error(self, ln, e):
         """ Log exceptions thrown by primary converter.
             All exceptions are written to the .err file with the exception type
@@ -342,12 +326,7 @@ class MasterCravatConverter(object):
             traceback logged.
         """
         err_toks = [str(x) for x in [ln, e.__class__.__name__, e]]
-        #self.err_file.write('\t'.join(err_toks)+'\n')
-        self.logger.exception(e)
-        '''
-        if not(isinstance(e,InvalidData)):
-            self.logger.exception(e)
-        '''
+        self.logger.error(' '.join(err_toks))
 
     def _close_files(self):
         """ Close the input and output files. """

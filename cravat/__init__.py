@@ -6,7 +6,6 @@ from .base_postaggregator import BasePostAggregator
 from .annotator_options import AnnotatorOptions
 from .inout import CravatReader
 from .inout import CravatWriter
-from .verifier import AnnotatorVerifier
 from .base_converter import *
 from .exceptions import *
 from .util import *
