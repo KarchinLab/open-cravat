@@ -264,7 +264,6 @@ def get_count (request):
         filterstring = queries['filter']
     else:
         filterstring = None
-    print(filterstring)
     cf = CravatFilter(dbpath=dbpath, 
                       mode='sub', 
                       filterstring=filterstring)
@@ -371,7 +370,7 @@ def get_colmodel (tab, colinfo):
         startidx = dataindx
         endidx = startidx + col_count
         for d in colinfo[tab]['columns'][startidx:endidx]:
-            cats = [d['col_cats'][key] for key in d['col_cats'].keys()]
+            cats = d['col_cats']
             column = {
                 "col": d['col_name'],
                 'colgroupkey': groupkey, 
@@ -383,6 +382,7 @@ def get_colmodel (tab, colinfo):
                 "retfilt":False,
                 "retfilttype":"None",
                 "multiseloptions":[],
+                'reportsub': d['reportsub'] if 'reportsub' in d else {},
                 'categories': d['col_cats'],
                 'width': d['col_width'],
                 'desc': d['col_desc'],

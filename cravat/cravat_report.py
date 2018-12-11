@@ -37,8 +37,8 @@ class CravatReport:
             for i in self.column_subs[level]:
                 val = row[i]
                 sub = self.column_subs[level][i]
-                if val in sub:
-                    row[i] = sub[val]
+                for target in sub:
+                    row[i] = row[i].replace(target, sub[target])
         return row
 
     def run_level (self, level):
@@ -160,7 +160,7 @@ class CravatReport:
         colcount = 0
         for row in self.cursor.fetchall():
             (colname, coltitle, col_type) = row[:3]
-            col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else {}
+            col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else []
             col_width = row[4] if len(row) > 4 else None
             col_desc = row[5] if len(row) > 5 else None
             column = {'col_name': colname,
@@ -204,11 +204,7 @@ class CravatReport:
                     self.colnos[level][colname] = colcount
                     colcount += 1
                     colname = mi.name + '__' + col['name']
-                    col_cats = col.get('categories',{})
-                    # if 'categories' in cols:
-                    #     col_cats = col['categories']
-                    # else:
-                    #     col_cats = {}
+                    col_cats = col.get('categories',[])
                     col_width = col.get('width')
                     col_desc = col.get('desc')
                     column = {'col_name': colname,
@@ -244,14 +240,10 @@ class CravatReport:
                     columngroup['count'] = len(cols)
                     self.columngroups[level].append(columngroup)
                     for col in cols:
-                        if 'categories' in col:
-                            col_cats = col['categories']
-                        else:
-                            col_cats = {}
                         column = {'col_name': conf['name'] + '__' + col['name'],
                                   'col_title': col['title'],
                                   'col_type': col['type'],
-                                  'col_cats': col.get('categories', {}),
+                                  'col_cats': col.get('categories', []),
                                   'col_width':col.get('width'),
                                   'col_desc':col.get('desc')}
                         columns.append(column)
@@ -282,6 +274,7 @@ class CravatReport:
                         sub = self.report_substitution[module]
                         if col in sub:
                             self.column_subs[level][i] = sub[col]
+                            self.colinfo[level]['columns'][i]['reportsub'] = sub[col]
     
     def parse_cmd_args (self, cmd_args):
         parser = argparse.ArgumentParser()

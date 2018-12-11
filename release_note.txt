@@ -1,0 +1,26 @@
+## 1.3.0
+December 12, 2018
+* Categorical data type has been added.
+* aggregator is now a part of the open-cravat pip package for better coherence.
+* Three new optional column attributes have been added, column type "category", column width, and column description.
+* wcravat improvements:
+** Log file can be viewed from the job list.
+* Result Viewer improvements:
+** Can filter with multiple-selection boxes with pre-filled options for data fields of categorical type.
+** Improved the speed by removing asynchronous calls.
+** More stable widget layout (do not change widget width according to long text content)
+** New gradient bar widget component which can do both forward and backward gradients.
+* Fixed various minor bugs
+
+## 0.0.140
+December 5, 2018
+* Annotators run in parallel for faster analysis (# cores - 1 by default)
+* 'New' Icon when updates available for installed modules in CRAVAT Store
+* Protein Change column (base information)
+* Sequence Ontology - Codes translated to full terms (e.g. missense rather than MIS)
+* Selected Row Highlighted
+* New 'QuickSave" button on top right saves current filter and layout for when results are next opened.
+* Fix so applying filter does not remove loaded IGV tracks
+* Filter panel fixes.
+* Consolidated Error Log
+

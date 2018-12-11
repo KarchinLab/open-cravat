@@ -136,7 +136,7 @@ class BaseMapper(object):
         self.crg_path = os.path.join(self.output_dir, crg_fname)
         self.crg_writer = CravatWriter(self.crg_path)
         self.crg_writer.add_columns(crg_def)
-        self.crg_writer.write_definition()
+        self.crg_writer.write_definition(self.conf)
         for index_columns in crg_idx:
             self.crg_writer.add_index(index_columns)
         #.crt

@@ -378,7 +378,6 @@ class CravatFilter ():
         q = 'drop table if exists ' + vftable
         self.cursor.execute(q)
         where = self.getwhere(level)
-        print(where)
         q = 'create table ' + vftable +\
             ' as select base__uid from ' + level + where
         self.cursor.execute(q)

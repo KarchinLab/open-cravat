@@ -87,15 +87,12 @@ const makeFilterColDiv = (filter) => {
 }
 
 const onFilterColumnSelectorChange = (evt) => {
-    console.log(evt);
     var groupName = evt.target.previousSibling.value;
     var columns = infomgr.getVariantColumnGroupByName(groupName).colModel;
     var columnName = evt.target.value;
     var filter = null;
-    console.log(columnName);
     for (var i = 0; i < columns.length; i++) {
         var column = columns[i];
-        console.log(column.col);
         if (column.col == columnName) {
             filter = column.filter;
             break;
@@ -145,6 +142,10 @@ const populateFilterValues = (valsContainer, testName, value) => {
                 for (var j = 0; j < optionValues.length; j++) {
                     var option = getEl('option');
                     var optionValue = optionValues[j];
+                    var subVal = column.reportsub[optionValue];
+                    if (subVal != undefined) {
+                        optionValue = subVal;
+                    }
                     option.value = optionValue;
                     option.textContent = optionValue;
                     addEl(select, option);
@@ -336,6 +337,15 @@ const groupOperatorSelectHandler = (event) => {
     joinDivs.append(operator);
 }
 
+function doReportSub (reportsub, reportsubKeys, origVal) {
+    for (var k = 0; k < reportsubKeys.length; k++) {
+        var key = reportsubKeys[k];
+        var val = reportsub[key];
+        origVal = origVal.replace(new RegExp(val, 'g'), key);
+    }
+    return origVal;
+}
+
 const makeGroupFilter = (groupDiv) => {
     const filter = {};
     // Operator
@@ -354,41 +364,29 @@ const makeGroupFilter = (groupDiv) => {
         colFilter.test = colDiv.children('.filter-test-selector').val();
         // Value
         const valInputs = colDiv.children('.filter-values-div').children();
-        console.log(colFilter.column, colFilter.test, valInputs);
+        var column = infomgr.getColumnByName('variant', colFilter.column);
+        var reportsub = column.reportsub;
+        var reportsubKeys = Object.keys(reportsub);
         if (colFilter.test == 'select') {
             var selOptions = valInputs[0].selectedOptions;
             colFilter.value = [];
-            var categories = infomgr.getColumnByName('variant', colFilter.column).categories;
-            var catIntValues = Object.keys(categories);
             for (var j = 0; j < selOptions.length; j++) {
-                var displayValue = selOptions[j].value;
-                for (var k = 0; k < catIntValues.length; k++) {
-                    var catIntVal = catIntValues[k];
-                    var catDisVal = categories[catIntVal];
-                    if (displayValue == catDisVal) {
-                        colFilter.value.push(catIntVal);
-                        break;
-                    }
-                }
+                var optVal = selOptions[j].value;
+                colFilter.value.push(doReportSub(reportsub, reportsubKeys, optVal));
             }
         } else {
             if (valInputs.length === 0) {
                 colFilter.value = null;
             } else if (valInputs.length === 1) {
                 var rawValue = $(valInputs[0]).val();
-                // Below is temporary. Implement categorical column type and remove this.
-                if (colFilter.column == 'base__so') {
-                    subValue = soDic[rawValue];
-                    if (subValue != undefined) {
-                        rawValue = subValue;
-                    }
-                }
-                colFilter.value = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
+                var val = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
+                colFilter.value = doReportSub(reportsub, reportsubKeys, val);
             } else {
                 colFilter.value = [];
                 for (let j=0; j<valInputs.length; j++){
                     const rawValue = $(valInputs[j]).val()
-                    colFilter.value.push(Number(rawValue) !== NaN ? Number(rawValue) : rawValue);
+                    var val = Number(rawValue) !== NaN ? Number(rawValue) : rawValue;
+                    colFilter.value.push(doReportSub(reportsub, reportsubKeys, val));
                 }
             }
         }

@@ -177,7 +177,7 @@ class CravatWriter(CravatFile):
         self._validate_col_type(col_type)
         col_name = col_def['name']
         col_cats = json.dumps(col_def.get('categories'))
-        if col_type == 'category' and not(col_cats):
+        if col_type == 'category' and col_cats == 'null':
             raise Exception('Categories are not defined for column {}.'.format(col_name))
         col_width = col_def.get('width')
         col_desc = col_def.get('desc')
@@ -258,8 +258,6 @@ class CravatWriter(CravatFile):
         self._definition_written = True
         self.wf.flush()
 
-    def write_report_substitution (self):
-        self._prep_for_write()
     def write_titles(self):
         self._prep_for_write()
         title_line = self.titles_prefix+'\t'.join(self.title_toks) + '\n'
