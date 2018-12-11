@@ -162,6 +162,9 @@ class BaseMapper(object):
             count += 1
             try:
                 crx_data, alt_transcripts = self.map(crv_data)
+                # Skip cases where there was no change. Can result if ref_base not in original input
+                if crx_data['ref_base'] == crx_data['alt_base']:
+                    continue
             except Exception as e:
                 self._log_runtime_error(ln, e)
                 continue

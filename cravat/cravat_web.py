@@ -94,9 +94,11 @@ def get_server():
     if pl.startswith('Windows'):
         def_host = 'localhost'
     elif pl.startswith('Linux'):
-        def_host = 'localhost'
+        def_host = '0.0.0.0'
     elif pl.startswith('Darwin'):
         def_host = '0.0.0.0'
+    else:
+        def_host = 'localhost'
     host = conf.get_cravat_conf().get('gui_host', def_host)
     port = conf.get_cravat_conf().get('gui_port', 8060)
     server['host'] = host

@@ -251,9 +251,9 @@ class CravatReport:
                         column = {'col_name': conf['name'] + '__' + col['name'],
                                   'col_title': col['title'],
                                   'col_type': col['type'],
-                                  'col_cats': col['categories'],
-                                  'col_width':col['width'],
-                                  'col_desc':col['desc']}
+                                  'col_cats': col.get('categories', {}),
+                                  'col_width':col.get('width'),
+                                  'col_desc':col.get('desc')}
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
         colno = 0
