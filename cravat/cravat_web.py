@@ -94,7 +94,7 @@ def get_server():
     if pl.startswith('Windows'):
         def_host = 'localhost'
     elif pl.startswith('Linux'):
-        def_host = '0.0.0.0'
+        def_host = 'localhost'
     elif pl.startswith('Darwin'):
         def_host = '0.0.0.0'
     else:
