@@ -158,7 +158,7 @@ class BaseMapper(object):
         self.logger.info('started: %s' \
                          %time.asctime(time.localtime(start_time)))
         count = 0
-        for ln, crv_data in self.reader.loop_data('dict'):
+        for ln, crv_data in self.reader.loop_data():
             count += 1
             try:
                 crx_data, alt_transcripts = self.map(crv_data)

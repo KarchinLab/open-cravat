@@ -33,8 +33,6 @@ class CravatReader (CravatFile):
         self.annotator_name = ''
         self.annotator_displayname = ''
         self.no_aggregate_cols = []
-        self.valid_modes = ['line','list','dict']
-        self.default_mode = 'dict'
         self.index_columns = []
         self.report_substitution = None
         self._setup_definition()
@@ -96,75 +94,39 @@ class CravatReader (CravatFile):
     def get_no_aggregate_columns (self):
         return self.no_aggregate_cols
 
-    def _check_mode(self, mode):
-        if mode not in self.valid_modes:
-            raise Exception('Invalid mode: %s. Choose from %s' \
-                                %(mode, ', '.join(self.valid_modes)))
-    def set_mode(self, mode):
-        self._check_mode(mode)
-        self.default_mode = mode
-
-    def loop_data(self, mode=None):
-        if mode:
-            self._check_mode(mode)
-        else:
-            mode = self.default_mode
+    def loop_data(self):
         for lnum, l in self._loop_data():
-            data = None
-            if mode == 'line':
-                data = l
-            elif mode == 'list':
-                data = l.split('\t')
-            elif mode == 'dict':
-                data = self.line_to_data_dict(l)
-            yield lnum, data
-
-    def get_data(self, mode=None):
-        if mode:
-            self._check_mode(mode)
-        else:
-            mode = self.default_mode
-        all_data = []
-        for _, l in self._loop_data():
-            if mode == 'line':
-                all_data.append(l)
-            elif mode == 'list':
-                all_data.append(l.split('\t'))
-            elif mode == 'dict':
-                all_data.append(self.line_to_data_dict(l))
-        return all_data
-
-    def line_to_data_dict(self, l):
-        toks = l.split('\t')
-        return self.toks_to_data_dict(toks)
-
-    def toks_to_data_dict(self, toks):
-        out = {}
-        if len(toks) < len(self.columns):
-            err_msg = 'Too few columns. Received %s. Expected %s' \
-                %(len(toks),len(self.columns))
-            raise BadFormatError(err_msg)
-        for col_index, col_def in self.columns.items():
-            col_name = col_def['name']
-            col_type = col_def['type']
-            col_cats = col_def['categories']
-            tok = toks[col_index]
-            if tok == '':
-                out[col_name] = None
-            else:
-                if col_type == 'string':
-                    out[col_name] = tok
-                elif col_type == 'int':
-                    out[col_name] = int(tok)
-                elif col_type == 'float':
-                    out[col_name] = float(tok)
-                elif col_type == 'category':
-                    if tok not in col_cats:
-                        raise Exception('Undefined category [{}]. Available categories are {}. But accepting and moving on.'.format(tok, ','.join(col_cats)))
-                    out[col_name] = tok
+            toks = l.split('\t')
+            out = {}
+            if len(toks) < len(self.columns):
+                err_msg = 'Too few columns. Received %s. Expected %s' \
+                    %(len(toks),len(self.columns))
+                raise BadFormatError(err_msg)
+            for col_index, col_def in self.columns.items():
+                col_name = col_def['name']
+                col_type = col_def['type']
+                col_cats = col_def['categories']
+                tok = toks[col_index]
+                if tok == '':
+                    out[col_name] = None
                 else:
-                    out[col_name] = tok
-        return out
+                    if col_type == 'string':
+                        out[col_name] = tok
+                    elif col_type == 'int':
+                        out[col_name] = int(tok)
+                    elif col_type == 'float':
+                        out[col_name] = float(tok)
+                    elif col_type == 'category':
+                        if tok not in col_cats:
+                            raise Exception('Undefined category [{}]. Available categories are {}. But accepting and moving on.'.format(tok, ','.join(col_cats)))
+                        out[col_name] = tok
+                    else:
+                        out[col_name] = tok
+            yield lnum, out
+   
+    def get_data(self):
+        all_data = [d for _,d in self.loop_data()]
+        return all_data
 
     def _loop_definition(self):
         f = open(self.path)
@@ -440,6 +402,3 @@ class AllMappingsParser (object):
         s = protein + ':' + achange + ':' + tr + ':' + tchange + ':' + \
             so + ':' + gene
         return s
-
-if __name__ == '__main__':
-    reader = CravatReader('example_input.clinvar.var')

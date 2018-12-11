@@ -415,7 +415,7 @@ class BaseAnnotator(object):
     # Gets the input dict from both the input file, and 
     # any depended annotators depended annotator feature not complete.
     def _get_input(self):
-        for lnum, reader_data in self.primary_input_reader.loop_data('dict'):
+        for lnum, reader_data in self.primary_input_reader.loop_data():
             try:
                 input_data = {}
                 for col_name in self.conf['input_columns']:
@@ -467,7 +467,7 @@ class SecondaryInputFetcher():
         self.load_input()
     
     def load_input(self):
-        for _, all_col_data in self.input_reader.loop_data('dict'):
+        for _, all_col_data in self.input_reader.loop_data():
             key_data = all_col_data[self.key_col]
             if key_data not in self.data: self.data[key_data] = []
             fetch_col_data = {}
