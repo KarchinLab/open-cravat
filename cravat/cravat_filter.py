@@ -58,8 +58,6 @@ class FilterColumn(object):
                 sql_val = '(' + ', '.join(str_toks) + ')'
         else:
             sql_val = str(self.value)
-        if sql_val == '':
-            return ''
         if len(sql_val) > 0:
             s += ' '+sql_val
         if self.negate:
@@ -292,7 +290,7 @@ class CravatFilter ():
         if sql_criteria == '':
             return ''
         else:
-            return ' where '+main_group.get_sql()
+            return ' where ' + main_group.get_sql()
     
     def getvariantcount (self):
         return self.getcount('variant')
@@ -380,6 +378,7 @@ class CravatFilter ():
         q = 'drop table if exists ' + vftable
         self.cursor.execute(q)
         where = self.getwhere(level)
+        print(where)
         q = 'create table ' + vftable +\
             ' as select base__uid from ' + level + where
         self.cursor.execute(q)

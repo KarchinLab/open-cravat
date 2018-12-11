@@ -264,6 +264,7 @@ def get_count (request):
         filterstring = queries['filter']
     else:
         filterstring = None
+    print(filterstring)
     cf = CravatFilter(dbpath=dbpath, 
                       mode='sub', 
                       filterstring=filterstring)
