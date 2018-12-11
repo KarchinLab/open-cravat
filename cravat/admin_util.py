@@ -878,10 +878,9 @@ def show_system_conf ():
     print('Configuration file path:', system_conf_info['path'])
     print(system_conf_info['content'])
 
-def check_cravat_update():
+def get_latest_package_version():
     """
-    Return latest cravat version if higher than installed version. Return none if latest version 
-    is present in ignore_cravat_versions section of system-conf.
+    Return latest cravat version on pypi
     """
     r = requests.get('https://pypi.org/pypi/open-cravat/json')
     if r.status_code == 200:
@@ -889,30 +888,12 @@ def check_cravat_update():
         all_vers = list(d['releases'].keys())
         all_vers.sort(key=LooseVersion)
         highest_ver = all_vers[-1]
-    else:
-        # return up to date if check fails
-        return None
-    current_ver = LooseVersion(pkg_resources.get_distribution('open-cravat').version)
-    if highest_ver > current_ver:
-        ignore_vers = get_system_conf().get('ignore_cravat_versions',[])
-        if highest_ver not in ignore_vers:
-            return highest_ver
-        else:
-            return None
+        return highest_ver
     else:
         return None
 
-def ignore_cravat_update(version):
-    """
-    Stop getting notified about an available cravat update. Works by updating the ignore_cravat_versions
-    section of system-conf.
-    """
-    sys_conf = get_system_conf()
-    ignore_vers = sys_conf.get('ignore_cravat_versions',[])
-    if version not in ignore_vers:
-        ignore_vers.append(version)
-    update_system_conf_file({'ignore_cravat_versions':ignore_vers})
-    
+def get_current_package_version():
+    return pkg_resources.get_distribution('open-cravat').version    
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
