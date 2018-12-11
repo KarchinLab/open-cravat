@@ -214,9 +214,6 @@ InfoMgr.prototype.getColumnGroups = function (tabName) {
 }
 
 InfoMgr.prototype.getColumnByName = function (tabName, columnName) {
-	if (tabName == 'variant') {
-		tabName = 'info';
-	}
 	return this.columnss[tabName][this.columnnoss[tabName][columnName]];
 }
 
@@ -263,3 +260,15 @@ InfoMgr.prototype.getGeneRowValue = function (hugo) {
 	}
 	return val;
 }
+
+InfoMgr.prototype.getVariantColumnGroupByName = function (groupName) {
+    var colGroups = this.colModels.variant;
+    for (var i = 0; i < colGroups.length; i++) {
+        var cg = colGroups[i];
+        if (cg.title == groupName) {
+            return cg;
+        }
+    }
+    return null;
+}
+
