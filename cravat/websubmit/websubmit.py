@@ -528,6 +528,13 @@ async def logout (request):
 def get_servermode (request):
     return web.json_response({'servermode': servermode})
 
+async def get_package_versions(request):
+    d = {
+        'current': au.get_current_package_version(),
+        'latest': au.get_latest_package_version(),
+    }
+    return web.json_response(d)
+
 
 filerouter = FileRouter()
 VIEW_PROCESS = None
@@ -556,6 +563,7 @@ routes.append(['GET', '/submit/passwordquestion', get_password_question])
 routes.append(['GET', '/submit/passwordanswer', check_password_answer])
 routes.append(['GET', '/submit/changepassword', change_password])
 routes.append(['GET', '/submit/checklogged', check_logged])
+routes.append(['GET', '/submit/packageversions', get_package_versions])
 
 if __name__ == '__main__':
     app = web.Application()

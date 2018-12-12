@@ -935,6 +935,19 @@ function checkLogged () {
     });
 }
 
+function populatePackageVersions () {
+    $.get('/submit/packageversions').done(function(data){
+        let curver = data.current;
+        let latver = data.latest;
+        $('#curverspan').text(curver);
+        const latverspan = $('#latestverspan')
+        latverspan.text(latver);
+        if (curver !== latver) {
+            latverspan.css('color','red');
+        }
+	});
+}
+
 function websubmit_run () {
     getServermode();
     var md = showMd();
@@ -975,5 +988,6 @@ function websubmit_run () {
     var h = window.innerHeight - 235;
     submitcontentdiv.style.height = h + 'px';
     loadSystemConf();
+    populatePackageVersions();
 };
 
