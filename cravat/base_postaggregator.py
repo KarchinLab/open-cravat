@@ -103,14 +103,15 @@ class BasePostAggregator (object):
             self.logger.info('runtime: {0:0.3f}'.format(run_time))
         except Exception as e:
             self._log_exception(e)
-    
+
     def write_output (self, input_data, output_dict):
         q = 'update ' + self.level + ' set '
         for col_def in self.conf['output_columns']:
             col_name = col_def['name']
             if col_name in output_dict:
                 val = output_dict[col_name]
-                if col_def['type'] == 'string':
+                col_type = col_def['type']
+                if col_type in ['string', 'category']:
                     val = '"' + val + '"'
                 else:
                     val = str(val)
@@ -167,7 +168,7 @@ class BasePostAggregator (object):
             colname = col_def['name']
             coltitle = col_def['title']
             coltype = col_def['type']
-            colcats = col_def.get('categories')
+            colcats = col_def.get('categories', "[]")
             colwidth = col_def.get('width')
             coldesc = col_def.get('desc')
             # data table

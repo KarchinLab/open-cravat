@@ -98,20 +98,33 @@ const onFilterColumnSelectorChange = (evt) => {
             break;
         }
     }
-    if (filter != null && filter.type == 'select') {
+    if (filter != null) {
         var testDiv = evt.target.nextSibling;
-        var selIdx = null;
-        for (var i = 0; i < testDiv.options.length; i++) {
-            var option = testDiv.options[i];
-            if (option.value == 'select') {
-                var selIdx = i;
-                break;
+        if (filter.type == 'select') {
+            var selIdx = null;
+            for (var i = 0; i < testDiv.options.length; i++) {
+                var option = testDiv.options[i];
+                if (option.value == 'select') {
+                    var selIdx = i;
+                    break;
+                }
             }
-        }
-        if (selIdx) {
-            testDiv.selectedIndex = selIdx;
-            var event = new Event('change');
-            testDiv.dispatchEvent(event);
+            if (selIdx) {
+                testDiv.selectedIndex = selIdx;
+                var event = new Event('change');
+                testDiv.dispatchEvent(event);
+            }
+        } else {
+           console.log(testDiv);
+           console.log(filter);
+           var title = filterTests[filter.condition].title;
+           for (var i = 0; i < testDiv.options.length; i++) {
+               if (testDiv.options[i].value == title) {
+                   testDiv.selectedIndex = i;
+                   var event = new Event('change');
+                   testDiv.dispatchEvent(event);
+               }
+           }
         }
     }
 }
@@ -126,37 +139,34 @@ const filterTestChangeHandler = (event) => {
 const populateFilterValues = (valsContainer, testName, value) => {
     valsContainer.empty();
     const testDesc = filterTests[testName];
-    if (testName == 'select') {
-        var testDiv = valsContainer[0].previousSibling.previousSibling.previousSibling;
-        var groupDiv = testDiv.previousSibling;
-        var col = testDiv.value;
-        var columns = infomgr.columnss.variant;
+    var testDiv = valsContainer[0].previousSibling.previousSibling.previousSibling;
+    var col = testDiv.value;
+    var column = infomgr.getColumnByName('variant', col);
+    var filter = column.filter;
+    if (testName == 'select' && filter.type == 'select') {
         var select = getEl('select');
         select.className = 'filter-value-input';
         select.multiple = 'multiple';
         addEl(valsContainer[0], select);
-        for (var i = 0; i < columns.length; i++) {
-            var column = columns[i];
-            if (column.col == col) {
-                var optionValues = column.filter.options;
-                for (var j = 0; j < optionValues.length; j++) {
-                    var option = getEl('option');
-                    var optionValue = optionValues[j];
-                    var subVal = column.reportsub[optionValue];
-                    if (subVal != undefined) {
-                        optionValue = subVal;
-                    }
-                    option.value = optionValue;
-                    option.textContent = optionValue;
-                    addEl(select, option);
+        var optionValues = column.filter.options;
+        if (optionValues != undefined) {
+            for (var j = 0; j < optionValues.length; j++) {
+                var option = getEl('option');
+                var optionValue = optionValues[j];
+                var subVal = column.reportsub[optionValue];
+                if (subVal != undefined) {
+                    optionValue = subVal;
                 }
-                break;
+                option.value = optionValue;
+                option.textContent = optionValue;
+                addEl(select, option);
             }
         }
         $(select).pqSelect({
             checkbox: true, 
             displayText: '{0} selected',
             maxDisplay: 0,
+            width: 200,
         });
     } else {
         for (let i=0; i<testDesc.inputs; i++) {
@@ -423,7 +433,7 @@ const loadFilter = (filter) => {
 }
 
 const filterTests = {
-    equals: {title:'equals', inputs: 1},
+    equals: {title:'equals', inputs: 1, valtypes: ['string', 'float', },
     lessThanEq: {title:'<=', inputs: 1},
     lessThan: {title:'<', inputs:1},
     greaterThanEq: {title:'>=', inputs:1},

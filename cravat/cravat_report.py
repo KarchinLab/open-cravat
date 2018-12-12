@@ -163,6 +163,12 @@ class CravatReport:
             col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else []
             col_width = row[4] if len(row) > 4 else None
             col_desc = row[5] if len(row) > 5 else None
+            if col_type == 'category' and len(col_cats) == 0:
+                sql = 'select distinct {} from {}'.format(colname, level)
+                self.cursor.execute(sql)
+                rs = self.cursor.fetchall()
+                for r in rs:
+                    col_cats.append(r[0])
             column = {'col_name': colname,
                       'col_title': coltitle,
                       'col_type': col_type,
@@ -204,12 +210,19 @@ class CravatReport:
                     self.colnos[level][colname] = colcount
                     colcount += 1
                     colname = mi.name + '__' + col['name']
+                    col_type = col['type']
                     col_cats = col.get('categories',[])
                     col_width = col.get('width')
                     col_desc = col.get('desc')
+                    if col_type == 'category' and len(col_cats) == 0:
+                        sql = 'select distinct {} from {}'.format(colname, level)
+                        self.cursor.execute(sql)
+                        rs = self.cursor.fetchall()
+                        for r in rs:
+                            col_cats.append(r[0])
                     column = {'col_name': colname,
                               'col_title': col['title'],
-                              'col_type': col['type'],
+                              'col_type': col_type,
                               'col_cats': col_cats,
                               'col_width':col_width,
                               'col_desc':col_desc}
@@ -240,10 +253,18 @@ class CravatReport:
                     columngroup['count'] = len(cols)
                     self.columngroups[level].append(columngroup)
                     for col in cols:
+                        col_type = col['type']
+                        col_cats = col.get('categories', [])
+                        if col_type == 'category' and len(col_cats) == 0:
+                            sql = 'select distinct {} from {}'.format(colname, level)
+                            self.cursor.execute(sql)
+                            rs = self.cursor.fetchall()
+                            for r in rs:
+                                col_cats.append(r[0])
                         column = {'col_name': conf['name'] + '__' + col['name'],
                                   'col_title': col['title'],
-                                  'col_type': col['type'],
-                                  'col_cats': col.get('categories', []),
+                                  'col_type': col_type,
+                                  'col_cats': col_cats,
                                   'col_width':col.get('width'),
                                   'col_desc':col.get('desc')}
                         columns.append(column)
