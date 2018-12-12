@@ -149,7 +149,7 @@ class ImageSrcEditor(HTMLParser):
     def handle_starttag(self, tag, attrs):
         html = '<{}'.format(tag)
         if tag == 'img':
-            attrs.append(['style', 'width:100%'])
+            attrs.append(['style', 'display:block;margin:auto;max-width:100%'])
         for name, value in attrs:
             if tag == 'img' and name == 'src':
                 value = self.prefix_url + '/' + value.lstrip('/')
