@@ -60,7 +60,7 @@ crx_def = crv_def + \
                    'FD2', 
                    'FD1', 
                    'FI2', 
-                   'FI2']},
+                   'FI1']},
            {'name':'achange', 'title':'Protein Change', 'type':'string'},
            {'name':'all_mappings', 'title':'All Mappings', 'type':'string'},
            ]
