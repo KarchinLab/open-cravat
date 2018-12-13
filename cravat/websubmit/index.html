@@ -13,7 +13,7 @@
     </script> 
 </head>
 
-<body style='font-family: sans-serif;'>
+<body style='font-family: helvetica;'>
 
 <div id='accountdiv' style='z-index: 3; position: fixed;'>
     <div id='userdiv' style='display: none;'></div>
@@ -94,7 +94,7 @@
 <div id='submitdiv' class='appdiv'>
     <div id = 'headerdiv' style='position: fixed; top: 0px; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px; background-color: white; box-shadow: 0px 0px 20px gray; left: 0px; right: 0px;'>
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
-            <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
+            <img src='logo.png' style='width: 300px; position: relative; top: 39px;' />
         </div>
         <div style="position: absolute; right: 25px; vertical-align: bottom; bottom: 10px;">
             OpenCRAVAT Version: <span id="curverspan" style="font-family: monospace;"></span>
@@ -143,7 +143,7 @@
                         </td>
                     </tr><tr>
                         <td valign='top' style='position: relative; padding-top: 20px;'>
-                            Try examples of<br />
+                            Try examples:
                             <button value="cravat" class='input-example-button'>CRAVAT Format</button>
                             <button value="vcf" class='input-example-button'>VCF Format</button>
                             <div class='or'>OR</div>
@@ -151,8 +151,10 @@
                     </tr>
                     <tr>
                         <td>
-                            <span style='font-style: italic; vertical-align: top;'>Note: </span>
-                            <textarea id='jobnoteinput' cols='50' rows='1' placeholder='Enter a note for the analysis (optional)'></textarea>
+                            <div style='margin-top: 14px;'>
+                                <span style='vertical-align: top;'>Note: </span>
+                                <textarea id='jobnoteinput' cols='50' rows='1' placeholder='Enter a note for the analysis (optional)'></textarea>
+                            </div>
                         </td>
                     </tr>
                 </table>
@@ -167,18 +169,10 @@
                 <div id="annotator-select-div"></div>
                 <div class='divbanner'></div>
             </div>
-            <br />
-            <br />
-            <div class='container'>
-                <div>
-                </div>
-                <div class='divbanner'></div>
-            </div>
-            <br />
         </div>
         <br />
 
-        <div style='text-align: center;'><button id="submit-job-button" style='font-size: 24px; padding: 10px; width: 100%; background-color: #b5e0c4; border-radius: 6px; margin-bottom: 10px;'>Annotate</button></div>
+        <div style='text-align: center;'><button id="submit-job-button" style='font-size: 24px; padding: 10px; width: 100%; background-color: #d0d0d0; border-radius: 6px; margin-bottom: 10px;'>Annotate</button></div>
     </div>
 
     </td><td valign='top' style='padding-left: 20px; width: 100%;'>
