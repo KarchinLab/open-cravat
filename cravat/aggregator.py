@@ -152,15 +152,31 @@ class Aggregator (object):
         self.logger.info('runtime: %s' %round(runtime, 3))
         self._cleanup()
 
+    def get_reportsub (self):
+        q = 'select * from {}_reportsub'.format(self.level)
+        self.cursor.execute(q)
+        reportsub = {}
+        for r in self.cursor.fetchall():
+            (col_name, sub) = r
+            reportsub[col_name] = json.loads(sub)
+        return reportsub
+
+    def do_reportsub (self):
+        
     def fill_categories (self):
+        reportsub = self.get_reportsub()
         q = 'select col_name, col_type, col_cats from {}_header'.format(self.level)
         self.cursor.execute(q)
         rs = self.cursor.fetchall()
         cols_to_fill = []
         for r in rs:
             (col_name, col_type, col_cats) = r
-            if (col_type == 'category' or col_type == 'multicategory') and (col_cats == None or len(col_cats) == 0):
-                cols_to_fill.append(col_name)
+            if col_type == 'category' or col_type == 'multicategory':
+                if col_cats == None or len(col_cats) == 0:
+                    cols_to_fill.append(col_name)
+                else:
+                    col_cats = self.do_reportsub(col_cats)
+                    self.write_col_cats(col_name, col_cats)
         for col_name in cols_to_fill:
             q = 'select distinct {} from {}'.format(col_name, self.level)
             self.cursor.execute(q)
@@ -173,12 +189,14 @@ class Aggregator (object):
                 for col_cat in vals:
                     if col_cat not in col_cats:
                         col_cats.append(col_cat)
-            q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
-                self.level,
-                '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']',
-                col_name)
-            self.cursor.execute(q)
         self.dbconn.commit()
+    
+    def write_col_cats (self, col_name, col_cats):
+        q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
+            self.level,
+            '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']',
+            col_name)
+        self.cursor.execute(q)
 
     def _cleanup(self):
         self.cursor.close()

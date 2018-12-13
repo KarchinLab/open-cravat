@@ -247,6 +247,9 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
             .append(col.title);
         colSel.append(colOpt);
     }
+    colSel[0].selectedIndex = 0;
+    var event = new Event('change');
+    colSel[0].dispatchEvent(event);
 }
 
 const makeFilterGroupDiv = (filter) => {
@@ -422,6 +425,9 @@ const makeGroupFilter = (groupDiv) => {
                 var optVal = selOptions[j].value;
                 colFilter.value.push(doReportSub(reportsub, reportsubKeys, optVal));
             }
+            if (colFilter.value.length == 0) {
+                continue;
+            }
         } else {
             if (valInputs.length === 0) {
                 colFilter.value = null;
@@ -471,17 +477,17 @@ const loadFilter = (filter) => {
 }
 
 const filterTests = {
-    equals: {title:'equals', inputs: 1, colTypes: ['string', 'float', 'integer', 'select'], },
-    lessThanEq: {title:'<=', inputs: 1, colTypes: ['float', 'integer']},
-    lessThan: {title:'<', inputs:1, colTypes: ['float', 'integer']},
-    greaterThanEq: {title:'>=', inputs:1, colTypes: ['float', 'integer']},
-    greaterThan: {title:'>', inputs:1, colTypes: ['float', 'integer']},
-    hasData: {title:'has data', inputs:0, colTypes: ['float', 'integer', 'string', 'category', 'multicategory']},
-    noData: {title:'is empty', inputs:0, colTypes: ['float', 'integer', 'string', 'category', 'multicategory']},
+    equals: {title:'equals', inputs: 1, colTypes: ['string', 'float', 'int', 'select'], },
+    lessThanEq: {title:'<=', inputs: 1, colTypes: ['float', 'int']},
+    lessThan: {title:'<', inputs:1, colTypes: ['float', 'int']},
+    greaterThanEq: {title:'>=', inputs:1, colTypes: ['float', 'int']},
+    greaterThan: {title:'>', inputs:1, colTypes: ['float', 'int']},
+    hasData: {title:'has data', inputs:0, colTypes: ['float', 'int', 'string', 'category', 'multicategory']},
+    noData: {title:'is empty', inputs:0, colTypes: ['float', 'int', 'string', 'category', 'multicategory']},
     stringContains: {title: 'contains', inputs:1, colTypes: ['string', 'category', 'multicategory']},
     stringStarts: {title: 'starts with', inputs:1, colTypes: ['string', 'category', 'multicategory']},
     stringEnds: {title: 'ends with', inputs:1, colTypes: ['string', 'category', 'multicategory']},
-    between: {title: 'in range', inputs:2, colTypes: ['float', 'integer']},
+    between: {title: 'in range', inputs:2, colTypes: ['float', 'int']},
     select: {title: 'select', inputs: 1, colTypes: ['category', 'multicategory']},
 }
 

@@ -383,7 +383,7 @@ def get_colmodel (tab, colinfo):
                 "retfilttype":"None",
                 "multiseloptions":[],
                 'reportsub': d['reportsub'] if 'reportsub' in d else {},
-                'categories': d['col_cats'],
+                'categories': cats,
                 'width': d['col_width'],
                 'desc': d['col_desc'],
                 'type': d['col_type'],

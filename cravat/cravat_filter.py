@@ -396,6 +396,7 @@ class CravatFilter ():
             ' as t, sample as s, mapping as m ' + where
         if where != '':
             q += ' and s.base__uid=t.base__uid and m.base__uid=t.base__uid'
+        print(q)
         self.cursor.execute(q)
         self.cursor.execute('pragma synchronous=2')
 
