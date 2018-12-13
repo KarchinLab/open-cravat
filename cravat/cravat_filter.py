@@ -33,33 +33,46 @@ class FilterColumn(object):
         self.negate = d.get('negate', False)
     
     def get_sql(self):
-        s = self.column + ' ' + self.test2sql[self.test]
-        if type(self.value) == str:
-            if self.test == 'stringContains':
-                sql_val = '"%{}%"'.format(self.value)
-            elif self.test == 'stringStarts':
-                sql_val = '"{}%"'.format(self.value)
-            elif self.test == 'stringEnds':
-                sql_val = '"%{}"'.format(self.value)
-            else:
-                sql_val = '"{}"'.format(self.value)
-        elif self.value is None:
-            sql_val = ''
-        elif type(self.value) == list:
-            if self.test == 'between':
-                sql_val = '{} and {}'.format(self.value[0], self.value[1])
-            else:
-                str_toks = []
-                for val in self.value:
-                    if type(val) == str:
-                        str_toks.append('"{}"'.format(val))
-                    else:
-                        str_toks.append(str(val))
-                sql_val = '(' + ', '.join(str_toks) + ')'
+        if self.column == 'tagsampler__samples':
+            s = 's.base__sample_id="' + self.value[0] + '"'
+            for v in self.value[1:]:
+                s += ' or s.base__sample_id="' + v + '"'
+        elif self.column == 'tagsampler__tags':
+            s = 'm.base__tags="' + self.value[0] + '"'
+            for v in self.value[1:]:
+                s += ' or m.base__tags="' + v + '"'
+        elif self.test == 'multicategory':
+            s = 't.{} like "%{}%"'.format(self.column, self.value[0])
+            for v in self.value[1:]:
+                s += ' or t.{} like "%{}%"'.format(self.column, v) 
         else:
-            sql_val = str(self.value)
-        if len(sql_val) > 0:
-            s += ' '+sql_val
+            s = 't.' + self.column + ' ' + self.test2sql[self.test]
+            if type(self.value) == str:
+                if self.test == 'stringContains':
+                    sql_val = '"%{}%"'.format(self.value)
+                elif self.test == 'stringStarts':
+                    sql_val = '"{}%"'.format(self.value)
+                elif self.test == 'stringEnds':
+                    sql_val = '"%{}"'.format(self.value)
+                else:
+                    sql_val = '"{}"'.format(self.value)
+            elif self.value is None:
+                sql_val = ''
+            elif type(self.value) == list:
+                if self.test == 'between':
+                    sql_val = '{} and {}'.format(self.value[0], self.value[1])
+                else:
+                    str_toks = []
+                    for val in self.value:
+                        if type(val) == str:
+                            str_toks.append('"{}"'.format(val))
+                        else:
+                            str_toks.append(str(val))
+                    sql_val = '(' + ', '.join(str_toks) + ')'
+            else:
+                sql_val = str(self.value)
+            if len(sql_val) > 0:
+                s += ' '+sql_val
         if self.negate:
             s = 'not('+s+')'
         return s
@@ -379,10 +392,13 @@ class CravatFilter ():
         self.cursor.execute(q)
         where = self.getwhere(level)
         q = 'create table ' + vftable +\
-            ' as select base__uid from ' + level + where
+            ' as select distinct(t.base__uid) from ' + level +\
+            ' as t, sample as s, mapping as m ' + where
+        if where != '':
+            q += ' and s.base__uid=t.base__uid and m.base__uid=t.base__uid'
         self.cursor.execute(q)
         self.cursor.execute('pragma synchronous=2')
-    
+
     def make_filtered_hugo_table (self):
         self.cursor.execute('pragma synchronous=0')
         level = 'gene'
@@ -526,7 +542,6 @@ def test ():
         print(row)
     for row in cf.get_filtered_iterator(level='gene'):
         print(row)
-    
 
 if __name__ == '__main__':
     #main()

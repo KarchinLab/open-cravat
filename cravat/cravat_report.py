@@ -214,7 +214,7 @@ class CravatReport:
                     col_cats = col.get('categories',[])
                     col_width = col.get('width')
                     col_desc = col.get('desc')
-                    if col_type == 'category' and len(col_cats) == 0:
+                    if (col_type == 'category' or col_type == 'multicategory') and len(col_cats) == 0:
                         sql = 'select distinct {} from {}'.format(colname, level)
                         self.cursor.execute(sql)
                         rs = self.cursor.fetchall()
@@ -255,7 +255,7 @@ class CravatReport:
                     for col in cols:
                         col_type = col['type']
                         col_cats = col.get('categories', [])
-                        if col_type == 'category' and len(col_cats) == 0:
+                        if (col_type == 'category' or col_type == 'multicategory') and len(col_cats) == 0:
                             sql = 'select distinct {} from {}'.format(colname, level)
                             self.cursor.execute(sql)
                             rs = self.cursor.fetchall()
@@ -344,7 +344,7 @@ class CravatReport:
     def load_filter (self):
         self.cf = CravatFilter(dbpath=self.dbpath)
         self.cf.loadfilter(filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
-    
+
     def table_exists (self, tablename):
         sql = 'select name from sqlite_master where ' + \
             'type="table" and name="' + tablename + '"'

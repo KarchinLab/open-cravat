@@ -426,7 +426,7 @@ function firstLoadData () {
 	}
 	loadWidgets();
 	setupTab('info');
-	loadFilterSetting(quickSaveName, afterLoadDefaultFilter);
+	loadFilterSetting(quickSaveName, afterLoadDefaultFilter, true);
 }
 
 function checkWidgets () {

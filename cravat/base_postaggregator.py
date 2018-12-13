@@ -95,6 +95,7 @@ class BasePostAggregator (object):
                     self.write_output(input_data, fixed_output)
                 except Exception as e:
                     self._log_runtime_exception(input_data, e)
+            self.fill_categories()
             self.dbconn.commit()
             self.base_cleanup()
             end_time = time.time()
@@ -104,6 +105,26 @@ class BasePostAggregator (object):
         except Exception as e:
             self._log_exception(e)
 
+    def fill_categories (self):
+        for col_def in self.conf['output_columns']:
+            if col_def['type'] not in ['category', 'multicategory']:
+                continue
+            col_name = col_def['name']
+            q = 'select distinct {} from {}'.format(col_name, self.level)
+            self.cursor.execute(q)
+            rs = self.cursor.fetchall()
+            col_cats = []
+            for r in rs:
+                col_cat = r[0]
+                if col_cat not in col_cats:
+                    col_cats.append(col_cat)
+            q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
+                self.level,
+                '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']',
+                col_name)
+            self.cursor.execute(q)
+        self.dbconn.commit()
+
     def write_output (self, input_data, output_dict):
         q = 'update ' + self.level + ' set '
         for col_def in self.conf['output_columns']:
@@ -111,7 +132,7 @@ class BasePostAggregator (object):
             if col_name in output_dict:
                 val = output_dict[col_name]
                 col_type = col_def['type']
-                if col_type in ['string', 'category']:
+                if col_type in ['string', 'category', 'multicategory']:
                     val = '"' + val + '"'
                 else:
                     val = str(val)

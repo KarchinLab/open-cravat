@@ -468,7 +468,6 @@ class Cravat (object):
         converter_class = util.load_class('MasterCravatConverter', module.script_path)
         converter = converter_class(cmd)
         exit = converter.run()
-        print(exit)
 
     def run_genemapper (self):
         module = au.get_local_module_info(

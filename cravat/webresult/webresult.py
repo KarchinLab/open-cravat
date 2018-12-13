@@ -386,6 +386,7 @@ def get_colmodel (tab, colinfo):
                 'categories': d['col_cats'],
                 'width': d['col_width'],
                 'desc': d['col_desc'],
+                'type': d['col_type'],
                 }
             if d['col_type'] == 'string':
                 column['filter'] = {
@@ -408,6 +409,16 @@ def get_colmodel (tab, colinfo):
                     'type': 'select',
                     'attr': 'multiple',
                     'condition': 'equal',
+                    'options': cats,
+                    'listeners': ['change']}
+                column['retfilt'] = True
+                column['retfilttype'] = 'select'
+                column['multiseloptions'] = cats
+            elif d['col_type'] == 'multicategory':
+                column['filter'] = {
+                    'type': 'select',
+                    'attr': 'multiple',
+                    'condition': 'contain',
                     'options': cats,
                     'listeners': ['change']}
                 column['retfilt'] = True

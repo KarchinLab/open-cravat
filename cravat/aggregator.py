@@ -15,7 +15,8 @@ class Aggregator (object):
     cr_type_to_sql = {'string':'text',
                       'int':'integer',
                       'float':'real',
-                      'category': 'string'}
+                      'category': 'string',
+                      'multicategory': 'string'}
     commit_threshold = 10000
     
     def __init__(self, cmd_args):
@@ -142,6 +143,7 @@ class Aggregator (object):
                 if n%self.commit_threshold == 0:
                     self.dbconn.commit()
             self.dbconn.commit()
+        self.fill_categories()
         self.cursor.execute('pragma synchronous=2;')
         self.cursor.execute('pragma journal_mode=delete;')
         end_time = time.time()
@@ -149,7 +151,35 @@ class Aggregator (object):
         runtime = end_time - start_time
         self.logger.info('runtime: %s' %round(runtime, 3))
         self._cleanup()
-        
+
+    def fill_categories (self):
+        q = 'select col_name, col_type, col_cats from {}_header'.format(self.level)
+        self.cursor.execute(q)
+        rs = self.cursor.fetchall()
+        cols_to_fill = []
+        for r in rs:
+            (col_name, col_type, col_cats) = r
+            if (col_type == 'category' or col_type == 'multicategory') and (col_cats == None or len(col_cats) == 0):
+                cols_to_fill.append(col_name)
+        for col_name in cols_to_fill:
+            q = 'select distinct {} from {}'.format(col_name, self.level)
+            self.cursor.execute(q)
+            rs = self.cursor.fetchall()
+            col_cats = []
+            for r in rs:
+                if r[0] == None:
+                    continue
+                vals = r[0].split(';')
+                for col_cat in vals:
+                    if col_cat not in col_cats:
+                        col_cats.append(col_cat)
+            q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
+                self.level,
+                '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']',
+                col_name)
+            self.cursor.execute(q)
+        self.dbconn.commit()
+
     def _cleanup(self):
         self.cursor.close()
         self.dbconn.close()
