@@ -152,19 +152,20 @@ class Aggregator (object):
         self.logger.info('runtime: %s' %round(runtime, 3))
         self._cleanup()
 
-    def get_reportsub (self):
+    def make_reportsub (self):
         q = 'select * from {}_reportsub'.format(self.level)
         self.cursor.execute(q)
-        reportsub = {}
+        self.reportsub = {}
         for r in self.cursor.fetchall():
             (col_name, sub) = r
-            reportsub[col_name] = json.loads(sub)
-        return reportsub
+            self.reportsub[col_name] = json.loads(sub)
 
-    def do_reportsub (self):
-        
+    def do_reportsub (self, col_name, col_cats):
+        if col_name in self.reportsub:
+            for col_cat in col_cats:
+
     def fill_categories (self):
-        reportsub = self.get_reportsub()
+        self.get_reportsub()
         q = 'select col_name, col_type, col_cats from {}_header'.format(self.level)
         self.cursor.execute(q)
         rs = self.cursor.fetchall()
@@ -175,7 +176,7 @@ class Aggregator (object):
                 if col_cats == None or len(col_cats) == 0:
                     cols_to_fill.append(col_name)
                 else:
-                    col_cats = self.do_reportsub(col_cats)
+                    col_cats = self.do_reportsub(col_name, col_cats)
                     self.write_col_cats(col_name, col_cats)
         for col_name in cols_to_fill:
             q = 'select distinct {} from {}'.format(col_name, self.level)
