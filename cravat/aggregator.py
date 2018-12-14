@@ -153,19 +153,29 @@ class Aggregator (object):
         self._cleanup()
 
     def make_reportsub (self):
-        q = 'select * from {}_reportsub'.format(self.level)
-        self.cursor.execute(q)
-        self.reportsub = {}
-        for r in self.cursor.fetchall():
-            (col_name, sub) = r
-            self.reportsub[col_name] = json.loads(sub)
+        if self.level in ['variant', 'gene']:
+            q = 'select * from {}_reportsub'.format(self.level)
+            self.cursor.execute(q)
+            self.reportsub = {}
+            for r in self.cursor.fetchall():
+                (col_name, sub) = r
+                self.reportsub[col_name] = json.loads(sub)
+        else:
+            self.reportsub = {}
 
     def do_reportsub (self, col_name, col_cats):
+        new_col_cats = []
         if col_name in self.reportsub:
+            sub = self.reportsub[col_name]
             for col_cat in col_cats:
+                new_col_cat = col_cat
+                for k in sub:
+                    new_col_cat = new_col_cat.replace(k, sub[k])
+                new_col_cats.append(new_col_cat)
+        return new_col_cats
 
     def fill_categories (self):
-        self.get_reportsub()
+        self.make_reportsub()
         q = 'select col_name, col_type, col_cats from {}_header'.format(self.level)
         self.cursor.execute(q)
         rs = self.cursor.fetchall()
