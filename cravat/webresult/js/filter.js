@@ -200,6 +200,8 @@ const populateFilterValues = (valsContainer, testName, value) => {
         $(select).pqSelect({
             checkbox: true, 
             displayText: '{0} selected',
+            singlePlaceholder: '>',
+            multiplePlaceholder: '>',
             maxDisplay: 0,
             width: 200,
         });

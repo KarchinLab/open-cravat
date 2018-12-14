@@ -189,7 +189,6 @@ class Aggregator (object):
             self.cursor.execute(q)
             rs = self.cursor.fetchall()
             col_cats = []
-            col_cats_str = '['
             for r in rs:
                 if r[0] == None:
                     continue
@@ -197,9 +196,8 @@ class Aggregator (object):
                 for col_cat in vals:
                     if col_cat not in col_cats:
                         col_cats.append(col_cat)
-                        col_cats_str += '"' + col_cat + '",'
-            col_cats_str = col_cats_str.rstrip(',')
-            col_cats_str += ']'
+            col_cats.sort()
+            col_cats_str = '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']'
             col_cats_str = self.do_reportsub_col_cats_str(col_name, col_cats_str)
             self.write_col_cats_str(col_name, col_cats_str)
         self.dbconn.commit()
@@ -373,6 +371,7 @@ class Aggregator (object):
         self.cursor.execute(q)
         for col_row in columns:
             if col_row[3]:
+                col_row[3].sort()
                 col_cats_str = json.dumps(col_row[3])
                 col_row[3] = self.do_reportsub_col_cats_str(col_row[0], col_cats_str)
             # use prepared statement to allow " characters in categories and desc

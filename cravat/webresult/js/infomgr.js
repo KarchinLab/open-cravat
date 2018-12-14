@@ -157,7 +157,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                 let colType = column['type'];
                 if (colType == 'category') {
                     column['filter']['condition'] = function (val, select) {
-                        var selects = select.split(';');
+                        var selects = select.split(',');
                         if (selects.indexOf(val) >= 0) {
                             return true;
                         } else {
@@ -165,18 +165,24 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                         }
                     };
                 } else if (colType == 'multicategory') {
-                    column['filter']['condition'] = function (val, select) {
-                        console.log(val, select);
-                        if (select.indexOf(val) >= 0) {
+                    column['filter']['condition'] = function (val, selects) {
+                        if (selects == null) {
                             return true;
-                        } else {
-                            return false;
                         }
+                        selects = selects.split(',');
+                        for (var i = 0; i < selects.length; i++) {
+                            var select = selects[i];
+                            if (val.indexOf(select) >= 0) {
+                                return true;
+                            }
+                        }
+                        return false;
                     };
                 }
                 column['filter']['init'] = function () {
                     $(this).pqSelect({
                         checkbox: true, 
+                        multiplePlaceholder: '>',
                         radio: true, 
                         maxDisplay: 0,
                         width: '100%',});

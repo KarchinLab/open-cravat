@@ -115,9 +115,11 @@ class BasePostAggregator (object):
             rs = self.cursor.fetchall()
             col_cats = []
             for r in rs:
-                col_cat = r[0]
-                if col_cat not in col_cats:
-                    col_cats.append(col_cat)
+                col_cat_str = r[0]
+                for col_cat in col_cat_str.split(';'):
+                    if col_cat not in col_cats:
+                        col_cats.append(col_cat)
+            col_cats.sort()
             q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
                 self.level,
                 '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']',
