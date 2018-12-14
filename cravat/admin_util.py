@@ -11,7 +11,8 @@ from . import util
 import requests
 import traceback
 import re
-from distutils.version import StrictVersion
+from distutils.version import StrictVersion, LooseVersion
+import pkg_resources
 
 def load_yml_conf(yml_conf_path):
     """
@@ -876,6 +877,23 @@ def show_system_conf ():
     system_conf_info = get_system_conf_info()
     print('Configuration file path:', system_conf_info['path'])
     print(system_conf_info['content'])
+
+def get_latest_package_version():
+    """
+    Return latest cravat version on pypi
+    """
+    r = requests.get('https://pypi.org/pypi/open-cravat/json')
+    if r.status_code == 200:
+        d = json.loads(r.text)
+        all_vers = list(d['releases'].keys())
+        all_vers.sort(key=LooseVersion)
+        highest_ver = all_vers[-1]
+        return highest_ver
+    else:
+        return None
+
+def get_current_package_version():
+    return pkg_resources.get_distribution('open-cravat').version    
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
