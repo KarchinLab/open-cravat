@@ -71,6 +71,12 @@ function submit () {
             buildJobsTable();
         }
     })
+    $('#submit-job-button').attr('disabled','disabled');
+    setTimeout(function(){
+            $('#submit-job-button').removeAttr('disabled');
+        },
+        1500
+    );
 };
 
 function addJob (jsonObj) {
@@ -942,7 +948,7 @@ function populatePackageVersions () {
         $('#curverspan').text(curver);
         const latverspan = $('#latestverspan')
         latverspan.text(latver);
-        if (curver !== latver) {
+        if (data.update) {
             latverspan.css('color','red');
         }
 	});
