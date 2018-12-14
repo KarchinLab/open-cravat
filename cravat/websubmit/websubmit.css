@@ -1,3 +1,7 @@
+body * {
+    font-family: Muli;
+}
+
 #pageselect {
     position: fixed; 
     top: 67px; 
@@ -54,7 +58,7 @@
 .container {
     position: relative;
     border: 0.5px solid #939393; 
-    border-radius: 14px; 
+    border-radius: 8px 8px 0px 0px; 
     padding-left: 30px; 
     padding-right: 30px; 
     padding-top: 18px; 
@@ -63,15 +67,19 @@
     margin-bottom: 20px;
 }
 
+.container * {
+    font-size: 13px;
+}
+
 #assembly-select {
     overflow: auto;
-    height: 42px;
+    height: 37px;
     border: 1px solid black;
 }
 
 #assembly-select option {
     display: inline-block;
-    height: 20px;
+    height: 15px;
     padding: 10px;
     border: 0px;
 }
@@ -111,7 +119,7 @@
     top: 0px;
     left: 0px;
     z-index: -1;
-    border-radius: 14px 14px 0px 0px;
+    border-radius: 8px 8px 0px 0px;
 }
 
 button {
@@ -131,8 +139,9 @@ button {
 }
 
 #jobs-table {
+    width: 100%;
     border-collapse: collapse;
-    font-size: 15px;
+    border-spacing: 10px;
 }
 
 #jobs-table tbody tr:nth-child(even) {
@@ -147,5 +156,12 @@ button {
 #jobs-table tbody td {
     padding: 0px;
     cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+#annotator-select-div label {
+    font-size: 15px;
+    font-family: monospace;
 }
 

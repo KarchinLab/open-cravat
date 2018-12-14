@@ -11,16 +11,17 @@
             websubmit_run();
         });
     </script> 
+    <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
 </head>
 
-<body style='font-family: helvetica;'>
+<body>
 
 <div id='accountdiv' style='z-index: 3; position: fixed;'>
     <div id='userdiv' style='display: none;'></div>
     <div id='logoutdiv' style='display: none;'>
         <button onclick='changePassword();'>Change password</button>
         <button onclick='logout();'>Logout</button>
-        <div id='changepassworddiv' style='display: none; position: absolute; padding: 10px; background-color: white; border: 1px solid black; font-size: 14px;'>
+        <div id='changepassworddiv' style='display: none; position: absolute; padding: 10px; background-color: white; border: 1px solid black;'>
             Old password: <input type='password' id='changepasswordoldpassword' />
             <br />
             New password: <input type='password' id='changepasswordnewpassword' />
@@ -31,7 +32,7 @@
         </div>
     </div>
     <button id='loginsignupbutton' onclick='toggleloginsignupdiv();'>Log in</button>
-    <div id='loginsignupdialog' style='display: none; position: fixed; padding: 10px; background-color: white; border: 1px solid black; font-size: 14px; box-shadow: 6px 6px 6px #b5b5b5;'>
+    <div id='loginsignupdialog' style='display: none; position: fixed; padding: 10px; background-color: white; border: 1px solid black; box-shadow: 6px 6px 6px #b5b5b5;'>
         <div id='logindiv' style='display: block;'>
             <span style='font-weight: bold;'>Login:</span>
             <br />
@@ -118,26 +119,21 @@
                 <table>
                     <tr>
                         <td valign='top' style='border-bottom: 1px solid black; padding-bottom: 20px;'>
-                            <table style='width: 100%'><tr><td>
-                            Upload a variant file<br />
-                            <span style='font-size: 12px;'>(<a href=''>CRAVAT</a> or <a href=''>VCF</a> format)</span>
-                            <br />
-                            <input type="file" name="input-file" id="input-file" />
-                            </td>
-                            <td style='text-align: right;'>
                                 <select id="assembly-select" size='3'>
                                     <option value="hg38" selected=true>hg38</option>
                                     <option value="hg19">hg19</option>
                                     <option value="hg18">hg18</option>
                                 </select>
-                            </td></tr></table>
+                                <br />
+                            Upload a variant file <span style=''>(<a href=''>CRAVAT</a> or <a href=''>VCF</a> format)</span>
+                            <input type="file" name="input-file" id="input-file" />
                         </td>
                     </tr><tr>
                         <td valign='top' style='border-bottom: 1px solid black; padding-bottom: 20px; position: relative; padding-top: 20px;'>
                             <div>
                                 Type variants
                                 <br />
-                                <textarea rows="3" cols="60" id="input-text" style='font-size: 12px;' placeholder="Input text"></textarea>
+                                <textarea rows="1" cols="60" id="input-text" style='' placeholder="Input text" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
                             <div class='or'>OR</div>
                         </td>
@@ -164,7 +160,6 @@
                 <span class='divtitle'>Annotators</span>
                 <br />
                 <br />
-                <br />
                 Mouse over an annotator to see details (if the browser is connected to the internet).
                 <div id="annotator-select-div"></div>
                 <div class='divbanner'></div>
@@ -176,14 +171,14 @@
     </div>
 
     </td><td valign='top' style='padding-left: 20px; width: 100%;'>
-    <div id="jobdiv" style='position: relative; top: 120px; display: block;'>
+    <div id="jobdiv" style='position: relative; top: 120px; display: block; overflow: auto;'>
         <br />
             <div style='width: 100%; text-align: right;'>
                 <span style='font-style: italic;'></span>
                 <span id='jobsdirtext' style='font-family: monospace;'></span>
                 <button id="refresh-jobs-table-btn">Refresh Table</button>
             </div>
-            <table id="jobs-table" style='width: 100%; border-spacing: 10px;'>
+            <table id="jobs-table">
                 <thead>
                 <tr>
                     <th class='tableheadercell'>Input File</th>

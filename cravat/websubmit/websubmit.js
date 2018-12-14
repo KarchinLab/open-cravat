@@ -119,11 +119,11 @@ function buildJobsTable () {
         // Job ID
         jobTr.append($(getEl('td')).append(job.id));
         // Status
-        jobTr.append($(getEl('td')).append(job.status.status));
+        jobTr.append($(getEl('td')).css('text-align', 'center').append(job.status.status.replace('Finished', 'F').replace('Error', 'E')));
         // Note
         jobTr.append($(getEl('td')).append(job.note));
         // Genome assembly
-        jobTr.append($(getEl('td')).append(job.assembly));
+        jobTr.append($(getEl('td')).css('text-align', 'center').append(job.assembly));
         // View
         var viewTd = $(getEl('td'))
             .css('text-align', 'center');
@@ -474,8 +474,6 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         check.setAttribute('checked', checkData.check);
         addEl(checkDiv, check);
         var label = getEl('span');
-        label.style.fontFamily = 'monospace';
-        label.style.fontSize = '16px';
         label.textContent = checkData.label;
         addEl(checkDiv, label);
         if (parentId != 'report-select-div') {
@@ -984,10 +982,23 @@ function websubmit_run () {
         populateReports();
     }
     getJobsDir();
-    var submitcontentdiv = document.getElementById('submit-form');
+    var div = document.getElementById('submit-form');
     var h = window.innerHeight - 235;
-    submitcontentdiv.style.height = h + 'px';
+    div.style.height = h + 'px';
+    var div = document.getElementById('jobdiv');
+    var h = window.innerHeight - 135;
+    div.style.height = h + 'px';
     loadSystemConf();
     populatePackageVersions();
 };
+
+function onClickInputTextArea () {
+    let input = document.getElementById('input-text');
+    input.rows = 20;
+}
+
+function onBlurInputTextArea () {
+    let input = document.getElementById('input-text');
+    input.rows = 1;
+}
 
