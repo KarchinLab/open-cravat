@@ -114,7 +114,7 @@ class WebJob(object):
         self.info.update(kwargs)
 
 def get_next_job_id():
-    return datetime.datetime.now().strftime(r'CJ-%Y%m%d-%H%M%S')
+    return datetime.datetime.now().strftime(r'%y%m%d-%H%M%S')
 
 async def submit (request):
     global filerouter

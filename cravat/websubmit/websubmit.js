@@ -31,6 +31,10 @@ function submit () {
         alert('Choose a input variants file, enter variants, or click an input example button.');
         return;
     }
+    document.getElementById('submit-job-button').disabled = true;
+    setTimeout(function () {
+        document.getElementById('submit-job-button').disabled = false;
+    }, 1000);
     fd.append('file', inputFile);
     var submitOpts = {
         annotators: [],
@@ -120,10 +124,10 @@ function buildJobsTable () {
         jobTr.append($(getEl('td')).append(job.id));
         // Status
         jobTr.append($(getEl('td')).css('text-align', 'center').append(job.status.status.replace('Finished', 'F').replace('Error', 'E')));
-        // Note
-        jobTr.append($(getEl('td')).append(job.note));
         // Genome assembly
         jobTr.append($(getEl('td')).css('text-align', 'center').append(job.assembly));
+        // Note
+        jobTr.append($(getEl('td')).append(job.note));
         // View
         var viewTd = $(getEl('td'))
             .css('text-align', 'center');
@@ -568,14 +572,12 @@ function onTabChange () {
 
 function getJobsDir () {
     $.get('/submit/getjobsdir').done(function (response) {
-        document.getElementById('jobsdirtext').textContent = response;
     });
 }
 
 function setJobsDir (evt) {
     var d = evt.target.value;
     $.get('/submit/setjobsdir', {'jobsdir': d}).done(function (response) {
-        document.getElementById('jobsdirtext').textContent = response;
         populateJobsTable();
     });
 }
