@@ -942,7 +942,7 @@ function populatePackageVersions () {
         $('#curverspan').text(curver);
         const latverspan = $('#latestverspan')
         latverspan.text(latver);
-        if (curver !== latver) {
+        if (data.update) {
             latverspan.css('color','red');
         }
 	});
