@@ -118,6 +118,9 @@ const onFilterColumnSelectorChange = (evt) => {
                 testDiv.dispatchEvent(event);
             }
         } else {
+            if (testDiv == null) {
+                return;
+            }
             var curTestKey = testDiv.value;
             var curTestSetup = filterTests[curTestKey];
             var curTestColTypes = curTestSetup['colTypes'];
@@ -138,7 +141,6 @@ const onFilterColumnSelectorChange = (evt) => {
 }
 
 const filterTestChangeHandler = (event) => {
-    console.log(event);
     const testSel = $(event.target);
     const valuesDiv = testSel.siblings('.filter-values-div');
     const testName = testSel.val();
