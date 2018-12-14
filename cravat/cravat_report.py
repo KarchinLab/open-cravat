@@ -163,7 +163,7 @@ class CravatReport:
             col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else []
             col_width = row[4] if len(row) > 4 else None
             col_desc = row[5] if len(row) > 5 else None
-            if col_type == 'category' and len(col_cats) == 0:
+            if (col_type == 'category' or col_type == 'multicategory') and len(col_cats) == 0:
                 sql = 'select distinct {} from {}'.format(colname, level)
                 self.cursor.execute(sql)
                 rs = self.cursor.fetchall()

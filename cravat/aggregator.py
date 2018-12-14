@@ -163,36 +163,33 @@ class Aggregator (object):
         else:
             self.reportsub = {}
 
-    def do_reportsub (self, col_name, col_cats):
-        new_col_cats = []
-        if col_name in self.reportsub:
-            sub = self.reportsub[col_name]
-            for col_cat in col_cats:
-                new_col_cat = col_cat
-                for k in sub:
-                    new_col_cat = new_col_cat.replace(k, sub[k])
-                new_col_cats.append(new_col_cat)
-        return new_col_cats
+    def do_reportsub_col_cats_str (self, col_name, col_cats):
+        (module_name, col) = col_name.split('__')
+        if module_name in self.reportsub and col in self.reportsub[module_name]:
+            sub = self.reportsub[module_name][col]
+            for k in sub:
+                col_cats = col_cats.replace(k, sub[k])
+        return col_cats
 
     def fill_categories (self):
-        self.make_reportsub()
         q = 'select col_name, col_type, col_cats from {}_header'.format(self.level)
         self.cursor.execute(q)
         rs = self.cursor.fetchall()
         cols_to_fill = []
         for r in rs:
-            (col_name, col_type, col_cats) = r
+            (col_name, col_type, col_cats_str) = r
             if col_type == 'category' or col_type == 'multicategory':
-                if col_cats == None or len(col_cats) == 0:
+                if col_cats_str == None or len(col_cats_str) == 0:
                     cols_to_fill.append(col_name)
                 else:
-                    col_cats = self.do_reportsub(col_name, col_cats)
-                    self.write_col_cats(col_name, col_cats)
+                    col_cats_str = self.do_reportsub_col_cats_str(col_name, col_cats_str)
+                    self.write_col_cats_str(col_name, col_cats_str)
         for col_name in cols_to_fill:
             q = 'select distinct {} from {}'.format(col_name, self.level)
             self.cursor.execute(q)
             rs = self.cursor.fetchall()
             col_cats = []
+            col_cats_str = '['
             for r in rs:
                 if r[0] == None:
                     continue
@@ -200,12 +197,17 @@ class Aggregator (object):
                 for col_cat in vals:
                     if col_cat not in col_cats:
                         col_cats.append(col_cat)
+                        col_cats_str += '"' + col_cat + '",'
+            col_cats_str = col_cats_str.rstrip(',')
+            col_cats_str += ']'
+            col_cats_str = self.do_reportsub_col_cats_str(col_name, col_cats_str)
+            self.write_col_cats_str(col_name, col_cats_str)
         self.dbconn.commit()
     
-    def write_col_cats (self, col_name, col_cats):
+    def write_col_cats_str (self, col_name, col_cats_str):
         q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
             self.level,
-            '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']',
+            col_cats_str,
             col_name)
         self.cursor.execute(q)
 
@@ -336,18 +338,6 @@ class Aggregator (object):
                         )
             self.cursor.execute(q)
             index_n += 1
-        # header table
-        q = 'drop table if exists %s' %self.header_table_name
-        self.cursor.execute(q)
-        q = 'create table %s (col_name text, col_title text, col_type text, col_cats text, col_width int, col_desc text);' \
-            %(self.header_table_name)
-        self.cursor.execute(q)
-        for col_row in columns:
-            if col_row[3]:
-                col_row[3] = json.dumps(col_row[3])
-            # use prepared statement to allow " characters in categories and desc
-            insert_template = 'insert into {} values (?, ?, ?, ?, ?, ?)'.format(self.header_table_name)
-            self.cursor.execute(insert_template, col_row)
         # report substitution table
         if self.level in ['variant', 'gene']:
             q = 'drop table if exists {}'.format(self.reportsub_table_name)
@@ -374,6 +364,20 @@ class Aggregator (object):
                             json.dumps(sub)
                         )
                         self.cursor.execute(q)
+        self.make_reportsub()
+        # header table
+        q = 'drop table if exists %s' %self.header_table_name
+        self.cursor.execute(q)
+        q = 'create table %s (col_name text, col_title text, col_type text, col_cats text, col_width int, col_desc text);' \
+            %(self.header_table_name)
+        self.cursor.execute(q)
+        for col_row in columns:
+            if col_row[3]:
+                col_cats_str = json.dumps(col_row[3])
+                col_row[3] = self.do_reportsub_col_cats_str(col_row[0], col_cats_str)
+            # use prepared statement to allow " characters in categories and desc
+            insert_template = 'insert into {} values (?, ?, ?, ?, ?, ?)'.format(self.header_table_name)
+            self.cursor.execute(insert_template, col_row)
         self.dbconn.commit()
 
     def _setup_io(self):
