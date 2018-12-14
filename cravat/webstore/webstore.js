@@ -201,7 +201,7 @@ function getRemoteModulePanel (moduleName) {
     }
     var img = getLogo(moduleName);
     img.onerror = function () {
-        img.src = '/store/genericmodulelogo.png';
+        img.src = '/store/genericmodulelogo_1.png';
         var span = getEl('div');
         span.style.position = 'absolute';
         span.style.fontSize = '42px';
