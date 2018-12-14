@@ -15,7 +15,8 @@ class Aggregator (object):
     cr_type_to_sql = {'string':'text',
                       'int':'integer',
                       'float':'real',
-                      'category': 'string'}
+                      'category': 'string',
+                      'multicategory': 'string'}
     commit_threshold = 10000
     
     def __init__(self, cmd_args):

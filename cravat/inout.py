@@ -11,7 +11,7 @@ from io import StringIO
 csv.register_dialect('cravat', delimiter=',', quotechar='@')
 
 class CravatFile(object):
-    valid_types = ['string', 'int', 'float', 'category']
+    valid_types = ['string', 'int', 'float', 'category', 'multicategory']
     def __init__(self, path):
         self.path = os.path.abspath(path)
         self.columns = {}
