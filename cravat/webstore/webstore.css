@@ -21,3 +21,14 @@
     font-size: 13px;
 }
 
+#messagediv {
+    position: absolute; 
+    width: 100%; 
+    text-align: center; 
+    font-size: 14px; 
+    height: 20px; 
+    z-index: 1; 
+    display: none;
+    top: 104px;
+}
+

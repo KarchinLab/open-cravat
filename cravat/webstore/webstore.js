@@ -63,29 +63,39 @@ function getLocal () {
         } else {
             var div = document.getElementById('messagediv');
             emptyElement(div);
-            div.style.top = '120px';
             div.style.display = 'block';
             var span = getEl('span');
             span.style.position = 'relative';
-            span.style.top = '40px';
             span.textContent = 'All base modules need to be installed to use Open-CRAVAT. Click this button to install them all: ';
             addEl(div, span);
             var button = getEl('button');
             button.style.position = 'relative';
-            button.style.top = '37px';
+            button.style.top = '-2px';
             button.textContent = 'Install base components';
             button.addEventListener('click', function (evt) {
                 installBaseComponents();
             });
             addEl(div, button);
             div = document.getElementById('remotemodulepanels');
-            div.style.top = '220px';
-            document.getElementById('typefilter').value = 'base';
-            updateFilter();
+            div.style.top = '114px';
+            var select = document.getElementById('typefilter')
+            var options = select.options;
+            for (var i = 0; i < options.length; i++) {
+                var option = options[i];
+                if (option.value == 'base') {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+            var event = new Event('change');
+            select.dispatchEvent(event);
+            //updateFilter();
+            /*
             var select = document.getElementById('typefilter');
             select.disabled = true;
             var input = document.getElementById('namefilter');
             input.disabled = true;
+            */
         }
 	});
 }
@@ -111,6 +121,7 @@ function getRemote () {
             }
         }
         populateTypeFilter();
+        getLocal();
 	});
 }
 
@@ -203,14 +214,14 @@ function getRemoteModulePanel (moduleName) {
         img.src = '/store/genericmodulelogo.png';
         var span = getEl('div');
         span.style.position = 'absolute';
-        span.style.fontSize = '42px';
         span.style.fontWeight = 'bold';
-        span.textContent = moduleInfo.title;
-        span.style.width = '100%';
+        span.style.width = 'calc(100% - 25px)';
         span.style.height = 'auto';
         span.style.maxWidth = '100%';
         span.style.maxHeight = '100%';
         span.style.textAlign = 'center';
+        span.style.fontSize = '42px';
+        span.textContent = moduleInfo.title;
         addEl(sdiv, span);
     }
     img.onload = function () {
@@ -956,5 +967,4 @@ function webstore_run () {
     connectWebSocket();
     getBaseModuleNames();
 	getRemote();
-    getLocal();
 }

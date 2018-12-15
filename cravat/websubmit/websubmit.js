@@ -1042,12 +1042,6 @@ function resetSystemConf () {
     });
 }
 
-function showMd () {
-    $.get('/store/getmd').done(function (response) {
-        document.getElementById('modulesdirspan').textContent = response;
-    });
-}
-
 function getServermode () {
     $.ajax({
         url: '/submit/servermode',
@@ -1316,13 +1310,11 @@ function populatePackageVersions () {
 
 function websubmit_run () {
     getServermode();
-    var md = showMd();
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
     connectWebSocket();
     getBaseModuleNames();
     getRemote();
-    getLocal();
     document.addEventListener('click', function (evt) {
         if (evt.target.closest('#moduledetaildiv_submit') == null && evt.target.closest('.moduledetailbutton') == null ) {
             var div = document.getElementById('moduledetaildiv_submit');
