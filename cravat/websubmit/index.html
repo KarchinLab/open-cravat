@@ -207,15 +207,15 @@
             <img src='logo.png' class='logo' />
         </div>
         <div style='position: absolute; right: 25px; vertical-align: bottom; bottom: 10px;'>
-            Modules directory: <span id='modulesdirspan' style='font-family: monospace;'></span>
-            <br />
             Module type:
             <select id='typefilter' onchange='updateFilter()' style='font-size: 16px'></select>
             <input type='text' id='namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()' style='font-size: 16px'/>
         </div>
     </div>
-    <div id='messagediv' style='position: fixed; width: 100%; text-align: center; color: black; background-color: yellow; font-size: 20px; height: 100px; z-index: 1; display: none;'></div>
-    <div id='remotemodulepanels' ></div>
+    <div id='messagediv'></div>
+    <div>
+        <div id='remotemodulepanels' ></div>
+    </div>
 </div> <!-- storediv -->
 
 <div id='settingsdiv' class='appdiv' style='display: none;'>
