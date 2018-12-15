@@ -5,6 +5,7 @@
     <script src="websubmit.js"></script>
     <script src="/submit/jquery-3.3.1.min.js"></script>
     <link rel="stylesheet" href="websubmit.css">
+    <link rel="stylesheet" href="/store/webstore.css">
     <script src='../store/webstore.js'></script>
     <script>
         $(document).ready(function() {
@@ -12,6 +13,9 @@
         });
     </script> 
     <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Gothic+A1" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Hind" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Arimo" rel="stylesheet">
 </head>
 
 <body>
@@ -93,9 +97,9 @@
 </div>
 
 <div id='submitdiv' class='appdiv'>
-    <div id = 'headerdiv' style='position: fixed; top: 0px; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px; background-color: white; box-shadow: 0px 0px 20px gray; left: 0px; right: 0px;'>
+    <div class = 'headerdiv' />
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
-            <img src='logo.png' style='width: 300px; position: relative; top: 39px;' />
+            <img src='logo.png' class='logo' />
         </div>
         <div style="position: absolute; right: 25px; vertical-align: bottom; bottom: 10px;">
             OpenCRAVAT Version: <span id="curverspan" style="font-family: monospace;"></span>
@@ -109,37 +113,34 @@
     </div>
 
     <table><tr><td valign='top' style=''>
-    <div id='submitcontentdiv' style='position: relative; top: 120px; display: block;'>
+    <div id='submitcontentdiv' style='position: relative; top: 75px; display: block;'>
         <br />
         <div id="submit-form" style='overflow-y: auto;'>
             <div class='container'>
                 <span class='divtitle'>Variants</span>
-                <br />
-                <br />
+                <select id="assembly-select">
+                    <option value="hg38" selected=true>hg38</option>
+                    <option value="hg19">hg19</option>
+                    <option value="hg18">hg18</option>
+                </select>
                 <table>
                     <tr>
                         <td valign='top' style='border-bottom: 1px solid black; padding-bottom: 20px;'>
-                                <select id="assembly-select" size='3'>
-                                    <option value="hg38" selected=true>hg38</option>
-                                    <option value="hg19">hg19</option>
-                                    <option value="hg18">hg18</option>
-                                </select>
                                 <br />
-                            Upload a variant file <span style=''>(<a href=''>CRAVAT</a> or <a href=''>VCF</a> format)</span>
+                            Upload:
                             <input type="file" name="input-file" id="input-file" />
                         </td>
                     </tr><tr>
                         <td valign='top' style='border-bottom: 1px solid black; padding-bottom: 20px; position: relative; padding-top: 20px;'>
                             <div>
-                                Type variants
-                                <br />
-                                <textarea rows="1" cols="60" id="input-text" style='' placeholder="Input text" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
+                                Type:
+                                <textarea rows="1" cols="40" id="input-text" style='' placeholder="Input text" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
                             <div class='or'>OR</div>
                         </td>
                     </tr><tr>
                         <td valign='top' style='position: relative; padding-top: 20px;'>
-                            Try examples:
+                            Try:
                             <button value="cravat" class='input-example-button'>CRAVAT Format</button>
                             <button value="vcf" class='input-example-button'>VCF Format</button>
                             <div class='or'>OR</div>
@@ -160,7 +161,6 @@
                 <span class='divtitle'>Annotators</span>
                 <br />
                 <br />
-                Mouse over an annotator to see details (if the browser is connected to the internet).
                 <div id="annotator-select-div"></div>
                 <div class='divbanner'></div>
             </div>
@@ -171,17 +171,17 @@
     </div>
 
     </td><td valign='top' style='padding-left: 20px; width: 100%;'>
-    <div id="jobdiv" style='position: relative; top: 120px; display: block; overflow: auto;'>
+    <div id="jobdiv" style='position: relative; top: 93px; display: block; overflow: auto;'>
         <br />
             <div style='width: 100%; text-align: right;'>
-                <span style='font-style: italic;'></span>
-                <button id="refresh-jobs-table-btn"></button>
+                <img src='refresh.png' id='refresh-jobs-table-btn' 
+                    style='width: 15px; position: absolute; top: 24px; left: 3px;' />
             </div>
             <table id="jobs-table">
                 <thead>
                 <tr>
                     <th class='tableheadercell'>Input File</th>
-                    <th class='tableheadercell' style='width: 100px;'>Job ID</th>
+                    <th class='tableheadercell' style='width: 100px;'># Annot</th>
                     <th class='tableheadercell'>Status</th>
                     <th class='tableheadercell'>Genome</th>
                     <th class='tableheadercell'>Note</th>
@@ -202,9 +202,9 @@
 </div> <!-- submitdiv -->
 
 <div id='storediv' class='appdiv'>
-    <div style='position: fixed; top: 0px; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px; background-color: white; box-shadow: 0px 0px 20px gray; left: 0px; right: 0px;'>
+    <div class='headerdiv' >
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
-            <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
+            <img src='logo.png' class='logo' />
         </div>
         <div style='position: absolute; right: 25px; vertical-align: bottom; bottom: 10px;'>
             Modules directory: <span id='modulesdirspan' style='font-family: monospace;'></span>
@@ -215,13 +215,13 @@
         </div>
     </div>
     <div id='messagediv' style='position: fixed; width: 100%; text-align: center; color: black; background-color: yellow; font-size: 20px; height: 100px; z-index: 1; display: none;'></div>
-    <div id='remotemodulepanels' style='display: flex; flex-wrap: wrap; justify-content: center; position: relative; top: 120px; background-color: white;'></div>
+    <div id='remotemodulepanels' ></div>
 </div> <!-- storediv -->
 
 <div id='settingsdiv' class='appdiv' style='display: none;'>
-    <div style='position: fixed; top: 0px; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px; background-color: white; box-shadow: 0px 0px 20px gray; left: 0px; right: 0px;'>
+    <div class='headerdiv' >
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
-            <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
+            <img src='logo.png' class='logo' />
         </div>
     </div>
     <div style='position: relative; top: 120px;'>
