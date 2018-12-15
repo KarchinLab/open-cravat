@@ -123,7 +123,6 @@ class BasePostAggregator (object):
             q += 'base__uid=' + str(input_data['base__uid'])
         elif self.levelno == GENE:
             q += 'base__hugo="' + input_data['base__hugo'] + '"'
-        print(q)
         self.cursor_w.execute(q)
         
     def _log_runtime_exception(self, input_data, e):
