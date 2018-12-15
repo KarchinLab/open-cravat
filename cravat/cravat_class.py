@@ -211,15 +211,17 @@ class Cravat (object):
         self.status_fpath = os.path.join(self.output_dir, status_fname)
         self.status = {}
         self.status['job_dir'] = self.output_dir
-        self.status['id'] = self.run_name
+        self.status['id'] = os.path.basename(os.path.normpath(self.output_dir))
+        self.status['run_name'] = self.run_name
         self.status['assembly'] = self.input_assembly
         self.status['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
-        self.status['orig_input_fname'] = self.input
+        self.status['orig_input_fname'] = os.path.basename(self.input)
+        self.status['orig_input_path'] = self.input
         self.status['submission_time'] = datetime.datetime.now().isoformat()
         self.status['viewable'] = False
         self.status['note'] = self.args.note
         self.status['status'] = 'Starting'
-        self.status['reports'] = self.args.reports
+        self.status['reports'] = self.args.reports if self.args.reports != None else []
         with open(self.status_fpath,'w') as wf:
             wf.write(json.dumps(self.status))
 
