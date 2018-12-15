@@ -18,6 +18,7 @@ from logging.handlers import QueueListener
 from .aggregator import Aggregator
 from .exceptions import *
 import yaml
+import cravat.cravat_util as cu
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
@@ -207,7 +208,7 @@ class Cravat (object):
     
     def write_initial_status_json (self):
         status_fname = '{}.status.json'.format(self.run_name)
-        status_fpath = os.path.join(self.output_dir, status_fname)
+        self.status_fpath = os.path.join(self.output_dir, status_fname)
         self.status = {}
         self.status['job_dir'] = self.output_dir
         self.status['id'] = self.run_name
@@ -219,7 +220,7 @@ class Cravat (object):
         self.status['note'] = self.args.note
         self.status['status'] = 'Starting'
         self.status['reports'] = self.args.reports
-        with open(status_fpath,'w') as wf:
+        with open(self.status_fpath,'w') as wf:
             wf.write(json.dumps(self.status))
 
     def get_logger (self):
@@ -234,20 +235,11 @@ class Cravat (object):
     def close_logger (self):
         logging.shutdown()
     
-    def update_status (self, status):
-        self.update_status_json('status', status)
+    def update_status_json (self, key, val):
+        cu.update_status_json(self.status_fpath, key, val)
 
-    def update_status_json(self, key, val):
-        status_fname = self.run_name+'.status.json'
-        status_fpath = os.path.join(self.output_dir, status_fname)
-        if os.path.exists(status_fpath):
-            with open(status_fpath) as f:
-                self.status = yaml.load(f)
-        else:
-            self.status = {}
-        self.status[key] = val
-        with open(status_fpath,'w') as wf:
-            wf.write(json.dumps(self.status))
+    def update_status (self, status):
+        cu.update_status_json(self.status_fpath, 'status', status)
 
     def main (self):
         self.update_status('Started')
