@@ -110,7 +110,9 @@ class BasePostAggregator (object):
             col_name = col_def['name']
             if col_name in output_dict:
                 val = output_dict[col_name]
-                if col_def['type'] == 'string':
+                if col_def['type'] == 'string' or \
+                        col_def['type'] == 'category' or \
+                        col_def['type'] == 'multicategory':
                     val = '"' + val + '"'
                 else:
                     val = str(val)
@@ -121,13 +123,14 @@ class BasePostAggregator (object):
             q += 'base__uid=' + str(input_data['base__uid'])
         elif self.levelno == GENE:
             q += 'base__hugo="' + input_data['base__hugo'] + '"'
+        print(q)
         self.cursor_w.execute(q)
         
     def _log_runtime_exception(self, input_data, e):
         try:
             error_classname = e.__class__.__name__
             err_line = '\t'.join([error_classname, str(e)])
-            self.invalid_file.write(err_line + '\n')
+            #self.invalid_file.write(err_line + '\n')
             if not(isinstance(e,InvalidData)):
                 self._log_exception(e, halt=False)
         except Exception as e:
