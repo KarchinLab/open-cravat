@@ -230,7 +230,7 @@ class BaseAnnotator(object):
         try:
             error_classname = e.__class__.__name__
             err_line = '\t'.join([input_data[self._id_col_name], error_classname, str(e)])
-            self.invalid_file.write(err_line + '\n')
+            #self.invalid_file.write(err_line + '\n')
             if not(isinstance(e,InvalidData)):
                 self._log_exception(e, halt=False)
         except Exception as e:
@@ -355,7 +355,7 @@ class BaseAnnotator(object):
                 self.output_writer.write_definition()
                 self.output_writer.write_meta_line('no_aggregate',
                                                    ','.join(skip_aggregation))
-            self.invalid_file = open(self.invalid_path, 'w')
+            #self.invalid_file = open(self.invalid_path, 'w')
         except Exception as e:
                 self._log_exception(e)
     
@@ -383,7 +383,7 @@ class BaseAnnotator(object):
     def base_cleanup(self):
         try:
             self.output_writer.close()
-            self.invalid_file.close()
+            #self.invalid_file.close()
             if self.dbconn != None:
                 self.close_db_connection()
             self.cleanup()

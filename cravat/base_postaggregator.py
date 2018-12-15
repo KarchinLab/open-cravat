@@ -151,7 +151,7 @@ class BasePostAggregator (object):
         try:
             error_classname = e.__class__.__name__
             err_line = '\t'.join([error_classname, str(e)])
-            self.invalid_file.write(err_line + '\n')
+            #self.invalid_file.write(err_line + '\n')
             if not(isinstance(e,InvalidData)):
                 self._log_exception(e, halt=False)
         except Exception as e:

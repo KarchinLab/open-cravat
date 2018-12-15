@@ -7,6 +7,8 @@ from cravat.cravat_filter import CravatFilter
 from cravat import admin_util as au
 from cravat.config_loader import ConfigLoader
 from cravat import util
+import subprocess
+import re
 
 class CravatReport:
 
@@ -296,7 +298,7 @@ class CravatReport:
                         if col in sub:
                             self.column_subs[level][i] = sub[col]
                             self.colinfo[level]['columns'][i]['reportsub'] = sub[col]
-    
+
     def parse_cmd_args (self, cmd_args):
         parser = argparse.ArgumentParser()
         parser.add_argument('dbpath',
@@ -356,7 +358,15 @@ class CravatReport:
             ret = True
         return ret
 
-
 def main ():
-    reporter = CravatReport(sys.argv)
-    reporter.run()
+    if len(sys.argv) < 2:
+        print('Please provide a sqlite file path')
+        exit()
+    dbpath = os.path.abspath(sys.argv[1])
+    run_name = os.path.basename(dbpath).rstrip('.sqlite')
+    output_dir = os.path.dirname(dbpath)
+    avail_reporters = au.get_local_module_infos_of_type('reporter')
+    avail_reporter_names = [re.sub('reporter$', '', v) for v in avail_reporters.keys()]
+    cmd = ['cravat', 'dummyinput', '-n', run_name, '-d', output_dir, '--sc', '--sm', '--sa', '--sg', '--sp', '--str', '-t']
+    cmd.extend(avail_reporter_names)
+    subprocess.run(cmd)

@@ -91,7 +91,7 @@ class LocalModuleInfo (object):
         else:
             self.input_format = None
         if 'secondary_inputs' in self.conf:
-            self.secondary_module_names = self.conf['secondary_inputs'].keys()
+            self.secondary_module_names = list(self.conf['secondary_inputs'].keys())
         else:
             self.secondary_module_names = []
         if self.type == 'annotator':

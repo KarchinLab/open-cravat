@@ -1,6 +1,7 @@
 var servermode = false;
 var logged = false;
 var username = null;
+var prevJobTr = null;
 
 var GLOBALS = {
     jobs: [],
@@ -31,6 +32,10 @@ function submit () {
         alert('Choose a input variants file, enter variants, or click an input example button.');
         return;
     }
+    document.getElementById('submit-job-button').disabled = true;
+    setTimeout(function () {
+        document.getElementById('submit-job-button').disabled = false;
+    }, 1000);
     fd.append('file', inputFile);
     var submitOpts = {
         annotators: [],
@@ -67,6 +72,12 @@ function submit () {
             buildJobsTable();
         }
     })
+    $('#submit-job-button').attr('disabled','disabled');
+    setTimeout(function(){
+            $('#submit-job-button').removeAttr('disabled');
+        },
+        1500
+    );
 };
 
 function addJob (jsonObj) {
@@ -97,6 +108,19 @@ function createJobTextReport (evt) {
     });
 }
 
+function getAnnotatorsForJob (jobid) {
+    var jis = GLOBALS.jobs;
+    var anns = [];
+    for (var j = 0; j < jis.length; j++) {
+        var cji = jis[j];
+        if (cji.id == jobid) {
+            anns = cji.annotators;
+            break;
+        }
+    }
+    return anns;
+}
+
 function buildJobsTable () {
     var allJobs = GLOBALS.jobs;
     var reportSelectors = $('.report-type-selector');
@@ -107,23 +131,43 @@ function buildJobsTable () {
         var val = selector.val();
         curSelectedReports[jobId] = val;
     }
-    $('.job-table-row').remove();
+    $('#jobs-table tbody').empty();
     var jobsTable = $('#jobs-table tbody');
     for (let i = 0; i < allJobs.length; i++) {
         job = allJobs[i];
+        ji = job.id;
         var jobTr = $(getEl('tr'))
-            .addClass('job-table-row');
+            .addClass('job-table-tr');
+        jobTr[0].setAttribute('jobid', ji);
+        jobTr[0].addEventListener('click', function (evt) {
+            var clickedTr = evt.target.parentElement;
+            var detailTr = clickedTr.nextSibling;
+            if (clickedTr.classList.contains('highlighted-tr')) {
+                clickedTr.classList.remove('highlighted-tr');
+                detailTr.classList.add('hidden-tr');
+            } else {
+                clickedTr.classList.add('highlighted-tr');
+                detailTr.classList.remove('hidden-tr');
+            }
+        });
         jobsTable.append(jobTr);
         // Input file
         jobTr.append($(getEl('td')).append(job.orig_input_fname));
-        // Job ID
-        jobTr.append($(getEl('td')).append(job.id));
+        // Number of annotators
+        var num = getAnnotatorsForJob(ji).length;
+        var td = getEl('td');
+        td.textContent = '' + num;
+        addEl(jobTr[0], td);
         // Status
-        jobTr.append($(getEl('td')).append(job.status.status));
+        var td = getEl('td');
+        var statusC = job.status.status.replace('Finished', 'F').replace('Error', 'E');
+        td.title = job.status.status;
+        td.textContent = statusC;
+        jobTr.append($(td)).css('text-align', 'center');
+        // Genome assembly
+        jobTr.append($(getEl('td')).css('text-align', 'center').append(job.assembly));
         // Note
         jobTr.append($(getEl('td')).append(job.note));
-        // Genome assembly
-        jobTr.append($(getEl('td')).append(job.assembly));
         // View
         var viewTd = $(getEl('td'))
             .css('text-align', 'center');
@@ -133,23 +177,27 @@ function buildJobsTable () {
             .attr('target','_blank')
             .append($(getEl('button')).append('Launch').attr('disabled', !job.viewable))
         viewTd.append(viewLink);
-        // Database
         var dbTd = $(getEl('td'));
         dbTd.css('text-align', 'center');
         jobTr.append(dbTd);
+        // Database
+        /*
         var dbLink = $(getEl('a'))
             .attr('href',`jobs/${job.id}/db`)
             .append($(getEl('button')).append('DB'))
         dbTd.append(dbLink);
+        */
         // Excel
         var excelButton = $(getEl('button'))
             .append('Excel')
             .attr('jobId',job.id)
         if (job.reports.includes('excel') == false) {
-            excelButton.css('background-color', 'red');
+            excelButton.css('background-color', '#cccccc');
             excelButton.click(createJobExcelReport);
+            excelButton[0].title = 'Click to create.';
         } else {
             excelButton.click(jobExcelDownloadButtonHandler);
+            excelButton[0].title = 'Click to download.';
         }
         dbTd.append(excelButton);
         // Text
@@ -157,16 +205,19 @@ function buildJobsTable () {
             .append('Text')
             .attr('jobId',job.id)
         if (job.reports.includes('text') == false) {
-            textButton.css('background-color', 'red');
+            textButton.css('background-color', '#cccccc');
             textButton.click(createJobTextReport);
+            textButton[0].title = 'Click to create.';
         } else {
             textButton.click(jobTextDownloadButtonHandler);
+            textButton[0].title = 'Click to download.';
         }
         dbTd.append(textButton);
         // Log
         var logLink = $(getEl('a'))
             .attr('href','jobs/'+job.id+'/log')
             .attr('target','_blank')
+            .attr('title', 'Click to download.')
             .append($(getEl('button')).append('Log'))
         dbTd.append(logLink);
 
@@ -207,12 +258,49 @@ function buildJobsTable () {
         */
         // Delete
         var deleteTd = $(getEl('td'));
+        deleteTd[0].title = 'Click to delete.';
         deleteTd.css('text-align', 'center');
         jobTr.append(deleteTd);
         var deleteBtn = $(getEl('button')).append('X');
         deleteTd.append(deleteBtn);
         deleteBtn.attr('jobId', job.id);
         deleteBtn.click(jobDeleteButtonHandler);
+
+        var anns = getAnnotatorsForJob(ji);
+        if (anns.length == 0) {
+            anns = 'None';
+        } else {
+            anns = anns.join(', ');
+        }
+        var detailTr = getEl('tr');
+        var detailTd = getEl('td');
+        detailTr.classList.add('job-detail-tr');
+        detailTr.classList.add('hidden-tr');
+        detailTd.colSpan = '8';
+        var detailTable = getEl('table');
+        detailTable.style.width = '100%';
+        var tbody = getEl('tbody');
+        addEl(detailTable, tbody);
+        var tr = getEl('tr');
+        var td = getEl('td');
+        td.style.width = '100px';
+        td.textContent = 'Job ID';
+        addEl(tr, td);
+        var td = getEl('td');
+        td.textContent = ji;
+        addEl(tr, td);
+        addEl(tbody, tr);
+        var tr = getEl('tr');
+        var td = getEl('td');
+        td.textContent = 'Annotators';
+        addEl(tr, td);
+        var td = getEl('td');
+        td.textContent = anns;
+        addEl(tr, td);
+        addEl(tbody, tr);
+        addEl(detailTd, detailTable);
+        addEl(detailTr, detailTd);
+        addEl(jobsTable[0], detailTr);
     }
 }
 
@@ -433,6 +521,228 @@ function buildAnnotatorsSelector () {
     buildCheckBoxGroup(checkDatas, annotCheckDiv);
 }
 
+function getModuleDetailDiv (moduleName) {
+    var div = document.getElementById('moduledetaildiv_submit');
+    if (div) {
+        emptyElement(div);
+    } else {
+        div = getEl('div');
+        div.id = 'moduledetaildiv_submit';
+        div.style.position = 'fixed';
+        div.style.width = 'calc(90% - 200px)';
+        div.style.height = '80%';
+        div.style.margin = 'auto';
+        div.style.backgroundColor = 'white';
+        div.style.left = '200px';
+        div.style.right = '0';
+        div.style.top = '0';
+        div.style.bottom = '0';
+        div.style.zIndex = '2';
+        div.style.border = '6px';
+        div.style.padding = '10px';
+        div.style.paddingBottom = '23px';
+        div.style.border = '1px solid black';
+        div.style.boxShadow = '0px 0px 20px';
+    }
+    currentDetailModule = moduleName;
+    div.style.display = 'block';
+    var localModule = localModuleInfo[moduleName];
+    var table = getEl('table');
+    table.style.height = '100px';
+    table.style.border = '0px';
+    var tr = getEl('tr');
+    tr.style.border = '0px';
+    var td = getEl('td');
+    td.id = 'moduledetaillogotd';
+    td.style.width = '120px';
+    td.style.border = '0px';
+    addEl(tr, td);
+    var img = getLogo(moduleName);
+    img.onerror = function () {
+        var span = getEl('div');
+        span.style.fontSize = '20px';
+        span.style.fontWeight = 'bold';
+        span.textContent = localModule.title;
+        var sdiv = div.querySelector('#moduledetaillogotd');
+        addEl(sdiv, span);
+    }
+    img.onload = function () {
+        var sdiv = div.querySelector('#moduledetaillogotd');
+        addEl(sdiv, this);
+    }
+    addEl(tr, td);
+    td = getEl('td');
+    td.style.border = '0px';
+    var span = getEl('div');
+    span.style.fontSize = '30px';
+    span.textContent = localModule.title;
+    addEl(td, span);
+    addEl(td, getEl('br'));
+    span = getEl('span');
+    span.style.fontSize = '12px';
+    span.style.color = 'green';
+    span.textContent = localModule.type;
+    addEl(td, span);
+    span = getEl('span');
+    span.style.fontSize = '12px';
+    span.style.color = 'green';
+    span.textContent = ' | ' + localModule.developer.organization;
+    addEl(td, span);
+    addEl(tr, td);
+    td = getEl('td');
+    td.style.border = '0px';
+    td.style.verticalAlign = 'top';
+    td.style.textAlign = 'right';
+    var sdiv = getEl('div');
+    sdiv.id = 'installstatdiv_' + moduleName;
+    sdiv.style.marginTop = '10px';
+    sdiv.style.fontSize = '12px';
+    if (installInfo[moduleName] != undefined) {
+        sdiv.textContent = installInfo[moduleName]['msg'];
+    }
+    addEl(td, sdiv);
+    addEl(tr, td);
+    addEl(table, tr);
+    addEl(div, table);
+    addEl(div, getEl('hr'));
+    table = getEl('table');
+    table.style.height = 'calc(100% - 100px)';
+    table.style.border = '0px';
+    tr = getEl('tr');
+    tr.style.border = '0px';
+    var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
+    td = getEl('td');
+    td.style.border = '0px';
+    td.style.width = '70%';
+    td.style.verticalAlign = 'top';
+    td.style.height = tdHeight;
+    var mdDiv = getEl('div');
+    mdDiv.style.height = '100%';
+    mdDiv.style.overflow = 'auto';
+    addEl(td, mdDiv);
+    addEl(tr, td);
+	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
+		mdDiv.innerHTML = data;
+	});
+    td = getEl('td');
+    td.style.width = '30%';
+    td.style.border = '0px';
+    td.style.verticalAlign = 'top';
+    td.style.height = tdHeight;
+    var infodiv = getEl('div');
+    infodiv.style.height = '100%';
+    infodiv.style.overflow = 'auto';
+    var d = getEl('div');
+    span = getEl('span');
+    span.textContent = localModule.description;
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Version: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = localModule['version'];
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Maintainer: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = localModule['developer']['name'];
+    addEl(d, span);
+    addEl(d, getEl('br'));
+    addEl(d, getEl('br'));
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'e-mail: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = localModule['developer']['email'];
+    addEl(d, span);
+    addEl(d, getEl('br'));
+    addEl(d, getEl('br'));
+    addEl(infodiv, d);
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Citation: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.style.display = 'inline-block';
+    span.style.width = 'calc(100% - 120px)';
+    span.style.wordWrap = 'break-word';
+    span.style.verticalAlign = 'text-top';
+    var citation = localModule['developer']['citation'];
+    if (citation.startsWith('http')) {
+        var a = getEl('a');
+        a.href = citation;
+        a.target = '_blank';
+        a.textContent = citation;
+        addEl(span, a);
+    } else {
+        span.textContent = citation;
+    }
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Organization: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = localModule['developer']['organization'];
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Website: ';
+    addEl(d, span);
+    span = getEl('a');
+    span.textContent = localModule['developer']['website'];
+    span.href = localModule['developer']['website'];
+    span.target = '_blank';
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Type: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = localModule['type'];
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    addEl(td, infodiv);
+    addEl(tr, td);
+    addEl(table, tr);
+    addEl(div, table);
+    var el = getEl('div');
+    el.style.position = 'absolute';
+    el.style.top = '0px';
+    el.style.right = '0px';
+    el.style.fontSize = '20px';
+    el.style.padding = '10px';
+    el.style.cursor = 'pointer';
+    el.textContent = 'X';
+    el.addEventListener('click', function (evt) {
+        var pel = evt.target.parentElement;
+        pel.parentElement.removeChild(pel);
+    });
+    addEl(div, el);
+    return div;
+}
+
 function buildCheckBoxGroup (checkDatas, parentDiv) {
     parentDiv = (parentDiv === undefined) ? getEl('div') : parentDiv;
     emptyElement(parentDiv);
@@ -474,16 +784,14 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         check.setAttribute('checked', checkData.check);
         addEl(checkDiv, check);
         var label = getEl('span');
-        label.style.fontFamily = 'monospace';
-        label.style.fontSize = '16px';
-        label.textContent = checkData.label;
+        label.textContent = checkData.label + ' ';
         addEl(checkDiv, label);
         if (parentId != 'report-select-div') {
             var question = getEl('button');
             question.className = 'moduledetailbutton';
             question.textContent = '?';
             question.setAttribute('module', checkData.value);
-            question.addEventListener('click', function (evt) {
+            question.addEventListener('mouseover', function (evt) {
                 var annotchoosediv = document.getElementById('annotchoosediv');
                 var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
                 if (moduledetaildiv != null) {
@@ -492,6 +800,15 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
                 var detaildiv = getModuleDetailDiv(evt.target.getAttribute('module'));
                 addEl(annotchoosediv, detaildiv);
             });
+            /*
+            question.addEventListener('mouseout', function (evt) {
+                var annotchoosediv = document.getElementById('annotchoosediv');
+                var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
+                if (moduledetaildiv != null) {
+                    $(moduledetaildiv).remove();
+                }
+            });
+            */
             addEl(checkDiv, question);
         } else {
             checkDiv.style.display = 'inline-block';
@@ -570,14 +887,12 @@ function onTabChange () {
 
 function getJobsDir () {
     $.get('/submit/getjobsdir').done(function (response) {
-        document.getElementById('jobsdirtext').textContent = response;
     });
 }
 
 function setJobsDir (evt) {
     var d = evt.target.value;
     $.get('/submit/setjobsdir', {'jobsdir': d}).done(function (response) {
-        document.getElementById('jobsdirtext').textContent = response;
         populateJobsTable();
     });
 }
@@ -673,12 +988,6 @@ function resetSystemConf () {
         } else {
             alert('Resetting system conf file failed.');
         }
-    });
-}
-
-function showMd () {
-    $.get('/store/getmd').done(function (response) {
-        document.getElementById('modulesdirspan').textContent = response;
     });
 }
 
@@ -942,7 +1251,7 @@ function populatePackageVersions () {
         $('#curverspan').text(curver);
         const latverspan = $('#latestverspan')
         latverspan.text(latver);
-        if (curver !== latver) {
+        if (data.update) {
             latverspan.css('color','red');
         }
 	});
@@ -950,13 +1259,11 @@ function populatePackageVersions () {
 
 function websubmit_run () {
     getServermode();
-    var md = showMd();
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
     connectWebSocket();
     getBaseModuleNames();
     getRemote();
-    getLocal();
     document.addEventListener('click', function (evt) {
         if (evt.target.closest('#moduledetaildiv_submit') == null && evt.target.closest('.moduledetailbutton') == null ) {
             var div = document.getElementById('moduledetaildiv_submit');
@@ -980,14 +1287,29 @@ function websubmit_run () {
         populateJobs();
     }
     populateAnnotators();
+    /*
     if (servermode == false) {
         populateReports();
     }
+    */
     getJobsDir();
-    var submitcontentdiv = document.getElementById('submit-form');
-    var h = window.innerHeight - 235;
-    submitcontentdiv.style.height = h + 'px';
+    var div = document.getElementById('submit-form');
+    var h = window.innerHeight - 195;
+    div.style.height = h + 'px';
+    var div = document.getElementById('jobdiv');
+    var h = window.innerHeight - 125;
+    div.style.height = h + 'px';
     loadSystemConf();
     populatePackageVersions();
 };
+
+function onClickInputTextArea () {
+    let input = document.getElementById('input-text');
+    input.rows = 20;
+}
+
+function onBlurInputTextArea () {
+    let input = document.getElementById('input-text');
+    input.rows = 1;
+}
 

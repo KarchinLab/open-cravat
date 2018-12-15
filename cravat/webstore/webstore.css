@@ -1,0 +1,34 @@
+.donemark {
+    width: 20px;
+    position: absolute;
+    bottom: 1px;
+    right: 0px;
+}
+
+#remotemodulepanels {
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: center; 
+    position: relative; 
+    top: 88px; 
+    background-color: white;
+}
+
+.module-size-span {
+    position: absolute;
+    right: 22px;
+    bottom: 0px;
+    font-size: 13px;
+}
+
+#messagediv {
+    position: absolute; 
+    width: 100%; 
+    text-align: center; 
+    font-size: 14px; 
+    height: 20px; 
+    z-index: 1; 
+    display: none;
+    top: 104px;
+}
+

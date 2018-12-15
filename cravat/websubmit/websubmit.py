@@ -14,6 +14,7 @@ from aiohttp import web
 #from aiohttp_session import get_session, new_session
 import sqlite3
 import hashlib
+from distutils.version import LooseVersion
 
 class FileRouter(object):
 
@@ -114,7 +115,7 @@ class WebJob(object):
         self.info.update(kwargs)
 
 def get_next_job_id():
-    return datetime.datetime.now().strftime(r'CJ-%Y%m%d-%H%M%S')
+    return datetime.datetime.now().strftime(r'%y%m%d-%H%M%S')
 
 async def submit (request):
     global filerouter
@@ -529,9 +530,13 @@ def get_servermode (request):
     return web.json_response({'servermode': servermode})
 
 async def get_package_versions(request):
+    cur_ver = au.get_current_package_version()
+    lat_ver = au.get_latest_package_version()
+    update = LooseVersion(lat_ver) > LooseVersion(cur_ver)
     d = {
-        'current': au.get_current_package_version(),
-        'latest': au.get_latest_package_version(),
+        'current': cur_ver,
+        'latest': lat_ver,
+        'update': update
     }
     return web.json_response(d)
 

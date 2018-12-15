@@ -5,22 +5,27 @@
     <script src="websubmit.js"></script>
     <script src="/submit/jquery-3.3.1.min.js"></script>
     <link rel="stylesheet" href="websubmit.css">
+    <link rel="stylesheet" href="/store/webstore.css">
     <script src='../store/webstore.js'></script>
     <script>
         $(document).ready(function() {
             websubmit_run();
         });
     </script> 
+    <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Gothic+A1" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Hind" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Arimo" rel="stylesheet">
 </head>
 
-<body style='font-family: helvetica;'>
+<body>
 
 <div id='accountdiv' style='z-index: 3; position: fixed;'>
     <div id='userdiv' style='display: none;'></div>
     <div id='logoutdiv' style='display: none;'>
         <button onclick='changePassword();'>Change password</button>
         <button onclick='logout();'>Logout</button>
-        <div id='changepassworddiv' style='display: none; position: absolute; padding: 10px; background-color: white; border: 1px solid black; font-size: 14px;'>
+        <div id='changepassworddiv' style='display: none; position: absolute; padding: 10px; background-color: white; border: 1px solid black;'>
             Old password: <input type='password' id='changepasswordoldpassword' />
             <br />
             New password: <input type='password' id='changepasswordnewpassword' />
@@ -31,7 +36,7 @@
         </div>
     </div>
     <button id='loginsignupbutton' onclick='toggleloginsignupdiv();'>Log in</button>
-    <div id='loginsignupdialog' style='display: none; position: fixed; padding: 10px; background-color: white; border: 1px solid black; font-size: 14px; box-shadow: 6px 6px 6px #b5b5b5;'>
+    <div id='loginsignupdialog' style='display: none; position: fixed; padding: 10px; background-color: white; border: 1px solid black; box-shadow: 6px 6px 6px #b5b5b5;'>
         <div id='logindiv' style='display: block;'>
             <span style='font-weight: bold;'>Login:</span>
             <br />
@@ -92,9 +97,9 @@
 </div>
 
 <div id='submitdiv' class='appdiv'>
-    <div id = 'headerdiv' style='position: fixed; top: 0px; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px; background-color: white; box-shadow: 0px 0px 20px gray; left: 0px; right: 0px;'>
+    <div class = 'headerdiv' />
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
-            <img src='logo.png' style='width: 300px; position: relative; top: 39px;' />
+            <img src='logo.png' class='logo' />
         </div>
         <div style="position: absolute; right: 25px; vertical-align: bottom; bottom: 10px;">
             OpenCRAVAT Version: <span id="curverspan" style="font-family: monospace;"></span>
@@ -108,42 +113,34 @@
     </div>
 
     <table><tr><td valign='top' style=''>
-    <div id='submitcontentdiv' style='position: relative; top: 120px; display: block;'>
+    <div id='submitcontentdiv' style='position: relative; top: 75px; display: block;'>
         <br />
         <div id="submit-form" style='overflow-y: auto;'>
             <div class='container'>
                 <span class='divtitle'>Variants</span>
-                <br />
-                <br />
+                <select id="assembly-select">
+                    <option value="hg38" selected=true>hg38</option>
+                    <option value="hg19">hg19</option>
+                    <option value="hg18">hg18</option>
+                </select>
                 <table>
                     <tr>
                         <td valign='top' style='border-bottom: 1px solid black; padding-bottom: 20px;'>
-                            <table style='width: 100%'><tr><td>
-                            Upload a variant file<br />
-                            <span style='font-size: 12px;'>(<a href=''>CRAVAT</a> or <a href=''>VCF</a> format)</span>
-                            <br />
+                                <br />
+                            Upload:
                             <input type="file" name="input-file" id="input-file" />
-                            </td>
-                            <td style='text-align: right;'>
-                                <select id="assembly-select" size='3'>
-                                    <option value="hg38" selected=true>hg38</option>
-                                    <option value="hg19">hg19</option>
-                                    <option value="hg18">hg18</option>
-                                </select>
-                            </td></tr></table>
                         </td>
                     </tr><tr>
                         <td valign='top' style='border-bottom: 1px solid black; padding-bottom: 20px; position: relative; padding-top: 20px;'>
                             <div>
-                                Type variants
-                                <br />
-                                <textarea rows="3" cols="60" id="input-text" style='font-size: 12px;' placeholder="Input text"></textarea>
+                                Type:
+                                <textarea rows="1" cols="40" id="input-text" style='' placeholder="Input text" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
                             <div class='or'>OR</div>
                         </td>
                     </tr><tr>
                         <td valign='top' style='position: relative; padding-top: 20px;'>
-                            Try examples:
+                            Try:
                             <button value="cravat" class='input-example-button'>CRAVAT Format</button>
                             <button value="vcf" class='input-example-button'>VCF Format</button>
                             <div class='or'>OR</div>
@@ -164,8 +161,6 @@
                 <span class='divtitle'>Annotators</span>
                 <br />
                 <br />
-                <br />
-                Mouse over an annotator to see details (if the browser is connected to the internet).
                 <div id="annotator-select-div"></div>
                 <div class='divbanner'></div>
             </div>
@@ -176,22 +171,21 @@
     </div>
 
     </td><td valign='top' style='padding-left: 20px; width: 100%;'>
-    <div id="jobdiv" style='position: relative; top: 120px; display: block;'>
+    <div id="jobdiv" style='position: relative; top: 93px; display: block; overflow: auto;'>
         <br />
             <div style='width: 100%; text-align: right;'>
-                <span style='font-style: italic;'></span>
-                <span id='jobsdirtext' style='font-family: monospace;'></span>
-                <button id="refresh-jobs-table-btn">Refresh Table</button>
+                <img src='refresh.png' id='refresh-jobs-table-btn' 
+                    style='width: 12px; position: absolute; top: 24px; left: 3px;' />
             </div>
-            <table id="jobs-table" style='width: 100%; border-spacing: 10px;'>
+            <table id="jobs-table">
                 <thead>
                 <tr>
                     <th class='tableheadercell'>Input File</th>
-                    <th class='tableheadercell'>Job ID</th>
+                    <th class='tableheadercell' style='width: 100px;'># Annot</th>
                     <th class='tableheadercell'>Status</th>
-                    <th class='tableheadercell'>Note</th>
                     <th class='tableheadercell'>Genome</th>
-                    <th class='tableheadercell'>Result Viewer</th>
+                    <th class='tableheadercell'>Note</th>
+                    <th class='tableheadercell'>View Result</th>
                     <th class='tableheadercell'>Download</th>
                     <th class='tableheadercell'>Delete</th>
                 </tr>
@@ -208,26 +202,26 @@
 </div> <!-- submitdiv -->
 
 <div id='storediv' class='appdiv'>
-    <div style='position: fixed; top: 0px; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px; background-color: white; box-shadow: 0px 0px 20px gray; left: 0px; right: 0px;'>
+    <div class='headerdiv' >
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
-            <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
+            <img src='logo.png' class='logo' />
         </div>
         <div style='position: absolute; right: 25px; vertical-align: bottom; bottom: 10px;'>
-            Modules directory: <span id='modulesdirspan' style='font-family: monospace;'></span>
-            <br />
             Module type:
             <select id='typefilter' onchange='updateFilter()' style='font-size: 16px'></select>
             <input type='text' id='namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()' style='font-size: 16px'/>
         </div>
     </div>
-    <div id='messagediv' style='position: fixed; width: 100%; text-align: center; color: black; background-color: yellow; font-size: 20px; height: 100px; z-index: 1; display: none;'></div>
-    <div id='remotemodulepanels' style='display: flex; flex-wrap: wrap; justify-content: center; position: relative; top: 120px; background-color: white;'></div>
+    <div id='messagediv'></div>
+    <div>
+        <div id='remotemodulepanels' ></div>
+    </div>
 </div> <!-- storediv -->
 
 <div id='settingsdiv' class='appdiv' style='display: none;'>
-    <div style='position: fixed; top: 0px; width: 100%; z-index: 1; padding-bottom: 20px; height: 100px; background-color: white; box-shadow: 0px 0px 20px gray; left: 0px; right: 0px;'>
+    <div class='headerdiv' >
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
-            <img src='logo.png' style='width: 360px; position: relative; top: 39px;' />
+            <img src='logo.png' class='logo' />
         </div>
     </div>
     <div style='position: relative; top: 120px;'>

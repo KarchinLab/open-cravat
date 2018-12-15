@@ -49,7 +49,6 @@ function getLocal () {
             var div = document.getElementById('messagediv');
             div.style.display = 'none';
             div = document.getElementById('remotemodulepanels');
-            div.style.top = '120px';
             var select = document.getElementById('typefilter');
             select.disabled = false;
             var input = document.getElementById('namefilter');
@@ -64,29 +63,39 @@ function getLocal () {
         } else {
             var div = document.getElementById('messagediv');
             emptyElement(div);
-            div.style.top = '120px';
             div.style.display = 'block';
             var span = getEl('span');
             span.style.position = 'relative';
-            span.style.top = '40px';
             span.textContent = 'All base modules need to be installed to use Open-CRAVAT. Click this button to install them all: ';
             addEl(div, span);
             var button = getEl('button');
             button.style.position = 'relative';
-            button.style.top = '37px';
+            button.style.top = '-2px';
             button.textContent = 'Install base components';
             button.addEventListener('click', function (evt) {
                 installBaseComponents();
             });
             addEl(div, button);
             div = document.getElementById('remotemodulepanels');
-            div.style.top = '220px';
-            document.getElementById('typefilter').value = 'base';
-            updateFilter();
+            div.style.top = '114px';
+            var select = document.getElementById('typefilter')
+            var options = select.options;
+            for (var i = 0; i < options.length; i++) {
+                var option = options[i];
+                if (option.value == 'base') {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+            var event = new Event('change');
+            select.dispatchEvent(event);
+            //updateFilter();
+            /*
             var select = document.getElementById('typefilter');
             select.disabled = true;
             var input = document.getElementById('namefilter');
             input.disabled = true;
+            */
         }
 	});
 }
@@ -112,6 +121,7 @@ function getRemote () {
             }
         }
         populateTypeFilter();
+        getLocal();
 	});
 }
 
@@ -204,14 +214,14 @@ function getRemoteModulePanel (moduleName) {
         img.src = '/store/genericmodulelogo.png';
         var span = getEl('div');
         span.style.position = 'absolute';
-        span.style.fontSize = '42px';
         span.style.fontWeight = 'bold';
-        span.textContent = moduleInfo.title;
-        span.style.width = '100%';
+        span.style.width = 'calc(100% - 25px)';
         span.style.height = 'auto';
         span.style.maxWidth = '100%';
         span.style.maxHeight = '100%';
         span.style.textAlign = 'center';
+        span.style.fontSize = '42px';
+        span.textContent = moduleInfo.title;
         addEl(sdiv, span);
     }
     img.onload = function () {
@@ -258,6 +268,7 @@ function getRemoteModulePanel (moduleName) {
     addEl(div, span);
     addEl(div, getEl('br'));
     span = getEl('span');
+    span.className = 'module-size-span';
     span.textContent = getSizeText(moduleInfo['size']);
     addEl(div, span);
     addEl(div, getEl('br'));
@@ -285,8 +296,8 @@ function getRemoteModulePanel (moduleName) {
     if (installStatus == 'Installed') {
         var img2 = getEl('img');
         img2.src = '/store/done.png';
-        img2.style.width = '20px';
         img2.title = 'Installed';
+        img2.className = 'donemark';
         addEl(span, img2);
     } else {
         if (installStatus == 'Queued') {
@@ -303,8 +314,8 @@ function getRemoteModulePanel (moduleName) {
         if (c > 0) {
             var img3 = getEl('img');
             img3.src = '/store/new.png';
-            img3.style.width = '50px';
             img3.title = 'New module available';
+            img3.style.width = '50px';
             img3.style.position = 'absolute';
             img3.style.bottom = '0px';
             img3.style.right = '0px';
@@ -835,228 +846,6 @@ function getHighestVersionForRemoteModule (module) {
     return highestVersion;
 }
 
-function getModuleDetailDiv (moduleName) {
-    var div = document.getElementById('moduledetaildiv_store');
-    if (div) {
-        emptyElement(div);
-    } else {
-        div = getEl('div');
-        div.id = 'moduledetaildiv_store';
-        div.style.position = 'fixed';
-        div.style.width = 'calc(90% - 200px)';
-        div.style.height = '80%';
-        div.style.margin = 'auto';
-        div.style.backgroundColor = 'white';
-        div.style.left = '200px';
-        div.style.right = '0';
-        div.style.top = '0';
-        div.style.bottom = '0';
-        div.style.zIndex = '2';
-        div.style.border = '6px';
-        div.style.padding = '10px';
-        div.style.paddingBottom = '23px';
-        div.style.border = '1px solid black';
-        div.style.boxShadow = '0px 0px 20px';
-    }
-    currentDetailModule = moduleName;
-    div.style.display = 'block';
-    var localModule = localModuleInfo[moduleName];
-    var table = getEl('table');
-    table.style.height = '100px';
-    table.style.border = '0px';
-    var tr = getEl('tr');
-    tr.style.border = '0px';
-    var td = getEl('td');
-    td.id = 'moduledetaillogotd';
-    td.style.width = '120px';
-    td.style.border = '0px';
-    addEl(tr, td);
-    var img = getLogo(moduleName);
-    img.onerror = function () {
-        var span = getEl('div');
-        span.style.fontSize = '20px';
-        span.style.fontWeight = 'bold';
-        span.textContent = localModule.title;
-        var sdiv = div.querySelector('#moduledetaillogotd');
-        addEl(sdiv, span);
-    }
-    img.onload = function () {
-        var sdiv = div.querySelector('#moduledetaillogotd');
-        addEl(sdiv, this);
-    }
-    addEl(tr, td);
-    td = getEl('td');
-    td.style.border = '0px';
-    var span = getEl('div');
-    span.style.fontSize = '30px';
-    span.textContent = localModule.title;
-    addEl(td, span);
-    addEl(td, getEl('br'));
-    span = getEl('span');
-    span.style.fontSize = '12px';
-    span.style.color = 'green';
-    span.textContent = localModule.type;
-    addEl(td, span);
-    span = getEl('span');
-    span.style.fontSize = '12px';
-    span.style.color = 'green';
-    span.textContent = ' | ' + localModule.developer.organization;
-    addEl(td, span);
-    addEl(tr, td);
-    td = getEl('td');
-    td.style.border = '0px';
-    td.style.verticalAlign = 'top';
-    td.style.textAlign = 'right';
-    var sdiv = getEl('div');
-    sdiv.id = 'installstatdiv_' + moduleName;
-    sdiv.style.marginTop = '10px';
-    sdiv.style.fontSize = '12px';
-    if (installInfo[moduleName] != undefined) {
-        sdiv.textContent = installInfo[moduleName]['msg'];
-    }
-    addEl(td, sdiv);
-    addEl(tr, td);
-    addEl(table, tr);
-    addEl(div, table);
-    addEl(div, getEl('hr'));
-    table = getEl('table');
-    table.style.height = 'calc(100% - 100px)';
-    table.style.border = '0px';
-    tr = getEl('tr');
-    tr.style.border = '0px';
-    var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
-    td = getEl('td');
-    td.style.border = '0px';
-    td.style.width = '70%';
-    td.style.verticalAlign = 'top';
-    td.style.height = tdHeight;
-    var mdDiv = getEl('div');
-    mdDiv.style.height = '100%';
-    mdDiv.style.overflow = 'auto';
-    addEl(td, mdDiv);
-    addEl(tr, td);
-	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
-		mdDiv.innerHTML = data;
-	});
-    td = getEl('td');
-    td.style.width = '30%';
-    td.style.border = '0px';
-    td.style.verticalAlign = 'top';
-    td.style.height = tdHeight;
-    var infodiv = getEl('div');
-    infodiv.style.height = '100%';
-    infodiv.style.overflow = 'auto';
-    var d = getEl('div');
-    span = getEl('span');
-    span.textContent = localModule.description;
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Version: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.textContent = localModule['version'];
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Maintainer: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.textContent = localModule['developer']['name'];
-    addEl(d, span);
-    addEl(d, getEl('br'));
-    addEl(d, getEl('br'));
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'e-mail: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.textContent = localModule['developer']['email'];
-    addEl(d, span);
-    addEl(d, getEl('br'));
-    addEl(d, getEl('br'));
-    addEl(infodiv, d);
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Citation: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.style.display = 'inline-block';
-    span.style.width = 'calc(100% - 120px)';
-    span.style.wordWrap = 'break-word';
-    span.style.verticalAlign = 'text-top';
-    var citation = localModule['developer']['citation'];
-    if (citation.startsWith('http')) {
-        var a = getEl('a');
-        a.href = citation;
-        a.target = '_blank';
-        a.textContent = citation;
-        addEl(span, a);
-    } else {
-        span.textContent = citation;
-    }
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Organization: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.textContent = localModule['developer']['organization'];
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Website: ';
-    addEl(d, span);
-    span = getEl('a');
-    span.textContent = localModule['developer']['website'];
-    span.href = localModule['developer']['website'];
-    span.target = '_blank';
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Type: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.textContent = localModule['type'];
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    addEl(td, infodiv);
-    addEl(tr, td);
-    addEl(table, tr);
-    addEl(div, table);
-    var el = getEl('div');
-    el.style.position = 'absolute';
-    el.style.top = '0px';
-    el.style.right = '0px';
-    el.style.fontSize = '20px';
-    el.style.padding = '10px';
-    el.style.cursor = 'pointer';
-    el.textContent = 'X';
-    el.addEventListener('click', function (evt) {
-        var pel = evt.target.parentElement;
-        pel.parentElement.removeChild(pel);
-    });
-    addEl(div, el);
-    return div;
-}
-
 function getSizeText (size) {
     size = parseInt(size);
     if (size < 1024) {
@@ -1178,5 +967,4 @@ function webstore_run () {
     connectWebSocket();
     getBaseModuleNames();
 	getRemote();
-    getLocal();
 }

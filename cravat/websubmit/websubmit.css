@@ -1,8 +1,12 @@
+body * {
+    font-family: 'Gothic A1';
+}
+
 #pageselect {
     position: fixed; 
-    top: 67px; 
+    top: 62px; 
     left: 0px; 
-    font-size: 20px; 
+    font-size: 15px; 
     color: #000000;
     z-index: 2;
     outline: none;
@@ -14,20 +18,24 @@
     padding: 6px;
     height: 24px;
     width: 80px;
-    border: 1px solid #5b8588;
     transition: all 0.3s ease;
     vertical-align: bottom;
     cursor: pointer;
+    clip-path: polygon(12% 0, 90% 0, 100% 100%, 0 100%);
+    background-color: #999999;
+    color: #000000;
+    height: 20px;
+    border-radius: 22px 22px 0px 0px;
 }
 
 #pageselect div:hover {
-    height: 40px;
-    background-color: #f0f0f0;
+    background-color: #dddddd;
+    color: #000000;
 }
 
 #pageselect div[selval="t"] {
-    height: 40px;
-    background-color: #e3e3e3;
+    background-color: #000000;
+    color: #ffffff;
 }
 
 #tabselectdiv {
@@ -54,7 +62,7 @@
 .container {
     position: relative;
     border: 0.5px solid #939393; 
-    border-radius: 14px; 
+    border-radius: 8px 8px 0px 0px; 
     padding-left: 30px; 
     padding-right: 30px; 
     padding-top: 18px; 
@@ -63,21 +71,8 @@
     margin-bottom: 20px;
 }
 
-#assembly-select {
-    overflow: auto;
-    height: 42px;
-    border: 1px solid black;
-}
-
-#assembly-select option {
-    display: inline-block;
-    height: 20px;
-    padding: 10px;
-    border: 0px;
-}
-
-#assembly-select option:hover {
-    background-color: #c4e1ff;
+.container * {
+    font-size: 13px;
 }
 
 .divtitle {
@@ -111,41 +106,99 @@
     top: 0px;
     left: 0px;
     z-index: -1;
-    border-radius: 14px 14px 0px 0px;
+    border-radius: 8px 8px 0px 0px;
 }
 
 button {
     background-color: #fbfbfb;
+    font-size: 12px;
 }
 
 .moduledetailbutton {
     border-radius: 10px;
     border: 0px;
     outline: none;
-}
-
-.tableheadercell {
-    border-bottom: 1px solid black;
-    box-shadow: 0px 0px 10px 0px #c7c7c7;
-    font-weight: normal;
+    background-color: #e9e9e9;
 }
 
 #jobs-table {
+    width: 100%;
     border-collapse: collapse;
-    font-size: 15px;
+    border-spacing: 10px;
 }
 
-#jobs-table tbody tr:nth-child(even) {
-    background-color: #e0e0e0;
+/*
+#jobs-table tbody tr:nth-child(even) .job-detail-td {
+    background-color: #eeeeaa;
 }
 
-#jobs-table tbody tr:hover {
-    background-color: #444444;
-    color: white;
+#jobs-table tbody tr:nth-child(odd) .job-detail-td {
+    background-color: #eeeeaa;
+}
+*/
+
+#jobs-table tr.job-table-tr:hover {
+    background-color: #777777;
+}
+
+.job-detail-tr {
+    background-color: #f2f2f2;
+}
+
+.job-detail-tr td table tr td:first-of-type {
+    text-align: right;
+    text-decoration: underline;
+}
+
+.highlighted-tr {
+    background-color: #949494;
+    color: black;
+}
+
+.hidden-tr {
+    display: none;
 }
 
 #jobs-table tbody td {
-    padding: 0px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     cursor: pointer;
+    font-size: 14px;
 }
 
+#jobs-table thead th {
+    font-size: 13px;
+    font-weight: bold;
+    border-bottom: 1px solid black;
+    box-shadow: 0px 0px 10px 0px #c7c7c7;
+}
+
+#annotator-select-div span {
+    font-family: cursive;
+}
+
+#assembly-select {
+    position: relative;
+    top: -12px;
+    left: 7px;
+    height: 21px;
+}
+
+.logo {
+    width: 260px;
+    position: relative;
+    top: 39px;
+}
+
+.headerdiv {
+    position: fixed; 
+    top: 0px; 
+    width: 100%; 
+    z-index: 1; 
+    padding-bottom: 20px; 
+    height: 74px; 
+    background-color: white; 
+    box-shadow: 0px 0px 20px gray; 
+    left: 0px; 
+    right: 0px;
+}
