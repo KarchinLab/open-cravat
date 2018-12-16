@@ -1297,13 +1297,18 @@ function checkLogged () {
 
 function populatePackageVersions () {
     $.get('/submit/packageversions').done(function(data){
-        let curver = data.current;
-        let latver = data.latest;
-        $('#curverspan').text(curver);
-        const latverspan = $('#latestverspan')
-        latverspan.text(latver);
+        var curverspan = document.getElementById('curverspan');
+        var a = getEl('a');
+        a.href = "https://github.com/KarchinLab/open-cravat/wiki/Release-Notes";
+        a.target = '_blank';
+        a.textContent = data.current;
+        addEl(curverspan, a);
         if (data.update) {
-            latverspan.css('color','red');
+            var a = getEl('a');
+            a.href = 'https://github.com/KarchinLab/open-cravat/wiki/Update-Instructions';
+            a.target = '_blank';
+            a.textContent = '(' + data.latest + ')';
+            addEl(curverspan, a);
         }
 	});
 }

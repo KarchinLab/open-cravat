@@ -52,7 +52,6 @@ function getWidgetTableTr (values) {
 
 function getLineHeader (header) {
 	var spanHeader = document.createElement('span');
-	spanHeader.style.fontWeight = 'bold';
 	spanHeader.appendChild(document.createTextNode('  ' + header + ': '));
 	return spanHeader;
 }
@@ -64,12 +63,12 @@ function addInfoLine (div, row, header, col, tabName) {
     table.style.borderCollapse = 'collapse';
     var tr = getEl('tr');
     var td = getEl('td');
-    td.style.verticalAlign = 'top';
+    td.className = 'detail-info-line-header';
     var h = getLineHeader(header);
     addEl(td, h);
     addEl(tr, td);
     td = getEl('td');
-    td.style.verticalAlign = 'top';
+    td.className = 'detail-info-line-content';
     var t = getEl('span');
     t.textContent = text;
     addEl(td, t);
