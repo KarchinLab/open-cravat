@@ -405,12 +405,12 @@ button {
 
 .detail-info-line-header {
     vertical-align: top;
-    min-width: 50px;
+    min-width: 60px;
     font-weight: bold;
 }
 
 .detail-info-line-content {
     vertical-align: top;
-    min-width: 50px;
+    min-width: 60px;
 }
 
