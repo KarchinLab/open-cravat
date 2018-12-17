@@ -171,12 +171,15 @@ class CravatReport:
                 rs = self.cursor.fetchall()
                 for r in rs:
                     col_cats.append(r[0])
+            col_hidden = bool(row[6]) if len(row) > 6 else False
             column = {'col_name': colname,
                       'col_title': coltitle,
                       'col_type': col_type,
                       'col_cats': col_cats,
                       'col_width':col_width,
-                      'col_desc':col_desc}
+                      'col_desc':col_desc,
+                      'col_hidden':col_hidden,
+                      }
             self.colnos[level][colname] = colcount
             colcount += 1
             columns.append(column)
