@@ -371,7 +371,6 @@ def get_colmodel (tab, colinfo):
         endidx = startidx + col_count
         for d in colinfo[tab]['columns'][startidx:endidx]:
             cats = d['col_cats']
-            print(d)
             column = {
                 "col": d['col_name'],
                 'colgroupkey': groupkey, 
