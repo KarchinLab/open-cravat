@@ -275,7 +275,7 @@ class CravatReport:
                                   'col_cats': col_cats,
                                   'col_width':col.get('width'),
                                   'col_desc':col.get('desc'),
-                                  'col_hidden':col.get('hidden',True),
+                                  'col_hidden':col.get('hidden',False),
                                   }
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
