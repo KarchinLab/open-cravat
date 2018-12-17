@@ -62,7 +62,7 @@ crx_def = crv_def + \
                    'FI2', 
                    'FI1']},
            {'name':'achange', 'title':'Protein Change', 'type':'string', 'width': 70},
-           {'name':'all_mappings', 'title':'All Mappings', 'type':'string', 'width': 100},
+           {'name':'all_mappings', 'title':'All Mappings', 'type':'string', 'width': 100, 'hidden':True},
            ]
 crx_idx = [['uid']]
 crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70},
