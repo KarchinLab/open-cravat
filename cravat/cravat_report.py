@@ -212,12 +212,15 @@ class CravatReport:
                     col_cats = col.get('categories',[])
                     col_width = col.get('width')
                     col_desc = col.get('desc')
+                    col_hidden = col.get('hidden',False)
                     column = {'col_name': colname,
                               'col_title': col['title'],
                               'col_type': col['type'],
                               'col_cats': col_cats,
                               'col_width':col_width,
-                              'col_desc':col_desc}
+                              'col_desc':col_desc,
+                              'col_hidden':col_hidden,
+                              }
                     columns.append(column)
                     self.var_added_cols.append(colname)
         # Gene level summary columns
@@ -250,7 +253,9 @@ class CravatReport:
                                   'col_type': col['type'],
                                   'col_cats': col.get('categories', []),
                                   'col_width':col.get('width'),
-                                  'col_desc':col.get('desc')}
+                                  'col_desc':col.get('desc'),
+                                  'col_hidden':col.get('hidden',True),
+                                  }
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
         colno = 0
