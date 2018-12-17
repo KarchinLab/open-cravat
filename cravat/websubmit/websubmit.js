@@ -160,7 +160,17 @@ function buildJobsTable () {
         addEl(jobTr[0], td);
         // Status
         var td = getEl('td');
-        var statusC = job.status.status.replace('Finished', 'F').replace('Error', 'E');
+        var statusC = null;
+        if (job.status['status'] == undefined) {
+            if (job.status != undefined) {
+                statusC = job.status;
+            } else {
+                continue;
+            }
+        } else {
+            statusC = job.status.status;
+        }
+        statusC = statusC.replace('Finished', 'F').replace('Error', 'E');
         td.title = job.status.status;
         td.textContent = statusC;
         jobTr.append($(td)).css('text-align', 'center');
@@ -180,13 +190,6 @@ function buildJobsTable () {
         var dbTd = $(getEl('td'));
         dbTd.css('text-align', 'center');
         jobTr.append(dbTd);
-        // Database
-        /*
-        var dbLink = $(getEl('a'))
-            .attr('href',`jobs/${job.id}/db`)
-            .append($(getEl('button')).append('DB'))
-        dbTd.append(dbLink);
-        */
         // Excel
         var excelButton = $(getEl('button'))
             .append('Excel')
@@ -283,7 +286,7 @@ function buildJobsTable () {
         addEl(detailTable, tbody);
         var tr = getEl('tr');
         var td = getEl('td');
-        td.style.width = '100px';
+        td.style.width = '150px';
         td.textContent = 'Job ID';
         addEl(tr, td);
         var td = getEl('td');
@@ -298,6 +301,54 @@ function buildJobsTable () {
         td.textContent = anns;
         addEl(tr, td);
         addEl(tbody, tr);
+        if (job.num_input_var != undefined) {
+            var tr = getEl('tr');
+            var td = getEl('td');
+            td.textContent = '# input variants';
+            addEl(tr, td);
+            var td = getEl('td');
+            td.textContent = job.num_input_var;
+            addEl(tr, td);
+            addEl(tbody, tr);
+        }
+        if (job.submission_time != undefined) {
+            var tr = getEl('tr');
+            var td = getEl('td');
+            td.textContent = 'Submitted';
+            addEl(tr, td);
+            var td = getEl('td');
+            td.textContent = job.submission_time;
+            addEl(tr, td);
+            addEl(tbody, tr);
+        }
+        if (job.db_path != undefined) {
+            var tr = getEl('tr');
+            var td = getEl('td');
+            td.textContent = 'Result DB';
+            addEl(tr, td);
+            var td = getEl('td');
+            var button = getEl('button');
+            button.textContent = 'DB';
+            button.setAttribute('db', job.id);
+            button.addEventListener('click', function (evt) {
+                window.open('/submit/jobs/' + evt.target.getAttribute('db') + '/db');
+            });
+            addEl(td, button);
+            addEl(tr, td);
+            addEl(tbody, tr);
+            var tr = getEl('tr');
+            var td = getEl('td');
+            td.textContent = 'Job Directory';
+            addEl(tr, td);
+            var td = getEl('td');
+            var a = getEl('a');
+            var d = job.db_path.substring(0, job.db_path.lastIndexOf('/'));
+            a.href = 'http://file://///' + d;
+            a.textContent = d;
+            addEl(td, a);
+            addEl(tr, td);
+            addEl(tbody, tr);
+        }
         addEl(detailTd, detailTable);
         addEl(detailTr, detailTd);
         addEl(jobsTable[0], detailTr);

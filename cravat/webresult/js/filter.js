@@ -36,11 +36,13 @@ const makeFilterColDiv = (filter) => {
     const testSel = $(getEl('select'))
         .addClass('filter-test-selector')
         .change(filterTestChangeHandler);
+    testSel[0].setAttribute('prevselidx', 0);
     colDiv.append(testSel);
-    for (const testName in filterTests) {
-        const testDesc = filterTests[testName];
+    for (var i = 0; i < filterTestNames.length; i++) {
+        var filterTestName = filterTestNames[i];
+        const testDesc = filterTests[filterTestName];
         const testOpt = $(getEl('option'))
-            .val(testName)
+            .val(filterTestName)
             .append(testDesc.title);
         testSel.append(testOpt);
     }
@@ -91,27 +93,49 @@ const onFilterColumnSelectorChange = (evt) => {
     var columns = infomgr.getVariantColumnGroupByName(groupName).colModel;
     var columnName = evt.target.value;
     var filter = null;
+    var column = null;
     for (var i = 0; i < columns.length; i++) {
-        var column = columns[i];
+        column = columns[i];
         if (column.col == columnName) {
             filter = column.filter;
             break;
         }
     }
-    if (filter != null && filter.type == 'select') {
+    if (filter != null) {
         var testDiv = evt.target.nextSibling;
-        var selIdx = null;
-        for (var i = 0; i < testDiv.options.length; i++) {
-            var option = testDiv.options[i];
-            if (option.value == 'select') {
-                var selIdx = i;
-                break;
+        if (filter.type == 'select') {
+            var selIdx = null;
+            for (var i = 0; i < testDiv.options.length; i++) {
+                var option = testDiv.options[i];
+                if (option.value == 'select') {
+                    var selIdx = i;
+                    break;
+                }
             }
-        }
-        if (selIdx) {
-            testDiv.selectedIndex = selIdx;
-            var event = new Event('change');
-            testDiv.dispatchEvent(event);
+            if (selIdx) {
+                testDiv.selectedIndex = selIdx;
+                var event = new Event('change');
+                testDiv.dispatchEvent(event);
+            }
+        } else {
+            if (testDiv == null) {
+                return;
+            }
+            var curTestKey = testDiv.value;
+            var curTestSetup = filterTests[curTestKey];
+            var curTestColTypes = curTestSetup['colTypes'];
+            var selColType = column.type;
+            if (curTestColTypes.indexOf(selColType) >= 0) {
+                return;
+            }
+            for (var i = 0; i < filterTestNames.length; i++) {
+                if (filterTests[testDiv.options[i].value].colTypes.indexOf(selColType) >= 0) {
+                    testDiv.selectedIndex = i;
+                    var event = new Event('change');
+                    testDiv.dispatchEvent(event);
+                    break;
+                }
+            }
         }
     }
 }
@@ -120,43 +144,68 @@ const filterTestChangeHandler = (event) => {
     const testSel = $(event.target);
     const valuesDiv = testSel.siblings('.filter-values-div');
     const testName = testSel.val();
+    var testDiv = testSel[0].previousSibling;
+    var colname = testDiv.value;
+    var column = infomgr.getColumnByName('variant', colname);
+    var colType = column.type;
+    var selTestType = testSel[0].value;
+    var filterTest = filterTests[selTestType];
+    var allowedColTypes = filterTest.colTypes;
+    if (allowedColTypes.indexOf(colType) < 0) {
+        testSel[0].selectedIndex = testSel[0].getAttribute('prevselidx');
+        return;
+    }
     populateFilterValues(valuesDiv, testName);
+    testSel[0].setAttribute('prevselidx', testSel[0].selectedIndex);
 }
 
 const populateFilterValues = (valsContainer, testName, value) => {
     valsContainer.empty();
     const testDesc = filterTests[testName];
-    if (testName == 'select') {
-        var testDiv = valsContainer[0].previousSibling.previousSibling.previousSibling;
-        var groupDiv = testDiv.previousSibling;
-        var col = testDiv.value;
-        var columns = infomgr.columnss.variant;
+    var testDiv = valsContainer[0].previousSibling.previousSibling.previousSibling;
+    var col = testDiv.value;
+    var column = infomgr.getColumnByName('variant', col);
+    var filter = column.filter;
+    var valSubDic = column.reportsub;
+    var valSubDicKeys = Object.keys(valSubDic);
+    if (testName == 'select' && filter.type == 'select') {
         var select = getEl('select');
         select.className = 'filter-value-input';
         select.multiple = 'multiple';
         addEl(valsContainer[0], select);
-        for (var i = 0; i < columns.length; i++) {
-            var column = columns[i];
-            if (column.col == col) {
-                var optionValues = column.filter.options;
-                for (var j = 0; j < optionValues.length; j++) {
-                    var option = getEl('option');
-                    var optionValue = optionValues[j];
-                    var subVal = column.reportsub[optionValue];
-                    if (subVal != undefined) {
-                        optionValue = subVal;
-                    }
-                    option.value = optionValue;
-                    option.textContent = optionValue;
-                    addEl(select, option);
+        var optionValues = column.filter.options;
+        var writtenOptionValues = [];
+        if (optionValues != undefined) {
+            for (var j = 0; j < optionValues.length; j++) {
+                var optionValue = optionValues[j];
+                for (let k = 0; k < valSubDicKeys.length; k++) {
+                    const key = valSubDicKeys[k];
+                    optionValue = optionValue.replace(new RegExp(key, 'g'), valSubDic[key]);
                 }
-                break;
+                console.log('@@', optionValue);
+                let vals = optionValue.split(',');
+                for (let k = 0; k < vals.length; k++) {
+                    let val = vals[k];
+                    if (writtenOptionValues.indexOf(val) < 0) {
+                        writtenOptionValues.push(val);
+                        var option = getEl('option');
+                        option.value = val;
+                        option.textContent = val;
+                        console.log(val);
+                        console.log(writtenOptionValues);
+                        addEl(select, option);
+                        console.log(select);
+                    }
+                }
             }
         }
         $(select).pqSelect({
             checkbox: true, 
             displayText: '{0} selected',
+            singlePlaceholder: '>',
+            multiplePlaceholder: '>',
             maxDisplay: 0,
+            width: 200,
         });
     } else {
         for (let i=0; i<testDesc.inputs; i++) {
@@ -202,6 +251,9 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
             .append(col.title);
         colSel.append(colOpt);
     }
+    colSel[0].selectedIndex = 0;
+    var event = new Event('change');
+    colSel[0].dispatchEvent(event);
 }
 
 const makeFilterGroupDiv = (filter) => {
@@ -360,19 +412,25 @@ const makeGroupFilter = (groupDiv) => {
         const colDiv = $(colDivs[i]);
         // Column
         colFilter.column = colDiv.children('.filter-column-selector').val();
+        var column = infomgr.getColumnByName('variant', colFilter.column);
         // Test
         colFilter.test = colDiv.children('.filter-test-selector').val();
+        if (column.type == 'multicategory') {
+            colFilter.test = 'multicategory';
+        }
         // Value
         const valInputs = colDiv.children('.filter-values-div').children();
-        var column = infomgr.getColumnByName('variant', colFilter.column);
         var reportsub = column.reportsub;
         var reportsubKeys = Object.keys(reportsub);
-        if (colFilter.test == 'select') {
+        if (colFilter.test == 'select' || colFilter.test == 'multicategory') {
             var selOptions = valInputs[0].selectedOptions;
             colFilter.value = [];
             for (var j = 0; j < selOptions.length; j++) {
                 var optVal = selOptions[j].value;
                 colFilter.value.push(doReportSub(reportsub, reportsubKeys, optVal));
+            }
+            if (colFilter.value.length == 0) {
+                continue;
             }
         } else {
             if (valInputs.length === 0) {
@@ -423,16 +481,32 @@ const loadFilter = (filter) => {
 }
 
 const filterTests = {
-    equals: {title:'equals', inputs: 1},
-    lessThanEq: {title:'<=', inputs: 1},
-    lessThan: {title:'<', inputs:1},
-    greaterThanEq: {title:'>=', inputs:1},
-    greaterThan: {title:'>', inputs:1},
-    hasData: {title:'has data', inputs:0},
-    noData: {title:'is empty', inputs:0},
-    stringContains: {title: 'contains', inputs:1},
-    stringStarts: {title: 'starts with', inputs:1},
-    stringEnds: {title: 'ends with', inputs:1},
-    between: {title: 'in range', inputs:2},
-    select: {title: 'select', inputs: 1},
+    equals: {title:'equals', inputs: 1, colTypes: ['string', 'float', 'int', 'select'], },
+    lessThanEq: {title:'<=', inputs: 1, colTypes: ['float', 'int']},
+    lessThan: {title:'<', inputs:1, colTypes: ['float', 'int']},
+    greaterThanEq: {title:'>=', inputs:1, colTypes: ['float', 'int']},
+    greaterThan: {title:'>', inputs:1, colTypes: ['float', 'int']},
+    hasData: {title:'has data', inputs:0, colTypes: ['float', 'int', 'string', 'category', 'multicategory']},
+    noData: {title:'is empty', inputs:0, colTypes: ['float', 'int', 'string', 'category', 'multicategory']},
+    stringContains: {title: 'contains', inputs:1, colTypes: ['string', 'category', 'multicategory']},
+    stringStarts: {title: 'starts with', inputs:1, colTypes: ['string', 'category', 'multicategory']},
+    stringEnds: {title: 'ends with', inputs:1, colTypes: ['string', 'category', 'multicategory']},
+    between: {title: 'in range', inputs:2, colTypes: ['float', 'int']},
+    select: {title: 'select', inputs: 1, colTypes: ['category', 'multicategory']},
 }
+
+const filterTestNames = [
+    'equals',
+    'between',
+    'lessThanEq',
+    'lessThan',
+    'greaterThanEq',
+    'greaterThan',
+    'hasData',
+    'noData',
+    'stringContains',
+    'stringStarts',
+    'stringEnds',
+    'select',
+];
+

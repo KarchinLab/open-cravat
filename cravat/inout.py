@@ -121,8 +121,6 @@ class CravatReader (CravatFile):
                     elif col_type == 'float':
                         out[col_name] = float(tok)
                     elif col_type == 'category':
-                        if tok not in col_cats:
-                            raise Exception('Undefined category [{}]. Available categories are {}. But accepting and moving on.'.format(tok, ','.join(col_cats)))
                         out[col_name] = tok
                     else:
                         out[col_name] = tok
@@ -181,8 +179,6 @@ class CravatWriter(CravatFile):
         self._validate_col_type(col_type)
         col_name = col_def['name']
         col_cats = json.dumps(col_def.get('categories'))
-        if col_type == 'category' and col_cats == 'null':
-            raise Exception('Categories are not defined for column {}.'.format(col_name))
         col_width = col_def.get('width')
         col_desc = col_def.get('desc')
         col_hidden = col_def.get('hidden',False)

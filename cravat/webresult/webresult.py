@@ -383,9 +383,10 @@ def get_colmodel (tab, colinfo):
                 "retfilttype":"None",
                 "multiseloptions":[],
                 'reportsub': d['reportsub'] if 'reportsub' in d else {},
-                'categories': d['col_cats'],
+                'categories': cats,
                 'width': d['col_width'],
                 'desc': d['col_desc'],
+                'type': d['col_type'],
                 'hidden': d['col_hidden'],
                 }
             if d['col_type'] == 'string':
@@ -405,6 +406,16 @@ def get_colmodel (tab, colinfo):
                 column['retfilttype'] = 'between'
                 column['multiseloptions'] = []
             elif d['col_type'] == 'category':
+                column['filter'] = {
+                    'type': 'select',
+                    'attr': 'multiple',
+                    'condition': 'equal',
+                    'options': cats,
+                    'listeners': ['change']}
+                column['retfilt'] = True
+                column['retfilttype'] = 'select'
+                column['multiseloptions'] = cats
+            elif d['col_type'] == 'multicategory':
                 column['filter'] = {
                     'type': 'select',
                     'attr': 'multiple',

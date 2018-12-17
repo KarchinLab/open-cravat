@@ -587,7 +587,7 @@ function loadFilterSettingAs () {
     			evt.target.style.backgroundColor = 'white';
     		});
     		a.addEventListener('click', function (evt) {
-    			loadFilterSetting(evt.target.textContent, null)
+    			loadFilterSetting(evt.target.textContent, null, false)
     			div.style.display = 'none';
     		});
     		addEl(div, a);
@@ -596,7 +596,7 @@ function loadFilterSettingAs () {
 	});
 }
 
-function loadFilterSetting (name, callback) {
+function loadFilterSetting (name, callback, doNotCount) {
 	$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Filter setting loaded');
 		var data = response;
@@ -605,7 +605,9 @@ function loadFilterSetting (name, callback) {
 		filterWrapDiv.empty();
 		var filterRootGroupDiv = makeFilterRootGroupDiv(filterJson);
 		filterWrapDiv.append(filterRootGroupDiv);
-		infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
+        if (! doNotCount) {
+            infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
+        }
 		if (callback != null) {
 			callback();
 		}

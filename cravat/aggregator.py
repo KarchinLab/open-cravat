@@ -143,6 +143,7 @@ class Aggregator (object):
                 if n%self.commit_threshold == 0:
                     self.dbconn.commit()
             self.dbconn.commit()
+        self.fill_categories()
         self.cursor.execute('pragma synchronous=2;')
         self.cursor.execute('pragma journal_mode=delete;')
         end_time = time.time()
@@ -150,7 +151,64 @@ class Aggregator (object):
         runtime = end_time - start_time
         self.logger.info('runtime: %s' %round(runtime, 3))
         self._cleanup()
-        
+
+    def make_reportsub (self):
+        if self.level in ['variant', 'gene']:
+            q = 'select * from {}_reportsub'.format(self.level)
+            self.cursor.execute(q)
+            self.reportsub = {}
+            for r in self.cursor.fetchall():
+                (col_name, sub) = r
+                self.reportsub[col_name] = json.loads(sub)
+        else:
+            self.reportsub = {}
+
+    def do_reportsub_col_cats_str (self, col_name, col_cats):
+        (module_name, col) = col_name.split('__')
+        if module_name in self.reportsub and col in self.reportsub[module_name]:
+            sub = self.reportsub[module_name][col]
+            for k in sub:
+                col_cats = col_cats.replace(k, sub[k])
+        return col_cats
+
+    def fill_categories (self):
+        q = 'select col_name, col_type, col_cats from {}_header'.format(self.level)
+        self.cursor.execute(q)
+        rs = self.cursor.fetchall()
+        cols_to_fill = []
+        for r in rs:
+            (col_name, col_type, col_cats_str) = r
+            if col_type == 'category' or col_type == 'multicategory':
+                if col_cats_str == None or len(col_cats_str) == 0:
+                    cols_to_fill.append(col_name)
+                else:
+                    col_cats_str = self.do_reportsub_col_cats_str(col_name, col_cats_str)
+                    self.write_col_cats_str(col_name, col_cats_str)
+        for col_name in cols_to_fill:
+            q = 'select distinct {} from {}'.format(col_name, self.level)
+            self.cursor.execute(q)
+            rs = self.cursor.fetchall()
+            col_cats = []
+            for r in rs:
+                if r[0] == None:
+                    continue
+                vals = r[0].split(';')
+                for col_cat in vals:
+                    if col_cat not in col_cats:
+                        col_cats.append(col_cat)
+            col_cats.sort()
+            col_cats_str = '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']'
+            col_cats_str = self.do_reportsub_col_cats_str(col_name, col_cats_str)
+            self.write_col_cats_str(col_name, col_cats_str)
+        self.dbconn.commit()
+    
+    def write_col_cats_str (self, col_name, col_cats_str):
+        q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
+            self.level,
+            col_cats_str,
+            col_name)
+        self.cursor.execute(q)
+
     def _cleanup(self):
         self.cursor.close()
         self.dbconn.close()
@@ -316,6 +374,7 @@ class Aggregator (object):
                             json.dumps(sub)
                         )
                         self.cursor.execute(q)
+        self.make_reportsub()
         self.dbconn.commit()
 
     def _setup_io(self):

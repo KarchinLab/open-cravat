@@ -25,11 +25,11 @@ liftover_chain_paths = {
                         }
 
 crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'width': 90},
-           {'name':'tags', 'title':'User Tags', 'type':'string', 'width': 90},
+           {'name':'tags', 'title':'User Tags', 'type':'category', 'width': 90},
            {'name':'uid', 'title':'UID', 'type':'int', 'width': 70}]
 crm_idx = [['uid'],['tags']]
 crs_def = [{'name':'uid', 'title':'UID', 'type':'string', 'width': 70},
-           {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90}]
+           {'name':'sample_id', 'title':'Sample', 'type':'category', 'width': 90}]
 crs_idx = [['uid'], ['sample_id']]
 crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
            {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 60},

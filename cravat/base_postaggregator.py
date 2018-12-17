@@ -95,6 +95,7 @@ class BasePostAggregator (object):
                     self.write_output(input_data, fixed_output)
                 except Exception as e:
                     self._log_runtime_exception(input_data, e)
+            self.fill_categories()
             self.dbconn.commit()
             self.base_cleanup()
             end_time = time.time()
@@ -103,16 +104,37 @@ class BasePostAggregator (object):
             self.logger.info('runtime: {0:0.3f}'.format(run_time))
         except Exception as e:
             self._log_exception(e)
-    
+
+    def fill_categories (self):
+        for col_def in self.conf['output_columns']:
+            if col_def['type'] not in ['category', 'multicategory']:
+                continue
+            col_name = col_def['name']
+            q = 'select distinct {} from {}'.format(col_name, self.level)
+            self.cursor.execute(q)
+            rs = self.cursor.fetchall()
+            col_cats = []
+            for r in rs:
+                col_cat_str = r[0]
+                for col_cat in col_cat_str.split(';'):
+                    if col_cat not in col_cats:
+                        col_cats.append(col_cat)
+            col_cats.sort()
+            q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
+                self.level,
+                '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']',
+                col_name)
+            self.cursor.execute(q)
+        self.dbconn.commit()
+
     def write_output (self, input_data, output_dict):
         q = 'update ' + self.level + ' set '
         for col_def in self.conf['output_columns']:
             col_name = col_def['name']
             if col_name in output_dict:
                 val = output_dict[col_name]
-                if col_def['type'] == 'string' or \
-                        col_def['type'] == 'category' or \
-                        col_def['type'] == 'multicategory':
+                col_type = col_def['type']
+                if col_type in ['string', 'category', 'multicategory']:
                     val = '"' + val + '"'
                 else:
                     val = str(val)
@@ -169,7 +191,7 @@ class BasePostAggregator (object):
             colname = col_def['name']
             coltitle = col_def['title']
             coltype = col_def['type']
-            colcats = col_def.get('categories')
+            colcats = col_def.get('categories', "[]")
             colwidth = col_def.get('width')
             coldesc = col_def.get('desc')
             colhidden = col_def.get('hidden',False)
