@@ -17,8 +17,6 @@ from .constants import mapping_parser_name
 from .exceptions import InvalidData
 import sqlite3
 
-
-
 class BaseAnnotator(object):
     
     valid_levels = ['variant','gene']

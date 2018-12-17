@@ -55,16 +55,20 @@ class CravatReader (CravatFile):
                 col_title = col_info[1]
                 col_name = col_info[2]
                 col_type = col_info[3]
+                self._validate_col_type(col_type)
                 col_cats = json.loads(col_info[4]) if col_info[4] else {}
                 col_width = col_info[5] if col_info[5] else None
                 col_desc = col_info[6] if col_info[6] else None
-                self._validate_col_type(col_type)
+                # Using json properly converts "False" to False, bool("False") evalueates to True
+                col_hidden = json.loads(col_info[7].lower()) if col_info[7] else True
                 self.columns[col_index] = {'title':col_title,
                                            'name':col_name,
                                            'type':col_type,
-                                           'categories': col_cats,
+                                           'categories':col_cats,
                                            'width':col_width,
-                                           'desc':col_desc}
+                                           'desc':col_desc,
+                                           'hidden':col_hidden,
+                                           }
             elif l.startswith('#report_substitution='):
                 self.report_substitution = json.loads(l.split('=')[1])
             else:
@@ -181,6 +185,7 @@ class CravatWriter(CravatFile):
             raise Exception('Categories are not defined for column {}.'.format(col_name))
         col_width = col_def.get('width')
         col_desc = col_def.get('desc')
+        col_hidden = col_def.get('hidden',False)
         if not(override):
             try:
                 self.columns[col_index]
@@ -198,6 +203,7 @@ class CravatWriter(CravatFile):
                                    'categories': col_cats,
                                    'width': col_width,
                                    'desc': col_desc,
+                                   'hidden': col_hidden
                                    }
 
     def add_columns(self, col_list, append=False):
@@ -244,7 +250,7 @@ class CravatWriter(CravatFile):
 
     def write_definition(self, conf=None):
         self._prep_for_write()
-        val_order = ['title','name','type','categories','width','desc']
+        val_order = ['title','name','type','categories','width','desc','hidden']
         for col_index, col_def in enumerate(self.ordered_columns):
             ordered_vals = [col_index]+[col_def[k] for k in val_order]
             s_buffer = StringIO()

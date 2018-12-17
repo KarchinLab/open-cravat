@@ -377,7 +377,6 @@ def get_colmodel (tab, colinfo):
                 'colgroup': grouptitle,
                 "title": d['col_title'], 
                 "align":"center",
-                "hidden":False,
                 "dataIndx": dataindx,
                 "retfilt":False,
                 "retfilttype":"None",
@@ -386,6 +385,7 @@ def get_colmodel (tab, colinfo):
                 'categories': d['col_cats'],
                 'width': d['col_width'],
                 'desc': d['col_desc'],
+                'hidden': d['col_hidden'],
                 }
             if d['col_type'] == 'string':
                 column['filter'] = {

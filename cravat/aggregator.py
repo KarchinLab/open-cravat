@@ -224,7 +224,7 @@ class Aggregator (object):
         self.cursor.execute(q)
         for _, col_def in self.base_reader.get_all_col_defs().items():
             col_name = self.base_prefix + '__' + col_def['name']
-            columns.append([col_name, col_def['title'], col_def['type'], col_def['categories'], col_def['width'], col_def['desc']])
+            columns.append([col_name, col_def['title'], col_def['type'], col_def['categories'], col_def['width'], col_def['desc'], col_def['hidden']])
             unique_names.add(col_name)
         for annot_name in self.annotators:
             reader = self.readers[annot_name]
@@ -251,7 +251,7 @@ class Aggregator (object):
                         %(db_col_name, reader.path)
                     sys.exit(err_msg)
                 else:
-                    columns.append([db_col_name, db_col_title, db_type, db_col_cats, col_def['width'], col_def['desc']])
+                    columns.append([db_col_name, db_col_title, db_type, db_col_cats, col_def['width'], col_def['desc'], col_def['hidden']])
                     unique_names.add(db_col_name)
                     
         col_def_strings = []
@@ -281,14 +281,14 @@ class Aggregator (object):
         # header table
         q = 'drop table if exists %s' %self.header_table_name
         self.cursor.execute(q)
-        q = 'create table %s (col_name text, col_title text, col_type text, col_cats text, col_width int, col_desc text);' \
+        q = 'create table %s (col_name text, col_title text, col_type text, col_cats text, col_width int, col_desc text, col_hidden boolean);' \
             %(self.header_table_name)
         self.cursor.execute(q)
         for col_row in columns:
             if col_row[3]:
                 col_row[3] = json.dumps(col_row[3])
             # use prepared statement to allow " characters in categories and desc
-            insert_template = 'insert into {} values (?, ?, ?, ?, ?, ?)'.format(self.header_table_name)
+            insert_template = 'insert into {} values (?, ?, ?, ?, ?, ?, ?)'.format(self.header_table_name)
             self.cursor.execute(insert_template, col_row)
         # report substitution table
         if self.level in ['variant', 'gene']:

@@ -165,12 +165,15 @@ class CravatReport:
             col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else []
             col_width = row[4] if len(row) > 4 else None
             col_desc = row[5] if len(row) > 5 else None
+            col_hidden = bool(row[6]) if len(row) > 6 else False
             column = {'col_name': colname,
                       'col_title': coltitle,
                       'col_type': col_type,
                       'col_cats': col_cats,
                       'col_width':col_width,
-                      'col_desc':col_desc}
+                      'col_desc':col_desc,
+                      'col_hidden':col_hidden,
+                      }
             self.colnos[level][colname] = colcount
             colcount += 1
             columns.append(column)
