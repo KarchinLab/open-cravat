@@ -17,6 +17,8 @@ import multiprocessing as mp
 from logging.handlers import QueueListener
 from .aggregator import Aggregator
 from .exceptions import *
+import yaml
+import cravat.cravat_util as cu
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
@@ -170,6 +172,10 @@ cravat_cmd_parser.add_argument('--newlog',
                     default=False,
                     help='deletes the existing log file and ' +
                             'creates a new one.')
+cravat_cmd_parser.add_argument('--note',
+                    dest='note',
+                    default='',
+                    help='note will be written to the run status file (.status.json)')
 
 class Cravat (object):
     def __init__ (self, **kwargs):
@@ -199,7 +205,27 @@ class Cravat (object):
         self.logger.info('input assembly: {}'.format(self.input_assembly))
         if self.run_conf_path != '':
             self.logger.info('conf file: {}'.format(self.run_conf_path))
+        self.write_initial_status_json()
     
+    def write_initial_status_json (self):
+        status_fname = '{}.status.json'.format(self.run_name)
+        self.status_fpath = os.path.join(self.output_dir, status_fname)
+        self.status = {}
+        self.status['job_dir'] = self.output_dir
+        self.status['id'] = os.path.basename(os.path.normpath(self.output_dir))
+        self.status['run_name'] = self.run_name
+        self.status['assembly'] = self.input_assembly
+        self.status['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
+        self.status['orig_input_fname'] = os.path.basename(self.input)
+        self.status['orig_input_path'] = self.input
+        self.status['submission_time'] = datetime.datetime.now().isoformat()
+        self.status['viewable'] = False
+        self.status['note'] = self.args.note
+        self.status['status'] = 'Starting'
+        self.status['reports'] = self.args.reports if self.args.reports != None else []
+        with open(self.status_fpath,'w') as wf:
+            wf.write(json.dumps(self.status))
+
     def get_logger (self):
         self.logger = logging.getLogger('cravat')
         self.logger.setLevel('INFO')
@@ -212,14 +238,11 @@ class Cravat (object):
     def close_logger (self):
         logging.shutdown()
     
-    def update_status(self, status):
-        status_fname = self.run_name+'.status.json'
-        status_fpath = os.path.join(self.output_dir, status_fname)
-        d = {
-            'status': status
-        }
-        with open(status_fpath,'w') as wf:
-            wf.write(json.dumps(d))
+    def update_status_json (self, key, val):
+        cu.update_status_json(self.status_fpath, key, val)
+
+    def update_status (self, status):
+        cu.update_status_json(self.status_fpath, 'status', status)
 
     def main (self):
         self.update_status('Started')
@@ -417,6 +440,9 @@ class Cravat (object):
         self.modules = {}
         for module in self.annotators.values():
             self.add_annotator_to_queue(module)
+        annot_names = [v.name for v in self.ordered_annotators]
+        annot_names.sort()
+        self.update_status_json('annotators', annot_names)
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
@@ -476,7 +502,7 @@ class Cravat (object):
             print(' '.join(cmd))
         converter_class = util.load_class('MasterCravatConverter', module.script_path)
         converter = converter_class(cmd)
-        exit = converter.run()
+        converter.run()
 
     def run_genemapper (self):
         module = au.get_local_module_info(

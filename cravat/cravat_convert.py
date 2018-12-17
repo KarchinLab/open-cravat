@@ -11,6 +11,7 @@ from cravat.exceptions import LiftoverFailure, InvalidData, BadFormatError, Expe
 import cravat.admin_util as au
 from pyliftover import LiftOver
 import copy
+import cravat.cravat_util as cu
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
@@ -100,23 +101,24 @@ class MasterCravatConverter(object):
         self.input_path = os.path.abspath(parsed_args.input)
         if parsed_args.format:
             self.input_format = parsed_args.format
-        input_dir, input_fname = os.path.split(self.input_path)
+        self.input_dir, self.input_fname = os.path.split(self.input_path)
         if parsed_args.output_dir:
             self.output_dir = parsed_args.output_dir
         else:
-            self.output_dir = input_dir
+            self.output_dir = self.input_dir
         if not(os.path.exists(self.output_dir)):
             os.makedirs(self.output_dir)
         if parsed_args.name:
             self.output_base_fname = parsed_args.name
         else:
-            self.output_base_fname = input_fname
+            self.output_base_fname = self.input_fname
         self.input_assembly = parsed_args.liftover
         self.do_liftover = self.input_assembly != 'hg38'
         if self.do_liftover:
             self.lifter = LiftOver(constants.liftover_chain_paths[self.input_assembly])
         else:
             self.lifter = None
+        self.status_path = os.path.join(self.input_dir, self.input_fname + '.status.json')
 
     def setup (self):
         """ Do necesarry pre-run tasks """
@@ -302,13 +304,19 @@ class MasterCravatConverter(object):
                     self.crs_writer.write_data(wdict)
         self.logger.info('error lines: %d' %num_errors)
         self._close_files()
+        self.update_status_json('num_input_var', read_lnum)
+        self.update_status_json('num_unique_var', write_lnum)
+        self.update_status_json('num_error_input', num_errors)
         end_time = time.time()
         self.logger.info('finished: %s' %\
             time.asctime(time.localtime(end_time)))
         runtime = round(end_time - start_time, 3)
         self.logger.info('num input lines: {}'.format(read_lnum))
         self.logger.info('runtime: %s'%runtime)
-    
+
+    def update_status_json (self, k, v):
+        cu.update_status_json(self.status_path, k, v)
+
     def liftover(self, old_chrom, old_pos):
         new_coords = self.lifter.convert_coordinate(old_chrom, int(old_pos))
         if new_coords != None and len(new_coords) > 0:
@@ -317,7 +325,7 @@ class MasterCravatConverter(object):
             return new_chrom, new_pos
         else:
             raise LiftoverFailure(old_chrom, old_pos)
-    
+
     def _log_conversion_error(self, ln, e):
         """ Log exceptions thrown by primary converter.
             All exceptions are written to the .err file with the exception type

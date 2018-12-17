@@ -5,6 +5,8 @@ import pyliftover
 import argparse
 import os
 import sys
+import yaml
+import json
 
 def get_args ():
     if len(sys.argv) == 1:
@@ -133,6 +135,16 @@ def hg19tohg38 (args):
                 print('  ' + str(count) + '...')
         print('  ' + table + ': done.', count, 'rows converted')
     newdb.commit()
+
+def update_status_json(status_fpath, key, val):
+    if os.path.exists(status_fpath):
+        with open(status_fpath) as f:
+            status = yaml.load(f)
+    else:
+        status = {}
+    status[key] = val
+    with open(status_fpath,'w') as wf:
+        wf.write(json.dumps(status))
 
 def main ():
     args = get_args()
