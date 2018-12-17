@@ -349,15 +349,15 @@ def set_jobs_dir (request):
     au.set_jobs_dir(d)
     return web.json_response(d)
 
-def get_system_conf_info (request):
-    info = au.get_system_conf_info()
+async def get_system_conf_info (request):
+    info = au.get_system_conf_info_json()
+    global filerouter
     return web.json_response(info)
 
 async def update_system_conf (request):
-    post = await request.post()
-    sysconfstr = post['sysconfstr']
+    queries = request.rel_url.query
+    sysconf = json.loads(queries['sysconf'])
     try:
-        sysconf = yaml.load(sysconfstr)
         success = au.update_system_conf_file(sysconf)
     except:
         raise
@@ -574,7 +574,7 @@ routes.append(['GET','/submit/jobs/{job_id}/log',get_job_log])
 routes.append(['GET', '/submit/getjobsdir', get_jobs_dir])
 routes.append(['GET', '/submit/setjobsdir', set_jobs_dir])
 routes.append(['GET', '/submit/getsystemconfinfo', get_system_conf_info])
-routes.append(['POST', '/submit/updatesystemconf', update_system_conf])
+routes.append(['GET', '/submit/updatesystemconf', update_system_conf])
 routes.append(['GET', '/submit/resetsystemconf', reset_system_conf])
 routes.append(['GET', '/submit/login', login])
 routes.append(['GET', '/submit/servermode', get_servermode])

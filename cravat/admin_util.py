@@ -676,8 +676,10 @@ def update_system_conf_file(d):
     """
     Recursively update the system config and re-write to disk.
     """
+    print('@ in d=', d)
     try:
         sys_conf = recursive_update(get_system_conf(), d)
+        print('sys_conf in admin util=', sys_conf)
         write_system_conf_file(sys_conf)
         refresh_cache()
         return True
@@ -871,6 +873,20 @@ def get_system_conf_info ():
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
     system_conf_info = {'path': confpath, 'exists': confexists, 'content': yaml.dump(conf, default_flow_style=False)}
+    return system_conf_info
+
+def get_system_conf_info_json ():
+    set_jobs_dir(get_jobs_dir())
+    confpath = constants.system_conf_path
+    if os.path.exists(confpath):
+        conf = load_yml_conf(confpath)
+        confexists = True
+    else:
+        conf = {}
+        confexists = False
+    if constants.modules_dir_key not in conf:
+        conf[constants.modules_dir_key] = constants.default_modules_dir
+    system_conf_info = {'path': confpath, 'exists': confexists, 'content': conf}
     return system_conf_info
 
 def show_system_conf ():

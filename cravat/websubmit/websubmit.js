@@ -1000,46 +1000,53 @@ function openSubmitDiv () {
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
         var s = document.getElementById('sysconfpathspan');
-        s.textContent = response['path'];
-        var ta = document.getElementById('sysconftextarea');
-        ta.value = response['content'];
+        s.value = response['path'];
+        var s = document.getElementById('settings_jobs_dir_input');
+        s.value = response['content']['jobs_dir'];
+        var span = document.getElementById('server_user_span');
+        if (! servermode) {
+            span.textContent = '/default';
+        } else {
+            span.textContent = '';
+        }
+        var s = document.getElementById('settings_modules_dir_input');
+        s.value = response['content']['modules_dir'];
     });
 }
 
+function onClickSaveSystemConf () {
+    document.getElementById('settingsdiv').style.display = 'none';
+    updateSystemConf();
+}
+
 function updateSystemConf () {
-    var data = {'sysconfstr': document.getElementById('sysconftextarea').value};
-    $.ajax({
-        url:'/submit/updatesystemconf',
-        data: data,
-        type: 'POST',
-        success: function (response) {
-            if (response['success'] == true) {
-                alert('System configuration has been updated.');
-            } else {
-                alert('System configuration was not successful');
+    $.get('/submit/getsystemconfinfo').done(function (response) {
+        var s = document.getElementById('sysconfpathspan');
+        response['path'] = s.value;
+        var s = document.getElementById('settings_jobs_dir_input');
+        response['content']['jobs_dir'] = s.value;
+        var s = document.getElementById('settings_modules_dir_input');
+        response['content']['modules_dir'] = s.value;
+        $.ajax({
+            url:'/submit/updatesystemconf',
+            data: {'sysconf': JSON.stringify(response['content'])},
+            type: 'GET',
+            success: function (response) {
+                if (response['success'] == true) {
+                    alert('System configuration has been updated.');
+                } else {
+                    alert('System configuration was not successful');
+                }
+                if (response['sysconf']['jobs_dir'] != undefined) {
+                    populateJobs();
+                }
             }
-            if (response['sysconf']['jobs_dir'] != undefined) {
-                populateJobs();
-                /*
-                populateJobs().then(function () {
-                    buildJobsTable();
-                });
-                */
-            }
-        }
+        });
     });
 }
 
 function resetSystemConf () {
-    $.get('/submit/resetsystemconf').done(function (response) {
-        var status = response['status'];
-        if (status == 'success') {
-            var d = response['dict'];
-            document.getElementById('sysconftextarea').value = d;
-        } else {
-            alert('Resetting system conf file failed.');
-        }
-    });
+    loadSystemConf();
 }
 
 function getServermode () {
@@ -1313,6 +1320,27 @@ function populatePackageVersions () {
 	});
 }
 
+function onClickInputTextArea () {
+    let input = document.getElementById('input-text');
+    input.rows = 20;
+}
+
+function onBlurInputTextArea () {
+    let input = document.getElementById('input-text');
+    input.rows = 1;
+}
+
+function onClickThreeDots () {
+    var div = document.getElementById('settingsdiv');
+    var display = div.style.display;
+    if (display == 'block') {
+        display = 'none';
+    } else {
+        display = 'block';
+    }
+    div.style.display = display;
+}
+
 function websubmit_run () {
     getServermode();
     var storediv = document.getElementById('storediv');
@@ -1358,14 +1386,4 @@ function websubmit_run () {
     loadSystemConf();
     populatePackageVersions();
 };
-
-function onClickInputTextArea () {
-    let input = document.getElementById('input-text');
-    input.rows = 20;
-}
-
-function onBlurInputTextArea () {
-    let input = document.getElementById('input-text');
-    input.rows = 1;
-}
 
