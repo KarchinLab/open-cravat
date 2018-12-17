@@ -212,3 +212,23 @@ button {
     font-size: 13px;
 }
 
+#settingsdiv {
+    display: none;
+    position: absolute;
+    top: 27px;
+    right: 6px;
+    background-color: white;
+    z-index: 1;
+    box-shadow: 2px 2px 2px gray;
+    border: 1px solid #a2a2a2;
+    padding: 14px;
+    font-size: 13px;
+}
+
+.threedots {
+    height: 20px;
+    top: 6px;
+    position: absolute;
+    right: 10px;
+}
+

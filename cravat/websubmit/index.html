@@ -91,15 +91,21 @@
         Jobs 
     </div><div value='storediv' onclick='changePage("storediv");'>
         Store
-    </div><div id='settingspageselect' value='settingsdiv' onclick='changePage("settingsdiv");'>
+    </div>
+    <!--
+    <div id='settingspageselect' value='settingsdiv' onclick='changePage("settingsdiv");'>
         Settings
     </div>
+    -->
 </div>
 
 <div id='submitdiv' class='appdiv'>
     <div class = 'headerdiv' />
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
             <img src='logo.png' class='logo' />
+        </div>
+        <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' onclick='onClickThreeDots();'>
+            <img src='threedots.png' class='threedots' />
         </div>
         <div id='verdiv' >
             Version: <span id="curverspan" style="font-family: monospace;"></span>
@@ -167,26 +173,26 @@
     </td><td valign='top' style='padding-left: 20px; width: 100%;'>
     <div id="jobdiv" style='position: relative; top: 93px; display: block; overflow: auto;'>
         <br />
-            <div style='width: 100%; text-align: right;'>
-                <img src='refresh.png' id='refresh-jobs-table-btn' 
-                    style='width: 12px; position: absolute; top: 24px; left: 3px;' />
-            </div>
-            <table id="jobs-table">
-                <thead>
-                <tr>
-                    <th class='tableheadercell'>Input File</th>
-                    <th class='tableheadercell' style='width: 100px;'># Annot</th>
-                    <th class='tableheadercell'>Status</th>
-                    <th class='tableheadercell'>Genome</th>
-                    <th class='tableheadercell'>Note</th>
-                    <th class='tableheadercell'>View Result</th>
-                    <th class='tableheadercell'>Download</th>
-                    <th class='tableheadercell'>Delete</th>
-                </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+        <div style='width: 100%; text-align: right;'>
+            <img src='refresh.png' id='refresh-jobs-table-btn' 
+                style='width: 12px; position: absolute; top: 24px; left: 3px;' />
+        </div>
+        <table id="jobs-table">
+            <thead>
+            <tr>
+                <th class='tableheadercell'>Input File</th>
+                <th class='tableheadercell' style='width: 100px;'># Annot</th>
+                <th class='tableheadercell'>Status</th>
+                <th class='tableheadercell'>Genome</th>
+                <th class='tableheadercell'>Note</th>
+                <th class='tableheadercell'>View Result</th>
+                <th class='tableheadercell'>Download</th>
+                <th class='tableheadercell'>Delete</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
         <br />
     </div>  
     </td></tr></table>
@@ -200,6 +206,9 @@
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
             <img src='logo.png' class='logo' />
         </div>
+        <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' onclick='onClickThreeDots();'>
+            <img src='threedots.png' class='threedots' />
+        </div>
         <div style='position: absolute; right: 25px; vertical-align: bottom; bottom: 10px;'>
             Module type:
             <select id='typefilter' onchange='updateFilter()' style='font-size: 16px'></select>
@@ -212,20 +221,17 @@
     </div>
 </div> <!-- storediv -->
 
-<div id='settingsdiv' class='appdiv' style='display: none;'>
-    <div class='headerdiv' >
-        <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
-            <img src='logo.png' class='logo' />
-        </div>
-    </div>
-    <div style='position: relative; top: 120px;'>
-        <span>System configuration file:</span><span id='sysconfpathspan'></span>
-        <br />
-        <textarea id='sysconftextarea' cols='120' rows='30'></textarea>
-        <br />
-        <button style='font-size: 30px; padding: 11px; background-color: #d6ecff;' onclick='updateSystemConf();'>Update</button>
-        <button style='font-size: 30px; padding: 11px; background-color: #d6ecff;' onclick='resetSystemConf();'>Reset</button>
-    </div>
+<div id='settingsdiv' >
+    <span>System configuration file:</span>
+    <br />
+    <input id='sysconfpathspan' type='text' size='60' disabled />
+    <br />
+    <span>Jobs dir: </span><input id='settings_jobs_dir_input' type='text' size='30' /><span id='server_user_span'></span>
+    <br />
+    <span>Modules dir: </span><input id='settings_modules_dir_input' type='text' size='60' />
+    <br />
+    <button onclick='onClickSaveSystemConf();'>Save</button>
+    <button onclick='resetSystemConf();'>Reset</button>
 </div> <!-- settingsdiv -->
 
 </body>
