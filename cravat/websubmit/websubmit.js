@@ -170,7 +170,7 @@ function buildJobsTable () {
         } else {
             statusC = job.status.status;
         }
-        statusC = statusC.replace('Finished', 'F').replace('Error', 'E');
+        statusC = statusC.replace('Finished', 'C').replace('Error', 'E');
         td.title = job.status.status;
         td.textContent = statusC;
         jobTr.append($(td)).css('text-align', 'center');
@@ -317,7 +317,28 @@ function buildJobsTable () {
             td.textContent = 'Submitted';
             addEl(tr, td);
             var td = getEl('td');
-            td.textContent = job.submission_time;
+            var t = job.submission_time;
+            var month = t.getMonth();
+            if (month < 10) {
+                month = '0' + month;
+            }
+            var d = t.getDate();
+            if (d < 10) {
+                d = '0' + d;
+            }
+            var h = t.getHours();
+            if (h < 10) {
+                h = '0' + h;
+            }
+            var m = t.getMinutes();
+            if (m < 10) {
+                m = '0' + m;
+            }
+            var s = t.getSeconds();
+            if (s < 10) {
+                s = '0' + s;
+            }
+            td.textContent = t.getFullYear() + '.' + month + '.' + d + ' ' + h + ':' + m + ':' + s;
             addEl(tr, td);
             addEl(tbody, tr);
         }
