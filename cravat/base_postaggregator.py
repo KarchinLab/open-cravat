@@ -106,10 +106,8 @@ class BasePostAggregator (object):
             self._log_exception(e)
 
     def fill_categories (self):
-        print(self.conf['output_columns'])
         for col_def in self.conf['output_columns']:
-            print(col_def)
-            if col_def['category'] not in ['single', 'multi']:
+            if 'category' not in col_def or col_def['category'] not in ['single', 'multi']:
                 continue
             col_name = col_def['name']
             q = 'select distinct {} from {}'.format(col_name, self.level)
@@ -147,7 +145,6 @@ class BasePostAggregator (object):
             q += 'base__uid=' + str(input_data['base__uid'])
         elif self.levelno == GENE:
             q += 'base__hugo="' + input_data['base__hugo'] + '"'
-        print(q)
         self.cursor_w.execute(q)
         
     def _log_runtime_exception(self, input_data, e):
@@ -206,7 +203,6 @@ class BasePostAggregator (object):
             # header table
             # use prepared statement to allow " characters in colcats and coldesc
             q = 'insert into {} values (?, ?, ?, ?, ?, ?, ?, ?)'.format(header_table_name)
-            print(q)
             self.cursor_w.execute(q,[colname, coltitle, coltype, colcats, colwidth, coldesc, colhidden, col_ctg])
         self.dbconn.commit()
         

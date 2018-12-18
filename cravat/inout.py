@@ -79,13 +79,14 @@ class CravatReader (CravatFile):
     def get_index_columns(self):
         return self.index_columns
 
-    def override_column(self, index, name, title=None, data_type='string', cats=[]):
+    def override_column(self, index, name, title=None, data_type='string', cats=[], category=None):
         if title == None:
             title = ' '.join(x.title() for x in name.split('_'))
         self.columns[index]['title'] = title
         self.columns[index]['name'] = name
         self.columns[index]['type'] = data_type
         self.columns[index]['categories'] = cats
+        self.columns[index]['category'] = category
 
     def get_column_names(self):
         sorted_order = sorted(list(self.columns.keys()))

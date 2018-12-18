@@ -14,9 +14,7 @@ class Aggregator (object):
     
     cr_type_to_sql = {'string':'text',
                       'int':'integer',
-                      'float':'real',
-                      'category': 'string',
-                      'multicategory': 'string'}
+                      'float':'real'}
     commit_threshold = 10000
     
     def __init__(self, cmd_args):
@@ -172,14 +170,20 @@ class Aggregator (object):
         return col_cats
 
     def fill_categories (self):
-        q = 'select col_name, col_type, col_cats from {}_header'.format(self.level)
+        q = 'select * from {}_header'.format(self.level)
         self.cursor.execute(q)
         rs = self.cursor.fetchall()
         cols_to_fill = []
         for r in rs:
-            (col_name, col_type, col_cats_str) = r
-            if col_type == 'category' or col_type == 'multicategory':
-                if col_cats_str == None or len(col_cats_str) == 0:
+            col_name = r[0]
+            col_type = r[2]
+            col_cats_str = r[3]
+            if len(r) > 7:
+                col_ctg = r[7]
+            else:
+                col_ctg = None
+            if col_ctg in ['single', 'multi']:
+                if col_cats_str == None or len(col_cats_str) == 0 or col_cats_str == '[]':
                     cols_to_fill.append(col_name)
                 else:
                     col_cats_str = self.do_reportsub_col_cats_str(col_name, col_cats_str)
@@ -311,7 +315,6 @@ class Aggregator (object):
                 else:
                     columns.append([db_col_name, db_col_title, db_type, db_col_cats, col_def['width'], col_def['desc'], col_def['hidden'], col_def['category']])
                     unique_names.add(db_col_name)
-                    
         col_def_strings = []
         for col in columns:
             name = col[0]

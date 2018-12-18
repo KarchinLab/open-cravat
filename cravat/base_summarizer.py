@@ -261,6 +261,7 @@ class BaseAnnotator(object):
                     raise ConfigurationError(err_msg)
                 else:
                     default_columns = self.default_input_columns[self.conf['input_format']]
+                    print('default_columns=', default_columns)
                     for col_name in requested_input_columns:
                         try:
                             col_index = default_columns.index(col_name)

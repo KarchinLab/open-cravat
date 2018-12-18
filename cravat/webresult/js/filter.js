@@ -125,9 +125,6 @@ const onFilterColumnSelectorChange = (evt) => {
             var curTestSetup = filterTests[curTestKey];
             var curTestColTypes = curTestSetup['colTypes'];
             var selColType = column.type;
-            if (curTestColTypes.indexOf(selColType) >= 0) {
-                return;
-            }
             for (var i = 0; i < filterTestNames.length; i++) {
                 if (filterTests[testDiv.options[i].value].colTypes.indexOf(selColType) >= 0) {
                     testDiv.selectedIndex = i;
@@ -178,12 +175,14 @@ const populateFilterValues = (valsContainer, testName, value) => {
         if (optionValues != undefined) {
             for (var j = 0; j < optionValues.length; j++) {
                 var optionValue = optionValues[j];
+                if (optionValue == null) {
+                    continue;
+                }
                 for (let k = 0; k < valSubDicKeys.length; k++) {
                     const key = valSubDicKeys[k];
                     optionValue = optionValue.replace(new RegExp(key, 'g'), valSubDic[key]);
                 }
-                console.log('@@', optionValue);
-                let vals = optionValue.split(',');
+                let vals = optionValue.split(';');
                 for (let k = 0; k < vals.length; k++) {
                     let val = vals[k];
                     if (writtenOptionValues.indexOf(val) < 0) {
@@ -191,10 +190,7 @@ const populateFilterValues = (valsContainer, testName, value) => {
                         var option = getEl('option');
                         option.value = val;
                         option.textContent = val;
-                        console.log(val);
-                        console.log(writtenOptionValues);
                         addEl(select, option);
-                        console.log(select);
                     }
                 }
             }
@@ -415,7 +411,7 @@ const makeGroupFilter = (groupDiv) => {
         var column = infomgr.getColumnByName('variant', colFilter.column);
         // Test
         colFilter.test = colDiv.children('.filter-test-selector').val();
-        if (column.type == 'multicategory') {
+        if (column.category == 'multi') {
             colFilter.test = 'multicategory';
         }
         // Value
@@ -486,13 +482,13 @@ const filterTests = {
     lessThan: {title:'<', inputs:1, colTypes: ['float', 'int']},
     greaterThanEq: {title:'>=', inputs:1, colTypes: ['float', 'int']},
     greaterThan: {title:'>', inputs:1, colTypes: ['float', 'int']},
-    hasData: {title:'has data', inputs:0, colTypes: ['float', 'int', 'string', 'category', 'multicategory']},
-    noData: {title:'is empty', inputs:0, colTypes: ['float', 'int', 'string', 'category', 'multicategory']},
-    stringContains: {title: 'contains', inputs:1, colTypes: ['string', 'category', 'multicategory']},
-    stringStarts: {title: 'starts with', inputs:1, colTypes: ['string', 'category', 'multicategory']},
-    stringEnds: {title: 'ends with', inputs:1, colTypes: ['string', 'category', 'multicategory']},
+    hasData: {title:'has data', inputs:0, colTypes: ['float', 'int', 'string']},
+    noData: {title:'is empty', inputs:0, colTypes: ['float', 'int', 'string']},
+    stringContains: {title: 'contains', inputs:1, colTypes: ['string']},
+    stringStarts: {title: 'starts with', inputs:1, colTypes: ['string']},
+    stringEnds: {title: 'ends with', inputs:1, colTypes: ['string']},
     between: {title: 'in range', inputs:2, colTypes: ['float', 'int']},
-    select: {title: 'select', inputs: 1, colTypes: ['category', 'multicategory']},
+    select: {title: 'select', inputs: 1, colTypes: ['string', 'float', 'int']},
 }
 
 const filterTestNames = [
