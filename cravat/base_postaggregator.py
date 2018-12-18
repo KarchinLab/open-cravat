@@ -108,6 +108,7 @@ class BasePostAggregator (object):
     def fill_categories (self):
         print(self.conf['output_columns'])
         for col_def in self.conf['output_columns']:
+            print(col_def)
             if col_def['category'] not in ['single', 'multi']:
                 continue
             col_name = col_def['name']
