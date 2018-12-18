@@ -32,3 +32,18 @@
     top: 104px;
 }
 
+.newmoduleicon {
+    width: 25px;
+    position: absolute;
+    top: 3px;
+    right: 0px;
+}
+
+.modulepanel-type-span {
+    font-size: 14px;
+    color: lightcoral;
+    bottom: 2px;
+    left: 9px;
+    position: absolute;
+}
+

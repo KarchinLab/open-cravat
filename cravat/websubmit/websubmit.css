@@ -84,8 +84,9 @@ body * {
 }
 
 .input-example-button {
-    width: 120px;
+    width: 35px;
     background-color: #d2e8fa;
+    font-size: 11px;
 }
 
 .or {
@@ -96,6 +97,7 @@ body * {
     padding-top: 5px;
     padding-bottom: 5px;
     width: 26px;
+    color: #4b4b4b;
 }
 
 .divbanner {
@@ -141,6 +143,10 @@ button {
     background-color: #777777;
 }
 
+.job-table-tr {
+    border-bottom: 1px dotted #aaaaaa;
+}
+
 .job-detail-tr {
     background-color: #f2f2f2;
 }
@@ -163,7 +169,7 @@ button {
     padding-top: 10px;
     padding-bottom: 10px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 #jobs-table thead th {
@@ -174,14 +180,16 @@ button {
 }
 
 #annotator-select-div span {
-    font-family: cursive;
+}
+
+#assembly-select-div {
+    position: absolute;
+    top: 12px;
+    right: 7px;
+    height: 21px;
 }
 
 #assembly-select {
-    position: relative;
-    top: -12px;
-    left: 7px;
-    height: 21px;
 }
 
 .logo {
@@ -230,5 +238,11 @@ button {
     top: 6px;
     position: absolute;
     right: 10px;
+}
+
+.variant-input-border-bottom {
+    position: relative;
+    border-bottom: 1px dotted #cbcbcb;
+    padding-bottom: 20px;
 }
 

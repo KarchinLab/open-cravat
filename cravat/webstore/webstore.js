@@ -262,8 +262,7 @@ function getRemoteModulePanel (moduleName) {
     addEl(div, span);
     addEl(div, getEl('br'));
     span = getEl('span');
-    span.style.fontSize = '14px';
-    span.style.color = 'lightcoral';
+    span.className = 'modulepanel-type-span';
     span.textContent = moduleInfo['type'];
     addEl(div, span);
     addEl(div, getEl('br'));
@@ -315,10 +314,7 @@ function getRemoteModulePanel (moduleName) {
             var img3 = getEl('img');
             img3.src = '/store/new.png';
             img3.title = 'New module available';
-            img3.style.width = '50px';
-            img3.style.position = 'absolute';
-            img3.style.bottom = '0px';
-            img3.style.right = '0px';
+            img3.className = 'newmoduleicon';
             addEl(div, img3);
         }
     }
