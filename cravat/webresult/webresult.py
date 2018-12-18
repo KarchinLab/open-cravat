@@ -387,15 +387,37 @@ def get_colmodel (tab, colinfo):
                 'desc': d['col_desc'],
                 'type': d['col_type'],
                 'hidden': d['col_hidden'],
+                'ctg': d['col_ctg'],
                 }
             if d['col_type'] == 'string':
-                column['filter'] = {
-                    "type":"textbox",
-                    "condition":"contain",
-                    "listeners":["keyup"]}
-                column['retfilt'] = True
-                column['retfilttype'] = 'regexp'
-                column['multiseloptions'] = []
+                if d['col_ctg'] == 'single':
+                    column['filter'] = {
+                        'type': 'select',
+                        'attr': 'multiple',
+                        'condition': 'equal',
+                        'options': cats,
+                        'listeners': ['change']}
+                    column['retfilt'] = True
+                    column['retfilttype'] = 'select'
+                    column['multiseloptions'] = cats
+                elif d['col_ctg'] == 'multi':
+                    column['filter'] = {
+                        'type': 'select',
+                        'attr': 'multiple',
+                        'condition': 'equal',
+                        'options': cats,
+                        'listeners': ['change']}
+                    column['retfilt'] = True
+                    column['retfilttype'] = 'select'
+                    column['multiseloptions'] = cats
+                else:
+                    column['filter'] = {
+                        "type":"textbox",
+                        "condition":"contain",
+                        "listeners":["keyup"]}
+                    column['retfilt'] = True
+                    column['retfilttype'] = 'regexp'
+                    column['multiseloptions'] = []
             elif d['col_type'] == 'float' or d['col_type'] == 'int':
                 column['filter'] = {
                     "type":"textbox",
@@ -404,26 +426,6 @@ def get_colmodel (tab, colinfo):
                 column['retfilt'] = True
                 column['retfilttype'] = 'between'
                 column['multiseloptions'] = []
-            elif d['col_type'] == 'category':
-                column['filter'] = {
-                    'type': 'select',
-                    'attr': 'multiple',
-                    'condition': 'equal',
-                    'options': cats,
-                    'listeners': ['change']}
-                column['retfilt'] = True
-                column['retfilttype'] = 'select'
-                column['multiseloptions'] = cats
-            elif d['col_type'] == 'multicategory':
-                column['filter'] = {
-                    'type': 'select',
-                    'attr': 'multiple',
-                    'condition': 'equal',
-                    'options': cats,
-                    'listeners': ['change']}
-                column['retfilt'] = True
-                column['retfilttype'] = 'select'
-                column['multiseloptions'] = cats
             columngroupdef['colModel'].append(column)
             dataindx += 1
         colModel.append(columngroupdef)

@@ -11,7 +11,7 @@ from io import StringIO
 csv.register_dialect('cravat', delimiter=',', quotechar='@')
 
 class CravatFile(object):
-    valid_types = ['string', 'int', 'float', 'category', 'multicategory']
+    valid_types = ['string', 'int', 'float']
     def __init__(self, path):
         self.path = os.path.abspath(path)
         self.columns = {}
@@ -61,6 +61,7 @@ class CravatReader (CravatFile):
                 col_desc = col_info[6] if col_info[6] else None
                 # Using json properly converts "False" to False, bool("False") evalueates to True
                 col_hidden = json.loads(col_info[7].lower()) if col_info[7] else True
+                col_ctg = col_info[8] if col_info[8] else None
                 self.columns[col_index] = {'title':col_title,
                                            'name':col_name,
                                            'type':col_type,
@@ -68,6 +69,7 @@ class CravatReader (CravatFile):
                                            'width':col_width,
                                            'desc':col_desc,
                                            'hidden':col_hidden,
+                                           'category': col_ctg,
                                            }
             elif l.startswith('#report_substitution='):
                 self.report_substitution = json.loads(l.split('=')[1])
@@ -80,10 +82,10 @@ class CravatReader (CravatFile):
     def override_column(self, index, name, title=None, data_type='string', cats=[]):
         if title == None:
             title = ' '.join(x.title() for x in name.split('_'))
-        self.columns[index] = {'title':title,
-                               'name':name,
-                               'type':data_type,
-                               'categories': cats}
+        self.columns[index]['title'] = title
+        self.columns[index]['name'] = name
+        self.columns[index]['type'] = data_type
+        self.columns[index]['categories'] = cats
 
     def get_column_names(self):
         sorted_order = sorted(list(self.columns.keys()))
@@ -109,7 +111,6 @@ class CravatReader (CravatFile):
             for col_index, col_def in self.columns.items():
                 col_name = col_def['name']
                 col_type = col_def['type']
-                col_cats = col_def['categories']
                 tok = toks[col_index]
                 if tok == '':
                     out[col_name] = None
@@ -120,10 +121,6 @@ class CravatReader (CravatFile):
                         out[col_name] = int(tok)
                     elif col_type == 'float':
                         out[col_name] = float(tok)
-                    elif col_type == 'category':
-                        out[col_name] = tok
-                    else:
-                        out[col_name] = tok
             yield lnum, out
    
     def get_data(self):
@@ -182,6 +179,7 @@ class CravatWriter(CravatFile):
         col_width = col_def.get('width')
         col_desc = col_def.get('desc')
         col_hidden = col_def.get('hidden',False)
+        col_ctg = col_def.get('category', None)
         if not(override):
             try:
                 self.columns[col_index]
@@ -199,7 +197,8 @@ class CravatWriter(CravatFile):
                                    'categories': col_cats,
                                    'width': col_width,
                                    'desc': col_desc,
-                                   'hidden': col_hidden
+                                   'hidden': col_hidden,
+                                   'category': col_ctg
                                    }
 
     def add_columns(self, col_list, append=False):
@@ -246,7 +245,7 @@ class CravatWriter(CravatFile):
 
     def write_definition(self, conf=None):
         self._prep_for_write()
-        val_order = ['title','name','type','categories','width','desc','hidden']
+        val_order = ['title','name','type','categories','width','desc','hidden', 'category']
         for col_index, col_def in enumerate(self.ordered_columns):
             ordered_vals = [col_index]+[col_def[k] for k in val_order]
             s_buffer = StringIO()

@@ -25,11 +25,11 @@ liftover_chain_paths = {
                         }
 
 crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'width': 90},
-           {'name':'tags', 'title':'User Tags', 'type':'category', 'width': 90},
+           {'name':'tags', 'title':'User Tags', 'type':'string', 'width': 90, 'category': 'multi'},
            {'name':'uid', 'title':'UID', 'type':'int', 'width': 70}]
 crm_idx = [['uid'],['tags']]
 crs_def = [{'name':'uid', 'title':'UID', 'type':'string', 'width': 70},
-           {'name':'sample_id', 'title':'Sample', 'type':'category', 'width': 90}]
+           {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90, 'category': 'multi'}]
 crs_idx = [['uid'], ['sample_id']]
 crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
            {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 60},
@@ -38,10 +38,10 @@ crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
            {'name':'alt_base', 'title':'Alt Base', 'type':'string', 'width': 80}]
 crv_idx = [['uid']]
 crx_def = crv_def + \
-          [{'name':'coding', 'title':'Coding', 'type':'category', 'width': 50},
+          [{'name':'coding', 'title':'Coding', 'type':'string', 'width': 50, 'category': 'single'},
            {'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70},
            {'name':'transcript', 'title':'Transcript', 'type':'string', 'width': 150},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'category', 'width': 155,
+           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 155, 'category': 'single',
                'categories': [
                    '2KD',
                    '2KU', 
@@ -67,7 +67,7 @@ crx_def = crv_def + \
 crx_idx = [['uid']]
 crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70},
            {'name':'num_variants', 'title':'Variants in Gene', 'type':'int', 'width': 130},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'category', 'width': 170,
+           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 170, 'category': 'single',
                'categories': [
                    '2KD',
                    '2KU', 

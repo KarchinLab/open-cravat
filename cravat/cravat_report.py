@@ -165,13 +165,14 @@ class CravatReport:
             col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else []
             col_width = row[4] if len(row) > 4 else None
             col_desc = row[5] if len(row) > 5 else None
-            if (col_type == 'category' or col_type == 'multicategory') and len(col_cats) == 0:
+            col_hidden = bool(row[6]) if len(row) > 6 else False
+            col_ctg = row[7] if len(row) > 7 else None
+            if col_ctg in ['single', 'multi'] and len(col_cats) == 0:
                 sql = 'select distinct {} from {}'.format(colname, level)
                 self.cursor.execute(sql)
                 rs = self.cursor.fetchall()
                 for r in rs:
                     col_cats.append(r[0])
-            col_hidden = bool(row[6]) if len(row) > 6 else False
             column = {'col_name': colname,
                       'col_title': coltitle,
                       'col_type': col_type,
@@ -179,6 +180,7 @@ class CravatReport:
                       'col_width':col_width,
                       'col_desc':col_desc,
                       'col_hidden':col_hidden,
+                      'col_ctg': col_ctg,
                       }
             self.colnos[level][colname] = colcount
             colcount += 1
@@ -220,7 +222,8 @@ class CravatReport:
                     col_width = col.get('width')
                     col_desc = col.get('desc')
                     col_hidden = col.get('hidden',False)
-                    if (col_type == 'category' or col_type == 'multicategory') and len(col_cats) == 0:
+                    col_ctg = col.get('category', None)
+                    if col_ctg in ['category', 'multicategory'] and len(col_cats) == 0:
                         sql = 'select distinct {} from {}'.format(colname, level)
                         self.cursor.execute(sql)
                         rs = self.cursor.fetchall()
@@ -233,6 +236,7 @@ class CravatReport:
                               'col_width':col_width,
                               'col_desc':col_desc,
                               'col_hidden':col_hidden,
+                              'col_ctg': col_ctg
                               }
                     columns.append(column)
                     self.var_added_cols.append(colname)
@@ -263,7 +267,8 @@ class CravatReport:
                     for col in cols:
                         col_type = col['type']
                         col_cats = col.get('categories', [])
-                        if (col_type == 'category' or col_type == 'multicategory') and len(col_cats) == 0:
+                        col_ctg = col.get('category', None)
+                        if col_type in ['category', 'multicategory'] and len(col_cats) == 0:
                             sql = 'select distinct {} from {}'.format(colname, level)
                             self.cursor.execute(sql)
                             rs = self.cursor.fetchall()
@@ -276,6 +281,7 @@ class CravatReport:
                                   'col_width':col.get('width'),
                                   'col_desc':col.get('desc'),
                                   'col_hidden':col.get('hidden',False),
+                                  'col_ctg': col_ctg
                                   }
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])

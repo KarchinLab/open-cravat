@@ -106,8 +106,9 @@ class BasePostAggregator (object):
             self._log_exception(e)
 
     def fill_categories (self):
+        print(self.conf['output_columns'])
         for col_def in self.conf['output_columns']:
-            if col_def['type'] not in ['category', 'multicategory']:
+            if col_def['category'] not in ['single', 'multi']:
                 continue
             col_name = col_def['name']
             q = 'select distinct {} from {}'.format(col_name, self.level)
@@ -134,7 +135,7 @@ class BasePostAggregator (object):
             if col_name in output_dict:
                 val = output_dict[col_name]
                 col_type = col_def['type']
-                if col_type in ['string', 'category', 'multicategory']:
+                if col_type in ['string']:
                     val = '"' + val + '"'
                 else:
                     val = str(val)
@@ -145,6 +146,7 @@ class BasePostAggregator (object):
             q += 'base__uid=' + str(input_data['base__uid'])
         elif self.levelno == GENE:
             q += 'base__hugo="' + input_data['base__hugo'] + '"'
+        print(q)
         self.cursor_w.execute(q)
         
     def _log_runtime_exception(self, input_data, e):
@@ -195,14 +197,16 @@ class BasePostAggregator (object):
             colwidth = col_def.get('width')
             coldesc = col_def.get('desc')
             colhidden = col_def.get('hidden',False)
+            col_ctg = col_def.get('category', None)
             # data table
             q = 'alter table ' + self.level + ' add column ' +\
                 colname + ' ' + coltype
             self.cursor_w.execute(q)
             # header table
             # use prepared statement to allow " characters in colcats and coldesc
-            q = 'insert into {} values (?, ?, ?, ?, ?, ?, ?)'.format(header_table_name)
-            self.cursor_w.execute(q,[colname, coltitle, coltype, colcats, colwidth, coldesc, colhidden])
+            q = 'insert into {} values (?, ?, ?, ?, ?, ?, ?, ?)'.format(header_table_name)
+            print(q)
+            self.cursor_w.execute(q,[colname, coltitle, coltype, colcats, colwidth, coldesc, colhidden, col_ctg])
         self.dbconn.commit()
         
     # Placeholder, intended to be overridded in derived class
