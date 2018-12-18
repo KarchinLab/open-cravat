@@ -404,7 +404,7 @@ def get_colmodel (tab, colinfo):
                     column['filter'] = {
                         'type': 'select',
                         'attr': 'multiple',
-                        'condition': 'equal',
+                        'condition': 'contain',
                         'options': cats,
                         'listeners': ['change']}
                     column['retfilt'] = True
