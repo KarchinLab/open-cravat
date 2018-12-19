@@ -207,7 +207,7 @@ function getRemoteModulePanel (moduleName) {
         span.className = 'moduletile-title';
         span.textContent = moduleInfo.title;
         if (moduleInfo.title.length > 30) {
-            span.style.fontSize = 30;
+            span.style.fontSize = '30px';
         }
         addEl(sdiv, span);
     }
