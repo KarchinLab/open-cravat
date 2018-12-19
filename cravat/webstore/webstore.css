@@ -72,9 +72,14 @@
 }
 
 .panelinstallstatusspan {
+    background-color: white;
+    font-size: 12px;
+}
+
+.panelinstallprogressspan {
     position: absolute;
     top: 0px;
     right: 0px;
-    background-color: white;
+    font-size: 12px;
 }
 

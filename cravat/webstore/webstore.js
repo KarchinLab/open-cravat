@@ -275,10 +275,12 @@ function getRemoteModulePanel (moduleName) {
             installStatus = '';
         }
     }
+    var progSpan = getEl('div');
+    progSpan.id = 'panelinstallprogress_' + moduleName;
+    progSpan.className = 'panelinstallprogressspan';
+    addEl(div, progSpan);
     var span = getEl('div');
     span.id = 'panelinstallstatus_' + moduleName;
-    span.className = 'panelinstallstatusspan';
-    span.style.fontSize = '12px';
     addEl(div, span);
     if (installStatus == 'Installed') {
         var img2 = getEl('img');
@@ -288,10 +290,10 @@ function getRemoteModulePanel (moduleName) {
         addEl(span, img2);
     } else {
         if (installStatus == 'Queued') {
-            span.textContent = 'Queued';
-            span.style.color = 'red';
+            progSpan.textContent = 'Queued';
+            progSpan.style.color = 'red';
         } else {
-            span.style.color = 'black';
+            progSpan.style.color = 'black';
         }
     }
     if (installStatus == 'Installed') {
@@ -916,7 +918,7 @@ function connectWebSocket () {
             if (installstatdiv != null) {
                 installstatdiv.textContent = msg;
             }
-            var sdiv = document.getElementById('panelinstallstatus_' + divModuleName);
+            var sdiv = document.getElementById('panelinstallprogress_' + divModuleName);
             sdiv.style.color = 'black';
             sdiv.textContent = msg;
             if (msg.startsWith('Finished installation of')) {
