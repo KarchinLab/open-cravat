@@ -82,8 +82,29 @@ class FileRouter(object):
 
     async def job_log(self, request, job_id):
         job_dir = await self.job_dir(request, job_id)
-        log_fname = self.input_fname+self.log_extension
-        return os.path.join(job_dir, log_fname)
+        fns = os.listdir(job_dir)
+        log_fn = None
+        for fn in fns:
+            if fn.endswith('.status.json'):
+                with open(os.path.join(job_dir, fn)) as f:
+                    statusjson = json.loads(f.readline())
+                    if 'orig_input_fname' in statusjson:
+                        log_fn = statusjson['orig_input_fname']
+            elif fn.endswith('.info.yaml'):
+                with open(os.path.join(job_dir, fn)) as f:
+                    infojson = yaml.load(f)
+                    if 'orig_input_fname' in infojson:
+                        log_fn = infojson['orig_input_fname']
+        if log_fn is not None:
+            log_fname = os.path.join(job_dir, self.input_fname + self.log_extension)
+            if os.path.exists(log_fname) == False:
+                log_fname = None
+        else:
+            log_fname = None
+        if log_fname != None:
+            return log_fname
+        else:
+            return None
 
 
 class WebJob(object):
@@ -302,8 +323,11 @@ async def get_job_log (request):
     global filerouter
     job_id = request.match_info['job_id']
     log_path = await filerouter.job_log(request, job_id)
-    with open(log_path) as f:
-        return web.Response(text=f.read())
+    if log_path is not None:
+        with open(log_path) as f:
+            return web.Response(text=f.read())
+    else:
+        return web.Response(text='loo file does not exist.')
 
 def get_valid_report_types():
     reporter_infos = au.get_local_module_infos(types=['reporter'])

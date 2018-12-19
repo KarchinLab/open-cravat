@@ -216,7 +216,7 @@ function buildJobsTable () {
         dbTd.append(textButton);
         // Log
         var logLink = $(getEl('a'))
-            .attr('href','jobs/'+job.id+'/log')
+            .attr('href','jobs/'+job.id+'/log?')
             .attr('target','_blank')
             .attr('title', 'Click to download.')
             .append($(getEl('button')).append('Log'))
