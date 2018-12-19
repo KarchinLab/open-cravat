@@ -41,7 +41,7 @@ crx_def = crv_def + \
           [{'name':'coding', 'title':'Coding', 'type':'string', 'width': 50, 'category': 'single'},
            {'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70},
            {'name':'transcript', 'title':'Transcript', 'type':'string', 'width': 150},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 155, 'category': 'single',
+           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 200, 'category': 'single',
                'categories': [
                    '2KD',
                    '2KU', 
@@ -57,17 +57,15 @@ crx_def = crv_def + \
                    'STL', 
                    'SPL', 
                    'STG', 
-                   'FD2', 
-                   'FD1', 
-                   'FI2', 
-                   'FI1']},
+                   'FSD', 
+                   'FSI']},
            {'name':'achange', 'title':'Protein Change', 'type':'string', 'width': 70},
            {'name':'all_mappings', 'title':'All Mappings', 'type':'string', 'width': 100, 'hidden':True},
            ]
 crx_idx = [['uid']]
 crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70},
            {'name':'num_variants', 'title':'Variants in Gene', 'type':'int', 'width': 130},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 170, 'category': 'single',
+           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 200, 'category': 'single',
                'categories': [
                    '2KD',
                    '2KU', 
@@ -83,10 +81,8 @@ crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70},
                    'STL', 
                    'SPL', 
                    'STG', 
-                   'FD2', 
-                   'FD1', 
-                   'FI2', 
-                   'FI1']},
+                   'FSD', 
+                   'FSI']},
            {'name':'all_so', 'title':'All Sequence Ontologies', 'type':'string', 'width': 190}
           ]
 crg_idx = [['hugo']]

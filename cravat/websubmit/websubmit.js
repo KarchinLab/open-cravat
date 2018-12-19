@@ -158,8 +158,11 @@ function buildJobsTable () {
         var td = getEl('td');
         td.textContent = '' + num;
         addEl(jobTr[0], td);
+        // Genome assembly
+        jobTr.append($(getEl('td')).css('text-align', 'center').append(job.assembly));
+        // Note
+        jobTr.append($(getEl('td')).append(job.note));
         // Status
-        var td = getEl('td');
         var statusC = null;
         if (job.status['status'] == undefined) {
             if (job.status != undefined) {
@@ -170,23 +173,18 @@ function buildJobsTable () {
         } else {
             statusC = job.status.status;
         }
-        statusC = statusC.replace('Finished', 'C').replace('Error', 'E');
-        td.title = job.status.status;
-        td.textContent = statusC;
-        jobTr.append($(td)).css('text-align', 'center');
-        // Genome assembly
-        jobTr.append($(getEl('td')).css('text-align', 'center').append(job.assembly));
-        // Note
-        jobTr.append($(getEl('td')).append(job.note));
-        // View
         var viewTd = $(getEl('td'))
             .css('text-align', 'center');
         jobTr.append(viewTd);
-        var viewLink = $(getEl('a'))
-            .attr('href',`/result/index.html?dbpath=${job.db_path}&job_id=${job.id}`)
-            .attr('target','_blank')
-            .append($(getEl('button')).append('Launch').attr('disabled', !job.viewable))
-        viewTd.append(viewLink);
+        if (statusC == 'Finished') {
+            var viewLink = $(getEl('a'))
+                .attr('href',`/result/index.html?dbpath=${job.db_path}&job_id=${job.id}`)
+                .attr('target','_blank')
+                .append($(getEl('button')).append('Launch').attr('disabled', !job.viewable));
+            viewTd.append(viewLink);
+        } else {
+            viewTd[0].textContent = statusC;
+        }
         var dbTd = $(getEl('td'));
         dbTd.css('text-align', 'center');
         jobTr.append(dbTd);
@@ -863,7 +861,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
             question.className = 'moduledetailbutton';
             question.textContent = '?';
             question.setAttribute('module', checkData.value);
-            question.addEventListener('mouseover', function (evt) {
+            question.addEventListener('click', function (evt) {
                 var annotchoosediv = document.getElementById('annotchoosediv');
                 var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
                 if (moduledetaildiv != null) {

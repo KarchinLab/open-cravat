@@ -185,7 +185,7 @@ function saveFilterSetting (name, useFilterJson) {
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
         type: 'GET',
-        async: 'false',
+        async: true,
         url: '/result/service/savefiltersetting', 
         data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
         success: function (response) {
@@ -317,7 +317,7 @@ function saveWidgetSetting (name) {
 	$.ajax({
 		url: '/result/service/savewidgetsetting', 
 		type: 'get',
-		async: false,
+		async: true,
 		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
 		success: function (response) {
 			writeLogDiv('Widget setting has been saved.');
@@ -440,7 +440,7 @@ function saveLayoutSetting (name) {
 		url: '/result/service/savelayoutsetting', 
 		type: 'post',
 		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr}, 
-		async: false,
+		async: true,
 		success: function (response) {
 			lastUsedLayoutName = name;
 			writeLogDiv('Layout setting has been saved.');

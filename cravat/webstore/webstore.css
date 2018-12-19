@@ -32,3 +32,42 @@
     top: 104px;
 }
 
+.newmoduleicon {
+    width: 25px;
+    position: absolute;
+    top: 3px;
+    right: 0px;
+}
+
+.modulepanel-type-span {
+    font-size: 14px;
+    color: lightcoral;
+    bottom: 2px;
+    left: 9px;
+    position: absolute;
+}
+
+.moduletile {
+    display: inline-block;
+    width: 250px;
+    height: 250px;
+    border-width: 2px;
+    border-color: #dddddd;
+    border-style: ridge;
+    vertical-align: top;
+    margin: 10px;
+    padding: 10px;
+    position: relative;
+}
+
+.moduletile-title {
+    position: absolute;
+    font-weight: bold;
+    width: calc(100% - 25px);
+    weight: auto;
+    max-width: 100%;
+    max-height: 100%;
+    text-align: center;
+    font-size: 42px;
+}
+

@@ -182,16 +182,7 @@ function updateFilter () {
 function getRemoteModulePanel (moduleName) {
     var moduleInfo = remoteModuleInfo[moduleName];
     var div = getEl('div');
-    div.style.display = 'inline-block';
-    div.style.width = '300px';
-    div.style.height = '300px';
-    div.style.borderWidth = '2px';
-    div.style.borderColor = '#dddddd';
-    div.style.borderStyle = 'ridge';
-    div.style.verticalAlign = 'top';
-    div.style.margin = '10px';
-    div.style.padding = '10px';
-    div.style.position = 'relative';
+    div.className = 'moduletile';
     div.setAttribute('module', moduleName);
     var sdiv = getEl('div');
     sdiv.id = 'logodiv_' + moduleName;
@@ -213,15 +204,11 @@ function getRemoteModulePanel (moduleName) {
     img.onerror = function () {
         img.src = '/store/genericmodulelogo.png';
         var span = getEl('div');
-        span.style.position = 'absolute';
-        span.style.fontWeight = 'bold';
-        span.style.width = 'calc(100% - 25px)';
-        span.style.height = 'auto';
-        span.style.maxWidth = '100%';
-        span.style.maxHeight = '100%';
-        span.style.textAlign = 'center';
-        span.style.fontSize = '42px';
+        span.className = 'moduletile-title';
         span.textContent = moduleInfo.title;
+        if (moduleInfo.title.length > 30) {
+            span.style.fontSize = 30;
+        }
         addEl(sdiv, span);
     }
     img.onload = function () {
@@ -262,8 +249,7 @@ function getRemoteModulePanel (moduleName) {
     addEl(div, span);
     addEl(div, getEl('br'));
     span = getEl('span');
-    span.style.fontSize = '14px';
-    span.style.color = 'lightcoral';
+    span.className = 'modulepanel-type-span';
     span.textContent = moduleInfo['type'];
     addEl(div, span);
     addEl(div, getEl('br'));
@@ -315,10 +301,7 @@ function getRemoteModulePanel (moduleName) {
             var img3 = getEl('img');
             img3.src = '/store/new.png';
             img3.title = 'New module available';
-            img3.style.width = '50px';
-            img3.style.position = 'absolute';
-            img3.style.bottom = '0px';
-            img3.style.right = '0px';
+            img3.className = 'newmoduleicon';
             addEl(div, img3);
         }
     }

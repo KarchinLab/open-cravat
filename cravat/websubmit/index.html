@@ -118,31 +118,31 @@
         <div id="submit-form" style='overflow-y: auto;'>
             <div class='container'>
                 <span class='divtitle'>Variants</span>
-                <select id="assembly-select">
-                    <option value="hg38" selected=true>hg38</option>
-                    <option value="hg19">hg19</option>
-                    <option value="hg18">hg18</option>
-                </select>
+                <div id='assembly-select-div'>
+                    Genome:
+                    <select id="assembly-select">
+                        <option value="hg38" selected=true>hg38</option>
+                        <option value="hg19">hg19</option>
+                        <option value="hg18">hg18</option>
+                    </select>
+                </div>
                 <table>
                     <tr>
-                        <td valign='top' style='border-bottom: 1px solid black; padding-bottom: 20px;'>
+                        <td valign='top' class='variant-input-border-bottom'>
                                 <br />
                             Upload:
                             <input type="file" name="input-file" id="input-file" />
                         </td>
                     </tr><tr>
-                        <td valign='top' style='border-bottom: 1px solid black; padding-bottom: 20px; position: relative; padding-top: 20px;'>
+                        <td valign='top' class='variant-input-border-bottom'>
+                            <br />
                             <div>
                                 Type:
                                 <textarea rows="1" cols="40" id="input-text" style='' placeholder="Input text" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
-                            <div class='or'>OR</div>
-                        </td>
-                    </tr><tr>
-                        <td valign='top' style='position: relative; padding-top: 20px;'>
-                            Try:
-                            <button value="cravat" class='input-example-button'>CRAVAT Format</button>
-                            <button value="vcf" class='input-example-button'>VCF Format</button>
+                            <span style='font-size: 13px;'>Example:</span>
+                            <button value="vcf" class='input-example-button'>VCF</button>
+                            <button value="cravat" class='input-example-button'>tsv</button>
                             <div class='or'>OR</div>
                         </td>
                     </tr>
@@ -182,10 +182,9 @@
             <tr>
                 <th class='tableheadercell'>Input File</th>
                 <th class='tableheadercell' style='width: 100px;'># Annot</th>
-                <th class='tableheadercell'>Status</th>
                 <th class='tableheadercell'>Genome</th>
                 <th class='tableheadercell'>Note</th>
-                <th class='tableheadercell'>View Result</th>
+                <th class='tableheadercell'>Status</th>
                 <th class='tableheadercell'>Download</th>
                 <th class='tableheadercell'>Delete</th>
             </tr>
