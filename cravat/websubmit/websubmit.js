@@ -1361,6 +1361,15 @@ function onClickThreeDots () {
     div.style.display = display;
 }
 
+function resizePage () {
+    var div = document.getElementById('submit-form');
+    var h = window.innerHeight - 195;
+    div.style.height = h + 'px';
+    var div = document.getElementById('jobdiv');
+    var h = window.innerHeight - 125;
+    div.style.height = h + 'px';
+}
+
 function websubmit_run () {
     getServermode();
     var storediv = document.getElementById('storediv');
@@ -1397,12 +1406,10 @@ function websubmit_run () {
     }
     */
     getJobsDir();
-    var div = document.getElementById('submit-form');
-    var h = window.innerHeight - 195;
-    div.style.height = h + 'px';
-    var div = document.getElementById('jobdiv');
-    var h = window.innerHeight - 125;
-    div.style.height = h + 'px';
+    resizePage();
+    window.onresize = function (evt) {
+        resizePage();
+    }
     loadSystemConf();
     populatePackageVersions();
 };
