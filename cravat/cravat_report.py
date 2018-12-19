@@ -336,6 +336,11 @@ class CravatReport:
         parser.add_argument('-c',
             dest='confpath',
             help='path to a conf file')
+        parser.add_argument('-t',
+            dest='reporttypes',
+            nargs='+',
+            default=None,
+            help='report types')
         parsed_args = parser.parse_args(cmd_args[1:])
         self.dbpath = parsed_args.dbpath
         self.filterpath = parsed_args.filterpath
@@ -344,6 +349,7 @@ class CravatReport:
         self.savepath = parsed_args.savepath
         self.confpath = parsed_args.confpath
         self.conf = ConfigLoader(job_conf_path=self.confpath)
+        self.report_types = parsed_args.reporttypes
 
     def connect_db (self, dbpath=None):
         if dbpath != None:
@@ -376,11 +382,24 @@ def main ():
     if len(sys.argv) < 2:
         print('Please provide a sqlite file path')
         exit()
-    dbpath = os.path.abspath(sys.argv[1])
-    run_name = os.path.basename(dbpath).rstrip('.sqlite')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dbpath',
+                        help='Path to aggregator output')
+    parser.add_argument('-t',
+        dest='reporttypes',
+        nargs='+',
+        default=None,
+        help='report types')
+    parsed_args = parser.parse_args(sys.argv[1:])
+    dbpath = parsed_args.dbpath
+    report_types = parsed_args.reporttypes
+    run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
     output_dir = os.path.dirname(dbpath)
     avail_reporters = au.get_local_module_infos_of_type('reporter')
     avail_reporter_names = [re.sub('reporter$', '', v) for v in avail_reporters.keys()]
     cmd = ['cravat', 'dummyinput', '-n', run_name, '-d', output_dir, '--sc', '--sm', '--sa', '--sg', '--sp', '--str', '-t']
-    cmd.extend(avail_reporter_names)
+    if report_types is not None:
+        cmd.extend(report_types)
+    else:
+        cmd.extend(avail_reporter_names)
     subprocess.run(cmd)
