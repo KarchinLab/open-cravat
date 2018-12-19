@@ -144,9 +144,7 @@ def main ():
         print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
         web.run_app(app, port=8060)
     except KeyboardInterrupt:
-        print('@@@@@@@ keyboard interrupt')
     except BrokenPipeError:
-        print('@@@@@@@ broken pipe')
     except:
         import traceback
         traceback.print_exc()

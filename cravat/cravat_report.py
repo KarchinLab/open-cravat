@@ -162,7 +162,6 @@ class CravatReport:
         colcount = 0
         for row in self.cursor.fetchall():
             (colname, coltitle, col_type) = row[:3]
-            print(row)
             col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else []
             col_width = row[4] if len(row) > 4 else None
             col_desc = row[5] if len(row) > 5 else None
