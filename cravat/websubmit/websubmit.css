@@ -21,11 +21,10 @@ body * {
     transition: all 0.3s ease;
     vertical-align: bottom;
     cursor: pointer;
-    clip-path: polygon(12% 0, 90% 0, 100% 100%, 0 100%);
     background-color: #999999;
     color: #000000;
     height: 20px;
-    border-radius: 22px 22px 0px 0px;
+    border-radius: 8px 8px 0px 0px;
 }
 
 #pageselect div:hover {
