@@ -62,7 +62,7 @@ class InstallProgressMpDict(au.InstallProgressHandler):
             self.install_state['cur_size'] = 0
             self.install_state['total_size'] = 0
             self.install_state['update_time'] = time.time()
-            last_update_time = install_state['update_time']
+            last_update_time = self.install_state['update_time']
         self.cur_stage = stage
         self.install_state['module_name'] = self._module_name
         self.install_state['module_version'] = self._module_version
