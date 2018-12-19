@@ -248,6 +248,7 @@ async def connect_websocket (request):
             data['msg'] = install_state['message']
             if data['msg'].startswith('Downloading'):
                 data['msg'] = data['msg'] + ' ' + str(install_state['cur_chunk']) + '%'
+            print(data['msg'])
             await install_ws.send_str(json.dumps(data))
             last_update_time = install_state['update_time']
     return install_ws

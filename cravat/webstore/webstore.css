@@ -71,3 +71,10 @@
     font-size: 42px;
 }
 
+.panelinstallstatusspan {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    background-color: white;
+}
+

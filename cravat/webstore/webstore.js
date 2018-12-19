@@ -277,6 +277,7 @@ function getRemoteModulePanel (moduleName) {
     }
     var span = getEl('div');
     span.id = 'panelinstallstatus_' + moduleName;
+    span.className = 'panelinstallstatusspan';
     span.style.fontSize = '12px';
     addEl(div, span);
     if (installStatus == 'Installed') {
