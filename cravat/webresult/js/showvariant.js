@@ -56,7 +56,7 @@ function getLineHeader (header) {
 	return spanHeader;
 }
 
-function addInfoLine (div, row, header, col, tabName) {
+function addInfoLine (div, row, header, col, tabName, headerMinWidth) {
 	var text = infomgr.getRowValue(tabName, row, col);
     var table = getEl('table');
     table.style.fontSize = '12px';
@@ -64,6 +64,9 @@ function addInfoLine (div, row, header, col, tabName) {
     var tr = getEl('tr');
     var td = getEl('td');
     td.className = 'detail-info-line-header';
+    if (headerMinWidth != undefined) {
+        td.style.minWidth = headerMinWidth;
+    }
     var h = getLineHeader(header);
     addEl(td, h);
     addEl(tr, td);
