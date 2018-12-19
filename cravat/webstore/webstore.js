@@ -182,16 +182,7 @@ function updateFilter () {
 function getRemoteModulePanel (moduleName) {
     var moduleInfo = remoteModuleInfo[moduleName];
     var div = getEl('div');
-    div.style.display = 'inline-block';
-    div.style.width = '300px';
-    div.style.height = '300px';
-    div.style.borderWidth = '2px';
-    div.style.borderColor = '#dddddd';
-    div.style.borderStyle = 'ridge';
-    div.style.verticalAlign = 'top';
-    div.style.margin = '10px';
-    div.style.padding = '10px';
-    div.style.position = 'relative';
+    div.className = 'moduletile';
     div.setAttribute('module', moduleName);
     var sdiv = getEl('div');
     sdiv.id = 'logodiv_' + moduleName;
@@ -213,15 +204,11 @@ function getRemoteModulePanel (moduleName) {
     img.onerror = function () {
         img.src = '/store/genericmodulelogo.png';
         var span = getEl('div');
-        span.style.position = 'absolute';
-        span.style.fontWeight = 'bold';
-        span.style.width = 'calc(100% - 25px)';
-        span.style.height = 'auto';
-        span.style.maxWidth = '100%';
-        span.style.maxHeight = '100%';
-        span.style.textAlign = 'center';
-        span.style.fontSize = '42px';
+        span.className = 'moduletile-title';
         span.textContent = moduleInfo.title;
+        if (moduleInfo.title.length > 30) {
+            span.style.fontSize = 30;
+        }
         addEl(sdiv, span);
     }
     img.onload = function () {
