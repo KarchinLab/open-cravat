@@ -153,10 +153,15 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 						val + '</a>';
 				}
 				return '<span title="' + val + '">' + content + '</span>'};
-            if (column['filter'] != undefined && column['filter']['type'] == 'select') {
-                let colType = column['type'];
-                if (colType == 'category') {
+            var filter = column['filter'];
+            if (filter != undefined && filter['type'] == 'select') {
+                var colType = column['type'];
+                var colCtg = column['ctg'];
+                if (colType == 'string' && colCtg == 'single') {
                     column['filter']['condition'] = function (val, select) {
+                        if (select == '' || select == null) {
+                            return true;
+                        }
                         var selects = select.split(',');
                         if (selects.indexOf(val) >= 0) {
                             return true;
@@ -164,7 +169,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                             return false;
                         }
                     };
-                } else if (colType == 'multicategory') {
+                } else if (colType == 'single' && colCtg == 'multi') {
                     column['filter']['condition'] = function (val, selects) {
                         if (selects == null) {
                             return true;
