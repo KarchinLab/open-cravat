@@ -894,7 +894,8 @@ function moduleChange (data) {
 }
 
 function connectWebSocket () {
-    var ws = new WebSocket('ws://localhost:8060/store/connectwebsocket');
+    var host = window.location.host;
+    var ws = new WebSocket(`ws://${host}/store/connectwebsocket`);
     ws.onopen = function (evt) {
     }
     ws.onmessage = function (evt) {
