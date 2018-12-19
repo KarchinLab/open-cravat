@@ -246,3 +246,18 @@ button {
     padding-bottom: 20px;
 }
 
+#submitcontentdiv {
+    position: relative;
+    top: 75px;
+    display: block;
+    width: 400px;
+}
+
+#jobnoteinput {
+    width: calc(100% - 44px);
+}
+
+#input-text {
+    width: calc(100% - 43px);
+}
+
