@@ -58,8 +58,8 @@ class CravatReport:
             if level == 'variant':
                 hugo_present = 'base__hugo' in self.colnos['variant']
             for row in self.cf.get_filtered_iterator(level):
+                row = list(row)
                 if level == 'variant':
-                    row = list(row)
                     if hugo_present:
                         hugo = row[self.colnos['variant']['base__hugo']]
                         generow = self.cf.get_gene_row(hugo)
@@ -70,7 +70,6 @@ class CravatReport:
                                 colval = generow[self.colnos['gene'][colname]]
                             row.append(colval)
                 elif level == 'gene':
-                    row = list(row)
                     hugo = row[0]
                     for module_name in gene_summary_datas:
                         [gene_summary_data, cols] = gene_summary_datas[module_name]

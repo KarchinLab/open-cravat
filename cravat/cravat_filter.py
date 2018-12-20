@@ -7,6 +7,7 @@ import yaml
 import sqlite3
 import json
 import re
+import time
 
 class FilterColumn(object):
 
@@ -294,17 +295,26 @@ class CravatFilter ():
 
     def getwhere (self, level):
         if self.filter == None:
-            return ''
-        if level not in self.filter:
-            return ''
-        criteria = self.filter[level]
-        main_group = FilterGroup(criteria)
-        sql_criteria = main_group.get_sql()
-        if sql_criteria == '':
-            return ''
+            sample_needed = False
+            tag_needed = False
+            where = ''
         else:
-            return ' where ' + main_group.get_sql()
-    
+            if level not in self.filter:
+                sample_needed = False
+                tag_needed = False
+                where = ''
+            else:
+                criteria = self.filter[level]
+                main_group = FilterGroup(criteria)
+                sql_criteria = main_group.get_sql()
+                if sql_criteria == '':
+                    where = ''
+                else:
+                    where = ' where ' + main_group.get_sql()
+                sample_needed = 's.base__sample_id' in where
+                tag_needed = 'm.base__tags' in where
+        return (sample_needed, tag_needed, where)
+
     def getvariantcount (self):
         return self.getcount('variant')
     
@@ -330,7 +340,7 @@ class CravatFilter ():
         return self.getrows('gene')
     
     def getrows (self, level='variant'):
-        where = self.getwhere(level)
+        (sample_needed, tag_needed, where) = self.getwhere(level)
         q = 'select *  from ' + level + where
         self.cursor.execute(q)
         
@@ -356,7 +366,7 @@ class CravatFilter ():
         return self.getiterator('gene')
     
     def getiterator (self, level='variant'):
-        where = self.getwhere(level)
+        (sample_needed, tag_needed, where) = self.getwhere(level)
         sql = 'select * from ' + level + where
         self.cursor.execute(sql)
         it = self.cursor.fetchall()
@@ -390,12 +400,22 @@ class CravatFilter ():
         vftable = level + '_filtered'
         q = 'drop table if exists ' + vftable
         self.cursor.execute(q)
-        where = self.getwhere(level)
+        (sample_needed, tag_needed, where) = self.getwhere(level)
+        '''
         q = 'create table ' + vftable +\
             ' as select distinct(t.base__uid) from ' + level +\
             ' as t, sample as s, mapping as m ' + where
-        if where != '':
-            q += ' and s.base__uid=t.base__uid and m.base__uid=t.base__uid'
+        '''
+        q = 'create table {} as select distinct(t.base__uid) from {} as t '.format(vftable, level) 
+        if sample_needed:
+            q += ', sample as s '
+        if tag_needed:
+            q += ', mapping as m '
+        q += where
+        if sample_needed:
+            q += ' and s.base__uid=t.base__uid'
+        if tag_needed:
+            q += ' and m.base__uid=t.base__uid'
         self.cursor.execute(q)
         self.cursor.execute('pragma synchronous=2')
 
