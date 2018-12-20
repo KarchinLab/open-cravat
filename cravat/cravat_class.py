@@ -316,6 +316,8 @@ class Cravat (object):
             runtime = end_time - self.start_time
             self.logger.info('runtime: {0:0.3f}s'.format(runtime))
             print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            print('Check {}'.format(self.log_path))
+            self.update_status('Error')
             self.close_logger()
             return
         except InvalidData:
@@ -324,6 +326,8 @@ class Cravat (object):
             runtime = end_time - self.start_time
             self.logger.info('runtime: {0:0.3f}s'.format(runtime))
             print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            print('Check {}'.format(self.log_path))
+            self.update_status('Error')
             self.close_logger()
             return
         except ExpectedException as e:
@@ -334,6 +338,8 @@ class Cravat (object):
             runtime = end_time - self.start_time
             self.logger.info('runtime: {0:0.3f}s'.format(runtime))
             print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            print('Check {}'.format(self.log_path))
+            self.update_status('Error')
             self.close_logger()
             return
         except:
@@ -345,6 +351,8 @@ class Cravat (object):
             runtime = end_time - self.start_time
             self.logger.info('runtime: {0:0.3f}s'.format(runtime))
             print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            print('Check {}'.format(self.log_path))
+            self.update_status('Error')
             self.close_logger()
             return
         end_time = time.time()
