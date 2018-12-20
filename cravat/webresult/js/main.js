@@ -223,7 +223,6 @@ function loadData (alertFlag, finalcallback) {
 		if (finalcallback) {
 			finalcallback();
 		}
-		unlockTabs();
 		populateSummaryWidgetDiv();
 		if (currentTab == 'info') {
 			changeMenu();
@@ -335,11 +334,11 @@ function removeLoadingDiv () {
 }
 
 function lockTabs () {
-	$('#tabheads span').css('pointer-events', 'none').css('opacity', '0.5');
+	$('#tabheads div').css('pointer-events', 'none').css('opacity', '0.5');
 }
 
 function unlockTabs () {
-	$('#tabheads span').css('pointer-events', 'auto').css('opacity', '1');
+	$('#tabheads div').css('pointer-events', 'auto').css('opacity', '1');
 }
 
 function notifyToUseFilter () {
@@ -514,6 +513,7 @@ function quicksave () {
 
 function afterGetResultLevels () {
 	addTabHeadsAndTabContentDivs();
+    lockTabs();
 	currentTab = 'info';
     $('#tabheads .tabhead').click(function(event) {
     	var targetTab = "#" + this.id.replace('head', '');
