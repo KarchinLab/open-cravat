@@ -442,6 +442,7 @@ function getEl (tag) {
 }
 
 function jobDeleteButtonHandler (event) {
+    event.stopPropagation();
     var jobId = $(event.target).attr('jobId');
     deleteJob(jobId);
 }
