@@ -1033,7 +1033,11 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	}
 	var detailDivHeight = 0;
 	if (detailDiv) {
-		detailDivHeight = detailDiv.offsetHeight;
+        if (rightDivHeight < 660) {
+            detailDivHeight = 300;
+        } else {
+            detailDivHeight = detailDiv.offsetHeight;
+        }
 	}
 
 	var gridObject = new Object();
