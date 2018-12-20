@@ -294,7 +294,9 @@ def get_result (request):
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
     reporter = m.Reporter(args)
+    print('getting result from {} for viewer...'.format(dbpath))
     data = reporter.run(tab=tab)
+    print('result obtained from {}. packing...'.format(dbpath))
     content = {}
     content['stat'] = {'rowsreturned': True, 
                    'wherestr':'', 
@@ -305,6 +307,7 @@ def get_result (request):
     content['columns'] = get_colmodel(tab, data['colinfo'])
     content["data"] = get_datamodel(data[tab])
     content["status"] = "normal"
+    print('sending result of {}...'.format(dbpath))
     return web.json_response(content)
 
 def get_result_levels (request):

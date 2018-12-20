@@ -367,7 +367,6 @@ function notifyOfReadyToLoad () {
 function firstLoadData () {
 	var infoReset = resetTab['info'];
 	resetTab = {'info': infoReset};
-	
 	var loadWidgets = function () {
 		detailWidgetOrder = {'variant': {}, 'gene': {}, 'info': {}};
 		$.get('/result/service/widgetlist', {}).done(function (jsonResponseData) {
