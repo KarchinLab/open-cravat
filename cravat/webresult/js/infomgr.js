@@ -169,7 +169,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                             return false;
                         }
                     };
-                } else if (colType == 'single' && colCtg == 'multi') {
+                } else if (colType == 'string' && colCtg == 'multi') {
                     column['filter']['condition'] = function (val, selects) {
                         if (selects == null) {
                             return true;
