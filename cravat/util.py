@@ -120,12 +120,18 @@ so_severity = ['',
                'MIS',
                'CSS',
                'IND',
+               'IDV',
                'INI',
+               'IIV',
                'STL',
                'SPL',
                'STG',
+               'FD1',
+               'FD2',
                'FSD',
-               'FSI']
+               'FI1',
+               'FI2',
+               'FSI',]
 
 def valid_so(so):
     return so in so_severity

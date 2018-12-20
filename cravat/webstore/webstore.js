@@ -898,6 +898,8 @@ function connectWebSocket () {
     var ws = new WebSocket(`ws://${host}/store/connectwebsocket`);
     ws.onopen = function (evt) {
     }
+    ws.onclose = function (evt) {
+    }
     ws.onmessage = function (evt) {
         var data = JSON.parse(evt.data);
         var module = data['module'];
