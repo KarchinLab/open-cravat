@@ -154,6 +154,21 @@ class Tester():
             self.verify_level('sample', 'Base Information')
             self.verify_level('mapping', 'Base Information')
                  
+    
+    #See if key and result are floating point numbers.  If so, allow tiny 
+    #differences.
+    def floats_differ(self, str_val1, str_val2):
+        try:
+            v1 = float(str_val1)
+            v2 = float(str_val2)
+        except:
+            return True
+        
+        if abs(v1 - v2) < .0001:
+            return False
+        else:
+            return True    
+    
         
     #Match the key (expected values) to the text report output.  Generate errors
     #if expected results are not found and fail the test.    Test just the specified
@@ -177,11 +192,12 @@ class Tester():
                     continue
                 
                 if header not in result_header:
+                    self._report('  Expected Header: ' + header + ' did not appear in results');
                     self.test_passed = False
                     continue
                 
                 result_idx = result_header.index(header)
-                if result[result_idx] != key_row[idx]:
+                if (result[result_idx] != key_row[idx]) and self.floats_differ(result[result_idx], key_row[idx]):
                     self._report('      ' + variant + '  ' + \
                           header[header.index("|")+1:] + \
                           '  Expected: ' + key_row[idx] + \
