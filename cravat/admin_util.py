@@ -486,7 +486,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         if module_name in list_local():
             local_info = get_local_module_info(module_name)
             if local_info.has_data:
-                local_data_version = local_info.version
+                local_data_version = get_remote_data_version(module_name, version=local_info.version)
             else:
                 local_data_version = None
         else:
@@ -555,7 +555,7 @@ def get_remote_data_version(module_name, version=None):
     mic.update_remote()
     if version is None:
         version = get_remote_latest_version(module_name)
-    return mic.remote[module_name]['data_versions'][version]
+    return mic.remote[module_name]['data_versions'].get(version)
 
 def uninstall_module (module_name):
     """
