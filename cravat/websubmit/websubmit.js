@@ -532,7 +532,7 @@ function populateJobs () {
         $.ajax({
             url:'jobs',
             type: 'GET',
-            async: false,
+            async: true,
             success: function (allJobs) {
                 GLOBALS.jobs = [];
                 for (var i=0; i<allJobs.length; i++) {
