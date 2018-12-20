@@ -1115,7 +1115,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.filter = function () {
 		this.scrollRow({rowIndxPage: 0});
 	};
-	gridObject.collapsible = {on: false};
+	gridObject.collapsible = {on: false, toggle: false};
 	gridObject.roundCorners = false;
 	gridObject.stripeRows = true;
 	gridObject.cellDblClick = function (evt, ui) {

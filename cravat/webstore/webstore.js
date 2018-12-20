@@ -792,22 +792,22 @@ function activateDetailDialog (moduleName) {
 function compareVersion (ver1, ver2) {
     var tok1 = ver1.split('.');
     var tok2 = ver2.split('.');
-    var first1 = Number(tok1[0]);
-    var first2 = Number(tok2[0]);
+    var first1 = tok1[0];
+    var first2 = tok2[0];
     if (first1 < first2) {
         return -1;
     } else if (first1 > first2) {
         return 1;
     } else {
-        var second1 = Number(tok1[1]);
-        var second2 = Number(tok2[1]);
+        var second1 = tok1[1];
+        var second2 = tok2[1];
         if (second1 < second2) {
             return -1;
         } else if (second1 > second2) {
             return 1;
         } else {
-            var third1 = Number(tok1[2]);
-            var third2 = Number(tok2[2]);
+            var third1 = tok1[2];
+            var third2 = tok2[2];
             if (third1 < third2) {
                 return -1;
             } else if (third1 > third2) {
