@@ -10,3 +10,4 @@ cravat/__pycache__/*
 **/cravat_test_*
 *.swp
 cravat/modules/**
+/dist/
