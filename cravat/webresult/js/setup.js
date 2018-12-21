@@ -266,6 +266,7 @@ function makeVariantGeneTab (tabName, rightDiv) {
     var detailContainerDiv = null;
 
 	// Table container div
+    /*
     var tableContainerDivId = 'tablecontainerdiv_' + tabName;
     var tableContainerDiv = document.getElementById(tableContainerDivId);
     if (tableContainerDiv == null) {
@@ -273,6 +274,7 @@ function makeVariantGeneTab (tabName, rightDiv) {
         tableContainerDiv.id = tableContainerDivId;
         addEl(rightDiv, tableContainerDiv);
     }
+    */
 
 	// Table div
     var tableDivId = 'tablediv_' + tabName;
@@ -281,7 +283,7 @@ function makeVariantGeneTab (tabName, rightDiv) {
         tableDiv = getEl('div');
         tableDiv.id = tableDivId;
         tableDiv.className = 'tablediv';
-        addEl(tableContainerDiv, tableDiv);
+        addEl(rightDiv, tableDiv);
     } else {
         //$(tableDiv).empty();
     }
