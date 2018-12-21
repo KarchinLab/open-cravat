@@ -96,7 +96,7 @@ class FileRouter(object):
                     if 'orig_input_fname' in infojson:
                         log_fn = infojson['orig_input_fname']
         if log_fn is not None:
-            log_fname = os.path.join(job_dir, self.input_fname + self.log_extension)
+            log_fname = os.path.join(job_dir, log_fn + '.log')
             if os.path.exists(log_fname) == False:
                 log_fname = None
         else:
