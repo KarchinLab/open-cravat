@@ -373,7 +373,7 @@ class Cravat (object):
             self.annotators = \
                 au.get_local_module_infos_by_names(self.annotator_names)
         self.excludes = self.args.excludes
-        if self.excludes == '*':
+        if self.excludes == ['*']:
             self.annotators = {}
         elif self.excludes != None:
             for m in self.excludes:

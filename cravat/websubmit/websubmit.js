@@ -156,6 +156,7 @@ function buildJobsTable () {
         // Number of annotators
         var num = getAnnotatorsForJob(ji).length;
         var td = getEl('td');
+        td.style.textAlign = 'center';
         td.textContent = '' + num;
         addEl(jobTr[0], td);
         // Genome assembly
@@ -855,45 +856,25 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         check.setAttribute('checked', checkData.check);
         addEl(checkDiv, check);
         var label = getEl('span');
+        label.style.cursor = 'pointer';
+        label.style.textDecorationLine = 'underline';
+        label.style.textDecorationStyle = 'dotted';
+        label.style.textDecorationColor = '#aaaaaa';
+        label.setAttribute('module', checkData.value);
         label.textContent = checkData.label + ' ';
+        label.className = 'moduledetailbutton';
         addEl(checkDiv, label);
-        if (parentId != 'report-select-div') {
-            var question = getEl('button');
-            question.className = 'moduledetailbutton';
-            question.textContent = '?';
-            question.setAttribute('module', checkData.value);
-            question.addEventListener('click', function (evt) {
-                var annotchoosediv = document.getElementById('annotchoosediv');
-                var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
-                if (moduledetaildiv != null) {
-                    annotchoosediv.removeChild(moduledetaildiv);
-                }
-                var detaildiv = getModuleDetailDiv(evt.target.getAttribute('module'));
-                addEl(annotchoosediv, detaildiv);
-            });
-            /*
-            question.addEventListener('mouseout', function (evt) {
-                var annotchoosediv = document.getElementById('annotchoosediv');
-                var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
-                if (moduledetaildiv != null) {
-                    $(moduledetaildiv).remove();
-                }
-            });
-            */
-            addEl(checkDiv, question);
-        } else {
-            checkDiv.style.display = 'inline-block';
-        }
+        label.addEventListener('click', function (evt) {
+            var annotchoosediv = document.getElementById('annotchoosediv');
+            var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
+            if (moduledetaildiv != null) {
+                annotchoosediv.removeChild(moduledetaildiv);
+            }
+            var detaildiv = getModuleDetailDiv(evt.target.getAttribute('module'));
+            addEl(annotchoosediv, detaildiv);
+        });
         checkDivs.push(checkDiv);
     }
-    // resize all to match max
-    /*
-    var maxWidth = Math.max.apply(null, checkDivs.map(elem => elem.width()));
-    for (let i=0; i<checkDivs.length; i++) {
-        let checkDiv = checkDivs[i];
-        checkDiv.width(maxWidth);
-    }
-    */
     return parentDiv;
 }
 

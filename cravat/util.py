@@ -124,8 +124,13 @@ so_severity = ['',
                'STL',
                'SPL',
                'STG',
-               'FSD',
-               'FSI']
+               'FD1',
+               'FD2',
+               'FSI',
+               'FI1',
+               'FI2',
+               'FSD'
+               ]
 
 def valid_so(so):
     return so in so_severity

@@ -182,6 +182,8 @@ async def submit (request):
         run_args.extend(job_options['annotators'])
     else:
         run_args.append('--sa')
+        run_args.append('-e')
+        run_args.append('*')
     # Liftover assembly
     run_args.append('-l')
     run_args.append(job_options['assembly'])

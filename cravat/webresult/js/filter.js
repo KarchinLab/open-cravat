@@ -90,7 +90,13 @@ const makeFilterColDiv = (filter) => {
 
 const onFilterColumnSelectorChange = (evt) => {
     var groupName = evt.target.previousSibling.value;
-    var columns = infomgr.getVariantColumnGroupByName(groupName).colModel;
+    var columns = null;
+    for (var i = 0; i < filterCols.length; i++) {
+        if (filterCols[i].title == groupName) {
+            columns = filterCols[i].colModel;
+            break;
+        }
+    }
     var columnName = evt.target.value;
     var filter = null;
     var column = null;
@@ -137,14 +143,28 @@ const onFilterColumnSelectorChange = (evt) => {
     }
 }
 
+function getFilterColByName (name) {
+    var column = null;
+    for (var i = 0; i < filterCols.length; i++) {
+        var fg = filterCols[i].colModel;
+        for (var j = 0; j < fg.length; j++) {
+            var col = fg[j];
+            if (col.col == name) {
+                column = col;
+                break;
+            }
+        }
+    }
+    return column;
+}
+
 const filterTestChangeHandler = (event) => {
     const testSel = $(event.target);
     const valuesDiv = testSel.siblings('.filter-values-div');
     const testName = testSel.val();
     var testDiv = testSel[0].previousSibling;
     var colname = testDiv.value;
-    var column = infomgr.getColumnByName('variant', colname);
-    var colType = column.type;
+    var colType = getFilterColByName(colname).type;
     var selTestType = testSel[0].value;
     var filterTest = filterTests[selTestType];
     var allowedColTypes = filterTest.colTypes;
@@ -161,7 +181,7 @@ const populateFilterValues = (valsContainer, testName, value) => {
     const testDesc = filterTests[testName];
     var testDiv = valsContainer[0].previousSibling.previousSibling.previousSibling;
     var col = testDiv.value;
-    var column = infomgr.getColumnByName('variant', col);
+    var column = getFilterColByName(col);
     var filter = column.filter;
     var valSubDic = column.reportsub;
     var valSubDicKeys = Object.keys(valSubDic);
@@ -408,7 +428,7 @@ const makeGroupFilter = (groupDiv) => {
         const colDiv = $(colDivs[i]);
         // Column
         colFilter.column = colDiv.children('.filter-column-selector').val();
-        var column = infomgr.getColumnByName('variant', colFilter.column);
+        var column = getFilterColByName(colFilter.column);
         // Test
         colFilter.test = colDiv.children('.filter-test-selector').val();
         if (column.category == 'multi') {
