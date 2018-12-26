@@ -3,7 +3,6 @@ import os
 import subprocess
 from cravat import admin_util as au
 import time
-import platform
 import sys
 
 # Regression test program for CRAAT modules.  By default, it will go through all modules and
@@ -112,7 +111,7 @@ class Tester():
             rows = {}
         else:
             rows = []
-        with open(rsltFile) as f:
+        with open(rsltFile, encoding='latin-1') as f:
             line = f.readline().strip('\n')
             while line:
                 # skip comment lines but pull out the report level
