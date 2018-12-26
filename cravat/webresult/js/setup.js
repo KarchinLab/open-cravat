@@ -555,11 +555,19 @@ function drawSummaryWidget (widgetName) {
 			var data = response['data'];
 			if (data == {}) {
 			} else {
-				generator['function'](widgetContentDiv, data);
+                try {
+                    generator['function'](widgetContentDiv, data);
+                } catch (e) {
+                    console.log(e);
+                }
 			}
 		});
 	} else {
-		generator['function'](widgetContentDiv);
+        try {
+            generator['function'](widgetContentDiv);
+        } catch (e) {
+            console.log(e);
+        }
 	}
 }
 
@@ -1033,11 +1041,16 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	}
 	var detailDivHeight = 0;
 	if (detailDiv) {
-        if (rightDivHeight < 660) {
-            detailDivHeight = 300;
+        if (loadedHeightSettings['detail_' + tabName] == undefined) {
+            if (rightDivHeight < 660) {
+                detailDivHeight = 250;
+            } else {
+                detailDivHeight = detailDiv.offsetHeight;
+            }
         } else {
-            detailDivHeight = detailDiv.offsetHeight;
+            detailDivHeight = Number(loadedHeightSettings['detail_' + tabName].replace('px', ''));
         }
+        detailDiv.style.height = detailDivHeight + 'px';
 	}
 
 	var gridObject = new Object();
