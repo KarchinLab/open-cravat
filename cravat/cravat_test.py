@@ -110,7 +110,7 @@ class Tester():
             rows = {}
         else:
             rows = []
-        with open(rsltFile) as f:
+        with open(rsltFile, encoding='latin-1') as f:
             line = f.readline().strip('\n')
             while line:
                 # skip comment lines but pull out the report level
