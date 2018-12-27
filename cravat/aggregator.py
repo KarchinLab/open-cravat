@@ -81,75 +81,79 @@ class Aggregator (object):
         self.logger.info('input directory: %s' %self.input_dir)
         
     def run(self):
-        self._setup()
-        if self.input_base_fname == None:
-            return
-        start_time = time.time()
-        self.logger.info('started: %s' %\
-                         time.asctime(time.localtime(start_time)))
-        self.dbconn.commit()
-        self.cursor.execute('pragma synchronous=0;')
-        self.cursor.execute('pragma journal_mode=WAL;')
-        n = 0
-        for _, rd in self.base_reader.loop_data():
-            n += 1
-            names = list(rd.keys())
-            values = []
-            for name in names:
-                val = rd[name]
-                valtype = type(val)
-                if valtype is str:
-                    val = '\'' + val + '\''
-                else:
-                    if val == None:
-                        val = '\'\''
-                    else:
-                        val = str(val)
-                values.append(val)
-            q = 'insert into %s (%s) values (%s);' \
-                %(self.table_name, 
-                  ', '.join([self.base_prefix + '__' + v for v in names]), 
-                  ', '.join(values))
-            self.cursor.execute(q)
-            if n%self.commit_threshold == 0:
-                self.dbconn.commit()
-        self.dbconn.commit()
-        for annot_name in self.annotators:
-            reader = self.readers[annot_name]
+        try:
+            self._setup()
+            if self.input_base_fname == None:
+                return
+            start_time = time.time()
+            self.logger.info('started: %s' %\
+                             time.asctime(time.localtime(start_time)))
+            self.dbconn.commit()
+            self.cursor.execute('pragma synchronous=0;')
+            self.cursor.execute('pragma journal_mode=WAL;')
             n = 0
-            for _, rd in reader.loop_data():
+            for _, rd in self.base_reader.loop_data():
                 n += 1
-                key_val = rd[self.key_name]
-                reader_col_names = [x for x in rd if x != self.key_name]
-                update_toks = []
-                for reader_col_name in reader_col_names:
-                    db_col_name = '%s__%s' %(annot_name, reader_col_name)
-                    val = rd[reader_col_name]
-                    set_val = 'null'
-                    if val is not None:
-                        if type(val) is str:
-                            set_val = '"%s"' %val
+                names = list(rd.keys())
+                values = []
+                for name in names:
+                    val = rd[name]
+                    valtype = type(val)
+                    if valtype is str:
+                        val = '\'' + val + '\''
+                    else:
+                        if val == None:
+                            val = '\'\''
                         else:
-                            set_val = str(val)
-                    update_toks.append('%s=%s' %(db_col_name, set_val))
-                q = 'update %s set %s where %s="%s";' %(
-                    self.table_name,
-                    ', '.join(update_toks),
-                    self.base_prefix + '__' + self.key_name,
-                    key_val)
+                            val = str(val)
+                    values.append(val)
+                q = 'insert into %s (%s) values (%s);' \
+                    %(self.table_name, 
+                      ', '.join([self.base_prefix + '__' + v for v in names]), 
+                      ', '.join(values))
                 self.cursor.execute(q)
                 if n%self.commit_threshold == 0:
                     self.dbconn.commit()
             self.dbconn.commit()
-        self.fill_categories()
-        self.cursor.execute('pragma synchronous=2;')
-        self.cursor.execute('pragma journal_mode=delete;')
-        end_time = time.time()
-        self.logger.info('finished: %s' %time.asctime(time.localtime(end_time)))
-        runtime = end_time - start_time
-        self.logger.info('runtime: %s' %round(runtime, 3))
-        self._cleanup()
-
+            for annot_name in self.annotators:
+                reader = self.readers[annot_name]
+                n = 0
+                for _, rd in reader.loop_data():
+                    n += 1
+                    key_val = rd[self.key_name]
+                    reader_col_names = [x for x in rd if x != self.key_name]
+                    update_toks = []
+                    for reader_col_name in reader_col_names:
+                        db_col_name = '%s__%s' %(annot_name, reader_col_name)
+                        val = rd[reader_col_name]
+                        set_val = 'null'
+                        if val is not None:
+                            if type(val) is str:
+                                set_val = '"%s"' %val
+                            else:
+                                set_val = str(val)
+                        update_toks.append('%s=%s' %(db_col_name, set_val))
+                    q = 'update %s set %s where %s="%s";' %(
+                        self.table_name,
+                        ', '.join(update_toks),
+                        self.base_prefix + '__' + self.key_name,
+                        key_val)
+                    self.cursor.execute(q)
+                    if n%self.commit_threshold == 0:
+                        self.dbconn.commit()
+                self.dbconn.commit()
+            self.fill_categories()
+            self.cursor.execute('pragma synchronous=2;')
+            self.cursor.execute('pragma journal_mode=delete;')
+            end_time = time.time()
+            self.logger.info('finished: %s' %time.asctime(time.localtime(end_time)))
+            runtime = end_time - start_time
+            self.logger.info('runtime: %s' %round(runtime, 3))
+            self._cleanup()
+        except Exception as e:
+            print(e)
+            self.logger.exception(e)
+            
     def make_reportsub (self):
         if self.level in ['variant', 'gene']:
             q = 'select * from {}_reportsub'.format(self.level)
