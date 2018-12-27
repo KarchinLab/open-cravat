@@ -9,6 +9,7 @@ import yaml
 from cravat import CravatReader
 from cravat import CravatWriter
 import json
+from .exceptions import BadFormatError
 
 class Aggregator (object):
     
@@ -119,6 +120,9 @@ class Aggregator (object):
                 reader = self.readers[annot_name]
                 n = 0
                 for _, rd in reader.loop_data():
+                    if isinstance(rd, Exception):
+                        self.logger.info('Exception withh output by {}: {}'.format(annot_name, rd.args[0]))
+                        continue
                     n += 1
                     key_val = rd[self.key_name]
                     reader_col_names = [x for x in rd if x != self.key_name]
@@ -151,8 +155,10 @@ class Aggregator (object):
             self.logger.info('runtime: %s' %round(runtime, 3))
             self._cleanup()
         except Exception as e:
-            print(e)
+            import traceback
+            traceback.print_exc()
             self.logger.exception(e)
+            exit(-1)
             
     def make_reportsub (self):
         if self.level in ['variant', 'gene']:

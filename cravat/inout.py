@@ -106,9 +106,10 @@ class CravatReader (CravatFile):
             toks = l.split('\t')
             out = {}
             if len(toks) < len(self.columns):
-                err_msg = 'Too few columns. Received %s. Expected %s' \
-                    %(len(toks),len(self.columns))
-                raise BadFormatError(err_msg)
+                err_msg = 'Too few columns. Received %s. Expected %s. data was [%s]' \
+                    %(len(toks),len(self.columns), l)
+                yield None, BadFormatError(err_msg)
+                continue
             for col_index, col_def in self.columns.items():
                 col_name = col_def['name']
                 col_type = col_def['type']
@@ -139,7 +140,7 @@ class CravatReader (CravatFile):
         f.close()
 
     def _loop_data(self):
-        f = open(self.path)
+        f = open(self.path, encoding='latin-1')
         lnum = 0
         for l in f:
             lnum += 1
