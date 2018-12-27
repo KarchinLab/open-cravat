@@ -80,6 +80,19 @@ class FileRouter(object):
         jobs_dir = await self.job_dir(request, job_id)
         return os.path.join(jobs_dir, status_fname)
 
+    async def job_status (self, request, job_id):
+        job_dir = await self.job_dir(request, job_id)
+        fns = os.listdir(job_dir)
+        statusjson = {}
+        for fn in fns:
+            if fn.endswith('.status.json'):
+                with open(os.path.join(job_dir, fn)) as f:
+                    statusjson = json.loads(f.readline())
+            elif fn.endswith('.info.yaml'):
+                with open(os.path.join(job_dir, fn)) as f:
+                    statusjson = yaml.load(f)
+        return statusjson
+        
     async def job_log(self, request, job_id):
         job_dir = await self.job_dir(request, job_id)
         fns = os.listdir(job_dir)
@@ -279,7 +292,7 @@ async def get_all_jobs (request):
             existing_reports = []
             for report_type in get_valid_report_types():
                 ext = filerouter.report_extensions.get(report_type, '.'+report_type)
-                report_fname = filerouter.input_fname + ext
+                report_fname = job.info['orig_input_fname'] + ext
                 report_file = os.path.join(job_dir, report_fname)
                 if os.path.exists(report_file):
                     existing_reports.append(report_type)
@@ -346,9 +359,10 @@ def get_report_types(request):
 async def generate_report(request):
     global filerouter
     job_id = request.match_info['job_id']
+    statusjson = await filerouter.job_status(request, job_id)
     report_type = request.match_info['report_type']
     if report_type in get_valid_report_types():
-        job_input = await filerouter.job_input(request, job_id)
+        job_input = statusjson['orig_input_path']
         cmd_args = ['cravat', job_input]
         cmd_args.append('--str')
         cmd_args.extend(['-t', report_type])
