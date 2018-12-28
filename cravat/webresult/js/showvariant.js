@@ -50,6 +50,35 @@ function getWidgetTableTr (values) {
 	return tr;
 }
 
+function getWidgetTableTrLink (values) {
+	var numBorder = values.length - 1;
+	var tr = getEl('tr');
+	tr.style.borderBottom = '1px solid #cccccc';
+	for (var i = 0; i < values.length; i++) {
+		var td = getEl('td');
+		var p = getEl('p');
+		p.style.wordWrap = 'break-word';
+		if (i < numBorder) {
+			td.style.borderRight = widgetTableBorderStyle;
+		}
+		var value = values[i];
+		if (value == null) {
+			value = '';
+		}
+		if(value.startsWith('http')){
+			spanText = document.createElement('a');
+			spanText.href = value;
+			spanText.target = '_blank';
+			addEl(td, addEl(spanText, getTn('Link')));
+		}
+		else{
+			addEl(td, addEl(p, getTn(value)));
+		}
+		addEl(tr, td);
+	}
+	return tr;
+}
+
 function getLineHeader (header) {
 	var spanHeader = document.createElement('span');
 	spanHeader.appendChild(document.createTextNode('  ' + header + ': '));
