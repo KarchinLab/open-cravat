@@ -44,27 +44,6 @@ function getWidgetTableTr (values) {
 		if (value == null) {
 			value = '';
 		}
-		addEl(td, addEl(p, getTn(value)));
-		addEl(tr, td);
-	}
-	return tr;
-}
-
-function getWidgetTableTrLink (values) {
-	var numBorder = values.length - 1;
-	var tr = getEl('tr');
-	tr.style.borderBottom = '1px solid #cccccc';
-	for (var i = 0; i < values.length; i++) {
-		var td = getEl('td');
-		var p = getEl('p');
-		p.style.wordWrap = 'break-word';
-		if (i < numBorder) {
-			td.style.borderRight = widgetTableBorderStyle;
-		}
-		var value = values[i];
-		if (value == null) {
-			value = '';
-		}
 		if(value.startsWith('http')){
 			spanText = document.createElement('a');
 			spanText.href = value;
