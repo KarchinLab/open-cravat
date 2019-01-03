@@ -7,6 +7,7 @@ import yaml
 import json
 import csv
 from io import StringIO
+from cravat.util import detect_encoding
 
 csv.register_dialect('cravat', delimiter=',', quotechar='@')
 
@@ -130,7 +131,8 @@ class CravatReader (CravatFile):
         return all_data
 
     def _loop_definition(self):
-        f = open(self.path)
+        encoding = detect_encoding(self.path)
+        f = open(self.path, encoding=encoding)
         for l in f:
             l = l.rstrip().lstrip()
             if l.startswith('#'):
@@ -140,7 +142,8 @@ class CravatReader (CravatFile):
         f.close()
 
     def _loop_data(self):
-        f = open(self.path, encoding='latin-1')
+        encoding = detect_encoding(self.path)
+        f = open(self.path, encoding=encoding)
         lnum = 0
         for l in f:
             lnum += 1
@@ -157,7 +160,7 @@ class CravatWriter(CravatFile):
                  include_titles=True,
                  titles_prefix='#'):
         super().__init__(path)
-        self.wf = open(self.path,'w')
+        self.wf = open(self.path,'w', encoding='UTF-8')
         self._ready_to_write = False
         self.ordered_columns = []
         self.name_to_col_index = {}

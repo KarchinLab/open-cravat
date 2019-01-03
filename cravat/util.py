@@ -3,6 +3,7 @@ import os
 import importlib
 import sys
 import yaml
+import chardet
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -129,7 +130,7 @@ so_severity = ['',
                'FSD',
                'FI1',
                'FI2',
-               'FSD'
+               'FSI'
                ]
 
 def valid_so(so):
@@ -182,3 +183,15 @@ def get_argument_parser_defaults(parser):
              for action in parser._actions
              if action.dest != 'help'
             }
+
+def detect_encoding (path):
+    f = open(path, 'rb')
+    detector = chardet.universaldetector.UniversalDetector()
+    for line in f:
+        detector.feed(line)
+        if detector.done:
+            break
+    detector.close()
+    f.close()
+    print(detector.result['encoding'])
+    return detector.result['encoding']
