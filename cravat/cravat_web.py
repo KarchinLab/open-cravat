@@ -67,7 +67,8 @@ def result ():
     check_donotopenbrowser()
     global donotopenbrowser
     if not donotopenbrowser:
-        webbrowser.open('http://localhost:8060/result/index.html?job_id=' + runid + '&dbpath=' + dbpath)
+        server = get_server()
+        webbrowser.open('http://{host}:{port}/result/index.html?job_id='.format(host=server.get('host'), port=server.get('port')) + runid + '&dbpath=' + dbpath)
     main()
 
 def store ():
@@ -75,14 +76,34 @@ def store ():
     ws.start_install_queue_manager()
     global donotopenbrowser
     if not donotopenbrowser:
-        webbrowser.open('http://localhost:8060/store/index.html')
+        server = get_server()
+        webbrowser.open('http://{host}:{port}/store/index.html'.format(host=server.get('host'), port=server.get('port')))
 
 def submit ():
     check_donotopenbrowser()
     global donotopenbrowser
     if not donotopenbrowser:
-        webbrowser.open('http://localhost:8060/submit/index.html')
+        server = get_server()
+        webbrowser.open('http://{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port')))
     main()
+
+def get_server():
+    server = {}
+    conf = ConfigLoader()
+    pl = platform.platform()
+    if pl.startswith('Windows'):
+        def_host = 'localhost'
+    elif pl.startswith('Linux'):
+        def_host = 'localhost'
+    elif pl.startswith('Darwin'):
+        def_host = '0.0.0.0'
+    else:
+        def_host = 'localhost'
+    host = conf.get_cravat_conf().get('gui_host', def_host)
+    port = conf.get_cravat_conf().get('gui_port', 8060)
+    server['host'] = host
+    server['port'] = port
+    return server
 
 def main ():
     '''
@@ -123,21 +144,18 @@ def main ():
         print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
         web.run_app(app, port=8060)
     except KeyboardInterrupt:
-        print('@@@@@@@ keyboard interrupt')
     except BrokenPipeError:
-        print('@@@@@@@ broken pipe')
     except:
         import traceback
         traceback.print_exc()
     '''
+    serv = get_server()
     try:
         s = socket.socket()
-        pl = platform.platform()
-        if pl == 'Windows':
-            s.bind(('0.0.0.0', 8060))
-        else:
-            s.bind(('localhost', 8060))
+        s.bind((serv.get('host'), serv.get('port')))
+        s.close()
     except:
+        print('Cannot bind to same host and port')
         return
     app = web.Application()
     routes = list()
@@ -152,7 +170,7 @@ def main ():
     app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
     ws.start_worker()
     print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
-    web.run_app(app, port=8060)
+    web.run_app(app, port=serv.get('port'))
 
 if __name__ == '__main__':
     main()

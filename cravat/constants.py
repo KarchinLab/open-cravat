@@ -24,32 +24,66 @@ liftover_chain_paths = {
                                              )
                         }
 
-crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int'},
-           {'name':'tags', 'title':'User Tags', 'type':'string'},
-           {'name':'uid', 'title':'UID', 'type':'int'}]
+crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'width': 90},
+           {'name':'tags', 'title':'User Tags', 'type':'string', 'width': 90, 'category': 'multi'},
+           {'name':'uid', 'title':'UID', 'type':'int', 'width': 70}]
 crm_idx = [['uid'],['tags']]
-crs_def = [{'name':'uid', 'title':'UID', 'type':'string'},
-           {'name':'sample_id', 'title':'Sample', 'type':'string'}]
+crs_def = [{'name':'uid', 'title':'UID', 'type':'string', 'width': 70},
+           {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90, 'category': 'multi'}]
 crs_idx = [['uid'], ['sample_id']]
-crv_def = [{'name':'uid', 'title':'UID', 'type':'int'},
-           {'name':'chrom', 'title':'Chrom', 'type':'string'},
-           {'name':'pos', 'title':'Position', 'type':'int'},
-           {'name':'ref_base', 'title':'Ref Base', 'type':'string'},
-           {'name':'alt_base', 'title':'Alt Base', 'type':'string'}]
+crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
+           {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 60},
+           {'name':'pos', 'title':'Position', 'type':'int', 'width': 80},
+           {'name':'ref_base', 'title':'Ref Base', 'type':'string', 'width': 80},
+           {'name':'alt_base', 'title':'Alt Base', 'type':'string', 'width': 80}]
 crv_idx = [['uid']]
 crx_def = crv_def + \
-          [{'name':'coding', 'title':'Coding', 'type':'string'},
-           {'name':'hugo', 'title':'Hugo', 'type':'string'},
-           {'name':'transcript', 'title':'Transcript', 'type':'string'},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'string'},
-           {'name':'achange', 'title':'Protein Change', 'type':'string'},
-           {'name':'all_mappings', 'title':'All Mappings', 'type':'string'},
+          [{'name':'coding', 'title':'Coding', 'type':'string', 'width': 50, 'category': 'single'},
+           {'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70},
+           {'name':'transcript', 'title':'Transcript', 'type':'string', 'width': 150},
+           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 200, 'category': 'single',
+               'categories': [
+                   '2KD',
+                   '2KU', 
+                   'UT3', 
+                   'UT5', 
+                   'INT', 
+                   'UNK', 
+                   'SYN', 
+                   'MIS', 
+                   'CSS', 
+                   'IND', 
+                   'INI', 
+                   'STL', 
+                   'SPL', 
+                   'STG', 
+                   'FSD', 
+                   'FSI']},
+           {'name':'achange', 'title':'Protein Change', 'type':'string', 'width': 70},
+           {'name':'all_mappings', 'title':'All Mappings', 'type':'string', 'width': 100, 'hidden':True},
            ]
 crx_idx = [['uid']]
-crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string'},
-           {'name':'num_variants', 'title':'Variants in Gene', 'type':'int'},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'string'},
-           {'name':'all_so', 'title':'All Sequence Ontologies', 'type':'string'}
+crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70},
+           {'name':'num_variants', 'title':'Variants in Gene', 'type':'int', 'width': 130},
+           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 200, 'category': 'single',
+               'categories': [
+                   '2KD',
+                   '2KU', 
+                   'UT3', 
+                   'UT5', 
+                   'INT', 
+                   'UNK', 
+                   'SYN', 
+                   'MIS', 
+                   'CSS', 
+                   'IND', 
+                   'INI', 
+                   'STL', 
+                   'SPL', 
+                   'STG', 
+                   'FSD', 
+                   'FSI']},
+           {'name':'all_so', 'title':'All Sequence Ontologies', 'type':'string', 'width': 190}
           ]
 crg_idx = [['hugo']]
 crt_def = [{'name':'primary_transcript', 'title':'Primary transcript', 
@@ -74,3 +108,5 @@ mapping_parser_name = 'mapping_parser'
 VARIANT = 0
 GENE = 1
 LEVELS = {'variant': VARIANT, 'gene': GENE}
+
+viewer_effective_digits = 3

@@ -7,6 +7,8 @@ from cravat.cravat_filter import CravatFilter
 from cravat import admin_util as au
 from cravat.config_loader import ConfigLoader
 from cravat import util
+import subprocess
+import re
 
 class CravatReport:
 
@@ -37,8 +39,8 @@ class CravatReport:
             for i in self.column_subs[level]:
                 val = row[i]
                 sub = self.column_subs[level][i]
-                if val in sub:
-                    row[i] = sub[val]
+                for target in sub:
+                    row[i] = row[i].replace(target, sub[target])
         return row
 
     def run_level (self, level):
@@ -56,8 +58,8 @@ class CravatReport:
             if level == 'variant':
                 hugo_present = 'base__hugo' in self.colnos['variant']
             for row in self.cf.get_filtered_iterator(level):
+                row = list(row)
                 if level == 'variant':
-                    row = list(row)
                     if hugo_present:
                         hugo = row[self.colnos['variant']['base__hugo']]
                         generow = self.cf.get_gene_row(hugo)
@@ -68,7 +70,6 @@ class CravatReport:
                                 colval = generow[self.colnos['gene'][colname]]
                             row.append(colval)
                 elif level == 'gene':
-                    row = list(row)
                     hugo = row[0]
                     for module_name in gene_summary_datas:
                         [gene_summary_data, cols] = gene_summary_datas[module_name]
@@ -154,15 +155,32 @@ class CravatReport:
                 {'name': name,
                  'displayname': displayname,
                  'count': 0})
-        sql = 'select col_name, col_title, col_type from ' + level + '_header'
+        sql = 'select * from ' + level + '_header'
         self.cursor.execute(sql)
         columns = []
         colcount = 0
         for row in self.cursor.fetchall():
-            (colname, coltitle, col_type) = row
+            (colname, coltitle, col_type) = row[:3]
+            col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else []
+            col_width = row[4] if len(row) > 4 else None
+            col_desc = row[5] if len(row) > 5 else None
+            col_hidden = bool(row[6]) if len(row) > 6 else False
+            col_ctg = row[7] if len(row) > 7 else None
+            if col_ctg in ['single', 'multi'] and len(col_cats) == 0:
+                sql = 'select distinct {} from {}'.format(colname, level)
+                self.cursor.execute(sql)
+                rs = self.cursor.fetchall()
+                for r in rs:
+                    col_cats.append(r[0])
             column = {'col_name': colname,
                       'col_title': coltitle,
-                      'col_type': col_type}
+                      'col_type': col_type,
+                      'col_cats': col_cats,
+                      'col_width':col_width,
+                      'col_desc':col_desc,
+                      'col_hidden':col_hidden,
+                      'col_ctg': col_ctg,
+                      }
             self.colnos[level][colname] = colcount
             colcount += 1
             columns.append(column)
@@ -198,9 +216,27 @@ class CravatReport:
                     self.colnos[level][colname] = colcount
                     colcount += 1
                     colname = mi.name + '__' + col['name']
+                    col_type = col['type']
+                    col_cats = col.get('categories',[])
+                    col_width = col.get('width')
+                    col_desc = col.get('desc')
+                    col_hidden = col.get('hidden',False)
+                    col_ctg = col.get('category', None)
+                    if col_ctg in ['category', 'multicategory'] and len(col_cats) == 0:
+                        sql = 'select distinct {} from {}'.format(colname, level)
+                        self.cursor.execute(sql)
+                        rs = self.cursor.fetchall()
+                        for r in rs:
+                            col_cats.append(r[0])
                     column = {'col_name': colname,
                               'col_title': col['title'],
-                              'col_type': col['type']}
+                              'col_type': col_type,
+                              'col_cats': col_cats,
+                              'col_width':col_width,
+                              'col_desc':col_desc,
+                              'col_hidden':col_hidden,
+                              'col_ctg': col_ctg
+                              }
                     columns.append(column)
                     self.var_added_cols.append(colname)
         # Gene level summary columns
@@ -228,9 +264,24 @@ class CravatReport:
                     columngroup['count'] = len(cols)
                     self.columngroups[level].append(columngroup)
                     for col in cols:
+                        col_type = col['type']
+                        col_cats = col.get('categories', [])
+                        col_ctg = col.get('category', None)
+                        if col_type in ['category', 'multicategory'] and len(col_cats) == 0:
+                            sql = 'select distinct {} from {}'.format(colname, level)
+                            self.cursor.execute(sql)
+                            rs = self.cursor.fetchall()
+                            for r in rs:
+                                col_cats.append(r[0])
                         column = {'col_name': conf['name'] + '__' + col['name'],
                                   'col_title': col['title'],
-                                  'col_type': col['type']}
+                                  'col_type': col_type,
+                                  'col_cats': col_cats,
+                                  'col_width':col.get('width'),
+                                  'col_desc':col.get('desc'),
+                                  'col_hidden':col.get('hidden',False),
+                                  'col_ctg': col_ctg
+                                  }
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
         colno = 0
@@ -259,7 +310,8 @@ class CravatReport:
                         sub = self.report_substitution[module]
                         if col in sub:
                             self.column_subs[level][i] = sub[col]
-    
+                            self.colinfo[level]['columns'][i]['reportsub'] = sub[col]
+
     def parse_cmd_args (self, cmd_args):
         parser = argparse.ArgumentParser()
         parser.add_argument('dbpath',
@@ -283,6 +335,11 @@ class CravatReport:
         parser.add_argument('-c',
             dest='confpath',
             help='path to a conf file')
+        parser.add_argument('-t',
+            dest='reporttypes',
+            nargs='+',
+            default=None,
+            help='report types')
         parsed_args = parser.parse_args(cmd_args[1:])
         self.dbpath = parsed_args.dbpath
         self.filterpath = parsed_args.filterpath
@@ -291,6 +348,7 @@ class CravatReport:
         self.savepath = parsed_args.savepath
         self.confpath = parsed_args.confpath
         self.conf = ConfigLoader(job_conf_path=self.confpath)
+        self.report_types = parsed_args.reporttypes
 
     def connect_db (self, dbpath=None):
         if dbpath != None:
@@ -307,7 +365,7 @@ class CravatReport:
     def load_filter (self):
         self.cf = CravatFilter(dbpath=self.dbpath)
         self.cf.loadfilter(filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
-    
+
     def table_exists (self, tablename):
         sql = 'select name from sqlite_master where ' + \
             'type="table" and name="' + tablename + '"'
@@ -319,7 +377,28 @@ class CravatReport:
             ret = True
         return ret
 
-
 def main ():
-    reporter = CravatReport(sys.argv)
-    reporter.run()
+    if len(sys.argv) < 2:
+        print('Please provide a sqlite file path')
+        exit()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dbpath',
+                        help='Path to aggregator output')
+    parser.add_argument('-t',
+        dest='reporttypes',
+        nargs='+',
+        default=None,
+        help='report types')
+    parsed_args = parser.parse_args(sys.argv[1:])
+    dbpath = parsed_args.dbpath
+    report_types = parsed_args.reporttypes
+    run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
+    output_dir = os.path.dirname(dbpath)
+    avail_reporters = au.get_local_module_infos_of_type('reporter')
+    avail_reporter_names = [re.sub('reporter$', '', v) for v in avail_reporters.keys()]
+    cmd = ['cravat', 'dummyinput', '-n', run_name, '-d', output_dir, '--sc', '--sm', '--sa', '--sg', '--sp', '--str', '-t']
+    if report_types is not None:
+        cmd.extend(report_types)
+    else:
+        cmd.extend(avail_reporter_names)
+    subprocess.run(cmd)

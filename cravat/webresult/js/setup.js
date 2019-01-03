@@ -555,11 +555,19 @@ function drawSummaryWidget (widgetName) {
 			var data = response['data'];
 			if (data == {}) {
 			} else {
-				generator['function'](widgetContentDiv, data);
+                try {
+                    generator['function'](widgetContentDiv, data);
+                } catch (e) {
+                    console.log(e);
+                }
 			}
 		});
 	} else {
-		generator['function'](widgetContentDiv);
+        try {
+            generator['function'](widgetContentDiv);
+        } catch (e) {
+            console.log(e);
+        }
 	}
 }
 
@@ -952,7 +960,7 @@ function populateTableColumnSelectorPanel () {
 			checkbox.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_' + column.col + '_' + '_checkbox';
 			checkbox.className = 'colcheckbox';
 			checkbox.type = 'checkbox';
-			checkbox.checked = true;
+			checkbox.checked = !column.hidden;
 			checkbox.setAttribute('colgroupname', columnGroupName);
 			checkbox.setAttribute('col', column.col);
 			checkbox.setAttribute('colno', columnKeyNo);
@@ -1033,7 +1041,16 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	}
 	var detailDivHeight = 0;
 	if (detailDiv) {
-		detailDivHeight = detailDiv.offsetHeight;
+        if (loadedHeightSettings['detail_' + tabName] == undefined) {
+            if (rightDivHeight < 660) {
+                detailDivHeight = 250;
+            } else {
+                detailDivHeight = detailDiv.offsetHeight;
+            }
+        } else {
+            detailDivHeight = Number(loadedHeightSettings['detail_' + tabName].replace('px', ''));
+        }
+        detailDiv.style.height = detailDivHeight + 'px';
 	}
 
 	var gridObject = new Object();
@@ -1115,7 +1132,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.filter = function () {
 		this.scrollRow({rowIndxPage: 0});
 	};
-	gridObject.collapsible = {on: false};
+	gridObject.collapsible = {on: false, toggle: false};
 	gridObject.roundCorners = false;
 	gridObject.stripeRows = true;
 	gridObject.cellDblClick = function (evt, ui) {
@@ -1128,7 +1145,15 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: selRowNo});
             row.css('background-color', '#ffc500');
         }
-    }
+	}
+	gridObject.refreshHeader = function () {
+		for (let i=0; i<this.colModel.length; i++) {
+			col = this.colModel[i];
+			if (col.desc !== null) {
+				$(this.getCellHeader({colIndx:col.dataIndx})).attr('title',col.desc).tooltip();
+			}
+		}
+	}
 	return gridObject;
 }
 

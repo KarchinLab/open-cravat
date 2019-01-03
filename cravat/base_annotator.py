@@ -17,8 +17,6 @@ from .constants import mapping_parser_name
 from .exceptions import InvalidData
 import sqlite3
 
-
-
 class BaseAnnotator(object):
     
     valid_levels = ['variant','gene']
@@ -357,10 +355,7 @@ class BaseAnnotator(object):
                                                    self.annotator_display_name)
             skip_aggregation = []
             for col_index, col_def in enumerate(self.conf['output_columns']):
-                self.output_writer.add_column(col_index,
-                                              col_def['title'],
-                                              col_def['name'],
-                                              col_def['type'])
+                self.output_writer.add_column(col_index, col_def)
                 if not(col_def.get('aggregate', True)):
                     skip_aggregation.append(col_def['name'])
             if not(self.plain_output):
@@ -438,7 +433,7 @@ class BaseAnnotator(object):
     # Gets the input dict from both the input file, and 
     # any depended annotators depended annotator feature not complete.
     def _get_input(self):
-        for lnum, reader_data in self.primary_input_reader.loop_data('dict'):
+        for lnum, reader_data in self.primary_input_reader.loop_data():
             try:
                 input_data = {}
                 for col_name in self.conf['input_columns']:
@@ -490,7 +485,7 @@ class SecondaryInputFetcher():
         self.load_input()
     
     def load_input(self):
-        for _, all_col_data in self.input_reader.loop_data('dict'):
+        for _, all_col_data in self.input_reader.loop_data():
             key_data = all_col_data[self.key_col]
             if key_data not in self.data: self.data[key_data] = []
             fetch_col_data = {}

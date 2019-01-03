@@ -95,6 +95,7 @@ class BasePostAggregator (object):
                     self.write_output(input_data, fixed_output)
                 except Exception as e:
                     self._log_runtime_exception(input_data, e)
+            self.fill_categories()
             self.dbconn.commit()
             self.base_cleanup()
             end_time = time.time()
@@ -103,14 +104,37 @@ class BasePostAggregator (object):
             self.logger.info('runtime: {0:0.3f}'.format(run_time))
         except Exception as e:
             self._log_exception(e)
-    
+
+    def fill_categories (self):
+        for col_def in self.conf['output_columns']:
+            if 'category' not in col_def or col_def['category'] not in ['single', 'multi']:
+                continue
+            col_name = col_def['name']
+            q = 'select distinct {} from {}'.format(col_name, self.level)
+            self.cursor.execute(q)
+            rs = self.cursor.fetchall()
+            col_cats = []
+            for r in rs:
+                col_cat_str = r[0]
+                for col_cat in col_cat_str.split(';'):
+                    if col_cat not in col_cats:
+                        col_cats.append(col_cat)
+            col_cats.sort()
+            q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
+                self.level,
+                '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']',
+                col_name)
+            self.cursor.execute(q)
+        self.dbconn.commit()
+
     def write_output (self, input_data, output_dict):
         q = 'update ' + self.level + ' set '
         for col_def in self.conf['output_columns']:
             col_name = col_def['name']
             if col_name in output_dict:
                 val = output_dict[col_name]
-                if col_def['type'] == 'string':
+                col_type = col_def['type']
+                if col_type in ['string']:
                     val = '"' + val + '"'
                 else:
                     val = str(val)
@@ -127,7 +151,7 @@ class BasePostAggregator (object):
         try:
             error_classname = e.__class__.__name__
             err_line = '\t'.join([error_classname, str(e)])
-            self.invalid_file.write(err_line + '\n')
+            #self.invalid_file.write(err_line + '\n')
             if not(isinstance(e,InvalidData)):
                 self._log_exception(e, halt=False)
         except Exception as e:
@@ -167,14 +191,19 @@ class BasePostAggregator (object):
             colname = col_def['name']
             coltitle = col_def['title']
             coltype = col_def['type']
+            colcats = col_def.get('categories', "[]")
+            colwidth = col_def.get('width')
+            coldesc = col_def.get('desc')
+            colhidden = col_def.get('hidden',False)
+            col_ctg = col_def.get('category', None)
             # data table
             q = 'alter table ' + self.level + ' add column ' +\
                 colname + ' ' + coltype
             self.cursor_w.execute(q)
             # header table
-            q = 'insert into {} values ("{}", "{}", "{}")'.format(
-                header_table_name, colname, coltitle, coltype)
-            self.cursor_w.execute(q)
+            # use prepared statement to allow " characters in colcats and coldesc
+            q = 'insert into {} values (?, ?, ?, ?, ?, ?, ?, ?)'.format(header_table_name)
+            self.cursor_w.execute(q,[colname, coltitle, coltype, colcats, colwidth, coldesc, colhidden, col_ctg])
         self.dbconn.commit()
         
     # Placeholder, intended to be overridded in derived class

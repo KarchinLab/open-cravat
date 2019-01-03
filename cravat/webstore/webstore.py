@@ -62,7 +62,7 @@ class InstallProgressMpDict(au.InstallProgressHandler):
             self.install_state['cur_size'] = 0
             self.install_state['total_size'] = 0
             self.install_state['update_time'] = time.time()
-            last_update_time = install_state['update_time']
+            last_update_time = self.install_state['update_time']
         self.cur_stage = stage
         self.install_state['module_name'] = self._module_name
         self.install_state['module_version'] = self._module_version
@@ -81,19 +81,14 @@ class InstallProgressMpDict(au.InstallProgressHandler):
 
 def fetch_install_queue (install_queue, install_state):
     while True:
-        try:
-            data = install_queue.get()
-            au.refresh_cache()
-            module_name = data['module']
-            module_version = data['version']
-            stage_handler = InstallProgressMpDict(module_name, module_version, install_state)
-            au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
-            au.refresh_cache()
-            time.sleep(1)
-        except KeyboardInterrupt:
-            raise
-        except:
-            traceback.print_exc()
+        data = install_queue.get()
+        au.refresh_cache()
+        module_name = data['module']
+        module_version = data['version']
+        stage_handler = InstallProgressMpDict(module_name, module_version, install_state)
+        au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
+        au.refresh_cache()
+        time.sleep(1)
 
 ###################### start from store_handler #####################
 import cravat.admin_util as au
@@ -154,7 +149,7 @@ class ImageSrcEditor(HTMLParser):
     def handle_starttag(self, tag, attrs):
         html = '<{}'.format(tag)
         if tag == 'img':
-            attrs.append(['style', 'width:100%'])
+            attrs.append(['style', 'display:block;margin:auto;max-width:100%'])
         for name, value in attrs:
             if tag == 'img' and name == 'src':
                 value = self.prefix_url + '/' + value.lstrip('/')
@@ -253,6 +248,7 @@ async def connect_websocket (request):
             data['msg'] = install_state['message']
             if data['msg'].startswith('Downloading'):
                 data['msg'] = data['msg'] + ' ' + str(install_state['cur_chunk']) + '%'
+            print(data['msg'])
             await install_ws.send_str(json.dumps(data))
             last_update_time = install_state['update_time']
     return install_ws

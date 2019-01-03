@@ -28,6 +28,7 @@ const makeFilterColDiv = (filter) => {
     // Column select
     const colSel = $(getEl('select'))
         .addClass('filter-column-selector');
+    colSel.on('change', onFilterColumnSelectorChange);
     colDiv.append(colSel);
     populateFilterColumnSelector(colSel, groupSel.val());
 
@@ -35,11 +36,13 @@ const makeFilterColDiv = (filter) => {
     const testSel = $(getEl('select'))
         .addClass('filter-test-selector')
         .change(filterTestChangeHandler);
+    testSel[0].setAttribute('prevselidx', 0);
     colDiv.append(testSel);
-    for (const testName in filterTests) {
-        const testDesc = filterTests[testName];
+    for (var i = 0; i < filterTestNames.length; i++) {
+        var filterTestName = filterTestNames[i];
+        const testDesc = filterTests[filterTestName];
         const testOpt = $(getEl('option'))
-            .val(testName)
+            .val(filterTestName)
             .append(testDesc.title);
         testSel.append(testOpt);
     }
@@ -85,27 +88,153 @@ const makeFilterColDiv = (filter) => {
     return colDiv;
 }
 
+const onFilterColumnSelectorChange = (evt) => {
+    var groupName = evt.target.previousSibling.value;
+    var columns = null;
+    for (var i = 0; i < filterCols.length; i++) {
+        if (filterCols[i].title == groupName) {
+            columns = filterCols[i].colModel;
+            break;
+        }
+    }
+    var columnName = evt.target.value;
+    var filter = null;
+    var column = null;
+    for (var i = 0; i < columns.length; i++) {
+        column = columns[i];
+        if (column.col == columnName) {
+            filter = column.filter;
+            break;
+        }
+    }
+    if (filter != null) {
+        var testDiv = evt.target.nextSibling;
+        if (filter.type == 'select') {
+            var selIdx = null;
+            for (var i = 0; i < testDiv.options.length; i++) {
+                var option = testDiv.options[i];
+                if (option.value == 'select') {
+                    var selIdx = i;
+                    break;
+                }
+            }
+            if (selIdx) {
+                testDiv.selectedIndex = selIdx;
+                var event = new Event('change');
+                testDiv.dispatchEvent(event);
+            }
+        } else {
+            if (testDiv == null) {
+                return;
+            }
+            var curTestKey = testDiv.value;
+            var curTestSetup = filterTests[curTestKey];
+            var curTestColTypes = curTestSetup['colTypes'];
+            var selColType = column.type;
+            for (var i = 0; i < filterTestNames.length; i++) {
+                if (filterTests[testDiv.options[i].value].colTypes.indexOf(selColType) >= 0) {
+                    testDiv.selectedIndex = i;
+                    var event = new Event('change');
+                    testDiv.dispatchEvent(event);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+function getFilterColByName (name) {
+    var column = null;
+    for (var i = 0; i < filterCols.length; i++) {
+        var fg = filterCols[i].colModel;
+        for (var j = 0; j < fg.length; j++) {
+            var col = fg[j];
+            if (col.col == name) {
+                column = col;
+                break;
+            }
+        }
+    }
+    return column;
+}
+
 const filterTestChangeHandler = (event) => {
     const testSel = $(event.target);
     const valuesDiv = testSel.siblings('.filter-values-div');
     const testName = testSel.val();
+    var testDiv = testSel[0].previousSibling;
+    var colname = testDiv.value;
+    var colType = getFilterColByName(colname).type;
+    var selTestType = testSel[0].value;
+    var filterTest = filterTests[selTestType];
+    var allowedColTypes = filterTest.colTypes;
+    if (allowedColTypes.indexOf(colType) < 0) {
+        testSel[0].selectedIndex = testSel[0].getAttribute('prevselidx');
+        return;
+    }
     populateFilterValues(valuesDiv, testName);
-
+    testSel[0].setAttribute('prevselidx', testSel[0].selectedIndex);
 }
 
 const populateFilterValues = (valsContainer, testName, value) => {
     valsContainer.empty();
     const testDesc = filterTests[testName];
-    for (let i=0; i<testDesc.inputs; i++) {
-        const valueInput = $(getEl('input'))
-            .addClass('filter-value-input');
-            valsContainer.append(valueInput);
-            valsContainer.append(' ');
-        if (value !== undefined) {
-            if (Array.isArray(value)) {
-                valueInput.val(value[i]);
-            } else {
-                valueInput.val(value);
+    var testDiv = valsContainer[0].previousSibling.previousSibling.previousSibling;
+    var col = testDiv.value;
+    var column = getFilterColByName(col);
+    var filter = column.filter;
+    var valSubDic = column.reportsub;
+    var valSubDicKeys = Object.keys(valSubDic);
+    if (testName == 'select' && filter.type == 'select') {
+        var select = getEl('select');
+        select.className = 'filter-value-input';
+        select.multiple = 'multiple';
+        addEl(valsContainer[0], select);
+        var optionValues = column.filter.options;
+        var writtenOptionValues = [];
+        if (optionValues != undefined) {
+            for (var j = 0; j < optionValues.length; j++) {
+                var optionValue = optionValues[j];
+                if (optionValue == null) {
+                    continue;
+                }
+                for (let k = 0; k < valSubDicKeys.length; k++) {
+                    const key = valSubDicKeys[k];
+                    optionValue = optionValue.replace(new RegExp(key, 'g'), valSubDic[key]);
+                }
+                let vals = optionValue.split(';');
+                for (let k = 0; k < vals.length; k++) {
+                    let val = vals[k];
+                    if (writtenOptionValues.indexOf(val) < 0) {
+                        writtenOptionValues.push(val);
+                        var option = getEl('option');
+                        option.value = val;
+                        option.textContent = val;
+                        addEl(select, option);
+                    }
+                }
+            }
+        }
+        $(select).pqSelect({
+            checkbox: true, 
+            displayText: '{0} selected',
+            singlePlaceholder: '>',
+            multiplePlaceholder: '>',
+            maxDisplay: 0,
+            width: 200,
+        });
+    } else {
+        for (let i=0; i<testDesc.inputs; i++) {
+            const valueInput = $(getEl('input'))
+                .addClass('filter-value-input');
+                valsContainer.append(valueInput);
+                valsContainer.append(' ');
+            if (value !== undefined) {
+                if (Array.isArray(value)) {
+                    valueInput.val(value[i]);
+                } else {
+                    valueInput.val(value);
+                }
             }
         }
     }
@@ -138,6 +267,9 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
             .append(col.title);
         colSel.append(colOpt);
     }
+    colSel[0].selectedIndex = 0;
+    var event = new Event('change');
+    colSel[0].dispatchEvent(event);
 }
 
 const makeFilterGroupDiv = (filter) => {
@@ -273,6 +405,15 @@ const groupOperatorSelectHandler = (event) => {
     joinDivs.append(operator);
 }
 
+function doReportSub (reportsub, reportsubKeys, origVal) {
+    for (var k = 0; k < reportsubKeys.length; k++) {
+        var key = reportsubKeys[k];
+        var val = reportsub[key];
+        origVal = origVal.replace(new RegExp(val, 'g'), key);
+    }
+    return origVal;
+}
+
 const makeGroupFilter = (groupDiv) => {
     const filter = {};
     // Operator
@@ -287,27 +428,40 @@ const makeGroupFilter = (groupDiv) => {
         const colDiv = $(colDivs[i]);
         // Column
         colFilter.column = colDiv.children('.filter-column-selector').val();
+        var column = getFilterColByName(colFilter.column);
         // Test
         colFilter.test = colDiv.children('.filter-test-selector').val();
+        if (column.category == 'multi') {
+            colFilter.test = 'multicategory';
+        }
         // Value
         const valInputs = colDiv.children('.filter-values-div').children();
-        if (valInputs.length === 0) {
-            colFilter.value = null;
-        } else if (valInputs.length === 1) {
-            var rawValue = $(valInputs[0]).val();
-            // Below is temporary. Implement categorical column type and remove this.
-            if (colFilter.column == 'base__so') {
-				subValue = soDic[rawValue];
-                if (subValue != undefined) {
-                    rawValue = subValue;
-                }
-            }
-            colFilter.value = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
-        } else {
+        var reportsub = column.reportsub;
+        var reportsubKeys = Object.keys(reportsub);
+        if (colFilter.test == 'select' || colFilter.test == 'multicategory') {
+            var selOptions = valInputs[0].selectedOptions;
             colFilter.value = [];
-            for (let j=0; j<valInputs.length; j++){
-                const rawValue = $(valInputs[j]).val()
-                colFilter.value.push(Number(rawValue) !== NaN ? Number(rawValue) : rawValue);
+            for (var j = 0; j < selOptions.length; j++) {
+                var optVal = selOptions[j].value;
+                colFilter.value.push(doReportSub(reportsub, reportsubKeys, optVal));
+            }
+            if (colFilter.value.length == 0) {
+                continue;
+            }
+        } else {
+            if (valInputs.length === 0) {
+                colFilter.value = null;
+            } else if (valInputs.length === 1) {
+                var rawValue = $(valInputs[0]).val();
+                var val = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
+                colFilter.value = doReportSub(reportsub, reportsubKeys, val);
+            } else {
+                colFilter.value = [];
+                for (let j=0; j<valInputs.length; j++){
+                    const rawValue = $(valInputs[j]).val()
+                    var val = Number(rawValue) !== NaN ? Number(rawValue) : rawValue;
+                    colFilter.value.push(doReportSub(reportsub, reportsubKeys, val));
+                }
             }
         }
         // Negate
@@ -343,15 +497,32 @@ const loadFilter = (filter) => {
 }
 
 const filterTests = {
-    equals: {title:'equals', inputs: 1},
-    lessThanEq: {title:'<=', inputs: 1},
-    lessThan: {title:'<', inputs:1},
-    greaterThanEq: {title:'>=', inputs:1},
-    greaterThan: {title:'>', inputs:1},
-    hasData: {title:'has data', inputs:0},
-    noData: {title:'is empty', inputs:0},
-    stringContains: {title: 'contains', inputs:1},
-    stringStarts: {title: 'starts with', inputs:1},
-    stringEnds: {title: 'ends with', inputs:1},
-    between: {title: 'in range', inputs:2}
+    equals: {title:'equals', inputs: 1, colTypes: ['string', 'float', 'int', 'select'], },
+    lessThanEq: {title:'<=', inputs: 1, colTypes: ['float', 'int']},
+    lessThan: {title:'<', inputs:1, colTypes: ['float', 'int']},
+    greaterThanEq: {title:'>=', inputs:1, colTypes: ['float', 'int']},
+    greaterThan: {title:'>', inputs:1, colTypes: ['float', 'int']},
+    hasData: {title:'has data', inputs:0, colTypes: ['float', 'int', 'string']},
+    noData: {title:'is empty', inputs:0, colTypes: ['float', 'int', 'string']},
+    stringContains: {title: 'contains', inputs:1, colTypes: ['string']},
+    stringStarts: {title: 'starts with', inputs:1, colTypes: ['string']},
+    stringEnds: {title: 'ends with', inputs:1, colTypes: ['string']},
+    between: {title: 'in range', inputs:2, colTypes: ['float', 'int']},
+    select: {title: 'select', inputs: 1, colTypes: ['string', 'float', 'int']},
 }
+
+const filterTestNames = [
+    'equals',
+    'between',
+    'lessThanEq',
+    'lessThan',
+    'greaterThanEq',
+    'greaterThan',
+    'hasData',
+    'noData',
+    'stringContains',
+    'stringStarts',
+    'stringEnds',
+    'select',
+];
+

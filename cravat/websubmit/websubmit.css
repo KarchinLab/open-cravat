@@ -1,8 +1,12 @@
+body * {
+    font-family: 'Gothic A1';
+}
+
 #pageselect {
     position: fixed; 
-    top: 67px; 
+    top: 62px; 
     left: 0px; 
-    font-size: 20px; 
+    font-size: 15px; 
     color: #000000;
     z-index: 2;
     outline: none;
@@ -14,20 +18,24 @@
     padding: 6px;
     height: 24px;
     width: 80px;
-    border: 1px solid #5b8588;
     transition: all 0.3s ease;
     vertical-align: bottom;
     cursor: pointer;
+    background-color: #f0f0f0;
+    color: #000000;
+    height: 20px;
+    border-radius: 8px 8px 0px 0px;
+    border: 1px solid #939393
 }
 
 #pageselect div:hover {
-    height: 40px;
-    background-color: #c4e1ff;
+    background-color: #dddddd;
+    color: #000000;
 }
 
 #pageselect div[selval="t"] {
-    height: 40px;
-    background-color: #a6dde0;
+    background-color: #bbbbbb;
+    color: #000000;
 }
 
 #tabselectdiv {
@@ -53,41 +61,32 @@
 
 .container {
     position: relative;
-    border: 1px solid black; 
-    border-radius: 30px; 
+    border: 0.5px solid #939393; 
+    border-radius: 8px 8px 0px 0px; 
     padding-left: 30px; 
     padding-right: 30px; 
-    padding-top: 20px; 
-    padding-bottom: 34px; 
+    padding-top: 18px; 
+    padding-bottom: 14px; 
     margin-right: 10px;
+    margin-bottom: 20px;
 }
 
-#assembly-select {
-    overflow: auto;
-    height: 42px;
-    border: 1px solid black;
-}
-
-#assembly-select option {
-    display: inline-block;
-    height: 20px;
-    padding: 10px;
-    border: 0px;
-}
-
-#assembly-select option:hover {
-    background-color: #c4e1ff;
+.container * {
+    font-size: 13px;
 }
 
 .divtitle {
     font-weight: bold;
-    font-size: 20px;
+    font-size: 22px;
     color: #000000;
+    top: -9px;
+    position: relative;
 }
 
 .input-example-button {
-    width: 120px;
-    background-color: #faebd7;
+    width: 35px;
+    background-color: #d2e8fa;
+    font-size: 11px;
 }
 
 .or {
@@ -98,51 +97,182 @@
     padding-top: 5px;
     padding-bottom: 5px;
     width: 26px;
+    color: #4b4b4b;
 }
 
 .divbanner {
     position: absolute;
-    background-color: #c5dbdb;
+    background-color: #c0c0c0;
     width: 100%;
-    height: 60px;
+    height: 45px;
     top: 0px;
     left: 0px;
     z-index: -1;
-    border-radius: 30px 30px 0px 0px;
+    border-radius: 8px 8px 0px 0px;
 }
 
 button {
     background-color: #fbfbfb;
-}
-
-.moduledetailbutton {
-    border-radius: 10px;
-    border: 0px;
-    outline: none;
-}
-
-.tableheadercell {
-    border-bottom: 1px solid black;
-    box-shadow: 0px 0px 10px 0px #c7c7c7;
-    font-weight: normal;
+    font-size: 12px;
 }
 
 #jobs-table {
+    width: 100%;
     border-collapse: collapse;
-    font-size: 15px;
+    border-spacing: 10px;
 }
 
-#jobs-table tbody tr:nth-child(even) {
-    background-color: #e0e0e0;
+/*
+#jobs-table tbody tr:nth-child(even) .job-detail-td {
+    background-color: #eeeeaa;
 }
 
-#jobs-table tbody tr:hover {
-    background-color: #444444;
-    color: white;
+#jobs-table tbody tr:nth-child(odd) .job-detail-td {
+    background-color: #eeeeaa;
+}
+*/
+
+#jobs-table tr.job-table-tr:hover {
+    background-color: #777777;
+}
+
+.job-table-tr {
+    border-bottom: 1px dotted #aaaaaa;
+}
+
+.job-detail-tr {
+    background-color: #f2f2f2;
+}
+
+.job-detail-tr td table tr td:first-of-type {
+    text-align: right;
+    text-decoration: underline;
+}
+
+.highlighted-tr {
+    background-color: #949494;
+    color: black;
+}
+
+.hidden-tr {
+    display: none;
 }
 
 #jobs-table tbody td {
-    padding: 0px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     cursor: pointer;
+    font-size: 15px;
+}
+
+#jobs-table thead th {
+    font-size: 13px;
+    font-weight: bold;
+    border-bottom: 1px solid black;
+    box-shadow: 0px 0px 10px 0px #c7c7c7;
+}
+
+#annotator-select-div span {
+}
+
+#assembly-select-div {
+    position: absolute;
+    top: 12px;
+    right: 7px;
+    height: 21px;
+}
+
+#assembly-select {
+}
+
+.logo {
+    width: 260px;
+    position: relative;
+    top: 39px;
+}
+
+.headerdiv {
+    position: fixed; 
+    top: 0px; 
+    width: 100%; 
+    z-index: 1; 
+    padding-bottom: 20px; 
+    height: 74px; 
+    background-color: white; 
+    box-shadow: 0px 0px 20px gray; 
+    left: 0px; 
+    right: 0px;
+}
+
+#verdiv {
+    position: absolute; 
+    right: 25px; 
+    vertical-align: bottom; 
+    bottom: 2px; 
+    right: 10px;
+    font-size: 13px;
+}
+
+#settingsdiv {
+    display: none;
+    position: absolute;
+    top: 27px;
+    right: 6px;
+    background-color: white;
+    z-index: 1;
+    box-shadow: 2px 2px 2px gray;
+    border: 1px solid #a2a2a2;
+    padding: 14px;
+    font-size: 13px;
+}
+
+.variant-input-border-bottom {
+    position: relative;
+    border-bottom: 1px dotted #cbcbcb;
+    padding-bottom: 20px;
+}
+
+#submitcontentdiv {
+    position: relative;
+    top: 75px;
+    display: block;
+    width: 400px;
+}
+
+#jobnoteinput {
+    width: calc(100% - 44px);
+}
+
+#input-text {
+    width: calc(100% - 43px);
+}
+
+#refresh-jobs-table-btn {
+    width: 14px; 
+    height: 14px;
+    position: absolute; 
+    top: 22px; 
+    left: 3px;
+}
+
+.threedots {
+    height: 20px;
+    top: 6px;
+    position: absolute;
+    right: 10px;
+}
+
+.email-icon {
+    height: 20px;
+    top: 6px;
+    position: absolute;
+    right: 30px;
+}
+
+.question-icon {
+    height: 20px;
+    top: 6px;
+    position: absolute;
+    right: 70px;
 }
 

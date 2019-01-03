@@ -9,7 +9,7 @@ class BadFormatError(InvalidData):
 
 class LiftoverFailure(InvalidData):
     def __init__(self,chrom,pos):
-        msg = 'Failed to liftover %s %s' %(chrom,str(pos))
+        msg = '%s:%s' %(chrom,str(pos))
         super().__init__(msg)
         
 class FileIntegrityError(Exception):
@@ -19,3 +19,6 @@ class FileIntegrityError(Exception):
 class CravatProfileException():
     def __init__(self, msg):
         super().__init__(msg)
+
+class ExpectedException (Exception):
+    pass

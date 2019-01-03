@@ -62,6 +62,7 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	var div = document.createElement('fieldset');
 	div.id = 'detailwidget_' + tabName + '_' + widgetName;
 	div.className = 'detailwidget';
+    div.style.wordBreak = 'break-all';
 	var width = null;
 	var height = null;
 	var top = null;
@@ -184,7 +185,7 @@ function saveFilterSetting (name, useFilterJson) {
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
         type: 'GET',
-        async: 'false',
+        async: true,
         url: '/result/service/savefiltersetting', 
         data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
         success: function (response) {
@@ -316,7 +317,7 @@ function saveWidgetSetting (name) {
 	$.ajax({
 		url: '/result/service/savewidgetsetting', 
 		type: 'get',
-		async: false,
+		async: true,
 		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
 		success: function (response) {
 			writeLogDiv('Widget setting has been saved.');
@@ -339,7 +340,11 @@ function saveLayoutSetting (name) {
 			var cols = colGroup.colModel;
 			for (var j = 0; j < cols.length; j++) {
 				var col = cols[j];
-				group.cols.push({'col': col.col, 'dataIndx': col.dataIndx, 'width': col.width});
+				group.cols.push({
+                    'col': col.col, 
+                    'dataIndx': col.dataIndx, 
+                    'width': col.width,
+                    'hidden': col.hidden});
 			}
 			data.push(group);
 		}
@@ -435,7 +440,7 @@ function saveLayoutSetting (name) {
 		url: '/result/service/savelayoutsetting', 
 		type: 'post',
 		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr}, 
-		async: false,
+		async: true,
 		success: function (response) {
 			lastUsedLayoutName = name;
 			writeLogDiv('Layout setting has been saved.');
@@ -543,6 +548,7 @@ function applyTableSetting (level) {
 						var col = cols[l];
 						if (col.col == colSetting.col) {
 							col.width = colSetting.width;
+                            col.hidden = colSetting.hidden;
 							newColModel.colModel.push(col);
 							break;
 						}
@@ -581,7 +587,7 @@ function loadFilterSettingAs () {
     			evt.target.style.backgroundColor = 'white';
     		});
     		a.addEventListener('click', function (evt) {
-    			loadFilterSetting(evt.target.textContent, null)
+    			loadFilterSetting(evt.target.textContent, null, false)
     			div.style.display = 'none';
     		});
     		addEl(div, a);
@@ -590,7 +596,7 @@ function loadFilterSettingAs () {
 	});
 }
 
-function loadFilterSetting (name, callback) {
+function loadFilterSetting (name, callback, doNotCount) {
 	$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Filter setting loaded');
 		var data = response;
@@ -599,7 +605,9 @@ function loadFilterSetting (name, callback) {
 		filterWrapDiv.empty();
 		var filterRootGroupDiv = makeFilterRootGroupDiv(filterJson);
 		filterWrapDiv.append(filterRootGroupDiv);
-		infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
+        if (! doNotCount) {
+            infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
+        }
 		if (callback != null) {
 			callback();
 		}

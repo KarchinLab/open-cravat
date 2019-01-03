@@ -13,6 +13,7 @@ from cravat import ConfigLoader
 from cravat import admin_util as au
 from cravat import CravatFilter
 from aiohttp import web
+import time
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -267,7 +268,12 @@ def get_count (request):
     cf = CravatFilter(dbpath=dbpath, 
                       mode='sub', 
                       filterstring=filterstring)
+    dbbasename = os.path.basename(dbpath)
+    print('calling count for {}'.format(dbbasename))
+    t = time.time()
     n = cf.getcount(level=tab)
+    t = round(time.time() - t, 3)
+    print('count obtained from {} in {}s'.format(dbbasename, t))
     content = {'n': n}        
     return web.json_response(content)
 
@@ -294,7 +300,13 @@ def get_result (request):
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
     reporter = m.Reporter(args)
+    dbbasename = os.path.basename(dbpath)
+    print('getting result from {} for viewer...'.format(dbbasename))
+    t = time.time()
     data = reporter.run(tab=tab)
+    t = round(time.time() - t, 3)
+    print('result obtained from {} in {}s. packing...'.format(dbbasename, t))
+    t = time.time()
     content = {}
     content['stat'] = {'rowsreturned': True, 
                    'wherestr':'', 
@@ -305,10 +317,11 @@ def get_result (request):
     content['columns'] = get_colmodel(tab, data['colinfo'])
     content["data"] = get_datamodel(data[tab])
     content["status"] = "normal"
+    t = round(time.time() - t, 3)
+    print('done in {}s. sending result of {}...'.format(t, dbbasename))
     return web.json_response(content)
 
 def get_result_levels (request):
-    queries = request.rel_url.query
     queries = request.rel_url.query
     conn = sqlite3.connect(queries['dbpath'])
     cursor = conn.cursor()
@@ -371,26 +384,54 @@ def get_colmodel (tab, colinfo):
         startidx = dataindx
         endidx = startidx + col_count
         for d in colinfo[tab]['columns'][startidx:endidx]:
+            cats = d['col_cats']
             column = {
                 "col": d['col_name'],
                 'colgroupkey': groupkey, 
                 'colgroup': grouptitle,
                 "title": d['col_title'], 
                 "align":"center",
-                "hidden":False,
                 "dataIndx": dataindx,
                 "retfilt":False,
                 "retfilttype":"None",
-                "multiseloptions":[]
+                "multiseloptions":[],
+                'reportsub': d['reportsub'] if 'reportsub' in d else {},
+                'categories': cats,
+                'width': d['col_width'],
+                'desc': d['col_desc'],
+                'type': d['col_type'],
+                'hidden': d['col_hidden'],
+                'ctg': d['col_ctg'],
                 }
             if d['col_type'] == 'string':
-                column['filter'] = {
-                    "type":"textbox",
-                    "condition":"contain",
-                    "listeners":["keyup"]}
-                column['retfilt'] = True
-                column['retfilttype'] = 'regexp'
-                column['multiseloptions'] = []
+                if d['col_ctg'] == 'single':
+                    column['filter'] = {
+                        'type': 'select',
+                        'attr': 'multiple',
+                        'condition': 'equal',
+                        'options': cats,
+                        'listeners': ['change']}
+                    column['retfilt'] = True
+                    column['retfilttype'] = 'select'
+                    column['multiseloptions'] = cats
+                elif d['col_ctg'] == 'multi':
+                    column['filter'] = {
+                        'type': 'select',
+                        'attr': 'multiple',
+                        'condition': 'contain',
+                        'options': cats,
+                        'listeners': ['change']}
+                    column['retfilt'] = True
+                    column['retfilttype'] = 'select'
+                    column['multiseloptions'] = cats
+                else:
+                    column['filter'] = {
+                        "type":"textbox",
+                        "condition":"contain",
+                        "listeners":["keyup"]}
+                    column['retfilt'] = True
+                    column['retfilttype'] = 'regexp'
+                    column['multiseloptions'] = []
             elif d['col_type'] == 'float' or d['col_type'] == 'int':
                 column['filter'] = {
                     "type":"textbox",

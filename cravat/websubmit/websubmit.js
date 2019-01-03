@@ -1,6 +1,7 @@
 var servermode = false;
 var logged = false;
 var username = null;
+var prevJobTr = null;
 
 var GLOBALS = {
     jobs: [],
@@ -31,6 +32,10 @@ function submit () {
         alert('Choose a input variants file, enter variants, or click an input example button.');
         return;
     }
+    document.getElementById('submit-job-button').disabled = true;
+    setTimeout(function () {
+        document.getElementById('submit-job-button').disabled = false;
+    }, 1000);
     fd.append('file', inputFile);
     var submitOpts = {
         annotators: [],
@@ -67,6 +72,12 @@ function submit () {
             buildJobsTable();
         }
     })
+    $('#submit-job-button').attr('disabled','disabled');
+    setTimeout(function(){
+            $('#submit-job-button').removeAttr('disabled');
+        },
+        1500
+    );
 };
 
 function addJob (jsonObj) {
@@ -97,6 +108,19 @@ function createJobTextReport (evt) {
     });
 }
 
+function getAnnotatorsForJob (jobid) {
+    var jis = GLOBALS.jobs;
+    var anns = [];
+    for (var j = 0; j < jis.length; j++) {
+        var cji = jis[j];
+        if (cji.id == jobid) {
+            anns = cji.annotators;
+            break;
+        }
+    }
+    return anns;
+}
+
 function buildJobsTable () {
     var allJobs = GLOBALS.jobs;
     var reportSelectors = $('.report-type-selector');
@@ -107,66 +131,98 @@ function buildJobsTable () {
         var val = selector.val();
         curSelectedReports[jobId] = val;
     }
-    $('.job-table-row').remove();
+    $('#jobs-table tbody').empty();
     var jobsTable = $('#jobs-table tbody');
     for (let i = 0; i < allJobs.length; i++) {
         job = allJobs[i];
+        ji = job.id;
         var jobTr = $(getEl('tr'))
-            .addClass('job-table-row');
+            .addClass('job-table-tr');
+        jobTr[0].setAttribute('jobid', ji);
+        jobTr[0].addEventListener('click', function (evt) {
+            var clickedTr = evt.target.parentElement;
+            var detailTr = clickedTr.nextSibling;
+            if (clickedTr.classList.contains('highlighted-tr')) {
+                clickedTr.classList.remove('highlighted-tr');
+                detailTr.classList.add('hidden-tr');
+            } else {
+                clickedTr.classList.add('highlighted-tr');
+                detailTr.classList.remove('hidden-tr');
+            }
+        });
         jobsTable.append(jobTr);
         // Input file
         jobTr.append($(getEl('td')).append(job.orig_input_fname));
-        // Job ID
-        jobTr.append($(getEl('td')).append(job.id));
-        // Status
-        jobTr.append($(getEl('td')).append(job.status.status));
+        // Number of annotators
+        var num = getAnnotatorsForJob(ji).length;
+        var td = getEl('td');
+        td.style.textAlign = 'center';
+        td.textContent = '' + num;
+        addEl(jobTr[0], td);
+        // Genome assembly
+        jobTr.append($(getEl('td')).css('text-align', 'center').append(job.assembly));
         // Note
         jobTr.append($(getEl('td')).append(job.note));
-        // Genome assembly
-        jobTr.append($(getEl('td')).append(job.assembly));
-        // View
-        var viewTd = $(getEl('td'));
-        viewTd.css('text-align', 'center');
+        // Status
+        var statusC = null;
+        if (job.status['status'] == undefined) {
+            if (job.status != undefined) {
+                statusC = job.status;
+            } else {
+                continue;
+            }
+        } else {
+            statusC = job.status.status;
+        }
+        var viewTd = $(getEl('td'))
+            .css('text-align', 'center');
         jobTr.append(viewTd);
-        var viewBtn = $(getEl('button')).append('Launch')
-            .attr('disabled', !job.viewable)
-            .attr('jobId', job.id)
-            .click(jobViewButtonHandler);
-        viewTd.append(viewBtn);
-        // Database
+        if (statusC == 'Finished') {
+            var viewLink = $(getEl('a'))
+                .attr('href',`/result/index.html?dbpath=${job.db_path}&job_id=${job.id}`)
+                .attr('target','_blank')
+                .append($(getEl('button')).append('Launch').attr('disabled', !job.viewable));
+            viewTd.append(viewLink);
+        } else {
+            viewTd[0].textContent = statusC;
+        }
         var dbTd = $(getEl('td'));
         dbTd.css('text-align', 'center');
         jobTr.append(dbTd);
-        var dbButton = $(getEl('button'))
-            .append('DB')
-            .attr('jobId',job.id)
-            .attr('disabled',!job.viewable)
-            .click(jobDbDownloadButtonHandler);
-        dbTd.append(dbButton);
         // Excel
-        jobTr.append(dbTd);
-        var dbButton = $(getEl('button'))
+        var excelButton = $(getEl('button'))
             .append('Excel')
             .attr('jobId',job.id)
         if (job.reports.includes('excel') == false) {
-            dbButton.css('background-color', 'red');
-            dbButton.click(createJobExcelReport);
+            excelButton.css('background-color', '#cccccc');
+            excelButton.click(createJobExcelReport);
+            excelButton[0].title = 'Click to create.';
         } else {
-            dbButton.click(jobExcelDownloadButtonHandler);
+            excelButton.click(jobExcelDownloadButtonHandler);
+            excelButton[0].title = 'Click to download.';
         }
-        dbTd.append(dbButton);
+        dbTd.append(excelButton);
         // Text
-        jobTr.append(dbTd);
-        var dbButton = $(getEl('button'))
+        var textButton = $(getEl('button'))
             .append('Text')
             .attr('jobId',job.id)
         if (job.reports.includes('text') == false) {
-            dbButton.css('background-color', 'red');
-            dbButton.click(createJobTextReport);
+            textButton.css('background-color', '#cccccc');
+            textButton.click(createJobTextReport);
+            textButton[0].title = 'Click to create.';
         } else {
-            dbButton.click(jobTextDownloadButtonHandler);
+            textButton.click(jobTextDownloadButtonHandler);
+            textButton[0].title = 'Click to download.';
         }
-        dbTd.append(dbButton);
+        dbTd.append(textButton);
+        // Log
+        var logLink = $(getEl('a'))
+            .attr('href','jobs/'+job.id+'/log?')
+            .attr('target','_blank')
+            .attr('title', 'Click to download.')
+            .append($(getEl('button')).append('Log'))
+        dbTd.append(logLink);
+
         /*
         // Reports
         var reportTd = $(getEl('td'));
@@ -204,12 +260,118 @@ function buildJobsTable () {
         */
         // Delete
         var deleteTd = $(getEl('td'));
+        deleteTd[0].title = 'Click to delete.';
         deleteTd.css('text-align', 'center');
         jobTr.append(deleteTd);
         var deleteBtn = $(getEl('button')).append('X');
         deleteTd.append(deleteBtn);
         deleteBtn.attr('jobId', job.id);
         deleteBtn.click(jobDeleteButtonHandler);
+
+        var anns = getAnnotatorsForJob(ji);
+        if (anns.length == 0) {
+            anns = 'None';
+        } else {
+            anns = anns.join(', ');
+        }
+        var detailTr = getEl('tr');
+        var detailTd = getEl('td');
+        detailTr.classList.add('job-detail-tr');
+        detailTr.classList.add('hidden-tr');
+        detailTd.colSpan = '8';
+        var detailTable = getEl('table');
+        detailTable.style.width = '100%';
+        var tbody = getEl('tbody');
+        addEl(detailTable, tbody);
+        var tr = getEl('tr');
+        var td = getEl('td');
+        td.style.width = '150px';
+        td.textContent = 'Job ID';
+        addEl(tr, td);
+        var td = getEl('td');
+        td.textContent = ji;
+        addEl(tr, td);
+        addEl(tbody, tr);
+        var tr = getEl('tr');
+        var td = getEl('td');
+        td.textContent = 'Annotators';
+        addEl(tr, td);
+        var td = getEl('td');
+        td.textContent = anns;
+        addEl(tr, td);
+        addEl(tbody, tr);
+        if (job.num_input_var != undefined) {
+            var tr = getEl('tr');
+            var td = getEl('td');
+            td.textContent = '# input variants';
+            addEl(tr, td);
+            var td = getEl('td');
+            td.textContent = job.num_input_var;
+            addEl(tr, td);
+            addEl(tbody, tr);
+        }
+        if (job.submission_time != undefined) {
+            var tr = getEl('tr');
+            var td = getEl('td');
+            td.textContent = 'Submitted';
+            addEl(tr, td);
+            var td = getEl('td');
+            var t = job.submission_time;
+            var month = t.getMonth();
+            if (month < 10) {
+                month = '0' + month;
+            }
+            var d = t.getDate();
+            if (d < 10) {
+                d = '0' + d;
+            }
+            var h = t.getHours();
+            if (h < 10) {
+                h = '0' + h;
+            }
+            var m = t.getMinutes();
+            if (m < 10) {
+                m = '0' + m;
+            }
+            var s = t.getSeconds();
+            if (s < 10) {
+                s = '0' + s;
+            }
+            td.textContent = t.getFullYear() + '.' + month + '.' + d + ' ' + h + ':' + m + ':' + s;
+            addEl(tr, td);
+            addEl(tbody, tr);
+        }
+        if (job.db_path != undefined) {
+            var tr = getEl('tr');
+            var td = getEl('td');
+            td.textContent = 'Result DB';
+            addEl(tr, td);
+            var td = getEl('td');
+            var button = getEl('button');
+            button.textContent = 'DB';
+            button.setAttribute('db', job.id);
+            button.addEventListener('click', function (evt) {
+                window.open('/submit/jobs/' + evt.target.getAttribute('db') + '/db');
+            });
+            addEl(td, button);
+            addEl(tr, td);
+            addEl(tbody, tr);
+            var tr = getEl('tr');
+            var td = getEl('td');
+            td.textContent = 'Job Directory';
+            addEl(tr, td);
+            var td = getEl('td');
+            var a = getEl('a');
+            var d = job.db_path.substring(0, job.db_path.lastIndexOf('/'));
+            a.href = 'http://file://///' + d;
+            a.textContent = d;
+            addEl(td, a);
+            addEl(tr, td);
+            addEl(tbody, tr);
+        }
+        addEl(detailTd, detailTable);
+        addEl(detailTr, detailTd);
+        addEl(jobsTable[0], detailTr);
     }
 }
 
@@ -254,21 +416,12 @@ function generateReport (jobId, reportType, callback) {
     })
 }
 
-function jobDbDownloadButtonHandler (event) {
-    downloadJobDb($(event.target).attr('jobId'));
-}
-
 function jobExcelDownloadButtonHandler (event) {
     downloadJobExcel($(event.target).attr('jobId'));
 }
 
 function jobTextDownloadButtonHandler (event) {
     downloadJobText($(event.target).attr('jobId'));
-}
-
-function downloadJobDb (jobId) {
-    url = 'jobs/'+jobId+'/db';
-    downloadFile(url);
 }
 
 function downloadJobExcel (jobId) {
@@ -289,23 +442,8 @@ function getEl (tag) {
     return document.createElement(tag);
 }
 
-function jobViewButtonHandler (event) {
-    var jobId = $(event.target).attr('jobId');
-    let dbPath;
-    var jobs = GLOBALS.jobs;
-    for (let i=0; i<jobs.length; i++) {
-        job = jobs[i];
-        if (job.id === jobId) {
-            dbPath = job.db_path;
-            break;
-        }
-    }
-    url = '/result/index.html?dbpath='+dbPath+'&job_id='+jobId;
-    var win = window.open(url, '_blank');
-    win.focus()
-}
-
 function jobDeleteButtonHandler (event) {
+    event.stopPropagation();
     var jobId = $(event.target).attr('jobId');
     deleteJob(jobId);
 }
@@ -395,7 +533,7 @@ function populateJobs () {
         $.ajax({
             url:'jobs',
             type: 'GET',
-            async: false,
+            async: true,
             success: function (allJobs) {
                 GLOBALS.jobs = [];
                 for (var i=0; i<allJobs.length; i++) {
@@ -455,6 +593,228 @@ function buildAnnotatorsSelector () {
     buildCheckBoxGroup(checkDatas, annotCheckDiv);
 }
 
+function getModuleDetailDiv (moduleName) {
+    var div = document.getElementById('moduledetaildiv_submit');
+    if (div) {
+        emptyElement(div);
+    } else {
+        div = getEl('div');
+        div.id = 'moduledetaildiv_submit';
+        div.style.position = 'fixed';
+        div.style.width = 'calc(90% - 200px)';
+        div.style.height = '80%';
+        div.style.margin = 'auto';
+        div.style.backgroundColor = 'white';
+        div.style.left = '200px';
+        div.style.right = '0';
+        div.style.top = '0';
+        div.style.bottom = '0';
+        div.style.zIndex = '2';
+        div.style.border = '6px';
+        div.style.padding = '10px';
+        div.style.paddingBottom = '23px';
+        div.style.border = '1px solid black';
+        div.style.boxShadow = '0px 0px 20px';
+    }
+    currentDetailModule = moduleName;
+    div.style.display = 'block';
+    var localModule = localModuleInfo[moduleName];
+    var table = getEl('table');
+    table.style.height = '100px';
+    table.style.border = '0px';
+    var tr = getEl('tr');
+    tr.style.border = '0px';
+    var td = getEl('td');
+    td.id = 'moduledetaillogotd';
+    td.style.width = '120px';
+    td.style.border = '0px';
+    addEl(tr, td);
+    var img = getLogo(moduleName);
+    img.onerror = function () {
+        var span = getEl('div');
+        span.style.fontSize = '20px';
+        span.style.fontWeight = 'bold';
+        span.textContent = localModule.title;
+        var sdiv = div.querySelector('#moduledetaillogotd');
+        addEl(sdiv, span);
+    }
+    img.onload = function () {
+        var sdiv = div.querySelector('#moduledetaillogotd');
+        addEl(sdiv, this);
+    }
+    addEl(tr, td);
+    td = getEl('td');
+    td.style.border = '0px';
+    var span = getEl('div');
+    span.style.fontSize = '30px';
+    span.textContent = localModule.title;
+    addEl(td, span);
+    addEl(td, getEl('br'));
+    span = getEl('span');
+    span.style.fontSize = '12px';
+    span.style.color = 'green';
+    span.textContent = localModule.type;
+    addEl(td, span);
+    span = getEl('span');
+    span.style.fontSize = '12px';
+    span.style.color = 'green';
+    span.textContent = ' | ' + localModule.developer.organization;
+    addEl(td, span);
+    addEl(tr, td);
+    td = getEl('td');
+    td.style.border = '0px';
+    td.style.verticalAlign = 'top';
+    td.style.textAlign = 'right';
+    var sdiv = getEl('div');
+    sdiv.id = 'installstatdiv_' + moduleName;
+    sdiv.style.marginTop = '10px';
+    sdiv.style.fontSize = '12px';
+    if (installInfo[moduleName] != undefined) {
+        sdiv.textContent = installInfo[moduleName]['msg'];
+    }
+    addEl(td, sdiv);
+    addEl(tr, td);
+    addEl(table, tr);
+    addEl(div, table);
+    addEl(div, getEl('hr'));
+    table = getEl('table');
+    table.style.height = 'calc(100% - 100px)';
+    table.style.border = '0px';
+    tr = getEl('tr');
+    tr.style.border = '0px';
+    var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
+    td = getEl('td');
+    td.style.border = '0px';
+    td.style.width = '70%';
+    td.style.verticalAlign = 'top';
+    td.style.height = tdHeight;
+    var mdDiv = getEl('div');
+    mdDiv.style.height = '100%';
+    mdDiv.style.overflow = 'auto';
+    addEl(td, mdDiv);
+    addEl(tr, td);
+	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
+		mdDiv.innerHTML = data;
+	});
+    td = getEl('td');
+    td.style.width = '30%';
+    td.style.border = '0px';
+    td.style.verticalAlign = 'top';
+    td.style.height = tdHeight;
+    var infodiv = getEl('div');
+    infodiv.style.height = '100%';
+    infodiv.style.overflow = 'auto';
+    var d = getEl('div');
+    span = getEl('span');
+    span.textContent = localModule.description;
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Version: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = localModule['version'];
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Maintainer: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = localModule['developer']['name'];
+    addEl(d, span);
+    addEl(d, getEl('br'));
+    addEl(d, getEl('br'));
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'e-mail: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = localModule['developer']['email'];
+    addEl(d, span);
+    addEl(d, getEl('br'));
+    addEl(d, getEl('br'));
+    addEl(infodiv, d);
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Citation: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.style.display = 'inline-block';
+    span.style.width = 'calc(100% - 120px)';
+    span.style.wordWrap = 'break-word';
+    span.style.verticalAlign = 'text-top';
+    var citation = localModule['developer']['citation'];
+    if (citation.startsWith('http')) {
+        var a = getEl('a');
+        a.href = citation;
+        a.target = '_blank';
+        a.textContent = citation;
+        addEl(span, a);
+    } else {
+        span.textContent = citation;
+    }
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Organization: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = localModule['developer']['organization'];
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Website: ';
+    addEl(d, span);
+    span = getEl('a');
+    span.textContent = localModule['developer']['website'];
+    span.href = localModule['developer']['website'];
+    span.target = '_blank';
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Type: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = localModule['type'];
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    addEl(td, infodiv);
+    addEl(tr, td);
+    addEl(table, tr);
+    addEl(div, table);
+    var el = getEl('div');
+    el.style.position = 'absolute';
+    el.style.top = '0px';
+    el.style.right = '0px';
+    el.style.fontSize = '20px';
+    el.style.padding = '10px';
+    el.style.cursor = 'pointer';
+    el.textContent = 'X';
+    el.addEventListener('click', function (evt) {
+        var pel = evt.target.parentElement;
+        pel.parentElement.removeChild(pel);
+    });
+    addEl(div, el);
+    return div;
+}
+
 function buildCheckBoxGroup (checkDatas, parentDiv) {
     parentDiv = (parentDiv === undefined) ? getEl('div') : parentDiv;
     emptyElement(parentDiv);
@@ -496,38 +856,25 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         check.setAttribute('checked', checkData.check);
         addEl(checkDiv, check);
         var label = getEl('span');
-        label.style.fontFamily = 'monospace';
-        label.style.fontSize = '16px';
-        label.textContent = checkData.label;
+        label.style.cursor = 'pointer';
+        label.style.textDecorationLine = 'underline';
+        label.style.textDecorationStyle = 'dotted';
+        label.style.textDecorationColor = '#aaaaaa';
+        label.setAttribute('module', checkData.value);
+        label.textContent = checkData.label + ' ';
+        label.className = 'moduledetailbutton';
         addEl(checkDiv, label);
-        if (parentId != 'report-select-div') {
-            var question = getEl('button');
-            question.className = 'moduledetailbutton';
-            question.textContent = '?';
-            question.setAttribute('module', checkData.value);
-            question.addEventListener('click', function (evt) {
-                var annotchoosediv = document.getElementById('annotchoosediv');
-                var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
-                if (moduledetaildiv != null) {
-                    annotchoosediv.removeChild(moduledetaildiv);
-                }
-                var detaildiv = getModuleDetailDiv(evt.target.getAttribute('module'));
-                addEl(annotchoosediv, detaildiv);
-            });
-            addEl(checkDiv, question);
-        } else {
-            checkDiv.style.display = 'inline-block';
-        }
+        label.addEventListener('click', function (evt) {
+            var annotchoosediv = document.getElementById('annotchoosediv');
+            var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
+            if (moduledetaildiv != null) {
+                annotchoosediv.removeChild(moduledetaildiv);
+            }
+            var detaildiv = getModuleDetailDiv(evt.target.getAttribute('module'));
+            addEl(annotchoosediv, detaildiv);
+        });
         checkDivs.push(checkDiv);
     }
-    // resize all to match max
-    /*
-    var maxWidth = Math.max.apply(null, checkDivs.map(elem => elem.width()));
-    for (let i=0; i<checkDivs.length; i++) {
-        let checkDiv = checkDivs[i];
-        checkDiv.width(maxWidth);
-    }
-    */
     return parentDiv;
 }
 
@@ -592,14 +939,12 @@ function onTabChange () {
 
 function getJobsDir () {
     $.get('/submit/getjobsdir').done(function (response) {
-        document.getElementById('jobsdirtext').textContent = response;
     });
 }
 
 function setJobsDir (evt) {
     var d = evt.target.value;
     $.get('/submit/setjobsdir', {'jobsdir': d}).done(function (response) {
-        document.getElementById('jobsdirtext').textContent = response;
         populateJobsTable();
     });
 }
@@ -656,52 +1001,55 @@ function openSubmitDiv () {
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
         var s = document.getElementById('sysconfpathspan');
-        s.textContent = response['path'];
-        var ta = document.getElementById('sysconftextarea');
-        ta.value = response['content'];
+        s.value = response['path'];
+        var s = document.getElementById('settings_jobs_dir_input');
+        s.value = response['content']['jobs_dir'];
+        var span = document.getElementById('server_user_span');
+        if (! servermode) {
+            span.textContent = '/default';
+        } else {
+            span.textContent = '';
+        }
+        var s = document.getElementById('settings_modules_dir_input');
+        s.value = response['content']['modules_dir'];
     });
 }
 
+function onClickSaveSystemConf () {
+    document.getElementById('settingsdiv').style.display = 'none';
+    updateSystemConf();
+}
+
 function updateSystemConf () {
-    var data = {'sysconfstr': document.getElementById('sysconftextarea').value};
-    $.ajax({
-        url:'/submit/updatesystemconf',
-        data: data,
-        type: 'POST',
-        success: function (response) {
-            if (response['success'] == true) {
-                alert('System configuration has been updated.');
-            } else {
-                alert('System configuration was not successful');
+    $.get('/submit/getsystemconfinfo').done(function (response) {
+        var s = document.getElementById('sysconfpathspan');
+        response['path'] = s.value;
+        var s = document.getElementById('settings_jobs_dir_input');
+        response['content']['jobs_dir'] = s.value;
+        var s = document.getElementById('settings_modules_dir_input');
+        response['content']['modules_dir'] = s.value;
+        $.ajax({
+            url:'/submit/updatesystemconf',
+            data: {'sysconf': JSON.stringify(response['content'])},
+            type: 'GET',
+            success: function (response) {
+                if (response['success'] == true) {
+                    alert('System configuration has been updated.');
+                } else {
+                    alert('System configuration was not successful');
+                }
+                if (response['sysconf']['jobs_dir'] != undefined) {
+                    populateJobs();
+                    getLocal();
+                    populateAnnotators();
+                }
             }
-            if (response['sysconf']['jobs_dir'] != undefined) {
-                populateJobs();
-                /*
-                populateJobs().then(function () {
-                    buildJobsTable();
-                });
-                */
-            }
-        }
+        });
     });
 }
 
 function resetSystemConf () {
-    $.get('/submit/resetsystemconf').done(function (response) {
-        var status = response['status'];
-        if (status == 'success') {
-            var d = response['dict'];
-            document.getElementById('sysconftextarea').value = d;
-        } else {
-            alert('Resetting system conf file failed.');
-        }
-    });
-}
-
-function showMd () {
-    $.get('/store/getmd').done(function (response) {
-        document.getElementById('modulesdirspan').textContent = response;
-    });
+    loadSystemConf();
 }
 
 function getServermode () {
@@ -957,15 +1305,61 @@ function checkLogged () {
     });
 }
 
+function populatePackageVersions () {
+    $.get('/submit/packageversions').done(function(data){
+        var curverspan = document.getElementById('curverspan');
+        var a = getEl('a');
+        a.href = "https://github.com/KarchinLab/open-cravat/wiki/Release-Notes";
+        a.target = '_blank';
+        a.textContent = data.current;
+        addEl(curverspan, a);
+        if (data.update) {
+            var a = getEl('a');
+            a.href = 'https://github.com/KarchinLab/open-cravat/wiki/Update-Instructions';
+            a.target = '_blank';
+            a.textContent = '(' + data.latest + ')';
+            addEl(curverspan, a);
+        }
+	});
+}
+
+function onClickInputTextArea () {
+    let input = document.getElementById('input-text');
+    input.rows = 20;
+}
+
+function onBlurInputTextArea () {
+    let input = document.getElementById('input-text');
+    input.rows = 1;
+}
+
+function onClickThreeDots () {
+    var div = document.getElementById('settingsdiv');
+    var display = div.style.display;
+    if (display == 'block') {
+        display = 'none';
+    } else {
+        display = 'block';
+    }
+    div.style.display = display;
+}
+
+function resizePage () {
+    var div = document.getElementById('submit-form');
+    var h = window.innerHeight - 195;
+    div.style.height = h + 'px';
+    var div = document.getElementById('jobdiv');
+    var h = window.innerHeight - 125;
+    div.style.height = h + 'px';
+}
+
 function websubmit_run () {
     getServermode();
-    var md = showMd();
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
     connectWebSocket();
     getBaseModuleNames();
     getRemote();
-    getLocal();
     document.addEventListener('click', function (evt) {
         if (evt.target.closest('#moduledetaildiv_submit') == null && evt.target.closest('.moduledetailbutton') == null ) {
             var div = document.getElementById('moduledetaildiv_submit');
@@ -989,13 +1383,17 @@ function websubmit_run () {
         populateJobs();
     }
     populateAnnotators();
+    /*
     if (servermode == false) {
         populateReports();
     }
+    */
     getJobsDir();
-    var submitcontentdiv = document.getElementById('submit-form');
-    var h = window.innerHeight - 235;
-    submitcontentdiv.style.height = h + 'px';
+    resizePage();
+    window.onresize = function (evt) {
+        resizePage();
+    }
     loadSystemConf();
+    populatePackageVersions();
 };
 

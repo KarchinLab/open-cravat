@@ -7,6 +7,7 @@ import yaml
 import sqlite3
 import json
 import re
+import time
 
 class FilterColumn(object):
 
@@ -22,7 +23,8 @@ class FilterColumn(object):
         'stringStarts': 'like',
         'stringEnds': 'like',
         'between': 'between',
-        'in': 'in'
+        'in': 'in',
+        'select': 'in',
     }
 
     def __init__(self, d):
@@ -32,35 +34,46 @@ class FilterColumn(object):
         self.negate = d.get('negate', False)
     
     def get_sql(self):
-        s = self.column+' '+self.test2sql[self.test]
-        if type(self.value) == str:
-            if self.test == 'stringContains':
-                sql_val = '"%{}%"'.format(self.value)
-            elif self.test == 'stringStarts':
-                sql_val = '"{}%"'.format(self.value)
-            elif self.test == 'stringEnds':
-                sql_val = '"%{}"'.format(self.value)
-            else:
-                sql_val = '"{}"'.format(self.value)
-        elif self.value is None:
-            sql_val = ''
-        elif type(self.value) == list:
-            if self.test == 'between':
-                sql_val = '{} and {}'.format(self.value[0], self.value[1])
-            else:
-                str_toks = []
-                for val in self.value:
-                    if type(val) == str:
-                        str_toks.append('"{}"'.format(val))
-                    else:
-                        str_toks.append(str(val))
-                sql_val = '('+', '.join(str_toks)+')'
+        if self.column == 'tagsampler__samples':
+            s = 's.base__sample_id="' + self.value[0] + '"'
+            for v in self.value[1:]:
+                s += ' or s.base__sample_id="' + v + '"'
+        elif self.column == 'tagsampler__tags':
+            s = 'm.base__tags="' + self.value[0] + '"'
+            for v in self.value[1:]:
+                s += ' or m.base__tags="' + v + '"'
+        elif self.test == 'multicategory':
+            s = 't.{} like "%{}%"'.format(self.column, self.value[0])
+            for v in self.value[1:]:
+                s += ' or t.{} like "%{}%"'.format(self.column, v) 
         else:
-            sql_val = str(self.value)
-        if sql_val == '':
-            return ''
-        if len(sql_val) > 0:
-            s += ' '+sql_val
+            s = 't.' + self.column + ' ' + self.test2sql[self.test]
+            if type(self.value) == str:
+                if self.test == 'stringContains':
+                    sql_val = '"%{}%"'.format(self.value)
+                elif self.test == 'stringStarts':
+                    sql_val = '"{}%"'.format(self.value)
+                elif self.test == 'stringEnds':
+                    sql_val = '"%{}"'.format(self.value)
+                else:
+                    sql_val = '"{}"'.format(self.value)
+            elif self.value is None:
+                sql_val = ''
+            elif type(self.value) == list:
+                if self.test == 'between':
+                    sql_val = '{} and {}'.format(self.value[0], self.value[1])
+                else:
+                    str_toks = []
+                    for val in self.value:
+                        if type(val) == str:
+                            str_toks.append('"{}"'.format(val))
+                        else:
+                            str_toks.append(str(val))
+                    sql_val = '(' + ', '.join(str_toks) + ')'
+            else:
+                sql_val = str(self.value)
+            if len(sql_val) > 0:
+                s += ' '+sql_val
         if self.negate:
             s = 'not('+s+')'
         return s
@@ -282,17 +295,26 @@ class CravatFilter ():
 
     def getwhere (self, level):
         if self.filter == None:
-            return ''
-        if level not in self.filter:
-            return ''
-        criteria = self.filter[level]
-        main_group = FilterGroup(criteria)
-        sql_criteria = main_group.get_sql()
-        if sql_criteria == '':
-            return ''
+            sample_needed = False
+            tag_needed = False
+            where = ''
         else:
-            return ' where '+main_group.get_sql()
-    
+            if level not in self.filter:
+                sample_needed = False
+                tag_needed = False
+                where = ''
+            else:
+                criteria = self.filter[level]
+                main_group = FilterGroup(criteria)
+                sql_criteria = main_group.get_sql()
+                if sql_criteria == '':
+                    where = ''
+                else:
+                    where = ' where ' + main_group.get_sql()
+                sample_needed = 's.base__sample_id' in where
+                tag_needed = 'm.base__tags' in where
+        return (sample_needed, tag_needed, where)
+
     def getvariantcount (self):
         return self.getcount('variant')
     
@@ -318,7 +340,7 @@ class CravatFilter ():
         return self.getrows('gene')
     
     def getrows (self, level='variant'):
-        where = self.getwhere(level)
+        (sample_needed, tag_needed, where) = self.getwhere(level)
         q = 'select *  from ' + level + where
         self.cursor.execute(q)
         
@@ -344,7 +366,7 @@ class CravatFilter ():
         return self.getiterator('gene')
     
     def getiterator (self, level='variant'):
-        where = self.getwhere(level)
+        (sample_needed, tag_needed, where) = self.getwhere(level)
         sql = 'select * from ' + level + where
         self.cursor.execute(sql)
         it = self.cursor.fetchall()
@@ -378,12 +400,25 @@ class CravatFilter ():
         vftable = level + '_filtered'
         q = 'drop table if exists ' + vftable
         self.cursor.execute(q)
-        where = self.getwhere(level)
+        (sample_needed, tag_needed, where) = self.getwhere(level)
+        '''
         q = 'create table ' + vftable +\
-            ' as select base__uid from ' + level + where
+            ' as select distinct(t.base__uid) from ' + level +\
+            ' as t, sample as s, mapping as m ' + where
+        '''
+        q = 'create table {} as select distinct(t.base__uid) from {} as t '.format(vftable, level) 
+        if sample_needed:
+            q += ', sample as s '
+        if tag_needed:
+            q += ', mapping as m '
+        q += where
+        if sample_needed:
+            q += ' and s.base__uid=t.base__uid'
+        if tag_needed:
+            q += ' and m.base__uid=t.base__uid'
         self.cursor.execute(q)
         self.cursor.execute('pragma synchronous=2')
-    
+
     def make_filtered_hugo_table (self):
         self.cursor.execute('pragma synchronous=0')
         level = 'gene'
@@ -527,7 +562,6 @@ def test ():
         print(row)
     for row in cf.get_filtered_iterator(level='gene'):
         print(row)
-    
 
 if __name__ == '__main__':
     #main()

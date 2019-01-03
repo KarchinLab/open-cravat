@@ -139,11 +139,17 @@ function resizesTheWindow () {
 	onClickDetailRedraw();
 }
 
-function getResultLevels () {
-	var request = new XMLHttpRequest();
-	request.open('GET', '/result/service/getresulttablelevels?dbpath=' + dbPath, false);
-	request.send(null);
-	resultLevels = JSON.parse(request.responseText);
+function getResultLevels (callback) {
+    $.ajax({
+        method: 'GET',
+        url: '/result/service/getresulttablelevels',
+        async: true,
+        data: {'dbpath': dbPath},
+        success: function (response) {
+            resultLevels = response;
+            callback();
+        },
+    });
 }
 
 function makeTabHeadTabBody (resultTableLevel) {
@@ -172,7 +178,6 @@ function makeTabHeadTabBody (resultTableLevel) {
 }
 
 function addTabHeadsAndTabContentDivs () {
-	getResultLevels();
 	for (var i = 0; i < resultLevels.length; i++) {
 		var resultTableLevel = resultLevels[i];
 		makeTabHeadTabBody(resultTableLevel);
@@ -218,7 +223,6 @@ function loadData (alertFlag, finalcallback) {
 		if (finalcallback) {
 			finalcallback();
 		}
-		unlockTabs();
 		populateSummaryWidgetDiv();
 		if (currentTab == 'info') {
 			changeMenu();
@@ -286,27 +290,50 @@ function loadData (alertFlag, finalcallback) {
 		}
 		if (firstLoad) {
 			firstLoad = false;
-			infomgr.count(dbPath, 'variant', function (numvar) {
-                if (numvar > NUMVAR_LIMIT) {
-                    lockTabs();
-                    flagNotifyToUseFilter = true;
-                    if (document.getElementById('infonoticediv')) {
-                        notifyToUseFilter();
-                        flagNotifyToUseFilter = false;
-                    } else {
-                        flagNotifyToUseFilter = true;
-                    }
-                    removeLoadingDiv();
-                    return;
+            var numvar = Number(infomgr.jobinfo['Number of unique input variants']);
+            if (filterJson.length == 0 && numvar > NUMVAR_LIMIT) {
+                lockTabs();
+                flagNotifyToUseFilter = true;
+                if (document.getElementById('infonoticediv')) {
+                    notifyToUseFilter();
+                    flagNotifyToUseFilter = false;
                 } else {
-                    if (flagNotifyToUseFilter) {
-                        notifyOfReadyToLoad();
-                        flagNotifyToUseFilter = false;
-                    }
-                    removeLoadingDiv();
-                    callLoadVariant();
+                    flagNotifyToUseFilter = true;
                 }
-		    });
+                removeLoadingDiv();
+                firstLoad = true;
+                return;
+            }
+            if (filterJson.length != 0) {
+                infomgr.count(dbPath, 'variant', function (numvar) {
+                    if (numvar > NUMVAR_LIMIT) {
+                        lockTabs();
+                        flagNotifyToUseFilter = true;
+                        if (document.getElementById('infonoticediv')) {
+                            notifyToUseFilter();
+                            flagNotifyToUseFilter = false;
+                        } else {
+                            flagNotifyToUseFilter = true;
+                        }
+                        removeLoadingDiv();
+                        return;
+                    } else {
+                        if (flagNotifyToUseFilter) {
+                            notifyOfReadyToLoad();
+                            flagNotifyToUseFilter = false;
+                        }
+                        removeLoadingDiv();
+                        callLoadVariant();
+                    }
+                });
+            } else {
+                if (flagNotifyToUseFilter) {
+                    notifyOfReadyToLoad();
+                    flagNotifyToUseFilter = false;
+                }
+                removeLoadingDiv();
+                callLoadVariant();
+            }
 		} else {
 		    callLoadVariant();
 		}
@@ -330,11 +357,11 @@ function removeLoadingDiv () {
 }
 
 function lockTabs () {
-	$('#tabheads span').css('pointer-events', 'none').css('opacity', '0.5');
+	$('#tabheads div').css('pointer-events', 'none').css('opacity', '0.5');
 }
 
 function unlockTabs () {
-	$('#tabheads span').css('pointer-events', 'auto').css('opacity', '1');
+	$('#tabheads div').css('pointer-events', 'auto').css('opacity', '1');
 }
 
 function notifyToUseFilter () {
@@ -362,7 +389,6 @@ function notifyOfReadyToLoad () {
 function firstLoadData () {
 	var infoReset = resetTab['info'];
 	resetTab = {'info': infoReset};
-	
 	var loadWidgets = function () {
 		detailWidgetOrder = {'variant': {}, 'gene': {}, 'info': {}};
 		$.get('/result/service/widgetlist', {}).done(function (jsonResponseData) {
@@ -417,11 +443,11 @@ function firstLoadData () {
 		);
 	}
 	var afterLoadDefaultFilter = function (args) {
-		loadLayoutSetting(quickSaveName, afterLoadDefaultWidgetSetting);
+		loadLayoutSetting(quickSaveName, afterLoadDefaultWidgetSetting, true);
 	}
 	loadWidgets();
 	setupTab('info');
-	loadFilterSetting(quickSaveName, afterLoadDefaultFilter);
+	loadFilterSetting(quickSaveName, afterLoadDefaultFilter, true);
 }
 
 function checkWidgets () {
@@ -508,15 +534,9 @@ function quicksave () {
     saveFilterSetting(quickSaveName, true);
 }
 
-function webresult_run () {
-	var urlParams = new URLSearchParams(window.location.search);
-	jobId = urlParams.get('job_id');
-	dbPath = urlParams.get('dbpath');
-	confPath = urlParams.get('confpath');
-	$grids = {};
-	gridObjs = {};
-	document.title = 'CRAVAT: ' + jobId;
+function afterGetResultLevels () {
 	addTabHeadsAndTabContentDivs();
+    lockTabs();
 	currentTab = 'info';
     $('#tabheads .tabhead').click(function(event) {
     	var targetTab = "#" + this.id.replace('head', '');
@@ -536,31 +556,7 @@ function webresult_run () {
     	}
     	changeMenu();
     });
-    var resizeTimeout = null;
-    $(window).resize(function(event) {
-    	shouldResizeScreen = {};
-        var curWinWidth = window.innerWidth;
-        var curWinHeight = window.innerHeight;
-        if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
-            windowWidth = curWinWidth;
-            windowHeight = curWinHeight;
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function () {
-                resizesTheWindow();
-            }, 200);
-        }
-    });
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
-    // Chrome won't let you directly set this as window.onbeforeunload = function(){}
-	// it wont work on a refresh then.
-	function triggerAutosave() {
-		if (autoSaveLayout) {
-            filterJson = filterArmed;
-    		saveLayoutSetting(quickSaveName);
-			saveFilterSetting(quickSaveName, true);
-    	}
-	}
-    //window.onbeforeunload = triggerAutosave;
     $.get('/result/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
     	filterCols = jsonResponseData['columns']['variant'];
     	usedAnnotators = {};
@@ -585,4 +581,39 @@ function webresult_run () {
     	}
     	firstLoadData();
     });
+}
+
+function webresult_run () {
+	var urlParams = new URLSearchParams(window.location.search);
+	jobId = urlParams.get('job_id');
+	dbPath = urlParams.get('dbpath');
+	confPath = urlParams.get('confpath');
+	$grids = {};
+	gridObjs = {};
+	document.title = 'CRAVAT: ' + jobId;
+    var resizeTimeout = null;
+    $(window).resize(function(event) {
+    	shouldResizeScreen = {};
+        var curWinWidth = window.innerWidth;
+        var curWinHeight = window.innerHeight;
+        if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
+            windowWidth = curWinWidth;
+            windowHeight = curWinHeight;
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function () {
+                resizesTheWindow();
+            }, 200);
+        }
+    });
+    // Chrome won't let you directly set this as window.onbeforeunload = function(){}
+	// it wont work on a refresh then.
+	function triggerAutosave() {
+		if (autoSaveLayout) {
+            filterJson = filterArmed;
+    		saveLayoutSetting(quickSaveName);
+			saveFilterSetting(quickSaveName, true);
+    	}
+	}
+    //window.onbeforeunload = triggerAutosave;
+    getResultLevels(afterGetResultLevels);
 }

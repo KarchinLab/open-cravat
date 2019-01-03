@@ -15,6 +15,10 @@ import traceback
 from .mp_runners import run_annotator_mp
 import multiprocessing as mp
 from logging.handlers import QueueListener
+from .aggregator import Aggregator
+from .exceptions import *
+import yaml
+import cravat.cravat_util as cu
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
@@ -168,6 +172,10 @@ cravat_cmd_parser.add_argument('--newlog',
                     default=False,
                     help='deletes the existing log file and ' +
                             'creates a new one.')
+cravat_cmd_parser.add_argument('--note',
+                    dest='note',
+                    default='',
+                    help='note will be written to the run status file (.status.json)')
 
 class Cravat (object):
     def __init__ (self, **kwargs):
@@ -183,6 +191,7 @@ class Cravat (object):
         self.should_run_annotators = True
         self.should_run_aggregator = True
         self.should_run_reporter = True
+        self.has_secondary_input = False
         self.pythonpath = sys.executable
         self.annotators = {}        
         self.make_args_namespace(kwargs)
@@ -196,7 +205,27 @@ class Cravat (object):
         self.logger.info('input assembly: {}'.format(self.input_assembly))
         if self.run_conf_path != '':
             self.logger.info('conf file: {}'.format(self.run_conf_path))
+        self.write_initial_status_json()
     
+    def write_initial_status_json (self):
+        status_fname = '{}.status.json'.format(self.run_name)
+        self.status_fpath = os.path.join(self.output_dir, status_fname)
+        self.status = {}
+        self.status['job_dir'] = self.output_dir
+        self.status['id'] = os.path.basename(os.path.normpath(self.output_dir))
+        self.status['run_name'] = self.run_name
+        self.status['assembly'] = self.input_assembly
+        self.status['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
+        self.status['orig_input_fname'] = os.path.basename(self.input)
+        self.status['orig_input_path'] = self.input
+        self.status['submission_time'] = datetime.datetime.now().isoformat()
+        self.status['viewable'] = False
+        self.status['note'] = self.args.note
+        self.status['status'] = 'Starting'
+        self.status['reports'] = self.args.reports if self.args.reports != None else []
+        with open(self.status_fpath,'w') as wf:
+            wf.write(json.dumps(self.status))
+
     def get_logger (self):
         self.logger = logging.getLogger('cravat')
         self.logger.setLevel('INFO')
@@ -209,14 +238,11 @@ class Cravat (object):
     def close_logger (self):
         logging.shutdown()
     
-    def update_status(self, status):
-        status_fname = self.run_name+'.status.json'
-        status_fpath = os.path.join(self.output_dir, status_fname)
-        d = {
-            'status': status
-        }
-        with open(status_fpath,'w') as wf:
-            wf.write(json.dumps(d))
+    def update_status_json (self, key, val):
+        cu.update_status_json(self.status_fpath, key, val)
+
+    def update_status (self, status):
+        cu.update_status_json(self.status_fpath, 'status', status)
 
     def main (self):
         self.update_status('Started')
@@ -284,6 +310,38 @@ class Cravat (object):
                 print('Running reporter...')
                 self.run_reporter()
             self.update_status('Finished')
+        except LiftoverFailure:
+            end_time = time.time()
+            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
+            runtime = end_time - self.start_time
+            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
+            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            print('Check {}'.format(self.log_path))
+            self.update_status('Error')
+            self.close_logger()
+            return
+        except InvalidData:
+            end_time = time.time()
+            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
+            runtime = end_time - self.start_time
+            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
+            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            print('Check {}'.format(self.log_path))
+            self.update_status('Error')
+            self.close_logger()
+            return
+        except ExpectedException as e:
+            self.logger.error('Error:')
+            self.logger.error(e)
+            end_time = time.time()
+            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
+            runtime = end_time - self.start_time
+            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
+            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            print('Check {}'.format(self.log_path))
+            self.update_status('Error')
+            self.close_logger()
+            return
         except:
             self.logger.exception('<Exception>')
             self.update_status('Error')
@@ -293,6 +351,8 @@ class Cravat (object):
             runtime = end_time - self.start_time
             self.logger.info('runtime: {0:0.3f}s'.format(runtime))
             print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+            print('Check {}'.format(self.log_path))
+            self.update_status('Error')
             self.close_logger()
             return
         end_time = time.time()
@@ -313,7 +373,7 @@ class Cravat (object):
             self.annotators = \
                 au.get_local_module_infos_by_names(self.annotator_names)
         self.excludes = self.args.excludes
-        if self.excludes == '*':
+        if self.excludes == ['*']:
             self.annotators = {}
         elif self.excludes != None:
             for m in self.excludes:
@@ -388,35 +448,46 @@ class Cravat (object):
         self.modules = {}
         for module in self.annotators.values():
             self.add_annotator_to_queue(module)
+        annot_names = [v.name for v in self.ordered_annotators]
+        annot_names.sort()
+        self.update_status_json('annotators', annot_names)
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
             sys.exit('Module %s is not installed' % module)
-
         if module.name not in self.modules:
             self.modules[module.name] = module
-
         secondary_modules = self.get_secondary_modules(module)
+        if len(secondary_modules) > 0:
+            self.has_secondary_input = True
         for secondary_module in secondary_modules:
             if self.args.ra == True or \
                     self.check_module_output(secondary_module) == None:
                 self.add_annotator_to_queue(secondary_module)
-
         ordered_module_names = [m.name for m in self.ordered_annotators]
         if module.name not in ordered_module_names:
             if self.args.ra == True or \
                     self.check_module_output(module) == None:
                 self.ordered_annotators.append(module)
 
+    def get_module_output_path (self, module):
+        if module.level == 'variant':
+            postfix = '.var'
+        elif module.level == 'gene':
+            postfix = '.gen'
+        else:
+            return None
+        path = os.path.join(
+            self.output_dir, 
+            self.run_name + '.' + module.name + postfix)
+        return path
+
     def check_module_output (self, module):
-        paths = os.listdir(self.output_dir)
-        output_path = None
-        for path in paths:
-            if path.startswith(self.run_name) and path.endswith(
-                    module.output_suffix):
-                output_path = path
-                break
-        return output_path
+        path = self.get_module_output_path(module)
+        if os.path.exists(path):
+            return path
+        else:
+            None
 
     def get_secondary_modules (self, primary_module):
         secondary_modules = \
@@ -456,14 +527,10 @@ class Cravat (object):
         genemapper.run()
 
     def run_aggregator (self):
-        module = au.get_local_module_info(
-            self.conf.get_cravat_conf()['aggregator'])
-        aggregator_cls = util.load_class('Aggregator', module.script_path)
-
         # Variant level
         print('\t{0:30s}\t'.format('Variants'), end='', flush=True)
         stime = time.time()
-        cmd = [module.script_path, 
+        cmd = ['donotremove',
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'variant',
@@ -472,7 +539,7 @@ class Cravat (object):
             cmd.append('-x')
         if self.verbose:
             print(' '.join(cmd))
-        v_aggregator = aggregator_cls(cmd)
+        v_aggregator = Aggregator(cmd)
         v_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime)) 
@@ -480,14 +547,14 @@ class Cravat (object):
         # Gene level
         print('\t{0:30s}\t'.format('Genes'), end='', flush=True)
         stime = time.time()
-        cmd = [module.script_path, 
+        cmd = ['donotremove', 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'gene',
                '-n', self.run_name]
         if self.verbose:
             print(' '.join(cmd))
-        g_aggregator = aggregator_cls(cmd)
+        g_aggregator = Aggregator(cmd)
         g_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -495,28 +562,28 @@ class Cravat (object):
         # Sample level
         print('\t{0:30s}\t'.format('Samples'), end='', flush=True)
         stime = time.time()
-        cmd = [module.script_path, 
+        cmd = ['donotremove', 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'sample',
                '-n', self.run_name]
         if self.verbose:
             print(' '.join(cmd))
-        s_aggregator = aggregator_cls(cmd)
+        s_aggregator = Aggregator(cmd)
         s_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
 
         # Mapping level
         print('\t{0:30s}\t'.format('Tags'), end='', flush=True)
-        cmd = [module.script_path, 
+        cmd = ['donotremove', 
                '-i', self.output_dir,
                '-d', self.output_dir, 
                '-l', 'mapping',
                '-n', self.run_name]
         if self.verbose:
             print(' '.join(cmd))
-        m_aggregator = aggregator_cls(cmd)
+        m_aggregator = Aggregator(cmd)
         m_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -574,6 +641,8 @@ class Cravat (object):
         if default_workers < 1: 
             default_workers = 1
         num_workers = self.conf.get_cravat_conf().get('num_workers', default_workers)
+        if self.has_secondary_input:
+            num_workers = 1
         self.logger.info('num_workers: {}'.format(num_workers))
         all_cmds = []
         for module in self.ordered_annotators:
@@ -597,15 +666,11 @@ class Cravat (object):
                 for secondary_module_name in secondary_module_names:
                     secondary_module = self.modules[secondary_module_name]
                     secondary_output_path =\
-                        self.check_module_output(secondary_module)
-                    if secondary_output_path == None:
-                        print(secondary_module.name + ' output absent')
-                        return 1
-                    else:
-                        secondary_opts.extend([
-                            '-s', 
-                            secondary_module.name + '@' +\
-                                os.path.join(self.output_dir, secondary_output_path)])
+                        self.get_module_output_path(secondary_module)
+                    secondary_opts.extend([
+                        '-s', 
+                        secondary_module.name + '@' +\
+                            os.path.join(self.output_dir, secondary_output_path)])
             cmd = [module.script_path, inputpath]
             cmd.extend(secondary_opts)
             if self.run_name != None:

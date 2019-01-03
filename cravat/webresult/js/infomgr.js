@@ -153,6 +153,47 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 						val + '</a>';
 				}
 				return '<span title="' + val + '">' + content + '</span>'};
+            var filter = column['filter'];
+            if (filter != undefined && filter['type'] == 'select') {
+                var colType = column['type'];
+                var colCtg = column['ctg'];
+                if (colType == 'string' && colCtg == 'single') {
+                    column['filter']['condition'] = function (val, select) {
+                        if (select == '' || select == null) {
+                            return true;
+                        }
+                        var selects = select.split(',');
+                        if (selects.indexOf(val) >= 0) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    };
+                } else if (colType == 'string' && colCtg == 'multi') {
+                    column['filter']['condition'] = function (val, selects) {
+                        if (selects == null) {
+                            return true;
+                        }
+                        selects = selects.split(',');
+                        for (var i = 0; i < selects.length; i++) {
+                            var select = selects[i];
+                            if (val.indexOf(select) >= 0) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    };
+                }
+                column['filter']['init'] = function () {
+                    $(this).pqSelect({
+                        checkbox: true, 
+                        multiplePlaceholder: '>',
+                        radio: true, 
+                        maxDisplay: 0,
+                        width: '100%',});
+                };
+
+            }
 			var columnKey = column['col'];
 			var columnNo = column['dataIndx'];
 			columnnos[columnKey] = columnNo;
@@ -197,9 +238,6 @@ InfoMgr.prototype.getColumnGroups = function (tabName) {
 }
 
 InfoMgr.prototype.getColumnByName = function (tabName, columnName) {
-	if (tabName == 'variant') {
-		tabName = 'info';
-	}
 	return this.columnss[tabName][this.columnnoss[tabName][columnName]];
 }
 
@@ -246,3 +284,15 @@ InfoMgr.prototype.getGeneRowValue = function (hugo) {
 	}
 	return val;
 }
+
+InfoMgr.prototype.getVariantColumnGroupByName = function (groupName) {
+    var colGroups = this.colModels.variant;
+    for (var i = 0; i < colGroups.length; i++) {
+        var cg = colGroups[i];
+        if (cg.title == groupName) {
+            return cg;
+        }
+    }
+    return null;
+}
+

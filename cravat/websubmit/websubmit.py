@@ -14,6 +14,8 @@ from aiohttp import web
 #from aiohttp_session import get_session, new_session
 import sqlite3
 import hashlib
+from distutils.version import LooseVersion
+import glob
 
 class FileRouter(object):
 
@@ -25,6 +27,7 @@ class FileRouter(object):
             'excel':'.xlsx'
         }
         self.db_extension = '.sqlite'
+        self.log_extension = '.log'
 
     async def get_jobs_dir (self, request):
         root_jobs_dir = au.get_jobs_dir()
@@ -77,18 +80,58 @@ class FileRouter(object):
         jobs_dir = await self.job_dir(request, job_id)
         return os.path.join(jobs_dir, status_fname)
 
+    async def job_status (self, request, job_id):
+        job_dir = await self.job_dir(request, job_id)
+        fns = os.listdir(job_dir)
+        statusjson = {}
+        for fn in fns:
+            if fn.endswith('.status.json'):
+                with open(os.path.join(job_dir, fn)) as f:
+                    statusjson = json.loads(f.readline())
+            elif fn.endswith('.info.yaml'):
+                with open(os.path.join(job_dir, fn)) as f:
+                    statusjson = yaml.load(f)
+        return statusjson
+        
+    async def job_log(self, request, job_id):
+        job_dir = await self.job_dir(request, job_id)
+        fns = os.listdir(job_dir)
+        log_fn = None
+        for fn in fns:
+            if fn.endswith('.status.json'):
+                with open(os.path.join(job_dir, fn)) as f:
+                    statusjson = json.loads(f.readline())
+                    if 'orig_input_fname' in statusjson:
+                        log_fn = statusjson['orig_input_fname']
+            elif fn.endswith('.info.yaml'):
+                with open(os.path.join(job_dir, fn)) as f:
+                    infojson = yaml.load(f)
+                    if 'orig_input_fname' in infojson:
+                        log_fn = infojson['orig_input_fname']
+        if log_fn is not None:
+            log_fname = os.path.join(job_dir, log_fn + '.log')
+            if os.path.exists(log_fname) == False:
+                log_fname = None
+        else:
+            log_fname = None
+        if log_fname != None:
+            return log_fname
+        else:
+            return None
+
+
 class WebJob(object):
-    def __init__(self, job_dir, job_info_fpath):
+    def __init__(self, job_dir, job_status_fpath):
         self.info = {}
         self.job_dir = job_dir
-        self.job_info_fpath = job_info_fpath
+        self.job_status_fpath = job_status_fpath
         self.info['id'] = os.path.basename(job_dir)
 
     def save_job_options (self, job_options):
         self.set_values(**job_options)
 
     def read_info_file(self):
-        with open(self.job_info_fpath) as f:
+        with open(self.job_status_fpath) as f:
             info_dict = yaml.load(f)
         if info_dict != None:
             self.set_values(**info_dict)
@@ -96,9 +139,11 @@ class WebJob(object):
     def set_info_values(self, **kwargs):
         self.set_values(**kwargs)
 
+    '''
     def write_info_file(self):
         with open(self.job_info_fpath,'w') as wf:
             yaml.dump(self.get_info_dict(), wf, default_flow_style=False)
+    '''
 
     def get_info_dict(self):
         return self.info
@@ -107,7 +152,7 @@ class WebJob(object):
         self.info.update(kwargs)
 
 def get_next_job_id():
-    return datetime.datetime.now().strftime(r'CJ-%Y%m%d-%H%M%S')
+    return datetime.datetime.now().strftime(r'%y%m%d-%H%M%S')
 
 async def submit (request):
     global filerouter
@@ -129,12 +174,12 @@ async def submit (request):
     job_id = get_next_job_id()
     jobs_dir = await filerouter.get_jobs_dir(request)
     job_dir = os.path.join(jobs_dir, job_id)
-    info_fname = '{}.info.yaml'.format(job_id)
-    job_info_fpath = os.path.join(job_dir, info_fname)
     os.makedirs(job_dir, exist_ok=True)
+    info_fname = '{}.status.json'.format(orig_input_fname)
+    job_info_fpath = os.path.join(job_dir, info_fname)
     job = WebJob(job_dir, job_info_fpath)
     job.save_job_options(job_options)
-    input_fpath = os.path.join(job_dir, filerouter.input_fname)
+    input_fpath = os.path.join(job_dir, orig_input_fname)
     with open(input_fpath, 'wb') as wf:
         wf.write(input_data)
     job.set_info_values(orig_input_fname=orig_input_fname,
@@ -150,6 +195,8 @@ async def submit (request):
         run_args.extend(job_options['annotators'])
     else:
         run_args.append('--sa')
+        run_args.append('-e')
+        run_args.append('*')
     # Liftover assembly
     run_args.append('-l')
     run_args.append(job_options['assembly'])
@@ -160,11 +207,8 @@ async def submit (request):
     else:
         run_args.append('--sr')
     p = subprocess.Popen(run_args)
-    status_fname = 'input.status.json'
-    status_file = os.path.join(jobs_dir, status_fname)
-    status_d = {'status': 'Submitted'}
-    job.set_info_values(status=status_d)
-    job.write_info_file()
+    status = {'status': 'Submitted'}
+    job.set_info_values(status=status)
     # admin.sqlite
     if servermode:
         root_jobs_dir = au.get_jobs_dir()
@@ -195,6 +239,14 @@ def get_annotators(request):
                                 }
     return web.json_response(out)
 
+def find_files_by_ending (d, ending):
+    fns = os.listdir(d)
+    files = []
+    for fn in fns:
+        if fn.endswith(ending):
+            files.append(fn)
+    return files
+
 async def get_all_jobs (request):
     global filerouter
     jobs_dir = await filerouter.get_jobs_dir(request)
@@ -210,29 +262,37 @@ async def get_all_jobs (request):
             job_dir = os.path.join(jobs_dir, job_id)
             if os.path.isdir(job_dir) == False:
                 continue
-            info_fname = '{}.info.yaml'.format(job_id)
-            job_info_fpath = os.path.join(job_dir, info_fname)
-            if os.path.exists(job_info_fpath) == False:
+            fns = find_files_by_ending(job_dir, '.status.json')
+            if len(fns) < 1:
                 continue
-            job = WebJob(job_dir, job_info_fpath)
+            status_fname = fns[0]
+            status_fpath = os.path.join(job_dir, status_fname)
+            job = WebJob(job_dir, status_fpath)
             job.read_info_file()
-            output_fname = filerouter.input_fname + filerouter.db_extension
-            db_path = os.path.join(job_dir, output_fname)
+            fns = find_files_by_ending(job_dir, '.info.yaml')
+            if len(fns) > 0:
+                info_fpath = os.path.join(job_dir, fns[0])
+                with open (info_fpath) as f:
+                    info_json = yaml.load('\n'.join(f.readlines()))
+                    for k, v in info_json.items():
+                        if k == 'status' and 'status' in job.info:
+                            continue
+                        job.info[k] = v
+            fns = find_files_by_ending(job_dir, '.sqlite')
+            if len(fns) > 0:
+                db_path = os.path.join(job_dir, fns[0])
+            else:
+                db_path = ''
             job_viewable = os.path.exists(db_path)
-            status_fname = 'input.status.json'
-            status_file = os.path.join(job_dir, status_fname)
-            try:
-                with open(status_file) as f: status_d = json.load(f)
-            except IOError:
-                status_d = {'status':'Submitted'}
-            job.set_info_values(viewable=job_viewable,
-                                db_path=db_path,
-                                status=status_d,
-                                )
+            job.set_info_values(
+                viewable=job_viewable,
+                db_path=db_path,
+                status=job.info['status'],
+            )
             existing_reports = []
             for report_type in get_valid_report_types():
                 ext = filerouter.report_extensions.get(report_type, '.'+report_type)
-                report_fname = filerouter.input_fname + ext
+                report_fname = job.info['orig_input_fname'] + ext
                 report_file = os.path.join(job_dir, report_fname)
                 if os.path.exists(report_file):
                     existing_reports.append(report_type)
@@ -274,6 +334,16 @@ async def download_db(request):
     headers = {'Content-Disposition': 'attachment; filename='+db_fname}
     return web.FileResponse(db_path, headers=headers)
 
+async def get_job_log (request):
+    global filerouter
+    job_id = request.match_info['job_id']
+    log_path = await filerouter.job_log(request, job_id)
+    if log_path is not None:
+        with open(log_path) as f:
+            return web.Response(text=f.read())
+    else:
+        return web.Response(text='loo file does not exist.')
+
 def get_valid_report_types():
     reporter_infos = au.get_local_module_infos(types=['reporter'])
     report_types = [x.name.split('reporter')[0] for x in reporter_infos]
@@ -289,9 +359,10 @@ def get_report_types(request):
 async def generate_report(request):
     global filerouter
     job_id = request.match_info['job_id']
+    statusjson = await filerouter.job_status(request, job_id)
     report_type = request.match_info['report_type']
     if report_type in get_valid_report_types():
-        job_input = await filerouter.job_input(request, job_id)
+        job_input = statusjson['orig_input_path']
         cmd_args = ['cravat', job_input]
         cmd_args.append('--str')
         cmd_args.extend(['-t', report_type])
@@ -318,15 +389,15 @@ def set_jobs_dir (request):
     au.set_jobs_dir(d)
     return web.json_response(d)
 
-def get_system_conf_info (request):
-    info = au.get_system_conf_info()
+async def get_system_conf_info (request):
+    info = au.get_system_conf_info_json()
+    global filerouter
     return web.json_response(info)
 
 async def update_system_conf (request):
-    post = await request.post()
-    sysconfstr = post['sysconfstr']
+    queries = request.rel_url.query
+    sysconf = json.loads(queries['sysconf'])
     try:
-        sysconf = yaml.load(sysconfstr)
         success = au.update_system_conf_file(sysconf)
     except:
         raise
@@ -514,6 +585,18 @@ async def logout (request):
 def get_servermode (request):
     return web.json_response({'servermode': servermode})
 
+async def get_package_versions(request):
+    cur_ver = au.get_current_package_version()
+    lat_ver = au.get_latest_package_version()
+    update = LooseVersion(lat_ver) > LooseVersion(cur_ver)
+    d = {
+        'current': cur_ver,
+        'latest': lat_ver,
+        'update': update
+    }
+    return web.json_response(d)
+
+
 filerouter = FileRouter()
 VIEW_PROCESS = None
 
@@ -527,10 +610,11 @@ routes.append(['GET','/submit/jobs/{job_id}/db', download_db])
 routes.append(['GET','/submit/reports',get_report_types])
 routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',generate_report])
 routes.append(['GET','/submit/jobs/{job_id}/reports/{report_type}',download_report])
+routes.append(['GET','/submit/jobs/{job_id}/log',get_job_log])
 routes.append(['GET', '/submit/getjobsdir', get_jobs_dir])
 routes.append(['GET', '/submit/setjobsdir', set_jobs_dir])
 routes.append(['GET', '/submit/getsystemconfinfo', get_system_conf_info])
-routes.append(['POST', '/submit/updatesystemconf', update_system_conf])
+routes.append(['GET', '/submit/updatesystemconf', update_system_conf])
 routes.append(['GET', '/submit/resetsystemconf', reset_system_conf])
 routes.append(['GET', '/submit/login', login])
 routes.append(['GET', '/submit/servermode', get_servermode])
@@ -540,6 +624,7 @@ routes.append(['GET', '/submit/passwordquestion', get_password_question])
 routes.append(['GET', '/submit/passwordanswer', check_password_answer])
 routes.append(['GET', '/submit/changepassword', change_password])
 routes.append(['GET', '/submit/checklogged', check_logged])
+routes.append(['GET', '/submit/packageversions', get_package_versions])
 
 if __name__ == '__main__':
     app = web.Application()

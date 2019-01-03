@@ -402,3 +402,15 @@ button {
 .filter-join-operator-div {
     margin-left: 20px;
 }
+
+.detail-info-line-header {
+    vertical-align: top;
+    min-width: 60px;
+    font-weight: bold;
+}
+
+.detail-info-line-content {
+    vertical-align: top;
+    min-width: 60px;
+}
+

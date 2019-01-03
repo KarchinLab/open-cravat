@@ -11,7 +11,8 @@ from . import util
 import requests
 import traceback
 import re
-from distutils.version import StrictVersion
+from distutils.version import StrictVersion, LooseVersion
+import pkg_resources
 
 def load_yml_conf(yml_conf_path):
     """
@@ -90,7 +91,7 @@ class LocalModuleInfo (object):
         else:
             self.input_format = None
         if 'secondary_inputs' in self.conf:
-            self.secondary_module_names = self.conf['secondary_inputs'].keys()
+            self.secondary_module_names = list(self.conf['secondary_inputs'].keys())
         else:
             self.secondary_module_names = []
         if self.type == 'annotator':
@@ -485,7 +486,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         if module_name in list_local():
             local_info = get_local_module_info(module_name)
             if local_info.has_data:
-                local_data_version = local_info.version
+                local_data_version = get_remote_data_version(module_name, version=local_info.version)
             else:
                 local_data_version = None
         else:
@@ -554,7 +555,7 @@ def get_remote_data_version(module_name, version=None):
     mic.update_remote()
     if version is None:
         version = get_remote_latest_version(module_name)
-    return mic.remote[module_name]['data_versions'][version]
+    return mic.remote[module_name]['data_versions'].get(version)
 
 def uninstall_module (module_name):
     """
@@ -872,10 +873,41 @@ def get_system_conf_info ():
     system_conf_info = {'path': confpath, 'exists': confexists, 'content': yaml.dump(conf, default_flow_style=False)}
     return system_conf_info
 
+def get_system_conf_info_json ():
+    set_jobs_dir(get_jobs_dir())
+    confpath = constants.system_conf_path
+    if os.path.exists(confpath):
+        conf = load_yml_conf(confpath)
+        confexists = True
+    else:
+        conf = {}
+        confexists = False
+    if constants.modules_dir_key not in conf:
+        conf[constants.modules_dir_key] = constants.default_modules_dir
+    system_conf_info = {'path': confpath, 'exists': confexists, 'content': conf}
+    return system_conf_info
+
 def show_system_conf ():
     system_conf_info = get_system_conf_info()
     print('Configuration file path:', system_conf_info['path'])
     print(system_conf_info['content'])
+
+def get_latest_package_version():
+    """
+    Return latest cravat version on pypi
+    """
+    r = requests.get('https://pypi.org/pypi/open-cravat/json')
+    if r.status_code == 200:
+        d = json.loads(r.text)
+        all_vers = list(d['releases'].keys())
+        all_vers.sort(key=LooseVersion)
+        highest_ver = all_vers[-1]
+        return highest_ver
+    else:
+        return None
+
+def get_current_package_version():
+    return pkg_resources.get_distribution('open-cravat').version    
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
