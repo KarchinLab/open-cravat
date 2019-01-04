@@ -81,14 +81,17 @@ class InstallProgressMpDict(au.InstallProgressHandler):
 
 def fetch_install_queue (install_queue, install_state):
     while True:
-        data = install_queue.get()
-        au.refresh_cache()
-        module_name = data['module']
-        module_version = data['version']
-        stage_handler = InstallProgressMpDict(module_name, module_version, install_state)
-        au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
-        au.refresh_cache()
-        time.sleep(1)
+        try:
+            data = install_queue.get()
+            au.refresh_cache()
+            module_name = data['module']
+            module_version = data['version']
+            stage_handler = InstallProgressMpDict(module_name, module_version, install_state)
+            au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
+            au.refresh_cache()
+            time.sleep(1)
+        except:
+            sys.exit()
 
 ###################### start from store_handler #####################
 import cravat.admin_util as au
