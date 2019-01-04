@@ -193,5 +193,4 @@ def detect_encoding (path):
             break
     detector.close()
     f.close()
-    print(detector.result['encoding'])
     return detector.result['encoding']

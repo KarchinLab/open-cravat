@@ -196,6 +196,7 @@ function populateSummaryWidgetDiv () {
 					widgetDiv.style.width = generator['width'] + 'px';
 					widgetDiv.style.height = generator['height'] + 'px';
 				}
+                var outerDiv = document.getElementById('detailcontainerdiv_info');
 				addEl(outerDiv, widgetDiv);
                 try {
                     drawSummaryWidget(colGroupKey);
