@@ -9,6 +9,7 @@ from .util import most_severe_so, so_severity
 from .exceptions import InvalidData
 from cravat.config_loader import ConfigLoader
 import sys
+import pkg_resources
 
 class BaseMapper(object):
     """
@@ -51,7 +52,8 @@ class BaseMapper(object):
         self._setup_logger()
         config_loader = ConfigLoader()
         self.conf = config_loader.get_module_conf(self.module_name)
-            
+        self.cravat_version = pkg_resources.get_distribution('open-cravat').version
+    
     def _define_main_cmd_args(self):
         self.cmd_parser = argparse.ArgumentParser()
         self.cmd_parser.add_argument('path',

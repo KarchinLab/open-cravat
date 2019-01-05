@@ -13,6 +13,7 @@ from cravat import ConfigLoader
 from cravat import admin_util as au
 from cravat import CravatFilter
 from aiohttp import web
+import time
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -267,7 +268,12 @@ def get_count (request):
     cf = CravatFilter(dbpath=dbpath, 
                       mode='sub', 
                       filterstring=filterstring)
+    dbbasename = os.path.basename(dbpath)
+    print('calling count for {}'.format(dbbasename))
+    t = time.time()
     n = cf.getcount(level=tab)
+    t = round(time.time() - t, 3)
+    print('count obtained from {} in {}s'.format(dbbasename, t))
     content = {'n': n}        
     return web.json_response(content)
 
@@ -294,9 +300,13 @@ def get_result (request):
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
     reporter = m.Reporter(args)
-    print('getting result from {} for viewer...'.format(dbpath))
+    dbbasename = os.path.basename(dbpath)
+    print('getting result from {} for viewer...'.format(dbbasename))
+    t = time.time()
     data = reporter.run(tab=tab)
-    print('result obtained from {}. packing...'.format(dbpath))
+    t = round(time.time() - t, 3)
+    print('result obtained from {} in {}s. packing...'.format(dbbasename, t))
+    t = time.time()
     content = {}
     content['stat'] = {'rowsreturned': True, 
                    'wherestr':'', 
@@ -307,7 +317,8 @@ def get_result (request):
     content['columns'] = get_colmodel(tab, data['colinfo'])
     content["data"] = get_datamodel(data[tab])
     content["status"] = "normal"
-    print('sending result of {}...'.format(dbpath))
+    t = round(time.time() - t, 3)
+    print('done in {}s. sending result of {}...'.format(t, dbbasename))
     return web.json_response(content)
 
 def get_result_levels (request):

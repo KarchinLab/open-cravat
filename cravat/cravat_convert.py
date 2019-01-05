@@ -12,6 +12,7 @@ import cravat.admin_util as au
 from pyliftover import LiftOver
 import copy
 import cravat.cravat_util as cu
+from cravat.util import detect_encoding
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
@@ -124,7 +125,8 @@ class MasterCravatConverter(object):
         """ Do necesarry pre-run tasks """
         if self.ready_to_convert: return
         # Open file handle to input path
-        self.f = open(self.input_path)
+        encoding = detect_encoding(self.input_path)
+        self.f = open(self.input_path, encoding=encoding)
         # Read in the available converters
         self._initialize_converters()
         # Select the converter that matches the input format

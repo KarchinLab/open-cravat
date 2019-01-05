@@ -377,22 +377,6 @@ def main ():
                                                 help='installs base modules.',
                                                 description='installs base modules.')
     parser_install_base.set_defaults(func=install_base)
-    
-    # # install
-    # parser_install = subparsers.add_parser('install',
-    #                                        help='installs modules.',
-    #                                        description='installs modules.')
-    # parser_install.add_argument('modules',
-    #                             nargs='+',
-    #                             help='Modules to install. Format as module_name:version. Leaving version blank installs the latest version.')
-    # parser_install.add_argument('-d',
-    #                             '--force-data',
-    #                             action='store_true',
-    #                             help='Force download new data even if not needed.')
-    # parser_install.add_argument('--skip-installed',
-    #                             action='store_true',
-    #                             help='skips already installed modules.')
-    # parser_install.set_defaults(func=install_modules)
 
     # install
     parser_install = subparsers.add_parser('install',

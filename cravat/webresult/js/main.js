@@ -290,27 +290,50 @@ function loadData (alertFlag, finalcallback) {
 		}
 		if (firstLoad) {
 			firstLoad = false;
-			infomgr.count(dbPath, 'variant', function (numvar) {
-                if (numvar > NUMVAR_LIMIT) {
-                    lockTabs();
-                    flagNotifyToUseFilter = true;
-                    if (document.getElementById('infonoticediv')) {
-                        notifyToUseFilter();
-                        flagNotifyToUseFilter = false;
-                    } else {
-                        flagNotifyToUseFilter = true;
-                    }
-                    removeLoadingDiv();
-                    return;
+            var numvar = Number(infomgr.jobinfo['Number of unique input variants']);
+            if (filterJson.length == 0 && numvar > NUMVAR_LIMIT) {
+                lockTabs();
+                flagNotifyToUseFilter = true;
+                if (document.getElementById('infonoticediv')) {
+                    notifyToUseFilter();
+                    flagNotifyToUseFilter = false;
                 } else {
-                    if (flagNotifyToUseFilter) {
-                        notifyOfReadyToLoad();
-                        flagNotifyToUseFilter = false;
-                    }
-                    removeLoadingDiv();
-                    callLoadVariant();
+                    flagNotifyToUseFilter = true;
                 }
-		    });
+                removeLoadingDiv();
+                firstLoad = true;
+                return;
+            }
+            if (filterJson.length != 0) {
+                infomgr.count(dbPath, 'variant', function (numvar) {
+                    if (numvar > NUMVAR_LIMIT) {
+                        lockTabs();
+                        flagNotifyToUseFilter = true;
+                        if (document.getElementById('infonoticediv')) {
+                            notifyToUseFilter();
+                            flagNotifyToUseFilter = false;
+                        } else {
+                            flagNotifyToUseFilter = true;
+                        }
+                        removeLoadingDiv();
+                        return;
+                    } else {
+                        if (flagNotifyToUseFilter) {
+                            notifyOfReadyToLoad();
+                            flagNotifyToUseFilter = false;
+                        }
+                        removeLoadingDiv();
+                        callLoadVariant();
+                    }
+                });
+            } else {
+                if (flagNotifyToUseFilter) {
+                    notifyOfReadyToLoad();
+                    flagNotifyToUseFilter = false;
+                }
+                removeLoadingDiv();
+                callLoadVariant();
+            }
 		} else {
 		    callLoadVariant();
 		}
@@ -420,7 +443,7 @@ function firstLoadData () {
 		);
 	}
 	var afterLoadDefaultFilter = function (args) {
-		loadLayoutSetting(quickSaveName, afterLoadDefaultWidgetSetting);
+		loadLayoutSetting(quickSaveName, afterLoadDefaultWidgetSetting, true);
 	}
 	loadWidgets();
 	setupTab('info');
@@ -568,7 +591,6 @@ function webresult_run () {
 	$grids = {};
 	gridObjs = {};
 	document.title = 'CRAVAT: ' + jobId;
-    getResultLevels(afterGetResultLevels);
     var resizeTimeout = null;
     $(window).resize(function(event) {
     	shouldResizeScreen = {};
@@ -593,4 +615,5 @@ function webresult_run () {
     	}
 	}
     //window.onbeforeunload = triggerAutosave;
+    getResultLevels(afterGetResultLevels);
 }
