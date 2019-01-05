@@ -62,17 +62,20 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	var div = document.createElement('fieldset');
 	div.id = 'detailwidget_' + tabName + '_' + widgetName;
 	div.className = 'detailwidget';
-    div.style.wordBreak = 'break-all';
 	var width = null;
 	var height = null;
 	var top = null;
 	var left = null;
+	var wordBreak = 'break-all';
 	if (viewerWidgetSettings['info'] != undefined) {
 		for (var i = 0; i < viewerWidgetSettings['info'].length; i++) {
 			var setting = viewerWidgetSettings['info'][i];
 			if (setting['widgetkey'] == widgetName) {
 				width = parseInt(setting['width'].replace('px', ''));
 				height = parseInt(setting['height'].replace('px', ''));
+				if (setting['word-break'] != undefined){
+					wordBreak = setting['word-break'];
+				}
 				top = setting['top'];
 				left = setting['left'];
 				break;
@@ -81,9 +84,13 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	} else {
 		width = widgetGenerators[widgetName][tabName]['width'];
 		height = widgetGenerators[widgetName][tabName]['height'];
+		if (widgetGenerators[widgetName][tabName]['word-break'] != undefined){
+			wordBreak = widgetGenerators[widgetName][tabName]['word-break'];
+		}
 	}
 	div.clientWidth = width;
 	div.clientHeight = height;
+	div.style.wordBreak = wordBreak;
 	div.style.width = width + 'px';
 	div.style.height = height + 'px';
 	if (top) {

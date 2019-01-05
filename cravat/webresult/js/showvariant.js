@@ -44,7 +44,15 @@ function getWidgetTableTr (values) {
 		if (value == null) {
 			value = '';
 		}
-		addEl(td, addEl(p, getTn(value)));
+		if(value.startsWith('http')){
+			spanText = document.createElement('a');
+			spanText.href = value;
+			spanText.target = '_blank';
+			addEl(td, addEl(spanText, getTn('Link')));
+		}
+		else{
+			addEl(td, addEl(p, getTn(value)));
+		}
 		addEl(tr, td);
 	}
 	return tr;

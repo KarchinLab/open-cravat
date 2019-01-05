@@ -137,6 +137,9 @@ def get_module_readme (request):
             imgsrceditor = ImageSrcEditor(pathbuilder.module_version_dir(module_name, au.mic.remote[module_name]['latest_version']))
             imgsrceditor.feed(content)
             content = imgsrceditor.get_parsed()
+            linkouteditor = LinkOutEditor(pathbuilder.module_version_dir(module_name, au.mic.remote[module_name]['latest_version']))
+            linkouteditor.feed(content)
+            content = linkouteditor.get_parsed()
     headers = {'Content-Type': 'text/html'}
     return web.Response(body=content, headers=headers)
 
@@ -153,6 +156,29 @@ class ImageSrcEditor(HTMLParser):
         for name, value in attrs:
             if tag == 'img' and name == 'src':
                 value = self.prefix_url + '/' + value.lstrip('/')
+            html += ' {name}="{value}"'.format(name=name, value=value)
+        html += '>'
+        self.parsed += html
+
+    def handle_data(self, data):
+        self.parsed += data
+
+    def handle_endtag(self, tag):
+        self.parsed += '</{}>'.format(tag)
+
+    def get_parsed(self):
+        return self.parsed
+
+class LinkOutEditor(HTMLParser):
+    def __init__ (self, prefix_url):
+        super().__init__()
+        self.prefix_url = prefix_url
+        self.parsed = ''
+    def handle_starttag(self, tag, attrs):
+        html = '<{}'.format(tag)
+        if tag == 'a':
+            attrs.append(['target', '_blank'])
+        for name, value in attrs:
             html += ' {name}="{value}"'.format(name=name, value=value)
         html += '>'
         self.parsed += html
