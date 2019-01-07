@@ -92,8 +92,8 @@
 }
 
 #storemenudiv {
-    position: absolute;
-    top: 12px;
+    position: fixed;
+    top: 108px;
     width: 200px;
 }
 
