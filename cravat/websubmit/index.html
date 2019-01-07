@@ -216,6 +216,12 @@
             <input type='text' id='namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()' style='font-size: 16px' />
             <br />
             <br />
+            <div id='store-update-all-div' style='display: none;'>
+                <span style='color: red; font-size: 12px;'>New version modules are available!</span>
+                <button id='store-update-all-button' onclick='onClickStoreUpdateAllButton();' style='font-size: 14px;'>Update All</button>
+                <br />
+                <br />
+            </div>
             <button id='store-tag-reset-button' onclick='onClickStoreTagResetButton();' style='font-size: 14px;'>Clear Tags</button>
             &nbsp;
             <span class='store-switch-text'>and</span>

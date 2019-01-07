@@ -1,5 +1,3 @@
-var available;
-var installed;
 var currentDetailModule = null;
 
 var remoteModuleInfo = {};
@@ -13,6 +11,7 @@ var storeUrl = null;
 var storeurl = $.get('/store/getstoreurl').done(function(response) {
     storeUrl = response;
 });
+var newModuleAvailable = false;
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -32,14 +31,29 @@ function addEl (pelem, child) {
 function getLocal () {
 	$.get('/store/local').done(function(data){
         localModuleInfo = data;
+        newModuleAvailable = false;
         for (var remoteModuleName in remoteModuleInfo) {
             if (remoteModuleName in localModuleInfo) {
-                remoteModuleInfo[remoteModuleName]['tags'].push('installed');
+                var mI = remoteModuleInfo[remoteModuleName];
+                var tags = mI['tags'];
+                var idx = tags.indexOf('installed');
+                if (idx == -1) {
+                    tags.push('installed');
+                }
                 var localVersion = localModuleInfo[remoteModuleName].version;
                 var remoteVersion = getHighestVersionForRemoteModule(remoteModuleName);
                 c = compareVersion(remoteVersion, localVersion);
                 if (c > 0) {
-                    remoteModuleInfo[remoteModuleName]['tags'].push('newavailable');
+                    var idx = tags.indexOf('newavailable');
+                    if (idx == -1) {
+                        tags.push('newavailable');
+                    }
+                    newModuleAvailable = true;
+                } else {
+                    var idx = tags.indexOf('newavailable');
+                    if (idx >= 0) {
+                        tags.splice(idx, 1);
+                    }
                 }
             }
         }
@@ -106,6 +120,12 @@ function getLocal () {
             div = document.getElementById('remotemodulepanels');
             div.style.top = '114px';
         }
+        var d = document.getElementById('store-update-all-div');
+        if (newModuleAvailable) {
+            d.style.display = 'block';
+        } else {
+            d.style.display = 'none';
+        }
         populateStoreTagPanel();
 	});
 }
@@ -120,12 +140,6 @@ function getRemote () {
                 var moduleInfo = remoteModuleInfo[moduleName];
                 if (! ('tags' in moduleInfo)) {
                     moduleInfo.tags = [];
-                }
-                if (baseModuleNames.indexOf(moduleName) >= 0) {
-                    moduleInfo.tags.push('base');
-                }
-                if (moduleInfo.type == 'annotator') {
-                    moduleInfo.tags.push('annotator');
                 }
             }
             var modules = Object.keys(remoteModuleInfo);
@@ -149,63 +163,6 @@ function removeElementFromArrayByValue (a, e) {
 }
 
 function populateStoreTagPanel () {
-    /*
-    var numRemoteModule = Object.keys(remoteModuleInfo).length;
-    var taggedNumRemoteModule = 0;
-    for (var module in remoteModuleInfo) {
-        console.log('calling remote module config:', module);
-        $.ajax({
-            url: '/store/remotemoduleconfig', 
-            async: true,
-            data: {'module': module},
-            success: function (response) {
-                console.log('get remote module config:', response['name']);
-                remoteModuleInfo[response['name']]['tags'] = response['tags'];
-                taggedNumRemoteModule++;
-                if (taggedNumRemoteModule == numRemoteModule) {
-                    tagsCollected = [];
-                    for (var module in remoteModuleInfo) {
-                        var tags = remoteModuleInfo[module].tags;
-                        for (var i = 0; i < tags.length; i++) {
-                            var tag = tags[i];
-                            if (tagsCollected.indexOf(tag) == -1) {
-                                tagsCollected.push[tag];
-                            }
-                        }
-                    }
-                    for (var module in localModuleInfo) {
-                        var tags = localModuleInfo[module].tags;
-                        for (var i = 0; i < tags.length; i++) {
-                            var tag = tags[i];
-                            if (tagsCollected.indexOf(tag) == -1) {
-                                tagsCollected.push(tag);
-                            }
-                        }
-                    }
-                    tagsCollected.sort();
-                    console.log(tagsCollected);
-                    var div = document.getElementById('store-tag-custom-div');
-                    for (var i = 0; i < tagsCollected.length; i++) {
-                        var tag = tagsCollected[i];
-                        var input = getEl('input');
-                        input.type = 'checkbox';
-                        input.value = tag;
-                        input.className = 'store-tag-checkbox';
-                        input.addEventListener('click', function (evt) {
-                            onStoreTagCheckboxChange();
-                        });
-                        addEl(div, input);
-                        var span = getEl('span');
-                        span.class = 'store-tag-span';
-                        span.textContent = tag;
-                        addEl(div, span);
-                        addEl(div, getEl('br'));
-                    }
-                }
-            }
-        });
-    }
-    */
     tagsCollected = [];
     for (var module in remoteModuleInfo) {
         var tags = remoteModuleInfo[module].tags;
@@ -229,6 +186,7 @@ function populateStoreTagPanel () {
     removeElementFromArrayByValue(tagsCollected, 'newavailable');
     tagsCollected.sort();
     var div = document.getElementById('store-tag-custom-div');
+    $(div).empty();
     for (var i = 0; i < tagsCollected.length; i++) {
         var tag = tagsCollected[i];
         var input = getEl('input');
@@ -826,7 +784,7 @@ function activateDetailDialog (moduleName) {
             var span = getEl('span');
             span.textContent = ' (' + localVersion + ' installed)';
             addEl(d, span);
-            if (moduleInfo.newAvailabe > 0) {
+            if (moduleInfo.tags.indexOf('newavailable') >= 0) {
                 addEl(d, getEl('br'));
                 var span = getEl('span');
                 span.style.color = 'red';
@@ -1050,6 +1008,7 @@ function installModule (moduleName) {
 		url:'/store/install',
 		data: {name:moduleName, version:version},
         success: function (response) {
+            getLocal();
         }
 	});
 }
@@ -1133,6 +1092,14 @@ function onClickStoreTagResetButton () {
         this.checked = false;
     });
     updateFilter();
+}
+
+function onClickStoreUpdateAllButton () {
+    for (var moduleName in remoteModuleInfo) {
+        if (remoteModuleInfo[moduleName]['tags'].indexOf('newavailable') >= 0) {
+            queueInstall(moduleName);
+        }
+    }
 }
 
 function webstore_run () {
