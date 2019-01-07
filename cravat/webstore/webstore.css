@@ -5,15 +5,6 @@
     right: 0px;
 }
 
-#remotemodulepanels {
-    display: flex; 
-    flex-wrap: wrap; 
-    justify-content: center; 
-    position: relative; 
-    top: 88px; 
-    background-color: white;
-}
-
 .module-size-span {
     position: absolute;
     right: 22px;
@@ -81,5 +72,87 @@
     top: 0px;
     right: 0px;
     font-size: 12px;
+}
+
+#storebodydiv {
+    position: absolute;
+    top: 92px;
+    width: 100%;
+}
+
+#remotemodulepanels {
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: center; 
+    position: absolute; 
+    top: 40px; 
+    background-color: white;
+    left: 200px;
+    width: calc(100% - 210px);
+}
+
+#storemenudiv {
+    position: absolute;
+    top: 12px;
+    width: 200px;
+}
+
+.store-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 23px;
+}
+
+.store-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.store-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    background-color: #a1a1a1;
+    transition: .1s;
+    border-radius: 14px;
+}
+
+.store-switch-slider:before {
+    position: absolute;
+    content: '';
+    width: 15px;
+    height: 15px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .1s;
+    border-radius: 9px;
+}
+
+input:checked + .store-switch-slider {
+    background-color: #a1a1a1;
+}
+
+input:focus + .store-switch-slider {
+    box-shadow: 0 0 1px #a1a1a1;
+}
+
+input:checked + .store-switch-slider:before {
+    transform: translateX(15px);
+}
+
+.store-switch-text {
+    font-size: 13px;
+}
+
+#store-sort-div {
+    position: absolute;
+    top: 12px;
+    right: 17px;
 }
 

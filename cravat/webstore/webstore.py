@@ -13,7 +13,6 @@ from aiohttp import web
 from html.parser import HTMLParser
 from cravat import store_utils as su
 from cravat import constants
-#from aiohttp_session import get_session, new_session
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
@@ -40,7 +39,6 @@ class InstallProgressMpDict(au.InstallProgressHandler):
         self.install_state = install_state
 
     def _reset_progress(self, update_time=False):
-        #global install_state
         self.install_state['cur_chunk'] = 0
         self.install_state['total_chunks'] = 0
         self.install_state['cur_size'] = 0
@@ -72,7 +70,6 @@ class InstallProgressMpDict(au.InstallProgressHandler):
         self.install_state['update_time'] = time.time()
 
     def stage_progress(self, cur_chunk, total_chunks, cur_size, total_size):
-        #global install_state
         self.install_state['cur_chunk'] = cur_chunk
         self.install_state['total_chunks'] = total_chunks
         self.install_state['cur_size'] = cur_size
@@ -112,6 +109,17 @@ def get_remote_manifest(request):
         content[module]['queued'] = True
         install_queue.put({'module': module, 'version': version})
     return web.json_response(content)
+
+def get_remote_module_config (request):
+    queries = request.rel_url.query
+    module = queries['module']
+    conf = au.get_remote_module_config(module)
+    if 'tags' in conf:
+        tags = conf['tags']
+    else:
+        tags = []
+    response = {'name': module, 'tags': tags}
+    return web.json_response(response)
 
 def get_local_manifest (request):
     au.refresh_cache()
@@ -325,4 +333,5 @@ routes.append(['GET', '/store/queueinstall', queue_install])
 routes.append(['GET', '/store/modules/{module}/{version}/readme', get_module_readme])
 routes.append(['GET', '/store/getbasemodules', get_base_modules])
 routes.append(['GET', '/store/installbasemodules', install_base_modules])
+routes.append(['GET', '/store/remotemoduleconfig', get_remote_module_config])
 routes.append(['GET', '/store/getmd', get_md])

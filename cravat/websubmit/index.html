@@ -92,11 +92,6 @@
     </div><div value='storediv' onclick='changePage("storediv");'>
         Store
     </div>
-    <!--
-    <div id='settingspageselect' value='settingsdiv' onclick='changePage("settingsdiv");'>
-        Settings
-    </div>
-    -->
 </div>
 
 <div id='submitdiv' class='appdiv'>
@@ -214,15 +209,41 @@
         <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' onclick='onClickThreeDots();'>
             <img src='threedots.png' class='threedots' />
         </div>
-        <div style='position: absolute; right: 25px; vertical-align: bottom; bottom: 10px;'>
-            Module type:
-            <select id='typefilter' onchange='updateFilter()' style='font-size: 16px'></select>
-            <input type='text' id='namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()' style='font-size: 16px'/>
-        </div>
     </div>
     <div id='messagediv'></div>
-    <div>
-        <div id='remotemodulepanels' ></div>
+    <div id='storebodydiv'>
+        <div id='storemenudiv'>
+            <input type='text' id='namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()' style='font-size: 16px' />
+            <br />
+            <br />
+            <button id='store-tag-reset-button' onclick='onClickStoreTagResetButton();' style='font-size: 14px;'>Clear Tags</button>
+            &nbsp;
+            <span class='store-switch-text'>and</span>
+            <label class='store-switch'>
+                <input type='checkbox' id='store-tag-andor-checkbox' onchange='onStoreTagCheckboxChange();'/>
+                <span class='store-switch-slider'></span>
+            </label>
+            <span class='store-switch-text'>or</span>
+            <br />
+            <hr />
+            <input type='checkbox' class='store-tag-checkbox' value='installed' id='store-tag-checkbox-installed' onclick='onStoreTagCheckboxChange();'/> Installed
+            <br />
+            <input type='checkbox' class='store-tag-checkbox' value='newavailable' id='store-tag-checkbox-newavailable' onclick='onStoreTagCheckboxChange();'/> New available
+            <br />
+            <hr />
+            <div id='store-tag-custom-div'></div>
+        </div>
+        <div>
+            <div id='store-sort-div'>
+                <span id='store-sort-label'>Sort by</span>
+                <select id='store-sort-select' onchange='updateRemotePanels();'>
+                    <option value='name'>Name</option>
+                    <option value='date'>Date</option>
+                    <option value='size'>Size</option>
+                </select>
+            </div>
+            <div id='remotemodulepanels' ></div>
+        </div>
     </div>
 </div> <!-- storediv -->
 

@@ -4,7 +4,7 @@ var currentDetailModule = null;
 
 var remoteModuleInfo = {};
 var localModuleInfo = {};
-var filter = {'type': 'annotator'};
+var filter = {};
 var installQueue = [];
 var installInfo = {};
 var baseModuleNames = [];
@@ -32,11 +32,40 @@ function addEl (pelem, child) {
 function getLocal () {
 	$.get('/store/local').done(function(data){
         localModuleInfo = data;
-        var localModuleNames = Object.keys(localModuleInfo);
+        for (var remoteModuleName in remoteModuleInfo) {
+            if (remoteModuleName in localModuleInfo) {
+                remoteModuleInfo[remoteModuleName]['tags'].push('installed');
+                var localVersion = localModuleInfo[remoteModuleName].version;
+                var remoteVersion = getHighestVersionForRemoteModule(remoteModuleName);
+                c = compareVersion(remoteVersion, localVersion);
+                if (c > 0) {
+                    remoteModuleInfo[remoteModuleName]['tags'].push('newavailable');
+                }
+            }
+        }
+        for (var mn in localModuleInfo) {
+            var localModule = localModuleInfo[mn];
+            if (! ('tags' in localModule)) {
+                localModule['tags'] = [];
+            }
+            var remoteModule = remoteModuleInfo[mn];
+            if (remoteModule == undefined) {
+                continue;
+            }
+            var localTags = localModule.tags;
+            var remoteTags = remoteModule.tags;
+            for (var i = 0; i < localTags.length; i++) {
+                var tag = localTags[i];
+                if (remoteTags.indexOf(tag) == -1) {
+                    remoteTags.push(tag);
+                }
+            }
+            remoteModule.tags = remoteTags;
+        }
         var baseInstalled = true;
         for (var i = 0; i < baseModuleNames.length; i++) {
             var baseModuleName = baseModuleNames[i];
-            if (localModuleNames.includes(baseModuleName) == false) {
+            if (! (baseModuleName in localModuleInfo)) {
                 baseInstalled = false;
                 break;
             }
@@ -49,8 +78,6 @@ function getLocal () {
             var div = document.getElementById('messagediv');
             div.style.display = 'none';
             div = document.getElementById('remotemodulepanels');
-            var select = document.getElementById('typefilter');
-            select.disabled = false;
             var input = document.getElementById('namefilter');
             input.disabled = false;
             var div = document.getElementById('moduledetaildiv_store');
@@ -78,26 +105,146 @@ function getLocal () {
             addEl(div, button);
             div = document.getElementById('remotemodulepanels');
             div.style.top = '114px';
-            var select = document.getElementById('typefilter')
-            var options = select.options;
-            for (var i = 0; i < options.length; i++) {
-                var option = options[i];
-                if (option.value == 'base') {
-                    select.selectedIndex = i;
-                    break;
+        }
+        populateStoreTagPanel();
+	});
+}
+
+function getRemote () {
+	$.ajax({
+        url: '/store/remote',
+        async: true,
+        success: function(data){
+            remoteModuleInfo = data;
+            for (var moduleName in remoteModuleInfo) {
+                var moduleInfo = remoteModuleInfo[moduleName];
+                if (! ('tags' in moduleInfo)) {
+                    moduleInfo.tags = [];
+                }
+                if (baseModuleNames.indexOf(moduleName) >= 0) {
+                    moduleInfo.tags.push('base');
+                }
+                if (moduleInfo.type == 'annotator') {
+                    moduleInfo.tags.push('annotator');
                 }
             }
-            var event = new Event('change');
-            select.dispatchEvent(event);
-            //updateFilter();
-            /*
-            var select = document.getElementById('typefilter');
-            select.disabled = true;
-            var input = document.getElementById('namefilter');
-            input.disabled = true;
-            */
+            var modules = Object.keys(remoteModuleInfo);
+            for (var i = 0; i < modules.length; i++) {
+                var module = modules[i];
+                var moduleInfo = remoteModuleInfo[module];
+                if (moduleInfo['queued'] == true) {
+                    installInfo[module] = {'msg': 'queued'};
+                }
+            }
+            getLocal();
         }
 	});
+}
+
+function removeElementFromArrayByValue (a, e) {
+    var idx = a.indexOf(e);
+    if (idx >= 0) {
+        a.splice(idx, 1);
+    }
+}
+
+function populateStoreTagPanel () {
+    /*
+    var numRemoteModule = Object.keys(remoteModuleInfo).length;
+    var taggedNumRemoteModule = 0;
+    for (var module in remoteModuleInfo) {
+        console.log('calling remote module config:', module);
+        $.ajax({
+            url: '/store/remotemoduleconfig', 
+            async: true,
+            data: {'module': module},
+            success: function (response) {
+                console.log('get remote module config:', response['name']);
+                remoteModuleInfo[response['name']]['tags'] = response['tags'];
+                taggedNumRemoteModule++;
+                if (taggedNumRemoteModule == numRemoteModule) {
+                    tagsCollected = [];
+                    for (var module in remoteModuleInfo) {
+                        var tags = remoteModuleInfo[module].tags;
+                        for (var i = 0; i < tags.length; i++) {
+                            var tag = tags[i];
+                            if (tagsCollected.indexOf(tag) == -1) {
+                                tagsCollected.push[tag];
+                            }
+                        }
+                    }
+                    for (var module in localModuleInfo) {
+                        var tags = localModuleInfo[module].tags;
+                        for (var i = 0; i < tags.length; i++) {
+                            var tag = tags[i];
+                            if (tagsCollected.indexOf(tag) == -1) {
+                                tagsCollected.push(tag);
+                            }
+                        }
+                    }
+                    tagsCollected.sort();
+                    console.log(tagsCollected);
+                    var div = document.getElementById('store-tag-custom-div');
+                    for (var i = 0; i < tagsCollected.length; i++) {
+                        var tag = tagsCollected[i];
+                        var input = getEl('input');
+                        input.type = 'checkbox';
+                        input.value = tag;
+                        input.className = 'store-tag-checkbox';
+                        input.addEventListener('click', function (evt) {
+                            onStoreTagCheckboxChange();
+                        });
+                        addEl(div, input);
+                        var span = getEl('span');
+                        span.class = 'store-tag-span';
+                        span.textContent = tag;
+                        addEl(div, span);
+                        addEl(div, getEl('br'));
+                    }
+                }
+            }
+        });
+    }
+    */
+    tagsCollected = [];
+    for (var module in remoteModuleInfo) {
+        var tags = remoteModuleInfo[module].tags;
+        for (var i = 0; i < tags.length; i++) {
+            var tag = tags[i];
+            if (tagsCollected.indexOf(tag) == -1) {
+                tagsCollected.push(tag);
+            }
+        }
+    }
+    for (var module in localModuleInfo) {
+        var tags = localModuleInfo[module].tags;
+        for (var i = 0; i < tags.length; i++) {
+            var tag = tags[i];
+            if (tagsCollected.indexOf(tag) == -1) {
+                tagsCollected.push(tag);
+            }
+        }
+    }
+    removeElementFromArrayByValue(tagsCollected, 'installed');
+    removeElementFromArrayByValue(tagsCollected, 'newavailable');
+    tagsCollected.sort();
+    var div = document.getElementById('store-tag-custom-div');
+    for (var i = 0; i < tagsCollected.length; i++) {
+        var tag = tagsCollected[i];
+        var input = getEl('input');
+        input.type = 'checkbox';
+        input.value = tag;
+        input.className = 'store-tag-checkbox';
+        input.addEventListener('click', function (evt) {
+            onStoreTagCheckboxChange();
+        });
+        addEl(div, input);
+        var span = getEl('span');
+        span.class = 'store-tag-span';
+        span.textContent = tag;
+        addEl(div, span);
+        addEl(div, getEl('br'));
+    }
 }
 
 function installBaseComponents () {
@@ -106,55 +253,6 @@ function installBaseComponents () {
         if (localModuleInfo[module] == undefined || localModuleInfo[module]['exists'] == false) {
             queueInstall(module);
         }
-    }
-}
-
-function getRemote () {
-	$.get('/store/remote').done(function(data){
-        remoteModuleInfo = data;
-        var modules = Object.keys(remoteModuleInfo);
-        for (var i = 0; i < modules.length; i++) {
-            var module = modules[i];
-            var moduleInfo = remoteModuleInfo[module];
-            if (moduleInfo['queued'] == true) {
-                installInfo[module] = {'msg': 'queued'};
-            }
-        }
-        populateTypeFilter();
-        getLocal();
-	});
-}
-
-function populateTypeFilter () {
-    var moduleNames = Object.keys(remoteModuleInfo);
-    var types = [''];
-    var select = document.getElementById('typefilter');
-    if (select == null) {
-        return;
-    }
-    types.push('base');
-    for (var i = 0; i < moduleNames.length; i++) {
-        var moduleName = moduleNames[i];
-        var info = remoteModuleInfo[moduleName];
-        var type = info['type'];
-        if (types.includes(type)) {
-            continue;
-        } else if (type == 'aggregator' || type == 'postaggregator') {
-            continue;
-        } else {
-            types.push(type);
-        }
-    }
-    types.sort();
-    for (var i = 0; i < types.length; i++) {
-        var option = getEl('option');
-        var type = types[i];
-        option.value = type;
-        option.innerText = type;
-        if (type == filter['type']) {
-            option.selected = true;
-        }
-        addEl(select, option);
     }
 }
 
@@ -169,13 +267,17 @@ function updateFilter () {
     var nameinput = document.getElementById('namefilter');
     var nameStr = nameinput.value;
     filter = {};
+    // Name filter
     if (nameStr != '') {
         filter['name'] = [nameStr];
     }
-    var typeStr = document.getElementById('typefilter').value;
-    if (typeStr != '') {
-        filter['type'] = typeStr;
+    // Tag filter
+    var checkboxes = $('.store-tag-checkbox:checked');
+    var tags = [];
+    for (var i = 0; i < checkboxes.length; i++) {
+        tags.push(checkboxes[i].value);
     }
+    filter['tags'] = tags;
     updateRemotePanels();
 }
 
@@ -200,20 +302,20 @@ function getRemoteModulePanel (moduleName) {
         addEl(storediv, dialog);
         evt.stopPropagation();
     }
-    var img = getLogo(moduleName);
-    img.onerror = function () {
+    var img = getLogo(moduleName, onImgLoad, onImgError, sdiv);
+    function onImgError (moduleName, img, sdiv) {
         img.src = '/store/genericmodulelogo.png';
         var span = getEl('div');
         span.className = 'moduletile-title';
-        span.textContent = moduleInfo.title;
-        if (moduleInfo.title.length > 30) {
+        var title = remoteModuleInfo[moduleName].title;
+        span.textContent = title
+        if (title.length > 30) {
             span.style.fontSize = '30px';
         }
         addEl(sdiv, span);
     }
-    img.onload = function () {
-        this.onload = null;
-        var sdiv = document.getElementById('logodiv_' + moduleName);
+    function onImgLoad (moduleName, img, sdiv) {
+        img.onload = null;
         addEl(sdiv, img);
     }
     img.style.top = '0';
@@ -297,10 +399,7 @@ function getRemoteModulePanel (moduleName) {
         }
     }
     if (installStatus == 'Installed') {
-        var localVersion = localModuleInfo[moduleName].version;
-        var remoteVersion = getHighestVersionForRemoteModule(moduleName);
-        c = compareVersion(remoteVersion, localVersion);
-        if (c > 0) {
+        if (remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
             var img3 = getEl('img');
             img3.src = '/store/new.png';
             img3.title = 'New module available';
@@ -322,6 +421,7 @@ function getFilteredRemoteModules () {
         if (hasFilter) {
             var typeYes = false;
             var nameYes = false;
+            var tagYes = false;
             if (filter['type'] != undefined && filter['type'] != '') {
                 if (filter['type'] == 'base') {
                     if (baseModuleNames.includes(remoteModuleName)) {
@@ -340,7 +440,6 @@ function getFilteredRemoteModules () {
                 typeYes = true;
             }
             if (filter['name'] != undefined && filter['name'] != '') {
-                var nameYes = false;
                 for (var j = 0; j < filter['name'].length; j++) {
                     var queryStr = filter['name'][j].toLowerCase();
                     if (remoteModule['title'].toLowerCase().includes(queryStr) || remoteModule['description'].toLowerCase().includes(queryStr)) {
@@ -351,21 +450,74 @@ function getFilteredRemoteModules () {
             } else {
                 nameYes = true;
             }
+            if (filter['tags'] != undefined && filter['tags'].length > 0) {
+                var checkbox = document.getElementById('store-tag-andor-checkbox');
+                var op = 'and';
+                if (checkbox.checked) {
+                    op = 'or';
+                }
+                if (op == 'and') {
+                    tagYes = true;
+                    for (var j = 0; j < filter['tags'].length; j++) {
+                        if (remoteModule['tags'].indexOf(filter['tags'][j]) == -1) {
+                            tagYes = false;
+                            break;
+                        }
+                    }
+                } else if (op == 'or') {
+                    tagYes = false;
+                    for (var j = 0; j < filter['tags'].length; j++) {
+                        if (remoteModule['tags'].indexOf(filter['tags'][j]) >= 0) {
+                            tagYes = true;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                tagYes = true;
+            }
         } else {
             typeYes = true;
             nameYes = true;
+            tagYes = true;
         }
-        if (typeYes && nameYes) {
+        if (typeYes && nameYes && tagYes) {
             filteredRemoteModules[remoteModuleName] = remoteModule;
         }
     }
     return filteredRemoteModules;
 }
 
+function getSortedFilteredRemoteModuleNames () {
+    var sel = document.getElementById('store-sort-select');
+    var option = sel.options[sel.selectedIndex];
+    var sortKey = option.value;
+    var filteredRemoteModules = getFilteredRemoteModules();
+    var sortedNames = null;
+    if (sortKey == 'name') {
+        sortedNames = Object.keys(filteredRemoteModules);
+        sortedNames.sort();
+    } else if (sortKey == 'size') {
+        sortedNames = Object.keys(filteredRemoteModules);
+        for (var i = 0; i < sortedNames.length - 1; i++) {
+            for (var j = i + 1; j < sortedNames.length; j++) {
+                var size1 = filteredRemoteModules[sortedNames[i]].size;
+                var size2 = filteredRemoteModules[sortedNames[j]].size;
+                if (size1 < size2) {
+                    var tmp = sortedNames[i];
+                    sortedNames[i] = sortedNames[j];
+                    sortedNames[j] = tmp;
+                }
+            }
+        }
+    }
+    return sortedNames;
+}
+
 function updateRemotePanels () {
     var div = document.getElementById('remotemodulepanels');
     emptyElement(div);
-    var remoteModuleNames = Object.keys(getFilteredRemoteModules());
+    var remoteModuleNames = getSortedFilteredRemoteModuleNames();
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
         if (remoteModuleName.startsWith('chasmplus_')) {
@@ -380,7 +532,7 @@ function updateRemotePanels () {
     }
 }
 
-function getLogo (moduleName) {
+function getLogo (moduleName, onImgLoad, onImgError, sdiv) {
     var moduleInfo = remoteModuleInfo[moduleName];
     var img = null;
     if (moduleInfo == undefined) {
@@ -389,11 +541,22 @@ function getLogo (moduleName) {
     } else {
         img = getEl('img');
         var logoUrl = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
-        img.src = logoUrl;
         img.style.maxWidth = '100%';
         img.style.maxHeight = '100%';
         img.style.width = 'auto';
         img.style.height = 'auto';
+        img.onload = function (evt) {
+            onImgLoad(moduleName, img, sdiv);
+        }
+        img.onerror = function (evt) {
+            evt.stopPropagation();
+            evt.preventDefault();
+            onImgError(moduleName, img, sdiv);
+        }
+        try {
+            img.src = logoUrl;
+        } catch (e) {
+        }
     }
     return img;
 }
@@ -435,16 +598,33 @@ function activateDetailDialog (moduleName) {
     td.style.width = '120px';
     td.style.border = '0px';
     addEl(tr, td);
-    var img = getLogo(moduleName);
-    img.onerror = function () {
+    var sdiv = td;
+    var img = getLogo(moduleName, imgOnLoad, imgOnError, sdiv);
+    function imgOnError (moduleName, img, sdiv) {
+        img.src = '/store/genericmodulelogo.png';
+        /*
+        var span = getEl('div');
+        var title = remoteModuleInfo[moduleName].title;
+        span.textContent = title
+        if (title.length > 30) {
+            span.style.fontSize = '14px';
+        } else {
+            span.style.fontSize = '20px';
+        }
+        span.style.fontWeight = 'bold';
+        addEl(sdiv, span);
+        */
+        /*
+        addEl(sdiv, span);
         var span = getEl('div');
         span.style.fontSize = '20px';
         span.style.fontWeight = 'bold';
-        span.textContent = moduleInfo.title;
-        addEl(document.getElementById('moduledetaillogotd'), span);
+        span.textContent = remoteModuleInfo[moduleName].title;
+        addEl(sdiv, span);
+        */
     }
-    img.onload = function () {
-        addEl(document.getElementById('moduledetaillogotd'), this);
+    function imgOnLoad (moduleName, img, sdiv) {
+        addEl(sdiv, img);
     }
     td = getEl('td');
     td.style.border = '0px';
@@ -646,7 +826,7 @@ function activateDetailDialog (moduleName) {
             var span = getEl('span');
             span.textContent = ' (' + localVersion + ' installed)';
             addEl(d, span);
-            if (compareVersion(remoteVersion, localVersion) > 0) {
+            if (moduleInfo.newAvailabe > 0) {
                 addEl(d, getEl('br'));
                 var span = getEl('span');
                 span.style.color = 'red';
@@ -942,6 +1122,17 @@ function getBaseModuleNames () {
     $.get('/store/getbasemodules').done(function (response) {
         baseModuleNames = response;
     });
+}
+
+function onStoreTagCheckboxChange () {
+    updateFilter();
+}
+
+function onClickStoreTagResetButton () {
+    $('.store-tag-checkbox').each(function () {
+        this.checked = false;
+    });
+    updateFilter();
 }
 
 function webstore_run () {

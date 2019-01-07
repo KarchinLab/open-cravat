@@ -106,6 +106,10 @@ class LocalModuleInfo (object):
         else:
             self.title = self.name
         self.disk_size = None
+        if 'tags' in self.conf:
+            self.tags = self.conf['tags']
+        else:
+            self.tags = []
 
     def is_valid_module(self):
         r = self.exists
@@ -908,6 +912,10 @@ def get_latest_package_version():
 
 def get_current_package_version():
     return pkg_resources.get_distribution('open-cravat').version    
+
+def get_remote_module_config (module_name):
+    conf = mic.get_remote_config(module_name)
+    return conf
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
