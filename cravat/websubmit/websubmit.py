@@ -31,24 +31,6 @@ class FileRouter(object):
 
     async def get_jobs_dir (self, request):
         root_jobs_dir = au.get_jobs_dir()
-        '''
-        session = await get_session(request)
-        if servermode:
-            if 'logged' in session:
-                if session['logged'] != True:
-                    session['username'] = ''
-                    session['logged'] = False
-                    return None
-                else:
-                    username = session['username']
-            else:
-                session['logged'] = False
-                session['username'] = ''
-                return None
-        else:
-            username = 'default'
-        session['username'] = username
-        '''
         username = 'default'
         jobs_dir = os.path.join(root_jobs_dir, username)
         return jobs_dir
@@ -69,11 +51,28 @@ class FileRouter(object):
         jobs_dir = await self.job_dir(request, job_id)
         return os.path.join(jobs_dir, output_fname)
 
+    async def get_job_orig_input_fname (request, job_id):
+        job_dir = await self.job_dir(request, job_id)
+        fns = os.listdir(job_dir)
+        orig_input_fname = None
+        for fn in fns:
+            if fn.endswith('.status.json'):
+                with open(os.path.join(job_dir, fn)) as f:
+                    statusjson = json.loads(f.readline())
+                    if 'orig_input_fname' in statusjson:
+                        orig_input_fname = statusjson['orig_input_fname']
+            elif fn.endswith('.info.yaml'):
+                with open(os.path.join(job_dir, fn)) as f:
+                    infojson = yaml.load(f)
+                    if 'orig_input_fname' in infojson:
+                        orig_input_fname = infojson['orig_input_fname']
+        return os.path.join(job_dir, orig_input_fname)
+
     async def job_report(self, request, job_id, report_type):
         ext = self.report_extensions.get(report_type, '.'+report_type)
-        report_fname = self.input_fname+ext
-        jobs_dir = await self.job_dir(request, job_id)
-        return os.path.join(jobs_dir, report_fname)
+        orig_input_fname = await self.get_job_orig_input_fname(request, job_id)
+        report_fname = orig_input_fname + ext
+        return report_fname
 
     async def job_status_file(self, request, job_id):
         status_fname = 'input.status.json'
@@ -94,31 +93,14 @@ class FileRouter(object):
         return statusjson
         
     async def job_log(self, request, job_id):
-        job_dir = await self.job_dir(request, job_id)
-        fns = os.listdir(job_dir)
-        log_fn = None
-        for fn in fns:
-            if fn.endswith('.status.json'):
-                with open(os.path.join(job_dir, fn)) as f:
-                    statusjson = json.loads(f.readline())
-                    if 'orig_input_fname' in statusjson:
-                        log_fn = statusjson['orig_input_fname']
-            elif fn.endswith('.info.yaml'):
-                with open(os.path.join(job_dir, fn)) as f:
-                    infojson = yaml.load(f)
-                    if 'orig_input_fname' in infojson:
-                        log_fn = infojson['orig_input_fname']
-        if log_fn is not None:
-            log_fname = os.path.join(job_dir, log_fn + '.log')
+        orig_input_fname = self.get_job_orig_input_fname(request, job_id)
+        if orig_input_fname is not None:
+            log_fname = orig_input_fname + '.log'
             if os.path.exists(log_fname) == False:
                 log_fname = None
         else:
             log_fname = None
-        if log_fname != None:
-            return log_fname
-        else:
-            return None
-
+        return log_fname
 
 class WebJob(object):
     def __init__(self, job_dir, job_status_fpath):
@@ -138,12 +120,6 @@ class WebJob(object):
 
     def set_info_values(self, **kwargs):
         self.set_values(**kwargs)
-
-    '''
-    def write_info_file(self):
-        with open(self.job_info_fpath,'w') as wf:
-            yaml.dump(self.get_info_dict(), wf, default_flow_style=False)
-    '''
 
     def get_info_dict(self):
         return self.info
