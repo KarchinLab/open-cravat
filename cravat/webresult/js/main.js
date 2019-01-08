@@ -223,7 +223,12 @@ function loadData (alertFlag, finalcallback) {
 		if (finalcallback) {
 			finalcallback();
 		}
-		populateSummaryWidgetDiv();
+        try {
+            populateSummaryWidgetDiv();
+        } catch (e) {
+            console.log(e);
+            console.trace();
+        }
 		if (currentTab == 'info') {
 			changeMenu();
 		}
