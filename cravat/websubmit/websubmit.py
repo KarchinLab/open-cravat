@@ -61,8 +61,21 @@ class FileRouter(object):
             return os.path.join(jobs_dir, job_id)
 
     async def job_input(self, request, job_id):
-        jobs_dir = await self.job_dir(request, job_id)
-        return os.path.join(jobs_dir, self.input_fname)
+        job_dir, statusjson = await filerouter.job_status(request, job_id)
+        orig_input_fname = None
+        if 'orig_input_fname' in statusjson:
+            orig_input_fname = statusjson['orig_input_fname']
+        else:
+            fns = os.listdir(job_dir)
+            for fn in fns:
+                if fn.endswith('.crv'):
+                    orig_input_fname = fn[:-4]
+                    break
+        if orig_input_fname is not None:
+            orig_input_path = os.path.join(job_dir, orig_input_fname)
+        else:
+            orig_input_path = None
+        return orig_input_path
 
     async def job_db(self, request, job_id):
         output_fname = self.input_fname+self.db_extension
@@ -71,14 +84,9 @@ class FileRouter(object):
 
     async def job_report(self, request, job_id, report_type):
         ext = self.report_extensions.get(report_type, '.'+report_type)
-        report_fname = self.input_fname+ext
-        jobs_dir = await self.job_dir(request, job_id)
-        return os.path.join(jobs_dir, report_fname)
-
-    async def job_status_file(self, request, job_id):
-        status_fname = 'input.status.json'
-        jobs_dir = await self.job_dir(request, job_id)
-        return os.path.join(jobs_dir, status_fname)
+        orig_input_path = await self.job_input(request, job_id)
+        report_path = orig_input_path + ext
+        return report_path
 
     async def job_status (self, request, job_id):
         job_dir = await self.job_dir(request, job_id)
@@ -91,34 +99,45 @@ class FileRouter(object):
             elif fn.endswith('.info.yaml'):
                 with open(os.path.join(job_dir, fn)) as f:
                     statusjson = yaml.load(f)
-        return statusjson
-        
-    async def job_log(self, request, job_id):
+        return job_dir, statusjson
+
+    '''
+    def get_orig_input_path (self, request, job_id):
         job_dir = await self.job_dir(request, job_id)
         fns = os.listdir(job_dir)
-        log_fn = None
+        orig_input_fname = None
         for fn in fns:
             if fn.endswith('.status.json'):
                 with open(os.path.join(job_dir, fn)) as f:
                     statusjson = json.loads(f.readline())
                     if 'orig_input_fname' in statusjson:
-                        log_fn = statusjson['orig_input_fname']
+                        orig_input_fname = statusjson['orig_input_fname']
             elif fn.endswith('.info.yaml'):
                 with open(os.path.join(job_dir, fn)) as f:
                     infojson = yaml.load(f)
                     if 'orig_input_fname' in infojson:
-                        log_fn = infojson['orig_input_fname']
-        if log_fn is not None:
-            log_fname = os.path.join(job_dir, log_fn + '.log')
-            if os.path.exists(log_fname) == False:
-                log_fname = None
+                        orig_input_fname = infojson['orig_input_fname']
+        if orig_input_fname is not None:
+            orig_input_path = os.path.join(job_dir, orig_input_fname + '.log')
+            if os.path.exists(orig_input_path) == False:
+                orig_input_path = None
         else:
-            log_fname = None
-        if log_fname != None:
-            return log_fname
+            orig_input_path = None
+        return orig_input_path
+    '''
+
+    async def job_log (self, request, job_id):
+        orig_input_path = await self.job_input(request, job_id)
+        if orig_input_path is not None:
+            log_path = orig_input_path + '.log'
+            if os.path.exists(log_path) == False:
+                log_path = None
+        else:
+            log_path = None
+        if log_path != None:
+            return log_path
         else:
             return None
-
 
 class WebJob(object):
     def __init__(self, job_dir, job_status_fpath):
@@ -359,10 +378,9 @@ def get_report_types(request):
 async def generate_report(request):
     global filerouter
     job_id = request.match_info['job_id']
-    statusjson = await filerouter.job_status(request, job_id)
     report_type = request.match_info['report_type']
     if report_type in get_valid_report_types():
-        job_input = statusjson['orig_input_path']
+        job_input = await filerouter.job_input(request, job_id)
         cmd_args = ['cravat', job_input]
         cmd_args.append('--str')
         cmd_args.extend(['-t', report_type])
