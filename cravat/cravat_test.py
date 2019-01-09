@@ -34,7 +34,7 @@ class Tester():
         self.log_path = os.path.join(self.out_dir,'test.log')    #put the output of this program in test.log
         self.cravat_run = os.path.join(cur_dir, 'runcravat.py')
         self.out_path = os.path.join(self.out_dir, 'input.tsv') 
-        self.log = open(self.log_path,'w')
+        self.log = open(self.log_path, 'w', encoding='UTF-8')
         self.start_time = None
         self.end_time = None
         self.failures = []
