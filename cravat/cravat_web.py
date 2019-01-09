@@ -160,7 +160,7 @@ class WebServer (object):
         self.app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
         self.app.router.add_static('/submit', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
         ws.start_worker()
-        
+
 def main ():
     '''
     if servermode:
@@ -205,6 +205,9 @@ def main ():
         import traceback
         traceback.print_exc()
     '''
+    def wakeup ():
+        loop.call_later(0.1, wakeup)
+
     serv = get_server()
     try:
         s = socket.socket()
@@ -215,6 +218,7 @@ def main ():
         return
     print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
     loop = asyncio.get_event_loop()
+    loop.call_later(0.1, wakeup)
     server = WebServer(loop=loop)
     try:
         loop.run_forever()
