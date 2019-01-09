@@ -132,7 +132,12 @@ class TCPSitePatched (web_runner.BaseSite):
         self._server = await self.loop.create_server(self._runner.server, self._host, self._port, ssl=self._ssl_context, backlog=self._backlog, reuse_address=self._reuse_address, reuse_port=self._reuse_port)
 
 class WebServer (object):
-    def __init__ (self, host='localhost', port='8060', loop=None):
+    def __init__ (self, host=None, port=None, loop=None):
+        serv = get_server()
+        if host is None:
+            host = serv['host']
+        if port is None:
+            port = serv['port']
         self.host = host
         self.port = port
         if loop is None:
