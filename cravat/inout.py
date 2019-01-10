@@ -133,7 +133,7 @@ class CravatReader (CravatFile):
 
     def _loop_definition(self):
         encoding = detect_encoding(self.path)
-        sys.stderr.write('loop definition [' + self.path + ']. encoding=' + str(encoding) + '\n')
+        #sys.stderr.write('loop definition [' + self.path + ']. encoding=' + str(encoding) + '\n')
         f = open(self.path, encoding=encoding)
         for l in f:
             l = l.rstrip().lstrip()
@@ -145,7 +145,7 @@ class CravatReader (CravatFile):
 
     def _loop_data(self):
         encoding = detect_encoding(self.path)
-        sys.stderr.write('loop data [' + self.path + ']. encoding=' + str(encoding) + '\n')
+        #sys.stderr.write('loop data [' + self.path + ']. encoding=' + str(encoding) + '\n')
         f = open(self.path, 'rb')
         lnum = 0
         for l in f:
