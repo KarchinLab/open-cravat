@@ -8,6 +8,7 @@ import json
 import csv
 from io import StringIO
 from cravat.util import detect_encoding
+import sys
 
 csv.register_dialect('cravat', delimiter=',', quotechar='@')
 
@@ -132,6 +133,7 @@ class CravatReader (CravatFile):
 
     def _loop_definition(self):
         encoding = detect_encoding(self.path)
+        sys.stderr.write('loop definition [' + self.path + ']. encoding=' + str(encoding) + '\n')
         f = open(self.path, encoding=encoding)
         for l in f:
             l = l.rstrip().lstrip()
@@ -143,9 +145,11 @@ class CravatReader (CravatFile):
 
     def _loop_data(self):
         encoding = detect_encoding(self.path)
-        f = open(self.path, encoding=encoding)
+        sys.stderr.write('loop data [' + self.path + ']. encoding=' + str(encoding) + '\n')
+        f = open(self.path, 'rb')
         lnum = 0
         for l in f:
+            l = l.decode(encoding)
             lnum += 1
             l = l.rstrip('\r\n')
             if l.startswith('#'):
@@ -160,7 +164,8 @@ class CravatWriter(CravatFile):
                  include_titles=True,
                  titles_prefix='#'):
         super().__init__(path)
-        self.wf = open(self.path,'w', encoding='UTF-8')
+        self.wf = open(self.path,'w', encoding='utf-8')
+        sys.stderr.write('writing [' + self.path + ']. encoding=' + self.wf.encoding + '\n')
         self._ready_to_write = False
         self.ordered_columns = []
         self.name_to_col_index = {}
