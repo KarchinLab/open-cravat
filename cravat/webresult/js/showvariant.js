@@ -11,7 +11,7 @@ function getWidgetTableFrame (columnWidths) {
 	return table;
 }
 
-function getWidgetTableHead (headers) {
+function getWidgetTableHead (headers, widths) {
 	var thead = getEl('thead');
 	thead.style.textAlign = 'left';
 	thead.style.borderBottom = widgetTableBorderStyle;
@@ -22,6 +22,9 @@ function getWidgetTableHead (headers) {
 		if (i < numBorder) {
 			th.style.borderRight = widgetTableBorderStyle;
 		}
+		if (widths != undefined){
+			th.style.width = widths[i];
+		}
 		addEl(th, getTn(headers[i]));
 		addEl(tr, th);
 	}
@@ -29,14 +32,14 @@ function getWidgetTableHead (headers) {
 	return thead;
 }
 
-function getWidgetTableTr (values) {
+function getWidgetTableTr (values,linkNames) {
 	var numBorder = values.length - 1;
+	var linkNameItr = 0;
 	var tr = getEl('tr');
 	tr.style.borderBottom = '1px solid #cccccc';
 	for (var i = 0; i < values.length; i++) {
 		var td = getEl('td');
 		var p = getEl('p');
-		p.style.wordWrap = 'break-word';
 		if (i < numBorder) {
 			td.style.borderRight = widgetTableBorderStyle;
 		}
@@ -48,7 +51,13 @@ function getWidgetTableTr (values) {
 			spanText = document.createElement('a');
 			spanText.href = value;
 			spanText.target = '_blank';
-			addEl(td, addEl(spanText, getTn('Link')));
+			if(linkNames != undefined){
+				addEl(td, addEl(spanText, getTn(linkNames[linkNameItr])));
+				linkNameItr += 1;
+			}
+			else{
+				addEl(td, addEl(spanText, getTn('Link')));
+			}
 		}
 		else{
 			addEl(td, addEl(p, getTn(value)));
