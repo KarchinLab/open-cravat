@@ -165,7 +165,7 @@ class CravatWriter(CravatFile):
                  titles_prefix='#'):
         super().__init__(path)
         self.wf = open(self.path,'w', encoding='utf-8')
-        sys.stderr.write('writing [' + self.path + ']. encoding=' + self.wf.encoding + '\n')
+        #sys.stderr.write('writing [' + self.path + ']. encoding=' + self.wf.encoding + '\n')
         self._ready_to_write = False
         self.ordered_columns = []
         self.name_to_col_index = {}
