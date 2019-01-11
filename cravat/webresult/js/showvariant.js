@@ -47,7 +47,7 @@ function getWidgetTableTr (values,linkNames) {
 		if (value == null) {
 			value = '';
 		}
-		if(value.startsWith('http')){
+		if(typeof value == 'string' && value.startsWith('http')){
 			spanText = document.createElement('a');
 			spanText.href = value;
 			spanText.target = '_blank';
