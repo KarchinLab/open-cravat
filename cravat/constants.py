@@ -35,7 +35,9 @@ crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
            {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 60},
            {'name':'pos', 'title':'Position', 'type':'int', 'width': 80},
            {'name':'ref_base', 'title':'Ref Base', 'type':'string', 'width': 80},
-           {'name':'alt_base', 'title':'Alt Base', 'type':'string', 'width': 80}]
+           {'name':'alt_base', 'title':'Alt Base', 'type':'string', 'width': 80},
+           {'name': 'note', 'title': 'Note', 'type': 'string', 'width': 100},
+           ]
 crv_idx = [['uid']]
 crx_def = crv_def + \
           [{'name':'coding', 'title':'Coding', 'type':'string', 'width': 50, 'category': 'single'},
@@ -83,7 +85,8 @@ crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70},
                    'STG', 
                    'FSD', 
                    'FSI']},
-           {'name':'all_so', 'title':'All Sequence Ontologies', 'type':'string', 'width': 190}
+           {'name':'all_so', 'title':'All Sequence Ontologies', 'type':'string', 'width': 190},
+           {'name': 'note', 'title': 'Note', 'type': 'string', 'width': 100},
           ]
 crg_idx = [['hugo']]
 crt_def = [{'name':'primary_transcript', 'title':'Primary transcript', 

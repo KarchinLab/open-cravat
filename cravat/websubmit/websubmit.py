@@ -158,12 +158,6 @@ class WebJob(object):
     def set_info_values(self, **kwargs):
         self.set_values(**kwargs)
 
-    '''
-    def write_info_file(self):
-        with open(self.job_info_fpath,'w') as wf:
-            yaml.dump(self.get_info_dict(), wf, default_flow_style=False)
-    '''
-
     def get_info_dict(self):
         return self.info
 
