@@ -18,7 +18,7 @@ from cravat.webresult import webresult as wr
 from cravat.webstore import webstore as ws
 from cravat.websubmit import websubmit as wu
 import websockets
-from aiohttp import web
+from aiohttp import web, web_runner
 import socket
 import base64
 #from cryptography import fernet
@@ -26,6 +26,7 @@ import base64
 #from aiohttp_session.cookie_storage import EncryptedCookieStorage
 import hashlib
 import platform
+import asyncio
 
 donotopenbrowser = False
 
@@ -105,6 +106,66 @@ def get_server():
     server['port'] = port
     return server
 
+class TCPSitePatched (web_runner.BaseSite):
+    __slots__ = ('loop', '_host', '_port', '_reuse_address', '_reuse_port')
+    def __init__ (self, runner, host=None, port=None, *, shutdown_timeout=60.0, ssl_context=None, backlog=128, reuse_address=None, reuse_port=None, loop=None):
+        super().__init__(runner, shutdown_timeout=shutdown_timeout, ssl_context=ssl_context, backlog=backlog)
+        if loop is None:
+            loop = asyncio.get_event_loop()
+        self.loop = loop
+        if host is None:
+            host = '0.0.0.0'
+        self._host = host
+        if port is None:
+            port = 8443 if self._ssl_context else 8080
+        self._port = port
+        self._reuse_address = reuse_address
+        self._reuse_port = reuse_port
+
+    @property
+    def name(self):
+        scheme = 'https' if self._ssl_context else 'http'
+        return str(URL.build(scheme=scheme, host=self._host, port=self._port))
+
+    async def start(self):
+        await super().start()
+        self._server = await self.loop.create_server(self._runner.server, self._host, self._port, ssl=self._ssl_context, backlog=self._backlog, reuse_address=self._reuse_address, reuse_port=self._reuse_port)
+
+class WebServer (object):
+    def __init__ (self, host=None, port=None, loop=None):
+        serv = get_server()
+        if host is None:
+            host = serv['host']
+        if port is None:
+            port = serv['port']
+        self.host = host
+        self.port = port
+        if loop is None:
+            loop = asyncio.get_event_loop()
+        self.loop = loop
+        asyncio.ensure_future(self.start(), loop=self.loop)
+
+    async def start (self):
+        self.app = web.Application(loop=self.loop)
+        self.setup_routes()
+        self.runner = web.AppRunner(self.app)
+        await self.runner.setup()
+        self.site = TCPSitePatched(self.runner, self.host, self.port, loop=self.loop)
+        await self.site.start()
+
+    def setup_routes (self):
+        routes = list()
+        routes.extend(ws.routes)
+        routes.extend(wr.routes)
+        routes.extend(wu.routes)
+        for route in routes:
+            method, path, func_name = route
+            self.app.router.add_route(method, path, func_name)
+        self.app.router.add_static('/store', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webstore'))
+        self.app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
+        self.app.router.add_static('/submit', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
+        ws.start_worker()
+
 def main ():
     '''
     if servermode:
@@ -149,28 +210,25 @@ def main ():
         import traceback
         traceback.print_exc()
     '''
+    def wakeup ():
+        loop.call_later(0.1, wakeup)
+
     serv = get_server()
     try:
         s = socket.socket()
         s.bind((serv.get('host'), serv.get('port')))
         s.close()
     except:
-        print('Cannot bind to same host and port')
+        print('{}:{} already in use'.format(serv['host'], serv['port']))
         return
-    app = web.Application()
-    routes = list()
-    routes.extend(ws.routes)
-    routes.extend(wr.routes)
-    routes.extend(wu.routes)
-    for route in routes:
-        method, path, func_name = route
-        app.router.add_route(method, path, func_name)
-    app.router.add_static('/store', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webstore'))
-    app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
-    app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
-    ws.start_worker()
     print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
-    web.run_app(app, port=serv.get('port'))
+    loop = asyncio.get_event_loop()
+    loop.call_later(0.1, wakeup)
+    server = WebServer(loop=loop)
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
 
 if __name__ == '__main__':
     main()
