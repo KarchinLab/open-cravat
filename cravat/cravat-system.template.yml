@@ -20,3 +20,4 @@ base_modules:
 - wgsosamplesummary
 - wgsosummary
 - wgtopgenessummary
+- wgnote
