@@ -107,7 +107,7 @@
             <img src='threedots.png' class='threedots' />
         </div>
         <div id='verdiv' >
-            Version: <span id="curverspan" style="font-family: monospace;"></span>
+            Version: <span class="curverspan" style="font-family: monospace;"></span>
         </div>
     </div>
 
@@ -211,11 +211,17 @@
         <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' onclick='onClickThreeDots();'>
             <img src='threedots.png' class='threedots' />
         </div>
+        <div id='verdiv' >
+            Version: <span class="curverspan" style="font-family: monospace;"></span>
+        </div>
     </div>
     <div id='messagediv'></div>
     <div id='storebodydiv'>
         <div id='storemenudiv'>
             <input type='text' id='namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()' style='font-size: 16px' />
+            <br />
+            <br />
+            <span onclick='onClickStoreHome();' style='text-decoration: underline; cursor: pointer;'>Home</span>
             <br />
             <br />
             <div id='store-update-all-div' style='display: none;'>
@@ -236,21 +242,37 @@
             <hr />
             <input type='checkbox' class='store-tag-checkbox' value='installed' id='store-tag-checkbox-installed' onclick='onStoreTagCheckboxChange();'/> Installed
             <br />
-            <input type='checkbox' class='store-tag-checkbox' value='newavailable' id='store-tag-checkbox-newavailable' onclick='onStoreTagCheckboxChange();'/> New available
+            <input type='checkbox' class='store-tag-checkbox' value='newavailable' id='store-tag-checkbox-newavailable' onclick='onStoreTagCheckboxChange();'/> Update available
             <br />
             <hr />
             <div id='store-tag-custom-div'></div>
         </div>
         <div>
-            <div id='store-sort-div'>
-                <span id='store-sort-label'>Sort by</span>
-                <select id='store-sort-select' onchange='updateRemotePanels();'>
-                    <option value='name'>Name</option>
-                    <option value='date'>Date</option>
-                    <option value='size'>Size</option>
-                </select>
+            <div id='store-home-div'>
+                <span class='store-home-sectiontitle'>Featured</span>
+                <br />
+                <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
+                <div id='store-home-featureddiv' class='store-home-carouseldiv'></div>
+                <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
+                <br />
+                <span class='store-home-sectiontitle'>Newest</span>
+                <br />
+                <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
+                <div id='store-home-newestdiv' class='store-home-carouseldiv'></div>
+                <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
+                <br />
             </div>
-            <div id='remotemodulepanels' ></div>
+            <div id='store-allmodule-div'>
+                <div id='store-sort-div'>
+                    <span id='store-sort-label'>Sort by</span>
+                    <select id='store-sort-select' onchange='updateRemotePanels(true);'>
+                        <option value='name'>Name</option>
+                        <option value='date'>Date</option>
+                        <option value='size'>Size</option>
+                    </select>
+                </div>
+                <div id='remotemodulepanels' ></div>
+            </div>
         </div>
     </div>
 </div> <!-- storediv -->

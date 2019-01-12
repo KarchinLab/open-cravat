@@ -12,6 +12,8 @@ var storeurl = $.get('/store/getstoreurl').done(function(response) {
     storeUrl = response;
 });
 var newModuleAvailable = false;
+var storeFirstOpen = true;
+var storeTileWidthStep = 294;
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -26,6 +28,12 @@ function getTn(text){
 function addEl (pelem, child) {
 	pelem.appendChild(child);
 	return pelem;
+}
+
+function onClickStoreHome () {
+    var homediv = document.getElementById('store-home-div');
+    homediv.style.display = 'block';
+    document.getElementById('store-allmodule-div').style.display = 'none';
 }
 
 function getLocal () {
@@ -100,7 +108,12 @@ function getLocal () {
                     activateDetailDialog(currentDetailModule);
                 }
             }
-            updateRemotePanels();
+            if (storeFirstOpen) {
+                populateStoreHome();
+            } else {
+                updateRemotePanels(false);
+            }
+            storeFirstOpen = false;
         } else {
             var div = document.getElementById('messagediv');
             emptyElement(div);
@@ -128,6 +141,49 @@ function getLocal () {
         }
         populateStoreTagPanel();
 	});
+}
+
+function populateStoreHome () {
+    document.getElementById('store-home-div').style.display = 'block';
+    document.getElementById('store-allmodule-div').style.display = 'none';
+    // Featured
+    var div = document.getElementById('store-home-featureddiv');
+    var sdiv = getEl('div');
+    var featuredModules = ['chasmplus', 'vest', 'clinvar', 'hgvs', 'biogrid'];
+    sdiv.style.width = (featuredModules.length * storeTileWidthStep) + 'px';
+    for (var i = 0; i < featuredModules.length; i++) {
+        var panel = getRemoteModulePanel(featuredModules[i]);
+        addEl(sdiv, panel);
+    }
+    addEl(div, sdiv);
+    // Newest
+    var div = document.getElementById('store-home-newestdiv');
+    var sdiv = getEl('div');
+    var newestModules = ['gtex', 'grasp', 'clinvar', 'siphy', 'civic', 'gerp', 'fathmm', 'revel'];
+    sdiv.style.width = (newestModules.length * storeTileWidthStep) + 'px';
+    for (var i = 0; i < newestModules.length; i++) {
+        var panel = getRemoteModulePanel(newestModules[i]);
+        addEl(sdiv, panel);
+    }
+    addEl(div, sdiv);
+}
+
+function onClickStoreHomeLeftArrow (el) {
+    var d = el.nextElementSibling;
+    var dw = d.offsetWidth;
+    var s = d.scrollLeft;
+    s -= Math.floor(dw / storeTileWidthStep) * storeTileWidthStep;
+    $(d).animate({scrollLeft: s});
+    //d.scrollLeft = s;
+}
+
+function onClickStoreHomeRightArrow (el) {
+    var d = el.previousElementSibling;
+    var dw = d.offsetWidth;
+    var s = d.scrollLeft;
+    s += Math.floor(dw / storeTileWidthStep) * storeTileWidthStep;
+    $(d).animate({scrollLeft: s});
+    //d.scrollLeft = s;
 }
 
 function getRemote () {
@@ -236,7 +292,7 @@ function updateFilter () {
         tags.push(checkboxes[i].value);
     }
     filter['tags'] = tags;
-    updateRemotePanels();
+    updateRemotePanels(true);
 }
 
 function getRemoteModulePanel (moduleName) {
@@ -472,7 +528,13 @@ function getSortedFilteredRemoteModuleNames () {
     return sortedNames;
 }
 
-function updateRemotePanels () {
+function updateRemotePanels (showPanel) {
+    var homediv = document.getElementById('store-home-div');
+    var allmodulediv = document.getElementById('store-allmodule-div');
+    if (showPanel) {
+        homediv.style.display = 'none';
+        allmodulediv.style.display = 'block';
+    }
     var div = document.getElementById('remotemodulepanels');
     emptyElement(div);
     var remoteModuleNames = getSortedFilteredRemoteModuleNames();
@@ -996,7 +1058,7 @@ function queueInstall (moduleName) {
         function (response) {
             installInfo[moduleName] = {'msg': 'queued'};
             installQueue.push(moduleName);
-            updateRemotePanels();
+            updateRemotePanels(false);
         }
     );
 }
@@ -1015,7 +1077,7 @@ function installModule (moduleName) {
 
 function uninstallModule(moduleName) {
     installInfo[moduleName] = {'msg': 'uninstalling'};
-    updateRemotePanels();
+    updateRemotePanels(false);
 	$.ajax({
         type:'GET',
         url:'/store/uninstall',
