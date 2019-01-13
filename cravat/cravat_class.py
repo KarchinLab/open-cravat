@@ -176,6 +176,10 @@ cravat_cmd_parser.add_argument('--note',
                     dest='note',
                     default='',
                     help='note will be written to the run status file (.status.json)')
+cravat_cmd_parser.add_argument('--mp',
+                    dest='mp',
+                    default=None,
+                    help='number of processes to use to run annotators')
 
 class Cravat (object):
     def __init__ (self, **kwargs):
@@ -628,19 +632,18 @@ class Cravat (object):
             rtime = time.time() - stime
             print('finished in {0:.3f}s'.format(rtime))
 
-    def run_annotators (self):
-        for module in self.ordered_annotators:
-            stime = time.time()
-            self.announce_module(module)
-            self.run_annotator(module)
-            rtime = time.time() - stime
-            print('finished in {0:.3f}s'.format(rtime))
-
     def run_annotators_mp (self):
         default_workers = mp.cpu_count() - 1
         if default_workers < 1: 
             default_workers = 1
         num_workers = self.conf.get_cravat_conf().get('num_workers', default_workers)
+        if self.args.mp is not None:
+            try:
+                self.args.mp = int(self.args.mp)
+                if self.args.mp >= 1 and self.args.mp <= default_workers:
+                    num_workers = self.args.mp
+            except:
+                pass
         if self.has_secondary_input:
             num_workers = 1
         self.logger.info('num_workers: {}'.format(num_workers))

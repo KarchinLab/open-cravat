@@ -171,9 +171,15 @@ class BaseAnnotator(object):
             for lnum, input_data, secondary_data in self._get_input():
                 try:
                     if secondary_data == {}:
-                        output_dict = self.annotate(input_data)
+                        try:
+                            output_dict = self.annotate(input_data)
+                        except sqlite3.OperationalError:
+                            output_dict = None
                     else:
-                        output_dict = self.annotate(input_data, secondary_data)
+                        try:
+                            output_dict = self.annotate(input_data, secondary_data)
+                        except sqlite3.OperationalError:
+                            output_dict = None
                     # This enables summarizing without writing for now.
                     if output_dict == None:
                         continue
@@ -243,10 +249,6 @@ class BaseAnnotator(object):
                                   str(e)])
             #self.invalid_file.write(err_line + '\n')
             self.logger.exception(e)
-            '''
-            if not(isinstance(e,InvalidData)):
-                self._log_exception(e, halt=False)
-            '''
         except Exception as e:
             self._log_exception(e, halt=False)
 
@@ -412,21 +414,7 @@ class BaseAnnotator(object):
     # Setup the logging utility
     def _setup_logger(self):
         try:
-            #self.logger = logging.getLogger(self.annotator_name)
             self.logger = logging.getLogger('cravat.' + self.annotator_name)
-            '''
-            self.logger.propagate = False
-            self.logger.setLevel('INFO')
-            self.log_path = os.path.join(self.output_dir, 
-                                    '.'.join([self.output_basename, 
-                                             self.annotator_name, 
-                                             'log']))
-            self.log_handler = logging.FileHandler(self.log_path, mode='w')
-            formatter = logging.Formatter(
-                '%(name)20s%(lineno)6d   %(asctime)20s   %(message)s')
-            self.log_handler.setFormatter(formatter)
-            self.logger.addHandler(self.log_handler)
-            '''
         except Exception as e:
             self._log_exception(e)
 

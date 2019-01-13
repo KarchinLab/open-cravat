@@ -13,9 +13,6 @@ def run_annotator_mp(module, cmd, log_queue):
         annotator = annotator_class(cmd)
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.INFO)
-        # Otherwise many handlers get added when using multiprocessing pool
-        if len(root_logger.handlers) == 0:
-            root_logger.addHandler(QueueHandler(log_queue))
         annotator.run()
         completion_status = 'finished'
     except:
