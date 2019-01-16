@@ -334,6 +334,8 @@ def get_result_levels (request):
         content.insert(0, 'info')
     else:
         content = []
+    content.remove('sample')
+    content.remove('mapping')
     return web.json_response(content)
 
 def get_variant_cols (request):
