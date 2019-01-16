@@ -604,7 +604,7 @@ function placeDragNSBar (tabName) {
 	}
 	var tableDiv = document.getElementById('tablediv_' + tabName);
 	var tableDivHeight = tableDiv.offsetHeight;
-	dragBar.style.top = tableDivHeight + 25;
+	dragBar.style.top = tableDivHeight + 29;
 }
 
 function placeCellValueDiv (tabName) {

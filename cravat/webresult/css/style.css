@@ -90,14 +90,14 @@ body {
 	background-color: #c1c1c1;
 	left: 150px;
 	top: 0px;
-	padding: 6px;
+	padding: 16px;
 	z-index: 2;
 }
 
 .draggableDiv {
 	background-color: #bed4dc;
 	width: 100%;
-	height:	3px;
+	height:	8px;
 	text-align: center;
 	cursor: row-resize;
 	position: relative;

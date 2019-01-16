@@ -82,7 +82,7 @@ function afterDragNSBar (self, tabName) {
 	var height_detail_div = rightDiv_height - height_table - height_bar - 55;
 	
 	$grids[tabName].pqGrid('option', 'height', height_table).pqGrid('refresh');
-	dragBar.style.top = cellValueDivTop + 24;
+	dragBar.style.top = cellValueDivTop + 29;
 	cellValueDiv.style.top = cellValueDivTop;
    
 	detailDiv.style.height = height_detail_div;
@@ -122,7 +122,7 @@ function resizesTheWindow () {
 	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 35;
 	var tableDivWidth = 'calc(100% - 10px)';
 	var cellValueDivTop = tableDivHeight - 2 ;
-	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 6;
+	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 12;
 	
 	rightDiv.style.height = rightDivHeight + 'px';
 	tableDiv.style.width = tableDivWidth;
