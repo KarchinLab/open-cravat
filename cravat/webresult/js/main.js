@@ -66,21 +66,27 @@ function getExportContent (tabName) {
 }
 
 function afterDragNSBar (self, tabName) {
-	var dragBar = self;
-	var height_bar = self.offsetHeight;
-	var dragBarTop = self.offsetTop;
 	var rightDiv = document.getElementById('rightdiv_' + tabName);
 	var tableDiv = document.getElementById('tablediv_' + tabName);
 	var detailDiv = document.getElementById('detaildiv_' + tabName);
 	var cellValueDiv = document.getElementById('cellvaluediv_' + currentTab);
-
+	var dragBar = self;
+	var height_bar = self.offsetHeight;
+	var dragBarTop = self.offsetTop;
+    var dragBarTopUpperLimit = 0;
+    if (dragBarTop < dragBarTopUpperLimit) {
+        dragBarTop = dragBarTopUpperLimit;
+    }
+    var dragBarTopLowerLimit = rightDiv.offsetHeight - 50;
+    if (dragBarTop > dragBarTopLowerLimit) {
+        dragBarTop = dragBarTopLowerLimit;
+    }
 	var rightDiv_height = rightDiv.offsetHeight;
 	var rightDiv_top = rightDiv.offsetTop;
 	var dragBarTop_relativeRightDiv = dragBarTop - rightDiv_top - 33;
 	var cellValueDivTop = dragBarTop_relativeRightDiv + 11;
 	var height_table = dragBarTop_relativeRightDiv + 10;
 	var height_detail_div = rightDiv_height - height_table - height_bar - 55;
-	
 	$grids[tabName].pqGrid('option', 'height', height_table).pqGrid('refresh');
 	dragBar.style.top = cellValueDivTop + 29;
 	cellValueDiv.style.top = cellValueDivTop;
