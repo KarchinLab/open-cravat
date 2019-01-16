@@ -211,6 +211,10 @@
         <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' onclick='onClickThreeDots();'>
             <img src='threedots.png' class='threedots' />
         </div>
+        <div id='store-update-all-div' style='display: none; position: absolute; right: 102px; bottom: 5px;'>
+            <span style='color: red; font-size: 12px;'>New version modules are available!</span>
+            <button id='store-update-all-button' onclick='onClickStoreUpdateAllButton();' style='font-size: 14px;'>Update All</button>
+        </div>
         <div id='verdiv' >
             Version: <span class="curverspan" style="font-family: monospace;"></span>
         </div>
@@ -224,13 +228,7 @@
             <span onclick='onClickStoreHome();' style='text-decoration: underline; cursor: pointer;'>Front Page</span>
             <br />
             <br />
-            <div id='store-update-all-div' style='display: none;'>
-                <span style='color: red; font-size: 12px;'>New version modules are available!</span>
-                <button id='store-update-all-button' onclick='onClickStoreUpdateAllButton();' style='font-size: 14px;'>Update All</button>
-                <br />
-                <br />
-            </div>
-            <button id='store-tag-reset-button' onclick='onClickStoreTagResetButton();' style='font-size: 14px;'>Clear Tags</button>
+            <button id='store-tag-reset-button' onclick='onClickStoreTagResetButton();' style='font-size: 14px;'>View All</button>
             &nbsp;
             <span class='store-switch-text'>and</span>
             <label class='store-switch'>
@@ -249,7 +247,7 @@
         </div>
         <div>
             <div id='store-home-div'>
-                <span class='store-home-sectiontitle'>Featured</span>
+                <span class='store-home-sectiontitle'>Most Popular</span>
                 <br />
                 <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
                 <div id='store-home-featureddiv' class='store-home-carouseldiv'></div>
