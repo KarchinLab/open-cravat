@@ -140,6 +140,9 @@ function buildJobsTable () {
             .addClass('job-table-tr');
         jobTr[0].setAttribute('jobid', ji);
         jobTr[0].addEventListener('click', function (evt) {
+            if (evt.target.parentElement.classList.contains('job-table-tr') == false) {
+                return;
+            }
             var clickedTr = evt.target.parentElement;
             var detailTr = clickedTr.nextSibling;
             if (clickedTr.classList.contains('highlighted-tr')) {
