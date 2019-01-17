@@ -187,6 +187,7 @@ function addTabHeadsAndTabContentDivs () {
 	for (var i = 0; i < resultLevels.length; i++) {
 		var resultTableLevel = resultLevels[i];
 		makeTabHeadTabBody(resultTableLevel);
+        tableDetailDivSizes[resultTableLevel] = {'status': 'both'};
 	}
 }
 

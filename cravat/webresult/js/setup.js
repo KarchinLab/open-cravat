@@ -68,6 +68,26 @@ function setupTab (tabName) {
 	changeMenu();
 }
 
+function changeTableDetailMaxButtonText () {
+    var button = document.getElementById('tabledetailmaxbutton');
+    if (currentTab != 'variant' && currentTab != 'gene') {
+        button.style.display = 'none';
+        return;
+    } else {
+        button.style.display = 'block';
+    }
+    var stat = tableDetailDivSizes[currentTab]['status'];
+    var text = null;
+    if (stat == undefined || stat == 'both') {
+        text = 'Table only';
+    } else if (stat == 'tablemax') {
+        text = 'Detail only';
+    } else if (stat == 'detailmax') {
+        text = 'Table + Detail';
+    }
+    button.textContent = text;
+}
+
 function changeMenu () {
 	if (currentTab == 'variant' || currentTab == 'gene' || currentTab == 'info') {
 		if (currentTab == 'variant' || currentTab == 'gene') {
@@ -82,6 +102,7 @@ function changeMenu () {
 		turnOffMenu('layout_columns_menu');
 		turnOffMenu('layout_widgets_menu');
 	}
+    changeTableDetailMaxButtonText();
 }
 
 function makeInfoTab (rightDiv) {
@@ -1160,51 +1181,116 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	return gridObject;
 }
 
-function minimizeOrMaxmimizeTheDetailsDiv (minimizeOrMaximizeButton, action) {
-    var tableBeingAffected = minimizeOrMaximizeButton.parentElement.parentElement.parentElement.parentElement;
-    var idOfTableAffected = tableBeingAffected.id;
-
-    var minimizeAttributeOfTableBeforeClick = tableBeingAffected.getAttribute(
-		    "minimized");
-    var setMinimizeAttributeOfTableTo = null;
-    if (minimizeAttributeOfTableBeforeClick == null) {
-	    var minimizeAttribute = document.createAttribute("minimized");
-	    setMinimizeAttributeOfTableTo = 'true';
-	    minimizeAttribute.value = setMinimizeAttributeOfTableTo;
-	    tableBeingAffected.setAttributeNode(minimizeAttribute);
-    } else {
-	    if (minimizeAttributeOfTableBeforeClick == 'true') {
-		    setMinimizeAttributeOfTableTo = 'false';
-	    } else {
-		    setMinimizeAttributeOfTableTo = 'true';
-	    }
-	    tableBeingAffected.setAttribute('minimized', 
-			    setMinimizeAttributeOfTableTo);
+function minimizeOrMaxmimizeDetailDiv () {
+    var tabName = currentTab;
+    var tableDiv = document.getElementById('tablediv_' + tabName);
+    var detailDiv = document.getElementById('detaildiv_' + tabName);
+    var rightDiv = document.getElementById('rightdiv_' + tabName);
+    if (tableDetailDivSizes[tabName] == undefined) {
+        tableDetailDivSizes[tabName] = {'status': null};
     }
+    if (tableDetailDivSizes[tabName]['status'] == null) {
+        tableDetailDivSizes[tabName] = {'tablediv': {'width': tableDiv.offsetWidth, 'height': tableDiv.offsetHeight}, 'detaildiv': {'width': detailDiv.offsetWidth, 'height': detailDiv.offsetHeight}, 'status': 'detailmax'};
+        tableDiv.style.display = 'none';
+        detailDiv.style.height = (rightDiv.offsetHeight - 10) + 'px';
+        document.getElementById('dragNorthSouthDiv_' + tabName).style.display = 'none';
+        document.getElementById('cellvaluediv_' + tabName).style.display = 'none';
+    } else {
+        if (tableDetailDivSizes[tabName]['status'] == 'tablemax') {
+            minimizeOrMaxmimizeTableDiv();
+        }
+        tableDiv.style.display = 'block';
+        detailDiv.style.height = tableDetailDivSizes[tabName]['detaildiv']['height'];
+        document.getElementById('dragNorthSouthDiv_' + tabName).style.display = 'block';
+        document.getElementById('cellvaluediv_' + tabName).style.display = 'block';
+        tableDetailDivSizes[tabName] = {'status': null};
+    }
+}
 
-    var tabAffected = idOfTableAffected.split('_')[1];
-    var rightDivWithPiecesChanging = null;
-    rightDivWithPiecesChanging = document.getElementById(
-		    'rightdiv_' + tabAffected);
-    var heightRightDivChanging = parseInt(
-		    rightDivWithPiecesChanging.offsetHeight, 10);
+function minimizeOrMaxmimizeTableDiv () {
+    var tabName = currentTab;
+    var tableDiv = document.getElementById('tablediv_' + tabName);
+    var detailDiv = document.getElementById('detaildiv_' + tabName);
+    var rightDiv = document.getElementById('rightdiv_' + tabName);
+    if (tableDetailDivSizes[tabName] == undefined) {
+        tableDetailDivSizes[tabName] = {'status': null};
+    }
+    if (tableDetailDivSizes[tabName]['status'] == null) {
+        if (tableDetailDivSizes[tabName]['status'] == 'detailmax') {
+            minimizeOrMaxmimizeDetailDiv();
+        }
+        tableDetailDivSizes[tabName] = {'tablediv': {'width': tableDiv.offsetWidth, 'height': tableDiv.offsetHeight}, 'detaildiv': {'width': detailDiv.offsetWidth, 'height': detailDiv.offsetHeight}, 'status': 'tablemax'};
+        var tableHeight = rightDiv.offsetHeight;
+        tableDiv.style.height = tableHeight + 'px';
+        $grids[tabName].pqGrid('option', 'height', tableHeight).pqGrid('refresh');
+        detailDiv.style.display = 'none';
+        document.getElementById('dragNorthSouthDiv_' + tabName).style.display = 'none';
+        document.getElementById('cellvaluediv_' + tabName).style.display = 'none';
+    } else {
+        detailDiv.style.display = 'block';
+        var tableHeight = tableDetailDivSizes[tabName]['tablediv']['height'];
+        tableDiv.style.height = tableHeight + 'px';
+        $grids[tabName].pqGrid('option', 'height', tableHeight).pqGrid('refresh');
+        document.getElementById('dragNorthSouthDiv_' + tabName).style.display = 'block';
+        document.getElementById('cellvaluediv_' + tabName).style.display = 'block';
+        tableDetailDivSizes[tabName] = {'status': null};
+    }
+}
 
-    var changeHeightOfDetailsDiv = true;
-
-    changeHeightOfDetailsDiv = true;
-    if (changeHeightOfDetailsDiv == true){
-	    setTimeout(function(){
-		    var heightTableNow = parseInt(tableBeingAffected.offsetHeight, 10);
-		    var detailDivAffected = document.getElementById(
-				    'detaildiv_' + tabAffected);
-		    var heightDragBarNS = null;
-		    detailDivAffected = document.getElementById(
-				    'detaildiv_' + tabAffected);
-		    heightDragBarNS = parseInt(document.getElementById(
-				    'dragNorthSouthDiv_' + tabAffected).offsetHeight, 10);
-		    var newHeightOfDetailDiv = heightRightDivChanging - heightTableNow 
-		   			- heightDragBarNS - ARBITRARY_HEIGHT_SUBTRACTION;
-		   detailDivAffected.style.height = newHeightOfDetailDiv;
-	   }, 400);   
-   }
+function minimizeOrMaxmimizeTableDetailDiv () {
+    var tabName = currentTab;
+    if (tabName != 'variant' && tabName != 'gene') {
+        return;
+    }
+    var tableDiv = document.getElementById('tablediv_' + tabName);
+    var detailDiv = document.getElementById('detaildiv_' + tabName);
+    var detailContainerDiv = document.getElementById('detailcontainerdiv_' + tabName);
+    var rightDiv = document.getElementById('rightdiv_' + tabName);
+    var drag = document.getElementById('dragNorthSouthDiv_' + tabName);
+    var cell = document.getElementById('cellvaluediv_' + tabName);
+    var maxHeight = rightDiv.offsetHeight - 10;
+    if (tableDetailDivSizes[tabName] == undefined) {
+        tableDetailDivSizes[tabName] = {'status': 'both'};
+    }
+    var stat = tableDetailDivSizes[tabName]['status'];
+    if (stat == 'both') {
+        tableDetailDivSizes[tabName]['tableheight'] = tableDiv.offsetHeight;
+        tableDetailDivSizes[tabName]['detailheight'] = detailDiv.offsetHeight;
+    }
+    if (stat == 'both') {
+        stat = 'tablemax';
+    } else if (stat == 'tablemax') {
+        stat = 'detailmax';
+    } else if (stat == 'detailmax') {
+        stat = 'both';
+    }
+    if (stat == 'tablemax') {
+        detailDiv.style.display = 'none';
+        drag.style.display = 'none';
+        cell.style.display = 'none';
+        tableDiv.style.display = 'block';
+        tableDiv.style.height = maxHeight + 'px';
+        $grids[tabName].pqGrid('option', 'height', maxHeight).pqGrid('refresh');
+    } else if (stat == 'detailmax') {
+        tableDiv.style.display = 'none';
+        drag.style.display = 'none';
+        cell.style.display = 'none';
+        detailDiv.style.display = 'block';
+        detailDiv.style.height = maxHeight + 'px';
+        detailDiv.style.top = '10px';
+        $(detailContainerDiv).packery();
+    } else if (stat == 'both') {
+        tableDiv.style.display = 'block';
+        detailDiv.style.display = 'block';
+        drag.style.display = 'block';
+        cell.style.display = 'block';
+        var tableHeight = tableDetailDivSizes[tabName]['tableheight'];
+        var detailHeight = tableDetailDivSizes[tabName]['detailheight'];
+        tableDiv.style.height = tableHeight + 'px';
+        $grids[tabName].pqGrid('option', 'height', tableHeight).pqGrid('refresh');
+        detailDiv.style.height = detailHeight + 'px';
+        detailDiv.style.top = (drag.offsetTop + 10) + 'px';
+    }
+    tableDetailDivSizes[tabName]['status'] = stat;
+    changeTableDetailMaxButtonText();
 }

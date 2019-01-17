@@ -65,3 +65,5 @@ var savedLayoutNames = null;
 var autoSaveLayout = true;
 var windowWidth = 0;
 var windowHeight = 0;
+
+var tableDetailDivSizes = {};
