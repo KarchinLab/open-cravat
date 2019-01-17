@@ -49,14 +49,20 @@ class FilterColumn(object):
         else:
             s = 't.' + self.column + ' ' + self.test2sql[self.test]
             if type(self.value) == str:
-                if self.test == 'stringContains':
-                    sql_val = '"%{}%"'.format(self.value)
-                elif self.test == 'stringStarts':
-                    sql_val = '"{}%"'.format(self.value)
-                elif self.test == 'stringEnds':
-                    sql_val = '"%{}"'.format(self.value)
+                if self.test == 'noData':
+                    oper = '='
+                    sql_val = '""'
                 else:
-                    sql_val = '"{}"'.format(self.value)
+                    oper = self.test2sql[self.test]
+                    if self.test == 'stringContains':
+                        sql_val = '"%{}%"'.format(self.value)
+                    elif self.test == 'stringStarts':
+                        sql_val = '"{}%"'.format(self.value)
+                    elif self.test == 'stringEnds':
+                        sql_val = '"%{}"'.format(self.value)
+                    else:
+                        sql_val = '"{}"'.format(self.value)
+                s = 't.' + self.column + ' ' + oper
             elif self.value is None:
                 sql_val = ''
             elif type(self.value) == list:

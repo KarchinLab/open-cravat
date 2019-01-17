@@ -450,7 +450,11 @@ const makeGroupFilter = (groupDiv) => {
             }
         } else {
             if (valInputs.length === 0) {
-                colFilter.value = null;
+                if (column.type == 'string') {
+                    colFilter.value = '';
+                } else {
+                    colFilter.value = null;
+                }
             } else if (valInputs.length === 1) {
                 var rawValue = $(valInputs[0]).val();
                 var val = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
