@@ -138,6 +138,8 @@ table.detailtable td {
     font-size: 13px;
     border: 1px solid #5b8588;
     cursor: pointer;
+    position: relative;
+    top: 4px;
 }
 
 .tabhead:hover {

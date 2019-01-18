@@ -88,11 +88,13 @@
     </div>
 
     <div style='display: inline-block;'>
-        <div id='tabheads' style='position: relative; display: inline-block; vertical-align: bottom;'></div>
+        <div id='tabheads' style='position: relative; display: inline-block; vertical-align: bottom;'>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+        </div>
     </div>
 
-    <div style='position: absolute; top: 0px; right: 81px;'>
-        <button id='tabledetailmaxbutton' onclick='minimizeOrMaxmimizeTableDetailDiv();'>Table only</button>
+    <div id='tabledetailmaxbuttondiv' style='position: absolute; top: 0px; right: 81px;'>
+        View: <button id='tabledetailmaxbutton' onclick='minimizeOrMaxmimizeTableDetailDiv();'>Table only</button>
     </div>
     <div style='position: absolute; top: 0px; right: 0px;'>
         <button onclick='quicksave();'>Quicksave</button>

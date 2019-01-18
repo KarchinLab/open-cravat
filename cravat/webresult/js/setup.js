@@ -69,12 +69,13 @@ function setupTab (tabName) {
 }
 
 function changeTableDetailMaxButtonText () {
+    var div = document.getElementById('tabledetailmaxbuttondiv');
     var button = document.getElementById('tabledetailmaxbutton');
     if (currentTab != 'variant' && currentTab != 'gene') {
-        button.style.display = 'none';
+        div.style.display = 'none';
         return;
     } else {
-        button.style.display = 'block';
+        div.style.display = 'block';
     }
     var stat = tableDetailDivSizes[currentTab]['status'];
     var text = null;

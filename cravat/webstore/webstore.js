@@ -440,7 +440,7 @@ function getRemoteModulePanel (moduleName) {
     span.className = 'modulepanel-date-span';
     span.textContent = '2018.12.24';
     span.title = 'module source data release date';
-    addEl(sdiv, span);
+    addEl(div, span);
     addEl(div, sdiv);
     addEl(div, getEl('br'));
     var installStatus = '';
@@ -468,11 +468,13 @@ function getRemoteModulePanel (moduleName) {
     span.id = 'panelinstallstatus_' + moduleName;
     addEl(div, span);
     if (installStatus == 'Installed') {
+        /*
         var img2 = getEl('img');
         img2.src = '/store/done.png';
         img2.title = 'Installed';
         img2.className = 'donemark';
         addEl(span, img2);
+        */
     } else {
         if (installStatus == 'Queued') {
             progSpan.textContent = 'Queued';

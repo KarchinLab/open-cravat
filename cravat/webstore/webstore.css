@@ -54,6 +54,10 @@
 
 .modulepanel-date-span {
     color: #467444;
+    position: absolute;
+    right: 10px;
+    top: 200px;
+    font-size: 11px;
 }
 
 .modulepanel-divider-span {
@@ -62,15 +66,16 @@
 
 .modulepanel-update-button {
     position: absolute;
-    bottom: 42px;
+    bottom: 24px;
     right: 9px;
 }
 
 .modulepanel-uninstall-button {
     position: absolute;
-    bottom: 24px;
+    bottom: 3px;
     right: 9px;
     font-size: 10px;
+    background-color: #96c832;
 }
 
 .moduletile {
