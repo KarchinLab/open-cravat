@@ -34,7 +34,7 @@ function onClickStoreHome () {
     var homediv = document.getElementById('store-home-div');
     homediv.style.display = 'block';
     document.getElementById('store-allmodule-div').style.display = 'none';
-    document.getElementById('store-home-button').style.backgroundColor = 'rgb(232, 232, 232)';
+    document.getElementById('store-home-button').style.backgroundColor = 'rgb(212, 212, 212, 0.75)';
     document.getElementById('store-tag-reset-button').style.backgroundColor = '';
 }
 
