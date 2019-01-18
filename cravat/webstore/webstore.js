@@ -34,6 +34,18 @@ function onClickStoreHome () {
     var homediv = document.getElementById('store-home-div');
     homediv.style.display = 'block';
     document.getElementById('store-allmodule-div').style.display = 'none';
+    document.getElementById('store-home-button').style.backgroundColor = '#aaaaaa';
+    document.getElementById('store-tag-reset-button').style.backgroundColor = '';
+}
+
+function onClickStoreTagResetButton () {
+    document.getElementById('store-namefilter').value = '';
+    $('.store-tag-checkbox').each(function () {
+        this.checked = false;
+    });
+    updateFilter();
+    document.getElementById('store-home-button').style.backgroundColor = '';
+    //document.getElementById('store-tag-reset-button').style.backgroundColor = 'gray';
 }
 
 function getLocal () {
@@ -1237,14 +1249,6 @@ function getBaseModuleNames () {
 }
 
 function onStoreTagCheckboxChange () {
-    updateFilter();
-}
-
-function onClickStoreTagResetButton () {
-    document.getElementById('store-namefilter').value = '';
-    $('.store-tag-checkbox').each(function () {
-        this.checked = false;
-    });
     updateFilter();
 }
 

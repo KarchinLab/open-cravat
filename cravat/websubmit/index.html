@@ -225,14 +225,10 @@
             <input type='text' id='store-namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()' style='font-size: 16px' />
             <br />
             <br />
-            <div id='store-install-all-button-div' style='display: none;'>
-                <button id='store-install-all-button' onclick='onClickStoreInstallAllButton();' style='font-size: 14px;'>Install All</button>
-                <br />
-                <br />
-            </div>
-            <button onclick='onClickStoreHome();' style='font-size: 14px;'>Front Page</button>
+            <button id='store-home-button' onclick='onClickStoreHome();' style='font-size: 14px; background-color: #aaaaaa;'>Front Page</button>
             <button id='store-tag-reset-button' onclick='onClickStoreTagResetButton();' style='font-size: 14px;'>View All</button>
-            &nbsp;
+            <br />
+            <br />
             <span class='store-switch-text'>and</span>
             <label class='store-switch'>
                 <input type='checkbox' id='store-tag-andor-checkbox' onchange='onStoreTagCheckboxChange();'/>
@@ -247,6 +243,12 @@
             <br />
             <hr />
             <div id='store-tag-custom-div'></div>
+            <hr />
+            <div id='store-install-all-button-div' style='display: none;'>
+                <button id='store-install-all-button' onclick='onClickStoreInstallAllButton();' style='font-size: 14px;'>Install All</button>
+                <br />
+                <br />
+            </div>
         </div>
         <div>
             <div id='store-home-div'>
