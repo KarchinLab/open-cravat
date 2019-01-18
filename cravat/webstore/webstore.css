@@ -32,6 +32,8 @@
 
 .modulepanel-title-span {
     font-weight: bold;
+    width: 195px;
+    word-break: break-word;
 }
 
 .modulepanel-org-span {
@@ -74,8 +76,16 @@
     position: absolute;
     bottom: 3px;
     right: 9px;
-    font-size: 10px;
-    background-color: #96c832;
+    font-size: 13px;
+    background-color: #b3c9dc;
+}
+
+.modulepanel-install-button {
+    position: absolute;
+    bottom: 3px;
+    right: 9px;
+    font-size: 13px;
+    background-color: #ffffff;
 }
 
 .moduletile {

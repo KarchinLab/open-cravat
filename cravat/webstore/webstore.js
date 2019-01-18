@@ -433,10 +433,6 @@ function getRemoteModulePanel (moduleName) {
     span.title = 'module size';
     addEl(sdiv, span);
     span = getEl('span');
-    span.className = 'modulepanel-divider-span';
-    span.textContent = ' | ';
-    addEl(sdiv, span);
-    span = getEl('span');
     span.className = 'modulepanel-date-span';
     span.textContent = '2018.12.24';
     span.title = 'module source data release date';
@@ -506,7 +502,7 @@ function getRemoteModulePanel (moduleName) {
         addEl(div, button);
     } else {
         var button = getEl('button');
-        button.className = 'modulepanel-uninstall-button';
+        button.className = 'modulepanel-install-button';
         button.textContent = 'Install';
         button.setAttribute('module', moduleName);
         button.addEventListener('click', function (evt) {
