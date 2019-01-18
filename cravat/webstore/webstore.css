@@ -1,15 +1,8 @@
 .donemark {
     width: 20px;
     position: absolute;
-    bottom: 1px;
+    top: 1px;
     right: 0px;
-}
-
-.module-size-span {
-    position: absolute;
-    right: 22px;
-    bottom: 0px;
-    font-size: 13px;
 }
 
 #messagediv {
@@ -30,12 +23,54 @@
     right: 0px;
 }
 
-.modulepanel-type-span {
+.modulepanel-typesizedate-div {
     font-size: 14px;
-    color: lightcoral;
     bottom: 2px;
     left: 9px;
     position: absolute;
+}
+
+.modulepanel-title-span {
+    font-weight: bold;
+}
+
+.modulepanel-org-span {
+    color: green;
+    font-size: 12px;
+    width: 183px;
+    word-break: break-word;
+    display: block;
+    height: 37px;
+    overflow: auto;
+}
+
+.modulepanel-type-span {
+    color: lightcoral;
+}
+
+.modulepanel-size-span {
+    color: black;
+}
+
+.modulepanel-date-span {
+    color: #467444;
+}
+
+.modulepanel-divider-span {
+    color: #d4d4d4;
+}
+
+.modulepanel-update-button {
+    position: absolute;
+    bottom: 42px;
+    right: 9px;
+}
+
+.modulepanel-uninstall-button {
+    position: absolute;
+    bottom: 24px;
+    right: 9px;
+    font-size: 10px;
 }
 
 .moduletile {

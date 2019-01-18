@@ -105,7 +105,7 @@ function getLocal () {
             var div = document.getElementById('messagediv');
             div.style.display = 'none';
             div = document.getElementById('remotemodulepanels');
-            var input = document.getElementById('namefilter');
+            var input = document.getElementById('store-namefilter');
             input.disabled = false;
             var div = document.getElementById('moduledetaildiv_store');
             if (div != null) {
@@ -322,7 +322,7 @@ function emptyElement (elem) {
 }
 
 function updateFilter () {
-    var nameinput = document.getElementById('namefilter');
+    var nameinput = document.getElementById('store-namefilter');
     var nameStr = nameinput.value;
     filter = {};
     // Name filter
@@ -400,24 +400,48 @@ function getRemoteModulePanel (moduleName) {
     span.style.height = '5px';
     addEl(div, span);
     span = getEl('div');
-    span.style.fontWeight = 'bold';
+    span.className = 'modulepanel-title-span';
+    var moduleTitle = moduleInfo.title;
+    if (moduleTitle.length > 24) {
+        span.style.fontSize = '14px';
+    }
     addEl(span, getTn(moduleInfo.title));
     addEl(div, span);
     span = getEl('span');
-    span.style.color = 'green';
-    span.style.fontSize = '12px';
-    span.textContent = moduleInfo['developer']['organization'];
+    span.className = 'modulepanel-org-span';
+    var organization = moduleInfo['developer']['organization'];
+    if (organization != undefined && organization.length > 30) {
+        span.style.fontSize = '10px';
+    }
+    span.textContent = organization;
     addEl(div, span);
     addEl(div, getEl('br'));
+    var sdiv = getEl('div');
+    sdiv.className = 'modulepanel-typesizedate-div';
     span = getEl('span');
     span.className = 'modulepanel-type-span';
     span.textContent = moduleInfo['type'];
-    addEl(div, span);
-    addEl(div, getEl('br'));
+    span.title = 'module type';
+    addEl(sdiv, span);
     span = getEl('span');
-    span.className = 'module-size-span';
+    span.className = 'modulepanel-divider-span';
+    span.textContent = ' | ';
+    addEl(sdiv, span);
+    span = getEl('span');
+    span.className = 'modulepanel-size-span';
     span.textContent = getSizeText(moduleInfo['size']);
-    addEl(div, span);
+    span.title = 'module size';
+    addEl(sdiv, span);
+    span = getEl('span');
+    span.className = 'modulepanel-divider-span';
+    span.textContent = ' | ';
+    addEl(sdiv, span);
+    span = getEl('span');
+    span.className = 'modulepanel-date-span';
+    span.textContent = '2018.12.24';
+    span.title = 'module source data release date';
+    addEl(sdiv, span);
+    addEl(div, sdiv);
     addEl(div, getEl('br'));
     var installStatus = '';
     if (installInfo[moduleName] != undefined) {
@@ -459,14 +483,35 @@ function getRemoteModulePanel (moduleName) {
     }
     if (installStatus == 'Installed') {
         if (remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
-            /*
-            var img3 = getEl('img');
-            img3.src = '/store/new.png';
-            img3.title = 'New module available';
-            img3.className = 'newmoduleicon';
-            addEl(div, img3);
-            */
+            var button = getEl('button');
+            button.className = 'modulepanel-update-button';
+            button.textContent = 'Update';
+            button.setAttribute('module', moduleName);
+            button.addEventListener('click', function (evt) {
+                var moduleName = evt.target.getAttribute('module');
+                queueInstall(moduleName);
+            });
+            addEl(div, button);
         }
+        var button = getEl('button');
+        button.className = 'modulepanel-uninstall-button';
+        button.textContent = 'Uninstall';
+        button.setAttribute('module', moduleName);
+        button.addEventListener('click', function (evt) {
+            var moduleName = evt.target.getAttribute('module');
+            uninstallModule(moduleName);
+        });
+        addEl(div, button);
+    } else {
+        var button = getEl('button');
+        button.className = 'modulepanel-uninstall-button';
+        button.textContent = 'Install';
+        button.setAttribute('module', moduleName);
+        button.addEventListener('click', function (evt) {
+            var moduleName = evt.target.getAttribute('module');
+            queueInstall(moduleName);
+        });
+        addEl(div, button);
     }
     return div
 }
@@ -1198,6 +1243,7 @@ function onStoreTagCheckboxChange () {
 }
 
 function onClickStoreTagResetButton () {
+    document.getElementById('store-namefilter').value = '';
     $('.store-tag-checkbox').each(function () {
         this.checked = false;
     });
