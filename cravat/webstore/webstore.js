@@ -410,7 +410,7 @@ function getRemoteModulePanel (moduleName) {
     span = getEl('span');
     span.className = 'modulepanel-org-span';
     var organization = moduleInfo['developer']['organization'];
-    if (organization != undefined && organization.length > 30) {
+    if (organization != undefined && organization.length > 50) {
         span.style.fontSize = '10px';
     }
     span.textContent = organization;
