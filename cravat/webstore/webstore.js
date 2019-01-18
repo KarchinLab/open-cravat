@@ -459,11 +459,13 @@ function getRemoteModulePanel (moduleName) {
     }
     if (installStatus == 'Installed') {
         if (remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
+            /*
             var img3 = getEl('img');
             img3.src = '/store/new.png';
             img3.title = 'New module available';
             img3.className = 'newmoduleicon';
             addEl(div, img3);
+            */
         }
     }
     return div
@@ -1204,6 +1206,22 @@ function onClickStoreTagResetButton () {
 
 function onClickStoreInstallAllButton () {
     var notInstalledModuleNames = getNotInstalledModuleNames();
+    var totalSize = 0;
+    var modulesToInstallStr = '[';
+    for (var i = 0; i < notInstalledModuleNames.length; i++) {
+        totalSize += remoteModuleInfo[notInstalledModuleNames[i]].size;
+        modulesToInstallStr += notInstalledModuleNames[i];
+        if (i < notInstalledModuleNames.length - 1) {
+            modulesToInstallStr += ', ';
+        }
+    }
+    modulesToInstallStr += ']';
+    console.log(totalSize);
+    totalSize = getSizeText(totalSize);
+    var yn = confirm('Modules to install are ' + modulesToInstallStr + ' and total installation size is ' + totalSize + '. Install them all?');
+    if (yn == false) {
+        return;
+    }
     for (var i = 0; i < notInstalledModuleNames.length; i++) {
         queueInstall(notInstalledModuleNames[i]);
     }
