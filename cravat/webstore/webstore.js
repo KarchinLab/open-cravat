@@ -32,10 +32,20 @@ function addEl (pelem, child) {
 
 function onClickStoreHome () {
     var homediv = document.getElementById('store-home-div');
-    homediv.style.display = 'block';
-    document.getElementById('store-allmodule-div').style.display = 'none';
-    document.getElementById('store-home-button').className = 'store-front-all-button-on';
-    document.getElementById('store-tag-reset-button').className = 'store-front-all-button-off';
+    var allDiv = document.getElementById('store-allmodule-div');
+    var homeButton = document.getElementById('store-home-button');
+    var homeButtonClass = homeButton.className;
+    if (homeButtonClass == 'store-front-all-button-on') {
+        homediv.style.display = 'none';
+        allDiv.style.display = 'block';
+        homeButton.className = 'store-front-all-button-off';
+        updateFilter();
+    } else if (homeButtonClass == 'store-front-all-button-off') {
+        homediv.style.display = 'block';
+        allDiv.style.display = 'none';
+        homeButton.className = 'store-front-all-button-on';
+        document.getElementById('store-tag-reset-button').className = 'store-front-all-button-off';
+    }
 }
 
 function onClickStoreTagResetButton () {
