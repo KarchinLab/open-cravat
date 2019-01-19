@@ -34,8 +34,8 @@ function onClickStoreHome () {
     var homediv = document.getElementById('store-home-div');
     homediv.style.display = 'block';
     document.getElementById('store-allmodule-div').style.display = 'none';
-    document.getElementById('store-home-button').style.backgroundColor = 'rgb(214, 212, 212, 0.93)';
-    document.getElementById('store-tag-reset-button').style.backgroundColor = '';
+    document.getElementById('store-home-button').className = 'store-front-all-button-on';
+    document.getElementById('store-tag-reset-button').className = 'store-front-all-button-off';
 }
 
 function onClickStoreTagResetButton () {
@@ -44,8 +44,8 @@ function onClickStoreTagResetButton () {
         this.checked = false;
     });
     updateFilter();
-    document.getElementById('store-home-button').style.backgroundColor = '';
-    //document.getElementById('store-tag-reset-button').style.backgroundColor = 'gray';
+    document.getElementById('store-home-button').className = 'store-front-all-button-off';
+    document.getElementById('store-tag-reset-button').className = 'store-front-all-button-on';
 }
 
 function getLocal () {
@@ -337,19 +337,27 @@ function updateFilter () {
     var nameinput = document.getElementById('store-namefilter');
     var nameStr = nameinput.value;
     filter = {};
+    var filterHasValue = false;
     // Name filter
     if (nameStr != '') {
         filter['name'] = [nameStr];
+        filterHasValue = true;
     }
     // Tag filter
     var checkboxes = $('.store-tag-checkbox:checked');
     var tags = [];
     for (var i = 0; i < checkboxes.length; i++) {
         tags.push(checkboxes[i].value);
+        filterHasValue = true;
     }
     filter['tags'] = tags;
     populateAllModulesDiv();
     showAllModulesDiv();
+    if (filterHasValue) {
+        document.getElementById('store-tag-reset-button').className = 'store-front-all-button-off';
+    } else {
+        document.getElementById('store-tag-reset-button').className = 'store-front-all-button-on';
+    }
 }
 
 function getRemoteModulePanel (moduleName) {

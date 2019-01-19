@@ -238,3 +238,11 @@ input:checked + .store-switch-slider:before {
     cursor: pointer;
 }
 
+.store-front-all-button-on {
+    background-color: rgb(214, 212, 212, 0.93);
+}
+
+.store-front-all-button-off {
+    background-color: '';
+}
+
