@@ -383,6 +383,13 @@ function saveLayoutSetting (name) {
 		widgets = $(detailContainerDiv).packery('getItemElements');
 		for (var i = 0; i < widgets.length; i++) {
 			var widget = widgets[i];
+            var pinButtonClassList = widget.getElementsByClassName('detailwidgetpinbutton')[0].classList;
+            var pinned = null;
+            if (pinButtonClassList.contains('pinned') == true) {
+                pinned = 'pinned';
+            } else {
+                pinned = 'unpinned';
+            }
 			saveData['widgetSettings']['variant'].push(
 					{'id': widget.id,
 					'widgetkey': widget.getAttribute('widgetkey'),
@@ -390,7 +397,8 @@ function saveLayoutSetting (name) {
 					'left': widget.style.left, 
 					'width': widget.style.width, 
 					'height': widget.style.height,
-                    'display': widget.style.display});
+                    'display': widget.style.display,
+                    'pinned': pinned});
 		};
 	}
 	var detailContainerDiv = document.getElementById('detailcontainerdiv_gene');
@@ -399,6 +407,13 @@ function saveLayoutSetting (name) {
 		widgets = $(detailContainerDiv).packery('getItemElements');
 		for (var i = 0; i < widgets.length; i++) {
 			var widget = widgets[i];
+            var pinButtonClassList = widget.getElementsByClassName('detailwidgetpinbutton')[0].classList;
+            var pinned = null;
+            if (pinButtonClassList.contains('pinned') == true) {
+                pinned = 'pinned';
+            } else {
+                pinned = 'unpinned';
+            }
 			saveData['widgetSettings']['gene'].push(
 					{'id': widget.id,
 					'widgetkey': widget.getAttribute('widgetkey'),
@@ -406,7 +421,8 @@ function saveLayoutSetting (name) {
 					'left': widget.style.left, 
 					'width': widget.style.width, 
 					'height': widget.style.height,
-                    'display': widget.style.display});
+                    'display': widget.style.display,
+                    'pinned': pinned});
 		};
 	}
 	var detailContainerDiv = document.getElementById('detailcontainerdiv_info');
@@ -415,6 +431,13 @@ function saveLayoutSetting (name) {
 		widgets = $(detailContainerDiv).packery('getItemElements');
 		for (var i = 0; i < widgets.length; i++) {
 			var widget = widgets[i];
+            var pinButtonClassList = widget.getElementsByClassName('detailwidgetpinbutton')[0].classList;
+            var pinned = null;
+            if (pinButtonClassList.contains('pinned') == true) {
+                pinned = 'pinned';
+            } else {
+                pinned = 'unpinned';
+            }
 			saveData['widgetSettings']['info'].push(
 					{'id': widget.id,
 					'widgetkey': widget.getAttribute('widgetkey'),
@@ -422,7 +445,8 @@ function saveLayoutSetting (name) {
 					'left': widget.style.left, 
 					'width': widget.style.width, 
 					'height': widget.style.height,
-                    'display': widget.style.display});
+                    'display': widget.style.display,
+                    'pinned': pinned});
 		};
 	}
 	
@@ -524,6 +548,13 @@ function applyWidgetSetting (level) {
 					item.element.style.width = setting['width'];
 					item.element.style.height = setting['height'];
                     item.element.style.display = setting['display'];
+                    /*
+                    item.element.getElementsByClassName('detailwidgetpinbutton')[0].classList.remove('pinned', 'unpinned');
+                    item.element.getElementsByClassName('detailwidgetpinbutton')[0].classList.add(setting['pinned']);
+                    */
+                    if (setting['pinned'] == 'pinned') {
+                        $(item.element.getElementsByClassName('detailwidgetpinbutton')[0]).click();
+                    }
 					var tmp = items[widgetCount];
 					items[widgetCount] = item;
 					items[j] = tmp;
