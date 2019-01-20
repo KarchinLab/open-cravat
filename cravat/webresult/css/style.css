@@ -143,12 +143,12 @@ table.detailtable td {
 }
 
 .tabhead:hover {
-	background-color: #c4e1ff;
+	background-color: #f0f0f0;
     height: 30px;
 }
 
 .tabhead.show {
-	background-color: #a6eed0;
+	background-color: #d6d6d6;
     height: 30px;
 }
 

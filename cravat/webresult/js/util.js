@@ -389,7 +389,8 @@ function saveLayoutSetting (name) {
 					'top': widget.style.top, 
 					'left': widget.style.left, 
 					'width': widget.style.width, 
-					'height': widget.style.height});
+					'height': widget.style.height,
+                    'display': widget.style.display});
 		};
 	}
 	var detailContainerDiv = document.getElementById('detailcontainerdiv_gene');
@@ -404,7 +405,8 @@ function saveLayoutSetting (name) {
 					'top': widget.style.top, 
 					'left': widget.style.left, 
 					'width': widget.style.width, 
-					'height': widget.style.height});
+					'height': widget.style.height,
+                    'display': widget.style.display});
 		};
 	}
 	var detailContainerDiv = document.getElementById('detailcontainerdiv_info');
@@ -419,7 +421,8 @@ function saveLayoutSetting (name) {
 					'top': widget.style.top, 
 					'left': widget.style.left, 
 					'width': widget.style.width, 
-					'height': widget.style.height});
+					'height': widget.style.height,
+                    'display': widget.style.display});
 		};
 	}
 	
@@ -520,6 +523,7 @@ function applyWidgetSetting (level) {
 					item.element.style.left = setting['left'];
 					item.element.style.width = setting['width'];
 					item.element.style.height = setting['height'];
+                    item.element.style.display = setting['display'];
 					var tmp = items[widgetCount];
 					items[widgetCount] = item;
 					items[j] = tmp;
