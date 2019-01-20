@@ -229,7 +229,6 @@ function populateSummaryWidgetDiv () {
 			}
 		}
 	}
-
 	$outerDiv = $(outerDiv);
 	$outerDiv.packery({
 		columnWidth: widgetGridSize,
@@ -239,6 +238,9 @@ function populateSummaryWidgetDiv () {
 	$widgets.draggable({
 		grid: [widgetGridSize, widgetGridSize],
 		handle: '.detailwidgettitle',
+        stop: function (evt, ui) {
+            $outerDiv.packery();
+        },
 	}).resizable({
 		grid: [widgetGridSize, widgetGridSize]
 	});
@@ -535,12 +537,6 @@ function onClickWidgetPinButton (evt, tabName) {
 		button.classList.add('pinned');
 		$(container).packery('stamp', widget);
 	}
-}
-
-function pinUnpinWidget (tabName, widgetName, evt) {
-	var widget = evt.target.parentElement.parentElement.parentElement;
-	var container = widget.parentElement;
-	$(container).packery('stamp', widget);
 }
 
 function onClickWidgetCloseButton (tabName, evt) {

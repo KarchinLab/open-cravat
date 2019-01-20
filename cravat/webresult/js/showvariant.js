@@ -388,6 +388,9 @@ function showVariantDetail (row, tabName) {
 		$widgets.draggable({
 			grid: [widgetGridSize, widgetGridSize],
 			handle: '.detailwidgettitle',
+            stop: function (evt, ui) {
+                $outerDiv.packery();
+            },
 		}).resizable({
 			grid: [widgetGridSize, widgetGridSize]
 		});
