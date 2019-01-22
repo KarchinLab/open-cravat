@@ -398,11 +398,18 @@ button {
     margin: 5px;
     padding: 3px;
     margin-left: 20px;
-    border: 1px solid black;
+}
+
+.filter-group-div {
+	border-left: 2px solid black;
+	border-right: 2px solid black;
+	border-radius: 12px;
+	width: fit-content;
 }
 
 .filter-join-operator-div {
-    margin-left: 20px;
+	margin-left: 20px;
+	cursor: pointer;
 }
 
 .detail-info-line-header {

@@ -279,7 +279,8 @@ const makeFilterGroupDiv = (filter) => {
     
     // Elements div
     const elemsDiv = $(getEl('div'))
-    .addClass('filter-group-elements-div');
+        .addClass('filter-group-elements-div')
+        .attr('join-operator','and');
     groupDiv.append(elemsDiv);
         
     // Controls div
@@ -298,14 +299,6 @@ const makeFilterGroupDiv = (filter) => {
         .click(addFilterGroupBtnHandler)
         .append('Add group');
     controlsDiv.append(addGroupBtn).append(' ');
-    // Operator selector
-    controlsDiv.append(' Operator: ')
-    const operatorSel = $(getEl('select'))
-        .addClass('filter-group-operator-select')
-        .change(groupOperatorSelectHandler);
-    controlsDiv.append(operatorSel)
-    operatorSel.append($(getEl('option')).val('and').append('and'));
-    operatorSel.append($(getEl('option')).val('or').append('or'));
     // Negate
     const negateCheck = $(getEl('input'))
         .addClass('filter-element-negate-check')
@@ -385,24 +378,29 @@ const addFilterElement = (allElemsDiv, elementType, filter) => {
         elemDiv = makeFilterColDiv(filter);
     }
     if (allElemsDiv.children().length > 0) {
-        const operator = allElemsDiv
-            .siblings()
-            .children('.filter-group-operator-select')
-            .val();
+        const operator = allElemsDiv.attr('join-operator');
         const joinOpDiv = $(getEl('div'))
             .addClass('filter-join-operator-div')
             .append(operator);
+        joinOpDiv.click(groupOperatorClickHandler);
         allElemsDiv.append(joinOpDiv);
     }
     allElemsDiv.append(elemDiv);
 }
 
-const groupOperatorSelectHandler = (event) => {
-    const groupOpSel = $(event.target);
-    const operator = groupOpSel.val();
-    const joinDivs = groupOpSel.parent().siblings('.filter-group-elements-div').children('.filter-join-operator-div');
-    joinDivs.empty();
-    joinDivs.append(operator);
+const groupOperatorClickHandler = (event) => {
+    const opDiv = $(event.target);
+    const allElemsDiv = opDiv.parent();
+    const curOperator = allElemsDiv.attr('join-operator');
+    let newOperator;
+    if (curOperator === 'and') {
+        newOperator = 'or';
+    } else if (curOperator === 'or') {
+        newOperator = 'and';
+    }
+    opDiv.text(newOperator);
+    opDiv.siblings('.filter-join-operator-div').text(newOperator);
+    allElemsDiv.attr('join-operator',newOperator);
 }
 
 function doReportSub (reportsub, reportsubKeys, origVal) {
@@ -416,10 +414,9 @@ function doReportSub (reportsub, reportsubKeys, origVal) {
 
 const makeGroupFilter = (groupDiv) => {
     const filter = {};
-    // Operator
-    const opSel = groupDiv.children().children('.filter-group-operator-select');
-    filter.operator = opSel.val();
     const elemsDiv = groupDiv.children('.filter-group-elements-div');
+    // Operator
+    filter.operator = elemsDiv.attr('join-operator');
     // Columns
     const colDivs = elemsDiv.children('.filter-column-div');
     filter.columns = [];
