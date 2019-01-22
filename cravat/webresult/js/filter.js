@@ -93,7 +93,9 @@ const makeFilterColDiv = (filter) => {
         // Test values
         populateFilterValues(filterValsSpan, filter.test, filter.value);
         // Check negate
-        negateCheck[0].checked = filter.negate;
+        if (filter.negate) {
+            notSpan.click();
+        }
     }
 
     return colDiv;
@@ -341,7 +343,11 @@ const makeFilterGroupDiv = (filter) => {
     if (filter !== undefined) {
         if (filter.operator != undefined) {
             // Assign operator
-            operatorSel.val(filter.operator);
+            elemsDiv.attr('join-operator',filter.operator);
+            const joinOperators = elemsDiv.children('.filter-join-operator-div');
+            if (joinOperators.length > 0) {
+                $(joinOperators[0]).click();
+            }
             // Add groups
             for (let i=0; i<filter.groups.length; i++) {
                 addFilterElement(elemsDiv,'group',filter.groups[i]);
@@ -351,7 +357,9 @@ const makeFilterGroupDiv = (filter) => {
                 addFilterElement(elemsDiv,'column',filter.columns[i]);
             }
             // Check negate
-            negateCheck[0].checked = filter.negate;
+            if (filter.negate) {
+                notToggle.click();
+            }
         }
     }
     return wrapperDiv;
