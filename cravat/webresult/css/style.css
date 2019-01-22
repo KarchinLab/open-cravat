@@ -397,7 +397,6 @@ button {
 .filter-element-div {
     margin: 5px;
     padding: 3px;
-    margin-left: 20px;
 }
 
 .filter-group-div {
@@ -417,12 +416,19 @@ button {
 	cursor: pointer;
 	margin: 3px;
 }
+div.filter-not-toggle {
+	display: flex;
+    align-items: center;
+    justify-content: center;
+}
 .filter-not-toggle[active="true"] {
-	color: black;
-	font-weight: bold;
+	color: red;
 }
 .filter-not-toggle[active="false"] {
 	color: #bebebe;
+}
+.filter-group-wrapper-div {
+	display: flex;
 }
 
 .detail-info-line-header {

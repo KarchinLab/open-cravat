@@ -284,10 +284,22 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
 }
 
 const makeFilterGroupDiv = (filter) => {
+    const wrapperDiv = $(getEl('div'))
+        .addClass('filter-group-wrapper-div')
+        .addClass('filter-element-div');
+    // Not toggle
+    const notToggle = $(getEl('div'))
+        .addClass('filter-not-toggle')
+        .attr('active','false')
+        .click(filterNotToggleClick)
+        .text('not');
+    wrapperDiv.append(notToggle);
+    // Group div
     const groupDiv = $(getEl('div'))
         .addClass('filter-group-div')
         .addClass('filter-element-div');
-    
+    wrapperDiv.append(groupDiv);
+
     // Elements div
     const elemsDiv = $(getEl('div'))
         .addClass('filter-group-elements-div')
@@ -310,13 +322,6 @@ const makeFilterGroupDiv = (filter) => {
         .click(addFilterGroupBtnHandler)
         .append('Add group');
     controlsDiv.append(addGroupBtn).append(' ');
-    // Negate
-    const negateCheck = $(getEl('input'))
-        .addClass('filter-element-negate-check')
-        .addClass('filter-group-negate-check')
-        .attr('type','checkbox');
-    controlsDiv.append(negateCheck);
-    controlsDiv.append('negate ');
     // Remove
     const removeBtn = $(getEl('button'))
     .addClass('filter-element-remove-btn')
@@ -342,12 +347,12 @@ const makeFilterGroupDiv = (filter) => {
             negateCheck[0].checked = filter.negate;
         }
     }
-    return groupDiv;
+    return wrapperDiv;
 }
 
 const filterGroupRemoveHandler = (event) => {
     const target = $(event.target);
-    const filterElemDiv = target.parent().parent()
+    const filterElemDiv = target.parent().parent().parent();
     removeFilterElem(filterElemDiv);
 }
 
@@ -425,7 +430,7 @@ function doReportSub (reportsub, reportsubKeys, origVal) {
 
 const makeGroupFilter = (groupDiv) => {
     const filter = {};
-    const elemsDiv = groupDiv.children('.filter-group-elements-div');
+    const elemsDiv = groupDiv.children('.filter-group-div').children('.filter-group-elements-div');
     // Operator
     filter.operator = elemsDiv.attr('join-operator');
     // Columns
@@ -479,10 +484,9 @@ const makeGroupFilter = (groupDiv) => {
         // Negate
         colFilter.negate = colDiv.children('.filter-not-toggle').attr('active') === 'true';
         filter.columns.push(colFilter)
-
     }
     // Groups
-    const groupDivs = elemsDiv.children('.filter-group-div');
+    const groupDivs = elemsDiv.children('.filter-group-wrapper-div');
     filter.groups = [];
     for (let i=0; i<groupDivs.length; i++) {
         groupDiv = $(groupDivs[i]);
@@ -491,8 +495,8 @@ const makeGroupFilter = (groupDiv) => {
     }
     
     // Negate
-    filter.negate = groupDiv.children().children('.filter-group-negate-check').is(':checked');
-
+    filter.negate = groupDiv.children('.filter-not-toggle').attr('active') === 'true';
+    console.log(filter)
     return filter;
 }
 
