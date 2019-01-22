@@ -476,7 +476,7 @@ function populateWidgetSelectorPanel () {
 	var tabName = currentTab;
 	var panelDiv = document.getElementById('widgets_showhide_select_div');
 	panelDiv.innerHTML = '';
-	panelDiv.style.width = '200px';
+	panelDiv.style.width = '300px';
 	panelDiv.style.maxHeight = '400px';
 	panelDiv.style.overflow = 'auto';
 
@@ -493,6 +493,22 @@ function populateWidgetSelectorPanel () {
 	button.textContent = 'Reset';
 	button.addEventListener('click', function (evt, ui) {
 		onClickDetailReset();
+	});
+	addEl(panelDiv, button);
+
+	var button = getEl('button');
+	button.style.backgroundColor = 'white';
+	button.textContent = 'Hide all';
+	button.addEventListener('click', function (evt, ui) {
+		changeWidgetShowHideAll(false);
+	});
+	addEl(panelDiv, button);
+
+	var button = getEl('button');
+	button.style.backgroundColor = 'white';
+	button.textContent = 'Show all';
+	button.addEventListener('click', function (evt, ui) {
+		changeWidgetShowHideAll(true);
 	});
 	addEl(panelDiv, button);
 
@@ -545,6 +561,18 @@ function onClickWidgetCloseButton (tabName, evt) {
 	var button = document.getElementById(
 			'widgettogglecheckbox_' + tabName + '_' + widgetName);
 	button.checked = false;
+}
+
+function changeWidgetShowHideAll (checked) {
+	var tabName = currentTab;
+	var div = document.getElementById('detailcontainerdiv_' + tabName);
+    var widgets = $(div).packery('getItemElements');
+    for (var i = 0; i < widgets.length; i++) {
+        var widget = widgets[i];
+        var widgetName = widget.getAttribute('widgetkey');
+        document.getElementById('widgettogglecheckbox_' + tabName + '_' + widgetName).checked = checked;
+        showHideWidget(tabName, widgetName, checked)
+    }
 }
 
 function onClickWidgetSelectorCheckbox (tabName, evt) {
