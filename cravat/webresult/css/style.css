@@ -396,7 +396,8 @@ button {
 
 .filter-element-div {
     margin: 5px;
-    padding: 3px;
+	padding: 3px;
+	min-width: 600px;
 }
 
 .filter-group-div {
@@ -440,6 +441,38 @@ div.filter-not-toggle {
 	text-decoration: none;
 }
 
+.filter-group-controls-div {
+	display: flex;
+	min-width: 300px;
+	justify-content: center;
+}
+.filter-add-elem-div {
+	cursor: pointer;
+	font-size: 15px;
+	display: flex;
+	justify-content: center;
+	width: 45%;
+	align-items: center;
+	z-index: 2;
+}
+.filter-add-elem-div .line {
+	height: 0;
+	border: 1px solid black;
+	margin: 3px;
+	flex-grow: 1;
+	pointer-events: none;
+}
+.filter-add-elem-div span {
+	pointer-events: none;
+}
+.filter-add-elem-div:hover .line {
+	background-color: gray;
+	border-width: 2px;
+}
+.filter-add-elem-div:hover span {
+	font-weight: bold;
+}
+
 .detail-info-line-header {
     vertical-align: top;
     min-width: 60px;
@@ -450,4 +483,3 @@ div.filter-not-toggle {
     vertical-align: top;
     min-width: 60px;
 }
-

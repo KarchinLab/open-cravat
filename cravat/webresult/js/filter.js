@@ -316,19 +316,24 @@ const makeFilterGroupDiv = (filter) => {
     // Controls div
     const controlsDiv = $(getEl('div'))
         .addClass('filter-group-controls-div');
-        groupDiv.append(controlsDiv);
+    groupDiv.append(controlsDiv);
+
     // Add column
-    const addColumnBtn = $(getEl('button'))
-        .addClass('filter-add-column-btn')
-        .click(addFilterColBtnHandler)
-        .append('Add column');
-    controlsDiv.append(addColumnBtn).append(' ');
-    // Add group
-    const addGroupBtn = $(getEl('button'))
-        .addClass('filter-add-group-btn')
-        .click(addFilterGroupBtnHandler)
-        .append('Add group');
-    controlsDiv.append(addGroupBtn).append(' ');
+    const addColDiv = $(getEl('div'))
+        .click(addFilterColHandler)
+        .addClass('filter-add-elem-div')
+        .append($(getEl('div')).addClass('line'))
+        .append($(getEl('span')).text('+'))
+        .append($(getEl('div')).addClass('line'));
+    controlsDiv.append(addColDiv);
+    /// Add column
+    const addGroupDiv = $(getEl('div'))
+        .click(addFilterGroupHandler)
+        .addClass('filter-add-elem-div')
+        .append($(getEl('div')).addClass('line'))
+        .append($(getEl('span')).text('+( )'))
+        .append($(getEl('div')).addClass('line'));
+    controlsDiv.append(addGroupDiv);
     
     // Populate from filter
     if (filter !== undefined) {
@@ -374,13 +379,13 @@ const removeFilterElem = (elemDiv) => {
     elemDiv.remove();
 }
 
-const addFilterColBtnHandler = (event) => {
+const addFilterColHandler = (event) => {
     const button = $(event.target);
     const elemsDiv = button.parent().siblings('.filter-group-elements-div');
     addFilterElement(elemsDiv, 'column');
 }
 
-const addFilterGroupBtnHandler = (event) => {
+const addFilterGroupHandler = (event) => {
     const button = $(event.target);
     const elemsDiv = button.parent().siblings('.filter-group-elements-div');
     addFilterElement(elemsDiv, 'group');
