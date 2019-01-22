@@ -305,7 +305,10 @@ async def get_all_jobs (request):
             existing_reports = []
             for report_type in get_valid_report_types():
                 ext = filerouter.report_extensions.get(report_type, '.'+report_type)
-                report_fname = job.info['orig_input_fname'] + ext
+                job_input = await filerouter.job_input(request, job_id)
+                if job_input is None:
+                    continue
+                report_fname = job_input + ext
                 report_file = os.path.join(job_dir, report_fname)
                 if os.path.exists(report_file):
                     existing_reports.append(report_type)
