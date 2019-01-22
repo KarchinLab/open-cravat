@@ -416,3 +416,16 @@ button {
     min-width: 60px;
 }
 
+.email-icon {
+    height: 15px;
+    top: 5px;
+    position: absolute;
+    right: 30px;
+}
+
+.question-icon {
+    height: 17px;
+    top: 4px;
+    position: absolute;
+    right: 62px;
+}
