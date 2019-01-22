@@ -296,10 +296,17 @@ const makeFilterGroupDiv = (filter) => {
     wrapperDiv.append(notToggle);
     // Group div
     const groupDiv = $(getEl('div'))
-        .addClass('filter-group-div')
-        .addClass('filter-element-div');
+    .addClass('filter-group-div')
+    .addClass('filter-element-div');
     wrapperDiv.append(groupDiv);
-
+    // Remove
+    const removeBtn = $(getEl('button'))
+    .addClass('filter-element-remove-button')
+    .addClass('filter-group-remove-btn')
+    .click(filterGroupRemoveHandler)
+    .append('X');
+    wrapperDiv.append($(getEl('div')).append(removeBtn));
+    
     // Elements div
     const elemsDiv = $(getEl('div'))
         .addClass('filter-group-elements-div')
@@ -322,13 +329,6 @@ const makeFilterGroupDiv = (filter) => {
         .click(addFilterGroupBtnHandler)
         .append('Add group');
     controlsDiv.append(addGroupBtn).append(' ');
-    // Remove
-    const removeBtn = $(getEl('button'))
-    .addClass('filter-element-remove-btn')
-    .addClass('filter-group-remove-btn')
-    .click(filterGroupRemoveHandler)
-    .append('X');
-    controlsDiv.append(' ').append(removeBtn);
     
     // Populate from filter
     if (filter !== undefined) {
@@ -352,7 +352,7 @@ const makeFilterGroupDiv = (filter) => {
 
 const filterGroupRemoveHandler = (event) => {
     const target = $(event.target);
-    const filterElemDiv = target.parent().parent().parent();
+    const filterElemDiv = target.parent().parent();
     removeFilterElem(filterElemDiv);
 }
 

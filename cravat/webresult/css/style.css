@@ -409,6 +409,7 @@ button {
 .filter-join-operator-div {
 	margin-left: 20px;
 	cursor: pointer;
+	font-size: 13px;
 }
 
 .filter-not-toggle {
@@ -423,12 +424,20 @@ div.filter-not-toggle {
 }
 .filter-not-toggle[active="true"] {
 	color: red;
+	font-weight: bold;
 }
 .filter-not-toggle[active="false"] {
 	color: #bebebe;
 }
 .filter-group-wrapper-div {
 	display: flex;
+}
+
+.filter-element-remove-button {
+	text-align: center;
+	border-radius: 50%;
+	font-family: monospace;
+	text-decoration: none;
 }
 
 .detail-info-line-header {
