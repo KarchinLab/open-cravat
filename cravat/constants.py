@@ -32,7 +32,7 @@ crs_def = [{'name':'uid', 'title':'UID', 'type':'string', 'width': 70},
            {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90, 'category': 'multi'}]
 crs_idx = [['uid'], ['sample_id']]
 crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
-           {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 60, 'category': 'single'},
+           {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 80, 'category': 'single'},
            {'name':'pos', 'title':'Position', 'type':'int', 'width': 80},
            {'name':'ref_base', 'title':'Ref Base', 'type':'string', 'width': 80},
            {'name':'alt_base', 'title':'Alt Base', 'type':'string', 'width': 80},
@@ -98,7 +98,6 @@ crl_def = [{'name':'uid', 'title':'UID', 'type':'int'},
            {'name':'chrom', 'title':'Chrom', 'type':'string'},
            {'name':'pos', 'title':'Pos', 'type':'int'},
            ]
-
 
 exit_codes = {
     'alreadycrv':2,

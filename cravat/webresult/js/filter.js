@@ -218,11 +218,12 @@ const populateFilterValues = (valsContainer, testName, value) => {
         $(select).pqSelect({
             checkbox: true, 
             displayText: '{0} selected',
-            singlePlaceholder: '>',
-            multiplePlaceholder: '>',
+            singlePlaceholder: '',
+            multiplePlaceholder: '',
             maxDisplay: 0,
             width: 200,
         });
+        select.nextSibling.classList.add('ui-state-hover');
     } else {
         for (let i=0; i<testDesc.inputs; i++) {
             const valueInput = $(getEl('input'))

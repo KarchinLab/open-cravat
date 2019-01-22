@@ -429,3 +429,12 @@ button {
     position: absolute;
     right: 62px;
 }
+
+.ui-state-hover > .pq-select-text:before {
+    content: ">";
+}
+
+:not(.ui-state-hover) > .pq-select-text:before {
+    content: "V";
+}
+

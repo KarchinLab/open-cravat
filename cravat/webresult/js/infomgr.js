@@ -187,10 +187,12 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                 column['filter']['init'] = function () {
                     $(this).pqSelect({
                         checkbox: true, 
-                        multiplePlaceholder: '>',
+                        singlePlaceholder: '',
+                        multiplePlaceholder: '',
                         radio: true, 
                         maxDisplay: 0,
                         width: '100%',});
+                    this[0].nextSibling.classList.add('ui-state-hover');
                 };
 
             }
