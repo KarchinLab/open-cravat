@@ -2,6 +2,7 @@ var servermode = false;
 var logged = false;
 var username = null;
 var prevJobTr = null;
+var submittedJobs = [];
 
 var GLOBALS = {
     jobs: [],
@@ -68,8 +69,11 @@ function submit () {
         processData: false,
         contentType: false,
         success: function (data) {
-            addJob(data);
-            buildJobsTable();
+            if (data['status']['status'] == 'Submitted') {
+                submittedJobs.push(data);
+                addJob(data);
+                buildJobsTable();
+            }
         }
     })
     $('#submit-job-button').attr('disabled','disabled');
@@ -123,6 +127,28 @@ function getAnnotatorsForJob (jobid) {
 
 function buildJobsTable () {
     var allJobs = GLOBALS.jobs;
+    var i = submittedJobs.length - 1;
+    while (i >= 0) {
+        var submittedJob = submittedJobs[i];
+        var alreadyInList = false;
+        var submittedJobInList = null;
+        for (var j = 0; j < allJobs.length; j++) {
+            if (allJobs[j]['id'] == submittedJob['id']) {
+                alreadyInList = true;
+                submittedJobInList = allJobs[j];
+                break;
+            }
+        }
+        if (alreadyInList) {
+            if (submittedJobInList['status']['status'] != 'Submitted') {
+                var p = submittedJobs.pop();
+            }
+        } else {
+            submittedJob.status = 'Submitted';
+            allJobs.unshift(submittedJob);
+        }
+        i--;
+    }
     var reportSelectors = $('.report-type-selector');
     var curSelectedReports = {};
     for (let i=0; i<reportSelectors.length; i++) {
