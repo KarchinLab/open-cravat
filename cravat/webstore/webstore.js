@@ -15,6 +15,10 @@ var newModuleAvailable = false;
 var storeFirstOpen = true;
 var storeTileWidthStep = 294;
 
+var modulesToIgnore = [
+    'aggregator',
+];
+
 function getEl(tag){
 	var new_node = document.createElement(tag);
 	return new_node;
@@ -231,6 +235,35 @@ function onClickStoreHomeRightArrow (el) {
     //d.scrollLeft = s;
 }
 
+function trimRemote () {
+    var remoteModuleNames = Object.keys(remoteModuleInfo);
+    var defaultWidgetNames = [];
+    for (var i = 0; i < remoteModuleNames.length; i++) {
+        var remoteModuleName = remoteModuleNames[i];
+        var remoteModule = remoteModuleInfo[remoteModuleName];
+        if (remoteModule.type == 'annotator') {
+            defaultWidgetNames.push('wg' + remoteModuleName);
+        }
+    }
+    for (var i = 0; i < remoteModuleNames.length; i++) {
+        var remoteModuleName = remoteModuleNames[i];
+        if (modulesToIgnore.includes(remoteModuleName)) {
+            delete remoteModuleInfo[remoteModuleName];
+            continue;
+        }
+        if (baseModuleNames.includes(remoteModuleName)) {
+            delete remoteModuleInfo[remoteModuleName];
+            continue;
+        }
+        var remoteModule = remoteModuleInfo[remoteModuleName];
+        if (remoteModule.type == 'webviewerwidget' && 
+                defaultWidgetNames.includes(remoteModuleName)) {
+            delete remoteModuleInfo[remoteModuleName];
+            continue;
+        }
+    }
+}
+
 function getRemote () {
 	$.ajax({
         url: '/store/remote',
@@ -251,6 +284,7 @@ function getRemote () {
                     installInfo[module] = {'msg': 'queued'};
                 }
             }
+            trimRemote();
             getLocal();
         }
 	});
