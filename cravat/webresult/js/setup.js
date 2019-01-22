@@ -80,11 +80,11 @@ function changeTableDetailMaxButtonText () {
     var stat = tableDetailDivSizes[currentTab]['status'];
     var text = null;
     if (stat == undefined || stat == 'both') {
-        text = 'Table only';
+        text = 'View table';
     } else if (stat == 'tablemax') {
-        text = 'Detail only';
+        text = 'View detail pane';
     } else if (stat == 'detailmax') {
-        text = 'Table + Detail';
+        text = 'View table + detail pane';
     }
     button.textContent = text;
 }
