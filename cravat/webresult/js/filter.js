@@ -7,11 +7,30 @@ const getAnnotColsByName = (annotName) => {
     }
 }
 
+const filterNotToggleClick = (event) => {
+    console.log('Not toggle');
+    const target = $(event.target);
+    const curActive = target.attr('active');
+    let newActive;
+    if (curActive === 'true') {
+        newActive = 'false';
+    } else {
+        newActive = 'true';
+    }
+    target.attr('active',newActive);
+}
+
 const makeFilterColDiv = (filter) => {
     const colDiv = $(getEl('div'))
         .addClass('filter-column-div')
         .addClass('filter-element-div');
-
+    // Not toggle
+    const notSpan = $(getEl('span'))
+        .addClass('filter-not-toggle')
+        .attr('active','false')
+        .click(filterNotToggleClick)
+        .text('not');
+    colDiv.append(notSpan);
     // Annotator select
     const groupSel = $(getEl('select'))
         .addClass('filter-annotator-selector')
@@ -51,14 +70,6 @@ const makeFilterColDiv = (filter) => {
         .addClass('filter-values-div');
     colDiv.append(filterValsSpan)
     testSel.change();
-    
-    // Negate
-    const negateCheck = $(getEl('input'))
-        .addClass('filter-element-negate-check')
-        .addClass('filter-column-negate-check')
-        .attr('type','checkbox');
-    colDiv.append(negateCheck);
-    colDiv.append('negate ');
     
     // Remove column
     const removeColBtn = $(getEl('button'))
@@ -466,8 +477,9 @@ const makeGroupFilter = (groupDiv) => {
             }
         }
         // Negate
-        colFilter.negate = colDiv.children('.filter-column-negate-check').is(':checked');
+        colFilter.negate = colDiv.children('.filter-not-toggle').attr('active') === 'true';
         filter.columns.push(colFilter)
+
     }
     // Groups
     const groupDivs = elemsDiv.children('.filter-group-div');

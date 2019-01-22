@@ -412,6 +412,19 @@ button {
 	cursor: pointer;
 }
 
+.filter-not-toggle {
+	font-size: 13px;
+	cursor: pointer;
+	margin: 3px;
+}
+.filter-not-toggle[active="true"] {
+	color: black;
+	font-weight: bold;
+}
+.filter-not-toggle[active="false"] {
+	color: #bebebe;
+}
+
 .detail-info-line-header {
     vertical-align: top;
     min-width: 60px;
