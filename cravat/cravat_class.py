@@ -363,7 +363,7 @@ class Cravat (object):
         self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
         runtime = end_time - self.start_time
         self.logger.info('runtime: {0:0.3f}s'.format(runtime))
-        print('Normally Finished. Runtime: {0:0.3f}s'.format(runtime))
+        print('Finished normally. Runtime: {0:0.3f}s'.format(runtime))
         self.close_logger()
 
     def make_args_namespace(self, supplied_args):
