@@ -127,6 +127,7 @@ function getLocal () {
         if (div == null) {
             return;
         }
+        trimRemote();
         if (baseInstalled) {
             var div = document.getElementById('messagediv');
             div.style.display = 'none';
@@ -247,17 +248,18 @@ function trimRemote () {
     }
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
-        if (modulesToIgnore.includes(remoteModuleName)) {
+        var remoteModule = remoteModuleInfo[remoteModuleName];
+        if (modulesToIgnore.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false){
             delete remoteModuleInfo[remoteModuleName];
             continue;
         }
-        if (baseModuleNames.includes(remoteModuleName)) {
+        if (baseModuleNames.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false) {
             delete remoteModuleInfo[remoteModuleName];
             continue;
         }
         var remoteModule = remoteModuleInfo[remoteModuleName];
         if (remoteModule.type == 'webviewerwidget' && 
-                defaultWidgetNames.includes(remoteModuleName)) {
+                defaultWidgetNames.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false) {
             delete remoteModuleInfo[remoteModuleName];
             continue;
         }
@@ -284,7 +286,6 @@ function getRemote () {
                     installInfo[module] = {'msg': 'queued'};
                 }
             }
-            trimRemote();
             getLocal();
         }
 	});
@@ -402,6 +403,7 @@ function updateFilter () {
     } else {
         document.getElementById('store-tag-reset-button').className = 'store-front-all-button-on';
     }
+    document.getElementById('store-home-button').className = 'store-front-all-button-off';
 }
 
 function getRemoteModulePanel (moduleName) {
