@@ -408,9 +408,14 @@ button {
 }
 
 .filter-join-operator-div {
-	margin-left: 20px;
+	margin-left: 38px;
 	cursor: pointer;
 	font-size: 13px;
+	width: fit-content;
+	height: fit-content;
+}
+.filter-join-operator-div:hover {
+	font-weight: bold;
 }
 
 .filter-not-toggle {
@@ -418,13 +423,16 @@ button {
 	cursor: pointer;
 	margin: 3px;
 }
+.filter-not-toggle:hover {
+	font-weight: bold;
+}
 div.filter-not-toggle {
 	display: flex;
     align-items: center;
     justify-content: center;
 }
 .filter-not-toggle[active="true"] {
-	color: red;
+	color: black;
 	font-weight: bold;
 }
 .filter-not-toggle[active="false"] {
@@ -457,13 +465,14 @@ div.filter-not-toggle {
 }
 .filter-add-elem-div .line {
 	height: 0;
-	border: 1px solid black;
+	border: 1px solid #707070;
 	margin: 3px;
 	flex-grow: 1;
 	pointer-events: none;
 }
 .filter-add-elem-div span {
 	pointer-events: none;
+	color: #707070;
 }
 .filter-add-elem-div:hover .line {
 	background-color: gray;

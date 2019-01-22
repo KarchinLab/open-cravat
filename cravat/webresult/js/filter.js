@@ -310,7 +310,7 @@ const makeFilterGroupDiv = (filter) => {
     // Elements div
     const elemsDiv = $(getEl('div'))
         .addClass('filter-group-elements-div')
-        .attr('join-operator','and');
+        .attr('join-operator','And');
     groupDiv.append(elemsDiv);
         
     // Controls div
@@ -324,7 +324,8 @@ const makeFilterGroupDiv = (filter) => {
         .addClass('filter-add-elem-div')
         .append($(getEl('div')).addClass('line'))
         .append($(getEl('span')).text('+'))
-        .append($(getEl('div')).addClass('line'));
+        .append($(getEl('div')).addClass('line'))
+        .attr('title','Add column');
     controlsDiv.append(addColDiv);
     /// Add column
     const addGroupDiv = $(getEl('div'))
@@ -332,7 +333,8 @@ const makeFilterGroupDiv = (filter) => {
         .addClass('filter-add-elem-div')
         .append($(getEl('div')).addClass('line'))
         .append($(getEl('span')).text('+( )'))
-        .append($(getEl('div')).addClass('line'));
+        .append($(getEl('div')).addClass('line'))
+        .attr('title','Add group');
     controlsDiv.append(addGroupDiv);
     
     // Populate from filter
@@ -414,10 +416,10 @@ const groupOperatorClickHandler = (event) => {
     const allElemsDiv = opDiv.parent();
     const curOperator = allElemsDiv.attr('join-operator');
     let newOperator;
-    if (curOperator === 'and') {
-        newOperator = 'or';
-    } else if (curOperator === 'or') {
-        newOperator = 'and';
+    if (curOperator === 'And') {
+        newOperator = 'Or';
+    } else if (curOperator === 'Or') {
+        newOperator = 'And';
     }
     opDiv.text(newOperator);
     opDiv.siblings('.filter-join-operator-div').text(newOperator);
