@@ -402,8 +402,7 @@ button {
 .filter-group-div {
 	border-left: 2px solid black;
 	border-right: 2px solid black;
-	border-radius: 12px;
-	width: fit-content;
+	border-radius: 25px;
 	display: flex;
 }
 
@@ -429,7 +428,6 @@ button {
 div.filter-not-toggle {
 	display: flex;
     align-items: center;
-    justify-content: center;
 }
 .filter-not-toggle[active="true"] {
 	color: black;
@@ -437,6 +435,7 @@ div.filter-not-toggle {
 }
 .filter-not-toggle[active="false"] {
 	color: #bebebe;
+	text-decoration: line-through;
 }
 .filter-group-wrapper-div {
 	display: flex;
@@ -444,7 +443,6 @@ div.filter-not-toggle {
 
 .filter-control-button {
 	font-weight: bold;
-	border-radius: 25%;
 	padding-left: 4px;
     padding-right: 4px;
     padding-top: 2px;
@@ -455,15 +453,11 @@ div.filter-not-toggle {
 	margin-bottom: 3px;
 }
 .filter-add-elem-div {
-	cursor: pointer;
 	font-size: 15px;
 	align-self: flex-end;
 	margin: 5px;
 }
 
-/* span.filter-element-remove {
-	font-size: 15px;
-} */
 .filter-element-remove {
 	font-size: 15px;
 	cursor: default;
