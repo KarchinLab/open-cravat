@@ -430,6 +430,10 @@ button {
     right: 62px;
 }
 
+div.pq-select-button {
+    min-width: 12px;
+}
+
 .pq-select-button > .pq-select-text {
     text-align: center;
 }

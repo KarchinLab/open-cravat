@@ -205,7 +205,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                             maxDisplay: 0,
                             search: false,
                             selectallText: 'Select all',
-                            width: '100%',});
+                            width: '90%',});
                         this[0].nextSibling.classList.add('ui-state-hover');
                     };
                 } else {
@@ -218,7 +218,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                             maxDisplay: 0,
                             search: false,
                             selectallText: '',
-                            width: '100%',});
+                            width: '90%',});
                         this[0].nextSibling.classList.add('ui-state-hover');
                     };
                 }
