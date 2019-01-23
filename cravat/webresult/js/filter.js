@@ -74,10 +74,11 @@ const makeFilterColDiv = (filter) => {
     
     // Remove column
     const removeColBtn = $(getEl('button'))
-    .addClass('filter-element-remove-button')
-    .addClass('filter-column-remove-button')
-    .click(filterColRemoveHandler)
-    .append('X');
+        .addClass('filter-element-remove-button')
+        .addClass('filter-control-button')
+        .addClass('filter-column-remove-button')
+        .click(filterColRemoveHandler)
+        .append('-');
     colDiv.append(removeColBtn);
 
     // Populate from filter
@@ -299,15 +300,16 @@ const makeFilterGroupDiv = (filter) => {
     wrapperDiv.append(notToggle);
     // Group div
     const groupDiv = $(getEl('div'))
-    .addClass('filter-group-div')
-    .addClass('filter-element-div');
-    wrapperDiv.append(groupDiv);
+        .addClass('filter-group-div')
+        .addClass('filter-element-div');
+        wrapperDiv.append(groupDiv);
     // Remove
     const removeBtn = $(getEl('button'))
-    .addClass('filter-element-remove-button')
-    .addClass('filter-group-remove-btn')
-    .click(filterGroupRemoveHandler)
-    .append('X');
+        .addClass('filter-element-remove-button')
+        .addClass('filter-control-button')
+        .addClass('filter-group-remove-btn')
+        .click(filterGroupRemoveHandler)
+        .append('-');
     wrapperDiv.append($(getEl('div')).append(removeBtn));
     
     // Elements div
@@ -320,25 +322,26 @@ const makeFilterGroupDiv = (filter) => {
     const controlsDiv = $(getEl('div'))
         .addClass('filter-group-controls-div');
     groupDiv.append(controlsDiv);
-
     // Add column
-    const addColDiv = $(getEl('div'))
-        .click(addFilterColHandler)
+    const addRuleDiv = $(getEl('div'))
         .addClass('filter-add-elem-div')
-        .append($(getEl('div')).addClass('line'))
-        .append($(getEl('span')).text('+'))
-        .append($(getEl('div')).addClass('line'))
-        .attr('title','Add column');
-    controlsDiv.append(addColDiv);
-    /// Add column
+    controlsDiv.append(addRuleDiv);
+    const addRuleBtn = $(getEl('button'))
+        .text('+')
+        .addClass('filter-control-button')
+        .click(addFilterRuleHandler)
+        .attr('title','Add rule');
+    addRuleDiv.append(addRuleBtn);
+    /// Add group
     const addGroupDiv = $(getEl('div'))
-        .click(addFilterGroupHandler)
         .addClass('filter-add-elem-div')
-        .append($(getEl('div')).addClass('line'))
-        .append($(getEl('span')).text('+( )'))
-        .append($(getEl('div')).addClass('line'))
-        .attr('title','Add group');
     controlsDiv.append(addGroupDiv);
+    const addGroupBtn = $(getEl('button'))
+        .text('+()')
+        .addClass('filter-control-button')
+        .click(addFilterGroupHandler)
+        .attr('title','Add group');
+    addGroupDiv.append(addGroupBtn);
     
     // Populate from filter
     if (filter !== undefined && !$.isEmptyObject(filter)) {
@@ -353,9 +356,9 @@ const makeFilterGroupDiv = (filter) => {
             for (let i=0; i<filter.groups.length; i++) {
                 addFilterElement(elemsDiv,'group',filter.groups[i]);
             }
-            // Add columns
+            // Add rules
             for (let i=0; i<filter.columns.length; i++) {
-                addFilterElement(elemsDiv,'column',filter.columns[i]);
+                addFilterElement(elemsDiv,'rule',filter.columns[i]);
             }
             // Check negate
             if (filter.negate) {
@@ -363,7 +366,7 @@ const makeFilterGroupDiv = (filter) => {
             }
         }
     } else {
-        addFilterElement(elemsDiv,'column');
+        addFilterElement(elemsDiv,'rule');
     }
     return wrapperDiv;
 }
@@ -392,15 +395,15 @@ const removeFilterElem = (elemDiv) => {
     elemDiv.remove();
 }
 
-const addFilterColHandler = (event) => {
+const addFilterRuleHandler = (event) => {
     const button = $(event.target);
-    const elemsDiv = button.parent().siblings('.filter-group-elements-div');
-    addFilterElement(elemsDiv, 'column');
+    const elemsDiv = button.parent().parent().siblings('.filter-group-elements-div');
+    addFilterElement(elemsDiv, 'rule');
 }
 
 const addFilterGroupHandler = (event) => {
     const button = $(event.target);
-    const elemsDiv = button.parent().siblings('.filter-group-elements-div');
+    const elemsDiv = button.parent().parent().siblings('.filter-group-elements-div');
     addFilterElement(elemsDiv, 'group');
 }
 
@@ -408,7 +411,7 @@ const addFilterElement = (allElemsDiv, elementType, filter) => {
     let elemDiv;
     if (elementType === 'group') {
         elemDiv = makeFilterGroupDiv(filter);
-    } else if (elementType === 'column') {
+    } else if (elementType === 'rule') {
         elemDiv = makeFilterColDiv(filter);
     }
     if (allElemsDiv.children().length > 0) {

@@ -397,7 +397,6 @@ button {
 .filter-element-div {
     margin: 5px;
 	padding: 3px;
-	min-width: 600px;
 }
 
 .filter-group-div {
@@ -405,10 +404,11 @@ button {
 	border-right: 2px solid black;
 	border-radius: 12px;
 	width: fit-content;
+	display: flex;
 }
 
 .filter-join-operator-div {
-	margin-left: 38px;
+	margin-left: 12px;
 	cursor: pointer;
 	font-size: 13px;
 	width: fit-content;
@@ -442,44 +442,24 @@ div.filter-not-toggle {
 	display: flex;
 }
 
-.filter-element-remove-button {
-	text-align: center;
-	border-radius: 50%;
-	font-family: monospace;
-	text-decoration: none;
+.filter-control-button {
+	font-weight: bold;
+	border-radius: 25%;
+	padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 2px;
+	padding-bottom: 2px;
 }
 
 .filter-group-controls-div {
 	display: flex;
-	min-width: 300px;
-	justify-content: center;
+	margin-bottom: 3px;
 }
 .filter-add-elem-div {
 	cursor: pointer;
 	font-size: 15px;
-	display: flex;
-	justify-content: center;
-	width: 45%;
-	align-items: center;
-	z-index: 2;
-}
-.filter-add-elem-div .line {
-	height: 0;
-	border: 1px solid #707070;
-	margin: 3px;
-	flex-grow: 1;
-	pointer-events: none;
-}
-.filter-add-elem-div span {
-	pointer-events: none;
-	color: #707070;
-}
-.filter-add-elem-div:hover .line {
-	background-color: gray;
-	border-width: 2px;
-}
-.filter-add-elem-div:hover span {
-	font-weight: bold;
+	align-self: flex-end;
+	margin: 5px;
 }
 
 .detail-info-line-header {
