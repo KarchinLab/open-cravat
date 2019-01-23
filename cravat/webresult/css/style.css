@@ -430,11 +430,7 @@ button {
     right: 62px;
 }
 
-.ui-state-hover > .pq-select-text:before {
-    content: ">";
-}
-
-:not(.ui-state-hover) > .pq-select-text:before {
-    content: "V";
+.pq-select-button > .pq-select-text {
+    text-align: center;
 }
 

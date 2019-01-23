@@ -194,16 +194,34 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                         return false;
                     };
                 }
-                column['filter']['init'] = function () {
-                    $(this).pqSelect({
-                        checkbox: true, 
-                        singlePlaceholder: '',
-                        multiplePlaceholder: '',
-                        radio: true, 
-                        maxDisplay: 0,
-                        width: '100%',});
-                    this[0].nextSibling.classList.add('ui-state-hover');
-                };
+                var selectallText = '';
+                if (column['categories'].length > 3) {
+                    column['filter']['init'] = function () {
+                        $(this).pqSelect({
+                            checkbox: true, 
+                            singlePlaceholder: '&#x25BC;',
+                            multiplePlaceholder: '&#x25BC;',
+                            radio: true, 
+                            maxDisplay: 0,
+                            search: false,
+                            selectallText: 'Select all',
+                            width: '100%',});
+                        this[0].nextSibling.classList.add('ui-state-hover');
+                    };
+                } else {
+                    column['filter']['init'] = function () {
+                        $(this).pqSelect({
+                            checkbox: true, 
+                            singlePlaceholder: '&#x25BC;',
+                            multiplePlaceholder: '&#x25BC;',
+                            radio: true, 
+                            maxDisplay: 0,
+                            search: false,
+                            selectallText: '',
+                            width: '100%',});
+                        this[0].nextSibling.classList.add('ui-state-hover');
+                    };
+                }
 
             }
 			var columnKey = column['col'];

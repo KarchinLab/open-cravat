@@ -192,6 +192,7 @@ function addTabHeadsAndTabContentDivs () {
 }
 
 function loadData (alertFlag, finalcallback) {
+    document.getElementById('load_button').disabled = true;
 	var infoReset = resetTab['info'];
 	resetTab = {'info': infoReset};
 	resetTab['summary'] = true;

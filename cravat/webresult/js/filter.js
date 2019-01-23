@@ -192,10 +192,12 @@ const populateFilterValues = (valsContainer, testName, value) => {
         addEl(valsContainer[0], select);
         var optionValues = column.filter.options;
         var writtenOptionValues = [];
-        for (var j = 0; j < value.length; j++) {
-            for (let k = 0; k < valSubDicKeys.length; k++) {
-                const key = valSubDicKeys[k];
-                value[j] = value[j].replace(new RegExp(key, 'g'), valSubDic[key]);
+        if (value != undefined) {
+            for (var j = 0; j < value.length; j++) {
+                for (let k = 0; k < valSubDicKeys.length; k++) {
+                    const key = valSubDicKeys[k];
+                    value[j] = value[j].replace(new RegExp(key, 'g'), valSubDic[key]);
+                }
             }
         }
         if (optionValues != undefined) {
@@ -216,10 +218,12 @@ const populateFilterValues = (valsContainer, testName, value) => {
                         var option = getEl('option');
                         option.value = val;
                         option.textContent = val;
-                        for (var l = 0; l < value.length; l++) {
-                            if (value[l] == val) {
-                                option.selected = true;
-                                break;
+                        if (value != undefined) {
+                            for (var l = 0; l < value.length; l++) {
+                                if (value[l] == val) {
+                                    option.selected = true;
+                                    break;
+                                }
                             }
                         }
                         addEl(select, option);
@@ -227,14 +231,29 @@ const populateFilterValues = (valsContainer, testName, value) => {
                 }
             }
         }
-        $(select).pqSelect({
-            checkbox: true, 
-            displayText: '{0} selected',
-            singlePlaceholder: '',
-            multiplePlaceholder: '',
-            maxDisplay: 0,
-            width: 200,
-        });
+        if (writtenOptionValues.length > 3) {
+            $(select).pqSelect({
+                checkbox: true, 
+                displayText: '{0} selected',
+                singlePlaceholder: '&#x25BC;',
+                multiplePlaceholder: '&#x25BC;',
+                maxDisplay: 0,
+                width: 200,
+                search: false,
+                selectallText: 'Select all',
+            });
+        } else {
+            $(select).pqSelect({
+                checkbox: true, 
+                displayText: '{0} selected',
+                singlePlaceholder: '&#x25BC;',
+                multiplePlaceholder: '&#x25BC;',
+                maxDisplay: 0,
+                width: 200,
+                search: false,
+                selectallText: '',
+            });
+        }
         select.nextSibling.classList.add('ui-state-hover');
     } else {
         for (let i=0; i<testDesc.inputs; i++) {
