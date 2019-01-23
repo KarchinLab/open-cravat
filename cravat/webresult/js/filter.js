@@ -192,6 +192,12 @@ const populateFilterValues = (valsContainer, testName, value) => {
         addEl(valsContainer[0], select);
         var optionValues = column.filter.options;
         var writtenOptionValues = [];
+        for (var j = 0; j < value.length; j++) {
+            for (let k = 0; k < valSubDicKeys.length; k++) {
+                const key = valSubDicKeys[k];
+                value[j] = value[j].replace(new RegExp(key, 'g'), valSubDic[key]);
+            }
+        }
         if (optionValues != undefined) {
             for (var j = 0; j < optionValues.length; j++) {
                 var optionValue = optionValues[j];
@@ -210,6 +216,12 @@ const populateFilterValues = (valsContainer, testName, value) => {
                         var option = getEl('option');
                         option.value = val;
                         option.textContent = val;
+                        for (var l = 0; l < value.length; l++) {
+                            if (value[l] == val) {
+                                option.selected = true;
+                                break;
+                            }
+                        }
                         addEl(select, option);
                     }
                 }
