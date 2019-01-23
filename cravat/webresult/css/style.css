@@ -450,7 +450,6 @@ div.filter-not-toggle {
     padding-top: 2px;
 	padding-bottom: 2px;
 }
-
 .filter-group-controls-div {
 	display: flex;
 	margin-bottom: 3px;
@@ -460,6 +459,17 @@ div.filter-not-toggle {
 	font-size: 15px;
 	align-self: flex-end;
 	margin: 5px;
+}
+
+/* span.filter-element-remove {
+	font-size: 15px;
+} */
+.filter-element-remove {
+	font-size: 15px;
+	cursor: default;
+}
+.filter-element-remove:hover {
+	font-weight: bold;
 }
 
 .detail-info-line-header {

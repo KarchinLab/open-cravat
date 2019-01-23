@@ -73,12 +73,10 @@ const makeFilterColDiv = (filter) => {
     testSel.change();
     
     // Remove column
-    const removeColBtn = $(getEl('button'))
-        .addClass('filter-element-remove-button')
-        .addClass('filter-control-button')
-        .addClass('filter-column-remove-button')
+    const removeColBtn = $(getEl('span'))
+        .addClass('filter-element-remove')
         .click(filterColRemoveHandler)
-        .append('-');
+        .text('X');
     colDiv.append(removeColBtn);
 
     // Populate from filter
@@ -304,18 +302,17 @@ const makeFilterGroupDiv = (filter) => {
         .addClass('filter-element-div');
         wrapperDiv.append(groupDiv);
     // Remove
-    const removeBtn = $(getEl('button'))
-        .addClass('filter-element-remove-button')
-        .addClass('filter-control-button')
-        .addClass('filter-group-remove-btn')
+    const removeDiv = $(getEl('div'))
+        .addClass('filter-element-remove')
+        // .addClass('filter-group-remove')
         .click(filterGroupRemoveHandler)
-        .append('-');
-    wrapperDiv.append($(getEl('div')).append(removeBtn));
+        .text('X');
+    wrapperDiv.append(removeDiv);
     
     // Elements div
     const elemsDiv = $(getEl('div'))
         .addClass('filter-group-elements-div')
-        .attr('join-operator','And');
+        .attr('join-operator','AND');
     groupDiv.append(elemsDiv);
         
     // Controls div
@@ -337,7 +334,7 @@ const makeFilterGroupDiv = (filter) => {
         .addClass('filter-add-elem-div')
     controlsDiv.append(addGroupDiv);
     const addGroupBtn = $(getEl('button'))
-        .text('+()')
+        .text('( )')
         .addClass('filter-control-button')
         .click(addFilterGroupHandler)
         .attr('title','Add group');
@@ -373,7 +370,7 @@ const makeFilterGroupDiv = (filter) => {
 
 const filterGroupRemoveHandler = (event) => {
     const target = $(event.target);
-    const filterElemDiv = target.parent().parent();
+    const filterElemDiv = target.parent();
     removeFilterElem(filterElemDiv);
 }
 
@@ -430,10 +427,10 @@ const groupOperatorClickHandler = (event) => {
     const allElemsDiv = opDiv.parent();
     const curOperator = allElemsDiv.attr('join-operator');
     let newOperator;
-    if (curOperator === 'And') {
-        newOperator = 'Or';
-    } else if (curOperator === 'Or') {
-        newOperator = 'And';
+    if (curOperator === 'AND') {
+        newOperator = 'OR';
+    } else if (curOperator === 'OR') {
+        newOperator = 'AND';
     }
     opDiv.text(newOperator);
     opDiv.siblings('.filter-join-operator-div').text(newOperator);
