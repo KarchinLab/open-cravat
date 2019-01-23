@@ -798,7 +798,7 @@ function makeFilterRootGroupDiv (filter) {
     var filterRootGroupDiv = makeFilterGroupDiv(filterToShow);
     filterRootGroupDiv.attr('id', 'filter-root-group-div');
     filterRootGroupDiv.css('margin-left', '0px');
-	filterRootGroupDiv.children().children('.filter-group-remove-btn').attr('disabled', 'disabled');
+	filterRootGroupDiv.children().children('.filter-group-remove-btn').attr('hidden', 'true');
 	const rootElemsDiv = filterRootGroupDiv.children('.filter-group-div').children('.filter-group-elements-div');
 	// addFilterElement(rootElemsDiv,'column')
     return filterRootGroupDiv;
