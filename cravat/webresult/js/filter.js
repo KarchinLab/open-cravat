@@ -8,7 +8,6 @@ const getAnnotColsByName = (annotName) => {
 }
 
 const filterNotToggleClick = (event) => {
-    console.log('Not toggle');
     const target = $(event.target);
     const curActive = target.attr('active');
     let newActive;
