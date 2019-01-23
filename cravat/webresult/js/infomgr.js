@@ -149,10 +149,20 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 				}
 				var content = '' + val;
 				if (content != '' && content.indexOf('http') > -1) {
-					content = '<a href="' + content + '" target="_blank">' +
-						val + '</a>';
+                    var linkToks = content.split('[WEB:]');
+                    var linkUrl = null;
+                    var linkText = null;
+                    if (linkToks.length != 2) {
+                        linkUrl = linkToks[0];
+                        linkText = linkToks[0];
+                    } else {
+                        linkText = linkToks[0];
+                        linkUrl = linkToks[1];
+                    }
+					content = '<a href="' + linkUrl + '" target="_blank">' +
+						linkText + '</a>';
 				}
-				return '<span title="' + val + '">' + content + '</span>'};
+				return '<span title="' + linkUrl + '">' + content + '</span>'};
             var filter = column['filter'];
             if (filter != undefined && filter['type'] == 'select') {
                 var colType = column['type'];
