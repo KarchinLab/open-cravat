@@ -800,7 +800,7 @@ function makeFilterRootGroupDiv (filter) {
     filterRootGroupDiv.css('margin-left', '0px');
 	filterRootGroupDiv.children().children('.filter-group-remove-btn').attr('disabled', 'disabled');
 	const rootElemsDiv = filterRootGroupDiv.children('.filter-group-div').children('.filter-group-elements-div');
-	addFilterElement(rootElemsDiv,'column')
+	// addFilterElement(rootElemsDiv,'column')
     return filterRootGroupDiv;
 }
 
@@ -1138,7 +1138,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 				ascendingSort[sorter.dataIndx] = (sorter.dir == 'up');
 			}
 		} else {
-			ui.sorter = [ui.sorter[ui.sorter.length - 1]];
+	addFilterElement(elemsDiv,'column',filter.columns[i]);		ui.sorter = [ui.sorter[ui.sorter.length - 1]];
 			gridObject.sortModel.sorter = ui.sorter;
 			if (ui.sorter[0] != undefined) {
 				var sorter = ui.sorter[0];

@@ -23,6 +23,27 @@ const makeFilterColDiv = (filter) => {
     const colDiv = $(getEl('div'))
         .addClass('filter-column-div')
         .addClass('filter-element-div');
+        
+        // Annotator select
+        const groupSel = $(getEl('select'))
+        .addClass('filter-annotator-selector')
+        .change(filterGroupChangeHandler);
+        colDiv.append(groupSel);
+    for (let i=0; i<filterCols.length; i++) {
+        var colGroup = filterCols[i];
+        let groupOpt = $(getEl('option'))
+        .val(colGroup.title)
+        .append(colGroup.title);
+        groupSel.append(groupOpt);
+    };
+    
+    // Column select
+    const colSel = $(getEl('select'))
+    .addClass('filter-column-selector');
+    colSel.on('change', onFilterColumnSelectorChange);
+    colDiv.append(colSel);
+    populateFilterColumnSelector(colSel, groupSel.val());
+
     // Not toggle
     const notSpan = $(getEl('span'))
         .addClass('filter-not-toggle')
@@ -30,30 +51,11 @@ const makeFilterColDiv = (filter) => {
         .click(filterNotToggleClick)
         .text('not');
     colDiv.append(notSpan);
-    // Annotator select
-    const groupSel = $(getEl('select'))
-        .addClass('filter-annotator-selector')
-        .change(filterGroupChangeHandler);
-    colDiv.append(groupSel);
-    for (let i=0; i<filterCols.length; i++) {
-        var colGroup = filterCols[i];
-        let groupOpt = $(getEl('option'))
-            .val(colGroup.title)
-            .append(colGroup.title);
-        groupSel.append(groupOpt);
-    };
-
-    // Column select
-    const colSel = $(getEl('select'))
-        .addClass('filter-column-selector');
-    colSel.on('change', onFilterColumnSelectorChange);
-    colDiv.append(colSel);
-    populateFilterColumnSelector(colSel, groupSel.val());
-
+    
     // Test select
     const testSel = $(getEl('select'))
-        .addClass('filter-test-selector')
-        .change(filterTestChangeHandler);
+    .addClass('filter-test-selector')
+    .change(filterTestChangeHandler);
     testSel[0].setAttribute('prevselidx', 0);
     colDiv.append(testSel);
     for (var i = 0; i < filterTestNames.length; i++) {
@@ -120,7 +122,7 @@ const onFilterColumnSelectorChange = (evt) => {
         }
     }
     if (filter != null) {
-        var testDiv = evt.target.nextSibling;
+        var testDiv = $(evt.target).siblings('.filter-test-selector')[0];
         if (filter.type == 'select') {
             var selIdx = null;
             for (var i = 0; i < testDiv.options.length; i++) {
@@ -174,8 +176,8 @@ const filterTestChangeHandler = (event) => {
     const testSel = $(event.target);
     const valuesDiv = testSel.siblings('.filter-values-div');
     const testName = testSel.val();
-    var testDiv = testSel[0].previousSibling;
-    var colname = testDiv.value;
+    var testDiv = testSel.siblings('.filter-column-selector');
+    var colname = testDiv[0].value;
     var colType = getFilterColByName(colname).type;
     var selTestType = testSel[0].value;
     var filterTest = filterTests[selTestType];
@@ -191,8 +193,8 @@ const filterTestChangeHandler = (event) => {
 const populateFilterValues = (valsContainer, testName, value) => {
     valsContainer.empty();
     const testDesc = filterTests[testName];
-    var testDiv = valsContainer[0].previousSibling.previousSibling.previousSibling;
-    var col = testDiv.value;
+    var testDiv = valsContainer.siblings('.filter-column-selector');
+    var col = testDiv[0].value;
     var column = getFilterColByName(col);
     var filter = column.filter;
     var valSubDic = column.reportsub;
@@ -339,7 +341,7 @@ const makeFilterGroupDiv = (filter) => {
     controlsDiv.append(addGroupDiv);
     
     // Populate from filter
-    if (filter !== undefined) {
+    if (filter !== undefined && !$.isEmptyObject(filter)) {
         if (filter.operator != undefined) {
             // Assign operator
             elemsDiv.attr('join-operator',filter.operator);
@@ -360,6 +362,8 @@ const makeFilterGroupDiv = (filter) => {
                 notToggle.click();
             }
         }
+    } else {
+        addFilterElement(elemsDiv,'column');
     }
     return wrapperDiv;
 }
