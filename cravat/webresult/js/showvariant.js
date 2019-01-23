@@ -375,6 +375,13 @@ function showVariantDetail (row, tabName) {
 				generator['function'](widgetContentDiv, row, tabName);
 				widgetDiv.style.width = generator['width'] + 'px';
 				widgetDiv.style.height = generator['height'] + 'px';
+                var setting = getViewerWidgetSettingByWidgetkey(tabName, colGroupKey);
+                if (setting != null) {
+                    var display = setting['display'];
+                    if (display != undefined) {
+                        widgetDiv.style.display = display;
+                    }
+                }
 				addEl(outerDiv, widgetDiv);
 			}
 		}

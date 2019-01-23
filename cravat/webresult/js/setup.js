@@ -523,7 +523,22 @@ function populateWidgetSelectorPanel () {
 			var input = getEl('input');
 			input.id = 'widgettogglecheckbox_' + tabName + '_' + widgetName;
 			input.type = 'checkbox';
-			input.checked = true;
+            var vwsT = viewerWidgetSettings[tabName];
+            if (vwsT == undefined) {
+                vwsT = [];
+                viewerWidgetSettings[tabName] = vwsT;
+            }
+            var vws = getViewerWidgetSettingByWidgetkey(tabName, widgetName);
+            if (vws == null) {
+                input.checked = true;
+            } else {
+                var display = vws['display'];
+                if (display != 'none') {
+                    input.checked = true;
+                } else {
+                    input.checked = false;
+                }
+            }
 			input.setAttribute('widgetname', widgetName);
 			input.addEventListener('click', function (evt) {
 				onClickWidgetSelectorCheckbox(tabName, evt);
@@ -590,6 +605,10 @@ function showHideWidget (tabName, widgetName, state) {
 	} else {
 		widget.style.display = 'block';
 	}
+    var dcd = widget.getElementsByClassName('detailcontentdiv')[0];
+    if (dcd.innerHTML == '') {
+        drawSummaryWidget(widgetName);
+    }
 	var $detailContainerDiv = $(document.getElementById('detailcontainerdiv_' + tabName));
 	$detailContainerDiv.packery('fit', widget);
 }
@@ -598,6 +617,18 @@ function drawSummaryWidget (widgetName) {
 	var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
 	emptyElement(widgetContentDiv);
 	var generator = widgetGenerators[widgetName]['info'];
+    /*
+    if (generator['hidden'] == true) {
+        for (var i = 0; i < viewerWidgetSettings['info'].length; i++) {
+            var vws = viewerWidgetSettings['info'][i];
+            if (vws.id == 'detailwidget_info_' + widgetName) {
+                vws.display = 'none';
+                break;
+            }
+        }
+        return;
+    }
+    */
 	var callServer = generator['callserver'];
 	if (callServer) {
 		$.get('/result/runwidget/' + widgetName, {dbpath: dbPath}).done(function (response) {

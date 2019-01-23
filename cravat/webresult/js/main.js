@@ -230,15 +230,15 @@ function loadData (alertFlag, finalcallback) {
 		if (finalcallback) {
 			finalcallback();
 		}
+		if (currentTab == 'info') {
+			changeMenu();
+		}
         try {
             populateSummaryWidgetDiv();
         } catch (e) {
             console.log(e);
             console.trace();
         }
-		if (currentTab == 'info') {
-			changeMenu();
-		}
 		if (currentTab == 'variant' || currentTab == 'gene') {
 			setupTab(currentTab);
 		}
@@ -398,13 +398,25 @@ function notifyOfReadyToLoad () {
 	div.style.display = 'none';
 }
 
+function getViewerWidgetSettingByWidgetkey (tabName, widgetId) {
+    var settings = viewerWidgetSettings[tabName];
+    if (settings == undefined) {
+        return null;
+    }
+    for (var i = 0; i < settings.length; i++) {
+        if (settings[i].widgetkey == widgetId) {
+            return settings[i];
+        }
+    }
+    return null;
+}
+
 function firstLoadData () {
 	var infoReset = resetTab['info'];
 	resetTab = {'info': infoReset};
 	var loadWidgets = function () {
 		detailWidgetOrder = {'variant': {}, 'gene': {}, 'info': {}};
 		$.get('/result/service/widgetlist', {}).done(function (jsonResponseData) {
-			writeLogDiv('Widget list loaded');
 	    	var widgets = jsonResponseData;
 	    	var widgetLoadCount = 0;
 	    	for (var i = 0; i < widgets.length; i++) {
@@ -419,6 +431,36 @@ function firstLoadData () {
 	    			writeLogDiv(widgetName + ' script loaded');
 	    			widgetLoadCount += 1;
 	    			if (widgetLoadCount == widgets.length) {
+                        // processes widget default_hidden
+                        var widgetNames = Object.keys(widgetGenerators);
+                        for (var k = 0; k < widgetNames.length; k++) {
+                            var widgetName = widgetNames[k];
+                            var widgetTabs = Object.keys(widgetGenerators[widgetName]);
+                            for (var j = 0; j < widgetTabs.length; j++) {
+                                var widgetTab = widgetTabs[j];
+                                var dh = widgetGenerators[widgetName][widgetTab]['default_hidden'];
+                                if (dh != undefined) {
+                                    if (dh == true) {
+                                        dh = 'none';
+                                    } else {
+                                        dh = 'block';
+                                    }
+                                    if (viewerWidgetSettings[widgetTab] == null) {
+                                        viewerWidgetSettings[widgetTab] = [];
+                                    }
+                                    var vws = getViewerWidgetSettingByWidgetkey(widgetTab, widgetName);
+                                    if (vws == null) {
+                                        viewerWidgetSettings[widgetTab].push({
+                                            'widgetkey': widgetName,
+                                            'display': dh});
+                                    } else {
+                                        if (vws['display'] == '') {
+                                            vws['display'] = dh;
+                                        }
+                                    }
+                                }
+                            }
+                        }
 	    				setupTab('info');
                         missingWidgets = {};
 	        			if (flagNotifyToUseFilter) {
