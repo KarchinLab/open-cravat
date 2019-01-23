@@ -396,13 +396,80 @@ button {
 
 .filter-element-div {
     margin: 5px;
-    padding: 3px;
-    margin-left: 20px;
-    border: 1px solid black;
+	padding: 3px;
+}
+
+.filter-group-div {
+	border-left: 2px solid black;
+	border-right: 2px solid black;
+	border-radius: 12px;
+	width: fit-content;
+	display: flex;
 }
 
 .filter-join-operator-div {
-    margin-left: 20px;
+	margin-left: 12px;
+	cursor: pointer;
+	font-size: 13px;
+	width: fit-content;
+	height: fit-content;
+}
+.filter-join-operator-div:hover {
+	font-weight: bold;
+}
+
+.filter-not-toggle {
+	font-size: 13px;
+	cursor: pointer;
+	margin: 3px;
+}
+.filter-not-toggle:hover {
+	font-weight: bold;
+}
+div.filter-not-toggle {
+	display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.filter-not-toggle[active="true"] {
+	color: black;
+	font-weight: bold;
+}
+.filter-not-toggle[active="false"] {
+	color: #bebebe;
+}
+.filter-group-wrapper-div {
+	display: flex;
+}
+
+.filter-control-button {
+	font-weight: bold;
+	border-radius: 25%;
+	padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 2px;
+	padding-bottom: 2px;
+}
+.filter-group-controls-div {
+	display: flex;
+	margin-bottom: 3px;
+}
+.filter-add-elem-div {
+	cursor: pointer;
+	font-size: 15px;
+	align-self: flex-end;
+	margin: 5px;
+}
+
+/* span.filter-element-remove {
+	font-size: 15px;
+} */
+.filter-element-remove {
+	font-size: 15px;
+	cursor: default;
+}
+.filter-element-remove:hover {
+	font-weight: bold;
 }
 
 .detail-info-line-header {

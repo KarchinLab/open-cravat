@@ -7,35 +7,55 @@ const getAnnotColsByName = (annotName) => {
     }
 }
 
+const filterNotToggleClick = (event) => {
+    const target = $(event.target);
+    const curActive = target.attr('active');
+    let newActive;
+    if (curActive === 'true') {
+        newActive = 'false';
+    } else {
+        newActive = 'true';
+    }
+    target.attr('active',newActive);
+}
+
 const makeFilterColDiv = (filter) => {
     const colDiv = $(getEl('div'))
         .addClass('filter-column-div')
         .addClass('filter-element-div');
-
-    // Annotator select
-    const groupSel = $(getEl('select'))
+        
+        // Annotator select
+        const groupSel = $(getEl('select'))
         .addClass('filter-annotator-selector')
         .change(filterGroupChangeHandler);
-    colDiv.append(groupSel);
+        colDiv.append(groupSel);
     for (let i=0; i<filterCols.length; i++) {
         var colGroup = filterCols[i];
         let groupOpt = $(getEl('option'))
-            .val(colGroup.title)
-            .append(colGroup.title);
+        .val(colGroup.title)
+        .append(colGroup.title);
         groupSel.append(groupOpt);
     };
-
+    
     // Column select
     const colSel = $(getEl('select'))
-        .addClass('filter-column-selector');
+    .addClass('filter-column-selector');
     colSel.on('change', onFilterColumnSelectorChange);
     colDiv.append(colSel);
     populateFilterColumnSelector(colSel, groupSel.val());
 
+    // Not toggle
+    const notSpan = $(getEl('span'))
+        .addClass('filter-not-toggle')
+        .attr('active','false')
+        .click(filterNotToggleClick)
+        .text('not');
+    colDiv.append(notSpan);
+    
     // Test select
     const testSel = $(getEl('select'))
-        .addClass('filter-test-selector')
-        .change(filterTestChangeHandler);
+    .addClass('filter-test-selector')
+    .change(filterTestChangeHandler);
     testSel[0].setAttribute('prevselidx', 0);
     colDiv.append(testSel);
     for (var i = 0; i < filterTestNames.length; i++) {
@@ -52,20 +72,11 @@ const makeFilterColDiv = (filter) => {
     colDiv.append(filterValsSpan)
     testSel.change();
     
-    // Negate
-    const negateCheck = $(getEl('input'))
-        .addClass('filter-element-negate-check')
-        .addClass('filter-column-negate-check')
-        .attr('type','checkbox');
-    colDiv.append(negateCheck);
-    colDiv.append('negate ');
-    
     // Remove column
-    const removeColBtn = $(getEl('button'))
-    .addClass('filter-element-remove-button')
-    .addClass('filter-column-remove-button')
-    .click(filterColRemoveHandler)
-    .append('X');
+    const removeColBtn = $(getEl('span'))
+        .addClass('filter-element-remove')
+        .click(filterColRemoveHandler)
+        .text('X');
     colDiv.append(removeColBtn);
 
     // Populate from filter
@@ -82,7 +93,9 @@ const makeFilterColDiv = (filter) => {
         // Test values
         populateFilterValues(filterValsSpan, filter.test, filter.value);
         // Check negate
-        negateCheck[0].checked = filter.negate;
+        if (filter.negate) {
+            notSpan.click();
+        }
     }
 
     return colDiv;
@@ -108,7 +121,7 @@ const onFilterColumnSelectorChange = (evt) => {
         }
     }
     if (filter != null) {
-        var testDiv = evt.target.nextSibling;
+        var testDiv = $(evt.target).siblings('.filter-test-selector')[0];
         if (filter.type == 'select') {
             var selIdx = null;
             for (var i = 0; i < testDiv.options.length; i++) {
@@ -162,8 +175,8 @@ const filterTestChangeHandler = (event) => {
     const testSel = $(event.target);
     const valuesDiv = testSel.siblings('.filter-values-div');
     const testName = testSel.val();
-    var testDiv = testSel[0].previousSibling;
-    var colname = testDiv.value;
+    var testDiv = testSel.siblings('.filter-column-selector');
+    var colname = testDiv[0].value;
     var colType = getFilterColByName(colname).type;
     var selTestType = testSel[0].value;
     var filterTest = filterTests[selTestType];
@@ -179,8 +192,8 @@ const filterTestChangeHandler = (event) => {
 const populateFilterValues = (valsContainer, testName, value) => {
     valsContainer.empty();
     const testDesc = filterTests[testName];
-    var testDiv = valsContainer[0].previousSibling.previousSibling.previousSibling;
-    var col = testDiv.value;
+    var testDiv = valsContainer.siblings('.filter-column-selector');
+    var col = testDiv[0].value;
     var column = getFilterColByName(col);
     var filter = column.filter;
     var valSubDic = column.reportsub;
@@ -305,77 +318,91 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
 }
 
 const makeFilterGroupDiv = (filter) => {
+    const wrapperDiv = $(getEl('div'))
+        .addClass('filter-group-wrapper-div')
+        .addClass('filter-element-div');
+    // Not toggle
+    const notToggle = $(getEl('div'))
+        .addClass('filter-not-toggle')
+        .attr('active','false')
+        .click(filterNotToggleClick)
+        .text('not');
+    wrapperDiv.append(notToggle);
+    // Group div
     const groupDiv = $(getEl('div'))
         .addClass('filter-group-div')
         .addClass('filter-element-div');
+        wrapperDiv.append(groupDiv);
+    // Remove
+    const removeDiv = $(getEl('div'))
+        .addClass('filter-element-remove')
+        // .addClass('filter-group-remove')
+        .click(filterGroupRemoveHandler)
+        .text('X');
+    wrapperDiv.append(removeDiv);
     
     // Elements div
     const elemsDiv = $(getEl('div'))
-    .addClass('filter-group-elements-div');
+        .addClass('filter-group-elements-div')
+        .attr('join-operator','AND');
     groupDiv.append(elemsDiv);
         
     // Controls div
     const controlsDiv = $(getEl('div'))
         .addClass('filter-group-controls-div');
-        groupDiv.append(controlsDiv);
+    groupDiv.append(controlsDiv);
     // Add column
-    const addColumnBtn = $(getEl('button'))
-        .addClass('filter-add-column-btn')
-        .click(addFilterColBtnHandler)
-        .append('Add column');
-    controlsDiv.append(addColumnBtn).append(' ');
-    // Add group
+    const addRuleDiv = $(getEl('div'))
+        .addClass('filter-add-elem-div')
+    controlsDiv.append(addRuleDiv);
+    const addRuleBtn = $(getEl('button'))
+        .text('+')
+        .addClass('filter-control-button')
+        .click(addFilterRuleHandler)
+        .attr('title','Add rule');
+    addRuleDiv.append(addRuleBtn);
+    /// Add group
+    const addGroupDiv = $(getEl('div'))
+        .addClass('filter-add-elem-div')
+    controlsDiv.append(addGroupDiv);
     const addGroupBtn = $(getEl('button'))
-        .addClass('filter-add-group-btn')
-        .click(addFilterGroupBtnHandler)
-        .append('Add group');
-    controlsDiv.append(addGroupBtn).append(' ');
-    // Operator selector
-    controlsDiv.append(' Operator: ')
-    const operatorSel = $(getEl('select'))
-        .addClass('filter-group-operator-select')
-        .change(groupOperatorSelectHandler);
-    controlsDiv.append(operatorSel)
-    operatorSel.append($(getEl('option')).val('and').append('and'));
-    operatorSel.append($(getEl('option')).val('or').append('or'));
-    // Negate
-    const negateCheck = $(getEl('input'))
-        .addClass('filter-element-negate-check')
-        .addClass('filter-group-negate-check')
-        .attr('type','checkbox');
-    controlsDiv.append(negateCheck);
-    controlsDiv.append('negate ');
-    // Remove
-    const removeBtn = $(getEl('button'))
-    .addClass('filter-element-remove-btn')
-    .addClass('filter-group-remove-btn')
-    .click(filterGroupRemoveHandler)
-    .append('X');
-    controlsDiv.append(' ').append(removeBtn);
+        .text('( )')
+        .addClass('filter-control-button')
+        .click(addFilterGroupHandler)
+        .attr('title','Add group');
+    addGroupDiv.append(addGroupBtn);
     
     // Populate from filter
-    if (filter !== undefined) {
+    if (filter !== undefined && !$.isEmptyObject(filter)) {
         if (filter.operator != undefined) {
             // Assign operator
-            operatorSel.val(filter.operator);
+            elemsDiv.attr('join-operator',filter.operator);
+            const joinOperators = elemsDiv.children('.filter-join-operator-div');
+            if (joinOperators.length > 0) {
+                $(joinOperators[0]).click();
+            }
             // Add groups
             for (let i=0; i<filter.groups.length; i++) {
                 addFilterElement(elemsDiv,'group',filter.groups[i]);
             }
-            // Add columns
+            // Add rules
             for (let i=0; i<filter.columns.length; i++) {
-                addFilterElement(elemsDiv,'column',filter.columns[i]);
+                addFilterElement(elemsDiv,'rule',filter.columns[i]);
             }
             // Check negate
-            negateCheck[0].checked = filter.negate;
+            if (filter.negate) {
+                notToggle.click();
+            }
         }
+    } else {
+        addFilterElement(elemsDiv,'rule');
     }
-    return groupDiv;
+    return wrapperDiv;
 }
 
 const filterGroupRemoveHandler = (event) => {
     const target = $(event.target);
-    const filterElemDiv = target.parent().parent()
+    const filterElemDiv = target.parent();
     removeFilterElem(filterElemDiv);
 }
 
@@ -397,15 +424,15 @@ const removeFilterElem = (elemDiv) => {
     elemDiv.remove();
 }
 
-const addFilterColBtnHandler = (event) => {
+const addFilterRuleHandler = (event) => {
     const button = $(event.target);
-    const elemsDiv = button.parent().siblings('.filter-group-elements-div');
-    addFilterElement(elemsDiv, 'column');
+    const elemsDiv = button.parent().parent().siblings('.filter-group-elements-div');
+    addFilterElement(elemsDiv, 'rule');
 }
 
-const addFilterGroupBtnHandler = (event) => {
+const addFilterGroupHandler = (event) => {
     const button = $(event.target);
-    const elemsDiv = button.parent().siblings('.filter-group-elements-div');
+    const elemsDiv = button.parent().parent().siblings('.filter-group-elements-div');
     addFilterElement(elemsDiv, 'group');
 }
 
@@ -413,28 +440,33 @@ const addFilterElement = (allElemsDiv, elementType, filter) => {
     let elemDiv;
     if (elementType === 'group') {
         elemDiv = makeFilterGroupDiv(filter);
-    } else if (elementType === 'column') {
+    } else if (elementType === 'rule') {
         elemDiv = makeFilterColDiv(filter);
     }
     if (allElemsDiv.children().length > 0) {
-        const operator = allElemsDiv
-            .siblings()
-            .children('.filter-group-operator-select')
-            .val();
+        const operator = allElemsDiv.attr('join-operator');
         const joinOpDiv = $(getEl('div'))
             .addClass('filter-join-operator-div')
             .append(operator);
+        joinOpDiv.click(groupOperatorClickHandler);
         allElemsDiv.append(joinOpDiv);
     }
     allElemsDiv.append(elemDiv);
 }
 
-const groupOperatorSelectHandler = (event) => {
-    const groupOpSel = $(event.target);
-    const operator = groupOpSel.val();
-    const joinDivs = groupOpSel.parent().siblings('.filter-group-elements-div').children('.filter-join-operator-div');
-    joinDivs.empty();
-    joinDivs.append(operator);
+const groupOperatorClickHandler = (event) => {
+    const opDiv = $(event.target);
+    const allElemsDiv = opDiv.parent();
+    const curOperator = allElemsDiv.attr('join-operator');
+    let newOperator;
+    if (curOperator === 'AND') {
+        newOperator = 'OR';
+    } else if (curOperator === 'OR') {
+        newOperator = 'AND';
+    }
+    opDiv.text(newOperator);
+    opDiv.siblings('.filter-join-operator-div').text(newOperator);
+    allElemsDiv.attr('join-operator',newOperator);
 }
 
 function doReportSub (reportsub, reportsubKeys, origVal) {
@@ -448,10 +480,9 @@ function doReportSub (reportsub, reportsubKeys, origVal) {
 
 const makeGroupFilter = (groupDiv) => {
     const filter = {};
+    const elemsDiv = groupDiv.children('.filter-group-div').children('.filter-group-elements-div');
     // Operator
-    const opSel = groupDiv.children().children('.filter-group-operator-select');
-    filter.operator = opSel.val();
-    const elemsDiv = groupDiv.children('.filter-group-elements-div');
+    filter.operator = elemsDiv.attr('join-operator');
     // Columns
     const colDivs = elemsDiv.children('.filter-column-div');
     filter.columns = [];
@@ -501,21 +532,20 @@ const makeGroupFilter = (groupDiv) => {
             }
         }
         // Negate
-        colFilter.negate = colDiv.children('.filter-column-negate-check').is(':checked');
+        colFilter.negate = colDiv.children('.filter-not-toggle').attr('active') === 'true';
         filter.columns.push(colFilter)
     }
     // Groups
-    const groupDivs = elemsDiv.children('.filter-group-div');
+    const groupDivs = elemsDiv.children('.filter-group-wrapper-div');
     filter.groups = [];
     for (let i=0; i<groupDivs.length; i++) {
-        groupDiv = $(groupDivs[i]);
-        groupFilter = makeGroupFilter(groupDiv);
-        filter.groups.push(groupFilter);
+        subGroupDiv = $(groupDivs[i]);
+        subGroupFilter = makeGroupFilter(subGroupDiv);
+        filter.groups.push(subGroupFilter);
     }
     
     // Negate
-    filter.negate = groupDiv.children().children('.filter-group-negate-check').is(':checked');
-
+    filter.negate = groupDiv.children('.filter-not-toggle').attr('active') === 'true';
     return filter;
 }
 
