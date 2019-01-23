@@ -215,15 +215,7 @@ function loadData (alertFlag, finalcallback) {
 		if (spinner != null) {
 			spinner.remove();
 		}
-        /*
-		for (var i = 0; i < resultLevels.length; i++) {
-			var level = resultLevels[i];
-			if (level != 'info') {
-				var tab = document.getElementById('tab_' + level);
-				tab.innerHTML = '';
-			}
-		}
-        */
+        document.getElementById('load_button').disabled = false;
 		if (alertFlag) {
 			alert('Data has been loaded.');
 		}

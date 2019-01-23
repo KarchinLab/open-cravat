@@ -957,16 +957,17 @@ function populateLoadDiv (tabName, filterDiv) {
     button.textContent = 'Count';
     addEl(filterDiv, button);
 
-    // Load button
+    // Update button
     var button = getEl('button');
     button.id = 'load_button';
-    button.onclick = function(event) {
+    button.onclick = function(evt) {
+        toggleFilterDiv();
+        evt.target.disabled = true;
         var infoReset = resetTab['info'];
         resetTab = {'info': infoReset};
         showSpinner(tabName, this);
         makeFilterJson();
         loadData(false, null);
-        toggleFilterDiv();
     };
     addEl(button, getTn('Update'));
     addEl(filterDiv, button);
