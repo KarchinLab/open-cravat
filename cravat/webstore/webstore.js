@@ -69,6 +69,9 @@ function getLocal () {
         for (var remoteModuleName in remoteModuleInfo) {
             var mI = remoteModuleInfo[remoteModuleName];
             var tags = mI['tags'];
+            if (tags == null) {
+                continue;
+            }
             if (remoteModuleName in localModuleInfo) {
                 var idx = tags.indexOf('installed');
                 if (idx == -1) {
@@ -249,6 +252,9 @@ function trimRemote () {
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
         var remoteModule = remoteModuleInfo[remoteModuleName];
+        if (remoteModule.tags == null) {
+            remoteModule.tags = [];
+        }
         if (modulesToIgnore.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false){
             delete remoteModuleInfo[remoteModuleName];
             continue;
@@ -473,6 +479,7 @@ function getRemoteModulePanel (moduleName) {
     }
     addEl(span, getTn(moduleInfo.title));
     addEl(div, span);
+    /*
     span = getEl('span');
     span.className = 'modulepanel-org-span';
     var organization = moduleInfo['developer']['organization'];
@@ -482,6 +489,7 @@ function getRemoteModulePanel (moduleName) {
     span.textContent = organization;
     addEl(div, span);
     addEl(div, getEl('br'));
+    */
     var sdiv = getEl('div');
     sdiv.className = 'modulepanel-typesizedate-div';
     span = getEl('span');
@@ -499,8 +507,12 @@ function getRemoteModulePanel (moduleName) {
     span.title = 'module size';
     addEl(sdiv, span);
     span = getEl('span');
-    span.className = 'modulepanel-date-span';
-    span.textContent = '2018.12.24';
+    span.className = 'modulepanel-datasource-span';
+    var datasource = moduleInfo['datasource'];
+    if (datasource == null) {
+        datasource = '';
+    }
+    span.textContent = datasource;
     span.title = 'module source data release date';
     addEl(div, span);
     addEl(div, sdiv);
@@ -711,10 +723,11 @@ function populateAllModulesDiv () {
 
 function getLogo (moduleName, onImgLoad, onImgError, sdiv) {
     var moduleInfo = remoteModuleInfo[moduleName];
+    var localModule = localModuleInfo[moduleName];
     var img = null;
     if (moduleInfo == undefined) {
         img = getEl('span');
-        img.textContent = localModuleInfo[moduleName]['title'];
+        img.textContent = localModule['title'];
     } else {
         img = getEl('img');
         var logoUrl = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
@@ -1318,7 +1331,6 @@ function onClickStoreInstallAllButton () {
         }
     }
     modulesToInstallStr += ']';
-    console.log(totalSize);
     totalSize = getSizeText(totalSize);
     var yn = confirm('Modules to install are ' + modulesToInstallStr + ' and total installation size is ' + totalSize + '. Install them all?');
     if (yn == false) {

@@ -407,11 +407,6 @@ class CravatFilter ():
         q = 'drop table if exists ' + vftable
         self.cursor.execute(q)
         (sample_needed, tag_needed, where) = self.getwhere(level)
-        '''
-        q = 'create table ' + vftable +\
-            ' as select distinct(t.base__uid) from ' + level +\
-            ' as t, sample as s, mapping as m ' + where
-        '''
         q = 'create table {} as select distinct(t.base__uid) from {} as t '.format(vftable, level) 
         if sample_needed:
             q += ', sample as s '

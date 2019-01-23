@@ -54,12 +54,12 @@
     color: black;
 }
 
-.modulepanel-date-span {
+.modulepanel-datasource-span {
     color: #467444;
     position: absolute;
     right: 10px;
-    top: 200px;
-    font-size: 11px;
+    top: 191px;
+    font-size: 15px;
 }
 
 .modulepanel-divider-span {
