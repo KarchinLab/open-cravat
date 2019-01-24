@@ -209,7 +209,8 @@ class Cravat (object):
         self.logger.info('input assembly: {}'.format(self.input_assembly))
         if self.run_conf_path != '':
             self.logger.info('conf file: {}'.format(self.run_conf_path))
-        self.write_initial_status_json()
+        if self.towritestatusjson:
+            self.write_initial_status_json()
     
     def write_initial_status_json (self):
         status_fname = '{}.status.json'.format(self.run_name)
@@ -249,7 +250,8 @@ class Cravat (object):
         cu.update_status_json(self.status_fpath, 'status', status)
 
     def main (self):
-        self.update_status('Started')
+        if self.towritestatusjson:
+            self.update_status('Started')
         self.set_and_check_input_files()
         self.make_module_run_list()
         try:
@@ -313,7 +315,8 @@ class Cravat (object):
                 ):
                 print('Running reporter...')
                 self.run_reporter()
-            self.update_status('Finished')
+            if self.towritestatusjson:
+                self.update_status('Finished')
         except LiftoverFailure:
             end_time = time.time()
             self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
@@ -321,7 +324,8 @@ class Cravat (object):
             self.logger.info('runtime: {0:0.3f}s'.format(runtime))
             print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
             print('Check {}'.format(self.log_path))
-            self.update_status('Error')
+            if self.towritestatusjson:
+                self.update_status('Error')
             self.close_logger()
             return
         except InvalidData:
@@ -331,7 +335,8 @@ class Cravat (object):
             self.logger.info('runtime: {0:0.3f}s'.format(runtime))
             print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
             print('Check {}'.format(self.log_path))
-            self.update_status('Error')
+            if self.towritestatusjson:
+                self.update_status('Error')
             self.close_logger()
             return
         except ExpectedException as e:
@@ -343,12 +348,14 @@ class Cravat (object):
             self.logger.info('runtime: {0:0.3f}s'.format(runtime))
             print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
             print('Check {}'.format(self.log_path))
-            self.update_status('Error')
+            if self.towritestatusjson:
+                self.update_status('Error')
             self.close_logger()
             return
         except:
             self.logger.exception('<Exception>')
-            self.update_status('Error')
+            if self.towritestatusjson:
+                self.update_status('Error')
             traceback.print_exc()
             end_time = time.time()
             self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
@@ -356,7 +363,8 @@ class Cravat (object):
             self.logger.info('runtime: {0:0.3f}s'.format(runtime))
             print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
             print('Check {}'.format(self.log_path))
-            self.update_status('Error')
+            if self.towritestatusjson:
+                self.update_status('Error')
             self.close_logger()
             return
         end_time = time.time()
@@ -418,6 +426,10 @@ class Cravat (object):
             self.logmode = 'w'
         else:
             self.logmode = 'a'
+        if self.runlevel == self.runlevels['reporter']:
+            self.towritestatusjson = False
+        else:
+            self.towritestatusjson = True
 
     def set_and_check_input_files (self):
         if self.input.split('.')[-1] == 'crv':
@@ -454,7 +466,8 @@ class Cravat (object):
             self.add_annotator_to_queue(module)
         annot_names = [v.name for v in self.ordered_annotators]
         annot_names.sort()
-        self.update_status_json('annotators', annot_names)
+        if self.towritestatusjson:
+            self.update_status_json('annotators', annot_names)
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
@@ -763,7 +776,8 @@ class Cravat (object):
 
     def announce_module (self, module):
         print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
-        self.update_status(
-            'Running {title} ({name})'\
-            .format(title=module.title, name=module.name)
-            )
+        if self.towritestatusjson:
+            self.update_status(
+                'Running {title} ({name})'\
+                .format(title=module.title, name=module.name)
+                )
