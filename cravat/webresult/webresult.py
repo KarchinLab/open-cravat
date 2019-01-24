@@ -405,6 +405,7 @@ def get_colmodel (tab, colinfo):
                 'type': d['col_type'],
                 'hidden': d['col_hidden'],
                 'ctg': d['col_ctg'],
+                'filterable': d['col_filterable'],
                 }
             if d['col_type'] == 'string':
                 if d['col_ctg'] == 'single':

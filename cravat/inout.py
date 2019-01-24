@@ -64,6 +64,7 @@ class CravatReader (CravatFile):
                 # Using json properly converts "False" to False, bool("False") evalueates to True
                 col_hidden = json.loads(col_info[7].lower()) if col_info[7] else True
                 col_ctg = col_info[8] if col_info[8] else None
+                col_filterable = json.loads(col_info[9].lower()) if col_info[9] else True
                 self.columns[col_index] = {'title':col_title,
                                            'name':col_name,
                                            'type':col_type,
@@ -72,6 +73,7 @@ class CravatReader (CravatFile):
                                            'desc':col_desc,
                                            'hidden':col_hidden,
                                            'category': col_ctg,
+                                           'filterable': col_filterable,
                                            }
             elif l.startswith('#report_substitution='):
                 self.report_substitution = json.loads(l.split('=')[1])
@@ -190,6 +192,7 @@ class CravatWriter(CravatFile):
         col_desc = col_def.get('desc')
         col_hidden = col_def.get('hidden',False)
         col_ctg = col_def.get('category', None)
+        col_filterable = col_def.get('filterable',True)
         if not(override):
             try:
                 self.columns[col_index]
@@ -208,7 +211,8 @@ class CravatWriter(CravatFile):
                                    'width': col_width,
                                    'desc': col_desc,
                                    'hidden': col_hidden,
-                                   'category': col_ctg
+                                   'category': col_ctg,
+                                   'filterable': col_filterable,
                                    }
 
     def add_columns(self, col_list, append=False):
@@ -255,7 +259,7 @@ class CravatWriter(CravatFile):
 
     def write_definition(self, conf=None):
         self._prep_for_write()
-        val_order = ['title','name','type','categories','width','desc','hidden', 'category']
+        val_order = ['title','name','type','categories','width','desc','hidden','category','filterable']
         for col_index, col_def in enumerate(self.ordered_columns):
             ordered_vals = [col_index]+[col_def[k] for k in val_order]
             s_buffer = StringIO()

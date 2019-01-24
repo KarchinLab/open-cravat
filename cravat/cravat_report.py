@@ -172,6 +172,7 @@ class CravatReport:
                 rs = self.cursor.fetchall()
                 for r in rs:
                     col_cats.append(r[0])
+            col_filterable = bool(row[8]) if len(row) > 8 else True
             column = {'col_name': colname,
                       'col_title': coltitle,
                       'col_type': col_type,
@@ -180,6 +181,7 @@ class CravatReport:
                       'col_desc':col_desc,
                       'col_hidden':col_hidden,
                       'col_ctg': col_ctg,
+                      'col_filterable': col_filterable,
                       }
             self.colnos[level][colname] = colcount
             colcount += 1
@@ -228,6 +230,7 @@ class CravatReport:
                         rs = self.cursor.fetchall()
                         for r in rs:
                             col_cats.append(r[0])
+                    col_filterable = col.get('filterable',True)
                     column = {'col_name': colname,
                               'col_title': col['title'],
                               'col_type': col_type,
@@ -235,7 +238,8 @@ class CravatReport:
                               'col_width':col_width,
                               'col_desc':col_desc,
                               'col_hidden':col_hidden,
-                              'col_ctg': col_ctg
+                              'col_ctg': col_ctg,
+                              'col_filterable': col_filterable,
                               }
                     columns.append(column)
                     self.var_added_cols.append(colname)
@@ -273,6 +277,7 @@ class CravatReport:
                             rs = self.cursor.fetchall()
                             for r in rs:
                                 col_cats.append(r[0])
+                        col_filterable = col.get('filterable', True)
                         column = {'col_name': conf['name'] + '__' + col['name'],
                                   'col_title': col['title'],
                                   'col_type': col_type,
@@ -280,7 +285,8 @@ class CravatReport:
                                   'col_width':col.get('width'),
                                   'col_desc':col.get('desc'),
                                   'col_hidden':col.get('hidden',False),
-                                  'col_ctg': col_ctg
+                                  'col_ctg': col_ctg,
+                                  'col_filterable': col_filterable,
                                   }
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
