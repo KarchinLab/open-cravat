@@ -52,6 +52,9 @@ class FilterColumn(object):
                 if self.test == 'noData':
                     oper = '='
                     sql_val = '""'
+                elif self.test == 'hasData':
+                    oper = 'is not'
+                    sql_val = '""'
                 else:
                     oper = self.test2sql[self.test]
                     if self.test == 'stringContains':
