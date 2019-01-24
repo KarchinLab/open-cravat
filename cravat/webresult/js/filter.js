@@ -24,23 +24,23 @@ const makeFilterColDiv = (filter) => {
         .addClass('filter-column-div')
         .addClass('filter-element-div');
         
-        // Annotator select
-        const groupSel = $(getEl('select'))
+    // Annotator select
+    const groupSel = $(getEl('select'))
         .addClass('filter-annotator-selector')
         .change(filterGroupChangeHandler);
-        colDiv.append(groupSel);
+    colDiv.append(groupSel);
     for (let i=0; i<filterCols.length; i++) {
         var colGroup = filterCols[i];
         let groupOpt = $(getEl('option'))
-        .val(colGroup.title)
-        .append(colGroup.title);
+            .val(colGroup.title)
+            .append(colGroup.title);
         groupSel.append(groupOpt);
     };
     
     // Column select
     const colSel = $(getEl('select'))
-    .addClass('filter-column-selector');
-    colSel.on('change', onFilterColumnSelectorChange);
+        .addClass('filter-column-selector')
+        .on('change', onFilterColumnSelectorChange);
     colDiv.append(colSel);
     populateFilterColumnSelector(colSel, groupSel.val());
 
@@ -54,8 +54,8 @@ const makeFilterColDiv = (filter) => {
     
     // Test select
     const testSel = $(getEl('select'))
-    .addClass('filter-test-selector')
-    .change(filterTestChangeHandler);
+        .addClass('filter-test-selector')
+        .change(filterTestChangeHandler);
     testSel[0].setAttribute('prevselidx', 0);
     colDiv.append(testSel);
     for (var i = 0; i < filterTestNames.length; i++) {
@@ -120,9 +120,26 @@ const onFilterColumnSelectorChange = (evt) => {
             break;
         }
     }
+    var selColType = column.type;
     if (filter != null) {
         var testDiv = $(evt.target).siblings('.filter-test-selector')[0];
+        const $testSel = $(testDiv);
+        $testSel.empty();
+        for (let i=0; i<filterTestNames.length; i++) {
+            var filterTestName = filterTestNames[i];
+            const testDesc = filterTests[filterTestName];
+            if (testDesc.colTypes.includes(selColType)) {
+                const testOpt = $(getEl('option'))
+                    .val(filterTestName)
+                    .append(testDesc.title);
+                $testSel.append(testOpt);
+            }
+        }
         if (filter.type == 'select') {
+            $testSel.append($(getEl('option'))
+                .val('select')
+                .append(filterTests.select.title)
+            );
             var selIdx = null;
             for (var i = 0; i < testDiv.options.length; i++) {
                 var option = testDiv.options[i];
@@ -140,10 +157,6 @@ const onFilterColumnSelectorChange = (evt) => {
             if (testDiv == null) {
                 return;
             }
-            var curTestKey = testDiv.value;
-            var curTestSetup = filterTests[curTestKey];
-            var curTestColTypes = curTestSetup['colTypes'];
-            var selColType = column.type;
             for (var i = 0; i < filterTestNames.length; i++) {
                 if (filterTests[testDiv.options[i].value].colTypes.indexOf(selColType) >= 0) {
                     testDiv.selectedIndex = i;
@@ -175,16 +188,6 @@ const filterTestChangeHandler = (event) => {
     const testSel = $(event.target);
     const valuesDiv = testSel.siblings('.filter-values-div');
     const testName = testSel.val();
-    var testDiv = testSel.siblings('.filter-column-selector');
-    var colname = testDiv[0].value;
-    var colType = getFilterColByName(colname).type;
-    var selTestType = testSel[0].value;
-    var filterTest = filterTests[selTestType];
-    var allowedColTypes = filterTest.colTypes;
-    if (allowedColTypes.indexOf(colType) < 0) {
-        testSel[0].selectedIndex = testSel[0].getAttribute('prevselidx');
-        return;
-    }
     populateFilterValues(valuesDiv, testName);
     testSel[0].setAttribute('prevselidx', testSel[0].selectedIndex);
 }
@@ -338,7 +341,6 @@ const makeFilterGroupDiv = (filter) => {
     // Remove
     const removeDiv = $(getEl('div'))
         .addClass('filter-element-remove')
-        // .addClass('filter-group-remove')
         .click(filterGroupRemoveHandler)
         .text('X');
     wrapperDiv.append(removeDiv);
@@ -576,7 +578,7 @@ const filterTests = {
     stringStarts: {title: 'starts with', inputs:1, colTypes: ['string']},
     stringEnds: {title: 'ends with', inputs:1, colTypes: ['string']},
     between: {title: 'in range', inputs:2, colTypes: ['float', 'int']},
-    select: {title: 'select', inputs: 1, colTypes: ['string', 'float', 'int']},
+    select: {title: 'select', inputs: 1, colTypes: ['select']},
 }
 
 const filterTestNames = [
