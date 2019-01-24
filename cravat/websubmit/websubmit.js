@@ -162,6 +162,9 @@ function buildJobsTable () {
     for (let i = 0; i < allJobs.length; i++) {
         job = allJobs[i];
         ji = job.id;
+        if (ji.id == undefined) {
+            continue;
+        }
         var jobTr = $(getEl('tr'))
             .addClass('job-table-tr');
         jobTr[0].setAttribute('jobid', ji);

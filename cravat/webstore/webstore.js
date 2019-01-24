@@ -70,7 +70,8 @@ function getLocal () {
             var mI = remoteModuleInfo[remoteModuleName];
             var tags = mI['tags'];
             if (tags == null) {
-                continue;
+                tags = [];
+                mI['tags'] = tags;
             }
             if (remoteModuleName in localModuleInfo) {
                 var idx = tags.indexOf('installed');
