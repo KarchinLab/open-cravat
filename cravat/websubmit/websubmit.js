@@ -162,6 +162,9 @@ function buildJobsTable () {
     for (let i = 0; i < allJobs.length; i++) {
         job = allJobs[i];
         ji = job.id;
+        if (ji == undefined) {
+            continue;
+        }
         var jobTr = $(getEl('tr'))
             .addClass('job-table-tr');
         jobTr[0].setAttribute('jobid', ji);
@@ -181,9 +184,13 @@ function buildJobsTable () {
         });
         jobsTable.append(jobTr);
         // Input file
-        jobTr.append($(getEl('td')).append(job.orig_input_fname));
         // Number of annotators
-        var num = getAnnotatorsForJob(ji).length;
+        var annots = getAnnotatorsForJob(ji);
+        if (annots == undefined) {
+            continue;
+        }
+        jobTr.append($(getEl('td')).append(job.orig_input_fname));
+        var num = annots.length;
         var td = getEl('td');
         td.style.textAlign = 'center';
         td.textContent = '' + num;
