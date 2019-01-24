@@ -307,10 +307,12 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
     }
     for (let i=0; i<allCols.length; i++) {
         const col = allCols[i];
-        const colOpt = $(getEl('option'))
-            .val(col.col)
-            .append(col.title);
-        colSel.append(colOpt);
+        if (col.filterable ) {
+            const colOpt = $(getEl('option'))
+                .val(col.col)
+                .append(col.title);
+            colSel.append(colOpt);
+        }
     }
     colSel[0].selectedIndex = 0;
     var event = new Event('change');
