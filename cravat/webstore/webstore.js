@@ -1,12 +1,10 @@
 var currentDetailModule = null;
-
 var remoteModuleInfo = {};
 var localModuleInfo = {};
 var filter = {};
 var installQueue = [];
 var installInfo = {};
 var baseModuleNames = [];
-
 var storeUrl = null;
 var storeurl = $.get('/store/getstoreurl').done(function(response) {
     storeUrl = response;
@@ -14,10 +12,10 @@ var storeurl = $.get('/store/getstoreurl').done(function(response) {
 var newModuleAvailable = false;
 var storeFirstOpen = true;
 var storeTileWidthStep = 294;
-
 var modulesToIgnore = [
     'aggregator',
 ];
+var storeLogos = {};
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -420,12 +418,7 @@ function getRemoteModulePanel (moduleName) {
     div.setAttribute('module', moduleName);
     var sdiv = getEl('div');
     sdiv.id = 'logodiv_' + moduleName;
-    sdiv.style.width = '100%';
-    sdiv.style.height = '70%';
-    sdiv.style.display = 'flex';
-    sdiv.style.alignItems = 'center';
-    sdiv.style.backgroundColor = 'white';
-    sdiv.style.cursor = 'pointer';
+    sdiv.className = 'moduletile-logodiv';
     sdiv.setAttribute('module', moduleName);
     sdiv.onclick = function (evt) {
         var moduleName = this.getAttribute('module');
@@ -434,38 +427,16 @@ function getRemoteModulePanel (moduleName) {
         addEl(storediv, dialog);
         evt.stopPropagation();
     }
-    var img = getLogo(moduleName, onImgLoad, onImgError, sdiv);
-    function onImgError (moduleName, img, sdiv) {
-        img.src = '/store/genericmodulelogo.png';
-        var span = getEl('div');
-        span.className = 'moduletile-title';
-        var title = remoteModuleInfo[moduleName].title;
-        span.textContent = title
-        if (title.length > 30) {
-            span.style.fontSize = '30px';
+    var img = addLogo(moduleName, sdiv);
+    if (img != null) {
+        img.onclick = function (evt) {
+            var pdiv = evt.target.parentElement;
+            var moduleName = div.getAttribute('module');
+            var storediv = document.getElementById('storediv');
+            var dialog = activateDetailDialog(moduleName);
+            addEl(storediv, dialog);
+            evt.stopPropagation();
         }
-        addEl(sdiv, span);
-    }
-    function onImgLoad (moduleName, img, sdiv) {
-        img.onload = null;
-        addEl(sdiv, img);
-    }
-    img.style.top = '0';
-    img.style.bottom = '0';
-    img.style.left = '0';
-    img.style.right = '0';
-    img.style.margin = 'auto';
-    img.style.width = '100%';
-    img.style.height = 'auto';
-    img.style.maxWidth = '100%';
-    img.style.maxHeight = '100%';
-    img.onclick = function (evt) {
-        var pdiv = evt.target.parentElement;
-        var moduleName = div.getAttribute('module');
-        var storediv = document.getElementById('storediv');
-        var dialog = activateDetailDialog(moduleName);
-        addEl(storediv, dialog);
-        evt.stopPropagation();
     }
     addEl(div, sdiv);
     var span = null;
@@ -722,32 +693,30 @@ function populateAllModulesDiv () {
     }
 }
 
-function getLogo (moduleName, onImgLoad, onImgError, sdiv) {
+function addLogo (moduleName, sdiv) {
+    if (storeLogos[moduleName] != undefined) {
+        var img = storeLogos[moduleName].cloneNode(true);
+        addEl(sdiv, img);
+        return img;
+    }
     var moduleInfo = remoteModuleInfo[moduleName];
-    var localModule = localModuleInfo[moduleName];
     var img = null;
-    if (moduleInfo == undefined) {
-        img = getEl('span');
-        img.textContent = localModule['title'];
-    } else {
+    if (moduleInfo.has_logo == true) {
         img = getEl('img');
-        var logoUrl = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
-        img.style.maxWidth = '100%';
-        img.style.maxHeight = '100%';
-        img.style.width = 'auto';
-        img.style.height = 'auto';
-        img.onload = function (evt) {
-            onImgLoad(moduleName, img, sdiv);
+        img.className = 'moduletile-logo';
+        img.src = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
+        addEl(sdiv, img);
+        storeLogos[moduleName] = img;
+    } else {
+        sdiv.classList.add('moduletile-nologo');
+        var span = getEl('div');
+        span.className = 'moduletile-title';
+        var title = moduleInfo.title;
+        span.textContent = title
+        if (title.length > 30) {
+            span.style.fontSize = '30px';
         }
-        img.onerror = function (evt) {
-            evt.stopPropagation();
-            evt.preventDefault();
-            onImgError(moduleName, img, sdiv);
-        }
-        try {
-            img.src = logoUrl;
-        } catch (e) {
-        }
+        addEl(sdiv, span);
     }
     return img;
 }
@@ -790,33 +759,7 @@ function activateDetailDialog (moduleName) {
     td.style.border = '0px';
     addEl(tr, td);
     var sdiv = td;
-    var img = getLogo(moduleName, imgOnLoad, imgOnError, sdiv);
-    function imgOnError (moduleName, img, sdiv) {
-        img.src = '/store/genericmodulelogo.png';
-        /*
-        var span = getEl('div');
-        var title = remoteModuleInfo[moduleName].title;
-        span.textContent = title
-        if (title.length > 30) {
-            span.style.fontSize = '14px';
-        } else {
-            span.style.fontSize = '20px';
-        }
-        span.style.fontWeight = 'bold';
-        addEl(sdiv, span);
-        */
-        /*
-        addEl(sdiv, span);
-        var span = getEl('div');
-        span.style.fontSize = '20px';
-        span.style.fontWeight = 'bold';
-        span.textContent = remoteModuleInfo[moduleName].title;
-        addEl(sdiv, span);
-        */
-    }
-    function imgOnLoad (moduleName, img, sdiv) {
-        addEl(sdiv, img);
-    }
+    addLogo(moduleName, sdiv);
     td = getEl('td');
     td.style.border = '0px';
     var span = getEl('div');
