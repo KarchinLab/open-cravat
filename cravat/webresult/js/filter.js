@@ -553,11 +553,6 @@ const makeGroupFilter = (groupDiv) => {
         } else {
             if (valInputs.length === 0) {
                 colFilter.value = null;
-                // if (column.type == 'string') {
-                //     colFilter.value = '';
-                // } else {
-                //     colFilter.value = null;
-                // }
             } else if (valInputs.length === 1) {
                 var rawValue = $(valInputs[0]).val();
                 var val = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
@@ -614,7 +609,7 @@ const filterTests = {
     stringStarts: {title: 'starts with', inputs:1, colTypes: ['string']},
     stringEnds: {title: 'ends with', inputs:1, colTypes: ['string']},
     between: {title: 'in range', inputs:2, colTypes: ['float', 'int']},
-    select: {title: 'select', inputs: 1, colTypes: ['select']},
+    select: {title: 'one of', inputs: 1, colTypes: ['select']},
 }
 
 const filterTestNames = [
