@@ -609,7 +609,7 @@ const filterTests = {
     stringStarts: {title: 'starts with', inputs:1, colTypes: ['string']},
     stringEnds: {title: 'ends with', inputs:1, colTypes: ['string']},
     between: {title: 'in range', inputs:2, colTypes: ['float', 'int']},
-    select: {title: 'select', inputs: 1, colTypes: ['select']},
+    select: {title: 'one of', inputs: 1, colTypes: ['select']},
 }
 
 const filterTestNames = [
