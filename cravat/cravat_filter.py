@@ -17,8 +17,8 @@ class FilterColumn(object):
         'lessThan': '<',
         'greaterThanEq': '>=',
         'greaterThan': '>',
-        'hasData': 'is not null',
-        'noData': 'is null',
+        'hasData': 'is not',
+        'noData': 'is',
         'stringContains': 'like',
         'stringStarts': 'like',
         'stringEnds': 'like',
@@ -49,25 +49,18 @@ class FilterColumn(object):
         else:
             s = 't.' + self.column + ' ' + self.test2sql[self.test]
             if type(self.value) == str:
-                if self.test == 'noData':
-                    oper = '='
-                    sql_val = '""'
-                elif self.test == 'hasData':
-                    oper = 'is not'
-                    sql_val = '""'
+                oper = self.test2sql[self.test]
+                if self.test == 'stringContains':
+                    sql_val = '"%{}%"'.format(self.value)
+                elif self.test == 'stringStarts':
+                    sql_val = '"{}%"'.format(self.value)
+                elif self.test == 'stringEnds':
+                    sql_val = '"%{}"'.format(self.value)
                 else:
-                    oper = self.test2sql[self.test]
-                    if self.test == 'stringContains':
-                        sql_val = '"%{}%"'.format(self.value)
-                    elif self.test == 'stringStarts':
-                        sql_val = '"{}%"'.format(self.value)
-                    elif self.test == 'stringEnds':
-                        sql_val = '"%{}"'.format(self.value)
-                    else:
-                        sql_val = '"{}"'.format(self.value)
+                    sql_val = '"{}"'.format(self.value)
                 s = 't.' + self.column + ' ' + oper
             elif self.value is None:
-                sql_val = ''
+                sql_val = 'null'
             elif type(self.value) == list:
                 if self.test == 'between':
                     sql_val = '{} and {}'.format(self.value[0], self.value[1])
@@ -363,8 +356,8 @@ class CravatFilter ():
         return ret
     
     def get_gene_row (self, hugo):
-        q = 'select * from gene where base__hugo="' + hugo + '"'
-        self.cursor.execute(q)
+        q = 'select * from gene where base__hugo=?'
+        self.cursor.execute(q, [hugo])
         row = self.cursor.fetchone()
         return row
 
@@ -433,7 +426,8 @@ class CravatFilter ():
         self.cursor.execute(q)
         q = 'create table ' + gftable +\
             ' as select distinct v.base__hugo from ' + vtable + ' as v'\
-            ' inner join ' + vftable + ' as vf on vf.base__uid=v.base__uid'
+            ' inner join ' + vftable + ' as vf on vf.base__uid=v.base__uid'\
+            ' where v.base__hugo is not null'
         self.cursor.execute(q)
         self.cursor.execute('pragma synchronous=2')
         

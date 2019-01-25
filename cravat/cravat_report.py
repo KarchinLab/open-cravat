@@ -37,10 +37,10 @@ class CravatReport:
     def substitute_val (self, level, row):
         if level in self.column_subs:
             for i in self.column_subs[level]:
-                val = row[i]
-                sub = self.column_subs[level][i]
-                for target in sub:
-                    row[i] = row[i].replace(target, sub[target])
+                if row[i] is not None:
+                    sub = self.column_subs[level][i]
+                    for target in sub:
+                        row[i] = row[i].replace(target, sub[target])
         return row
 
     def run_level (self, level):

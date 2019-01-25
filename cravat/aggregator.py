@@ -93,26 +93,36 @@ class Aggregator (object):
             self.cursor.execute('pragma synchronous=0;')
             self.cursor.execute('pragma journal_mode=WAL;')
             n = 0
+            # Prepare insert statement
+            col_names = self.base_reader.get_column_names()
+            q = 'insert into {table} ({columns}) values ({placeholders});'.format(
+                table = self.table_name,
+                columns = ', '.join([self.base_prefix+'__'+c for c in col_names]),
+                placeholders = ', '.join(['?']*len(col_names))
+            )
+            # Insert rows
             for _, rd in self.base_reader.loop_data():
                 n += 1
-                names = list(rd.keys())
-                values = []
-                for name in names:
-                    val = rd[name]
-                    valtype = type(val)
-                    if valtype is str:
-                        val = '\'' + val + '\''
-                    else:
-                        if val == None:
-                            val = '\'\''
-                        else:
-                            val = str(val)
-                    values.append(val)
-                q = 'insert into %s (%s) values (%s);' \
-                    %(self.table_name, 
-                      ', '.join([self.base_prefix + '__' + v for v in names]), 
-                      ', '.join(values))
-                self.cursor.execute(q)
+                vals = [rd.get(c) for c in col_names]
+                self.cursor.execute(q, vals)
+                # names = list(rd.keys())
+                # values = []
+                # for name in names:
+                #     val = rd[name]
+                #     valtype = type(val)
+                #     if valtype is str:
+                #         val = '\'' + val + '\''
+                #     else:
+                #         if val == None:
+                #             val = '\'\''
+                #         else:
+                #             val = str(val)
+                #     values.append(val)
+                # q = 'insert into %s (%s) values (%s);' \
+                #     %(self.table_name, 
+                #       ', '.join([self.base_prefix + '__' + v for v in names]), 
+                #       ', '.join(values))
+                # self.cursor.execute(q)
                 if n%self.commit_threshold == 0:
                     self.dbconn.commit()
             self.dbconn.commit()

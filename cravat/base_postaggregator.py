@@ -115,7 +115,7 @@ class BasePostAggregator (object):
             rs = self.cursor.fetchall()
             col_cats = []
             for r in rs:
-                col_cat_str = r[0]
+                col_cat_str = r[0] if r[0] is not None else ''
                 for col_cat in col_cat_str.split(';'):
                     if col_cat not in col_cats:
                         col_cats.append(col_cat)
