@@ -110,6 +110,10 @@ class LocalModuleInfo (object):
             self.tags = self.conf['tags']
         else:
             self.tags = []
+        if 'datasource' in self.conf:
+            self.datasource = self.conf['datasource']
+        else:
+            self.datasource = ''
 
     def is_valid_module(self):
         r = self.exists
@@ -139,6 +143,9 @@ class RemoteModuleInfo(object):
         self.title = kwargs.get('title','')
         self.description = kwargs.get('description','')
         self.size = kwargs.get('size',0)
+        self.datasource = kwargs.get('datasource', '')
+        if self.datasource == None:
+            self.datasource = ''
         dev_dict = kwargs.get('developer')
         if not(type(dev_dict)==dict):
             dev_dict = {}

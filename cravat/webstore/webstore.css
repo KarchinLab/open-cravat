@@ -59,7 +59,8 @@
     position: absolute;
     right: 10px;
     top: 191px;
-    font-size: 15px;
+    font-size: 13px;
+    width: 70px;
 }
 
 .modulepanel-divider-span {

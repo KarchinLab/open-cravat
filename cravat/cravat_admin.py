@@ -112,19 +112,19 @@ def main ():
             print(line)
         
     def list_local_modules(pattern=r'.*', types=[]):
-        header = ['Name','Type','Version','Size']
+        header = ['Name','Type','Version','Data source ver','Size']
         all_toks = [header]
         for module_name in au.search_local(pattern):
             module_info = au.get_local_module_info(module_name)
             if len(types) > 0 and module_info.type not in types:
                 continue
             size = module_info.get_size()
-            toks = [module_name, module_info.type, module_info.version, humanize_bytes(size)]
+            toks = [module_name, module_info.type, module_info.version, module_info.datasource, humanize_bytes(size)]
             all_toks.append(toks)
         print_tabular_lines(all_toks)
                 
     def list_available_modules(pattern=r'.*', types=[]):
-        header = ['Name','Type','Latest version','Installed','Installed version','Up-to-date','Size']
+        header = ['Name','Type','Installed','Up to date', 'Store latest ver','Store data source ver', 'Local ver', 'Local data source ver', 'Size']
         all_toks = [header]
         for module_name in au.search_remote(pattern):
             remote_info = au.get_remote_module_info(module_name)
@@ -132,19 +132,27 @@ def main ():
                 continue
             local_info = au.get_local_module_info(module_name)
             if local_info is not None:
-                installed = True
+                installed = 'yes'
                 local_version = local_info.version
                 up_to_date = local_version == remote_info.latest_version
+                if up_to_date:
+                    up_to_date = 'yes'
+                else:
+                    up_to_date = ''
+                local_datasource = local_info.datasource
             else:
-                installed = False
+                installed = ''
                 local_version = ''
                 up_to_date = ''
+                local_datasource = ''
             toks = [module_name,
                     remote_info.type,
-                    remote_info.latest_version,
                     installed,
-                    local_version,
                     up_to_date,
+                    remote_info.latest_version,
+                    remote_info.datasource,
+                    local_version,
+                    local_datasource,
                     humanize_bytes(remote_info.size)]
             all_toks.append(toks)
         print_tabular_lines(all_toks)

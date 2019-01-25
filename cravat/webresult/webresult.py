@@ -186,7 +186,6 @@ async def save_layout_setting (request):
 
 def save_filter_setting (request):
     queries = request.rel_url.query
-    print('queries=', queries)
     dbpath = queries['dbpath']
     name = queries['name']
     savedata = queries['savedata']
