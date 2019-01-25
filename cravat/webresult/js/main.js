@@ -551,12 +551,6 @@ function getCheckNoRowsMessage (tabName, noRows) {
 	return msg;
 }
 
-function makeFilterJson () {
-    var filterRootGroupDiv = $('#filter-root-group-div');
-    var filter = makeGroupFilter(filterRootGroupDiv);
-    filterJson = {'variant': filter};
-}
-
 function writeLogDiv (msg) {
 	var div = document.getElementById('log_div');
 	div.textContent = ' ' + msg + ' ';

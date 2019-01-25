@@ -643,10 +643,9 @@ function loadFilterSetting (name, callback, doNotCount) {
 		writeLogDiv('Filter setting loaded');
 		var data = response;
 		filterJson = data['filterSet'];
-		var filterWrapDiv = $('#filterwrapdiv');
-		filterWrapDiv.empty();
-		var filterRootGroupDiv = makeFilterRootGroupDiv(filterJson);
-		filterWrapDiv.append(filterRootGroupDiv);
+		var filterWrapDiv = document.getElementById('filterwrapdiv');
+		$(filterWrapDiv).empty();
+        populateFilterWrapDiv(filterWrapDiv);
         if (! doNotCount) {
             infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
         }

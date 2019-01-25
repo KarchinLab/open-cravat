@@ -400,9 +400,9 @@ button {
 }
 
 .filter-group-div {
-	border-left: 2px solid black;
-	border-right: 2px solid black;
-	border-radius: 25px;
+	border-left: 1px solid black;
+	border-right: 1px solid black;
+	border-radius: 5px;
 	display: flex;
 }
 
@@ -459,7 +459,7 @@ div.filter-not-toggle {
 }
 
 .filter-element-remove {
-	font-size: 15px;
+	font-size: 10px;
 	cursor: default;
 }
 .filter-element-remove:hover {
@@ -497,5 +497,28 @@ div.pq-select-button {
 
 .pq-select-button > .pq-select-text {
     text-align: center;
+}
+
+.filter-level-button {
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 13px;
+}
+
+.filter-level-button.filter-level-simple:before {
+    content: "Advanced Filter";
+}
+
+.filter-level-button.filter-level-advanced:before {
+    content: "Back to simple filter";
+}
+
+.filter-group-div.filter-level-simple {
+    border-left: 0;
+    border-right: 0;
+}
+
+#filterdiv {
+    z-index: 100;
 }
 

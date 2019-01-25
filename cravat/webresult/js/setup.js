@@ -849,19 +849,6 @@ function setFilterSelect (div) {
 	onChangeFilterSelector(col, retfilttype, val1, val2, checked);
 }
 
-function makeFilterRootGroupDiv (filter) {
-    var filterToShow = filter;
-    if (filter != undefined && filter.variant != undefined) {
-        filterToShow = filter.variant;
-    }
-    var filterRootGroupDiv = makeFilterGroupDiv(filterToShow);
-    filterRootGroupDiv.attr('id', 'filter-root-group-div');
-    filterRootGroupDiv.css('margin-left', '0px');
-	filterRootGroupDiv.children('.filter-element-remove').attr('hidden', 'true');
-	const rootElemsDiv = filterRootGroupDiv.children('.filter-group-div').children('.filter-group-elements-div');
-    return filterRootGroupDiv;
-}
-
 function populateLoadDiv (tabName, filterDiv) {
 	// Title
 	var legend = getEl('legend');
@@ -936,8 +923,7 @@ function populateLoadDiv (tabName, filterDiv) {
     // Filter
     var div = getEl('div');
     div.id = 'filterwrapdiv';
-    var filterRootGroupDiv = makeFilterRootGroupDiv();
-    $(div).append(filterRootGroupDiv);
+    populateFilterWrapDiv(div);
     $(filterDiv).append(div);
 
     // Message
@@ -985,6 +971,39 @@ function populateLoadDiv (tabName, filterDiv) {
         toggleFilterDiv();
     });
     addEl(filterDiv, button);
+}
+
+function onClickFilterLevelButton (button) {
+    var simpleFilterDiv = document.getElementById('filter-root-group-div-simple');
+    var advancedFilterDiv = document.getElementById('filter-root-group-div-advanced');
+    if (button.classList.contains('filter-level-simple')) {
+        button.classList.remove('filter-level-simple');
+        button.classList.add('filter-level-advanced');
+        simpleFilterDiv.style.display = 'none';
+        advancedFilterDiv.style.display = 'block';
+    } else if (button.classList.contains('filter-level-advanced')) {
+        button.classList.remove('filter-level-advanced');
+        button.classList.add('filter-level-simple');
+        simpleFilterDiv.style.display = 'block';
+        advancedFilterDiv.style.display = 'none';
+    }
+}
+
+function populateFilterWrapDiv (div) {
+    var button = getEl('span');
+    button.className = 'filter-level-button';
+    button.classList.add('filter-level-simple');
+    button.addEventListener('click', function (evt) {
+        onClickFilterLevelButton(evt.target);
+    });
+    addEl(div, button);
+    addEl(div, getEl('br'));
+    var filterRootGroupDivSimple = makeFilterRootGroupDiv(undefined, 'filter-root-group-div-simple', 'simple');
+    filterRootGroupDivSimple[0].style.display = 'block';
+    $(div).append(filterRootGroupDivSimple);
+    var filterRootGroupDivAdvanced = makeFilterRootGroupDiv(undefined, 'filter-root-group-div-advanced', 'advanced');
+    filterRootGroupDivAdvanced[0].style.display = 'none';
+    $(div).append(filterRootGroupDivAdvanced);
 }
 
 function populateTableColumnSelectorPanel () {
