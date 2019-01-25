@@ -980,11 +980,11 @@ function onClickFilterLevelButton (button) {
         button.classList.remove('filter-level-simple');
         button.classList.add('filter-level-advanced');
         simpleFilterDiv.style.display = 'none';
-        advancedFilterDiv.style.display = 'block';
+        advancedFilterDiv.style.display = null;
     } else if (button.classList.contains('filter-level-advanced')) {
         button.classList.remove('filter-level-advanced');
         button.classList.add('filter-level-simple');
-        simpleFilterDiv.style.display = 'block';
+        simpleFilterDiv.style.display = null;
         advancedFilterDiv.style.display = 'none';
     }
 }
@@ -992,18 +992,32 @@ function onClickFilterLevelButton (button) {
 function populateFilterWrapDiv (div) {
     var button = getEl('span');
     button.className = 'filter-level-button';
-    button.classList.add('filter-level-simple');
     button.addEventListener('click', function (evt) {
-        onClickFilterLevelButton(evt.target);
+		onClickFilterLevelButton(evt.target);
     });
+	button.classList.add('filter-level-simple');
     addEl(div, button);
-    addEl(div, getEl('br'));
-    var filterRootGroupDivSimple = makeFilterRootGroupDiv(undefined, 'filter-root-group-div-simple', 'simple');
-    filterRootGroupDivSimple[0].style.display = 'block';
-    $(div).append(filterRootGroupDivSimple);
-    var filterRootGroupDivAdvanced = makeFilterRootGroupDiv(undefined, 'filter-root-group-div-advanced', 'advanced');
-    filterRootGroupDivAdvanced[0].style.display = 'none';
-    $(div).append(filterRootGroupDivAdvanced);
+	addEl(div, getEl('br'));
+	var filter = undefined;
+	var filterSimple = undefined;
+	if (filterJson.hasOwnProperty('variant')) {
+		filter = filterJson;
+		// Make copy without groups for simple filter
+		filterSimple = JSON.parse(JSON.stringify(filter));
+		filterSimple.variant.groups = [];
+	}
+	var filterRootGroupDivSimple = makeFilterRootGroupDiv(filterSimple, 'filter-root-group-div-simple', 'simple');
+	$(div).append(filterRootGroupDivSimple);
+	var filterRootGroupDivAdvanced = makeFilterRootGroupDiv(filter, 'filter-root-group-div-advanced', 'advanced');
+	$(div).append(filterRootGroupDivAdvanced);
+	filterRootGroupDivSimple[0].style.display = null;
+	filterRootGroupDivAdvanced[0].style.display = 'none';
+	if (filter && filter.variant.groups.length > 0) { // Simple filter
+		filterRootGroupDivSimple[0].style.display = 'none';
+		filterRootGroupDivAdvanced[0].style.display = null;
+		button.classList.remove('filter-level-simple');
+		button.classList.add('filter-level-advanced');
+	}
 }
 
 function populateTableColumnSelectorPanel () {
