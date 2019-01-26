@@ -1230,7 +1230,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 				ascendingSort[sorter.dataIndx] = (sorter.dir == 'up');
 			}
 		} else {
-	addFilterElement(elemsDiv,'rule',filter.columns[i]);		ui.sorter = [ui.sorter[ui.sorter.length - 1]];
+			ui.sorter = [ui.sorter[ui.sorter.length - 1]];
 			gridObject.sortModel.sorter = ui.sorter;
 			if (ui.sorter[0] != undefined) {
 				var sorter = ui.sorter[0];
