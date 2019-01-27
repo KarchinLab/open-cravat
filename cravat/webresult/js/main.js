@@ -507,23 +507,20 @@ function checkWidgets () {
 function drawingRetrievingDataDiv (currentTab) {
 	var currentTabDiv = document.getElementById('tab_'+currentTab);
 	var loadingDiv = getEl('div');
-	loadingDiv.style.position = 'absolute';
-	loadingDiv.style.textAlign = 'center';
+    loadingDiv.className = 'data-retrieving-msg-div';
 	var loadingTxtDiv = getEl('div');
 	addEl(loadingTxtDiv, getTn('Retrieving Data...'));
-	loadingTxtDiv.style.fontWeight = 'bold';
-	loadingTxtDiv.style.fontSize = '6.0em';
 	addEl(loadingDiv, loadingTxtDiv);
 	var loadingSpinCircleDiv = getEl('div');
 	var loadingSpinCircleImg = getEl('img');
 	loadingSpinCircleImg.src = "images/bigSpinner.gif";
-	loadingSpinCircleImg.style.width = "300px";
-	loadingSpinCircleImg.style.height = "300px";
 	addEl(loadingSpinCircleDiv, loadingSpinCircleImg);
 	addEl(loadingDiv, loadingSpinCircleDiv);
 	addEl(currentTabDiv, loadingDiv);
-	loadingDiv.style.top = currentTabDiv.getBoundingClientRect().height/2 - loadingDiv.getBoundingClientRect().height/2;
-	loadingDiv.style.left = currentTabDiv.getBoundingClientRect().width/2 - loadingDiv.getBoundingClientRect().width/2;
+    var dW = document.body.offsetWidth;
+    var dH = document.body.offsetHeight;
+	loadingDiv.style.top = dH/2 - 200;
+	loadingDiv.style.left = dW/2 - 200;
 	jobDataLoadingDiv = loadingDiv;
 	return loadingDiv;
 }

@@ -522,3 +522,16 @@ div.pq-select-button {
     z-index: 100;
 }
 
+.data-retrieving-msg-div {
+	position: fixed;
+	text-align: center;
+    font-size: 14px;
+    width: 400px;
+    height: 400px;
+}
+
+.data-retrieving-msg-div img {
+	width: 100px;
+    height: 100px;
+}
+
