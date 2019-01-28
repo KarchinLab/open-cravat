@@ -13,6 +13,8 @@ from aiohttp import web
 from html.parser import HTMLParser
 from cravat import store_utils as su
 from cravat import constants
+import cravat.admin_util as au
+import markdown
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
@@ -91,8 +93,6 @@ def fetch_install_queue (install_queue, install_state):
             sys.exit()
 
 ###################### start from store_handler #####################
-import cravat.admin_util as au
-import markdown
 
 def get_remote_manifest(request):
     try:
@@ -141,7 +141,7 @@ def get_module_readme (request):
     if readme_md is None:
         content = ''
     else:
-        content = markdown.markdown(readme_md)
+        content = markdown.markdown(readme_md, extensions=['tables'])
         global system_conf
         global pathbuilder
         if module_name in au.mic.remote:
