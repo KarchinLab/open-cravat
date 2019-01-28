@@ -61,6 +61,9 @@ class PathBuilder(object):
 
     def manifest(self):
         return self._build_path(self.base(), 'manifest.yml')
+    
+    def download_counts(self):
+        return self._build_path(self.base(), 'download-counts.yml')
 
 def blank_stage_handler(*args,**kwargs):
     pass
