@@ -330,6 +330,8 @@ function populateStoreTagPanel () {
         var tags = remoteModuleInfo[module].tags;
         for (var i = 0; i < tags.length; i++) {
             var tag = tags[i];
+            if (tag == 'gene-level' || tag == 'variant-level') {
+            }
             if (tagsCollected.indexOf(tag) == -1) {
                 tagsCollected.push(tag);
             }
@@ -485,7 +487,7 @@ function getRemoteModulePanel (moduleName) {
         datasource = '';
     }
     span.textContent = datasource;
-    span.title = 'module source data release date';
+    span.title = 'Source data release date';
     addEl(div, span);
     addEl(div, sdiv);
     addEl(div, getEl('br'));
@@ -533,7 +535,7 @@ function getRemoteModulePanel (moduleName) {
         if (remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
             var button = getEl('button');
             button.className = 'modulepanel-update-button';
-            button.textContent = 'Update';
+            button.textContent = 'Update available';
             button.setAttribute('module', moduleName);
             button.addEventListener('click', function (evt) {
                 var moduleName = evt.target.getAttribute('module');
@@ -658,6 +660,21 @@ function getSortedFilteredRemoteModuleNames () {
                 var size1 = filteredRemoteModules[sortedNames[i]].size;
                 var size2 = filteredRemoteModules[sortedNames[j]].size;
                 if (size1 < size2) {
+                    var tmp = sortedNames[i];
+                    sortedNames[i] = sortedNames[j];
+                    sortedNames[j] = tmp;
+                }
+            }
+        }
+    } else if (sortKey == 'date') {
+        sortedNames = Object.keys(filteredRemoteModules);
+        for (var i = 0; i < sortedNames.length - 1; i++) {
+            for (var j = i + 1; j < sortedNames.length; j++) {
+                var v1 = filteredRemoteModules[sortedNames[i]].publish_time;
+                var v2 = filteredRemoteModules[sortedNames[j]].publish_time;
+                v1 = new Date(v1);
+                v2 = new Date(v2);
+                if (v1 < v2) {
                     var tmp = sortedNames[i];
                     sortedNames[i] = sortedNames[j];
                     sortedNames[j] = tmp;
@@ -1002,6 +1019,21 @@ function activateDetailDialog (moduleName) {
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
+    span.textContent = 'Data source version: ';
+    addEl(d, span);
+    span = getEl('span');
+    var datasource = moduleInfo['datasource'];
+    if (datasource == null) {
+        datasource = '';
+    }
+    span.textContent = datasource;
+    addEl(d, span);
+    addEl(d, getEl('br'));
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
     span.textContent = 'Maintainer: ';
     addEl(d, span);
     span = getEl('span');
@@ -1081,6 +1113,17 @@ function activateDetailDialog (moduleName) {
     addEl(d, span);
     span = getEl('span');
     span.textContent = getSizeText(moduleInfo['size']);
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Publish date: ';
+    addEl(d, span);
+    span = getEl('span');
+    var t = new Date(moduleInfo['publish_time']);
+    span.textContent = t.toLocaleDateString();
     addEl(d, span);
     addEl(infodiv, d);
     addEl(td, infodiv);
