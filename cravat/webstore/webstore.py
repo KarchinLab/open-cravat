@@ -321,6 +321,11 @@ def get_md (request):
     modules_dir = au.get_modules_dir()
     return web.Response(text=modules_dir)
 
+def get_download_counts (request):
+    counts = au.get_download_counts()
+    return web.json_response(counts)
+
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/install', install_module])
@@ -335,3 +340,4 @@ routes.append(['GET', '/store/getbasemodules', get_base_modules])
 routes.append(['GET', '/store/installbasemodules', install_base_modules])
 routes.append(['GET', '/store/remotemoduleconfig', get_remote_module_config])
 routes.append(['GET', '/store/getmd', get_md])
+routes.append(['GET', '/store/download-counts', get_download_counts])

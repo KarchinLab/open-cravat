@@ -175,6 +175,16 @@ class ModuleInfoCache(object):
         self.remote_config = {}
         self.update_local()
         self._store_path_builder = su.PathBuilder(self._sys_conf['store_url'],'url')
+        self.download_counts = {}
+        self._counts_fetched = False
+
+    def update_download_counts(self, force=False):
+        if force or not(self._counts_fetched):
+            counts_url = self._store_path_builder.download_counts()
+            counts_str = su.get_file_to_string(counts_url)
+            if counts_str != '':
+                self.download_counts = yaml.load(counts_str).get('modules',{})
+            self._counts_fetched = True
 
     def update_local(self):
         self.local = {}
@@ -196,9 +206,7 @@ class ModuleInfoCache(object):
             self._remote_url = self._store_path_builder.manifest()
             self.remote = {}
             manifest_str = su.get_file_to_string(self._remote_url)
-            if manifest_str == '':
-                self.remote = {}
-            else:
+            if manifest_str != '':
                 self.remote = yaml.load(manifest_str)
             self._remote_fetched = True
 
@@ -923,6 +931,11 @@ def get_current_package_version():
 def get_remote_module_config (module_name):
     conf = mic.get_remote_config(module_name)
     return conf
+
+def get_download_counts ():
+    mic.update_download_counts()
+    counts = mic.download_counts
+    return counts
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
