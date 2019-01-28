@@ -331,14 +331,12 @@ function populateStoreTagPanel () {
         for (var i = 0; i < tags.length; i++) {
             var tag = tags[i];
             if (tag == 'gene-level' || tag == 'variant-level') {
-                console.log(module, tag);
             }
             if (tagsCollected.indexOf(tag) == -1) {
                 tagsCollected.push(tag);
             }
         }
     }
-    console.log(tagsCollected);
     for (var module in localModuleInfo) {
         var tags = localModuleInfo[module].tags;
         for (var i = 0; i < tags.length; i++) {
@@ -351,7 +349,6 @@ function populateStoreTagPanel () {
     removeElementFromArrayByValue(tagsCollected, 'installed');
     removeElementFromArrayByValue(tagsCollected, 'newavailable');
     tagsCollected.sort();
-    console.log(tagsCollected);
     var div = document.getElementById('store-tag-custom-div');
     $(div).empty();
     for (var i = 0; i < tagsCollected.length; i++) {
@@ -663,6 +660,21 @@ function getSortedFilteredRemoteModuleNames () {
                 var size1 = filteredRemoteModules[sortedNames[i]].size;
                 var size2 = filteredRemoteModules[sortedNames[j]].size;
                 if (size1 < size2) {
+                    var tmp = sortedNames[i];
+                    sortedNames[i] = sortedNames[j];
+                    sortedNames[j] = tmp;
+                }
+            }
+        }
+    } else if (sortKey == 'date') {
+        sortedNames = Object.keys(filteredRemoteModules);
+        for (var i = 0; i < sortedNames.length - 1; i++) {
+            for (var j = i + 1; j < sortedNames.length; j++) {
+                var v1 = filteredRemoteModules[sortedNames[i]].publish_time;
+                var v2 = filteredRemoteModules[sortedNames[j]].publish_time;
+                v1 = new Date(v1);
+                v2 = new Date(v2);
+                if (v1 < v2) {
                     var tmp = sortedNames[i];
                     sortedNames[i] = sortedNames[j];
                     sortedNames[j] = tmp;
@@ -1101,6 +1113,17 @@ function activateDetailDialog (moduleName) {
     addEl(d, span);
     span = getEl('span');
     span.textContent = getSizeText(moduleInfo['size']);
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Publish date: ';
+    addEl(d, span);
+    span = getEl('span');
+    var t = new Date(moduleInfo['publish_time']);
+    span.textContent = t.toLocaleDateString();
     addEl(d, span);
     addEl(infodiv, d);
     addEl(td, infodiv);
