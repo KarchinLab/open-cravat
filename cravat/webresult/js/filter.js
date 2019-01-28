@@ -308,9 +308,10 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
     if (allCols === undefined) {
         return;
     }
+    const useAllCols = $('.filter-level-button').hasClass('filter-level-advanced');
     for (let i=0; i<allCols.length; i++) {
         const col = allCols[i];
-        if (col.filterable ) {
+        if (useAllCols || col.filterable ) {
             const colOpt = $(getEl('option'))
                 .val(col.col)
                 .append(col.title);
