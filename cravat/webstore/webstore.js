@@ -489,11 +489,6 @@ function getRemoteModulePanel (moduleName) {
     if (datasource == null) {
         datasource = '';
     }
-    // TODO: delete below lines about local datasource ver
-    var localModule = localModuleInfo[moduleName];
-    if (localModule != undefined) {
-        datasource = localModule['datasource'];
-    }
     span.textContent = datasource;
     span.title = 'Source data release date';
     addEl(div, span);
@@ -1018,11 +1013,6 @@ function activateDetailDialog (moduleName) {
     var datasource = moduleInfo['datasource'];
     if (datasource == null) {
         datasource = '';
-    }
-    // TODO: delete below rows.
-    var localModule = localModuleInfo[moduleName];
-    if (localModule != undefined) {
-        datasource = localModule['datasource'];
     }
     span.textContent = datasource;
     addEl(d, span);
