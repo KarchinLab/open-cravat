@@ -330,11 +330,15 @@ function populateStoreTagPanel () {
         var tags = remoteModuleInfo[module].tags;
         for (var i = 0; i < tags.length; i++) {
             var tag = tags[i];
+            if (tag == 'gene-level' || tag == 'variant-level') {
+                console.log(module, tag);
+            }
             if (tagsCollected.indexOf(tag) == -1) {
                 tagsCollected.push(tag);
             }
         }
     }
+    console.log(tagsCollected);
     for (var module in localModuleInfo) {
         var tags = localModuleInfo[module].tags;
         for (var i = 0; i < tags.length; i++) {
@@ -347,6 +351,7 @@ function populateStoreTagPanel () {
     removeElementFromArrayByValue(tagsCollected, 'installed');
     removeElementFromArrayByValue(tagsCollected, 'newavailable');
     tagsCollected.sort();
+    console.log(tagsCollected);
     var div = document.getElementById('store-tag-custom-div');
     $(div).empty();
     for (var i = 0; i < tagsCollected.length; i++) {
@@ -484,8 +489,13 @@ function getRemoteModulePanel (moduleName) {
     if (datasource == null) {
         datasource = '';
     }
+    // TODO: delete below lines about local datasource ver
+    var localModule = localModuleInfo[moduleName];
+    if (localModule != undefined) {
+        datasource = localModule['datasource'];
+    }
     span.textContent = datasource;
-    span.title = 'module source data release date';
+    span.title = 'Source data release date';
     addEl(div, span);
     addEl(div, sdiv);
     addEl(div, getEl('br'));
@@ -533,7 +543,7 @@ function getRemoteModulePanel (moduleName) {
         if (remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
             var button = getEl('button');
             button.className = 'modulepanel-update-button';
-            button.textContent = 'Update';
+            button.textContent = 'Update available';
             button.setAttribute('module', moduleName);
             button.addEventListener('click', function (evt) {
                 var moduleName = evt.target.getAttribute('module');
@@ -997,6 +1007,26 @@ function activateDetailDialog (moduleName) {
             }
         }
     }
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Data source version: ';
+    addEl(d, span);
+    span = getEl('span');
+    var datasource = moduleInfo['datasource'];
+    if (datasource == null) {
+        datasource = '';
+    }
+    // TODO: delete below rows.
+    var localModule = localModuleInfo[moduleName];
+    if (localModule != undefined) {
+        datasource = localModule['datasource'];
+    }
+    span.textContent = datasource;
+    addEl(d, span);
+    addEl(d, getEl('br'));
     addEl(infodiv, d);
     addEl(infodiv, getEl('br'));
     d = getEl('div');
