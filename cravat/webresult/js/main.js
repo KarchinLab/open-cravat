@@ -377,6 +377,8 @@ function notifyToUseFilter () {
 		'Number of variants exceeds viewer limit (' + NUMVAR_LIMIT + ').' +
 		'Click the Filter button to use filters to reduce the number of ' +
 		'variants to ' + NUMVAR_LIMIT + ' or less, and click Update to load filtered variants.';
+	document.getElementById('load_button').disabled = false;
+    
 }
 
 function hideWgnoticediv () {

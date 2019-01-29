@@ -273,3 +273,21 @@ input:checked + .store-switch-slider:before {
     background-color: '';
 }
 
+#moduledetaildiv_store {
+    position: fixed;
+    width: 80%;
+    height: 80%;
+    margin: auto;
+    z-index: 3;
+    background-color: white;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border: 6px;
+    padding: 10px;
+    padding-bottom: 23px;
+    border: 1px solid black;
+    box-shadow: 0px 0px 20px;
+}
+

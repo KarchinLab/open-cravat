@@ -195,12 +195,44 @@ function showStoreHome () {
     document.getElementById('store-allmodule-div').style.display = 'none';
 }
 
+function getMostDownloadedModuleNames () {
+    var moduleNames = Object.keys(remoteModuleInfo);
+    for (var i = 0; i < moduleNames.length; i++) {
+        for (var j = i + 1; j < moduleNames.length - 1; j++) {
+            var d1 = remoteModuleInfo[moduleNames[i]].downloads;
+            var d2 = remoteModuleInfo[moduleNames[j]].downloads;
+            if (d1 < d2) {
+                var tmp = moduleNames[i];
+                moduleNames[i] = moduleNames[j];
+                moduleNames[j] = tmp;
+            }
+        }
+    }
+    return moduleNames;
+}
+
+function getNewestModuleNames () {
+    var moduleNames = Object.keys(remoteModuleInfo);
+    for (var i = 0; i < moduleNames.length; i++) {
+        for (var j = i + 1; j < moduleNames.length - 1; j++) {
+            var d1 = new Date(remoteModuleInfo[moduleNames[i]].publish_time);
+            var d2 = new Date(remoteModuleInfo[moduleNames[j]].publish_time);
+            if (d1 < d2) {
+                var tmp = moduleNames[i];
+                moduleNames[i] = moduleNames[j];
+                moduleNames[j] = tmp;
+            }
+        }
+    }
+    return moduleNames;
+}
+
 function populateStoreHome () {
-    // Featured
+    // Most Downloaded
     var div = document.getElementById('store-home-featureddiv');
     $(div).empty();
     var sdiv = getEl('div');
-    var featuredModules = ['chasmplus', 'vest', 'mupit', 'clinvar', 'dbsnp', 'gnomad'];
+    var featuredModules = getMostDownloadedModuleNames();
     sdiv.style.width = (featuredModules.length * storeTileWidthStep) + 'px';
     for (var i = 0; i < featuredModules.length; i++) {
         var panel = getRemoteModulePanel(featuredModules[i]);
@@ -211,7 +243,7 @@ function populateStoreHome () {
     var div = document.getElementById('store-home-newestdiv');
     $(div).empty();
     var sdiv = getEl('div');
-    var newestModules = ['gtex', 'grasp', 'clinvar', 'siphy', 'civic', 'gerp', 'fathmm', 'revel'];
+    var newestModules = getNewestModuleNames();
     sdiv.style.width = (newestModules.length * storeTileWidthStep) + 'px';
     for (var i = 0; i < newestModules.length; i++) {
         var panel = getRemoteModulePanel(newestModules[i]);
@@ -745,21 +777,6 @@ function activateDetailDialog (moduleName) {
     } else {
         div = getEl('div');
         div.id = 'moduledetaildiv_store';
-        div.style.position = 'fixed';
-        div.style.width = '80%';
-        div.style.height = '80%';
-        div.style.margin = 'auto';
-        div.style.zIndex = '3';
-        div.style.backgroundColor = 'white';
-        div.style.left = '0';
-        div.style.right = '0';
-        div.style.top = '0';
-        div.style.bottom = '0';
-        div.style.border = '6px';
-        div.style.padding = '10px';
-        div.style.paddingBottom = '23px';
-        div.style.border = '1px solid black';
-        div.style.boxShadow = '0px 0px 20px';
     }
     currentDetailModule = moduleName;
     div.style.display = 'block';
@@ -772,11 +789,18 @@ function activateDetailDialog (moduleName) {
     tr.style.border = '0px';
     var td = getEl('td');
     td.id = 'moduledetaillogotd';
-    td.style.width = '120px';
     td.style.border = '0px';
+    var sdiv = getEl('div');
+    sdiv.className = 'moduletile-logodiv';
+    var img = addLogo(moduleName, sdiv);
+    if (img != null) {
+        img.style.maxHeight = '84px';
+    } else {
+        sdiv.style.position = 'relative';
+        sdiv.children[0].style.display = 'none';
+    }
+    addEl(td, sdiv);
     addEl(tr, td);
-    var sdiv = td;
-    addLogo(moduleName, sdiv);
     td = getEl('td');
     td.style.border = '0px';
     var span = getEl('div');
@@ -943,6 +967,8 @@ function activateDetailDialog (moduleName) {
     var mdDiv = getEl('div');
     mdDiv.style.height = '100%';
     mdDiv.style.overflow = 'auto';
+    var wiw = window.innerWidth;
+    mdDiv.style.maxWidth = (wiw * 0.8 * 0.68) + 'px';
     addEl(td, mdDiv);
     addEl(tr, td);
 	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
@@ -956,6 +982,7 @@ function activateDetailDialog (moduleName) {
     var infodiv = getEl('div');
     infodiv.style.height = '100%';
     infodiv.style.overflow = 'auto';
+    infodiv.style.maxWidth = (wiw * 0.8 * 0.3) + 'px';
     var d = getEl('div');
     span = getEl('span');
     span.textContent = moduleInfo.description;
@@ -1093,6 +1120,7 @@ function activateDetailDialog (moduleName) {
     span.textContent = moduleInfo['developer']['website'];
     span.href = moduleInfo['developer']['website'];
     span.target = '_blank';
+    span.style.wordBreak = 'break-all';
     addEl(d, span);
     addEl(infodiv, d);
     addEl(infodiv, getEl('br'));
@@ -1119,11 +1147,22 @@ function activateDetailDialog (moduleName) {
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
-    span.textContent = 'Publish date: ';
+    span.textContent = 'Posted on: ';
     addEl(d, span);
     span = getEl('span');
     var t = new Date(moduleInfo['publish_time']);
     span.textContent = t.toLocaleDateString();
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Downloads: ';
+    addEl(d, span);
+    span = getEl('span');
+    var t = moduleInfo['downloads'];
+    span.textContent = t;
     addEl(d, span);
     addEl(infodiv, d);
     addEl(td, infodiv);

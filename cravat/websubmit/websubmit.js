@@ -637,11 +637,11 @@ function getModuleDetailDiv (moduleName) {
         div = getEl('div');
         div.id = 'moduledetaildiv_submit';
         div.style.position = 'fixed';
-        div.style.width = 'calc(90% - 200px)';
+        div.style.width = '80%';
         div.style.height = '80%';
         div.style.margin = 'auto';
         div.style.backgroundColor = 'white';
-        div.style.left = '200px';
+        div.style.left = '0';
         div.style.right = '0';
         div.style.top = '0';
         div.style.bottom = '0';
@@ -665,7 +665,19 @@ function getModuleDetailDiv (moduleName) {
     td.style.width = '120px';
     td.style.border = '0px';
     addEl(tr, td);
-    var img = getLogo(moduleName);
+    var sdiv = getEl('sdiv');
+    sdiv.className = 'moduletile-logodiv';
+    var img = addLogo(moduleName, sdiv);
+    if (img != null) {
+        img.style.height = '86px';
+    }
+    if (img != null) {
+        img.style.maxHeight = '84px';
+    } else {
+        sdiv.style.position = 'relative';
+        sdiv.children[0].style.display = 'none';
+    }
+    /*
     img.onerror = function () {
         var span = getEl('div');
         span.style.fontSize = '20px';
@@ -678,6 +690,8 @@ function getModuleDetailDiv (moduleName) {
         var sdiv = div.querySelector('#moduledetaillogotd');
         addEl(sdiv, this);
     }
+    */
+    addEl(td, sdiv);
     addEl(tr, td);
     td = getEl('td');
     td.style.border = '0px';
@@ -727,6 +741,8 @@ function getModuleDetailDiv (moduleName) {
     var mdDiv = getEl('div');
     mdDiv.style.height = '100%';
     mdDiv.style.overflow = 'auto';
+    var wiw = window.innerWidth;
+    mdDiv.style.maxWidth = (wiw * 0.8 * 0.68) + 'px';
     addEl(td, mdDiv);
     addEl(tr, td);
 	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
@@ -740,6 +756,7 @@ function getModuleDetailDiv (moduleName) {
     var infodiv = getEl('div');
     infodiv.style.height = '100%';
     infodiv.style.overflow = 'auto';
+    infodiv.style.maxWidth = (wiw * 0.8 * 0.3) + 'px';
     var d = getEl('div');
     span = getEl('span');
     span.textContent = localModule.description;
