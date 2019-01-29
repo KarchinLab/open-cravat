@@ -906,17 +906,9 @@ function populateLoadDiv (tabName, filterDiv) {
 	// Description
 	var div = getEl('div');
 	var p = getEl('p');
-	p.textContent = 'Add variant filters using the controls below and ' + 
-	 	'click \'Count\' button to know the number of variants that ' +
-        'meet the filter criteria, and click \'Update\' button to ' +
-        'update the tables in all tabs ' +
-	 	'with the variants that meet the criteria of the filter. '
-	addEl(div, p);
-	var p = getEl('p');
-	p.textContent = 'Also, this result viewer will load up to 100,000 variants ' +
-	 	'to the memory and show. Thus, if your result has more than 100,000 ' +
-	 	'variants then you need to narrow down the variants to load with ' +
-	 	'the variant filters.';
+	p.textContent = 'Add variant filters below. Click "Count" to count the '
+				   +'number of variants passing the filter. Click "Update" to '
+				   +'apply the filter.'
 	addEl(div, p);
 	addEl(filterDiv, div);
 
