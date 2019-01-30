@@ -1016,7 +1016,7 @@ function activateDetailDialog (moduleName) {
                 addEl(d, getEl('br'));
                 var span = getEl('span');
                 span.style.color = 'red';
-                span.textContent = 'New version available!';
+                span.textContent = 'Updates to your installed modules are available!';
                 addEl(d, span);
                 var button = getEl('button');
                 button.id = 'updatebutton';
