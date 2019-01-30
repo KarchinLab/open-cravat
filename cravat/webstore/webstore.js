@@ -208,7 +208,11 @@ function getMostDownloadedModuleNames () {
             }
         }
     }
-    return moduleNames;
+    var top10ModuleNames = [];
+    for (var i = 0; i < 10; i++) {
+        top10ModuleNames.push(moduleNames[i]);
+    }
+    return top10ModuleNames;
 }
 
 function getNewestModuleNames () {
@@ -224,7 +228,11 @@ function getNewestModuleNames () {
             }
         }
     }
-    return moduleNames;
+    var top10ModuleNames = [];
+    for (var i = 0; i < 10; i++) {
+        top10ModuleNames.push(moduleNames[i]);
+    }
+    return top10ModuleNames;
 }
 
 function populateStoreHome () {
