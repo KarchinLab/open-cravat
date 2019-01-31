@@ -78,9 +78,9 @@ class FileRouter(object):
         return orig_input_path
 
     async def job_db(self, request, job_id):
-        output_fname = self.input_fname+self.db_extension
-        jobs_dir = await self.job_dir(request, job_id)
-        return os.path.join(jobs_dir, output_fname)
+        orig_input_path = await self.job_input(request, job_id)
+        output_fname = orig_input_path + self.db_extension
+        return output_fname
 
     async def job_report(self, request, job_id, report_type):
         ext = self.report_extensions.get(report_type, '.'+report_type)
