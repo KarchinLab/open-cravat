@@ -278,7 +278,7 @@ input:checked + .store-switch-slider:before {
     width: 80%;
     height: 80%;
     margin: auto;
-    z-index: 3;
+    z-index: 300;
     background-color: white;
     left: 0;
     right: 0;

@@ -161,8 +161,12 @@ button {
 #jobs-table tbody td {
     padding-top: 10px;
     padding-bottom: 10px;
-    cursor: pointer;
+    cursor: default;
     font-size: 15px;
+}
+
+#jobs-table tbody tr.job-table-main-tr td {
+    cursor: pointer;
 }
 
 #jobs-table thead th {

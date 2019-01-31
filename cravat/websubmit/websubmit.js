@@ -166,7 +166,8 @@ function buildJobsTable () {
             continue;
         }
         var jobTr = $(getEl('tr'))
-            .addClass('job-table-tr');
+            .addClass('job-table-tr')
+            .addClass('job-table-main-tr');
         jobTr[0].setAttribute('jobid', ji);
         jobTr[0].addEventListener('click', function (evt) {
             if (evt.target.parentElement.classList.contains('job-table-tr') == false) {
