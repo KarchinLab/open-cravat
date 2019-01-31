@@ -75,6 +75,7 @@ function getLocal () {
 	$.get('/store/local').done(function(data){
         localModuleInfo = data;
         newModuleAvailable = false;
+        var moduleNamesInInstallQueue = Object.keys(installInfo);
         for (var remoteModuleName in remoteModuleInfo) {
             var mI = remoteModuleInfo[remoteModuleName];
             var tags = mI['tags'];
@@ -87,19 +88,21 @@ function getLocal () {
                 if (idx == -1) {
                     tags.push('installed');
                 }
-                var localVersion = localModuleInfo[remoteModuleName].version;
-                var remoteVersion = getHighestVersionForRemoteModule(remoteModuleName);
-                c = compareVersion(remoteVersion, localVersion);
-                if (c > 0) {
-                    var idx = tags.indexOf('newavailable');
-                    if (idx == -1) {
-                        tags.push('newavailable');
-                    }
-                    newModuleAvailable = true;
-                } else {
-                    var idx = tags.indexOf('newavailable');
-                    if (idx >= 0) {
-                        tags.splice(idx, 1);
+                if (moduleNamesInInstallQueue.indexOf(remoteModuleName) == -1) {
+                    var localVersion = localModuleInfo[remoteModuleName].version;
+                    var remoteVersion = getHighestVersionForRemoteModule(remoteModuleName);
+                    c = compareVersion(remoteVersion, localVersion);
+                    if (c > 0) {
+                        var idx = tags.indexOf('newavailable');
+                        if (idx == -1) {
+                            tags.push('newavailable');
+                        }
+                        newModuleAvailable = true;
+                    } else {
+                        var idx = tags.indexOf('newavailable');
+                        if (idx >= 0) {
+                            tags.splice(idx, 1);
+                        }
                     }
                 }
             } else {
@@ -191,7 +194,10 @@ function getLocal () {
         }
         var d = document.getElementById('store-update-all-div');
         if (newModuleAvailable) {
+            var modulesInInstallQueue = Object.keys(installInfo);
+
             d.style.display = 'block';
+            announceStoreUpdateAllAvailable();
         } else {
             d.style.display = 'none';
         }
@@ -1417,6 +1423,23 @@ function onClickStoreUpdateAllButton () {
             queueInstall(moduleName);
         }
     }
+    announceStoreUpdatingAll();
+}
+
+function announceStoreUpdatingAll () {
+    var div = document.getElementById('store-update-all-div');
+    var span = document.getElementById('store-update-all-span');
+    var button = document.getElementById('store-update-all-button');
+    span.textContent = 'Updating all update-available modules...';
+    button.style.display = 'none';
+}
+
+function announceStoreUpdateAllAvailable () {
+    var div = document.getElementById('store-update-all-div');
+    var span = document.getElementById('store-update-all-span');
+    var button = document.getElementById('store-update-all-button');
+    span.textContent = 'Updates to your installed modules are available!';
+    button.style.display = 'inline';
 }
 
 function webstore_run () {
