@@ -139,9 +139,7 @@ function resizesTheWindow () {
 	if (detailDiv) {
 		$(detailDiv.getElementsByClassName('detailcontainerdiv')[0]).packery('shiftLayout');
 	}
-	
 	shouldResizeScreen[currentTab] = false;
-	
 	onClickDetailRedraw();
 }
 

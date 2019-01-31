@@ -103,6 +103,9 @@ function changeMenu () {
 		turnOffMenu('layout_columns_menu');
 		turnOffMenu('layout_widgets_menu');
 	}
+    if (shouldResizeScreen[currentTab] != false) {
+        resizesTheWindow();
+    }
     changeTableDetailMaxButtonText();
 }
 
