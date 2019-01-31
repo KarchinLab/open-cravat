@@ -607,11 +607,13 @@ function showHideWidget (tabName, widgetName, state) {
 		widget.style.display = 'none';
 	} else {
 		widget.style.display = 'block';
+        if (currentTab == 'info') {
+            var dcd = widget.getElementsByClassName('detailcontentdiv')[0];
+            if (dcd.innerHTML == '') {
+                    drawSummaryWidget(widgetName);
+            }
+        }
 	}
-    var dcd = widget.getElementsByClassName('detailcontentdiv')[0];
-    if (dcd.innerHTML == '') {
-        drawSummaryWidget(widgetName);
-    }
 	var $detailContainerDiv = $(document.getElementById('detailcontainerdiv_' + tabName));
 	$detailContainerDiv.packery('fit', widget);
 }
