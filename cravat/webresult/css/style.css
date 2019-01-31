@@ -25,6 +25,7 @@ body {
 	height: 20px;
 	padding: 3px;
 	font-size: 13px;
+    z-index: 100;
 }
 
 .menu1 {
@@ -35,6 +36,7 @@ body {
     font-size: 13px;
     border: none;
 	cursor: pointer;
+    z-index: 100;
 }
 
 .menu2 {
@@ -46,6 +48,7 @@ body {
 	background-color: #c8c8c8;
 	width: 150px;
 	border: 1px solid #888888;
+    z-index: 100;
 }
 
 .menu3 {
@@ -57,31 +60,37 @@ body {
 	padding-left: 6px;
 	padding-top: 6px;
 	padding-bottom: 6px;
+    z-index: 100;
 }
 
 .menu1 a {
 	color: black;
 	text-decoration: none;
+    z-index: 100;
 }
 
 .menu2 a {
 	display: block;
 	text-decoration: none;
 	padding: 4px;
+    z-index: 100;
 }
 
 .menu1:hover .menu2 {
 	display: block;
+    z-index: 100;
 }
 
 .menu1:hover, .menu1 a:hover, .menu2 a:hover {
 	background-color: #555555;
 	color: #ffffff;
+    z-index: 100;
 }
 
 .menu3 > div {
 	display: none;
 	border: 1px solid #888888;
+    z-index: 100;
 }
 
 .menu3:hover > div {
@@ -91,7 +100,7 @@ body {
 	left: 150px;
 	top: 0px;
 	padding: 16px;
-	z-index: 2;
+    z-index: 100;
 }
 
 .draggableDiv {
