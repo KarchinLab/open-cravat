@@ -60,6 +60,17 @@ function onClickStoreTagResetButton () {
     document.getElementById('store-tag-reset-button').className = 'store-front-all-button-on';
 }
 
+function clickTab (value) {
+    var tabs = document.getElementById('pageselect').children;
+    for (var i = 0; i < tabs.length; i++) {
+        var tab = tabs[i];
+        if (tab.getAttribute('value') == value) {
+            tab.click();
+            return;
+        }
+    }
+}
+
 function getLocal () {
 	$.get('/store/local').done(function(data){
         localModuleInfo = data;
@@ -129,8 +140,8 @@ function getLocal () {
         if (div == null) {
             return;
         }
-        trimRemote();
         if (baseInstalled) {
+            trimRemote();
             var div = document.getElementById('messagediv');
             div.style.display = 'none';
             div = document.getElementById('remotemodulepanels');
@@ -149,12 +160,22 @@ function getLocal () {
             }
             storeFirstOpen = false;
         } else {
+            hideStoreHome();
+            showAllModulesDiv();
+            populateAllModulesDiv('basetoinstall');
             var div = document.getElementById('messagediv');
             emptyElement(div);
             div.style.display = 'block';
+            div.style.top = '163px';
+            div.style.left = '127px';
             var span = getEl('span');
             span.style.position = 'relative';
-            span.textContent = 'All base modules need to be installed to use Open-CRAVAT. Click this button to install them all: ';
+            span.textContent = 'Base modules (shown below) need to be installed to use Open-CRAVAT.';
+            addEl(div, span);
+            addEl(div, getEl('br'));
+            var span = getEl('span');
+            span.style.position = 'relative';
+            span.textContent = 'Click this button to install them all: ';
             addEl(div, span);
             var button = getEl('button');
             button.style.position = 'relative';
@@ -166,6 +187,7 @@ function getLocal () {
             addEl(div, button);
             div = document.getElementById('remotemodulepanels');
             div.style.top = '114px';
+            clickTab('storediv');
         }
         var d = document.getElementById('store-update-all-div');
         if (newModuleAvailable) {
@@ -193,6 +215,11 @@ function showOrHideInstallAllButton () {
 function showStoreHome () {
     document.getElementById('store-home-div').style.display = 'block';
     document.getElementById('store-allmodule-div').style.display = 'none';
+}
+
+function hideStoreHome () {
+    document.getElementById('store-home-div').style.display = 'none';
+    document.getElementById('store-allmodule-div').style.display = 'block';
 }
 
 function getMostDownloadedModuleNames () {
@@ -732,17 +759,26 @@ function showAllModulesDiv () {
     allmodulediv.style.display = 'block';
 }
 
-function populateAllModulesDiv () {
+function populateAllModulesDiv (group) {
     var div = document.getElementById('remotemodulepanels');
     emptyElement(div);
     var remoteModuleNames = getSortedFilteredRemoteModuleNames();
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
-        if (remoteModuleName.startsWith('chasmplus_')) {
-            continue;
-        }
-        if (remoteModuleName == 'example_annotator' || remoteModuleName == 'template') {
-            continue;
+        if (group == 'basetoinstall') {
+            if (baseModuleNames.indexOf(remoteModuleName) == -1) {
+                continue;
+            }
+            if (remoteModuleInfo[remoteModuleName].tags.indexOf('installed') > -1) {
+                continue;
+            }
+        } else {
+            if (remoteModuleName.startsWith('chasmplus_')) {
+                continue;
+            }
+            if (remoteModuleName == 'example_annotator' || remoteModuleName == 'template') {
+                continue;
+            }
         }
         var remoteModule = remoteModuleInfo[remoteModuleName];
         var panel = getRemoteModulePanel(remoteModuleName);

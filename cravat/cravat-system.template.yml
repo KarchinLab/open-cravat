@@ -11,6 +11,8 @@ base_modules:
 - vcfinfo
 - hg38
 - wgbase
+- wghg19
+- wgigv
 - wgncrna
 - wglollipop
 - wgndex
@@ -21,3 +23,5 @@ base_modules:
 - wgsosummary
 - wgtopgenessummary
 - wgnote
+- wgvcfinfo
+
