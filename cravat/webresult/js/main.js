@@ -232,10 +232,12 @@ function loadData (alertFlag, finalcallback) {
         }
 		if (currentTab == 'variant' || currentTab == 'gene') {
 			setupTab(currentTab);
+            resizesTheWindow();
 		}
         makeVariantByGene();
         document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.';
 	}
+    /*
 	var loadMappingResult = function () {
 		if (resultLevels.indexOf('mapping') != -1) {
 			infomgr.load(jobId, 'mapping', removeSpinner, null, filterJson);
@@ -250,6 +252,7 @@ function loadData (alertFlag, finalcallback) {
 			loadMappingResult();
 		}
 	}
+    */
 	var loadGeneResult = function () {
 		var numvar = infomgr.getData('variant').length;
 		if (numvar > NUMVAR_LIMIT) {
@@ -272,7 +275,7 @@ function loadData (alertFlag, finalcallback) {
 			}
 		}
 		if (resultLevels.indexOf('gene') != -1) {
-			infomgr.load(jobId, 'gene', loadSampleResult, null, filterJson);
+			infomgr.load(jobId, 'gene', removeSpinner, null, filterJson);
 		} else {
 			loadSampleResult();
 		}
