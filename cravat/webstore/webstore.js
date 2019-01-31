@@ -186,6 +186,7 @@ function getLocal () {
             button.textContent = 'Install base components';
             button.addEventListener('click', function (evt) {
                 installBaseComponents();
+                document.getElementById('messagediv').style.display = 'none';
             });
             addEl(div, button);
             div = document.getElementById('remotemodulepanels');
