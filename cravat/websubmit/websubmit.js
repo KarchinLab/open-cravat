@@ -399,7 +399,7 @@ function buildJobsTable () {
             var td = getEl('td');
             var a = getEl('a');
             var d = job.db_path.substring(0, job.db_path.lastIndexOf('/'));
-            a.href = 'http://file://///' + d;
+            a.href = 'file://///' + d;
             a.textContent = d;
             addEl(td, a);
             addEl(tr, td);
