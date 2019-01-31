@@ -42,7 +42,6 @@ const makeFilterColDiv = (filter, filterLevel) => {
         .addClass('filter-column-selector')
         .on('change', onFilterColumnSelectorChange);
     colDiv.append(colSel);
-    populateFilterColumnSelector(colSel, groupSel.val());
 
     // Not toggle
     const notSpan = $(getEl('span'))
@@ -70,7 +69,6 @@ const makeFilterColDiv = (filter, filterLevel) => {
     const filterValsSpan = $(getEl('span'))
         .addClass('filter-values-div');
     colDiv.append(filterValsSpan)
-    testSel.change();
     
     // Remove column
     const removeColBtn = $(getEl('span'))
@@ -96,6 +94,8 @@ const makeFilterColDiv = (filter, filterLevel) => {
         if (filter.negate) {
             notSpan.click();
         }
+    } else {
+        populateFilterColumnSelector(colSel, groupSel.val());
     }
 
     return colDiv;

@@ -11,6 +11,10 @@ from cravat.constants import VARIANT, GENE, LEVELS
 from cravat.exceptions import InvalidData
 
 class BasePostAggregator (object):
+
+    cr_type_to_sql = {'string':'text',
+                      'int':'integer',
+                      'float':'real'}
     
     def __init__(self, cmd_args):
         try:
@@ -199,7 +203,7 @@ class BasePostAggregator (object):
             col_filterable = col_def.get('filterable',True)
             # data table
             q = 'alter table ' + self.level + ' add column ' +\
-                colname + ' ' + coltype
+                colname + ' ' + self.cr_type_to_sql[coltype]
             self.cursor_w.execute(q)
             # header table
             # use prepared statement to allow " characters in colcats and coldesc
