@@ -132,11 +132,15 @@ function getLocal () {
             remoteModule.tags = remoteTags;
         }
         var baseInstalled = true;
+        var moduleNamesInInstallQueue = Object.keys(installInfo);
+        var baseToInstall = [];
         for (var i = 0; i < baseModuleNames.length; i++) {
             var baseModuleName = baseModuleNames[i];
             if (! (baseModuleName in localModuleInfo)) {
                 baseInstalled = false;
-                break;
+                if (moduleNamesInInstallQueue.indexOf(baseModuleName) == -1) {
+                    baseToInstall.push(baseModuleName);
+                }
             }
         }
         var div = document.getElementById('remotemodulepanels');
@@ -166,32 +170,36 @@ function getLocal () {
             hideStoreHome();
             showAllModulesDiv();
             populateAllModulesDiv('basetoinstall');
-            var div = document.getElementById('messagediv');
-            emptyElement(div);
-            div.style.display = 'block';
-            div.style.top = '163px';
-            div.style.left = '127px';
-            var span = getEl('span');
-            span.style.position = 'relative';
-            span.textContent = 'Base modules (shown below) need to be installed to use Open-CRAVAT.';
-            addEl(div, span);
-            addEl(div, getEl('br'));
-            var span = getEl('span');
-            span.style.position = 'relative';
-            span.textContent = 'Click this button to install them all: ';
-            addEl(div, span);
-            var button = getEl('button');
-            button.style.position = 'relative';
-            button.style.top = '-2px';
-            button.textContent = 'Install base components';
-            button.addEventListener('click', function (evt) {
-                installBaseComponents();
-                document.getElementById('messagediv').style.display = 'none';
-            });
-            addEl(div, button);
-            div = document.getElementById('remotemodulepanels');
-            div.style.top = '114px';
-            clickTab('storediv');
+            if (baseToInstall.length > 0) {
+                var div = document.getElementById('messagediv');
+                emptyElement(div);
+                div.style.display = 'block';
+                div.style.top = '163px';
+                div.style.left = '127px';
+                var span = getEl('span');
+                span.style.position = 'relative';
+                span.textContent = 'Base modules (shown below) need to be installed to use Open-CRAVAT.';
+                addEl(div, span);
+                addEl(div, getEl('br'));
+                var span = getEl('span');
+                span.style.position = 'relative';
+                span.textContent = 'Click this button to install them all: ';
+                addEl(div, span);
+                var button = getEl('button');
+                button.style.position = 'relative';
+                button.style.top = '-2px';
+                button.textContent = 'Install base components';
+                button.addEventListener('click', function (evt) {
+                    installBaseComponents();
+                    document.getElementById('messagediv').style.display = 'none';
+                });
+                addEl(div, button);
+                div = document.getElementById('remotemodulepanels');
+                div.style.top = '114px';
+            }
+            if (baseInstalled == false) {
+                clickTab('storediv');
+            
         }
         var d = document.getElementById('store-update-all-div');
         if (newModuleAvailable) {
