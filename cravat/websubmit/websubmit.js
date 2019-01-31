@@ -397,9 +397,11 @@ function buildJobsTable () {
             td.textContent = 'Job Directory';
             addEl(tr, td);
             var td = getEl('td');
-            var a = getEl('a');
+            var a = getEl('span');
             var d = job.db_path.substring(0, job.db_path.lastIndexOf('/'));
+            /*
             a.href = 'file://///' + d;
+            */
             a.textContent = d;
             addEl(td, a);
             addEl(tr, td);
