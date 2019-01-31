@@ -199,7 +199,7 @@ function getLocal () {
             }
             if (baseInstalled == false) {
                 clickTab('storediv');
-            
+            }
         }
         var d = document.getElementById('store-update-all-div');
         if (newModuleAvailable) {
