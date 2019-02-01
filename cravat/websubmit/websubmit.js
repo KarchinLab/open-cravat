@@ -648,7 +648,7 @@ function getModuleDetailDiv (moduleName) {
         div.style.right = '0';
         div.style.top = '0';
         div.style.bottom = '0';
-        div.style.zIndex = '2';
+        div.style.zIndex = '300';
         div.style.border = '6px';
         div.style.padding = '10px';
         div.style.paddingBottom = '23px';
