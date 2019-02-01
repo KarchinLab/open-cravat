@@ -1004,13 +1004,13 @@ function populateFilterWrapDiv (div) {
 		filterSimple = JSON.parse(JSON.stringify(filter));
 		filterSimple.variant.groups = [];
 		// Also exclude columns that are only available in advanced
-		const topLevelCols = filterSimple.variant.columns;
+		const topFilterCols = filterSimple.variant.columns;
 		const topSimpleCols = []
-		for (let i=0; i<topLevelCols.length; i++) {
-			let colName = topLevelCols[i].column;
-			let col = getFilterColByName(colName);
-			if (col.filterable) {
-				topSimpleCols.push(col)
+		for (let i=0; i<topFilterCols.length; i++) {
+			let filterCol = topFilterCols[i];
+			let colModel = getFilterColByName(filterCol.column);
+			if (colModel.filterable) {
+				topSimpleCols.push(filterCol)
 			} else {
 				advancedColumnsPresent = true;
 			}
