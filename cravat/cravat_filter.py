@@ -34,10 +34,13 @@ class FilterColumn(object):
         self.negate = d.get('negate', False)
     
     def get_sql(self):
-        if self.column == 'tagsampler__samples':
-            s = 's.base__sample_id="' + self.value[0] + '"'
-            for v in self.value[1:]:
-                s += ' or s.base__sample_id="' + v + '"'
+        if self.column == 'tagsampler__samples' and type(self.value) == list:
+            if type(self.value) == list:
+                s = 's.base__sample_id="' + self.value[0] + '"'
+                for v in self.value[1:]:
+                    s += ' or s.base__sample_id="' + v + '"'
+            elif type(self.value) == str:
+                s = 's.base__sample_id="' + self.value + '"'
         elif self.column == 'tagsampler__tags':
             s = 'm.base__tags="' + self.value[0] + '"'
             for v in self.value[1:]:
