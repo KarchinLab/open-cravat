@@ -16,9 +16,10 @@ from .constants import all_mappings_col_name
 from .constants import mapping_parser_name
 from .exceptions import InvalidData
 import sqlite3
+import json
 
 class BaseAnnotator(object):
-    
+
     valid_levels = ['variant','gene']
     valid_input_formats = ['crv','crx','crg']
     id_col_defs = {'variant':crv_def[0],
@@ -27,7 +28,7 @@ class BaseAnnotator(object):
                              'crx':[x['name'] for x in crx_def],
                              'crg':[x['name'] for x in crg_def]}
     required_conf_keys = ['level', 'output_columns']
-        
+
     def __init__(self, cmd_args):
         try:
             self.logger = None
@@ -39,7 +40,7 @@ class BaseAnnotator(object):
                 self.annotator_name = main_basename
             self.annotator_dir = os.path.dirname(main_fpath)
             self.data_dir = os.path.join(self.annotator_dir, 'data')
-            
+
             # Load command line opts
             self.primary_input_path = None
             self.secondary_paths = None
@@ -65,6 +66,9 @@ class BaseAnnotator(object):
                 self.annotator_display_name = os.path.basename(self.annotator_dir).upper()
             self.dbconn = None
             self.cursor = None
+
+            # Loads status.json file.
+            self.load_status_json()
         except Exception as e:
             self._log_exception(e)
 
@@ -73,7 +77,7 @@ class BaseAnnotator(object):
             self.logger.exception(e)
         if halt:
             raise e
-    
+
     def _verify_conf(self):
         try:
             for k in self.required_conf_keys:
@@ -103,7 +107,7 @@ class BaseAnnotator(object):
                 self.conf['input_columns'] = self.default_input_columns[self.conf['input_format']]
         except Exception as e:
             self._log_exception(e)
-    
+
     def _define_cmd_parser(self):
         try:
             parser = argparse.ArgumentParser()
@@ -131,37 +135,39 @@ class BaseAnnotator(object):
             self.cmd_arg_parser = parser
         except Exception as e:
             self._log_exception(e)
-    
+
     # Parse the command line arguments
     def parse_cmd_args(self, cmd_args):
         try:
             self._define_cmd_parser()
             parsed_args = self.cmd_arg_parser.parse_args(cmd_args[1:])
-                
             self.primary_input_path = os.path.abspath(parsed_args.input_file)
-            
             self.secondary_paths = {}
             if parsed_args.secondary_inputs:
                 for secondary_def in parsed_args.secondary_inputs:
                     sec_name, sec_path = secondary_def.split('@')
                     self.secondary_paths[sec_name] = os.path.abspath(sec_path)
-            
             self.output_dir = os.path.dirname(self.primary_input_path)
             if parsed_args.output_dir:
                 self.output_dir = parsed_args.output_dir
-    
+
             self.plain_output = parsed_args.plainoutput
-            
             self.output_basename = os.path.basename(self.primary_input_path)
             if parsed_args.name:
                 self.output_basename = parsed_args.name
-            
+            status_fname = '{}.status.json'.format(self.output_basename)
+            self.status_fpath = os.path.join(self.output_dir, status_fname)
             if parsed_args.conf:
                 self.job_conf_path = parsed_args.conf
         except Exception as e:
             self._log_exception(e)
-    
-    
+
+    def load_status_json (self):
+        f = open(self.status_fpath)
+        lines = '\n'.join(f.readlines())
+        self.status_json = json.loads(lines)
+        f.close()
+
     # Runs the annotator.
     def run(self):
         try:
@@ -193,25 +199,38 @@ class BaseAnnotator(object):
                     self.output_writer.write_data(output_dict)
                 except Exception as e:
                     self._log_runtime_exception(lnum, input_data, e)
-            
+
             # This does summarizing.
             self.postprocess()
-            
+
             self.base_cleanup()
             end_time = time.time()
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
             run_time = end_time - start_time
             self.logger.info('runtime: {0:0.3f}'.format(run_time))
+            self.update_status_json('status', 'Finished {}'.format(self.annotator_name))
         except Exception as e:
             self._log_exception(e)
-    
         #self.log_handler.close()
         #if self.output_basename == '__dummy__':
         #    os.remove(self.log_path)
-            
+
     def postprocess (self):
         pass
-    
+
+    def update_status_json (self, k, v):
+        self.status_json[k] = v
+        tmp_path = self.status_fpath + '.' + self.annotator_name
+        wf = open(tmp_path, 'w')
+        json.dump(self.status_json, wf)
+        wf.close()
+        while True:
+            try:
+                os.rename(tmp_path, self.status_fpath)
+                break
+            except:
+                time.sleep(0.1)
+
     def get_gene_summary_data (self, cf):
         cols = [self.annotator_name + '__' + coldef['name'] \
                 for coldef in self.conf['output_columns']]
@@ -263,7 +282,7 @@ class BaseAnnotator(object):
             self.setup()
         except Exception as e:
             self._log_exception(e)
-    
+
     def _setup_primary_input(self):
         try:
             self.primary_input_reader = CravatReader(self.primary_input_path)
@@ -293,7 +312,7 @@ class BaseAnnotator(object):
                                                                   data_type=data_type)
         except Exception as e:
             self._log_exception(e)
-    
+
     def _setup_secondary_inputs(self):
         try:
             self.secondary_readers = {}
@@ -319,7 +338,7 @@ class BaseAnnotator(object):
                 self.secondary_readers[sec_name] = fetcher
         except Exception as e:
             self._log_exception(e)
-    
+
     # Open the output files (.var, .gen, .ncd) that are needed
     def _setup_outputs(self):
         try:
@@ -366,7 +385,7 @@ class BaseAnnotator(object):
                                                    ','.join(skip_aggregation))
         except Exception as e:
                 self._log_exception(e)
-    
+
     def _open_db_connection (self):
         db_dirs = [self.data_dir,
                    os.path.join('/ext', 'resource', 'newarch')]
@@ -376,21 +395,21 @@ class BaseAnnotator(object):
             if os.path.exists(db_path):
                 self.dbconn = sqlite3.connect(db_path)
                 self.cursor = self.dbconn.cursor()
-    
+
     def close_db_connection (self):
         self.cursor.close()
         self.dbconn.close()
-    
+
     def remove_log (self):
         pass
-    
+
     def get_uid_col (self):
         return self.conf['output_columns'][0]['name']
-        
+
     # Placeholder, intended to be overridded in derived class
     def setup(self):
         pass
-    
+
     def base_cleanup(self):
         try:
             self.output_writer.close()
@@ -400,17 +419,17 @@ class BaseAnnotator(object):
             self.cleanup()
         except Exception as e:
             self._log_exception(e)
-    
+
     # Placeholder, intended to be overridden in derived class
     def cleanup(self):
         pass
-    
+
     def remove_log_file (self):
         self.logger.removeHandler(self.log_handler)
         self.log_handler.flush()
         self.log_handler.close()
         os.remove(self.log_path)
-        
+
     # Setup the logging utility
     def _setup_logger(self):
         try:
@@ -441,12 +460,12 @@ class BaseAnnotator(object):
             except Exception as e:
                 self._log_runtime_error(lnum, e)
                 continue
-    
+
     def annotate (self, input_data):
         sys.stdout.write('        annotate method should be implemented. ' +\
                 'Exiting ' + self.annotator_display_name + '...\n')
         exit(-1)
-        
+
 class SecondaryInputFetcher():
     def __init__(self,
                  input_path,
@@ -471,7 +490,7 @@ class SecondaryInputFetcher():
             self.fetch_cols = valid_cols
         self.data = {}
         self.load_input()
-    
+
     def load_input(self):
         for _, all_col_data in self.input_reader.loop_data():
             key_data = all_col_data[self.key_col]
@@ -480,13 +499,13 @@ class SecondaryInputFetcher():
             for col in self.fetch_cols:
                 fetch_col_data[col] = all_col_data[col]
             self.data[key_data].append(fetch_col_data)
-    
+
     def get(self, key_data):
         if key_data in self.data:
             return self.data[key_data]
         else:
             return []
-        
+
     def get_values (self, key_data, key_column):
         ret = [v[key_column] for v in self.data[key_data]]
         return ret
