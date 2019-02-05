@@ -617,7 +617,7 @@ function getRemoteModulePanel (moduleName) {
         if (remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
             var button = getEl('button');
             button.className = 'modulepanel-update-button';
-            button.textContent = 'Update available';
+            button.textContent = 'Install update';
             button.setAttribute('module', moduleName);
             button.addEventListener('click', function (evt) {
                 var moduleName = evt.target.getAttribute('module');
