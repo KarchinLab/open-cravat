@@ -936,7 +936,12 @@ function populateLoadDiv (tabName, filterDiv) {
     button.id = 'count_button';
     button.onclick = function (evt) {
         makeFilterJson();
-        infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
+        infomgr.count(dbPath, 'variant', function (msg, data) {
+            updateLoadMsgDiv(msg);
+            if (data['n'] <= NUMVAR_LIMIT) {
+                enableUpdateButton();
+            }
+        });
     }
     button.textContent = 'Count';
     addEl(filterDiv, button);

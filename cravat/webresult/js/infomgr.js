@@ -21,7 +21,7 @@ InfoMgr.prototype.getStatus = function (jobId) {
 InfoMgr.prototype.count = function (dbPath, tabName, callback) {
 	$.get('/result/service/count', {tab: tabName, dbpath: dbPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
 		var msg = jsonResponseData['n'] + ' variants meet the criteria';
-		callback(msg);
+		callback(msg, jsonResponseData);
     });
 }
 
