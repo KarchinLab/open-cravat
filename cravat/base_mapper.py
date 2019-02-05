@@ -10,14 +10,13 @@ from .exceptions import InvalidData
 from cravat.config_loader import ConfigLoader
 import sys
 import pkg_resources
+import json
 
 class BaseMapper(object):
     """
     BaseMapper is the parent class for Cravat Mapper objects.
-    
     It recieves a crv file and writes crx and crg files based on it's child
     mapper's map() function.
-    
     It handles command line arguments, option parsing and file io for the
     mapping process.
     """
@@ -53,7 +52,8 @@ class BaseMapper(object):
         config_loader = ConfigLoader()
         self.conf = config_loader.get_module_conf(self.module_name)
         self.cravat_version = pkg_resources.get_distribution('open-cravat').version
-    
+        self.load_status_json()
+
     def _define_main_cmd_args(self):
         self.cmd_parser = argparse.ArgumentParser()
         self.cmd_parser.add_argument('path',
@@ -68,11 +68,11 @@ class BaseMapper(object):
                                      dest='output_dir',
                                      help='Output directory. '\
                                           +'Default is input file directory.')
-    
+
     def _define_additional_cmd_args(self):
         """This method allows sub-classes to override and provide addittional command line args"""
         pass
-    
+
     def _parse_cmd_args(self, args):
         self.cmd_args = self.cmd_parser.parse_args(args)
         self.input_path = os.path.abspath(self.cmd_args.input)
@@ -87,14 +87,35 @@ class BaseMapper(object):
             self.output_base_fname = self.cmd_args.name
         else:
             self.output_base_fname = self.input_fname
+        status_fname = '{}.status.json'.format(os.path.basename(self.output_base_fname))
+        self.status_fpath = os.path.join(self.output_dir, status_fname)
 
     def base_setup(self):
         self._setup_io()
         self.setup()
-        
+
     def setup(self):
         raise NotImplementedError('Mapper must have a setup() method.')
-    
+
+    def load_status_json (self):
+        f = open(self.status_fpath)
+        lines = '\n'.join(f.readlines())
+        self.status_json = json.loads(lines)
+        f.close()
+
+    def update_status_json (self, k, v):
+        self.status_json[k] = v
+        tmp_path = self.status_fpath + '.' + self.module_name
+        wf = open(tmp_path, 'w')
+        json.dump(self.status_json, wf)
+        wf.close()
+        while True:
+            try:
+                os.rename(tmp_path, self.status_fpath)
+                break
+            except:
+                time.sleep(0.1)
+
     def __handle_exception(self, e, should_exit=True):
         """
         Handles exceptions in standard cravat method
@@ -105,15 +126,15 @@ class BaseMapper(object):
                 if should_exit: sys.exit(2)
         else:
             if should_exit: sys.exit(1)
-    
+
     def _setup_logger(self):
         self.logger = logging.getLogger('cravat.mapper')
         self.logger.info('input file: %s' %self.input_path)
-        
+
     def _setup_io(self):
         """
         Open input and output files
-        
+
         Open CravatReader for crv input. Open  CravatWriters for crx, and crg
         output. Open plain file for err output.
         """
@@ -149,7 +170,7 @@ class BaseMapper(object):
         self.crt_writer.write_definition()
         for index_columns in crt_idx:
             self.crt_writer.add_index(index_columns)
- 
+
     def run(self):
         """
         Read crv file and use map() function to convert to crx dict. Write the
@@ -160,8 +181,13 @@ class BaseMapper(object):
         self.logger.info('started: %s' \
                          %time.asctime(time.localtime(start_time)))
         count = 0
+        last_status_update_time = time.time()
         for ln, crv_data in self.reader.loop_data():
             count += 1
+            cur_time = time.time()
+            if count % 10000 == 0 or cur_time - last_status_update_time > 10:
+                self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, count))
+                last_status_update_time = cur_time
             try:
                 crx_data, alt_transcripts = self.map(crv_data)
                 # Skip cases where there was no change. Can result if ref_base not in original input
@@ -179,7 +205,7 @@ class BaseMapper(object):
                          %time.asctime(time.localtime(stop_time)))
         runtime = stop_time - start_time
         self.logger.info('runtime: %6.3f' %runtime)
-        
+
     def _write_to_crt(self, alt_transcripts):
         for primary, alts in alt_transcripts.items():
             if primary not in self.written_primary_transc:
@@ -188,7 +214,7 @@ class BaseMapper(object):
                          'alt_transcript': alt}
                     self.crt_writer.write_data(d)
                 self.written_primary_transc.add(primary)
-    
+
     def _add_crx_to_gene_info(self, crx_data):
         """
         Add information in a crx dict to persistent gene_info dict
@@ -210,7 +236,7 @@ class BaseMapper(object):
                 self.gene_info[hugo]['so_counts'][so] += 1
             except KeyError:
                 self.gene_info[hugo]['so_counts'][so] = 1
-    
+
     def _write_crg(self):
         """
         Convert gene_info to crg dict and write to crg file
@@ -236,10 +262,10 @@ class BaseMapper(object):
             crg_data['so'] = worst_so
             crg_data['all_so'] = ','.join(so_count_toks)
             self.crg_writer.write_data(crg_data)
-    
+
     def _log_runtime_error(self, ln, e):
         err_toks = [str(x) for x in [ln, e]]
         self.logger.exception(e)
         if not(isinstance(e,InvalidData)):
             self.__handle_exception(e, should_exit=False)
-    
+

@@ -170,12 +170,18 @@ class BaseAnnotator(object):
 
     # Runs the annotator.
     def run(self):
+        self.update_status_json('status', 'Started {} ({})'.format(self.conf['title'], self.annotator_name))
         try:
             start_time = time.time()
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
             self.base_setup()
+            last_status_update_time = time.time()
             for lnum, input_data, secondary_data in self._get_input():
                 try:
+                    cur_time = time.time()
+                    if lnum % 10000 == 0 or cur_time - last_status_update_time > 10:
+                        self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
+                        last_status_update_time = cur_time
                     if secondary_data == {}:
                         try:
                             output_dict = self.annotate(input_data)
@@ -208,7 +214,7 @@ class BaseAnnotator(object):
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
             run_time = end_time - start_time
             self.logger.info('runtime: {0:0.3f}'.format(run_time))
-            self.update_status_json('status', 'Finished {}'.format(self.annotator_name))
+            self.update_status_json('status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
         except Exception as e:
             self._log_exception(e)
         #self.log_handler.close()
