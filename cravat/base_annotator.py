@@ -68,7 +68,8 @@ class BaseAnnotator(object):
             self.cursor = None
 
             # Loads status.json file.
-            self.load_status_json()
+            if self.update_status_json_flag:
+                self.load_status_json()
         except Exception as e:
             self._log_exception(e)
 
@@ -155,8 +156,13 @@ class BaseAnnotator(object):
             self.output_basename = os.path.basename(self.primary_input_path)
             if parsed_args.name:
                 self.output_basename = parsed_args.name
-            status_fname = '{}.status.json'.format(self.output_basename)
-            self.status_fpath = os.path.join(self.output_dir, status_fname)
+            if self.output_basename != '__dummy__':
+                self.update_status_json_flag = True
+            else:
+                self.update_status_json_flag = False
+            if self.update_status_json_flag:
+                status_fname = '{}.status.json'.format(self.output_basename)
+                self.status_fpath = os.path.join(self.output_dir, status_fname)
             if parsed_args.conf:
                 self.job_conf_path = parsed_args.conf
         except Exception as e:
@@ -170,7 +176,8 @@ class BaseAnnotator(object):
 
     # Runs the annotator.
     def run(self):
-        self.update_status_json('status', 'Started {} ({})'.format(self.conf['title'], self.annotator_name))
+        if self.update_status_json_flag:
+            self.update_status_json('status', 'Started {} ({})'.format(self.conf['title'], self.annotator_name))
         try:
             start_time = time.time()
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
@@ -178,10 +185,11 @@ class BaseAnnotator(object):
             last_status_update_time = time.time()
             for lnum, input_data, secondary_data in self._get_input():
                 try:
-                    cur_time = time.time()
-                    if lnum % 10000 == 0 or cur_time - last_status_update_time > 10:
-                        self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
-                        last_status_update_time = cur_time
+                    if self.update_status_json_flag:
+                        cur_time = time.time()
+                        if lnum % 10000 == 0 or cur_time - last_status_update_time > 10:
+                            self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
+                            last_status_update_time = cur_time
                     if secondary_data == {}:
                         try:
                             output_dict = self.annotate(input_data)
