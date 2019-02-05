@@ -226,7 +226,7 @@ def main ():
         r = requests.get(hello_url, timeout=1)
         print('{}:{} already in use'.format(serv['host'], serv['port']))
         return
-    except requests.exceptions.ConnectTimeout:
+    except requests.exceptions.ConnectionError:
         pass
     print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
     loop = asyncio.get_event_loop()
