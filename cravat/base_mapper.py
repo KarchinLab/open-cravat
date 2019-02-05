@@ -185,7 +185,7 @@ class BaseMapper(object):
         for ln, crv_data in self.reader.loop_data():
             count += 1
             cur_time = time.time()
-            if count % 10000 == 0 or cur_time - last_status_update_time > 10:
+            if count % 10000 == 0 or cur_time - last_status_update_time > 5:
                 self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, count))
                 last_status_update_time = cur_time
             try:

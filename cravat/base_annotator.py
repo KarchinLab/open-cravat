@@ -187,7 +187,7 @@ class BaseAnnotator(object):
                 try:
                     if self.update_status_json_flag:
                         cur_time = time.time()
-                        if lnum % 10000 == 0 or cur_time - last_status_update_time > 10:
+                        if lnum % 10000 == 0 or cur_time - last_status_update_time > 5:
                             self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
                             last_status_update_time = cur_time
                     if secondary_data == {}:
