@@ -1,3 +1,31 @@
+##1.3.2
+January 31, 2019
+Updates on Interactive Result Viewer (cravat-view):
+* Data loading indicator
+* Local filter select box
+* Show-all and hide-all buttons for widgets
+* Load filter of cravat-view now has two modes, simple and advanced, and it shows only the filter operators relevant to the type of the filtered data.
+* Widgets can be hidden by default and its show/hide status can be saved and loaded.
+Updates on cravat web GUI (wcravat):
+* Store now has a Front Page with Most Downloaded and Newest modules.
+* Store shows annotator modules' source data version for provenance.
+* Store can sort modules by their name, size, and date of post.
+Updates on cravat:
+* cravat detects input files’ encoding and reads them correctly and writes output files always in UTF-8.
+Others:
+* Module updates have been concurrently released.
+* Fixed various bugs.
+
+##1.3.1
+January 10, 2019
+Patch release for bugs:
+* Fixed bug that prevented excel spreadsheet download in the wcravat jobs page.
+* Handle summary widget issues so that results will still be presented (filters on some jobs locking up results).
+* wcravat server stops cleanly with cntrl-C.
+* Updated Mac and Linux install instructions.
+* Fixed favicon.ico error on Chrome.
+ *cravat detects and reads input files according to their encoding and always writes in UTF-8 across platforms.
+
 ## 1.3.0
 December 12, 2018
 * Categorical data type has been added.
