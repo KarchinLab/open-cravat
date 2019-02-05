@@ -27,6 +27,9 @@ import base64
 import hashlib
 import platform
 import asyncio
+import datetime as dt
+import requests
+import traceback
 
 donotopenbrowser = False
 
@@ -164,7 +167,11 @@ class WebServer (object):
         self.app.router.add_static('/store', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webstore'))
         self.app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
         self.app.router.add_static('/submit', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
+        self.app.router.add_get('/hello', hello)
         ws.start_worker()
+
+async def hello(request):
+    return web.Response(text='OpenCRAVAT server is running here. '+str(dt.datetime.now()))
 
 def main ():
     '''
@@ -214,13 +221,13 @@ def main ():
         loop.call_later(0.1, wakeup)
 
     serv = get_server()
+    hello_url = 'http://{host}:{port}/hello'.format(host=serv.get('host'),port=serv.get('port'))
     try:
-        s = socket.socket()
-        s.bind((serv.get('host'), serv.get('port')))
-        s.close()
-    except:
+        r = requests.get(hello_url, timeout=1)
         print('{}:{} already in use'.format(serv['host'], serv['port']))
         return
+    except requests.exceptions.ConnectTimeout:
+        pass
     print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
     loop = asyncio.get_event_loop()
     loop.call_later(0.1, wakeup)
