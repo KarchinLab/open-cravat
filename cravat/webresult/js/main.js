@@ -1,12 +1,10 @@
 function getExportContent (tabName) {
 	var conditionDic = {'contain':'contains', 'lte':'less than', 'gte':'greater than'};
-	
 	// Writes job information.
 	var content = '';
 	content += '# CRAVAT Report\n';
 	content += '# Result database: ' + dbPath + '\n';
 	content += '# Report section (tab): ' + tabName + '\n';
-	
 	// Writes filters.
 	content += '# Filters: ';
     content += JSON.stringify(filterJson) + '\n';
@@ -40,14 +38,12 @@ function getExportContent (tabName) {
 		}
 	}
 	content += '\n';
-	
 	// Writes data headers.
 	content += colTitles[0];
 	for (var colNo = 1; colNo < colTitles.length; colNo++) {
 		content += '\t' + colTitles[colNo];
 	}
 	content += '\n';
-	
 	// Writes data rows.
 	var rows = $grids[tabName].pqGrid('option', 'dataModel').data;
 	for (var rowNo = 0; rowNo < rows.length; rowNo++) {
@@ -73,24 +69,25 @@ function afterDragNSBar (self, tabName) {
 	var dragBar = self;
 	var height_bar = self.offsetHeight;
 	var dragBarTop = self.offsetTop;
-    var dragBarTopUpperLimit = 0;
+    var dragBarTopUpperLimit = 12;
     if (dragBarTop < dragBarTopUpperLimit) {
         dragBarTop = dragBarTopUpperLimit;
     }
-    var dragBarTopLowerLimit = rightDiv.offsetHeight - 50;
+    var dragBarTopLowerLimit = rightDiv.offsetHeight - 26;
     if (dragBarTop > dragBarTopLowerLimit) {
         dragBarTop = dragBarTopLowerLimit;
     }
 	var rightDiv_height = rightDiv.offsetHeight;
 	var rightDiv_top = rightDiv.offsetTop;
-	var dragBarTop_relativeRightDiv = dragBarTop - rightDiv_top - 33;
-	var cellValueDivTop = dragBarTop_relativeRightDiv + 11;
-	var height_table = dragBarTop_relativeRightDiv + 10;
-	var height_detail_div = rightDiv_height - height_table - height_bar - 55;
+	var dragBarTop_relativeRightDiv = dragBarTop - rightDiv_top - 37;
+	var cellValueDivTop = dragBarTop_relativeRightDiv + 7;
+	var height_table = dragBarTop_relativeRightDiv + 16;
+	var height_detail_div = rightDiv_height - height_table - height_bar - 49;
+    var detailDivTop = cellValueDivTop + 29 + 15;
 	$grids[tabName].pqGrid('option', 'height', height_table).pqGrid('refresh');
 	dragBar.style.top = cellValueDivTop + 29;
 	cellValueDiv.style.top = cellValueDivTop;
-   
+    detailDiv.style.top = detailDivTop + 'px';
 	detailDiv.style.height = height_detail_div;
 	var tableMinimized = tableDiv.getAttribute('minimized');
 	if (tableMinimized == 'true'){
@@ -109,7 +106,6 @@ function resizesTheWindow () {
 	var nsDragBar = document.getElementById('dragNorthSouthDiv_' + currentTab);
 	var rightDiv = document.getElementById('rightdiv_' + currentTab);
 	var cellValueDiv = document.getElementById('cellvaluediv_' + currentTab);
-	
 	var browserHeight = isNaN(window.innerHeight) ? window.clientHeight : window.innerHeight;
 	var nsDragBarHeight = 0;
 	if (nsDragBar) {
@@ -123,13 +119,11 @@ function resizesTheWindow () {
 	if (detailDiv) {
 		detailDivHeight = detailDiv.offsetHeight;
 	}
-	
 	var rightDivHeight = browserHeight - 67;
-	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 35;
+	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 38;
 	var tableDivWidth = 'calc(100% - 10px)';
-	var cellValueDivTop = tableDivHeight - 2 ;
-	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 12;
-	
+	var cellValueDivTop = tableDivHeight - 12;
+	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 10;
 	rightDiv.style.height = rightDivHeight + 'px';
 	tableDiv.style.width = tableDivWidth;
 	tableDiv.style.height = tableDivHeight;
@@ -137,6 +131,7 @@ function resizesTheWindow () {
 	cellValueDiv.style.top = cellValueDivTop + 'px';
 	nsDragBar.style.top = nsDragBarTop + 'px';
 	if (detailDiv) {
+        detailDiv.style.top = (nsDragBarTop + 15) + 'px';
 		$(detailDiv.getElementsByClassName('detailcontainerdiv')[0]).packery('shiftLayout');
 	}
 	shouldResizeScreen[currentTab] = false;
@@ -270,7 +265,6 @@ function loadData (alertFlag, finalcallback) {
 				flagNotifyToUseFilter = false;
 			} else {
 				flagNotifyToUseFilter = true;
-				
 			}
 			removeSpinner();
 			return;
@@ -391,7 +385,6 @@ function notifyToUseFilter () {
 		'Number of variants exceeds viewer limit (' + NUMVAR_LIMIT + ').' +
 		'Click the Filter button to use filters to reduce the number of ' +
 		'variants to ' + NUMVAR_LIMIT + ' or less, and click Update to load filtered variants.';
-    
 }
 
 function hideWgnoticediv () {
@@ -559,7 +552,6 @@ function getCheckNoRowsMessage (tabName, noRows) {
 	} else {
 		loadButton.style.visibility = 'hidden';
 	}
-	
 	return msg;
 }
 

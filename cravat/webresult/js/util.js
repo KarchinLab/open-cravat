@@ -54,7 +54,7 @@ function toHHMMSS (sec_num) {
     if (hours   < 10) {hours   = "0"+hours;}
     if (minutes < 10) {minutes = "0"+minutes;}
     if (seconds < 10) {seconds = "0"+seconds;}
-    
+
     return hours+':'+minutes+':'+seconds;
 }
 
@@ -100,18 +100,18 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 		div.style.left = left;
 	}
 	div.setAttribute('widgetkey', widgetName);
-	
+
 	// Header
 	var header = getEl('div');
 	header.className = 'detailwidgetheader';
 	addEl(div, header);
-	
+
 	// Title
 	var titleDiv = getEl('legend');
 	titleDiv.className = 'detailwidgettitle';
 	titleDiv.style.cursor = 'move';
 	addEl(header, addEl(titleDiv, getTn(title)));
-	
+
 	// Div for pin and x icons
 	var iconDiv = getEl('div');
 	iconDiv.className = 'detailwidgeticondiv';
@@ -138,13 +138,13 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 		onClickWidgetCloseButton(tabName, evt);
 	});
 	addEl(iconDiv, closeButton);
-	
+
 	var hr = getEl('hr');
     hr.style.margin = '5px';
     hr.style.marginInlineStart = '0px';
     hr.style.marginInlineEnd = '0px';
 	addEl(div, hr);
-	
+
 	// Content div
 	var detailContentDiv = getEl('div');
 	detailContentDiv.id = 'widgetcontentdiv_' + widgetName + '_' + tabName;
@@ -152,7 +152,7 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	detailContentDiv.style.height = 'calc(100% - 32px)';
     detailContentDiv.style.padding = '0px';
 	addEl(div, detailContentDiv);
-	
+
 	return [div, detailContentDiv];
 }
 
@@ -171,7 +171,7 @@ function addSpinner(parentDiv, scaleFactor, minDim, spinnerDivId){
 	addEl(spinnerDiv, spinnerImg);
 	addEl(parentDiv, spinnerDiv);
 	var spinnerRect = spinnerDiv.getBoundingClientRect();
-	
+
 	spinnerDiv.style.top = parentRect.top + parentRect.height/2 - spinnerRect.height/2;
 	spinnerDiv.style.left = parentRect.left + parentRect.width/2 - spinnerRect.width/2;
 	return spinnerDiv;
@@ -334,7 +334,6 @@ function saveWidgetSetting (name) {
 
 function saveLayoutSetting (name) {
 	var saveData = {};
-	
 	// Table layout
 	saveData['tableSettings'] = {};
 	if ($grids['variant'] != undefined) {
@@ -373,7 +372,6 @@ function saveLayoutSetting (name) {
 		}
 		saveData['tableSettings']['gene'] = data;
 	}
-	
 	// Widget layout
 	saveData['widgetSettings'] = {};
 	var widgets = {};
@@ -449,7 +447,6 @@ function saveLayoutSetting (name) {
                     'pinned': pinned});
 		};
 	}
-	
 	// Heights
 	saveData['height'] = {};
 	var variantTable = document.getElementById('tablediv_variant');
@@ -468,7 +465,8 @@ function saveLayoutSetting (name) {
 	if (geneDetail) {
 		saveData['height']['detail_gene'] = geneDetail.style.height;
 	}
-	
+    // tableDetailDivSizes
+    saveData['tabledetaildivsizes'] = tableDetailDivSizes;
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
 		url: '/result/service/savelayoutsetting', 
@@ -703,6 +701,10 @@ function loadLayoutSetting (name, callback) {
 		if (callback != null) {
 			callback();
 		}
+        var v = data['tabledetaildivsizes'];
+        if (v != undefined) {
+            tableDetailDivSizes = v;
+        }
 		lastUsedLayoutName = name;
 		writeLogDiv('Layout setting loaded');
     });

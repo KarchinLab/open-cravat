@@ -64,7 +64,9 @@ function setupTab (tabName) {
 	if (loadedViewerWidgetSettings != undefined && loadedViewerWidgetSettings[currentTab] != undefined) {
 		applyWidgetSetting(currentTab);
 	}
-
+    if ((currentTab == 'variant' || currentTab == 'gene') && tableDetailDivSizes[currentTab] != undefined) {
+        applyTableDetailDivSizes();
+    }
 	changeMenu();
 }
 
@@ -292,17 +294,6 @@ function makeVariantGeneTab (tabName, rightDiv) {
     var cellValueDiv = null;
     var detailDiv = null;
     var detailContainerDiv = null;
-
-	// Table container div
-    /*
-    var tableContainerDivId = 'tablecontainerdiv_' + tabName;
-    var tableContainerDiv = document.getElementById(tableContainerDivId);
-    if (tableContainerDiv == null) {
-        tableContainerDiv = getEl('div');
-        tableContainerDiv.id = tableContainerDivId;
-        addEl(rightDiv, tableContainerDiv);
-    }
-    */
 
 	// Table div
     var tableDivId = 'tablediv_' + tabName;
@@ -1292,89 +1283,16 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	return gridObject;
 }
 
-function minimizeOrMaxmimizeDetailDiv () {
+function applyTableDetailDivSizes () {
     var tabName = currentTab;
-    var tableDiv = document.getElementById('tablediv_' + tabName);
-    var detailDiv = document.getElementById('detaildiv_' + tabName);
-    var rightDiv = document.getElementById('rightdiv_' + tabName);
-    if (tableDetailDivSizes[tabName] == undefined) {
-        tableDetailDivSizes[tabName] = {'status': null};
-    }
-    if (tableDetailDivSizes[tabName]['status'] == null) {
-        tableDetailDivSizes[tabName] = {'tablediv': {'width': tableDiv.offsetWidth, 'height': tableDiv.offsetHeight}, 'detaildiv': {'width': detailDiv.offsetWidth, 'height': detailDiv.offsetHeight}, 'status': 'detailmax'};
-        tableDiv.style.display = 'none';
-        detailDiv.style.height = (rightDiv.offsetHeight - 10) + 'px';
-        document.getElementById('dragNorthSouthDiv_' + tabName).style.display = 'none';
-        document.getElementById('cellvaluediv_' + tabName).style.display = 'none';
-    } else {
-        if (tableDetailDivSizes[tabName]['status'] == 'tablemax') {
-            minimizeOrMaxmimizeTableDiv();
-        }
-        tableDiv.style.display = 'block';
-        detailDiv.style.height = tableDetailDivSizes[tabName]['detaildiv']['height'];
-        document.getElementById('dragNorthSouthDiv_' + tabName).style.display = 'block';
-        document.getElementById('cellvaluediv_' + tabName).style.display = 'block';
-        tableDetailDivSizes[tabName] = {'status': null};
-    }
-}
-
-function minimizeOrMaxmimizeTableDiv () {
-    var tabName = currentTab;
-    var tableDiv = document.getElementById('tablediv_' + tabName);
-    var detailDiv = document.getElementById('detaildiv_' + tabName);
-    var rightDiv = document.getElementById('rightdiv_' + tabName);
-    if (tableDetailDivSizes[tabName] == undefined) {
-        tableDetailDivSizes[tabName] = {'status': null};
-    }
-    if (tableDetailDivSizes[tabName]['status'] == null) {
-        if (tableDetailDivSizes[tabName]['status'] == 'detailmax') {
-            minimizeOrMaxmimizeDetailDiv();
-        }
-        tableDetailDivSizes[tabName] = {'tablediv': {'width': tableDiv.offsetWidth, 'height': tableDiv.offsetHeight}, 'detaildiv': {'width': detailDiv.offsetWidth, 'height': detailDiv.offsetHeight}, 'status': 'tablemax'};
-        var tableHeight = rightDiv.offsetHeight;
-        tableDiv.style.height = tableHeight + 'px';
-        $grids[tabName].pqGrid('option', 'height', tableHeight).pqGrid('refresh');
-        detailDiv.style.display = 'none';
-        document.getElementById('dragNorthSouthDiv_' + tabName).style.display = 'none';
-        document.getElementById('cellvaluediv_' + tabName).style.display = 'none';
-    } else {
-        detailDiv.style.display = 'block';
-        var tableHeight = tableDetailDivSizes[tabName]['tablediv']['height'];
-        tableDiv.style.height = tableHeight + 'px';
-        $grids[tabName].pqGrid('option', 'height', tableHeight).pqGrid('refresh');
-        document.getElementById('dragNorthSouthDiv_' + tabName).style.display = 'block';
-        document.getElementById('cellvaluediv_' + tabName).style.display = 'block';
-        tableDetailDivSizes[tabName] = {'status': null};
-    }
-}
-
-function minimizeOrMaxmimizeTableDetailDiv () {
-    var tabName = currentTab;
-    if (tabName != 'variant' && tabName != 'gene') {
-        return;
-    }
     var tableDiv = document.getElementById('tablediv_' + tabName);
     var detailDiv = document.getElementById('detaildiv_' + tabName);
     var detailContainerDiv = document.getElementById('detailcontainerdiv_' + tabName);
     var rightDiv = document.getElementById('rightdiv_' + tabName);
     var drag = document.getElementById('dragNorthSouthDiv_' + tabName);
     var cell = document.getElementById('cellvaluediv_' + tabName);
-    var maxHeight = rightDiv.offsetHeight - 10;
-    if (tableDetailDivSizes[tabName] == undefined) {
-        tableDetailDivSizes[tabName] = {'status': 'both'};
-    }
     var stat = tableDetailDivSizes[tabName]['status'];
-    if (stat == 'both') {
-        tableDetailDivSizes[tabName]['tableheight'] = tableDiv.offsetHeight;
-        tableDetailDivSizes[tabName]['detailheight'] = detailDiv.offsetHeight;
-    }
-    if (stat == 'both') {
-        stat = 'tablemax';
-    } else if (stat == 'tablemax') {
-        stat = 'detailmax';
-    } else if (stat == 'detailmax') {
-        stat = 'both';
-    }
+    var maxHeight = rightDiv.offsetHeight - 10;
     if (stat == 'tablemax') {
         detailDiv.style.display = 'none';
         drag.style.display = 'none';
@@ -1399,9 +1317,40 @@ function minimizeOrMaxmimizeTableDetailDiv () {
         var detailHeight = tableDetailDivSizes[tabName]['detailheight'];
         tableDiv.style.height = tableHeight + 'px';
         $grids[tabName].pqGrid('option', 'height', tableHeight).pqGrid('refresh');
+        drag.style.top = (tableHeight + 17) + 'px';
+        cell.style.top = (tableHeight - 12) + 'px';
         detailDiv.style.height = detailHeight + 'px';
-        detailDiv.style.top = (drag.offsetTop + 10) + 'px';
+        detailDiv.style.top = (tableHeight + 30) + 'px';
+    }
+}
+
+function onClickTableDetailMinMaxButton () {
+    var tabName = currentTab;
+    if (tabName != 'variant' && tabName != 'gene') {
+        return;
+    }
+    var tableDiv = document.getElementById('tablediv_' + tabName);
+    var detailDiv = document.getElementById('detaildiv_' + tabName);
+    var detailContainerDiv = document.getElementById('detailcontainerdiv_' + tabName);
+    var rightDiv = document.getElementById('rightdiv_' + tabName);
+    var drag = document.getElementById('dragNorthSouthDiv_' + tabName);
+    var cell = document.getElementById('cellvaluediv_' + tabName);
+    if (tableDetailDivSizes[tabName] == undefined) {
+        tableDetailDivSizes[tabName] = {'status': 'both'};
+    }
+    var stat = tableDetailDivSizes[tabName]['status'];
+    if (stat == 'both') {
+        tableDetailDivSizes[tabName]['tableheight'] = tableDiv.offsetHeight;
+        tableDetailDivSizes[tabName]['detailheight'] = detailDiv.offsetHeight;
+    }
+    if (stat == 'both') {
+        stat = 'tablemax';
+    } else if (stat == 'tablemax') {
+        stat = 'detailmax';
+    } else if (stat == 'detailmax') {
+        stat = 'both';
     }
     tableDetailDivSizes[tabName]['status'] = stat;
+    applyTableDetailDivSizes();
     changeTableDetailMaxButtonText();
 }
