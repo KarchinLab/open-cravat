@@ -236,6 +236,7 @@ function loadData (alertFlag, finalcallback) {
 			setupTab(currentTab);
             resizesTheWindow();
 		}
+        setFilterButtonText();
         makeVariantByGene();
         document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.';
 	}
@@ -359,6 +360,17 @@ function loadData (alertFlag, finalcallback) {
         filterButton.style.backgroundColor = 'red';
     } else {
         filterButton.style.backgroundColor = 'white';
+    }
+}
+
+function setFilterButtonText () {
+    var tot = infomgr.jobinfo['Number of unique input variants'];
+    var cur = infomgr.datas.variant.length;
+    var button = document.getElementById('filterbutton');
+    if (cur < tot) {
+        button.textContent = 'Filtered: ' + cur + '/' + tot;
+    } else {
+        button.textContent = 'Filter';
     }
 }
 
