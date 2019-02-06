@@ -394,7 +394,7 @@ function buildJobsTable () {
             addEl(tr, td);
             var td = getEl('td');
             var t = job.submission_time;
-            var month = t.getMonth();
+            var month = t.getMonth() + 1;
             if (month < 10) {
                 month = '0' + month;
             }
