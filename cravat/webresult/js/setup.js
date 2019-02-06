@@ -92,15 +92,17 @@ function changeTableDetailMaxButtonText () {
 }
 
 function changeMenu () {
-	if (currentTab == 'variant' || currentTab == 'gene' || currentTab == 'info') {
-		if (currentTab == 'variant' || currentTab == 'gene') {
-			turnOnMenu('layout_columns_menu');
-			populateTableColumnSelectorPanel();
+    if (currentTab == 'variant' || currentTab == 'gene') {
+        if (firstLoad == false) {
+            turnOnMenu('layout_columns_menu');
+            turnOnMenu('layout_widgets_menu');
+            populateTableColumnSelectorPanel();
+            populateWidgetSelectorPanel();
 		}
-		if (firstLoad == false) {
-			turnOnMenu('layout_widgets_menu');
-			populateWidgetSelectorPanel();
-		}
+    } else if (currentTab == 'info') {
+		turnOffMenu('layout_columns_menu');
+        turnOnMenu('layout_widgets_menu');
+        populateWidgetSelectorPanel();
 	} else {
 		turnOffMenu('layout_columns_menu');
 		turnOffMenu('layout_widgets_menu');

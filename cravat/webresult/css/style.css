@@ -16,7 +16,7 @@ body {
 	overflow: auto;
 }
 
-.menu {
+.menu1_container {
 	display: inline-block;
     vertical-align: bottom;
 	position: relative;
@@ -39,9 +39,8 @@ body {
     z-index: 100;
 }
 
-.menu2 {
+.menu2_container {
 	display: none;
-	z-index: 1;
 	position: absolute;
 	top: 23px;
 	left: -3px;
@@ -51,16 +50,26 @@ body {
     z-index: 100;
 }
 
-.menu3 {
+.menu2 {
 	position: relative;
 	z-index: 1;
 	background-color: #c8c8c8;
 	color: black;
-	width: 144px;
+	width: 130px;
 	padding-left: 6px;
 	padding-top: 6px;
 	padding-bottom: 6px;
     z-index: 100;
+}
+
+.menu3 {
+    display: none;
+    left: 145px;
+    position: absolute;
+    border: 1px solid #888888;
+    background-color: #c8c8c8;
+    z-index: 100;
+    top: 0px;
 }
 
 .menu1 a {
@@ -76,6 +85,7 @@ body {
     z-index: 100;
 }
 
+/*
 .menu1:hover .menu2 {
 	display: block;
     z-index: 100;
@@ -102,6 +112,7 @@ body {
 	padding: 16px;
     z-index: 100;
 }
+*/
 
 .draggableDiv {
 	background-color: #bed4dc;

@@ -250,7 +250,9 @@ function deleteFilterSettingAs () {
 	});
 }
 
-function saveLayoutSettingAs () {
+function saveLayoutSettingAs (evt) {
+    hideAllMenu3();
+    evt.stopPropagation();
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
@@ -653,9 +655,19 @@ function loadFilterSetting (name, callback, doNotCount) {
     });
 }
 
-function loadLayoutSettingAs () {
+function hideAllMenu3 () {
+    var menu3s = document.getElementById('menu_div').getElementsByClassName('menu3');
+    for (var i = 0; i < menu3s.length; i++) {
+        menu3s[i].style.display = 'none';
+    }
+}
+
+function loadLayoutSettingAs (evt) {
+    hideAllMenu3();
 	var div = document.getElementById('load_layout_select_div');
 	emptyElement(div);
+    div.style.display = 'block';
+    evt.stopPropagation();
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
@@ -710,9 +722,12 @@ function loadLayoutSetting (name, callback) {
     });
 }
 
-function deleteLayoutSettingAs () {
+function deleteLayoutSettingAs (evt) {
+    hideAllMenu3();
 	var div = document.getElementById('delete_layout_select_div');
 	emptyElement(div);
+    div.style.display = 'block';
+    evt.stopPropagation();
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
@@ -742,9 +757,12 @@ function deleteLayoutSetting (name, callback) {
     });
 }
 
-function renameLayoutSettingAs () {
+function renameLayoutSettingAs (evt) {
+    hideAllMenu3();
 	var div = document.getElementById('rename_layout_select_div');
 	emptyElement(div);
+    div.style.display = 'block';
+    evt.stopPropagation();
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
