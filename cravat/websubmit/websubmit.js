@@ -125,6 +125,19 @@ function getAnnotatorsForJob (jobid) {
     return anns;
 }
 
+function getAnnotatorVersionForJob (jobid) {
+    var jis = GLOBALS.jobs;
+    var anns = {};
+    for (var j = 0; j < jis.length; j++) {
+        var cji = jis[j];
+        if (cji.id == jobid) {
+            anns = cji.annotator_version;
+            break;
+        }
+    }
+    return anns;
+}
+
 function buildJobsTable () {
     var allJobs = GLOBALS.jobs;
     var i = submittedJobs.length - 1;
@@ -305,11 +318,28 @@ function buildJobsTable () {
         deleteBtn.attr('jobId', job.id);
         deleteBtn.click(jobDeleteButtonHandler);
 
-        var anns = getAnnotatorsForJob(ji);
-        if (anns.length == 0) {
-            anns = 'None';
+        // Job detail row
+        var annotVers = getAnnotatorVersionForJob(ji);
+        var annotVerStr = '';
+        if (annots.length == 0) {
+            annotVerStr = 'None';
         } else {
-            anns = anns.join(', ');
+            for (var j = 0; j < annots.length; j++) {
+                var annot = annots[j];
+                var ver = null;
+                if (annotVers != undefined) {
+                    ver = annotVers[annot];
+                    if (ver == undefined) {
+                        ver = null;
+                    }
+                }
+                if (ver == null) {
+                    annotVerStr += annot + ', ';
+                } else {
+                    annotVerStr += annot + '(' + ver + '), ';
+                }
+            }
+            annotVerStr = annotVerStr.replace(/, $/, '');
         }
         var detailTr = getEl('tr');
         var detailTd = getEl('td');
@@ -329,12 +359,22 @@ function buildJobsTable () {
         td.textContent = ji;
         addEl(tr, td);
         addEl(tbody, tr);
+        if (job.open_cravat_version != undefined) {
+            var tr = getEl('tr');
+            var td = getEl('td');
+            td.textContent = 'cravat';
+            addEl(tr, td);
+            var td = getEl('td');
+            td.textContent = job.open_cravat_version;
+            addEl(tr, td);
+            addEl(tbody, tr);
+        }
         var tr = getEl('tr');
         var td = getEl('td');
         td.textContent = 'Annotators';
         addEl(tr, td);
         var td = getEl('td');
-        td.textContent = anns;
+        td.textContent = annotVerStr;
         addEl(tr, td);
         addEl(tbody, tr);
         if (job.num_input_var != undefined) {

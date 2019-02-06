@@ -187,7 +187,7 @@ class BaseAnnotator(object):
                 try:
                     if self.update_status_json_flag:
                         cur_time = time.time()
-                        if lnum % 10000 == 0 or cur_time - last_status_update_time > 5:
+                        if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
                             self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
                             last_status_update_time = cur_time
                     if secondary_data == {}:
@@ -222,6 +222,7 @@ class BaseAnnotator(object):
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
             run_time = end_time - start_time
             self.logger.info('runtime: {0:0.3f}'.format(run_time))
+            self.add_annotator_version_to_status_json()
             self.update_status_json('status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
         except Exception as e:
             self._log_exception(e)
@@ -231,6 +232,14 @@ class BaseAnnotator(object):
 
     def postprocess (self):
         pass
+
+    def add_annotator_version_to_status_json (self):
+        self.load_status_json()
+        if 'annotator_version' not in self.status_json:
+            self.status_json['annotator_version'] = {}
+        version = self.conf.get('version', 'unknown')
+        self.status_json['annotator_version'][self.annotator_name] = version
+        self.update_status_json('annotator_version', self.status_json['annotator_version'])
 
     def update_status_json (self, k, v):
         self.status_json[k] = v

@@ -228,6 +228,8 @@ class Cravat (object):
         self.status['note'] = self.args.note
         self.status['status'] = 'Starting'
         self.status['reports'] = self.args.reports if self.args.reports != None else []
+        pkg_ver = au.get_current_package_version()
+        self.status['open_cravat_version'] = pkg_ver
         with open(self.status_fpath,'w') as wf:
             wf.write(json.dumps(self.status))
 
