@@ -137,6 +137,8 @@ class BasePostAggregator (object):
             col_name = col_def['name']
             if col_name in output_dict:
                 val = output_dict[col_name]
+                if val is None:
+                    continue
                 col_type = col_def['type']
                 if col_type in ['string']:
                     val = '"' + val + '"'
