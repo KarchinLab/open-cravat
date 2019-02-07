@@ -72,6 +72,7 @@ function submit () {
             if (data['status']['status'] == 'Submitted') {
                 submittedJobs.push(data);
                 addJob(data);
+                sortJobs();
                 buildJobsTable();
             }
         }
@@ -84,15 +85,33 @@ function submit () {
     );
 };
 
+function sortJobs () {
+    for (var i = 0; i < GLOBALS.jobs.length - 1; i++) {
+        for (var j = i + 1; j < GLOBALS.jobs.length; j++) {
+            var j1 = GLOBALS.jobs[i];
+            var j2 = GLOBALS.jobs[j];
+            var d1 = new Date(j1.submission_time).getTime();
+            var d2 = new Date(j2.submission_time).getTime();
+            if (d2 < d1) {
+                var tmp = j1;
+                GLOBALS.jobs[i] = GLOBALS.jobs[j];
+                GLOBALS.jobs[j] = tmp;
+            }
+        }
+    }
+}
+
 function addJob (jsonObj) {
     var trueDate = new Date(jsonObj.submission_time);
     jsonObj.submission_time = trueDate;
     GLOBALS.jobs.push(jsonObj);
+    /*
     GLOBALS.jobs.sort((a, b) => {
         console.log(a.id, b.id);
         console.log(a.submission_time.getTime(), b.submission_time.getTime());
         return b.submission_time.getTime() - a.submission_time.getTime();
     })
+    */
 
 }
 
@@ -621,6 +640,7 @@ function populateJobs () {
                     let job = allJobs[i];
                     addJob(job);
                 }
+                sortJobs();
                 buildJobsTable();
                 //resolve();
             },
