@@ -555,3 +555,11 @@ div.pq-select-button {
     height: 100px;
 }
 
+.pq-grid-title-row [pq-row-indx="0"] {
+        height: 40px;
+}
+
+.pq-grid-title-row [pq-row-indx="1"] {
+        height: 60px;
+}
+
