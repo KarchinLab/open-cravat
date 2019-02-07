@@ -222,7 +222,7 @@ function buildJobsTable () {
         // Number of annotators
         var annots = getAnnotatorsForJob(ji);
         if (annots == undefined) {
-            continue;
+            annots = '';
         }
         jobTr.append($(getEl('td')).append(job.orig_input_fname));
         var num = annots.length;
