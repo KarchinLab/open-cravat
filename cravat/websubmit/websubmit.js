@@ -89,6 +89,8 @@ function addJob (jsonObj) {
     jsonObj.submission_time = trueDate;
     GLOBALS.jobs.push(jsonObj);
     GLOBALS.jobs.sort((a, b) => {
+        console.log(a.id, b.id);
+        console.log(a.submission_time.getTime(), b.submission_time.getTime());
         return b.submission_time.getTime() - a.submission_time.getTime();
     })
 
