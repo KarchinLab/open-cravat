@@ -563,3 +563,34 @@ div.pq-select-button {
         height: 60px;
 }
 
+.table-header-contextmenu-div {
+    background-color: white;
+    position: fixed;
+    z-index: 400;
+    border: 1px solid #d3d3d3;
+    padding-right: 0;
+    padding-left: 0;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    box-shadow: 3px 3px 3px -1px #676767;
+}
+
+.table-header-contextmenu-div ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+
+.table-header-contextmenu-div ul li {
+    padding: 10px;
+}
+
+.table-header-contextmenu-div ul li:hover {
+    background-color: #153344;
+}
+
+.table-header-contextmenu-div ul li:hover a {
+    color: #ffffff;
+}
+

@@ -1275,14 +1275,65 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
         }
 	}
 	gridObject.refreshHeader = function () {
-		for (let i=0; i<this.colModel.length; i++) {
-			col = this.colModel[i];
+        var colModel = null;
+        if ($grids[currentTab] == undefined) {
+            colModel = this.colModel;
+        } else {
+            colModel = $grids[currentTab].pqGrid('getColModel');
+        }
+		for (let i=0; i < colModel.length; i++) {
+			var col = colModel[i];
+            var $headerCell = this.getCellHeader({colIndx: col.leftPos});
+            if ($headerCell.length == 0) {
+                continue;
+            }
 			if (col.desc !== null) {
-				$(this.getCellHeader({colIndx:col.dataIndx})).attr('title',col.desc).tooltip();
+				$headerCell.attr('title', col.desc).tooltip();
 			}
+            $headerCell.attr('col', col.col);
+            $headerCell.attr('colgroup', col.colgroup);
+            $headerCell.contextmenu(function (evt) {
+                var headerCell = evt.target;
+                if (headerCell.classList.contains('pq-td-div')) {
+                    headerCell = headerCell.parentElement;
+                }
+                var col = headerCell.getAttribute('col');
+                var colgroup = headerCell.getAttribute('colgroup');
+                makeTableHeaderRightClickMenu(evt, col, colgroup);
+                return false;
+            });
 		}
 	}
 	return gridObject;
+}
+
+function makeTableHeaderRightClickMenu (evt, col, colgroup) {
+    var rightDiv = document.getElementById('tablediv_' + currentTab);
+    var divId = 'table-header-contextmenu-' + currentTab;
+    var div = document.getElementById(divId);
+    if (div == undefined) {
+        div = getEl('div');
+        div.id = divId;
+        div.className = 'table-header-contextmenu-div';
+    } else {
+        $(div).empty();
+    }
+    div.style.top = evt.pageY;
+    div.style.left = evt.pageX;
+    var ul = getEl('ul');
+    var li = getEl('li');
+    var a = getEl('a');
+    a.textContent = 'Hide column';
+    li.addEventListener('click', function (evt) {
+        var checkboxId = 'columngroup__' + currentTab + '_' + colgroup + '_' + col + '__checkbox';
+        var checkbox = document.getElementById(checkboxId);
+        checkbox.click();
+        div.style.display = 'none';
+    });
+    addEl(ul, addEl(li, a));
+    addEl(div, ul);
+    div.style.display = 'block';
+    addEl(rightDiv, div);
 }
 
 function applyTableDetailDivSizes () {

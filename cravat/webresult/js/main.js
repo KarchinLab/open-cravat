@@ -701,4 +701,13 @@ function webresult_run () {
 	}
     //window.onbeforeunload = triggerAutosave;
     getResultLevels(afterGetResultLevels);
+    document.addEventListener('click', function (evt) {
+        var tableHeaderContextmenuId = 'table-header-contextmenu-' + currentTab;
+        if (evt.target.closest(tableHeaderContextmenuId) == null) {
+            var div = document.getElementById(tableHeaderContextmenuId);
+            if (div != null) {
+                div.style.display = 'none';
+            }
+        }
+    });
 }

@@ -1477,8 +1477,14 @@ function websubmit_run () {
     getBaseModuleNames();
     getRemote();
     document.addEventListener('click', function (evt) {
-        if (evt.target.closest('#moduledetaildiv_submit') == null && evt.target.closest('.moduledetailbutton') == null ) {
+        if (evt.target.closest('moduledetaildiv_submit') == null && evt.target.closest('.moduledetailbutton') == null ) {
             var div = document.getElementById('moduledetaildiv_submit');
+            if (div != null) {
+                div.style.display = 'none';
+            }
+        }
+        if (evt.target.closest('moduledetaildiv_store') == null) {
+            var div = document.getElementById('moduledetaildiv_store');
             if (div != null) {
                 div.style.display = 'none';
             }

@@ -1453,7 +1453,7 @@ function announceStoreUpdateAllAvailable () {
 
 function webstore_run () {
     document.addEventListener('click', function (evt) {
-        if (evt.target.closest('#moduledetaildiv_store') == null) {
+        if (evt.target.closest('moduledetaildiv_store') == null) {
             var div = document.getElementById('moduledetaildiv_store');
             if (div != null) {
                 div.style.display = 'none';
