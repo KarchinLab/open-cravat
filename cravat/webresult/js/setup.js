@@ -1185,7 +1185,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.title = tableTitle;
 	gridObject.width = rightDivWidth;
 	gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight - ARBITRARY_HEIGHT_SUBTRACTION - 15;
-	gridObject.virtualX = false;
+	gridObject.virtualX = true;
 	gridObject.virtualY = true;
 	gridObject.wrap = false;
 	gridObject.hwrap = true;
