@@ -105,14 +105,6 @@ function addJob (jsonObj) {
     var trueDate = new Date(jsonObj.submission_time);
     jsonObj.submission_time = trueDate;
     GLOBALS.jobs.push(jsonObj);
-    /*
-    GLOBALS.jobs.sort((a, b) => {
-        console.log(a.id, b.id);
-        console.log(a.submission_time.getTime(), b.submission_time.getTime());
-        return b.submission_time.getTime() - a.submission_time.getTime();
-    })
-    */
-
 }
 
 function createJobExcelReport (evt) {
@@ -197,6 +189,9 @@ function buildJobsTable () {
         job = allJobs[i];
         ji = job.id;
         if (ji == undefined) {
+            continue;
+        }
+        if (job.submission_time == 'Invalid Date') {
             continue;
         }
         var jobTr = $(getEl('tr'))
