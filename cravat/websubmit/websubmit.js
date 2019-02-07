@@ -92,7 +92,7 @@ function sortJobs () {
             var j2 = GLOBALS.jobs[j];
             var d1 = new Date(j1.submission_time).getTime();
             var d2 = new Date(j2.submission_time).getTime();
-            if (d2 < d1) {
+            if (d2 > d1) {
                 var tmp = j1;
                 GLOBALS.jobs[i] = GLOBALS.jobs[j];
                 GLOBALS.jobs[j] = tmp;
