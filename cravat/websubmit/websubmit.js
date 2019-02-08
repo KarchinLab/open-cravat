@@ -3,7 +3,7 @@ var logged = false;
 var username = null;
 var prevJobTr = null;
 var submittedJobs = [];
-
+var storeModuleDivClicked = false;
 var GLOBALS = {
     jobs: [],
     annotators: {},
@@ -556,17 +556,6 @@ function deleteJob (jobId) {
     })
 }
 
-function addListeners () {
-    $('#submit-job-button').click(submit);
-    $('#input-text').change(inputChangeHandler);
-    $('#input-file').change(inputChangeHandler);
-    $('#all-annotators-button').click(allNoAnnotatorsHandler);
-    $('#no-annotators-button').click(allNoAnnotatorsHandler);
-    $('.input-example-button').click(inputExampleChangeHandler)
-    $('#refresh-jobs-table-btn').click(refreshJobsTable);
-    $('.jobsdirinput').change(setJobsDir);
-}
-
 function inputExampleChangeHandler (event) {
     var elem = $(event.target);
     var val = elem.val();
@@ -807,6 +796,7 @@ function getModuleDetailDiv (moduleName) {
     addEl(tr, td);
 	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
 		mdDiv.innerHTML = data;
+        addClassRecursive(mdDiv, 'moduledetaildiv-submit-elem');
 	});
     td = getEl('td');
     td.style.width = '30%';
@@ -925,6 +915,7 @@ function getModuleDetailDiv (moduleName) {
         pel.parentElement.removeChild(pel);
     });
     addEl(div, el);
+    addClassRecursive(div, 'moduledetaildiv-submit-elem');
     return div;
 }
 
@@ -1469,25 +1460,30 @@ function resizePage () {
     div.style.height = h + 'px';
 }
 
-function websubmit_run () {
-    getServermode();
-    var storediv = document.getElementById('storediv');
-    storediv.style.display = 'none';
-    connectWebSocket();
-    getBaseModuleNames();
-    getRemote();
+function addListeners () {
+    $('#submit-job-button').click(submit);
+    $('#input-text').change(inputChangeHandler);
+    $('#input-file').change(inputChangeHandler);
+    $('#all-annotators-button').click(allNoAnnotatorsHandler);
+    $('#no-annotators-button').click(allNoAnnotatorsHandler);
+    $('.input-example-button').click(inputExampleChangeHandler)
+    $('#refresh-jobs-table-btn').click(refreshJobsTable);
+    $('.jobsdirinput').change(setJobsDir);
     document.addEventListener('click', function (evt) {
-        if (evt.target.closest('moduledetaildiv_submit') == null && evt.target.closest('.moduledetailbutton') == null ) {
+        if (evt.target.classList.contains('moduledetaildiv-submit-elem') == false && evt.target.closest('.moduledetailbutton') == null ) {
             var div = document.getElementById('moduledetaildiv_submit');
             if (div != null) {
                 div.style.display = 'none';
             }
         }
-        if (evt.target.closest('moduledetaildiv_store') == null) {
+        if (evt.target.classList.contains('moduledetaildiv-store-elem') == false) {
             var div = document.getElementById('moduledetaildiv_store');
             if (div != null) {
                 div.style.display = 'none';
             }
+            storeModuleDivClicked = false;
+        } else {
+            storeModuleDivClicked = true;
         }
     });
     window.addEventListener('resize', function (evt) {
@@ -1500,6 +1496,41 @@ function websubmit_run () {
         tds[0].style.height = tdHeight;
         tds[1].style.height = tdHeight;
     });
+    document.addEventListener('keyup', function (evt) {
+        if (storeModuleDivClicked) {
+            var k = evt.key;
+            var moduleDiv = document.getElementById('moduledetaildiv_store');
+            var moduleListName = moduleDiv.getAttribute('modulelistname');
+            var moduleListPos = moduleDiv.getAttribute('modulelistpos');
+            var moduleList = moduleLists[moduleListName];
+            if (k == 'ArrowRight') {
+                moduleListPos++;
+                if (moduleListPos >= moduleList.length) {
+                    moduleListPos = 0;
+                }
+                var moduleName = moduleList[moduleListPos];
+                activateDetailDialog(moduleName, moduleListName, moduleListPos);
+                evt.stopPropagation();
+            } else if (k == 'ArrowLeft') {
+                moduleListPos--;
+                if (moduleListPos < 0) {
+                    moduleListPos = moduleList.length - 1;
+                }
+                var moduleName = moduleList[moduleListPos];
+                activateDetailDialog(moduleName, moduleListName, moduleListPos);
+                evt.stopPropagation();
+            }
+        }
+    });
+}
+
+function websubmit_run () {
+    getServermode();
+    var storediv = document.getElementById('storediv');
+    storediv.style.display = 'none';
+    connectWebSocket();
+    getBaseModuleNames();
+    getRemote();
     addListeners();
     if (servermode == false) {
         populateJobs();

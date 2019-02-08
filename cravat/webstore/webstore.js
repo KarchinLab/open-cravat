@@ -16,6 +16,7 @@ var modulesToIgnore = [
     'aggregator',
 ];
 var storeLogos = {};
+var moduleLists = {};
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -157,7 +158,7 @@ function getLocal () {
             var div = document.getElementById('moduledetaildiv_store');
             if (div != null) {
                 if (div.style.display != 'none') {
-                    activateDetailDialog(currentDetailModule);
+                    activateDetailDialog(currentDetailModule, null, null);
                 }
             }
             populateStoreHome();
@@ -283,9 +284,10 @@ function populateStoreHome () {
     $(div).empty();
     var sdiv = getEl('div');
     var featuredModules = getMostDownloadedModuleNames();
+    moduleLists['download'] = featuredModules;
     sdiv.style.width = (featuredModules.length * storeTileWidthStep) + 'px';
     for (var i = 0; i < featuredModules.length; i++) {
-        var panel = getRemoteModulePanel(featuredModules[i]);
+        var panel = getRemoteModulePanel(featuredModules[i], 'download', i);
         addEl(sdiv, panel);
     }
     addEl(div, sdiv);
@@ -294,9 +296,10 @@ function populateStoreHome () {
     $(div).empty();
     var sdiv = getEl('div');
     var newestModules = getNewestModuleNames();
+    moduleLists['newest'] = newestModules;
     sdiv.style.width = (newestModules.length * storeTileWidthStep) + 'px';
     for (var i = 0; i < newestModules.length; i++) {
-        var panel = getRemoteModulePanel(newestModules[i]);
+        var panel = getRemoteModulePanel(newestModules[i], 'newest', i);
         addEl(sdiv, panel);
     }
     addEl(div, sdiv);
@@ -495,18 +498,23 @@ function updateFilter () {
     document.getElementById('store-home-button').className = 'store-front-all-button-off';
 }
 
-function getRemoteModulePanel (moduleName) {
+function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     var moduleInfo = remoteModuleInfo[moduleName];
     var div = getEl('div');
     div.className = 'moduletile';
     div.setAttribute('module', moduleName);
+    div.setAttribute('modulelistname', moduleListName);
+    div.setAttribute('modulelistpos', moduleListPos);
     var sdiv = getEl('div');
     sdiv.id = 'logodiv_' + moduleName;
     sdiv.className = 'moduletile-logodiv';
     sdiv.setAttribute('module', moduleName);
     sdiv.onclick = function (evt) {
         var moduleName = this.getAttribute('module');
-        var dialog = activateDetailDialog(moduleName);
+        var panel = this.parentElement;
+        var moduleListName = panel.getAttribute('modulelistname');
+        var moduleListPos = panel.getAttribute('modulelistpos');
+        var dialog = activateDetailDialog(moduleName, moduleListName, moduleListPos);
         var storediv = document.getElementById('storediv');
         addEl(storediv, dialog);
         evt.stopPropagation();
@@ -514,10 +522,12 @@ function getRemoteModulePanel (moduleName) {
     var img = addLogo(moduleName, sdiv);
     if (img != null) {
         img.onclick = function (evt) {
-            var pdiv = evt.target.parentElement;
+            var panel = evt.target.parentElement.parentElement;
+            var moduleListName = panel.getAttribute('modulelistname');
+            var moduleListPos = panel.getAttribute('modulelistpos');
             var moduleName = div.getAttribute('module');
             var storediv = document.getElementById('storediv');
-            var dialog = activateDetailDialog(moduleName);
+            var dialog = activateDetailDialog(moduleName, moduleListName, moduleListPos);
             addEl(storediv, dialog);
             evt.stopPropagation();
         }
@@ -778,6 +788,7 @@ function populateAllModulesDiv (group) {
     var div = document.getElementById('remotemodulepanels');
     emptyElement(div);
     var remoteModuleNames = getSortedFilteredRemoteModuleNames();
+    moduleLists['all'] = remoteModuleNames;
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
         if (group == 'basetoinstall') {
@@ -796,7 +807,7 @@ function populateAllModulesDiv (group) {
             }
         }
         var remoteModule = remoteModuleInfo[remoteModuleName];
-        var panel = getRemoteModulePanel(remoteModuleName);
+        var panel = getRemoteModulePanel(remoteModuleName, 'all', i);
         addEl(div, panel);
     }
 }
@@ -829,13 +840,19 @@ function addLogo (moduleName, sdiv) {
     return img;
 }
 
-function activateDetailDialog (moduleName) {
+function activateDetailDialog (moduleName, moduleListName, moduleListPos) {
     var div = document.getElementById('moduledetaildiv_store');
     if (div) {
         emptyElement(div);
     } else {
         div = getEl('div');
         div.id = 'moduledetaildiv_store';
+    }
+    if (moduleListName != null) {
+        div.setAttribute('modulelistname', moduleListName);
+    }
+    if (moduleListPos != null) {
+        div.setAttribute('modulelistpos', moduleListPos);
     }
     currentDetailModule = moduleName;
     div.style.display = 'block';
@@ -1032,6 +1049,7 @@ function activateDetailDialog (moduleName) {
     addEl(tr, td);
 	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
 		mdDiv.innerHTML = data;
+        addClassRecursive(mdDiv, 'moduledetaildiv-store-elem');
 	});
     td = getEl('td');
     td.style.width = '30%';
@@ -1241,7 +1259,19 @@ function activateDetailDialog (moduleName) {
         pel.parentElement.removeChild(pel);
     });
     addEl(div, el);
+    addClassRecursive(div, 'moduledetaildiv-store-elem');
+    storeModuleDivClicked = true;
     return div;
+}
+
+function addClassRecursive (elem, className) {
+    elem.classList.add(className);
+    $(elem).children().each(
+        function () {
+            $(this).addClass(className);
+            addClassRecursive(this, className);
+        }
+    );
 }
 
 function compareVersion (ver1, ver2) {
@@ -1439,7 +1469,7 @@ function announceStoreUpdatingAll () {
     var div = document.getElementById('store-update-all-div');
     var span = document.getElementById('store-update-all-span');
     var button = document.getElementById('store-update-all-button');
-    span.textContent = 'Updating all update-available modules...';
+    span.textContent = 'Updating all available modules...';
     button.style.display = 'none';
 }
 
