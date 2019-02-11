@@ -228,8 +228,8 @@ class Cravat (object):
         self.status['note'] = self.args.note
         self.status['status'] = 'Starting'
         self.status['reports'] = self.args.reports if self.args.reports != None else []
-        pkg_ver = au.get_current_package_version()
-        self.status['open_cravat_version'] = pkg_ver
+        self.pkg_ver = au.get_current_package_version()
+        self.status['open_cravat_version'] = self.pkg_ver
         with open(self.status_fpath,'w') as wf:
             wf.write(json.dumps(self.status))
 
@@ -534,6 +534,7 @@ class Cravat (object):
     def run_genemapper (self):
         module = au.get_local_module_info(
             self.conf.get_cravat_conf()['genemapper'])
+        self.genemapper = module
         cmd = [module.script_path, 
                self.crvinput,
                '-n', self.run_name,
@@ -719,14 +720,6 @@ class Cravat (object):
         else:
             return True
 
-    def add_annotator_displaynames (self, cursor, tab, annotators):
-        if self.table_exists(cursor, tab):
-            q = 'select displayname from ' + tab + '_annotator'
-            cursor.execute(q)
-            rs = cursor.fetchall()
-            for r in rs:
-                annotators[r[0]] = True
-
     def write_job_info (self):
         dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
         conn = sqlite3.connect(dbpath)
@@ -747,13 +740,31 @@ class Cravat (object):
         no_input = str(cursor.fetchone()[0])
         q = 'insert into info values ("Number of unique input variants", "' + no_input + '")'
         cursor.execute(q)
-        annotators = {}
-        self.add_annotator_displaynames(cursor, 'variant', annotators)
-        self.add_annotator_displaynames(cursor, 'gene', annotators)
-        annotators = list(annotators.keys())
-        annotators.sort(key=str.lower)
-        annotators = ', '.join(annotators)
-        q = 'insert into info values ("Annotators", "' + annotators + '")'
+        q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
+        cursor.execute(q)
+        version = self.genemapper.conf['version']
+        title = self.genemapper.conf['title']
+        modulename = self.genemapper.name
+        genemapper_str = '{} ({})'.format(title, version)
+        q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
+        cursor.execute(q)
+        '''
+        q = 'update variant_annotator set version="{}" where name="{}"'.format(version, modulename)
+        cursor.execute(q)
+        q = 'update gene_annotator set version="{}" where name="{}"'.format(version, modulename)
+        cursor.execute(q)
+        '''
+        annotators_str = ''
+        for modulename in self.annotators.keys():
+            annot = self.annotators[modulename]
+            version = annot.conf['version']
+            title = annot.conf['title']
+            level = annot.conf['level']
+            q = 'update {}_annotator set version="{}" where name="{}"'.format(level, version, modulename)
+            cursor.execute(q)
+            annotators_str += '{} ({}), '.format(title, version)
+        annotators = annotators_str.rstrip(', ')
+        q = 'insert into info values ("Annotators", "' + annotators_str + '")'
         cursor.execute(q)
         conn.commit()
         cursor.close()

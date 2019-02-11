@@ -186,8 +186,8 @@ class BasePostAggregator (object):
     
     def _alter_tables (self):
         # annotator table
-        q = 'insert into {:} values ("{:}", "{:}")'.format(
-            self.level + '_annotator', self.module_name, self.conf['title'])
+        q = 'insert into {:} values ("{:}", "{:}", "{}")'.format(
+            self.level + '_annotator', self.module_name, self.conf['title'], self.conf['version'])
         self.cursor_w.execute(q)
         # data table and header table
         header_table_name = self.level + '_header'

@@ -298,11 +298,11 @@ class Aggregator (object):
         annotator_table = self.level + '_annotator'
         q = 'drop table if exists {:}'.format(annotator_table)
         self.cursor.execute(q)
-        q = 'create table {:} (name text, displayname text)'.format(
+        q = 'create table {:} (name text, displayname text, version text)'.format(
             annotator_table)
         self.cursor.execute(q)
-        q = 'insert into {:} values ("{:}", "{:}")'.format(
-            annotator_table, 'base', 'Base Information')
+        q = 'insert into {:} values ("{:}", "{:}", "{:}")'.format(
+            annotator_table, 'base', 'Base Information', "")
         self.cursor.execute(q)
         for _, col_def in self.base_reader.get_all_col_defs().items():
             col_name = self.base_prefix + '__' + col_def['name']
@@ -316,8 +316,8 @@ class Aggregator (object):
             annotator_displayname = reader.get_annotator_displayname()
             if annotator_displayname == '':
                 annotator_displayname = annotator_name.upper()
-            q = 'insert into {:} values ("{:}", "{:}")'.format(
-                annotator_table, annotator_name, annotator_displayname)
+            q = 'insert into {:} values ("{:}", "{:}", "{:}")'.format(
+                annotator_table, annotator_name, annotator_displayname, "")
             self.cursor.execute(q)
             orded_col_index = sorted(list(reader.get_all_col_defs().keys()))
             for col_index in orded_col_index:
