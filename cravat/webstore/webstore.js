@@ -427,15 +427,6 @@ function populateStoreTagPanel () {
             }
         }
     }
-    for (var module in localModuleInfo) {
-        var tags = localModuleInfo[module].tags;
-        for (var i = 0; i < tags.length; i++) {
-            var tag = tags[i];
-            if (tagsCollected.indexOf(tag) == -1) {
-                tagsCollected.push(tag);
-            }
-        }
-    }
     removeElementFromArrayByValue(tagsCollected, 'installed');
     removeElementFromArrayByValue(tagsCollected, 'newavailable');
     tagsCollected.sort();
