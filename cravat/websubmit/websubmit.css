@@ -38,6 +38,11 @@ body * {
     color: #000000;
 }
 
+#pageselect div[disabled='t'] {
+    pointer-events: none;
+    color: white;
+}
+
 #tabselectdiv {
     position: absolute; 
     top: 74px; 

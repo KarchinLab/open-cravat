@@ -742,12 +742,13 @@ class Cravat (object):
         cursor.execute(q)
         q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
         cursor.execute(q)
-        version = self.genemapper.conf['version']
-        title = self.genemapper.conf['title']
-        modulename = self.genemapper.name
-        genemapper_str = '{} ({})'.format(title, version)
-        q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
-        cursor.execute(q)
+        if hasattr(self, 'genemapper'):
+            version = self.genemapper.conf['version']
+            title = self.genemapper.conf['title']
+            modulename = self.genemapper.name
+            genemapper_str = '{} ({})'.format(title, version)
+            q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
+            cursor.execute(q)
         '''
         q = 'update variant_annotator set version="{}" where name="{}"'.format(version, modulename)
         cursor.execute(q)

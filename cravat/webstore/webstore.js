@@ -213,7 +213,12 @@ function getLocal () {
         }
         populateStoreTagPanel();
         showOrHideInstallAllButton();
+        enableStoreTabHead();
 	});
+}
+
+function enableStoreTabHead () {
+    document.getElementById('storediv_tabhead').setAttribute('disabled', 'f');
 }
 
 function showOrHideInstallAllButton () {
