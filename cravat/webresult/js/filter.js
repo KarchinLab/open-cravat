@@ -86,6 +86,7 @@ const makeFilterColDiv = (filter, filterLevel) => {
         // Column select
         populateFilterColumnSelector(colSel, groupSel.val());
         colSel.val(filter.column);
+        colSel.change();
         // Test select
         testSel.val(filter.test);
         // Test values

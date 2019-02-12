@@ -997,21 +997,39 @@ function populateFilterWrapDiv (div) {
 	addEl(div, getEl('br'));
 	var filter = undefined;
 	var filterSimple = undefined;
+	var advancedColumnsPresent = false;
 	if (filterJson.hasOwnProperty('variant')) {
 		filter = filterJson;
 		// Make copy without groups for simple filter
 		filterSimple = JSON.parse(JSON.stringify(filter));
 		filterSimple.variant.groups = [];
+		// Also exclude columns that are only available in advanced
+		const topFilterCols = filterSimple.variant.columns;
+		const topSimpleCols = []
+		for (let i=0; i<topFilterCols.length; i++) {
+			let filterCol = topFilterCols[i];
+			let colModel = getFilterColByName(filterCol.column);
+			if (colModel.filterable) {
+				topSimpleCols.push(filterCol)
+			} else {
+				advancedColumnsPresent = true;
+			}
+		}
+		filterSimple.variant.columns = topSimpleCols;
 	}
 	var filterRootGroupDivSimple = makeFilterRootGroupDiv(filterSimple, 'filter-root-group-div-simple', 'simple');
 	$(div).append(filterRootGroupDivSimple);
+	button.classList.remove('filter-level-simple'); // Must toggle to advanced so that advanced filter uses all columns in rules selector
+	button.classList.add('filter-level-advanced');
 	var filterRootGroupDivAdvanced = makeFilterRootGroupDiv(filter, 'filter-root-group-div-advanced', 'advanced');
+	button.classList.remove('filter-level-advanced'); // Toggle back
+	button.classList.add('filter-level-simple');
 	$(div).append(filterRootGroupDivAdvanced);
 	filterRootGroupDivSimple[0].style.display = null;
 	filterRootGroupDivAdvanced[0].style.display = 'none';
-	if (filter && filter.variant.groups.length > 0) { // Simple filter
+	if ((filter && filter.variant.groups.length > 0) || advancedColumnsPresent) { // Advanced filter
 		filterRootGroupDivSimple[0].style.display = 'none';
-		filterRootGroupDivAdvanced[0].style.display = null;
+		filterRootGroupDivAdvanced[0].style.display = null; // Setting element.style null means inherited css style is used
 		button.classList.remove('filter-level-simple');
 		button.classList.add('filter-level-advanced');
 	}
