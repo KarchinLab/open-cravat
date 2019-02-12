@@ -107,6 +107,7 @@ function resizesTheWindow () {
 	var rightDiv = document.getElementById('rightdiv_' + currentTab);
 	var cellValueDiv = document.getElementById('cellvaluediv_' + currentTab);
 	var browserHeight = isNaN(window.innerHeight) ? window.clientHeight : window.innerHeight;
+	var rightDivHeight = browserHeight - 67;
 	var nsDragBarHeight = 0;
 	if (nsDragBar) {
 		nsDragBarHeight = nsDragBar.offsetHeight;
@@ -118,8 +119,10 @@ function resizesTheWindow () {
 	var detailDivHeight = 0;
 	if (detailDiv) {
 		detailDivHeight = detailDiv.offsetHeight;
+        if (detailDivHeight > rightDivHeight - 50) {
+            detailDivHeight = rightDivHeight - 50;
+        }
 	}
-	var rightDivHeight = browserHeight - 67;
 	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 38;
 	var tableDivWidth = 'calc(100% - 10px)';
 	var cellValueDivTop = tableDivHeight - 12;
@@ -136,6 +139,9 @@ function resizesTheWindow () {
 	}
 	shouldResizeScreen[currentTab] = false;
 	onClickDetailRedraw();
+    if (tableDetailDivSizes[currentTab]['status'] == 'detailmax') {
+        applyTableDetailDivSizes();
+    }
 }
 
 function getResultLevels (callback) {
