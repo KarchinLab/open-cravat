@@ -403,13 +403,6 @@ p {
 	color: white;
 }
 
-.cellvaluediv {
-	position: relative;
-	height: 18px;
-	width: 100%;
-	font-size: 14px;
-}
-
 button {
 	background-color: white;
 }
@@ -592,5 +585,32 @@ div.pq-select-button {
 
 .table-header-contextmenu-div ul li:hover a {
     color: #ffffff;
+}
+
+.cellvaluediv {
+	position: relative;
+	height: 18px;
+	width: 100%;
+	font-size: 13px;
+}
+
+.cellvaluediv button {
+    display: inline-block;
+    font-size: 10px;
+    border-radius: 10px;
+    width: 15px;
+    height: 16px;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #aaaaaa;
+    vertical-align: top;
+}
+
+.cellvaluediv textarea {
+    width: calc(100% - 30px);
+    height: 100%;
+    resize: none;
+    overflow: auto;
+    vertical-align: middle;
 }
 

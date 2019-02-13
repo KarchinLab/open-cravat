@@ -249,7 +249,9 @@ function populateSummaryWidgetDiv () {
             $outerDiv.packery();
         },
 	}).resizable({
-		grid: [widgetGridSize, widgetGridSize]
+		grid: [widgetGridSize, widgetGridSize],
+        autoHide: true,
+        handles: 'all',
 	});
 	$outerDiv.packery('bindUIDraggableEvents', $widgets);
 	var resizeTimeout;
@@ -327,11 +329,46 @@ function makeVariantGeneTab (tabName, rightDiv) {
         cellValueDiv = getEl('div');
         cellValueDiv.id = cellValueDivId;
         cellValueDiv.className = 'cellvaluediv';
-        var input = getEl('input');
+        var h = loadedHeightSettings['cellvalue_' + currentTab];
+        if (h != undefined) {
+            cellValueDiv.style.height = h;
+        }
+        var input = getEl('textarea');
         input.id = 'cellvaluetext_' + tabName;
-        input.type = 'text';
-        input.style.width = '100%';
+        input.setAttribute('readonly', 'true');
+        input.rows = '1';
+        /*
+        $(cellValueDiv).resizable({
+            resize: function(event, ui) {
+                ui.size.width = ui.originalSize.width;
+                resizesTheWindow();
+            },
+        });
+        */
         addEl(cellValueDiv, input);
+        var button = getEl('button');
+        button.textContent = '+';
+        button.addEventListener('click', function (evt) {
+            var div = document.getElementById('cellvaluediv_' + currentTab);
+            var divHeight = div.offsetHeight;
+            divHeight = divHeight + 14;
+            div.style.height = divHeight + 'px';
+            resizesTheWindow();
+        });
+        addEl(cellValueDiv, button);
+        var button = getEl('button');
+        button.textContent = '-';
+        button.addEventListener('click', function (evt) {
+            var div = document.getElementById('cellvaluediv_' + currentTab);
+            var divHeight = div.offsetHeight;
+            divHeight = divHeight - 14;
+            if (divHeight < 18) {
+                divHeight = 18;
+            }
+            div.style.height = divHeight + 'px';
+            resizesTheWindow();
+        });
+        addEl(cellValueDiv, button);
         addEl(rightDiv, cellValueDiv);
     }
 
@@ -344,9 +381,9 @@ function makeVariantGeneTab (tabName, rightDiv) {
         detailDiv.className = 'detaildiv';
         var detailContainerWrapDiv = getEl('div');
         detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
-        var heightSetting = loadedHeightSettings['detail_' + tabName];
-        if (heightSetting != undefined) {
-            detailDiv.style.height = heightSetting;
+        var h = loadedHeightSettings['detail_' + tabName];
+        if (h != undefined) {
+            detailDiv.style.height = h;
         }
         addEl(detailDiv, detailContainerWrapDiv);
     }
@@ -1370,10 +1407,10 @@ function applyTableDetailDivSizes () {
         var detailHeight = tableDetailDivSizes[tabName]['detailheight'];
         tableDiv.style.height = tableHeight + 'px';
         $grids[tabName].pqGrid('option', 'height', tableHeight).pqGrid('refresh');
-        drag.style.top = (tableHeight + 17) + 'px';
-        cell.style.top = (tableHeight - 12) + 'px';
+        drag.style.top = (tableHeight - 1 + cell.offsetHeight) + 'px';
+        cell.style.top = (tableHeight - 9) + 'px';
         detailDiv.style.height = detailHeight + 'px';
-        detailDiv.style.top = (tableHeight + 30) + 'px';
+        detailDiv.style.top = (tableHeight + cell.offsetHeight + 12) + 'px';
     }
 }
 

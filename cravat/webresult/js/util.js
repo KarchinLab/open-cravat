@@ -451,24 +451,29 @@ function saveLayoutSetting (name) {
 	}
 	// Heights
 	saveData['height'] = {};
-	var variantTable = document.getElementById('tablediv_variant');
-	if (variantTable) {
-		saveData['height']['table_variant'] = variantTable.style.height;
-	}
-	var geneTable = document.getElementById('tablediv_gene');
-	if (geneTable) {
-		saveData['height']['table_gene'] = geneTable.style.height;
-	}
-	var variantDetail = document.getElementById('detaildiv_variant');
-	if (variantDetail) {
-		saveData['height']['detail_variant'] = variantDetail.style.height;
-	}
-	var geneDetail = document.getElementById('detaildiv_gene');
-	if (geneDetail) {
-		saveData['height']['detail_gene'] = geneDetail.style.height;
-	}
+    var tabs = ['variant', 'gene'];
+    for (var i = 0; i < tabs.length; i++) {
+        var tab = tabs[i];
+        var h = null;
+        var div = document.getElementById('tablediv_' + tab);
+        if (div) {
+            h = div.style.height;
+            saveData['height']['table_' + tab] = h;
+        }
+        div = document.getElementById('detaildiv_' + tab);
+        if (div) {
+            h = div.style.height;
+            saveData['height']['detail_' + tab] = h;
+        }
+        div = document.getElementById('cellvaluediv_' + tab);
+        if (div) {
+            h = div.style.height;
+            saveData['height']['cellvalue_' + tab] = h;
+        }
+    }
     // tableDetailDivSizes
     saveData['tabledetaildivsizes'] = tableDetailDivSizes;
+    // Saves.
 	var saveDataStr = JSON.stringify(saveData);
 	$.ajax({
 		url: '/result/service/savelayoutsetting', 
@@ -709,7 +714,6 @@ function loadLayoutSetting (name, callback) {
 		if (loadedHeightSettings == undefined) {
 			loadedHeightSettings = {};
 		}
-		heightSettings = loadedHeightSettings;
 		if (callback != null) {
 			callback();
 		}

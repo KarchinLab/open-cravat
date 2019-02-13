@@ -78,14 +78,13 @@ function afterDragNSBar (self, tabName) {
         dragBarTop = dragBarTopLowerLimit;
     }
 	var rightDiv_height = rightDiv.offsetHeight;
-	var rightDiv_top = rightDiv.offsetTop;
-	var dragBarTop_relativeRightDiv = dragBarTop - rightDiv_top - 37;
-	var cellValueDivTop = dragBarTop_relativeRightDiv + 7;
-	var height_table = dragBarTop_relativeRightDiv + 16;
-	var height_detail_div = rightDiv_height - height_table - height_bar - 49;
-    var detailDivTop = cellValueDivTop + 29 + 15;
+	var rightDivTop = rightDiv.offsetTop;
+    var cellValueDivHeight = cellValueDiv.offsetHeight;
+	var cellValueDivTop = dragBarTop - cellValueDivHeight - 13;
+	var height_table = dragBarTop - rightDivTop - cellValueDivHeight;
+	var height_detail_div = rightDiv_height - height_table - height_bar - cellValueDivHeight - 25;
+    var detailDivTop = cellValueDivTop + cellValueDivHeight + 8 + 15;
 	$grids[tabName].pqGrid('option', 'height', height_table).pqGrid('refresh');
-	dragBar.style.top = cellValueDivTop + 29;
 	cellValueDiv.style.top = cellValueDivTop;
     detailDiv.style.top = detailDivTop + 'px';
 	detailDiv.style.height = height_detail_div;
@@ -108,6 +107,13 @@ function resizesTheWindow () {
 	var cellValueDiv = document.getElementById('cellvaluediv_' + currentTab);
 	var browserHeight = isNaN(window.innerHeight) ? window.clientHeight : window.innerHeight;
 	var rightDivHeight = browserHeight - 67;
+    var tableDivHeight = 0;
+    if (tableDiv) {
+        tableDivHeight = tableDiv.offsetHeight;
+        if (tableDivHeight > rightDivHeight - 50) {
+            tableDivHeight = rightDivHeight - 50;
+        }
+    }
 	var nsDragBarHeight = 0;
 	if (nsDragBar) {
 		nsDragBarHeight = nsDragBar.offsetHeight;
@@ -115,6 +121,10 @@ function resizesTheWindow () {
 	var cellValueDivHeight = 0;
 	if (cellValueDiv) {
 		cellValueDivHeight = cellValueDiv.offsetHeight;
+        if (cellValueDivHeight > rightDivHeight - tableDivHeight - 100) {
+            cellValueDivHeight = rightDivHeight - tableDivHeight - 100;
+            cellValueDiv.style.height = cellValueDivHeight + 'px';
+        }
 	}
 	var detailDivHeight = 0;
 	if (detailDiv) {
@@ -123,14 +133,16 @@ function resizesTheWindow () {
             detailDivHeight = rightDivHeight - 50;
         }
 	}
-	var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 38;
+	//var tableDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - detailDivHeight - 38;
+	var detailDivHeight = rightDivHeight - nsDragBarHeight - cellValueDivHeight - tableDivHeight - 28;
+    detailDiv.style.height = detailDivHeight + 'px';
 	var tableDivWidth = 'calc(100% - 10px)';
-	var cellValueDivTop = tableDivHeight - 12;
-	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 10;
+	var cellValueDivTop = tableDivHeight - 9;
+	var nsDragBarTop = cellValueDivTop + cellValueDivHeight + 7;
 	rightDiv.style.height = rightDivHeight + 'px';
 	tableDiv.style.width = tableDivWidth;
 	tableDiv.style.height = tableDivHeight;
-	pqTable.pqGrid('option', 'width', tableDivWidth).pqGrid('option', 'height', tableDivHeight - 1).pqGrid('refresh');
+	pqTable.pqGrid('option', 'width', tableDivWidth).pqGrid('option', 'height', tableDivHeight).pqGrid('refresh');
 	cellValueDiv.style.top = cellValueDivTop + 'px';
 	nsDragBar.style.top = nsDragBarTop + 'px';
 	if (detailDiv) {
