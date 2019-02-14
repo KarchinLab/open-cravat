@@ -937,6 +937,42 @@ def get_download_counts ():
     counts = mic.download_counts
     return counts
 
+
+
+def get_install_deps (module_name, version=None, skip_installed=True):
+    mic.update_remote()
+    # If input module version not provided, set to highest
+    if version is None:
+        version = get_remote_latest_version(module_name)
+    config = mic.get_remote_config(module_name, version=None)
+    deps = {}
+    req_list = config.get('requires',[])
+    for req_string in req_list:
+        req = pkg_resources.Requirement(req_string)
+        rem_info = get_remote_module_info(req.name)
+        # Skip if module does not exist
+        if rem_info is None:
+            continue
+        if skip_installed:
+            # Skip if a matching version is installed
+            local_info = get_local_module_info(req.name)
+            if local_info and local_info.version in req:
+                continue
+        # Select the highest matching version
+        lvers = [LooseVersion(v) for v in rem_info.versions]
+        lvers.sort(reverse=True)
+        highest_matching = None
+        for lv in lvers:
+            if lv.vstring in req:
+                highest_matching = lv.vstring
+                break
+        # Dont include if no matching version exists
+        if highest_matching is not None:
+            deps[req.name] = highest_matching
+    return deps
+
+    
+
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info

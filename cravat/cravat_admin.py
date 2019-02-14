@@ -225,15 +225,20 @@ def main ():
         matching_names = au.search_remote(*args.modules)
         if len(matching_names) > 1 and args.version is not None:
             print('WARNING: Version filter applied to all matching modules')
-        to_install = {}
+        force_install = {}
         for module_name in matching_names:
             remote_info = au.get_remote_module_info(module_name)
             if args.version is None:
-                    to_install[module_name] = remote_info.latest_version
+                    force_install[module_name] = remote_info.latest_version
             elif remote_info.has_version(args.version):
-                    to_install[module_name] = args.version
+                    force_install[module_name] = args.version
             else:
                 continue
+        to_install = {}
+        for module_name, version in force_install.items():
+            deps = au.get_install_deps(module_name, version=version)
+            to_install.update(deps)
+        to_install.update(force_install)
         if len(to_install) > 0:
             print('Installing: {:}'\
                   .format(', '.join([name+':'+version for name, version in sorted(to_install.items())]))
