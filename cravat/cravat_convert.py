@@ -245,6 +245,7 @@ class MasterCravatConverter(object):
             assm_crl_def = copy.deepcopy(constants.crl_def)
             assm_crl_def[1]['title'] = '{0} Chrom'.format(self.input_assembly.title())
             assm_crl_def[2]['title'] = '{0} Position'.format(self.input_assembly.title())
+            assm_crl_def[2]['desc'] = 'Position in {0}'.format(self.input_assembly.title())
             self.crl_writer.add_columns(assm_crl_def)
             self.crl_writer.write_definition()
             self.crl_writer.write_names(self.input_assembly,
