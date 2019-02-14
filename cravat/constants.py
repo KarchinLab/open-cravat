@@ -94,9 +94,9 @@ crt_def = [{'name':'primary_transcript', 'title':'Primary transcript',
            {'name':'alt_transcript', 'title':'Alternate transcript',
             'type':'string'}]
 crt_idx = [['primary_transcript']]
-crl_def = [{'name':'uid', 'title':'UID', 'type':'int'},
-           {'name':'chrom', 'title':'Chrom', 'type':'string'},
-           {'name':'pos', 'title':'Pos', 'type':'int'},
+crl_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
+           {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 80},
+           {'name':'pos', 'title':'Pos', 'type':'int', 'width': 80},
            ]
 
 exit_codes = {
