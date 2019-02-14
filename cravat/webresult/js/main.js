@@ -69,14 +69,15 @@ function afterDragNSBar (self, tabName) {
 	var dragBar = self;
 	var height_bar = self.offsetHeight;
 	var dragBarTop = self.offsetTop;
-    var dragBarTopUpperLimit = 12;
+    var dragBarTopUpperLimit = 100;
     if (dragBarTop < dragBarTopUpperLimit) {
         dragBarTop = dragBarTopUpperLimit;
     }
-    var dragBarTopLowerLimit = rightDiv.offsetHeight - 26;
+    var dragBarTopLowerLimit = rightDiv.offsetHeight - 50;
     if (dragBarTop > dragBarTopLowerLimit) {
         dragBarTop = dragBarTopLowerLimit;
     }
+    self.style.top = (dragBarTop - 5) + 'px';
 	var rightDiv_height = rightDiv.offsetHeight;
 	var rightDivTop = rightDiv.offsetTop;
     var cellValueDivHeight = cellValueDiv.offsetHeight;
