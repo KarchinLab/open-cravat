@@ -575,7 +575,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
         datasource = '';
     }
     span.textContent = datasource;
-    span.title = 'Source data release date';
+    span.title = 'Data source version';
     addEl(div, span);
     addEl(div, sdiv);
     addEl(div, getEl('br'));
