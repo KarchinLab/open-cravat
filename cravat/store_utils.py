@@ -7,6 +7,7 @@ import hashlib
 import zipfile
 from . import exceptions
 import json
+import pkg_resources
 
 class PathBuilder(object):
     """
@@ -59,8 +60,14 @@ class PathBuilder(object):
     def module_logo (self, module_name, version):
         return self._build_path(self.module_version_dir(module_name, version), 'logo.png')
 
-    def manifest(self):
-        return self._build_path(self.base(), 'manifest.yml')
+    def manifest(self, version=None):
+        if version is None:
+            version = pkg_resources.get_distribution('open-cravat').version
+        fname = 'manifest-{}.yml'.format(version)
+        return self._build_path(self.base(), fname)
+    
+    def manifest_nover(self):
+        return self._build_path(self.base(),'manifest.yml')
     
     def download_counts(self):
         return self._build_path(self.base(), 'download-counts.yml')

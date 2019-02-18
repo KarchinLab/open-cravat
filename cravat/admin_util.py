@@ -911,17 +911,26 @@ def show_system_conf ():
     print('Configuration file path:', system_conf_info['path'])
     print(system_conf_info['content'])
 
-def get_latest_package_version():
+def get_package_versions():
     """
-    Return latest cravat version on pypi
+    Return available open-cravat versions from pypi, sorted asc
     """
     r = requests.get('https://pypi.org/pypi/open-cravat/json')
     if r.status_code == 200:
         d = json.loads(r.text)
         all_vers = list(d['releases'].keys())
         all_vers.sort(key=LooseVersion)
-        highest_ver = all_vers[-1]
-        return highest_ver
+        return all_vers
+    else:
+        return None
+
+def get_latest_package_version():
+    """
+    Return latest cravat version on pypi
+    """
+    all_vers = get_package_versions()
+    if all_vers:
+        return all_vers[-1]
     else:
         return None
 
