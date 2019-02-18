@@ -60,6 +60,9 @@ class PathBuilder(object):
     def module_logo (self, module_name, version):
         return self._build_path(self.module_version_dir(module_name, version), 'logo.png')
 
+    def module_meta (self, module_name, version):
+        return self._build_path(self.module_version_dir(module_name, version), 'meta.yml')
+
     def manifest(self, version=None):
         if version is None:
             version = pkg_resources.get_distribution('open-cravat').version
