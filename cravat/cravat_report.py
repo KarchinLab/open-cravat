@@ -9,6 +9,8 @@ from cravat.config_loader import ConfigLoader
 from cravat import util
 import subprocess
 import re
+import logging
+import time
 
 class CravatReport:
 
@@ -23,9 +25,25 @@ class CravatReport:
         self.summarizing_modules = []
         self.columngroups = {}
         self.column_subs = {}
+        self._setup_logger()
         self.connect_db()
         self.load_filter()
-    
+        self.load_status_json()
+
+    def _setup_logger(self):
+        try:
+            self.logger = logging.getLogger('cravat.' + self.module_name)
+        except Exception as e:
+            self._log_exception(e)
+        self.error_logger = logging.getLogger('error.' + self.module_name)
+        self.unique_excs = []
+
+    def _log_exception(self, e, halt=True):
+        if halt:
+            raise e
+        else:
+            if self.logger:
+                self.logger.exception(e)
     def getjson (self, level):
         ret = None
         if self.table_exists(level) == False:
@@ -99,6 +117,9 @@ class CravatReport:
                 self.write_table_row(row)
 
     def run (self, tab='all'):
+        start_time = time.time()
+        self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
+        self.update_status_json('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
         self.setup()
         if tab == 'all':
             for level in self.cf.get_result_levels():
@@ -115,9 +136,33 @@ class CravatReport:
             else:
                 self.make_col_info(tab)
             self.run_level(tab)
+        self.update_status_json('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
+        end_time = time.time()
+        self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
+        run_time = end_time - start_time
+        self.logger.info('runtime: {0:0.3f}'.format(run_time))
         ret = self.end()
         return ret
-    
+
+    def load_status_json (self):
+        f = open(self.status_fpath)
+        lines = '\n'.join(f.readlines())
+        self.status_json = json.loads(lines)
+        f.close()
+
+    def update_status_json (self, k, v):
+        self.status_json[k] = v
+        tmp_path = self.status_fpath + '.' + self.module_name
+        wf = open(tmp_path, 'w')
+        json.dump(self.status_json, wf)
+        wf.close()
+        while True:
+            try:
+                os.rename(tmp_path, self.status_fpath)
+                break
+            except:
+                time.sleep(0.1)
+
     def get_variant_colinfo (self):
         self.setup()
         level = 'variant'
@@ -127,22 +172,22 @@ class CravatReport:
         if self.table_exists(level):
             self.make_col_info(level)
         return self.colinfo
-    
+
     def setup (self):
         pass
-    
+
     def end (self):
         pass
-    
+
     def write_preface (self, level):
         pass
-    
+
     def write_header (self, level):
         pass
-    
+
     def write_table_row (self, row):
         pass
-    
+
     def make_col_info (self, level):
         self.colnos[level] = {}
         # Columns from aggregator
@@ -346,6 +391,10 @@ class CravatReport:
             nargs='+',
             default=None,
             help='report types')
+        parser.add_argument('--module-name',
+            dest='module_name',
+            default=None,
+            help='report module name')
         parsed_args = parser.parse_args(cmd_args[1:])
         self.dbpath = parsed_args.dbpath
         self.filterpath = parsed_args.filterpath
@@ -354,7 +403,13 @@ class CravatReport:
         self.savepath = parsed_args.savepath
         self.confpath = parsed_args.confpath
         self.conf = ConfigLoader(job_conf_path=self.confpath)
+        self.module_name = parsed_args.module_name
+        self.module_conf = self.conf.get_module_conf(self.module_name)
         self.report_types = parsed_args.reporttypes
+        self.output_basename = os.path.basename(self.dbpath).rstrip('.sqlite')
+        self.output_dir = os.path.dirname(self.dbpath)
+        status_fname = '{}.status.json'.format(self.output_basename)
+        self.status_fpath = os.path.join(self.output_dir, status_fname)
 
     def connect_db (self, dbpath=None):
         if dbpath != None:

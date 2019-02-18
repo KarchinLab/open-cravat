@@ -63,7 +63,6 @@ class MasterCravatConverter(object):
         self.crs_writer = None
         self.crm_writer = None
         self.crl_writer = None
-        self.err_file = None
         self.primary_converter = None
         self.converters = {}
         self.possible_formats = []
@@ -149,6 +148,8 @@ class MasterCravatConverter(object):
         self.logger.info('input file: %s' %self.input_path)
         if self.do_liftover:
             self.logger.info('liftover from %s' %self.input_assembly)
+        self.error_logger = logging.getLogger('error.converter')
+        self.unique_excs = []
 
     def _initialize_converters(self):
         """ Reads in available converters.
@@ -270,7 +271,7 @@ class MasterCravatConverter(object):
                     continue
             except Exception as e:
                 num_errors += 1
-                self._log_conversion_error(read_lnum, e)
+                self._log_conversion_error(read_lnum, l, e)
                 continue
             if all_wdicts:
                 UIDMap = [] 
@@ -281,7 +282,7 @@ class MasterCravatConverter(object):
                     if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
                         num_errors += 1
                         e = BadFormatError('Reference base required for non SNV')
-                        self._log_conversion_error(read_lnum, e)
+                        self._log_conversion_error(read_lnum, l, e)
                         continue
                     if self.do_liftover:
                         prelift_wdict = copy.copy(wdict)
@@ -290,7 +291,7 @@ class MasterCravatConverter(object):
                                                                          wdict['pos'])
                         except LiftoverFailure as e:
                             num_errors += 1
-                            self._log_conversion_error(read_lnum, e)
+                            self._log_conversion_error(read_lnum, l, e)
                             continue
                     unique, UID = self.vtracker.addVar(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])                       
                     wdict['uid'] = UID
@@ -329,15 +330,17 @@ class MasterCravatConverter(object):
         else:
             raise LiftoverFailure(old_chrom, old_pos)
 
-    def _log_conversion_error(self, ln, e):
+    def _log_conversion_error(self, ln, line, e):
         """ Log exceptions thrown by primary converter.
             All exceptions are written to the .err file with the exception type
-            and message. Exceptions are also written to the log file, with the 
-            traceback. Exceptions of type InvalidData do not have their
-            traceback logged.
+            and message. Exceptions are also written to the log file once, with the 
+            traceback. 
         """
-        err_toks = [str(x) for x in [ln, e.__class__.__name__, e]]
-        self.logger.error(' '.join(err_toks))
+        err_str = traceback.format_exc().rstrip()
+        if err_str not in self.unique_excs:
+            self.unique_excs.append(err_str)
+            self.logger.error(err_str)
+        self.error_logger.error('\nLINE:{:d}\nINPUT:{}\nERROR:{}\n#'.format(ln, line[:-1], str(e)))
 
     def _close_files(self):
         """ Close the input and output files. """
@@ -345,7 +348,6 @@ class MasterCravatConverter(object):
         self.crv_writer.close()
         self.crm_writer.close()
         self.crs_writer.close()
-        #self.err_file.close()
 
 def main ():
     master_cravat_converter = MasterCravatConverter()

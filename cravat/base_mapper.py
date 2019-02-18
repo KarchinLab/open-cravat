@@ -116,20 +116,11 @@ class BaseMapper(object):
             except:
                 time.sleep(0.1)
 
-    def __handle_exception(self, e, should_exit=True):
-        """
-        Handles exceptions in standard cravat method
-        """
-        sys.stderr.write(traceback.format_exc())
-        if hasattr(self, 'logger') and self.logger is not None:
-                self.logger.exception(e)
-                if should_exit: sys.exit(2)
-        else:
-            if should_exit: sys.exit(1)
-
     def _setup_logger(self):
         self.logger = logging.getLogger('cravat.mapper')
         self.logger.info('input file: %s' %self.input_path)
+        self.error_logger = logging.getLogger('error.mapper')
+        self.unique_excs = []
 
     def _setup_io(self):
         """
@@ -182,23 +173,26 @@ class BaseMapper(object):
                          %time.asctime(time.localtime(start_time)))
         count = 0
         last_status_update_time = time.time()
-        for ln, crv_data in self.reader.loop_data():
-            count += 1
-            cur_time = time.time()
-            if count % 10000 == 0 or cur_time - last_status_update_time > 5:
-                self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, count))
-                last_status_update_time = cur_time
+        crx_data = None
+        alt_transcripts = None
+        for ln, line, crv_data in self.reader.loop_data():
             try:
+                count += 1
+                cur_time = time.time()
+                if count % 10000 == 0 or cur_time - last_status_update_time > 5:
+                    self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, count))
+                    last_status_update_time = cur_time
                 crx_data, alt_transcripts = self.map(crv_data)
                 # Skip cases where there was no change. Can result if ref_base not in original input
                 if crx_data['ref_base'] == crx_data['alt_base']:
                     continue
             except Exception as e:
-                self._log_runtime_error(ln, e)
-                continue
-            self.crx_writer.write_data(crx_data)
-            self._add_crx_to_gene_info(crx_data)
-            self._write_to_crt(alt_transcripts)
+                self._log_runtime_error(ln, line, e)
+            if crx_data is not None:
+                self.crx_writer.write_data(crx_data)
+                self._add_crx_to_gene_info(crx_data)
+            if alt_transcripts is not None:
+                self._write_to_crt(alt_transcripts)
         self._write_crg()
         stop_time = time.time()
         self.logger.info('finished: %s' \
@@ -263,9 +257,11 @@ class BaseMapper(object):
             crg_data['all_so'] = ','.join(so_count_toks)
             self.crg_writer.write_data(crg_data)
 
-    def _log_runtime_error(self, ln, e):
-        err_toks = [str(x) for x in [ln, e]]
-        self.logger.exception(e)
-        if not(isinstance(e,InvalidData)):
-            self.__handle_exception(e, should_exit=False)
-
+    def _log_runtime_error(self, ln, line, e):
+        err_str = traceback.format_exc().rstrip()
+        if err_str not in self.unique_excs:
+            self.unique_excs.append(err_str)
+            self.logger.error(err_str)
+        self.error_logger.error('\nLINE:{:d}\nINPUT:{}\nERROR:{}\n#'.format(ln, line[:-1], str(e)))
+        if not(isinstance(e, InvalidData)):
+            raise e

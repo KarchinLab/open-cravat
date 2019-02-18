@@ -127,10 +127,10 @@ class CravatReader (CravatFile):
                         out[col_name] = int(tok)
                     elif col_type == 'float':
                         out[col_name] = float(tok)
-            yield lnum, out
+            yield lnum, l, out
    
     def get_data(self):
-        all_data = [d for _,d in self.loop_data()]
+        all_data = [d for _, _, d in self.loop_data()]
         return all_data
 
     def _loop_definition(self):

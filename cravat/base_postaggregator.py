@@ -15,23 +15,20 @@ class BasePostAggregator (object):
     cr_type_to_sql = {'string':'text',
                       'int':'integer',
                       'float':'real'}
-    
+
     def __init__(self, cmd_args):
-        try:
-            # self.module_name = get_caller_name(sys.modules[self.__module__].__file__)
-            self.module_name = get_caller_name(cmd_args[0])
-            self.parse_cmd_args(cmd_args)
-            self._setup_logger()
-            config_loader = ConfigLoader()
-            self.conf = config_loader.get_module_conf(self.module_name)
-            self.fix_col_names()
-            self.dbconn = None
-            self.cursor = None
-            self.cursor_w = None
-            self._open_db_connection()
-            self.should_run_annotate = self.check()
-        except Exception as e:
-            self._log_exception(e)
+        # self.module_name = get_caller_name(sys.modules[self.__module__].__file__)
+        self.module_name = get_caller_name(cmd_args[0])
+        self.parse_cmd_args(cmd_args)
+        self._setup_logger()
+        config_loader = ConfigLoader()
+        self.conf = config_loader.get_module_conf(self.module_name)
+        self.fix_col_names()
+        self.dbconn = None
+        self.cursor = None
+        self.cursor_w = None
+        self._open_db_connection()
+        self.should_run_annotate = self.check()
 
     def check(self):
         """
@@ -39,38 +36,34 @@ class BasePostAggregator (object):
         Should be overridden in sub-classes.
         """
         return True
-    
+
     def fix_col_names (self):
         for col in self.conf['output_columns']:
             col['name'] = self.module_name + '__' + col['name']
-            
+
     def _log_exception(self, e, halt=True):
-        if self.logger:
-            self.logger.exception(e)
         if halt:
-            sys.exit(traceback.format_exc())
+            raise e
         else:
-            traceback.print_exc()
-    
+            if self.logger:
+                self.logger.exception(e)
+
     def _define_cmd_parser(self):
-        try:
-            parser = argparse.ArgumentParser()
-            parser.add_argument('-n',
-                                dest='run_name',
-                                help='name of cravat run')
-            parser.add_argument('-d',
-                                dest='output_dir',
-                                help='Output directory. '\
-                                     +'Default is input file directory.')
-            parser.add_argument('-l',
-                                dest='level',
-                                default='variant',
-                                help='Summarize level. '\
-                                     +'Default is variant.')
-            self.cmd_arg_parser = parser
-        except Exception as e:
-            self._log_exception(e)
-    
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-n',
+                            dest='run_name',
+                            help='name of cravat run')
+        parser.add_argument('-d',
+                            dest='output_dir',
+                            help='Output directory. '\
+                                 +'Default is input file directory.')
+        parser.add_argument('-l',
+                            dest='level',
+                            default='variant',
+                            help='Summarize level. '\
+                                 +'Default is variant.')
+        self.cmd_arg_parser = parser
+
     def parse_cmd_args(self, cmd_args):
         self._define_cmd_parser()
         parsed_args = self.cmd_arg_parser.parse_args(cmd_args[1:])
@@ -86,28 +79,25 @@ class BasePostAggregator (object):
     def run(self):
         if not self.should_run_annotate:
             return
-        try:
-            start_time = time.time()
-            self.logger.info('started: {0}'.format(time.asctime(time.localtime(start_time))))
-            self.base_setup()
-            for input_data in self._get_input():
-                try:
-                    output_dict = self.annotate(input_data)
-                    fixed_output = {}
-                    for k, v in output_dict.items():
-                        fixed_output[self.module_name + '__' + k] = v
-                    self.write_output(input_data, fixed_output)
-                except Exception as e:
-                    self._log_runtime_exception(input_data, e)
-            self.fill_categories()
-            self.dbconn.commit()
-            self.base_cleanup()
-            end_time = time.time()
-            run_time = end_time - start_time
-            self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
-            self.logger.info('runtime: {0:0.3f}'.format(run_time))
-        except Exception as e:
-            self._log_exception(e)
+        start_time = time.time()
+        self.logger.info('started: {0}'.format(time.asctime(time.localtime(start_time))))
+        self.base_setup()
+        for input_data in self._get_input():
+            try:
+                output_dict = self.annotate(input_data)
+                fixed_output = {}
+                for k, v in output_dict.items():
+                    fixed_output[self.module_name + '__' + k] = v
+                self.write_output(input_data, fixed_output)
+            except Exception as e:
+                self._log_runtime_exception(input_data, e)
+        self.fill_categories()
+        self.dbconn.commit()
+        self.base_cleanup()
+        end_time = time.time()
+        run_time = end_time - start_time
+        self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
+        self.logger.info('runtime: {0:0.3f}'.format(run_time))
 
     def fill_categories (self):
         for col_def in self.conf['output_columns']:
@@ -152,23 +142,23 @@ class BasePostAggregator (object):
         elif self.levelno == GENE:
             q += 'base__hugo="' + input_data['base__hugo'] + '"'
         self.cursor_w.execute(q)
-        
+
     def _log_runtime_exception(self, input_data, e):
         try:
-            error_classname = e.__class__.__name__
-            err_line = '\t'.join([error_classname, str(e)])
-            #self.invalid_file.write(err_line + '\n')
-            if not(isinstance(e,InvalidData)):
-                self._log_exception(e, halt=False)
+            err_str = traceback.format_exc().rstrip()
+            if err_str not in self.unique_excs:
+                self.unique_excs.append(err_str)
+                self.logger.error(err_str)
+            self.error_logger.error('\nINPUT:{}\nERROR:{}\n#'.format(str(input_data), str(e)))
         except Exception as e:
             self._log_exception(e, halt=False)
-    
+
     # Setup function for the base_annotator, different from self.setup() 
     # which is intended to be for the derived annotator.
     def base_setup(self):
         self._alter_tables()
         self.setup()
-    
+
     def _open_db_connection (self):
         self.db_path = os.path.join(self.output_dir, self.run_name + '.sqlite')
         if os.path.exists(self.db_path):
@@ -180,12 +170,12 @@ class BasePostAggregator (object):
             if self.logger:
                 self.logger.error(msg)
             sys.exit(msg)
-    
+
     def _close_db_connection (self):
         self.cursor.close()
         self.cursor_w.close()
         self.dbconn.close()
-    
+
     def _alter_tables (self):
         # annotator table
         q = 'insert into {:} values ("{:}", "{:}", "{}")'.format(
@@ -212,11 +202,11 @@ class BasePostAggregator (object):
             q = 'insert into {} values (?, ?, ?, ?, ?, ?, ?, ?, ?)'.format(header_table_name)
             self.cursor_w.execute(q,[colname, coltitle, coltype, colcats, colwidth, coldesc, colhidden, col_ctg, col_filterable])
         self.dbconn.commit()
-        
+
     # Placeholder, intended to be overridded in derived class
     def setup(self):
         pass
-    
+
     def base_cleanup(self):
         self.cleanup()
         if self.dbconn != None:
@@ -224,13 +214,15 @@ class BasePostAggregator (object):
 
     def cleanup(self):
         pass
-            
+
     def _setup_logger(self):
         try:
             self.logger = logging.getLogger('cravat.' + self.module_name)
         except Exception as e:
             self._log_exception(e)
-        
+        self.error_logger = logging.getLogger('error.' + self.module_name)
+        self.unique_excs = []
+
     def _get_input(self):
         dbconnloop = sqlite3.connect(self.db_path)
         cursorloop = dbconnloop.cursor()
@@ -243,9 +235,8 @@ class BasePostAggregator (object):
                     input_data[cursorloop.description[i][0]] = row[i]
                 yield input_data
             except Exception as e:
-                self._log_runtime_error(e)
-                continue
-    
+                self._log_runtime_exception(row, e)
+
     def annotate (self, input_data):
         sys.stdout.write('        annotate method should be implemented. ' +\
                 'Exiting ' + self.annotator_display_name + '...\n')

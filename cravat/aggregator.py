@@ -10,14 +10,15 @@ from cravat import CravatReader
 from cravat import CravatWriter
 import json
 from .exceptions import BadFormatError
+import traceback
 
 class Aggregator (object):
-    
+
     cr_type_to_sql = {'string':'text',
                       'int':'integer',
                       'float':'real'}
     commit_threshold = 10000
-    
+
     def __init__(self, cmd_args):
         self.annotators = []
         self.ipaths = {}
@@ -34,7 +35,7 @@ class Aggregator (object):
         self.base_dir = os.path.abspath(__file__)
         self.parse_cmd_args(cmd_args)
         self._setup_logger()
-        
+
     def parse_cmd_args(self, cmd_args):
         parser = argparse.ArgumentParser()
         parser.add_argument('path',
@@ -75,64 +76,48 @@ class Aggregator (object):
         if not(os.path.exists(self.output_dir)):
             os.makedirs(self.output_dir)
         self.delete = parsed.delete
-    
+
     def _setup_logger(self):
         self.logger = logging.getLogger('cravat.aggregator')
         self.logger.info('level: {0}'.format(self.level))
         self.logger.info('input directory: %s' %self.input_dir)
-        
+        self.error_logger = logging.getLogger('error.aggregator')
+        self.unique_excs = []
+
     def run(self):
-        try:
-            self._setup()
-            if self.input_base_fname == None:
-                return
-            start_time = time.time()
-            self.logger.info('started: %s' %\
-                             time.asctime(time.localtime(start_time)))
-            self.dbconn.commit()
-            self.cursor.execute('pragma synchronous=0;')
-            self.cursor.execute('pragma journal_mode=WAL;')
-            n = 0
-            # Prepare insert statement
-            col_names = self.base_reader.get_column_names()
-            q = 'insert into {table} ({columns}) values ({placeholders});'.format(
-                table = self.table_name,
-                columns = ', '.join([self.base_prefix+'__'+c for c in col_names]),
-                placeholders = ', '.join(['?']*len(col_names))
-            )
-            # Insert rows
-            for _, rd in self.base_reader.loop_data():
+        self._setup()
+        if self.input_base_fname == None:
+            return
+        start_time = time.time()
+        self.logger.info('started: %s' %\
+                         time.asctime(time.localtime(start_time)))
+        self.dbconn.commit()
+        self.cursor.execute('pragma synchronous=0;')
+        self.cursor.execute('pragma journal_mode=WAL;')
+        n = 0
+        # Prepare insert statement
+        col_names = self.base_reader.get_column_names()
+        q = 'insert into {table} ({columns}) values ({placeholders});'.format(
+            table = self.table_name,
+            columns = ', '.join([self.base_prefix+'__'+c for c in col_names]),
+            placeholders = ', '.join(['?']*len(col_names))
+        )
+        # Insert rows
+        for lnum, line, rd in self.base_reader.loop_data():
+            try:
                 n += 1
                 vals = [rd.get(c) for c in col_names]
                 self.cursor.execute(q, vals)
-                # names = list(rd.keys())
-                # values = []
-                # for name in names:
-                #     val = rd[name]
-                #     valtype = type(val)
-                #     if valtype is str:
-                #         val = '\'' + val + '\''
-                #     else:
-                #         if val == None:
-                #             val = '\'\''
-                #         else:
-                #             val = str(val)
-                #     values.append(val)
-                # q = 'insert into %s (%s) values (%s);' \
-                #     %(self.table_name, 
-                #       ', '.join([self.base_prefix + '__' + v for v in names]), 
-                #       ', '.join(values))
-                # self.cursor.execute(q)
                 if n%self.commit_threshold == 0:
                     self.dbconn.commit()
-            self.dbconn.commit()
-            for annot_name in self.annotators:
-                reader = self.readers[annot_name]
-                n = 0
-                for _, rd in reader.loop_data():
-                    if isinstance(rd, Exception):
-                        self.logger.info('Exception withh output by {}: {}'.format(annot_name, rd.args[0]))
-                        continue
+            except Exception as e:
+                self._log_runtime_error(lnum, line, e)
+        self.dbconn.commit()
+        for annot_name in self.annotators:
+            reader = self.readers[annot_name]
+            n = 0
+            for lnum, line, rd in reader.loop_data():
+                try:
                     n += 1
                     key_val = rd[self.key_name]
                     reader_col_names = [x for x in rd if x != self.key_name]
@@ -155,21 +140,18 @@ class Aggregator (object):
                     self.cursor.execute(q)
                     if n%self.commit_threshold == 0:
                         self.dbconn.commit()
-                self.dbconn.commit()
-            self.fill_categories()
-            self.cursor.execute('pragma synchronous=2;')
-            self.cursor.execute('pragma journal_mode=delete;')
-            end_time = time.time()
-            self.logger.info('finished: %s' %time.asctime(time.localtime(end_time)))
-            runtime = end_time - start_time
-            self.logger.info('runtime: %s' %round(runtime, 3))
-            self._cleanup()
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            self.logger.exception(e)
-            exit(-1)
-            
+                except Exception as e:
+                    self._log_runtime_error(lnum, line, e)
+            self.dbconn.commit()
+        self.fill_categories()
+        self.cursor.execute('pragma synchronous=2;')
+        self.cursor.execute('pragma journal_mode=delete;')
+        end_time = time.time()
+        self.logger.info('finished: %s' %time.asctime(time.localtime(end_time)))
+        runtime = end_time - start_time
+        self.logger.info('runtime: %s' %round(runtime, 3))
+        self._cleanup()
+
     def make_reportsub (self):
         if self.level in ['variant', 'gene']:
             q = 'select * from {}_reportsub'.format(self.level)
@@ -225,7 +207,7 @@ class Aggregator (object):
             col_cats_str = self.do_reportsub_col_cats_str(col_name, col_cats_str)
             self.write_col_cats_str(col_name, col_cats_str)
         self.dbconn.commit()
-    
+
     def write_col_cats_str (self, col_name, col_cats_str):
         q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
             self.level,
@@ -236,7 +218,7 @@ class Aggregator (object):
     def _cleanup(self):
         self.cursor.close()
         self.dbconn.close()
-    
+
     def set_input_base_fname (self):
         crv_fname = self.name + '.crv'
         crx_fname = self.name + '.crx'
@@ -255,10 +237,10 @@ class Aggregator (object):
                 self.input_base_fname = fname
             elif self.level == 'mapping' and fname == crm_fname:
                 self.input_base_fname = fname
-    
+
     def set_output_base_fname (self):
         self.output_base_fname = self.name
-        
+
     def _setup(self):
         if self.level == 'variant':
             self.key_name = 'uid'
@@ -290,7 +272,7 @@ class Aggregator (object):
         self.base_fpath = os.path.join(self.input_dir, self.input_base_fname)
         self._setup_io()
         self._setup_table()
-  
+
     def _setup_table(self):
         columns = []
         unique_names = set([])
@@ -410,6 +392,16 @@ class Aggregator (object):
             os.remove(self.db_path)
         self.dbconn = sqlite3.connect(self.db_path)
         self.cursor = self.dbconn.cursor()
+
+    def _log_runtime_error(self, ln, line, e):
+        err_str = traceback.format_exc().rstrip()
+        if ln is not None and line is not None:
+            if err_str not in self.unique_excs:
+                self.unique_excs.append(err_str)
+                self.logger.error(err_str)
+            self.error_logger.error('\nLINE:{:d}\nINPUT:{}\nERROR:{}\n#'.format(ln, line[:-1], str(e)))
+        else:
+            self.logger.error(err_str)
 
 if __name__ == '__main__':
     aggregator = Aggregator(sys.argv)

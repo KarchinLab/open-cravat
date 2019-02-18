@@ -211,7 +211,8 @@ class Cravat (object):
             self.logger.info('conf file: {}'.format(self.run_conf_path))
         if self.towritestatusjson:
             self.write_initial_status_json()
-    
+        self.unique_logs = {}
+
     def write_initial_status_json (self):
         status_fname = '{}.status.json'.format(self.run_name)
         self.status_fpath = os.path.join(self.output_dir, status_fname)
@@ -241,6 +242,14 @@ class Cravat (object):
         formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
         self.log_handler.setFormatter(formatter)
         self.logger.addHandler(self.log_handler)
+        # individual input line error log
+        self.error_logger = logging.getLogger('error')
+        self.error_logger.setLevel('INFO')
+        self.detail_log_path = os.path.join(self.output_dir, self.run_name + '.err')
+        self.detail_log_handler = logging.FileHandler(self.detail_log_path, mode=self.logmode)
+        formatter = logging.Formatter('SOURCE:%(name)-20s %(message)s')
+        self.detail_log_handler.setFormatter(formatter)
+        self.error_logger.addHandler(self.detail_log_handler)
 
     def close_logger (self):
         logging.shutdown()
@@ -252,11 +261,12 @@ class Cravat (object):
         cu.update_status_json(self.status_fpath, 'status', status)
 
     def main (self):
-        if self.towritestatusjson:
-            self.update_status('Started')
-        self.set_and_check_input_files()
-        self.make_module_run_list()
+        no_problem_in_run = True
         try:
+            if self.towritestatusjson:
+                self.update_status('Started')
+            self.set_and_check_input_files()
+            self.make_module_run_list()
             if self.args.sc == False and \
                 (
                     self.runlevel <= self.runlevels['converter'] or
@@ -316,65 +326,41 @@ class Cravat (object):
                     self.args.rr
                 ):
                 print('Running reporter...')
-                self.run_reporter()
+                no_problem_in_run = self.run_reporter()
             if self.towritestatusjson:
                 self.update_status('Finished')
-        except LiftoverFailure:
+        except Exception as e:
+            self.handle_exception(e)
+            no_problem_in_run = False
+        finally:
             end_time = time.time()
-            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
+            display_time = time.asctime(time.localtime(end_time))
             runtime = end_time - self.start_time
-            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
-            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
-            print('Check {}'.format(self.log_path))
-            if self.towritestatusjson:
-                self.update_status('Error')
+            if no_problem_in_run:
+                self.logger.info('finished: {0}'.format(display_time))
+                self.logger.info('runtime: {0:0.3f}s'.format(runtime))
+                print('Finished normally. Runtime: {0:0.3f}s'.format(runtime))
+            else:
+                self.logger.info('finished with an exception: {0}'.format(display_time))
+                self.logger.info('runtime: {0:0.3f}s'.format(runtime))
+                print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+                print('Check {}'.format(self.log_path))
+                if self.towritestatusjson:
+                    self.update_status('Error')
             self.close_logger()
-            return
-        except InvalidData:
-            end_time = time.time()
-            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
-            runtime = end_time - self.start_time
-            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
-            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
-            print('Check {}'.format(self.log_path))
-            if self.towritestatusjson:
-                self.update_status('Error')
-            self.close_logger()
-            return
-        except ExpectedException as e:
-            self.logger.error('Error:')
+
+
+    def handle_exception (self, e):
+        exc_str = traceback.format_exc()
+        exc_class = e.__class__
+        if exc_class == LiftoverFailure or exc_class == InvalidData:
+            pass
+        elif exc_class == ExpectedException:
+            self.logger.exception('An expected exception occurred.')
             self.logger.error(e)
-            end_time = time.time()
-            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
-            runtime = end_time - self.start_time
-            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
-            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
-            print('Check {}'.format(self.log_path))
-            if self.towritestatusjson:
-                self.update_status('Error')
-            self.close_logger()
-            return
-        except:
-            self.logger.exception('<Exception>')
-            if self.towritestatusjson:
-                self.update_status('Error')
-            traceback.print_exc()
-            end_time = time.time()
-            self.logger.info('finished with an exception: {0}'.format(time.asctime(time.localtime(end_time))))
-            runtime = end_time - self.start_time
-            self.logger.info('runtime: {0:0.3f}s'.format(runtime))
-            print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
-            print('Check {}'.format(self.log_path))
-            if self.towritestatusjson:
-                self.update_status('Error')
-            self.close_logger()
-            return
-        end_time = time.time()
-        self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
-        runtime = end_time - self.start_time
-        self.logger.info('runtime: {0:0.3f}s'.format(runtime))
-        print('Finished normally. Runtime: {0:0.3f}s'.format(runtime))
-        self.close_logger()
+        else:
+            self.logger.exception('An unexpected exception occurred.')
+            print(exc_str)
 
     def make_args_namespace(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
@@ -632,21 +618,29 @@ class Cravat (object):
             module_names = [v + 'reporter' for v in self.reports]
         else:
             module_names = [self.conf.get_cravat_conf()['reporter']]
+        all_reporters_ran_well = True
         for module_name in module_names:
-            module = au.get_local_module_info(module_name)
-            self.announce_module(module)
-            cmd = [module.script_path, 
-                   '-s', os.path.join(self.output_dir, self.run_name),
-                   os.path.join(self.output_dir, self.run_name + '.sqlite'),
-                   '-c', self.run_conf_path]
-            if self.verbose:
-                print(' '.join(cmd))
-            reporter_cls = util.load_class('Reporter', module.script_path)
-            reporter = reporter_cls(cmd)
-            stime = time.time()
-            reporter.run()
-            rtime = time.time() - stime
-            print('finished in {0:.3f}s'.format(rtime))
+            try:
+                module = au.get_local_module_info(module_name)
+                self.announce_module(module)
+                cmd = [module.script_path, 
+                       '-s', os.path.join(self.output_dir, self.run_name),
+                       os.path.join(self.output_dir, self.run_name + '.sqlite'),
+                       '-c', self.run_conf_path,
+                       '--module-name', module_name]
+                if self.verbose:
+                    print(' '.join(cmd))
+                reporter_cls = util.load_class('Reporter', module.script_path)
+                reporter = reporter_cls(cmd)
+                stime = time.time()
+                reporter.run()
+                rtime = time.time() - stime
+                print('finished in {0:.3f}s'.format(rtime))
+            except Exception as e:
+                traceback.print_exc()
+                self.logger.exception(e)
+                all_reporters_ran_well = False
+        return all_reporters_ran_well
 
     def run_annotators_mp (self):
         default_workers = mp.cpu_count() - 1
@@ -659,7 +653,7 @@ class Cravat (object):
                 if self.args.mp >= 1 and self.args.mp <= default_workers:
                     num_workers = self.args.mp
             except:
-                pass
+                self.logger.exception('error handling mp argument:')
         if self.has_secondary_input:
             num_workers = 1
         self.logger.info('num_workers: {}'.format(num_workers))
@@ -708,8 +702,13 @@ class Cravat (object):
         ql = QueueListener(annot_log_queue, *self.logger.handlers)
         with mp.Pool(processes=num_workers) as pool:
             ql.start()
-            pool.starmap(run_annotator_mp, pool_args)
+            results = pool.starmap_async(run_annotator_mp, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
             ql.stop()
+        try:
+            for result in results.get():
+                pass
+        except Exception as e:
+            self.handle_exception(e)
 
     def table_exists (self, cursor, table):
         sql = 'select name from sqlite_master where type="table" and ' +\

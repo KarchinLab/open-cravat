@@ -3,7 +3,6 @@ import os
 import time
 import traceback
 import argparse
-from .exceptions import ConfigurationError
 from .inout import CravatReader
 from .inout import CravatWriter
 from .inout import AllMappingsParser
@@ -15,6 +14,7 @@ from .constants import crg_def
 from .constants import all_mappings_col_name
 from .constants import mapping_parser_name
 from .exceptions import InvalidData
+from .exceptions import ConfigurationError
 import sqlite3
 import json
 
@@ -74,10 +74,11 @@ class BaseAnnotator(object):
             self._log_exception(e)
 
     def _log_exception(self, e, halt=True):
-        if self.logger:
-            self.logger.exception(e)
         if halt:
             raise e
+        else:
+            if self.logger:
+                self.logger.exception(e)
 
     def _verify_conf(self):
         try:
@@ -183,7 +184,7 @@ class BaseAnnotator(object):
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
             self.base_setup()
             last_status_update_time = time.time()
-            for lnum, input_data, secondary_data in self._get_input():
+            for lnum, line, input_data, secondary_data in self._get_input():
                 try:
                     if self.update_status_json_flag:
                         cur_time = time.time()
@@ -191,15 +192,9 @@ class BaseAnnotator(object):
                             self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
                             last_status_update_time = cur_time
                     if secondary_data == {}:
-                        try:
-                            output_dict = self.annotate(input_data)
-                        except sqlite3.OperationalError:
-                            output_dict = None
+                        output_dict = self.annotate(input_data)
                     else:
-                        try:
-                            output_dict = self.annotate(input_data, secondary_data)
-                        except sqlite3.OperationalError:
-                            output_dict = None
+                        output_dict = self.annotate(input_data, secondary_data)
                     # This enables summarizing without writing for now.
                     if output_dict == None:
                         continue
@@ -212,7 +207,7 @@ class BaseAnnotator(object):
                             output_dict[col_name] = ''
                     self.output_writer.write_data(output_dict)
                 except Exception as e:
-                    self._log_runtime_exception(lnum, input_data, e)
+                    self._log_runtime_exception(lnum, line, input_data, e)
 
             # This does summarizing.
             self.postprocess()
@@ -283,14 +278,13 @@ class BaseAnnotator(object):
             data[hugo] = out
         return data
 
-    def _log_runtime_exception (self, lnum, input_data, e):
+    def _log_runtime_exception (self, lnum, line, input_data, e):
         try:
-            error_classname = e.__class__.__name__
-            err_line = '\t'.join([str(input_data[self._id_col_name]),
-                                  error_classname,
-                                  str(e)])
-            #self.invalid_file.write(err_line + '\n')
-            self.logger.exception(e)
+            err_str = traceback.format_exc().rstrip()
+            if err_str not in self.unique_excs:
+                self.unique_excs.append(err_str)
+                self.logger.error(err_str)
+            self.error_logger.error('\n[{:d}]{}\n({})\n#'.format(lnum, line[:-1], str(e)))
         except Exception as e:
             self._log_exception(e, halt=False)
 
@@ -459,11 +453,13 @@ class BaseAnnotator(object):
             self.logger = logging.getLogger('cravat.' + self.annotator_name)
         except Exception as e:
             self._log_exception(e)
+        self.error_logger = logging.getLogger('error.' + self.annotator_name)
+        self.unique_excs = []
 
     # Gets the input dict from both the input file, and 
     # any depended annotators depended annotator feature not complete.
     def _get_input(self):
-        for lnum, reader_data in self.primary_input_reader.loop_data():
+        for lnum, line, reader_data in self.primary_input_reader.loop_data():
             try:
                 input_data = {}
                 for col_name in self.conf['input_columns']:
@@ -479,7 +475,7 @@ class BaseAnnotator(object):
                                                 ['primary']
                     input_key_data = input_data[input_key_col]
                     secondary_data[annotator_name] = fetcher.get(input_key_data)
-                yield lnum, input_data, secondary_data
+                yield lnum, line, input_data, secondary_data
             except Exception as e:
                 self._log_runtime_error(lnum, e)
                 continue
@@ -515,7 +511,7 @@ class SecondaryInputFetcher():
         self.load_input()
 
     def load_input(self):
-        for _, all_col_data in self.input_reader.loop_data():
+        for _, line, all_col_data in self.input_reader.loop_data():
             key_data = all_col_data[self.key_col]
             if key_data not in self.data: self.data[key_data] = []
             fetch_col_data = {}
