@@ -8,6 +8,7 @@ import zipfile
 from . import exceptions
 import json
 import pkg_resources
+from urllib.error import HTTPError
 
 class PathBuilder(object):
     """
@@ -157,7 +158,7 @@ def get_file_to_string(url):
         if r.status_code == 200:
             return r.text
         else:
-            raise RuntimeError('URL: %s responded with %d' %(url,r.status_code))
+            raise HTTPError(url,r.status_code,'',None,None)
     except:
         return ''
 

@@ -203,9 +203,16 @@ class ModuleInfoCache(object):
 
     def update_remote(self, force=False):
         if force or not(self._remote_fetched):
-            self._remote_url = self._store_path_builder.manifest()
+            if self._remote_url is None:
+                self._remote_url = self._store_path_builder.manifest()
+                manifest_str = su.get_file_to_string(self._remote_url)
+                # Current version may not have a manifest if it's a dev version
+                if not manifest_str:
+                    self._remote_url = self._store_path_builder.manifest_nover()
+                    manifest_str = su.get_file_to_string(self._remote_url)
+            else:
+                manifest_str = su.get_file_to_string(self._remote_url)
             self.remote = {}
-            manifest_str = su.get_file_to_string(self._remote_url)
             if manifest_str != '':
                 self.remote = yaml.load(manifest_str)
             self._remote_fetched = True
@@ -946,8 +953,6 @@ def get_download_counts ():
     counts = mic.download_counts
     return counts
 
-
-
 def get_install_deps (module_name, version=None, skip_installed=True):
     mic.update_remote()
     # If input module version not provided, set to highest
@@ -979,8 +984,6 @@ def get_install_deps (module_name, version=None, skip_installed=True):
         if highest_matching is not None:
             deps[req.name] = highest_matching
     return deps
-
-    
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
