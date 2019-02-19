@@ -454,7 +454,7 @@ def get_colinfo (dbpath, confpath, filterstring):
         reporter_name, 
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
-    args = ['', dbpath]
+    args = ['', dbpath, '--module-name', reporter_name]
     if confpath != None:
         args.extend(['-c', confpath])
     if filterstring != None:

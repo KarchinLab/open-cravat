@@ -5,6 +5,11 @@ from cravat.config_loader import ConfigLoader
 import cravat.constants as constants
 
 class Reporter (CravatReport):
+    def __init__ (self, cmd_args):
+        self.no_log = True
+        self.no_status_update = True
+        super().__init__(cmd_args)
+
     def setup (self):
         self.data = {}
         self.keep_json_all_mapping = True

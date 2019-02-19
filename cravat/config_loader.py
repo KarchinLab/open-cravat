@@ -32,7 +32,8 @@ class ConfigLoader():
     
     def _load_module_conf(self, module_name, build_all=True):
         module_info = au.get_local_module_info(module_name)
-        self._modules[module_name] = au.load_yml_conf(module_info.conf_path)
+        if module_info is not None:
+            self._modules[module_name] = au.load_yml_conf(module_info.conf_path)
         if build_all:
             self._build_all()
             
@@ -81,7 +82,10 @@ class ConfigLoader():
     def get_module_conf(self, module_name):
         if module_name not in self._modules:
             self._load_module_conf(module_name)
-        return self._all['modules'][module_name]
+        if 'modules' in self._all and module_name in self._all['modules']:
+            return self._all['modules'][module_name]
+        else:
+            return None
     
     def get_cravat_conf(self):
         return self._all['cravat']

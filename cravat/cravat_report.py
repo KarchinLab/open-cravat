@@ -28,9 +28,12 @@ class CravatReport:
         self._setup_logger()
         self.connect_db()
         self.load_filter()
-        self.load_status_json()
+        if self.module_conf is not None:
+            self.load_status_json()
 
     def _setup_logger(self):
+        if hasattr(self, 'no_log') and self.no_log:
+            return
         try:
             self.logger = logging.getLogger('cravat.' + self.module_name)
         except Exception as e:
@@ -118,8 +121,10 @@ class CravatReport:
 
     def run (self, tab='all'):
         start_time = time.time()
-        self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
-        self.update_status_json('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
+        if not (hasattr(self, 'no_log') and self.no_log):
+            self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
+        if self.module_conf is not None:
+            self.update_status_json('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
         self.setup()
         if tab == 'all':
             for level in self.cf.get_result_levels():
@@ -136,11 +141,13 @@ class CravatReport:
             else:
                 self.make_col_info(tab)
             self.run_level(tab)
-        self.update_status_json('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
+        if self.module_conf is not None:
+            self.update_status_json('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
         end_time = time.time()
-        self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
-        run_time = end_time - start_time
-        self.logger.info('runtime: {0:0.3f}'.format(run_time))
+        if not (hasattr(self, 'no_log') and self.no_log):
+            self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
+            run_time = end_time - start_time
+            self.logger.info('runtime: {0:0.3f}'.format(run_time))
         ret = self.end()
         return ret
 
@@ -404,7 +411,10 @@ class CravatReport:
         self.confpath = parsed_args.confpath
         self.conf = ConfigLoader(job_conf_path=self.confpath)
         self.module_name = parsed_args.module_name
-        self.module_conf = self.conf.get_module_conf(self.module_name)
+        if self.conf is not None:
+            self.module_conf = self.conf.get_module_conf(self.module_name)
+        else:
+            self.module_conf = None
         self.report_types = parsed_args.reporttypes
         self.output_basename = os.path.basename(self.dbpath).rstrip('.sqlite')
         self.output_dir = os.path.dirname(self.dbpath)
