@@ -185,11 +185,6 @@ function populateSummaryWidgetDiv () {
 	}
 	var widgetNames = Object.keys(widgetGenerators);
 	if (widgetNames.length == 0) {
-		/*
-		var el = getEl('p');
-		el.textContent = 'No summary wigdet';
-		addEl(outerDiv, el);
-		*/
 		return;
 	} else {
 		var orderNums = Object.keys(detailWidgetOrder[tabName]);
@@ -256,6 +251,11 @@ function populateSummaryWidgetDiv () {
 	$outerDiv.packery('bindUIDraggableEvents', $widgets);
 	var resizeTimeout;
 	$widgets.on('resize', function (evt, ui) {
+        var widgetName = evt.target.getAttribute('widgetkey');
+        var generator = widgetGenerators[widgetName][currentTab];
+        if (generator['onresize'] != undefined) {
+            generator['onresize']();
+        }
 		if (resizeTimeout) {
 			clearTimeout(resizeTimeout);
 		}
@@ -668,7 +668,7 @@ function drawSummaryWidget (widgetName) {
 			} else {
                 try {
                     if (generator['init'] != undefined) {
-                        generator['init']();
+                        generator['init'](data);
                     }
                     if (generator['shoulddraw'] != undefined) {
                         shouldDraw = generator['shoulddraw']();
@@ -682,6 +682,7 @@ function drawSummaryWidget (widgetName) {
                         var button = document.getElementById(
                             'widgettogglecheckbox_' + currentTab + '_' + widgetName);
                         button.disabled = 'disabled';
+                        button.nextSibling.style.color = 'gray';
                     }
                 } catch (e) {
                     console.log(e);
@@ -720,19 +721,6 @@ function setupEvents (tabName) {
     $('.ui-icon-circle-triangle-n').on('click', function(){
 	    minimizeOrMaxmimizeTheDetailsDiv(this, 'minimize');
     });
-
-    /*
-   $(document).keydown(function(button){
-	   switch(button.which){
-	   case 27:
-		   if (tabName == currentTab){
-			   if (document.getElementById("splashMupitBckRound_" + tabName) != null){
-				   eraseMuPITPopUp(currentTab);
-			   }
-		   }
-	   }
-   });
-   */
 }
 
 function placeDragNSBar (tabName) {

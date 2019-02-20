@@ -284,7 +284,7 @@ async def connect_websocket (request):
         last_update_time = install_state['update_time']
     if install_ws != None:
         await install_ws.close()
-    install_ws = web.WebSocketResponse(timeout=60*60*60*96)
+    install_ws = web.WebSocketResponse(timeout=60*60*24*365)
     await install_ws.prepare(request)
     while True:
         await asyncio.sleep(1)
