@@ -686,8 +686,9 @@ function showHideWidget (tabName, widgetName, state, repack) {
 		widget.style.display = 'block';
         if (currentTab == 'info') {
             var dcd = widget.getElementsByClassName('detailcontentdiv')[0];
+            console.log('dcd=', dcd);
             if (dcd.innerHTML == '') {
-                    drawSummaryWidget(widgetName);
+                drawSummaryWidget(widgetName);
             }
         }
 	}
@@ -711,6 +712,7 @@ function drawSummaryWidget (widgetName) {
                     if (generator['init'] != undefined) {
                         generator['init'](data);
                     }
+                    var shouldDraw = false;
                     if (generator['shoulddraw'] != undefined) {
                         shouldDraw = generator['shoulddraw']();
                     } else {
@@ -719,12 +721,14 @@ function drawSummaryWidget (widgetName) {
                     if (shouldDraw) {
                         generator['function'](widgetContentDiv, data);
                     } else {
-                        executeWidgetClose(widgetName);
-                        var button = document.getElementById(
-                            'widgettogglecheckbox_' + currentTab + '_' + widgetName);
-                        button.disabled = 'disabled';
-                        button.nextSibling.style.color = 'gray';
-                        onClickDetailRedraw();
+                        setTimeout(function () {
+                            executeWidgetClose(widgetName);
+                            var button = document.getElementById(
+                                'widgettogglecheckbox_' + currentTab + '_' + widgetName);
+                            button.disabled = 'disabled';
+                            button.nextSibling.style.color = 'gray';
+                            onClickDetailRedraw();
+                        }, 500);
                     }
                 } catch (e) {
                     console.log(e);
@@ -736,6 +740,7 @@ function drawSummaryWidget (widgetName) {
             if (generator['init'] != undefined) {
                 generator['init']();
             }
+            var shouldDraw = false;
             if (generator['shoulddraw'] != undefined) {
                 shouldDraw = generator['shoulddraw']();
             } else {
@@ -744,11 +749,14 @@ function drawSummaryWidget (widgetName) {
             if (shouldDraw) {
                 generator['function'](widgetContentDiv);
             } else {
-                executeWidgetClose(widgetName);
-                var button = document.getElementById(
-                    'widgettogglecheckbox_' + currentTab + '_' + widgetName);
-                button.disabled = 'disabled';
-                onClickDetailRedraw();
+                setTimeout(function () {
+                    executeWidgetClose(widgetName);
+                    var button = document.getElementById(
+                        'widgettogglecheckbox_' + currentTab + '_' + widgetName);
+                    button.disabled = 'disabled';
+                    button.nextSibling.style.color = 'gray';
+                    onClickDetailRedraw();
+                }, 500);
             }
         } catch (e) {
             console.log(e);
