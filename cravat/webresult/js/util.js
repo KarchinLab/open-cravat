@@ -733,10 +733,12 @@ function deleteLayoutSettingAs (evt) {
     div.style.display = 'block';
     evt.stopPropagation();
 	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+        /*
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
             response.splice(quickSaveNameIdx, 1);
         }
+        */
     	savedLayoutNames = response;
     	for (var i = 0; i < savedLayoutNames.length; i++) {
     		var name = savedLayoutNames[i];

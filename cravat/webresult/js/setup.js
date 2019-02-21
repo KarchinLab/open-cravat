@@ -724,6 +724,7 @@ function drawSummaryWidget (widgetName) {
                             'widgettogglecheckbox_' + currentTab + '_' + widgetName);
                         button.disabled = 'disabled';
                         button.nextSibling.style.color = 'gray';
+                        onClickDetailRedraw();
                     }
                 } catch (e) {
                     console.log(e);
@@ -747,6 +748,7 @@ function drawSummaryWidget (widgetName) {
                 var button = document.getElementById(
                     'widgettogglecheckbox_' + currentTab + '_' + widgetName);
                 button.disabled = 'disabled';
+                onClickDetailRedraw();
             }
         } catch (e) {
             console.log(e);

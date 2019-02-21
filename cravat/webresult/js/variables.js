@@ -67,3 +67,6 @@ var windowWidth = 0;
 var windowHeight = 0;
 
 var tableDetailDivSizes = {};
+
+var showcaseWidgets = {'info': ['sosamplesummary', 'ndexchasmplussummary', 'ndexvestsummary', 'sosummary', 'gosummary', 'circossummary'], 'variant': ['base'], 'gene': ['base']};
+

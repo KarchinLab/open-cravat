@@ -468,6 +468,8 @@ function firstLoadData () {
                         for (var k = 0; k < widgetNames.length; k++) {
                             var widgetName = widgetNames[k];
                             var widgetTabs = Object.keys(widgetGenerators[widgetName]);
+                            var req = infomgr.widgetReq[widgetName];
+                            var generator = widgetGenerators[widgetName];
                             for (var j = 0; j < widgetTabs.length; j++) {
                                 var widgetTab = widgetTabs[j];
                                 var dh = widgetGenerators[widgetName][widgetTab]['default_hidden'];
@@ -491,6 +493,43 @@ function firstLoadData () {
                                         }
                                     }
                                 }
+                                if (usedAnnotators[widgetTab].includes(req) && 
+                                        generator[widgetTab] != undefined) {
+                                    var len = Object.keys(detailWidgetOrder[widgetTab]).length;
+                                    detailWidgetOrder[widgetTab][len] = widgetName;
+                                }
+                            }
+                        }
+                        var widgetTabs = Object.keys(detailWidgetOrder);
+                        for (var k = 0; k < widgetTabs.length; k++) {
+                            var widgetTab = widgetTabs[k];
+                            if (showcaseWidgets[widgetTab] == undefined) {
+                                continue;
+                            }
+                            var poss = Object.keys(detailWidgetOrder[widgetTab]);
+                            for (var i1 = 0; i1 < poss.length - 1; i1++) {
+                                var pos1 = poss[i1];
+                                for (var i2 = i1 + 1; i2 < poss.length; i2++) {
+                                    var pos2 = poss[i2];
+                                    var widgetName1 = detailWidgetOrder[widgetTab][pos1];
+                                    var showcaseIdx1 = showcaseWidgets[widgetTab].indexOf(widgetName1);
+                                    var widgetName2 = detailWidgetOrder[widgetTab][pos2];
+                                    var showcaseIdx2 = showcaseWidgets[widgetTab].indexOf(widgetName2);
+                                    var changeFlag = false;
+                                    if (showcaseIdx2 != -1) {
+                                        if (showcaseIdx1 != -1) {
+                                            if (showcaseIdx2 < showcaseIdx1) {
+                                                changeFlag = true;
+                                            }
+                                        } else {
+                                            changeFlag = true;
+                                        }
+                                    }
+                                    if (changeFlag) {
+                                        detailWidgetOrder[widgetTab][pos1] = widgetName2;
+                                        detailWidgetOrder[widgetTab][pos2] = widgetName1;
+                                    }
+                                }
                             }
                         }
 	    				setupTab('info');
@@ -501,17 +540,6 @@ function firstLoadData () {
 	        			}
 	    			}
 	    		});
-	    		var requiredAnnotator = widgets[i]['required_annotator'];
-	    		if (usedAnnotators['variant'].includes(requiredAnnotator)) {
-	    			detailWidgetOrder['variant'][Object.keys(detailWidgetOrder['variant']).length] = widgetName;
-	    		}
-	    		if (usedAnnotators['gene'] && usedAnnotators['gene'].includes(requiredAnnotator)) {
-	    			detailWidgetOrder['gene'][Object.keys(detailWidgetOrder['gene']).length] = widgetName;
-	    		}
-	    		if (((usedAnnotators['variant'] && usedAnnotators['variant'].includes(requiredAnnotator)) || 
-	    			(usedAnnotators['gene'] && usedAnnotators['gene'].includes(requiredAnnotator)))) {
-	    			detailWidgetOrder['info'][Object.keys(detailWidgetOrder['info']).length] = widgetName;
-	    		}
 	    	}
 	    });
 	}
