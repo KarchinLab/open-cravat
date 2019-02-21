@@ -12,7 +12,6 @@ base_modules:
 - hg38
 - wgbase
 - wghg19
-- wgigv
 - wgncrna
 - wglollipop
 - wgndex
