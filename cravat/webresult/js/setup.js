@@ -131,6 +131,7 @@ function makeInfoTab (rightDiv) {
 	var infoDiv = getEl('fieldset');
 	infoDiv.id = 'info_div';
 	infoDiv.style.display = 'inline-block';
+    infoDiv.style.width = 'calc(100% - 24px)';
 	addEl(rightContentDiv, infoDiv);
 
 	// Filter
@@ -140,6 +141,7 @@ function makeInfoTab (rightDiv) {
 	// Widget Notice
 	var wgNoticeDiv = getEl('fieldset');
 	wgNoticeDiv.id = 'wgnoticediv';
+	wgNoticeDiv.className = 'detailContent';
     wgNoticeDiv.style.display = 'none';
 	addEl(rightContentDiv, wgNoticeDiv);
     if (Object.keys(missingWidgets).length == 0) {
@@ -440,15 +442,34 @@ function populateWgNoticeDiv (noWgAnnotModules) {
     emptyElement(wgNoticeDiv);
 	var legend = getEl('legend');
 	legend.className = 'section_header';
-	addEl(legend, getTn('Missing Widgets'));
+	addEl(legend, getTn('Missing Widgets\xa0'));
+    var btn = getEl('span');
+    btn.textContent = '\u2a53';
+    btn.style.cursor = 'pointer';
+    btn.addEventListener('click', function (evt) {
+        var btn = evt.target;
+        var contentDiv = btn.parentElement.nextSibling;
+        var display = contentDiv.style.display;
+        var btnText = null;
+        if (display == 'none') {
+            display = 'block';
+            btnText = '\u2a53';
+        } else {
+            display = 'none';
+            btnText = '\u2a54';
+        }
+        contentDiv.style.display = display;
+        btn.textContent = btnText;
+    });
+    addEl(legend, btn);
 	addEl(wgNoticeDiv, legend);
-	wgNoticeDiv.className = 'detailContent';
+    var contentDiv = getEl('div');
 	var msg = 'Your system does not have viwer widgets for the following annotator results are not installed in the system. ';
 	msg += 'If you want to install viewer widgets for them, click the buttons for the annotators.';
 	var span = getEl('span');
-	addEl(wgNoticeDiv, addEl(span, getTn(msg)));
-	addEl(wgNoticeDiv, getEl('br'));
-	addEl(wgNoticeDiv, getEl('br'));
+	addEl(contentDiv, addEl(span, getTn(msg)));
+	addEl(contentDiv, getEl('br'));
+	addEl(contentDiv, getEl('br'));
 	var div = getEl('div');
 	var moduleKeys = Object.keys(noWgAnnotModules);
 	for (var i = 0; i < moduleKeys.length; i++) {
@@ -464,7 +485,8 @@ function populateWgNoticeDiv (noWgAnnotModules) {
         });
 		addEl(div, button);
 	}
-	addEl(wgNoticeDiv, div);
+	addEl(contentDiv, div);
+    addEl(wgNoticeDiv, contentDiv);
 }
 
 function installWidgetsForModule (moduleKey) {
@@ -475,10 +497,29 @@ function installWidgetsForModule (moduleKey) {
 
 function populateInfoDiv (infoDiv) {
 	// Title
-	var span = getEl('legend');
-	span.className = 'section_header';
-	addEl(span, getTn('Result Information'));
-	addEl(infoDiv, span);
+	var legend = getEl('legend');
+	legend.className = 'section_header';
+	addEl(legend, getTn('Result Information\xa0'));
+    var btn = getEl('span');
+    btn.textContent = '\u2a53';
+    btn.style.cursor = 'pointer';
+    btn.addEventListener('click', function (evt) {
+        var btn = evt.target;
+        var contentDiv = btn.parentElement.nextSibling;
+        var display = contentDiv.style.display;
+        var btnText = null;
+        if (display == 'none') {
+            display = 'block';
+            btnText = '\u2a53';
+        } else {
+            display = 'none';
+            btnText = '\u2a54';
+        }
+        contentDiv.style.display = display;
+        btn.textContent = btnText;
+    });
+    addEl(legend, btn);
+	addEl(infoDiv, legend);
 
 	var keys = Object.keys(infomgr.jobinfo);
 	var table = getEl('table');
