@@ -7,6 +7,8 @@ import hashlib
 import zipfile
 from . import exceptions
 import json
+import pkg_resources
+from urllib.error import HTTPError
 
 class PathBuilder(object):
     """
@@ -59,8 +61,17 @@ class PathBuilder(object):
     def module_logo (self, module_name, version):
         return self._build_path(self.module_version_dir(module_name, version), 'logo.png')
 
-    def manifest(self):
-        return self._build_path(self.base(), 'manifest.yml')
+    def module_meta (self, module_name, version):
+        return self._build_path(self.module_version_dir(module_name, version), 'meta.yml')
+
+    def manifest(self, version=None):
+        if version is None:
+            version = pkg_resources.get_distribution('open-cravat').version
+        fname = 'manifest-{}.yml'.format(version)
+        return self._build_path(self.base(), fname)
+    
+    def manifest_nover(self):
+        return self._build_path(self.base(),'manifest.yml')
     
     def download_counts(self):
         return self._build_path(self.base(), 'download-counts.yml')
@@ -147,7 +158,7 @@ def get_file_to_string(url):
         if r.status_code == 200:
             return r.text
         else:
-            raise RuntimeError('URL: %s responded with %d' %(url,r.status_code))
+            raise HTTPError(url,r.status_code,'',None,None)
     except:
         return ''
 
