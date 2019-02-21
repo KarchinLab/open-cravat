@@ -234,6 +234,12 @@ def main ():
                 selected_install[module_name] = args.version
             else:
                 continue
+        if args.include_private:
+            if args.version is None:
+                sys.exit('--include-private cannot be used without specifying a version using -v/--version')
+            for module_name in args.modules:
+                if au.module_exists_remote(module_name, version=args.version, include_private=True):
+                    selected_install[module_name] = args.version
         # Add dependencies of selected modules
         dep_install = {}
         if not args.skip_dependencies:
@@ -417,6 +423,9 @@ def main ():
     parser_install.add_argument('--skip-dependencies',
                                 action='store_true',
                                 help='Skip installing dependencies of selected modules')
+    parser_install.add_argument('--include-private',
+                                action='store_true',
+                                help='Include private modules when checking for module existence')
     parser_install.set_defaults(func=install_modules)
     
     # update
