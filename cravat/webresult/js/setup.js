@@ -435,7 +435,10 @@ function makeSampleMappingTab (tabName, rightDiv) {
 function populateWgNoticeDiv (noWgAnnotModules) {
 	var contentDiv = document.getElementById('missing-widgets-div');
 	if (Object.keys(noWgAnnotModules).length == 0) {
-		contentDiv.textContent = 'None';
+		var span = getEl('span');
+        span.className = 'detailContent';
+        span.textContent = 'None';
+        addEl(contentDiv, span);
 		return;
 	} else {
     }
