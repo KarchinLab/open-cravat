@@ -224,17 +224,34 @@ def main ():
     def install_modules(args):
         matching_names = au.search_remote(*args.modules)
         if len(matching_names) > 1 and args.version is not None:
-            print('WARNING: Version filter applied to all matching modules')
-        to_install = {}
+            sys.exit('Version filter cannot be applied to multiple modules')
+        selected_install = {}
         for module_name in matching_names:
             remote_info = au.get_remote_module_info(module_name)
             if args.version is None:
-                    to_install[module_name] = remote_info.latest_version
+                selected_install[module_name] = remote_info.latest_version
             elif remote_info.has_version(args.version):
-                    to_install[module_name] = args.version
+                selected_install[module_name] = args.version
             else:
                 continue
-        if len(to_install) > 0:
+        if args.include_private:
+            if args.version is None:
+                sys.exit('--include-private cannot be used without specifying a version using -v/--version')
+            for module_name in args.modules:
+                if au.module_exists_remote(module_name, version=args.version, include_private=True):
+                    selected_install[module_name] = args.version
+        # Add dependencies of selected modules
+        dep_install = {}
+        if not args.skip_dependencies:
+            for module_name, version in selected_install.items():
+                deps = au.get_install_deps(module_name, version=version)
+                dep_install.update(deps)
+        # If overlap between selected modules and dependency modules, use the dependency version
+        to_install = selected_install
+        to_install.update(dep_install)
+        if len(to_install) == 0:
+            print('No modules found')
+        else:
             print('Installing: {:}'\
                   .format(', '.join([name+':'+version for name, version in sorted(to_install.items())]))
                   )
@@ -255,8 +272,6 @@ def main ():
                                   force_data=args.force_data,
                                   stage_handler=stage_handler
                                   )
-        else:
-            print('No modules found')
                     
     def update_modules(args):
         if len(args.modules) == 0:
@@ -405,6 +420,12 @@ def main ():
     parser_install.add_argument('-y','--yes',
                                 action='store_true',
                                 help='Proceed without prompt')
+    parser_install.add_argument('--skip-dependencies',
+                                action='store_true',
+                                help='Skip installing dependencies of selected modules')
+    parser_install.add_argument('--include-private',
+                                action='store_true',
+                                help='Include private modules when checking for module existence')
     parser_install.set_defaults(func=install_modules)
     
     # update

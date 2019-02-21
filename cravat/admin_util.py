@@ -203,9 +203,16 @@ class ModuleInfoCache(object):
 
     def update_remote(self, force=False):
         if force or not(self._remote_fetched):
-            self._remote_url = self._store_path_builder.manifest()
+            if self._remote_url is None:
+                self._remote_url = self._store_path_builder.manifest()
+                manifest_str = su.get_file_to_string(self._remote_url)
+                # Current version may not have a manifest if it's a dev version
+                if not manifest_str:
+                    self._remote_url = self._store_path_builder.manifest_nover()
+                    manifest_str = su.get_file_to_string(self._remote_url)
+            else:
+                manifest_str = su.get_file_to_string(self._remote_url)
             self.remote = {}
-            manifest_str = su.get_file_to_string(self._remote_url)
             if manifest_str != '':
                 self.remote = yaml.load(manifest_str)
             self._remote_fetched = True
@@ -234,11 +241,6 @@ class ModuleInfoCache(object):
     
     def get_remote_config(self, module_name, version=None):
         self.update_remote()
-        # Resolve name and version
-        if module_name not in self.remote:
-            raise LookupError(module_name)
-        if version != None and version not in self.remote[module_name]['versions']:
-            raise LookupError(version)
         if version == None:
             version = self.remote[module_name]['latest_version']
         # Check cache
@@ -337,18 +339,27 @@ def module_exists_local(module_name):
     """
     return module_name in mic.local
 
-def module_exists_remote(module_name, version=None):
+def module_exists_remote(module_name, version=None, include_private=False):
     """
     Returns true if a module (optionally versioned) exists in remote
     """
     mic.update_remote()
+    found = False
     if module_name in mic.remote:
-        if version is not None:
-            return version in mic.remote[module_name]['versions']
+        if version is None:
+            found = True
         else:
-            return True
-    else:
-        return False
+            found = version in mic.remote[module_name]['versions']
+    if include_private and not found:
+        sys_conf = get_system_conf()
+        path_builder = su.PathBuilder(sys_conf['store_url'], 'url')
+        if version is None:
+            check_url = path_builder.module_dir(module_name)
+        else:
+            check_url = path_builder.module_version_dir(module_name, version)
+        r = requests.get(check_url)
+        found = r.status_code != 404 and r.status_code < 500 
+    return found
 
 def get_remote_latest_version(module_name):
     """
@@ -501,11 +512,11 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         sys_conf = get_system_conf()
         store_url = sys_conf['store_url']
         store_path_builder = su.PathBuilder(store_url,'url')
-        remote_data_version = get_remote_data_version(module_name, version=version)
+        remote_data_version = get_remote_data_version(module_name, version)
         if module_name in list_local():
             local_info = get_local_module_info(module_name)
             if local_info.has_data:
-                local_data_version = get_remote_data_version(module_name, version=local_info.version)
+                local_data_version = get_remote_data_version(module_name, local_info.version)
             else:
                 local_data_version = None
         else:
@@ -513,7 +524,12 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         code_url = store_path_builder.module_code(module_name, version)
         zipfile_fname = module_name + '.zip'
         remote_info = get_remote_module_info(module_name)
-        module_type = remote_info.type
+        if remote_info is not None:
+            module_type = remote_info.type
+        else:
+            # Private module. Fallback to remote config.
+            remote_config = mic.get_remote_config(module_name, version)
+            module_type = remote_config['type']
         module_dir = os.path.join(modules_dir, module_type+'s', module_name)
         if not(os.path.isdir(module_dir)):
             os.makedirs(module_dir)
@@ -543,17 +559,21 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             data_path = os.path.join(module_dir, data_fname)
             stage_handler.stage_start('download_data')
             r = su.stream_to_file(data_url, data_path, stage_handler=stage_handler.stage_progress, **kwargs)
-            if r.status_code != 200:
+            if r.status_code == 200:
+                stage_handler.stage_start('extract_data')
+                zf = zipfile.ZipFile(data_path)
+                zf.extractall(module_dir)
+                zf.close()
+                stage_handler.stage_start('verify_data')
+                data_manifest_url = store_path_builder.module_data_manifest(module_name, remote_data_version)
+                data_manifest = yaml.load(su.get_file_to_string(data_manifest_url))
+                su.verify_against_manifest(module_dir, data_manifest)
+                os.remove(data_path)
+            elif r.status_code == 404:
+                # Probably a private module that does not have data
+                pass
+            else:
                 raise(requests.HTTPError(r))
-            stage_handler.stage_start('extract_data')
-            zf = zipfile.ZipFile(data_path)
-            zf.extractall(module_dir)
-            zf.close()
-            stage_handler.stage_start('verify_data')
-            data_manifest_url = store_path_builder.module_data_manifest(module_name, remote_data_version)
-            data_manifest = yaml.load(su.get_file_to_string(data_manifest_url))
-            su.verify_against_manifest(module_dir, data_manifest)
-            os.remove(data_path)
         mic.update_local()
         stage_handler.stage_start('finish')
         if module_name.startswith('wg') == False:
@@ -570,11 +590,20 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             raise
         raise
 
-def get_remote_data_version(module_name, version=None):
+def get_remote_data_version(module_name, version):
+    """
+    Get the data version to install for a module.
+    Return the input version if module_name or version is not found.
+    """
     mic.update_remote()
-    if version is None:
-        version = get_remote_latest_version(module_name)
-    return mic.remote[module_name]['data_versions'].get(version)
+    try:
+        manifest_entry = mic.remote[module_name]
+    except KeyError:
+        return version
+    try:
+        return manifest_entry['data_versions'][version]
+    except KeyError:
+        return version
 
 def uninstall_module (module_name):
     """
@@ -911,17 +940,26 @@ def show_system_conf ():
     print('Configuration file path:', system_conf_info['path'])
     print(system_conf_info['content'])
 
-def get_latest_package_version():
+def get_package_versions():
     """
-    Return latest cravat version on pypi
+    Return available open-cravat versions from pypi, sorted asc
     """
     r = requests.get('https://pypi.org/pypi/open-cravat/json')
     if r.status_code == 200:
         d = json.loads(r.text)
         all_vers = list(d['releases'].keys())
         all_vers.sort(key=LooseVersion)
-        highest_ver = all_vers[-1]
-        return highest_ver
+        return all_vers
+    else:
+        return None
+
+def get_latest_package_version():
+    """
+    Return latest cravat version on pypi
+    """
+    all_vers = get_package_versions()
+    if all_vers:
+        return all_vers[-1]
     else:
         return None
 
@@ -936,6 +974,38 @@ def get_download_counts ():
     mic.update_download_counts()
     counts = mic.download_counts
     return counts
+
+def get_install_deps (module_name, version=None, skip_installed=True):
+    mic.update_remote()
+    # If input module version not provided, set to highest
+    if version is None:
+        version = get_remote_latest_version(module_name)
+    config = mic.get_remote_config(module_name, version=version)
+    deps = {}
+    req_list = config.get('requires',[])
+    for req_string in req_list:
+        req = pkg_resources.Requirement(req_string)
+        rem_info = get_remote_module_info(req.name)
+        # Skip if module does not exist
+        if rem_info is None:
+            continue
+        if skip_installed:
+            # Skip if a matching version is installed
+            local_info = get_local_module_info(req.name)
+            if local_info and local_info.version in req:
+                continue
+        # Select the highest matching version
+        lvers = [LooseVersion(v) for v in rem_info.versions]
+        lvers.sort(reverse=True)
+        highest_matching = None
+        for lv in lvers:
+            if lv.vstring in req:
+                highest_matching = lv.vstring
+                break
+        # Dont include if no matching version exists
+        if highest_matching is not None:
+            deps[req.name] = highest_matching
+    return deps
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
