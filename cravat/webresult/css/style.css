@@ -614,3 +614,12 @@ div.pq-select-button {
     vertical-align: middle;
 }
 
+.summary-jobinfo-table td {
+    min-width: 200px;
+    vertical-align: top;
+}
+
+.summary-jobinfo-table tr:not(:last-child) td {
+    border-bottom: 1px dotted #aaaaaa;
+}
+
