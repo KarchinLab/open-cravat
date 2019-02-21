@@ -274,7 +274,7 @@ div.tabContent.hide {
 .detailwidgettitle {
 	display: inline-block;
 	width: calc(100% - 40px);
-	background: #c5dbdb;
+	background: #d1dae0;
 	font-size: 13px;
 	font-weight: bold;
 }
