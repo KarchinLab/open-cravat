@@ -158,7 +158,7 @@ function getLocal () {
             var div = document.getElementById('moduledetaildiv_store');
             if (div != null) {
                 if (div.style.display != 'none') {
-                    activateDetailDialog(currentDetailModule, null, null);
+                    makeModuleDetailDialog(currentDetailModule, null, null);
                 }
             }
             populateStoreHome();
@@ -510,7 +510,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
         var panel = this.parentElement;
         var moduleListName = panel.getAttribute('modulelistname');
         var moduleListPos = panel.getAttribute('modulelistpos');
-        var dialog = activateDetailDialog(moduleName, moduleListName, moduleListPos);
+        var dialog = makeModuleDetailDialog(moduleName, moduleListName, moduleListPos);
         var storediv = document.getElementById('storediv');
         addEl(storediv, dialog);
         evt.stopPropagation();
@@ -523,7 +523,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
             var moduleListPos = panel.getAttribute('modulelistpos');
             var moduleName = div.getAttribute('module');
             var storediv = document.getElementById('storediv');
-            var dialog = activateDetailDialog(moduleName, moduleListName, moduleListPos);
+            var dialog = makeModuleDetailDialog(moduleName, moduleListName, moduleListPos);
             addEl(storediv, dialog);
             evt.stopPropagation();
         }
@@ -834,6 +834,498 @@ function addLogo (moduleName, sdiv) {
         addEl(sdiv, span);
     }
     return img;
+}
+
+function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
+    var mInfo = null;
+    if (currentTab == 'store') {
+        mInfo = remoteModuleInfo[moduleName];
+    } else if (currentTab == 'submit') {
+        mInfo = localModuleInfo[moduleName];
+    }
+    var div = document.getElementById('moduledetaildiv_' + currentTab);
+    if (div) {
+        emptyElement(div);
+    } else {
+        div = getEl('div');
+        div.id = 'moduledetaildiv_' + currentTab;
+        div.className = 'moduledetaildiv';
+    }
+    if (moduleListName != null) {
+        div.setAttribute('modulelistname', moduleListName);
+    }
+    if (moduleListPos != null) {
+        div.setAttribute('modulelistpos', moduleListPos);
+    }
+    currentDetailModule = moduleName;
+    div.style.display = 'block';
+    var table = getEl('table');
+    table.style.height = '100px';
+    table.style.border = '0px';
+    table.style.width = 'calc(100% - 20px)';
+    var tr = getEl('tr');
+    tr.style.border = '0px';
+    var td = getEl('td');
+    td.style.border = '0px';
+    var sdiv = getEl('div');
+    sdiv.className = 'moduletile-logodiv';
+    var img = addLogo(moduleName, sdiv);
+    if (img != null) {
+        img.style.maxHeight = '84px';
+    } else {
+        sdiv.style.position = 'relative';
+        sdiv.children[0].style.display = 'none';
+    }
+    addEl(td, sdiv);
+    addEl(tr, td);
+    td = getEl('td');
+    td.style.border = '0px';
+    var span = getEl('div');
+    span.style.fontSize = '30px';
+    span.textContent = mInfo.title;
+    addEl(td, span);
+    addEl(td, getEl('br'));
+    span = getEl('span');
+    span.style.fontSize = '12px';
+    span.style.color = 'green';
+    span.textContent = mInfo.type;
+    addEl(td, span);
+    span = getEl('span');
+    span.style.fontSize = '12px';
+    span.style.color = 'green';
+    span.textContent = ' | ' + mInfo.developer.organization;
+    addEl(td, span);
+    addEl(tr, td);
+    td = getEl('td');
+    td.style.border = '0px';
+    td.style.verticalAlign = 'top';
+    td.style.textAlign = 'right';
+    if (currentTab == 'store' && (servermode == false || (logged == true && username == 'admin'))) {
+        var button = getEl('button');
+        button.id = 'installbutton';
+        var localInfo = localModuleInfo[moduleName];
+        var buttonText = null;
+        if (localInfo != undefined && localInfo.exists) {
+            buttonText = 'Uninstall';
+            button.style.backgroundColor = '#ffd3be';
+            button.addEventListener('click', function (evt) {
+                var btn = evt.target;
+                btn.textContent = 'Uninstalling...';
+                btn.style.color = 'red';
+                uninstallModule(btn.getAttribute('module'));
+                document.getElementById('moduledetaildiv_store').style.display = 'none';
+            });
+        } else {
+            buttonText = 'Install';
+            button.style.backgroundColor = '#beeaff';
+            button.addEventListener('click', function (evt) {
+                var btn = evt.target;
+                var btnModuleName = btn.getAttribute('module');
+                if (btnModuleName == 'chasmplus') {
+                    var select = document.getElementById('chasmplustissueselect');
+                    btnModuleName = select.value;
+                }
+                var buttonText = null;
+                if (installQueue.length == 0) {
+                    buttonText = 'Installing...';
+                } else {
+                    buttonText = 'Queued';
+                }
+                queueInstall(btnModuleName);
+                btn.textContent = buttonText;
+                btn.style.color = 'red';
+                document.getElementById('moduledetaildiv_store').style.display = 'none';
+            });
+        }
+        button.textContent = buttonText;
+        button.style.padding = '8px';
+        button.style.fontSize = '18px';
+        button.style.fontWeight = 'bold';
+        button.setAttribute('module', moduleName);
+        if (buttonText == 'Uninstall') {
+            var img2 = getEl('img');
+            img2.id = 'installedicon';
+            img2.src = '/store/done.png';
+            img2.style.width = '20px';
+            img2.title = 'Installed';
+            addEl(td, img2);
+        }
+        addEl(td, getEl('br'));
+        if (moduleName == 'chasmplus') {
+            var span = getEl('span');
+            span.textContent = 'Select tissue:';
+            addEl(td, span);
+            var select = getEl('select');
+            select.id = 'chasmplustissueselect';
+            var option = getEl('option');
+            option.value = 'chasmplus';
+            option.text = 'Generic';
+            select.add(option);
+            var modules = Object.keys(remoteModuleInfo);
+            for (var i = 0; i < modules.length; i++) {
+                var module = modules[i];
+                if (module.startsWith('chasmplus_')) {
+                    var option = getEl('option');
+                    var tissue = module.replace('chasmplus_', '');
+                    option.value = module;
+                    option.text = tissue;
+                    select.add(option);
+                }
+            }
+            select.addEventListener('change', function (evt) {
+                var value = select.options[select.selectedIndex].value;
+                var m = localModuleInfo[value];
+                if (m != undefined && m.exists == true) {
+                    var button = document.getElementById('installbutton');
+                    button.textContent = 'Uninstall';
+                    button.addEventListener('click', function (evt) {
+                        var btn = evt.target;
+                        btn.textContent = 'Uninstalling...';
+                        btn.style.color = 'red';
+                        uninstallModule(btn.getAttribute('module'));
+                        document.getElementById('moduledetaildiv_store').style.display = 'none';
+                    });
+                    var img2 = document.getElementById('installedicon');
+                    img2.src = '/store/done.png';
+                    img2.title = 'Installed';
+                } else {
+                    var button = document.getElementById('installbutton');
+                    button.textContent = 'Install';
+                    button.addEventListener('click', function (evt) {
+                        var btn = evt.target;
+                        var btnModuleName = btn.getAttribute('module');
+                        if (btnModuleName == 'chasmplus') {
+                            var select = document.getElementById('chasmplustissueselect');
+                            btnModuleName = select.value;
+                        }
+                        var buttonText = null;
+                        if (installQueue.length == 0) {
+                            buttonText = 'Installing...';
+                        } else {
+                            buttonText = 'Queued';
+                        }
+                        queueInstall(btnModuleName);
+                        btn.textContent = buttonText;
+                        btn.style.color = 'red';
+                        document.getElementById('moduledetaildiv_store').style.display = 'none';
+                    });
+                    var img2 = document.getElementById('installedicon');
+                    img2.src = '/store/empty.png';
+                    img2.title = 'Uninstalled';
+                }
+            });
+            addEl(td, select);
+        }
+        addEl(td, button);
+        var sdiv = getEl('div');
+        sdiv.id = 'installstatdiv_' + moduleName;
+        sdiv.style.marginTop = '10px';
+        sdiv.style.fontSize = '12px';
+        if (installInfo[moduleName] != undefined) {
+            sdiv.textContent = installInfo[moduleName]['msg'];
+        }
+        addEl(td, sdiv);
+    } else if (currentTab == 'submit') {
+        var sdiv = getEl('div');
+        sdiv.id = 'installstatdiv_' + moduleName;
+        sdiv.style.marginTop = '10px';
+        sdiv.style.fontSize = '12px';
+        if (installInfo[moduleName] != undefined) {
+            sdiv.textContent = installInfo[moduleName]['msg'];
+        }
+        addEl(td, sdiv);
+    }
+    addEl(tr, td);
+    addEl(table, tr);
+    addEl(div, table);
+    addEl(div, getEl('hr'));
+    // MD and maintainer
+    table = getEl('table');
+    table.style.height = 'calc(100% - 100px)';
+    table.style.border = '0px';
+    tr = getEl('tr');
+    var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
+    tr.style.border = '0px';
+    td = getEl('td');
+    td.style.border = '0px';
+    td.style.width = '70%';
+    td.style.verticalAlign = 'top';
+    td.style.height = tdHeight;
+    var mdDiv = getEl('div');
+    mdDiv.style.height = '100%';
+    mdDiv.style.overflow = 'auto';
+    var wiw = window.innerWidth;
+    mdDiv.style.maxWidth = (wiw * 0.8 * 0.68) + 'px';
+    addEl(td, mdDiv);
+    addEl(tr, td);
+	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
+		mdDiv.innerHTML = data;
+        // output column description
+        var d = getEl('div');
+        var h2 = getEl('h2');
+        h2.textContent = 'Output Columns';
+        addEl(d, h2);
+        var otable = getEl('table');
+        otable.className = 'moduledetail-output-table';
+        var othead = getEl('thead');
+        var otr = getEl('tr');
+        var oth = getEl('td');
+        oth.textContent = 'Name';
+        addEl(otr, oth);
+        var oth = getEl('td');
+        oth.textContent = 'Description';
+        addEl(otr, oth);
+        addEl(othead, otr);
+        addEl(otable, othead);
+        var otbody = getEl('tbody');
+        otbody.id = 'moduledetail-' + currentTab + '-output-tbody';
+        addEl(otable, otbody);
+        $.ajax({
+            url: '/store/remotemoduleconfig', 
+            data: {'module': moduleName},
+            success: function (data) {
+                var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
+                var outputs = data['output_columns'];
+                for (var i1 = 0; i1 < outputs.length; i1++) {
+                    var o = outputs[i1];
+                    var otr = getEl('tr');
+                    var otd = getEl('td');
+                    var ospan = getEl('span');
+                    ospan.textContent = o['title'];
+                    addEl(otd, ospan);
+                    addEl(otr, otd);
+                    var otd = getEl('td');
+                    var ospan = getEl('span');
+                    var desc = o['desc'];
+                    if (desc == undefined) {
+                        desc = '';
+                    }
+                    ospan.textContent = desc;
+                    addEl(otd, ospan);
+                    addEl(otr, otd);
+                    addEl(otbody, otr);
+                }
+            },
+        });
+        addEl(d, otable);
+        addEl(mdDiv, d);
+        addClassRecursive(mdDiv, 'moduledetaildiv-' + currentTab + '-elem');
+	});
+    td = getEl('td');
+    td.style.width = '30%';
+    td.style.border = '0px';
+    td.style.verticalAlign = 'top';
+    td.style.height = tdHeight;
+    var infodiv = getEl('div');
+    infodiv.style.height = '100%';
+    infodiv.style.overflow = 'auto';
+    infodiv.style.maxWidth = (wiw * 0.8 * 0.3) + 'px';
+    var d = getEl('div');
+    span = getEl('span');
+    span.textContent = mInfo.description;
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Version: ';
+    addEl(d, span);
+    span = getEl('span');
+    var remoteVersion = mInfo['latest_version'];
+    span.textContent = remoteVersion;
+    addEl(d, span);
+    if (currentTab == 'store' && localModuleInfo[moduleName] != undefined) {
+        var localVersion = localModuleInfo[moduleName].version;
+        if (localVersion != remoteVersion) {
+            var span = getEl('span');
+            span.textContent = ' (' + localVersion + ' installed)';
+            addEl(d, span);
+            if (mInfo.tags.indexOf('newavailable') >= 0) {
+                addEl(d, getEl('br'));
+                var span = getEl('span');
+                span.style.color = 'red';
+                span.textContent = 'Updates to your installed modules are available!';
+                addEl(d, span);
+                var button = getEl('button');
+                button.id = 'updatebutton';
+                buttonText = 'Update';
+                button.style.backgroundColor = '#beeaff';
+                button.addEventListener('click', function (evt) {
+                    var btn = evt.target;
+                    var btnModuleName = btn.getAttribute('module');
+                    if (btnModuleName == 'chasmplus') {
+                        var select = document.getElementById('chasmplustissueselect');
+                        btnModuleName = select.value;
+                    }
+                    var buttonText = null;
+                    if (installQueue.length == 0) {
+                        buttonText = 'Updating...';
+                    } else {
+                        buttonText = 'Queued';
+                    }
+                    queueInstall(btnModuleName);
+                    btn.textContent = buttonText;
+                    btn.style.color = 'red';
+                    document.getElementById('moduledetaildiv_store').style.display = 'none';
+                });
+                button.textContent = buttonText;
+                button.style.padding = '8px';
+                button.style.fontSize = '18px';
+                button.style.fontWeight = 'bold';
+                button.setAttribute('module', moduleName);
+                addEl(d, button);
+            }
+        }
+    }
+    if (currentTab == 'store') {
+        addEl(infodiv, d);
+        addEl(infodiv, getEl('br'));
+        d = getEl('div');
+        span = getEl('span');
+        span.style.fontWeight = 'bold';
+        span.textContent = 'Data source version: ';
+        addEl(d, span);
+        span = getEl('span');
+        var datasource = mInfo['datasource'];
+        if (datasource == null) {
+            datasource = '';
+        }
+        span.textContent = datasource;
+        addEl(d, span);
+        addEl(d, getEl('br'));
+    }
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Maintainer: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = mInfo['developer']['name'];
+    addEl(d, span);
+    addEl(d, getEl('br'));
+    addEl(d, getEl('br'));
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'e-mail: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = mInfo['developer']['email'];
+    addEl(d, span);
+    addEl(d, getEl('br'));
+    addEl(d, getEl('br'));
+    addEl(infodiv, d);
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Citation: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.style.display = 'inline-block';
+    span.style.width = 'calc(100% - 120px)';
+    span.style.wordWrap = 'break-word';
+    span.style.verticalAlign = 'text-top';
+    var citation = mInfo['developer']['citation'];
+    if (citation != undefined && citation.startsWith('http')) {
+        var a = getEl('a');
+        a.href = citation;
+        a.target = '_blank';
+        a.textContent = citation;
+        addEl(span, a);
+    } else {
+        span.textContent = citation;
+    }
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Organization: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = mInfo['developer']['organization'];
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Website: ';
+    addEl(d, span);
+    span = getEl('a');
+    span.textContent = mInfo['developer']['website'];
+    span.href = mInfo['developer']['website'];
+    span.target = '_blank';
+    span.style.wordBreak = 'break-all';
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Type: ';
+    addEl(d, span);
+    span = getEl('span');
+    span.textContent = mInfo['type'];
+    addEl(d, span);
+    addEl(infodiv, d);
+    addEl(infodiv, getEl('br'));
+    if (currentTab == 'store') {
+        d = getEl('div');
+        span = getEl('span');
+        span.style.fontWeight = 'bold';
+        span.textContent = 'Size: ';
+        addEl(d, span);
+        span = getEl('span');
+        span.textContent = getSizeText(mInfo['size']);
+        addEl(d, span);
+        addEl(infodiv, d);
+        addEl(infodiv, getEl('br'));
+        d = getEl('div');
+        span = getEl('span');
+        span.style.fontWeight = 'bold';
+        span.textContent = 'Posted on: ';
+        addEl(d, span);
+        span = getEl('span');
+        var t = new Date(mInfo['publish_time']);
+        span.textContent = t.toLocaleDateString();
+        addEl(d, span);
+        addEl(infodiv, d);
+        addEl(infodiv, getEl('br'));
+        d = getEl('div');
+        span = getEl('span');
+        span.style.fontWeight = 'bold';
+        span.textContent = 'Downloads: ';
+        addEl(d, span);
+        span = getEl('span');
+        var t = mInfo['downloads'];
+        span.textContent = t;
+        addEl(d, span);
+        addEl(infodiv, d);
+    }
+    addEl(td, infodiv);
+    addEl(tr, td);
+    addEl(table, tr);
+    addEl(div, table);
+    var el = getEl('div');
+    el.style.position = 'absolute';
+    el.style.top = '0px';
+    el.style.right = '0px';
+    el.style.fontSize = '20px';
+    el.style.padding = '10px';
+    el.style.cursor = 'pointer';
+    el.textContent = 'X';
+    el.addEventListener('click', function (evt) {
+        var pel = evt.target.parentElement;
+        pel.parentElement.removeChild(pel);
+    });
+    addEl(div, el);
+    addClassRecursive(div, 'moduledetaildiv-' + currentTab + '-elem');
+    storeModuleDivClicked = true;
+    return div;
 }
 
 function activateDetailDialog (moduleName, moduleListName, moduleListPos) {
@@ -1273,31 +1765,26 @@ function addClassRecursive (elem, className) {
 function compareVersion (ver1, ver2) {
     var tok1 = ver1.split('.');
     var tok2 = ver2.split('.');
-    var first1 = tok1[0];
-    var first2 = tok2[0];
-    if (first1 < first2) {
-        return -1;
-    } else if (first1 > first2) {
-        return 1;
-    } else {
-        var second1 = tok1[1];
-        var second2 = tok2[1];
-        if (second1 < second2) {
-            return -1;
-        } else if (second1 > second2) {
-            return 1;
+    var l = Math.min(tok1.length, tok2.length);
+    for (var i = 0; i < l; i++) {
+        var v1 = tok1[i];
+        var v2 = tok2[i];
+        var v1N = parseInt(v1);
+        var v2N = parseInt(v2);
+        if (isNaN(v1N) == false && isNaN(v2N) == false) {
+            var diff = v1N - v2N;
+            if (diff != 0) {
+                return diff;
+            }
         } else {
-            var third1 = tok1[2];
-            var third2 = tok2[2];
-            if (third1 < third2) {
-                return -1;
-            } else if (third1 > third2) {
+            if (v1 > v2) {
                 return 1;
-            } else {
-                return 0;
+            } else if (v1 < v2) {
+                return -1;
             }
         }
     }
+    return tok1.length - tok2.length;
 }
 
 function getHighestVersionForRemoteModule (module) {

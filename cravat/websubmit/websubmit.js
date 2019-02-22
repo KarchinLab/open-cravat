@@ -10,6 +10,7 @@ var GLOBALS = {
     reports: {},
     inputExamples: {}
 }
+var currentTab = 'submit';
 
 function submit () {
     if (servermode && logged == false) {
@@ -726,20 +727,6 @@ function getModuleDetailDiv (moduleName) {
         sdiv.style.position = 'relative';
         sdiv.children[0].style.display = 'none';
     }
-    /*
-    img.onerror = function () {
-        var span = getEl('div');
-        span.style.fontSize = '20px';
-        span.style.fontWeight = 'bold';
-        span.textContent = localModule.title;
-        var sdiv = div.querySelector('#moduledetaillogotd');
-        addEl(sdiv, span);
-    }
-    img.onload = function () {
-        var sdiv = div.querySelector('#moduledetaillogotd');
-        addEl(sdiv, this);
-    }
-    */
     addEl(td, sdiv);
     addEl(tr, td);
     td = getEl('td');
@@ -974,7 +961,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
             if (moduledetaildiv != null) {
                 annotchoosediv.removeChild(moduledetaildiv);
             }
-            var detaildiv = getModuleDetailDiv(evt.target.getAttribute('module'));
+            var detaildiv = makeModuleDetailDialog(evt.target.getAttribute('module'));
             addEl(annotchoosediv, detaildiv);
         });
         checkDivs.push(checkDiv);
@@ -1090,6 +1077,11 @@ function changePage (selectedPageId) {
         if (page.id == selectedPageId) {
             page.style.display = 'block';
             pageIdDiv.setAttribute('selval', 't');
+            if (selectedPageId == 'storediv') {
+                currentTab = 'store';
+            } else if (selectedPageId == 'submitdiv') {
+                currentTab = 'submit';
+            }
         } else {
             page.style.display = 'none';
             pageIdDiv.setAttribute('selval', 'f');
@@ -1488,13 +1480,19 @@ function addListeners () {
     });
     window.addEventListener('resize', function (evt) {
         var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
-        if (moduledetaildiv == null) {
-            return;
+        if (moduledetaildiv != null) {
+            var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
+            var tds = document.getElementById('moduledetaildiv_submit').getElementsByTagName('table')[1].getElementsByTagName('td');
+            tds[0].style.height = tdHeight;
+            tds[1].style.height = tdHeight;
         }
-        var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
-        var tds = document.getElementById('moduledetaildiv_submit').getElementsByTagName('table')[1].getElementsByTagName('td');
-        tds[0].style.height = tdHeight;
-        tds[1].style.height = tdHeight;
+        var moduledetaildiv = document.getElementById('moduledetaildiv_store');
+        if (moduledetaildiv != null) {
+            var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
+            var tds = document.getElementById('moduledetaildiv_store').getElementsByTagName('table')[1].getElementsByTagName('td');
+            tds[0].style.height = tdHeight;
+            tds[1].style.height = tdHeight;
+        }
     });
     document.addEventListener('keyup', function (evt) {
         if (storeModuleDivClicked) {

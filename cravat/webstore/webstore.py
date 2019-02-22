@@ -123,11 +123,9 @@ def get_remote_module_config (request):
     queries = request.rel_url.query
     module = queries['module']
     conf = au.get_remote_module_config(module)
-    if 'tags' in conf:
-        tags = conf['tags']
-    else:
-        tags = []
-    response = {'name': module, 'tags': tags}
+    if 'tags' not in conf:
+        conf['tags'] = []
+    response = conf
     return web.json_response(response)
 
 def get_local_manifest (request):

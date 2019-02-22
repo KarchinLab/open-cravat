@@ -273,7 +273,7 @@ input:checked + .store-switch-slider:before {
     background-color: '';
 }
 
-#moduledetaildiv_store {
+.moduledetaildiv {
     position: fixed;
     width: 80%;
     height: 80%;
@@ -294,5 +294,13 @@ input:checked + .store-switch-slider:before {
 #store-namefilter {
     font-size: 16px;
     width: 180px;
+}
+
+.moduledetail-output-table {
+    border-spacing: 12px;
+}
+
+.moduledetail-output-table thead td {
+    border-bottom: 1px dotted #aaaaaa;
 }
 
