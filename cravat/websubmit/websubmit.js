@@ -1502,19 +1502,31 @@ function addListeners () {
             var moduleListPos = moduleDiv.getAttribute('modulelistpos');
             var moduleList = moduleLists[moduleListName];
             if (k == 'ArrowRight') {
-                moduleListPos++;
-                if (moduleListPos >= moduleList.length) {
-                    moduleListPos = 0;
+                var moduleName = null;
+                while (true) {
+                    moduleListPos++;
+                    if (moduleListPos >= moduleList.length) {
+                        moduleListPos = 0;
+                    }
+                    moduleName = moduleList[moduleListPos];
+                    if (moduleName.startsWith('chasmplus_') == false) {
+                        break;
+                    }
                 }
-                var moduleName = moduleList[moduleListPos];
                 activateDetailDialog(moduleName, moduleListName, moduleListPos);
                 evt.stopPropagation();
             } else if (k == 'ArrowLeft') {
-                moduleListPos--;
-                if (moduleListPos < 0) {
-                    moduleListPos = moduleList.length - 1;
+                var moduleName = null;
+                while (true) {
+                    moduleListPos--;
+                    if (moduleListPos < 0) {
+                        moduleListPos = moduleList.length - 1;
+                    }
+                    moduleName = moduleList[moduleListPos];
+                    if (moduleName.startsWith('chasmplus_') == false) {
+                        break;
+                    }
                 }
-                var moduleName = moduleList[moduleListPos];
                 activateDetailDialog(moduleName, moduleListName, moduleListPos);
                 evt.stopPropagation();
             }
