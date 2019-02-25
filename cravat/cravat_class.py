@@ -158,7 +158,7 @@ cravat_cmd_parser.add_argument('-t',
                     help='report types. If omitted, default one in cravat.yml is used.')
 cravat_cmd_parser.add_argument('-l',
                     dest='liftover',
-                    choices=['hg38', 'hg19'],
+                    choices=['hg38', 'hg19', 'hg18'],
                     default='hg38',
                     help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
 cravat_cmd_parser.add_argument('-x',
