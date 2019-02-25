@@ -583,6 +583,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     addEl(div, sdiv);
     addEl(div, getEl('br'));
     var installStatus = '';
+    var btnAddedFlag = false;
     if (installInfo[moduleName] != undefined) {
         var msg = installInfo[moduleName]['msg'];
         if (msg == 'uninstalling') {
@@ -633,16 +634,19 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
                 queueInstall(moduleName);
             });
             addEl(div, button);
+            btnAddedFlag = true;
         }
-        var button = getEl('button');
-        button.className = 'modulepanel-uninstall-button';
-        button.textContent = 'Uninstall';
-        button.setAttribute('module', moduleName);
-        button.addEventListener('click', function (evt) {
-            var moduleName = evt.target.getAttribute('module');
-            uninstallModule(moduleName);
-        });
-        addEl(div, button);
+        if (btnAddedFlag == false) {
+            var button = getEl('button');
+            button.className = 'modulepanel-uninstall-button';
+            button.textContent = 'Uninstall';
+            button.setAttribute('module', moduleName);
+            button.addEventListener('click', function (evt) {
+                var moduleName = evt.target.getAttribute('module');
+                uninstallModule(moduleName);
+            });
+            addEl(div, button);
+        }
     } else {
         var button = getEl('button');
         button.className = 'modulepanel-install-button';
