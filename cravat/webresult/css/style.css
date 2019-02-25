@@ -256,7 +256,7 @@ div.tabContent.hide {
 
 .detailwidget {
 	font-size: 12px;
-	border: 1px solid #bfbfbf;
+	border: 1px solid #d0d0d0;
 	padding: 5px;
 	margin: 4px;
 }
@@ -621,5 +621,11 @@ div.pq-select-button {
 
 .summary-jobinfo-table tr:not(:last-child) td {
     border-bottom: 1px dotted #aaaaaa;
+}
+
+#info_div {
+	display: inline-block;
+    width: calc(100% - 24px);
+    border: 1px solid #acacac;
 }
 

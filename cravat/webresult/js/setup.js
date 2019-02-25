@@ -130,8 +130,6 @@ function makeInfoTab (rightDiv) {
 	// Info
 	var infoDiv = getEl('fieldset');
 	infoDiv.id = 'info_div';
-	infoDiv.style.display = 'inline-block';
-    infoDiv.style.width = 'calc(100% - 24px)';
 	addEl(rightContentDiv, infoDiv);
 
 	// Filter
