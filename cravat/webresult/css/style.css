@@ -643,3 +643,15 @@ div.pq-select-button {
     font-style: normal;
 }
 
+#filterbutton {
+    height: 26px;
+    border-top: 1px solid gray;
+    border-left: 1px solid gray;
+    border-right: 1px solid gray;
+    border-bottom: 0px;
+    position: relative;
+    top: 0px;
+    left: -3px;
+    background-color: #c5dbdb;
+}
+

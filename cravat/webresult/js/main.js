@@ -378,7 +378,7 @@ function loadData (alertFlag, finalcallback) {
     if (filterArmed.variant != undefined && (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0)) {
         filterButton.style.backgroundColor = 'red';
     } else {
-        filterButton.style.backgroundColor = 'white';
+        filterButton.style.backgroundColor = '#c5dbdb';
     }
 }
 

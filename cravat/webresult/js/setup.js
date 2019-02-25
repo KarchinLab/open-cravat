@@ -159,13 +159,13 @@ function toggleFilterDiv () {
 	if (display == 'none') {
 		display = 'block';
 		filterButton.style.backgroundColor = 'black';
-		filterButton.style.color = 'white';
+		filterButton.style.color = '#c5dbdb';
 	} else {
 		display = 'none';
         if (filterArmed.variant != undefined && (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0)) {
             filterButton.style.backgroundColor = 'red';
         } else {
-            filterButton.style.backgroundColor = 'white';
+            filterButton.style.backgroundColor = '#c5dbdb';
         }
 		filterButton.style.color = 'black';
 	}
