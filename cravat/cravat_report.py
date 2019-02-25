@@ -416,7 +416,7 @@ class CravatReport:
         else:
             self.module_conf = None
         self.report_types = parsed_args.reporttypes
-        self.output_basename = os.path.basename(self.dbpath).rstrip('.sqlite')
+        self.output_basename = os.path.basename(self.dbpath)[:-7]
         self.output_dir = os.path.dirname(self.dbpath)
         status_fname = '{}.status.json'.format(self.output_basename)
         self.status_fpath = os.path.join(self.output_dir, status_fname)

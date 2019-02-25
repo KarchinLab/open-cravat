@@ -704,6 +704,8 @@ class Cravat (object):
             ql.start()
             results = pool.starmap_async(run_annotator_mp, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
             ql.stop()
+            pool.close()
+            pool.join()
         try:
             for result in results.get():
                 pass
