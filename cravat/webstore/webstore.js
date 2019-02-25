@@ -203,13 +203,16 @@ function getLocal () {
             }
         }
         var d = document.getElementById('store-update-all-div');
+        var btn = document.getElementById('store-update-all-button');
         if (newModuleAvailable) {
             var modulesInInstallQueue = Object.keys(installInfo);
 
             d.style.display = 'block';
+            btn.style.display = 'inline-block';
             announceStoreUpdateAllAvailable();
         } else {
             d.style.display = 'none';
+            btn.style.display = 'none';
         }
         populateStoreTagPanel();
         showOrHideInstallAllButton();
