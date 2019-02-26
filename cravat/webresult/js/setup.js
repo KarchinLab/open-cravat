@@ -130,8 +130,6 @@ function makeInfoTab (rightDiv) {
 	// Info
 	var infoDiv = getEl('fieldset');
 	infoDiv.id = 'info_div';
-	infoDiv.style.display = 'inline-block';
-    infoDiv.style.width = 'calc(100% - 24px)';
 	addEl(rightContentDiv, infoDiv);
 
 	// Filter
@@ -161,13 +159,13 @@ function toggleFilterDiv () {
 	if (display == 'none') {
 		display = 'block';
 		filterButton.style.backgroundColor = 'black';
-		filterButton.style.color = 'white';
+		filterButton.style.color = '#c5dbdb';
 	} else {
 		display = 'none';
         if (filterArmed.variant != undefined && (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0)) {
             filterButton.style.backgroundColor = 'red';
         } else {
-            filterButton.style.backgroundColor = 'white';
+            filterButton.style.backgroundColor = '#c5dbdb';
         }
 		filterButton.style.color = 'black';
 	}
@@ -1040,7 +1038,7 @@ function populateLoadDiv (tabName, filterDiv) {
         evt.target.disabled = true;
         var infoReset = resetTab['info'];
         resetTab = {'info': infoReset};
-        showSpinner(tabName, this);
+        showSpinner(tabName, document.body);
         makeFilterJson();
         loadData(false, null);
     };
@@ -1397,6 +1395,23 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             });
 		}
 	}
+    /*
+    gridObject.columnDrag = function (evt, ui) {
+        console.log(ui.column.parent);
+        if (ui.column.parent != undefined) {
+            console.log('should be prevented');
+            ui.column.nodrop = true;
+        }
+        evt.stopPropagation();
+    }
+    gridObject.columnOrder = function (evt, ui) {
+        console.log('@@@', evt);
+        console.log('@@@', ui.column.parent);
+        if (ui.column.parent != undefined) {
+            console.log('should be prevented');
+        }
+    }
+    */
 	return gridObject;
 }
 

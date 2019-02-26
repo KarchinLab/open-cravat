@@ -158,7 +158,7 @@ cravat_cmd_parser.add_argument('-t',
                     help='report types. If omitted, default one in cravat.yml is used.')
 cravat_cmd_parser.add_argument('-l',
                     dest='liftover',
-                    choices=['hg38', 'hg19'],
+                    choices=['hg38', 'hg19', 'hg18'],
                     default='hg38',
                     help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
 cravat_cmd_parser.add_argument('-x',
@@ -704,6 +704,8 @@ class Cravat (object):
             ql.start()
             results = pool.starmap_async(run_annotator_mp, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
             ql.stop()
+            pool.close()
+            pool.join()
         try:
             for result in results.get():
                 pass

@@ -256,7 +256,7 @@ div.tabContent.hide {
 
 .detailwidget {
 	font-size: 12px;
-	border: 1px solid #bfbfbf;
+	border: 1px solid #d0d0d0;
 	padding: 5px;
 	margin: 4px;
 }
@@ -621,5 +621,41 @@ div.pq-select-button {
 
 .summary-jobinfo-table tr:not(:last-child) td {
     border-bottom: 1px dotted #aaaaaa;
+}
+
+#info_div {
+	display: inline-block;
+    width: calc(100% - 24px);
+    border: 1px solid #acacac;
+}
+
+@font-face {
+    font-family: "Roboto";
+    src: url("../fonts/Roboto-Regular.ttf") format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Roboto";
+    src: url('../fonts/Roboto-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+#filterbutton {
+    height: 26px;
+    border-top: 1px solid gray;
+    border-left: 1px solid gray;
+    border-right: 1px solid gray;
+    border-bottom: 0px;
+    position: relative;
+    top: 0px;
+    left: -3px;
+    background-color: #c5dbdb;
+}
+
+.pq-grid-cell {
+    height: 25px;
 }
 

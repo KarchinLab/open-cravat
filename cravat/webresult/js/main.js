@@ -212,7 +212,7 @@ function enableUpdateButton () {
 }
 
 function loadData (alertFlag, finalcallback) {
-    document.getElementById('load_button').disabled = true;
+    disableUpdateButton();
 	var infoReset = resetTab['info'];
 	resetTab = {'info': infoReset};
 	resetTab['summary'] = true;
@@ -258,6 +258,7 @@ function loadData (alertFlag, finalcallback) {
         setFilterButtonText();
         makeVariantByGene();
         document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.';
+        enableUpdateButton();
 	}
     /*
 	var loadMappingResult = function () {
@@ -351,7 +352,6 @@ function loadData (alertFlag, finalcallback) {
                             notifyOfReadyToLoad();
                             flagNotifyToUseFilter = false;
                         }
-                        enableUpdateButton();
                         removeLoadingDiv();
                         callLoadVariant();
                     }
@@ -361,12 +361,10 @@ function loadData (alertFlag, finalcallback) {
                     notifyOfReadyToLoad();
                     flagNotifyToUseFilter = false;
                 }
-                enableUpdateButton();
                 removeLoadingDiv();
                 callLoadVariant();
             }
 		} else {
-            enableUpdateButton();
 		    callLoadVariant();
 		}
 	}
@@ -378,7 +376,7 @@ function loadData (alertFlag, finalcallback) {
     if (filterArmed.variant != undefined && (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0)) {
         filterButton.style.backgroundColor = 'red';
     } else {
-        filterButton.style.backgroundColor = 'white';
+        filterButton.style.backgroundColor = '#c5dbdb';
     }
 }
 
@@ -589,6 +587,8 @@ function drawingRetrievingDataDiv (currentTab) {
 	loadingDiv.style.top = dH/2 - 200;
 	loadingDiv.style.left = dW/2 - 200;
 	jobDataLoadingDiv = loadingDiv;
+    var parentDiv = document.body;
+    addEl(parentDiv, loadingDiv);
 	return loadingDiv;
 }
 
