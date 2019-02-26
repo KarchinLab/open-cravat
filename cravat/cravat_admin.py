@@ -111,24 +111,28 @@ def main ():
         for line in yield_tabular_lines(l, *kwargs):
             print(line)
         
-    def list_local_modules(pattern=r'.*', types=[]):
+    def list_local_modules(pattern=r'.*', types=[], include_hidden=False):
         header = ['Name','Type','Version','Data source ver','Size']
         all_toks = [header]
         for module_name in au.search_local(pattern):
             module_info = au.get_local_module_info(module_name)
             if len(types) > 0 and module_info.type not in types:
                 continue
+            if module_info.hidden and not include_hidden:
+                continue
             size = module_info.get_size()
             toks = [module_name, module_info.type, module_info.version, module_info.datasource, humanize_bytes(size)]
             all_toks.append(toks)
         print_tabular_lines(all_toks)
                 
-    def list_available_modules(pattern=r'.*', types=[]):
+    def list_available_modules(pattern=r'.*', types=[], include_hidden=False):
         header = ['Name','Type','Installed','Up to date', 'Store latest ver','Store data source ver', 'Local ver', 'Local data source ver', 'Size']
         all_toks = [header]
         for module_name in au.search_remote(pattern):
             remote_info = au.get_remote_module_info(module_name)
             if len(types) > 0 and remote_info.type not in types:
+                continue
+            if remote_info.hidden and not include_hidden:
                 continue
             local_info = au.get_local_module_info(module_name)
             if local_info is not None:
@@ -159,9 +163,9 @@ def main ():
     
     def list_modules(args):
         if args.available:
-            list_available_modules(pattern=args.pattern, types=args.types)
+            list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden)
         else:
-            list_local_modules(pattern=args.pattern, types=args.types)
+            list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden)
     
     def yaml_string(x):
         s = yaml.dump(x, default_flow_style = False)
@@ -489,6 +493,9 @@ def main ():
                            nargs='+',
                            default=[],
                            help='Only list modules of certain types')
+    parser_ls.add_argument('-i','--include-hidden',
+                           action='store_true',
+                           help='Include hidden modules')
     parser_ls.set_defaults(func=list_modules)
     
     # publish

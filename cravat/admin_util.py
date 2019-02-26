@@ -76,6 +76,7 @@ class LocalModuleInfo (object):
         self.type = self.conf.get('type')
         self.version = self.conf.get('version')
         self.description = self.conf.get('description')
+        self.hidden = self.conf.get('hidden',False)
         dev_dict = self.conf.get('developer')
         if not(type(dev_dict)==dict):
             dev_dict = {}
@@ -145,6 +146,7 @@ class RemoteModuleInfo(object):
         self.description = kwargs.get('description','')
         self.size = kwargs.get('size',0)
         self.datasource = kwargs.get('datasource', '')
+        self.hidden = kwargs.get('hidden',False)
         if self.datasource == None:
             self.datasource = ''
         dev_dict = kwargs.get('developer')
