@@ -655,3 +655,7 @@ div.pq-select-button {
     background-color: #c5dbdb;
 }
 
+.pq-grid-cell {
+    height: 25px;
+}
+

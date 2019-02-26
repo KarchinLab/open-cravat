@@ -1395,6 +1395,23 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             });
 		}
 	}
+    /*
+    gridObject.columnDrag = function (evt, ui) {
+        console.log(ui.column.parent);
+        if (ui.column.parent != undefined) {
+            console.log('should be prevented');
+            ui.column.nodrop = true;
+        }
+        evt.stopPropagation();
+    }
+    gridObject.columnOrder = function (evt, ui) {
+        console.log('@@@', evt);
+        console.log('@@@', ui.column.parent);
+        if (ui.column.parent != undefined) {
+            console.log('should be prevented');
+        }
+    }
+    */
 	return gridObject;
 }
 
