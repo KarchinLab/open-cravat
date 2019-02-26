@@ -1049,17 +1049,13 @@ def get_updatable(modules=[], strategy='consensus'):
             elif strategy == 'consensus':
                 passing_versions = []
                 for version in versions:
-                    # print('checking {}:{}'.format(mname,version)) #debug
                     version_passes = True
                     for requester, requirement in reqs.items():
-                        # print(requester, requirement) #debug
                         version_passes = version in requirement
                         if not version_passes:
                             break
-                        # print(req, version_passes) #debug
                     if version_passes:
                         passing_versions.append(version)
-                    # print(passing_versions) #debug
                 selected_version = passing_versions[-1] if passing_versions else None
         if selected_version and LooseVersion(selected_version) > LooseVersion(local_info.version):
             update_vers[mname] = selected_version
