@@ -1901,9 +1901,12 @@ function connectWebSocket () {
             if (installstatdiv != null) {
                 installstatdiv.textContent = msg;
             }
-            var sdiv = document.getElementById('panelinstallprogress_' + divModuleName);
-            sdiv.style.color = 'black';
-            sdiv.textContent = msg;
+            var sdivs = $('div.moduletile[module=' + module + '] .panelinstallprogressspan');
+            for (var i1 = 0; i1 < sdivs.length; i1++) {
+                var sdiv = sdivs[i1];
+                sdiv.style.color = 'black';
+                sdiv.textContent = msg;
+            }
             if (msg.startsWith('Finished installation of')) {
                 delete installInfo[module];
                 installQueue = installQueue.filter(e => e != module);
