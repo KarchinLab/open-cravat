@@ -1038,7 +1038,7 @@ function populateLoadDiv (tabName, filterDiv) {
         evt.target.disabled = true;
         var infoReset = resetTab['info'];
         resetTab = {'info': infoReset};
-        showSpinner(tabName, this);
+        showSpinner(tabName, document.body);
         makeFilterJson();
         loadData(false, null);
     };
