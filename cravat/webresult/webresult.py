@@ -254,7 +254,8 @@ def get_widgetlist (request):
             req = module_name[2:]
         content.append({'name': module_name, 
                         'title': module.title, 
-                        'required_annotator': req})
+                        'required_annotator': req,
+                        'helphtml_exists': module.helphtml_exists})
     return web.json_response(content)
 
 def get_count (request):

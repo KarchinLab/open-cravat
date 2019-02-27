@@ -23,6 +23,7 @@ var infomgr = new InfoMgr();
 
 var jobDataLoadingDiv = null;
 
+var widgetInfo = null;
 var widgetGenerators = {};
 
 var widgetTableBorderStyle = '1px solid gray';

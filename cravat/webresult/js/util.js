@@ -117,6 +117,19 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	iconDiv.className = 'detailwidgeticondiv';
 	addEl(header, iconDiv);
 
+    // Help button
+    if (widgetInfo[widgetName]['helphtml_exists']) {
+        var btn = getEl('img');
+        btn.src = '/result/images/pin.png';
+        btn.className = 'detailwidgetpinbutton';
+        btn.classList.add('unpinned');
+        btn.setAttribute('widgetname', widgetName);
+        btn.addEventListener('click', function (evt) {
+            onClickWidgetHelpButton(evt, tabName);
+        });
+        addEl(iconDiv, btn);
+    }
+
 	// Pin button
 	var pinButton = getEl('img');
 	pinButton.src = '/result/images/pin.png';

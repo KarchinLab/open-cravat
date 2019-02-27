@@ -447,6 +447,7 @@ function firstLoadData () {
 	var loadWidgets = function () {
 		detailWidgetOrder = {'variant': {}, 'gene': {}, 'info': {}};
 		$.get('/result/service/widgetlist', {}).done(function (jsonResponseData) {
+            widgetInfo = {};
 	    	var widgets = jsonResponseData;
 	    	var widgetLoadCount = 0;
 	    	for (var i = 0; i < widgets.length; i++) {
@@ -455,6 +456,7 @@ function firstLoadData () {
 	    		var widgetName = widget['name'].substring(2);
 	    		var title = widget['title'];
 	    		var req = widget['required_annotator'];
+                widgetInfo[widgetName] = widget;
 	    		infomgr.colgroupkeytotitle[widgetName] = title;
 	    		infomgr.widgetReq[widgetName] = req;
 	    		$.getScript('/result/widgetfile/' + 'wg' + widgetName + '/wg' + widgetName + '.js', function () {
@@ -574,18 +576,20 @@ function drawingRetrievingDataDiv (currentTab) {
 	var loadingDiv = getEl('div');
     loadingDiv.className = 'data-retrieving-msg-div';
 	var loadingTxtDiv = getEl('div');
-	addEl(loadingTxtDiv, getTn('Retrieving Data...'));
-	addEl(loadingDiv, loadingTxtDiv);
+    loadingTxtDiv.className = 'data-retrieving-msg-div-content';
+    var span = getEl('span');
+    span.textContent = 'Retrieving Data...';
+	addEl(loadingTxtDiv, span);
+    addEl(loadingTxtDiv, getEl('br'));
 	var loadingSpinCircleDiv = getEl('div');
 	var loadingSpinCircleImg = getEl('img');
 	loadingSpinCircleImg.src = "images/bigSpinner.gif";
-	addEl(loadingSpinCircleDiv, loadingSpinCircleImg);
-	addEl(loadingDiv, loadingSpinCircleDiv);
-	addEl(currentTabDiv, loadingDiv);
+	addEl(loadingTxtDiv, loadingSpinCircleImg);
+	addEl(loadingDiv, loadingTxtDiv);
     var dW = document.body.offsetWidth;
     var dH = document.body.offsetHeight;
-	loadingDiv.style.top = dH/2 - 200;
-	loadingDiv.style.left = dW/2 - 200;
+	loadingDiv.style.top = 0;
+	loadingDiv.style.left = 0;
 	jobDataLoadingDiv = loadingDiv;
     var parentDiv = document.body;
     addEl(parentDiv, loadingDiv);

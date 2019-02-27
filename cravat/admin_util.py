@@ -69,6 +69,8 @@ class LocalModuleInfo (object):
                 self.readme = f.read()
         else:
             self.readme = ''
+        self.helphtml_path = os.path.join(self.directory, 'help.html')
+        self.helphtml_exists = os.path.exists(self.helphtml_path)
         self.conf = {}
         if self.conf_exists:
             self.conf = load_yml_conf(self.conf_path) # THIS SHOULD NOT BE KEPT HERE, USE CONFIG LOADER

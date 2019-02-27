@@ -616,6 +616,31 @@ function populateWidgetSelectorPanel () {
 		}
 	}
 }
+function onClickWidgetHelpButton (evt, tabName) {
+	var widget = evt.target.parentElement.parentElement.parentElement;
+	var container = widget.parentElement;
+    var widgetName = widget.getAttribute('widgetkey');
+    var frame = getEl('iframe');
+    frame.id = 'widgethelpdiv';
+    frame.src = '/result/widgetfile/wg' + widgetName + '/help.html';
+    addEl(document.body, frame);
+    frame.onload = function () {
+        if (this.contentDocument) {
+            var btn = getEl('span');
+            btn.textContent = '\u274c';
+            btn.style.position = 'fixed';
+            btn.style.top = '0';
+            btn.style.right = '0';
+            btn.style.cursor = 'default';
+            btn.addEventListener('click', function (evt) {
+                $('#widgethelpdiv').remove();
+            });
+            addEl(this.contentDocument.body, btn);
+        } else {
+            $(this).remove();
+        }
+    };
+}
 
 function onClickWidgetPinButton (evt, tabName) {
 	var widget = evt.target.parentElement.parentElement.parentElement;
@@ -637,11 +662,11 @@ function onClickWidgetPinButton (evt, tabName) {
 
 function onClickWidgetCloseButton (tabName, evt) {
 	var widgetName = evt.target.getAttribute('widgetname');
-    executeWidgetClose(widgetName, true);
+    executeWidgetClose(widgetName, tabName, true);
 }
 
-function executeWidgetClose (widgetName, repack) {
-	showHideWidget(currentTab, widgetName, false, repack);
+function executeWidgetClose (widgetName, tabName, repack) {
+	showHideWidget(tabName, widgetName, false, repack);
 	var button = document.getElementById(
 			'widgettogglecheckbox_' + currentTab + '_' + widgetName);
 	button.checked = false;
@@ -675,7 +700,6 @@ function showHideWidget (tabName, widgetName, state, repack) {
 		widget.style.display = 'block';
         if (currentTab == 'info') {
             var dcd = widget.getElementsByClassName('detailcontentdiv')[0];
-            console.log('dcd=', dcd);
             if (dcd.innerHTML == '') {
                 drawSummaryWidget(widgetName);
             }
@@ -711,7 +735,7 @@ function drawSummaryWidget (widgetName) {
                         generator['function'](widgetContentDiv, data);
                     } else {
                         setTimeout(function () {
-                            executeWidgetClose(widgetName);
+                            executeWidgetClose(widgetName, 'info');
                             var button = document.getElementById(
                                 'widgettogglecheckbox_' + currentTab + '_' + widgetName);
                             button.disabled = 'disabled';
@@ -739,7 +763,7 @@ function drawSummaryWidget (widgetName) {
                 generator['function'](widgetContentDiv);
             } else {
                 setTimeout(function () {
-                    executeWidgetClose(widgetName);
+                    executeWidgetClose(widgetName, 'info');
                     var button = document.getElementById(
                         'widgettogglecheckbox_' + currentTab + '_' + widgetName);
                     button.disabled = 'disabled';
