@@ -304,8 +304,12 @@ def queue_install (request):
         module_version = queries['version']
     else:
         module_version = None
-    data = {'module': queries['module'], 'version': module_version}
+    module_name = queries['module']
+    data = {'module': module_name, 'version': module_version}
     install_queue.put(data)
+    deps = au.get_install_deps(module_name, module_version)
+    for dep_name, dep_version in deps.items():
+        install_queue.put({'module':dep_name,'version':dep_version})
     return web.Response(text = 'queued ' + queries['module'])
 
 def get_base_modules (request):

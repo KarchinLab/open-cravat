@@ -13,6 +13,7 @@ import traceback
 import re
 from distutils.version import StrictVersion, LooseVersion
 import pkg_resources
+from collections import defaultdict
 
 def load_yml_conf(yml_conf_path):
     """
@@ -77,6 +78,7 @@ class LocalModuleInfo (object):
         self.type = self.conf.get('type')
         self.version = self.conf.get('version')
         self.description = self.conf.get('description')
+        self.hidden = self.conf.get('hidden',False)
         dev_dict = self.conf.get('developer')
         if not(type(dev_dict)==dict):
             dev_dict = {}
@@ -146,6 +148,7 @@ class RemoteModuleInfo(object):
         self.description = kwargs.get('description','')
         self.size = kwargs.get('size',0)
         self.datasource = kwargs.get('datasource', '')
+        self.hidden = kwargs.get('hidden',False)
         if self.datasource == None:
             self.datasource = ''
         dev_dict = kwargs.get('developer')
@@ -1008,6 +1011,61 @@ def get_install_deps (module_name, version=None, skip_installed=True):
         if highest_matching is not None:
             deps[req.name] = highest_matching
     return deps
+
+def get_updatable(modules=[], strategy='consensus'):
+    strategy = 'consensus' if not strategy else strategy
+    if strategy not in ('consensus','force','skip'):
+        raise ValueError('Unknown strategy "{}"'.format(strategy))
+    if not modules:
+        modules = list_local()
+    reqs_by_dep = defaultdict(dict)
+    all_versions = {}
+    for mname in list_local():
+        local_info = get_local_module_info(mname)
+        remote_info = get_remote_module_info(mname)
+        if remote_info:
+            all_versions[mname] = sorted(remote_info.versions, key=LooseVersion)
+        req_strings = local_info.conf.get('requires',[])
+        reqs = [pkg_resources.Requirement(s) for s in req_strings]
+        for req in reqs:
+            dep = req.name
+            reqs_by_dep[dep][mname] = req
+    update_vers = {}
+    resolution_applied = {}
+    resolution_failed = {}
+    for mname in modules:
+        if mname not in list_local():
+            continue
+        local_info = get_local_module_info(mname)
+        reqs = reqs_by_dep[mname]
+        versions = all_versions.get(mname,[])
+        if not versions:
+            continue
+        selected_version = versions[-1]
+        if LooseVersion(selected_version) <= LooseVersion(local_info.version):
+            continue
+        if reqs:
+            resolution_applied[mname] = reqs
+            if strategy == 'force':
+                pass
+            elif strategy == 'skip':
+                selected_version = None
+            elif strategy == 'consensus':
+                passing_versions = []
+                for version in versions:
+                    version_passes = True
+                    for requester, requirement in reqs.items():
+                        version_passes = version in requirement
+                        if not version_passes:
+                            break
+                    if version_passes:
+                        passing_versions.append(version)
+                selected_version = passing_versions[-1] if passing_versions else None
+        if selected_version and LooseVersion(selected_version) > LooseVersion(local_info.version):
+            update_vers[mname] = selected_version
+        else:
+            resolution_failed[mname] = reqs
+    return update_vers, resolution_applied, resolution_failed
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

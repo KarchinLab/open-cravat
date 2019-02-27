@@ -111,24 +111,28 @@ def main ():
         for line in yield_tabular_lines(l, *kwargs):
             print(line)
         
-    def list_local_modules(pattern=r'.*', types=[]):
+    def list_local_modules(pattern=r'.*', types=[], include_hidden=False):
         header = ['Name','Type','Version','Data source ver','Size']
         all_toks = [header]
         for module_name in au.search_local(pattern):
             module_info = au.get_local_module_info(module_name)
             if len(types) > 0 and module_info.type not in types:
                 continue
+            if module_info.hidden and not include_hidden:
+                continue
             size = module_info.get_size()
             toks = [module_name, module_info.type, module_info.version, module_info.datasource, humanize_bytes(size)]
             all_toks.append(toks)
         print_tabular_lines(all_toks)
                 
-    def list_available_modules(pattern=r'.*', types=[]):
+    def list_available_modules(pattern=r'.*', types=[], include_hidden=False):
         header = ['Name','Type','Installed','Up to date', 'Store latest ver','Store data source ver', 'Local ver', 'Local data source ver', 'Size']
         all_toks = [header]
         for module_name in au.search_remote(pattern):
             remote_info = au.get_remote_module_info(module_name)
             if len(types) > 0 and remote_info.type not in types:
+                continue
+            if remote_info.hidden and not include_hidden:
                 continue
             local_info = au.get_local_module_info(module_name)
             if local_info is not None:
@@ -159,9 +163,9 @@ def main ():
     
     def list_modules(args):
         if args.available:
-            list_available_modules(pattern=args.pattern, types=args.types)
+            list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden)
         else:
-            list_local_modules(pattern=args.pattern, types=args.types)
+            list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden)
     
     def yaml_string(x):
         s = yaml.dump(x, default_flow_style = False)
@@ -272,43 +276,35 @@ def main ():
                                   force_data=args.force_data,
                                   stage_handler=stage_handler
                                   )
-                    
+
     def update_modules(args):
-        if len(args.modules) == 0:
-            requested_modules = au.list_local()
-        else:
+        if len(args.modules) > 0:
             requested_modules = au.search_local(*args.modules)
-        print('Checking status')
-        needs_update = []
-        status_table = [['Name','Status']]
-        for module_name in requested_modules:
-            local_info = au.get_local_module_info(module_name)
-            version = local_info.conf['version']
-            if au.module_exists_remote(module_name):
-                latest_version = au.get_remote_latest_version(module_name)
-                if version == latest_version:
-                    status = 'Up to date'
-                else:
-                    status = 'Requires update'
-                    needs_update.append(module_name)
-            else:
-                status = 'No remote version'
-            status_table.append([module_name, status])
-        print_tabular_lines(status_table)
-        if len(needs_update) == 0:
-            print('All modules are up to date')
-            exit()
         else:
-            user_cont = input('Continue to update the following modules:\n%s\n<y/n>: '\
-                              %','.join(needs_update))
-            if user_cont.lower() not in ['y','yes']:
-                print('Cancelling update')
-                exit()
-        args.modules = needs_update
-        args.force_data = False
-        args.version = None
-        args.yes = True
-        install_modules(args)
+            requested_modules = []
+        update_strategy = args.strategy
+        status_table = [['Name','New Version']]
+        updates, reqs_applied, reqs_failed = au.get_updatable(requested_modules, strategy=update_strategy)
+        if reqs_failed:
+            print('Newer versions of ({}) are available, but would break dependencies. You may use --strategy=force to force installation.'\
+                .format(', '.join(reqs_failed.keys())))
+        if not updates:
+            print('No module updates are needed')
+            exit()
+        for mname, version in updates.items():
+            status_table.append([mname, version])
+        print_tabular_lines(status_table)
+        user_cont = input('Update the above modules? (y/n) > ')
+        if user_cont.lower() not in ['y','yes']:
+            exit()
+        for mname, version in updates.items():
+            args.modules = [mname]
+            args.force_data = False
+            args.version = version
+            args.yes = True
+            args.include_private = False
+            args.skip_dependencies = False
+            install_modules(args)
         
     def uninstall_modules (args):
         matching_names = au.search_local(*args.modules)
@@ -445,6 +441,12 @@ def main ():
     parser_update.add_argument('modules',
                                 nargs='*',
                                 help='Modules to update.')
+    parser_update.add_argument('--strategy',
+                               help='Dependency resolution strategy. "consensus" will attemp to resolve dependencies. "force" will install the highest available version. "skip" will skip modules with constraints.',
+                               default='consensus',
+                               type=str,
+                               choices=('consensus','force','skip')
+                               )
     parser_update.set_defaults(func=update_modules)
     
     # uninstall
@@ -491,6 +493,9 @@ def main ():
                            nargs='+',
                            default=[],
                            help='Only list modules of certain types')
+    parser_ls.add_argument('-i','--include-hidden',
+                           action='store_true',
+                           help='Include hidden modules')
     parser_ls.set_defaults(func=list_modules)
     
     # publish
