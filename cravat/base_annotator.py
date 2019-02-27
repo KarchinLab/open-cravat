@@ -436,9 +436,19 @@ class BaseAnnotator(object):
     def _setup_logger(self):
         try:
             self.logger = logging.getLogger('cravat.' + self.annotator_name)
+            self.log_path = os.path.join(self.output_dir, self.output_basename + '.log')
+            log_handler = logging.FileHandler(self.log_path, 'a')
+            formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
+            log_handler.setFormatter(formatter)
+            self.logger.addHandler(log_handler)
+            self.error_logger = logging.getLogger('error.' + self.annotator_name)
+            error_log_path = os.path.join(self.output_dir, self.output_basename + '.err')
+            error_log_handler = logging.FileHandler(error_log_path, 'a')
+            formatter = logging.Formatter('SOURCE:%(name)-20s %(message)s')
+            error_log_handler.setFormatter(formatter)
+            self.error_logger.addHandler(error_log_handler)
         except Exception as e:
             self._log_exception(e)
-        self.error_logger = logging.getLogger('error.' + self.annotator_name)
         self.unique_excs = []
 
     # Gets the input dict from both the input file, and 

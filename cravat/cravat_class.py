@@ -699,11 +699,12 @@ class Cravat (object):
             all_cmds,
             len(self.ordered_annotators)*[annot_log_queue]
             )
-        ql = QueueListener(annot_log_queue, *self.logger.handlers)
+        self.logger.removeHandler(self.log_handler)
+        #ql = QueueListener(annot_log_queue, *self.logger.handlers)
         with mp.Pool(processes=num_workers) as pool:
-            ql.start()
+            #ql.start()
             results = pool.starmap_async(run_annotator_mp, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
-            ql.stop()
+            #ql.stop()
             pool.close()
             pool.join()
         try:
@@ -711,6 +712,11 @@ class Cravat (object):
                 pass
         except Exception as e:
             self.handle_exception(e)
+        self.log_path = os.path.join(self.output_dir, self.run_name + '.log')
+        self.log_handler = logging.FileHandler(self.log_path, 'a')
+        formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
+        self.log_handler.setFormatter(formatter)
+        self.logger.addHandler(self.log_handler)
 
     def table_exists (self, cursor, table):
         sql = 'select name from sqlite_master where type="table" and ' +\
