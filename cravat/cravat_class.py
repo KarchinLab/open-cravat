@@ -254,9 +254,6 @@ class Cravat (object):
     def close_logger (self):
         logging.shutdown()
     
-    def update_status_json (self, key, val):
-        cu.update_status_json(self, key, val)
-
     def update_status (self, status):
         cu.update_status_json(self, 'status', status)
 
@@ -455,7 +452,7 @@ class Cravat (object):
         annot_names = [v.name for v in self.ordered_annotators]
         annot_names.sort()
         if self.towritestatusjson:
-            self.update_status_json('annotators', annot_names)
+            cu.update_status_json(self, 'annotators', annot_names)
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
