@@ -17,8 +17,8 @@ class FilterColumn(object):
         'lessThan': '<',
         'greaterThanEq': '>=',
         'greaterThan': '>',
-        'hasData': 'is not',
-        'noData': 'is',
+        'hasData': 'is not null',
+        'noData': 'is null',
         'stringContains': 'like',
         'stringStarts': 'like',
         'stringEnds': 'like',
@@ -48,36 +48,34 @@ class FilterColumn(object):
         elif self.test == 'multicategory':
             s = 't.{} like "%{}%"'.format(self.column, self.value[0])
             for v in self.value[1:]:
-                s += ' or t.{} like "%{}%"'.format(self.column, v) 
+                s += ' or t.{} like "%{}%"'.format(self.column, v)
         else:
-            s = 't.' + self.column + ' ' + self.test2sql[self.test]
-            if type(self.value) == str:
-                oper = self.test2sql[self.test]
-                if self.test == 'stringContains':
-                    sql_val = '"%{}%"'.format(self.value)
-                elif self.test == 'stringStarts':
-                    sql_val = '"{}%"'.format(self.value)
-                elif self.test == 'stringEnds':
-                    sql_val = '"%{}"'.format(self.value)
-                else:
+            s = 't.{col} {opr}'.format(col=self.column, opr=self.test2sql[self.test])
+            sql_val = None
+            if self.test == 'equals':
+                if type(self.value) == str:
                     sql_val = '"{}"'.format(self.value)
-                s = 't.' + self.column + ' ' + oper
-            elif self.value is None:
-                sql_val = 'null'
-            elif type(self.value) == list:
-                if self.test == 'between':
-                    sql_val = '{} and {}'.format(self.value[0], self.value[1])
                 else:
-                    str_toks = []
-                    for val in self.value:
-                        if type(val) == str:
-                            str_toks.append('"{}"'.format(val))
-                        else:
-                            str_toks.append(str(val))
-                    sql_val = '(' + ', '.join(str_toks) + ')'
-            else:
-                sql_val = str(self.value)
-            if len(sql_val) > 0:
+                    sql_val = str(self.value)
+            if self.test == 'stringContains':
+                sql_val = '"%{}%"'.format(self.value)
+            elif self.test == 'stringStarts':
+                sql_val = '"{}%"'.format(self.value)
+            elif self.test == 'stringEnds':
+                sql_val = '"%{}"'.format(self.value)
+            elif self.test == 'in':
+                str_toks = []
+                for val in self.value:
+                    if type(val) == str:
+                        str_toks.append('"{}"'.format(val))
+                    else:
+                        str_toks.append(str(val))
+                sql_val = '(' + ', '.join(str_toks) + ')'
+            elif self.test == 'between':
+                sql_val = '{} and {}'.format(self.value[0], self.value[1])
+            elif self.test in ('lessThan','lessThanEq','greaterThan','greaterThanEq'):
+                sql_val = str(self.value)       
+            if sql_val:
                 s += ' '+sql_val
         if self.negate:
             s = 'not('+s+')'
