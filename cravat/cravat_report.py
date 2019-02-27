@@ -11,6 +11,7 @@ import subprocess
 import re
 import logging
 import time
+import cravat.cravat_util as cu
 
 class CravatReport:
 
@@ -29,7 +30,7 @@ class CravatReport:
         self.connect_db()
         self.load_filter()
         if self.module_conf is not None:
-            self.load_status_json()
+            cu.load_status_json(self)
 
     def _setup_logger(self):
         if hasattr(self, 'no_log') and self.no_log:
@@ -124,7 +125,7 @@ class CravatReport:
         if not (hasattr(self, 'no_log') and self.no_log):
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
         if self.module_conf is not None:
-            self.update_status_json('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
+            cu.update_status_json(self, 'status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
         self.setup()
         if tab == 'all':
             for level in self.cf.get_result_levels():
@@ -142,7 +143,7 @@ class CravatReport:
                 self.make_col_info(tab)
             self.run_level(tab)
         if self.module_conf is not None:
-            self.update_status_json('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
+            cu.update_status_json(self, 'status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
         end_time = time.time()
         if not (hasattr(self, 'no_log') and self.no_log):
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
@@ -150,25 +151,6 @@ class CravatReport:
             self.logger.info('runtime: {0:0.3f}'.format(run_time))
         ret = self.end()
         return ret
-
-    def load_status_json (self):
-        f = open(self.status_fpath)
-        lines = '\n'.join(f.readlines())
-        self.status_json = json.loads(lines)
-        f.close()
-
-    def update_status_json (self, k, v):
-        self.status_json[k] = v
-        tmp_path = self.status_fpath + '.' + self.module_name
-        wf = open(tmp_path, 'w')
-        json.dump(self.status_json, wf)
-        wf.close()
-        while True:
-            try:
-                os.rename(tmp_path, self.status_fpath)
-                break
-            except:
-                time.sleep(0.1)
 
     def get_variant_colinfo (self):
         self.setup()

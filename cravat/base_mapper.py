@@ -11,6 +11,7 @@ from cravat.config_loader import ConfigLoader
 import sys
 import pkg_resources
 import json
+import cravat.cravat_util as cu
 
 class BaseMapper(object):
     """
@@ -52,7 +53,7 @@ class BaseMapper(object):
         config_loader = ConfigLoader()
         self.conf = config_loader.get_module_conf(self.module_name)
         self.cravat_version = pkg_resources.get_distribution('open-cravat').version
-        self.load_status_json()
+        cu.load_status_json(self)
 
     def _define_main_cmd_args(self):
         self.cmd_parser = argparse.ArgumentParser()
@@ -96,25 +97,6 @@ class BaseMapper(object):
 
     def setup(self):
         raise NotImplementedError('Mapper must have a setup() method.')
-
-    def load_status_json (self):
-        f = open(self.status_fpath)
-        lines = '\n'.join(f.readlines())
-        self.status_json = json.loads(lines)
-        f.close()
-
-    def update_status_json (self, k, v):
-        self.status_json[k] = v
-        tmp_path = self.status_fpath + '.' + self.module_name
-        wf = open(tmp_path, 'w')
-        json.dump(self.status_json, wf)
-        wf.close()
-        while True:
-            try:
-                os.rename(tmp_path, self.status_fpath)
-                break
-            except:
-                time.sleep(0.1)
 
     def _setup_logger(self):
         self.logger = logging.getLogger('cravat.mapper')
@@ -180,7 +162,7 @@ class BaseMapper(object):
                 count += 1
                 cur_time = time.time()
                 if count % 10000 == 0 or cur_time - last_status_update_time > 5:
-                    self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, count))
+                    cu.update_status_json(self, 'status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, count))
                     last_status_update_time = cur_time
                 crx_data, alt_transcripts = self.map(crv_data)
                 # Skip cases where there was no change. Can result if ref_base not in original input

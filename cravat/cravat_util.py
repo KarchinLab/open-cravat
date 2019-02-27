@@ -7,6 +7,11 @@ import os
 import sys
 import yaml
 import json
+import traceback
+import shutil
+import time
+
+status_update_in_progress_flag = False
 
 def get_args ():
     if len(sys.argv) == 1:
@@ -136,6 +141,32 @@ def hg19tohg38 (args):
         print('  ' + table + ': done.', count, 'rows converted')
     newdb.commit()
 
+def load_status_json (self):
+    f = None
+    f = open(self.status_fpath)
+    lines = '\n'.join(f.readlines())
+    self.status_json = json.loads(lines)
+    f.close()
+
+def update_status_json (self, k, v):
+    global status_update_in_progress_flag
+    if status_update_in_progress_flag:
+        return
+    status_update_in_progress_flag = True
+    self.status_json[k] = v
+    #tmp_path = self.status_fpath + '.tmp'
+    wf = open(self.status_fpath, 'w')
+    json.dump(self.status_json, wf)
+    wf.close()
+    '''
+    try:
+        shutil.move(tmp_path, self.status_fpath)
+    except:
+        print('Error in writing to the status file')
+    '''
+    status_update_in_progress_flag = False
+
+'''
 def update_status_json(status_fpath, key, val):
     if os.path.exists(status_fpath):
         with open(status_fpath) as f:
@@ -143,8 +174,19 @@ def update_status_json(status_fpath, key, val):
     else:
         status = {}
     status[key] = val
-    with open(status_fpath,'w') as wf:
+    tmp_path = status_fpath + '.tmp'
+    with open(tmp_path,'w') as wf:
         wf.write(json.dumps(status))
+    while True:
+        try:
+            if os.path.exists(status_fpath):
+                os.remove(status_fpath)
+            os.rename(tmp_path, status_fpath)
+            break
+        except FileExistsError:
+            print('Waiting for overwriting the status file...')
+            time.sleep(0.1)
+'''
 
 def main ():
     args = get_args()

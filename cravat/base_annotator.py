@@ -17,6 +17,7 @@ from .exceptions import InvalidData
 from .exceptions import ConfigurationError
 import sqlite3
 import json
+import cravat.cravat_util as cu
 
 class BaseAnnotator(object):
 
@@ -69,7 +70,7 @@ class BaseAnnotator(object):
 
             # Loads status.json file.
             if self.update_status_json_flag:
-                self.load_status_json()
+                cu.load_status_json(self)
         except Exception as e:
             self._log_exception(e)
 
@@ -169,16 +170,10 @@ class BaseAnnotator(object):
         except Exception as e:
             self._log_exception(e)
 
-    def load_status_json (self):
-        f = open(self.status_fpath)
-        lines = '\n'.join(f.readlines())
-        self.status_json = json.loads(lines)
-        f.close()
-
     # Runs the annotator.
     def run(self):
         if self.update_status_json_flag:
-            self.update_status_json('status', 'Started {} ({})'.format(self.conf['title'], self.annotator_name))
+            cu.update_status_json(self, 'status', 'Started {} ({})'.format(self.conf['title'], self.annotator_name))
         try:
             start_time = time.time()
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
@@ -190,7 +185,7 @@ class BaseAnnotator(object):
                     if self.update_status_json_flag:
                         cur_time = time.time()
                         if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
-                            self.update_status_json('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
+                            cu.update_status_json(self, 'status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
                             last_status_update_time = cur_time
                     if secondary_data == {}:
                         output_dict = self.annotate(input_data)
@@ -220,8 +215,9 @@ class BaseAnnotator(object):
             run_time = end_time - start_time
             self.logger.info('runtime: {0:0.3f}'.format(run_time))
             print('        {}: runtime {}'.format(self.annotator_name, time.asctime(time.localtime(run_time))))
-            self.add_annotator_version_to_status_json()
-            self.update_status_json('status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
+            if self.update_status_json_flag:
+                self.add_annotator_version_to_status_json()
+                cu.update_status_json(self, 'status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
         except Exception as e:
             self._log_exception(e)
         #self.log_handler.close()
@@ -232,25 +228,11 @@ class BaseAnnotator(object):
         pass
 
     def add_annotator_version_to_status_json (self):
-        self.load_status_json()
         if 'annotator_version' not in self.status_json:
             self.status_json['annotator_version'] = {}
         version = self.conf.get('version', 'unknown')
         self.status_json['annotator_version'][self.annotator_name] = version
-        self.update_status_json('annotator_version', self.status_json['annotator_version'])
-
-    def update_status_json (self, k, v):
-        self.status_json[k] = v
-        tmp_path = self.status_fpath + '.' + self.annotator_name
-        wf = open(tmp_path, 'w')
-        json.dump(self.status_json, wf)
-        wf.close()
-        while True:
-            try:
-                os.rename(tmp_path, self.status_fpath)
-                break
-            except:
-                time.sleep(0.1)
+        cu.update_status_json(self, 'annotator_version', self.status_json['annotator_version'])
 
     def get_gene_summary_data (self, cf):
         cols = [self.annotator_name + '__' + coldef['name'] \

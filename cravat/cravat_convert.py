@@ -118,7 +118,8 @@ class MasterCravatConverter(object):
             self.lifter = LiftOver(constants.liftover_chain_paths[self.input_assembly])
         else:
             self.lifter = None
-        self.status_path = os.path.join(self.input_dir, self.input_fname + '.status.json')
+        self.status_fpath = os.path.join(self.input_dir, self.input_fname + '.status.json')
+        cu.load_status_json(self)
 
     def setup (self):
         """ Do necesarry pre-run tasks """
@@ -308,18 +309,15 @@ class MasterCravatConverter(object):
                     self.crs_writer.write_data(wdict)
         self.logger.info('error lines: %d' %num_errors)
         self._close_files()
-        self.update_status_json('num_input_var', read_lnum)
-        self.update_status_json('num_unique_var', write_lnum)
-        self.update_status_json('num_error_input', num_errors)
+        cu.update_status_json(self, 'num_input_var', read_lnum)
+        cu.update_status_json(self, 'num_unique_var', write_lnum)
+        cu.update_status_json(self, 'num_error_input', num_errors)
         end_time = time.time()
         self.logger.info('finished: %s' %\
             time.asctime(time.localtime(end_time)))
         runtime = round(end_time - start_time, 3)
         self.logger.info('num input lines: {}'.format(read_lnum))
         self.logger.info('runtime: %s'%runtime)
-
-    def update_status_json (self, k, v):
-        cu.update_status_json(self.status_path, k, v)
 
     def liftover(self, old_chrom, old_pos):
         new_coords = self.lifter.convert_coordinate(old_chrom, int(old_pos))

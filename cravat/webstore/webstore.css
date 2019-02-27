@@ -305,3 +305,29 @@ input:checked + .store-switch-slider:before {
     border-bottom: 1px dotted #aaaaaa;
 }
 
+.yesnodialog {
+	position: fixed;
+    font-size: 14px;
+    width: 500px;
+    height: 500px;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    background-color: white;
+    vertical-align: middle;
+    text-align: center;
+    box-shadow: 3px 3px 12px 0px;
+}
+
+.yesnodialog .buttondiv {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 16px;
+}
+
+.yesnodialog .buttondiv button {
+    width: 100px;
+    height: 40px;
+}

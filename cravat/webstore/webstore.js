@@ -1933,6 +1933,23 @@ function onStoreTagCheckboxChange () {
     updateFilter();
 }
 
+function showYesNoDialog (content, yescallback) {
+    var div = getEl('div');
+    div.className = 'yesnodialog';
+    addEl(div, content);
+    var btnDiv = getEl('div');
+    btnDiv.className = 'buttondiv';
+    var btn = getEl('button');
+    btn.textContent = 'Yes';
+    btn.addEventListener('click', yescallback);
+    addEl(btnDiv, btn);
+    var btn = getEl('button');
+    btn.textContent = 'No';
+    addEl(btnDiv, btn);
+    addEl(div, btnDiv);
+    addEl(document.body, div);
+}
+
 function onClickStoreInstallAllButton () {
     var notInstalledModuleNames = getNotInstalledModuleNames();
     var totalSize = 0;
@@ -1946,7 +1963,12 @@ function onClickStoreInstallAllButton () {
     }
     modulesToInstallStr += ']';
     totalSize = getSizeText(totalSize);
-    var yn = confirm('Modules to install are ' + modulesToInstallStr + ' and total installation size is ' + totalSize + '. Install them all?');
+    var msg = 'Modules to install are ' + modulesToInstallStr + ' and total installation size is ' + totalSize + '. Install them all?';
+    var span = getEl('span');
+    span.textContent = msg;
+    var yescallback = function () {
+    };
+    showYesNoDialog(span,
     if (yn == false) {
         return;
     }
