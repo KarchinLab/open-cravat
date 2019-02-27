@@ -579,8 +579,9 @@ function populateWidgetSelectorPanel () {
 	var widgetNames = Object.keys(widgetGenerators);
 	for (var i = 0; i < widgetNames.length; i++) {
 		var widgetName = widgetNames[i];
-		if (widgetGenerators[widgetName][tabName] != undefined &&
-			widgetGenerators[widgetName][tabName]['function'] != undefined &&
+        var generator = widgetGenerators[widgetName][tabName];
+		if (generator != undefined &&
+			generator['function'] != undefined &&
 			usedAnnotators[tabName].includes(infomgr.widgetReq[widgetName])) {
 			var div = getEl('div');
 			div.style.padding = '4px';
@@ -612,6 +613,11 @@ function populateWidgetSelectorPanel () {
             span.style.cursor = 'auto';
 			addEl(span, getTn(infomgr.colgroupkeytotitle[widgetName]));
 			addEl(div, span);
+            if (generator['variables'] != undefined &&
+                generator['variables']['shoulddraw'] == false) {
+                input.disabled = 'disabled';
+                span.style.color = 'gray';
+            }
 			addEl(panelDiv, div);
 		}
 	}
@@ -668,8 +674,10 @@ function onClickWidgetCloseButton (tabName, evt) {
 function executeWidgetClose (widgetName, tabName, repack) {
 	showHideWidget(tabName, widgetName, false, repack);
 	var button = document.getElementById(
-			'widgettogglecheckbox_' + currentTab + '_' + widgetName);
-	button.checked = false;
+			'widgettogglecheckbox_' + tabName + '_' + widgetName);
+    if (button != undefined) {
+        button.checked = false;
+    }
 }
 
 function changeWidgetShowHideAll (checked) {
@@ -731,15 +739,21 @@ function drawSummaryWidget (widgetName) {
                     } else {
                         shouldDraw = true;
                     }
+                    if (generator['variables'] == undefined) {
+                        generator['variables'] = {};
+                    }
+                    generator['variables']['shoulddraw'] = shouldDraw;
                     if (shouldDraw) {
                         generator['function'](widgetContentDiv, data);
                     } else {
                         setTimeout(function () {
                             executeWidgetClose(widgetName, 'info');
                             var button = document.getElementById(
-                                'widgettogglecheckbox_' + currentTab + '_' + widgetName);
-                            button.disabled = 'disabled';
-                            button.nextSibling.style.color = 'gray';
+                                'widgettogglecheckbox_info_' + widgetName);
+                            if (button != undefined) {
+                                button.disabled = 'disabled';
+                                button.nextSibling.style.color = 'gray';
+                            }
                             onClickDetailRedraw();
                         }, 500);
                     }
@@ -759,6 +773,10 @@ function drawSummaryWidget (widgetName) {
             } else {
                 shouldDraw = true;
             }
+            if (generator['variables'] == undefined) {
+                generator['variables'] = {};
+            }
+            generator['variables']['shoulddraw'] = shouldDraw;
             if (shouldDraw) {
                 generator['function'](widgetContentDiv);
             } else {
@@ -766,8 +784,10 @@ function drawSummaryWidget (widgetName) {
                     executeWidgetClose(widgetName, 'info');
                     var button = document.getElementById(
                         'widgettogglecheckbox_' + currentTab + '_' + widgetName);
-                    button.disabled = 'disabled';
-                    button.nextSibling.style.color = 'gray';
+                    if (button != undefined) {
+                        button.disabled = 'disabled';
+                        button.nextSibling.style.color = 'gray';
+                    }
                     onClickDetailRedraw();
                 }, 500);
             }

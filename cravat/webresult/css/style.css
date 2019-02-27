@@ -273,7 +273,7 @@ div.tabContent.hide {
 
 .detailwidgettitle {
 	display: inline-block;
-	width: calc(100% - 40px);
+	width: calc(100% - 37px);
 	background: #d1dae0;
 	font-size: 13px;
 	font-weight: bold;
@@ -332,12 +332,12 @@ div.tabContent.hide {
 }
 
 .detailwidgetclosebutton {
-	cursor: pointer;
+	cursor: default;
 	margin-left: 4px;
 }
 
 .detailwidgetpinbutton {
-	cursor: pointer;
+	cursor: default;
 	font-size: 12px;
 	text-align: center;
 	border: 1px solid gray;

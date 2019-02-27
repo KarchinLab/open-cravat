@@ -119,11 +119,12 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 
     // Help button
     if (widgetInfo[widgetName]['helphtml_exists']) {
-        var btn = getEl('img');
-        btn.src = '/result/images/pin.png';
+        var btn = getEl('span');
         btn.className = 'detailwidgetpinbutton';
-        btn.classList.add('unpinned');
-        btn.setAttribute('widgetname', widgetName);
+        btn.style.position = 'relative';
+        btn.style.top = '-4px';
+        btn.style.backgroundColor = 'white';
+        btn.textContent = '\u2754';
         btn.addEventListener('click', function (evt) {
             onClickWidgetHelpButton(evt, tabName);
         });

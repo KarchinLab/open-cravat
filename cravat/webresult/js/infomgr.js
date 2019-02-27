@@ -199,9 +199,9 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                     column['filter']['init'] = function () {
                         $(this).pqSelect({
                             checkbox: true, 
-                            displayText: '\u26ab',
-                            singlePlaceholder: '&#x25BC;',
-                            multiplePlaceholder: '&#x25BC;',
+                            displayText: '\u25BC',
+                            singlePlaceholder: '&#x25BD;',
+                            multiplePlaceholder: '&#x25BD;',
                             radio: true, 
                             maxDisplay: 0,
                             search: false,
@@ -213,9 +213,9 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                     column['filter']['init'] = function () {
                         $(this).pqSelect({
                             checkbox: true, 
-                            displayText: '\u26ab',
-                            singlePlaceholder: '&#x25BC;',
-                            multiplePlaceholder: '&#x25BC;',
+                            displayText: '\u25BC',
+                            singlePlaceholder: '&#x25BD;',
+                            multiplePlaceholder: '&#x25BD;',
                             radio: true, 
                             maxDisplay: 0,
                             search: false,
