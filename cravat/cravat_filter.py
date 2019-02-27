@@ -57,13 +57,13 @@ class FilterColumn(object):
                     sql_val = '"{}"'.format(self.value)
                 else:
                     sql_val = str(self.value)
-            if self.test == 'stringContains':
+            elif self.test == 'stringContains':
                 sql_val = '"%{}%"'.format(self.value)
             elif self.test == 'stringStarts':
                 sql_val = '"{}%"'.format(self.value)
             elif self.test == 'stringEnds':
                 sql_val = '"%{}"'.format(self.value)
-            elif self.test == 'in':
+            elif self.test in ('select','in'):
                 str_toks = []
                 for val in self.value:
                     if type(val) == str:
@@ -74,7 +74,7 @@ class FilterColumn(object):
             elif self.test == 'between':
                 sql_val = '{} and {}'.format(self.value[0], self.value[1])
             elif self.test in ('lessThan','lessThanEq','greaterThan','greaterThanEq'):
-                sql_val = str(self.value)       
+                sql_val = str(self.value)
             if sql_val:
                 s += ' '+sql_val
         if self.negate:
