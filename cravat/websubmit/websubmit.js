@@ -1513,7 +1513,7 @@ function addListeners () {
                         break;
                     }
                 }
-                activateDetailDialog(moduleName, moduleListName, moduleListPos);
+                makeModuleDetailDialog(moduleName, moduleListName, moduleListPos);
                 evt.stopPropagation();
             } else if (k == 'ArrowLeft') {
                 var moduleName = null;
@@ -1527,7 +1527,7 @@ function addListeners () {
                         break;
                     }
                 }
-                activateDetailDialog(moduleName, moduleListName, moduleListPos);
+                makeModuleDetailDialog(moduleName, moduleListName, moduleListPos);
                 evt.stopPropagation();
             }
         }

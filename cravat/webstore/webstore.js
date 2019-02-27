@@ -876,6 +876,8 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     td.style.border = '0px';
     var sdiv = getEl('div');
     sdiv.className = 'moduletile-logodiv';
+    sdiv.style.width = '180px';
+    sdiv.style.height = '85px';
     var img = addLogo(moduleName, sdiv);
     if (img != null) {
         img.style.maxHeight = '84px';
