@@ -473,7 +473,7 @@ div.filter-not-toggle {
 
 .filter-element-remove {
 	font-size: 10px;
-	cursor: default;
+	cursor: pointer;
 }
 .filter-element-remove:hover {
 	font-weight: bold;
