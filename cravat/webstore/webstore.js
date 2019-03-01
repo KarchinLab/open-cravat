@@ -1968,7 +1968,7 @@ function onClickStoreInstallAllButton () {
     span.textContent = msg;
     var yescallback = function () {
     };
-    showYesNoDialog(span,
+    showYesNoDialog(span, yescallback);
     if (yn == false) {
         return;
     }
