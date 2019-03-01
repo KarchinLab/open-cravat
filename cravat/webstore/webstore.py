@@ -332,6 +332,16 @@ def get_md (request):
     modules_dir = au.get_modules_dir()
     return web.Response(text=modules_dir)
 
+def get_module_updates (request):
+    queries = request.rel_url.query
+    smodules = queries.get('modules','')
+    if smodules:
+        modules = smodules.split(',')
+    else:
+        modules = []
+    updates, _, _ = au.get_updatable(modules=modules)
+    return web.json_response(updates)
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/install', install_module])
@@ -346,3 +356,4 @@ routes.append(['GET', '/store/getbasemodules', get_base_modules])
 routes.append(['GET', '/store/installbasemodules', install_base_modules])
 routes.append(['GET', '/store/remotemoduleconfig', get_remote_module_config])
 routes.append(['GET', '/store/getmd', get_md])
+routes.append(['GET','/store/updates', get_module_updates])

@@ -1013,7 +1013,6 @@ def get_install_deps (module_name, version=None, skip_installed=True):
     return deps
 
 def get_updatable(modules=[], strategy='consensus'):
-    strategy = 'consensus' if not strategy else strategy
     if strategy not in ('consensus','force','skip'):
         raise ValueError('Unknown strategy "{}"'.format(strategy))
     if not modules:
