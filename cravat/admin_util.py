@@ -283,7 +283,6 @@ def list_local():
     """
     Returns a list of locally installed modules.
     """
-    mic.update_local()
     return sorted(list(mic.local.keys()))
 
 def list_remote():
