@@ -216,6 +216,7 @@ function getLocal () {
         }
         populateStoreTagPanel();
         showOrHideInstallAllButton();
+        showOrHideUpdateAllButton();
         enableStoreTabHead();
 	});
 }
@@ -226,12 +227,24 @@ function enableStoreTabHead () {
 
 function showOrHideInstallAllButton () {
     var notInstalledModuleNames = getNotInstalledModuleNames();
-    var div = document.getElementById('store-install-all-button-div');
+    var div = document.getElementById('store-install-all-button');
     var display = null;
     if (notInstalledModuleNames.length == 0) {
         display = 'none';
     } else {
-        display = 'block';
+        display = 'inline-block';
+    }
+    div.style.display = display;
+}
+
+function showOrHideUpdateAllButton () {
+    var modulesToUpdate = getModulesToUpdate();
+    var div = document.getElementById('store-update-all-button');
+    var display = null;
+    if (modulesToUpdate.length == 0) {
+        display = 'none';
+    } else {
+        display = 'inline-block';
     }
     div.style.display = display;
 }
@@ -1934,17 +1947,28 @@ function onStoreTagCheckboxChange () {
 }
 
 function showYesNoDialog (content, yescallback) {
+    var div = document.getElementById('yesnodialog');
+    if (div != undefined) {
+        $(div).remove();
+    }
     var div = getEl('div');
-    div.className = 'yesnodialog';
+    div.id = 'yesnodialog';
     addEl(div, content);
     var btnDiv = getEl('div');
     btnDiv.className = 'buttondiv';
     var btn = getEl('button');
     btn.textContent = 'Yes';
-    btn.addEventListener('click', yescallback);
+    btn.addEventListener('click', function (evt) {
+        $('#yesnodialog').remove();
+        yescallback(true);
+    });
     addEl(btnDiv, btn);
     var btn = getEl('button');
     btn.textContent = 'No';
+    btn.addEventListener('click', function (evt) {
+        $('#yesnodialog').remove();
+        yescallback(false);
+    });
     addEl(btnDiv, btn);
     addEl(div, btnDiv);
     addEl(document.body, div);
@@ -1952,38 +1976,104 @@ function showYesNoDialog (content, yescallback) {
 
 function onClickStoreInstallAllButton () {
     var notInstalledModuleNames = getNotInstalledModuleNames();
+    var div = getEl('div');
+    div.id = 'yesnodialog-contentdiv';
+    var span = getEl('span');
+    span.textContent = 'Modules to install are:';
+    addEl(div, span);
+    addEl(div, getEl('br'));
     var totalSize = 0;
-    var modulesToInstallStr = '[';
     for (var i = 0; i < notInstalledModuleNames.length; i++) {
         totalSize += remoteModuleInfo[notInstalledModuleNames[i]].size;
-        modulesToInstallStr += notInstalledModuleNames[i];
-        if (i < notInstalledModuleNames.length - 1) {
-            modulesToInstallStr += ', ';
+        var span = getEl('span');
+        span.textContent = notInstalledModuleNames[i];
+        span.style.fontWeight = 'bold';
+        addEl(div, span);
+        addEl(div, getEl('br'));
+    }
+    addEl(div, getEl('br'));
+    totalSize = getSizeText(totalSize);
+    var span = getEl('span');
+    span.textContent = 'Total installation size is ';
+    addEl(div, span);
+    var span = getEl('span');
+    span.textContent = totalSize;
+    span.style.fontWeight = 'bold';
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    var span = getEl('span');
+    span.textContent = 'Install them all?';
+    addEl(div, span);
+    var yescallback = function (yn) {
+        if (yn == false) {
+            $('#yesnodialog').remove();
+            return;
+        } else {
+            for (var i = 0; i < notInstalledModuleNames.length; i++) {
+                queueInstall(notInstalledModuleNames[i]);
+            }
+        }
+    };
+    showYesNoDialog(div, yescallback);
+}
+
+function getModulesToUpdate () {
+    var modulesToUpdate = [];
+    for (var moduleName in remoteModuleInfo) {
+        if (remoteModuleInfo[moduleName]['tags'].indexOf('newavailable') >= 0) {
+            modulesToUpdate.push(moduleName);
         }
     }
-    modulesToInstallStr += ']';
-    totalSize = getSizeText(totalSize);
-    var msg = 'Modules to install are ' + modulesToInstallStr + ' and total installation size is ' + totalSize + '. Install them all?';
-    var span = getEl('span');
-    span.textContent = msg;
-    var yescallback = function () {
-    };
-    showYesNoDialog(span, yescallback);
-    if (yn == false) {
-        return;
-    }
-    for (var i = 0; i < notInstalledModuleNames.length; i++) {
-        queueInstall(notInstalledModuleNames[i]);
-    }
+    return modulesToUpdate;
 }
 
 function onClickStoreUpdateAllButton () {
+    var modulesToUpdate = getModulesToUpdate();
     for (var moduleName in remoteModuleInfo) {
         if (remoteModuleInfo[moduleName]['tags'].indexOf('newavailable') >= 0) {
-            queueInstall(moduleName);
+            modulesToUpdate.push(moduleName);
         }
     }
-    announceStoreUpdatingAll();
+    var div = getEl('div');
+    div.id = 'yesnodialog-contentdiv';
+    var span = getEl('span');
+    span.textContent = 'Modules to update are:';
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    var totalSize = 0;
+    for (var i = 0; i < modulesToUpdate.length; i++) {
+        totalSize += remoteModuleInfo[modulesToUpdate[i]].size;
+        var span = getEl('span');
+        span.textContent = modulesToUpdate[i];
+        span.style.fontWeight = 'bold';
+        addEl(div, span);
+        addEl(div, getEl('br'));
+    }
+    addEl(div, getEl('br'));
+    /*
+    totalSize = getSizeText(totalSize);
+    var span = getEl('span');
+    span.textContent = 'Total update size is ';
+    addEl(div, span);
+    var span = getEl('span');
+    span.textContent = totalSize;
+    span.style.fontWeight = 'bold';
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    */
+    var span = getEl('span');
+    span.textContent = 'Update them all?';
+    addEl(div, span);
+    var yescallback = function (yn) {
+        if (yn == false) {
+        } else {
+            announceStoreUpdatingAll();
+            for (var i = 0; i < modulesToUpdate.length; i++) {
+                queueInstall(modulesToUpdate[i]);
+            }
+        }
+    };
+    showYesNoDialog(div, yescallback);
 }
 
 function announceStoreUpdatingAll () {

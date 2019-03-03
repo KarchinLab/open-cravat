@@ -305,7 +305,7 @@ input:checked + .store-switch-slider:before {
     border-bottom: 1px dotted #aaaaaa;
 }
 
-.yesnodialog {
+#yesnodialog {
 	position: fixed;
     font-size: 14px;
     width: 500px;
@@ -314,12 +314,11 @@ input:checked + .store-switch-slider:before {
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
     background-color: white;
-    vertical-align: middle;
     text-align: center;
     box-shadow: 3px 3px 12px 0px;
 }
 
-.yesnodialog .buttondiv {
+#yesnodialog .buttondiv {
     position: absolute;
     bottom: 10px;
     left: 50%;
@@ -327,7 +326,17 @@ input:checked + .store-switch-slider:before {
     font-size: 16px;
 }
 
-.yesnodialog .buttondiv button {
+#yesnodialog .buttondiv button {
     width: 100px;
     height: 40px;
 }
+
+#yesnodialog-contentdiv {
+    font-size: 16px;
+    position: absolute;
+    height: calc(100% - 80px);
+    overflow: auto;
+    width: calc(100% - 20px);
+    padding: 10px;
+}
+
