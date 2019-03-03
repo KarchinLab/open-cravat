@@ -53,10 +53,23 @@ class FilterColumn(object):
             s = 't.{col} {opr}'.format(col=self.column, opr=self.test2sql[self.test])
             sql_val = None
             if self.test == 'equals':
-                if type(self.value) == str:
-                    sql_val = '"{}"'.format(self.value)
+                if type(self.value) is list:
+                    v = self.value[0]
+                    if type(v) is str:
+                        sql_val = '"' + v + '"'
+                    else:
+                        sql_val = str(v)
+                    for v in self.value[1:]:
+                        if type(v) is str:
+                            v = '"' + v + '"'
+                        else:
+                            v = str(v)
+                        sql_val += ' OR {} == {}'.format(self.column, v)
                 else:
-                    sql_val = str(self.value)
+                    if type(self.value) is str:
+                        sql_val = '"{}"'.format(self.value)
+                    else:
+                        sql_val = str(self.value)
             elif self.test == 'stringContains':
                 sql_val = '"%{}%"'.format(self.value)
             elif self.test == 'stringStarts':

@@ -558,7 +558,27 @@ const makeGroupFilter = (groupDiv) => {
             } else if (valInputs.length === 1) {
                 var rawValue = $(valInputs[0]).val();
                 var val = isNaN(Number(rawValue)) ? rawValue: Number(rawValue);
-                colFilter.value = doReportSub(reportsub, reportsubKeys, val);
+                if (reportsubKeys.length > 0 && (colFilter.test == 'stringContains' || colFilter.test == 'stringStarts' || colFilter.test == 'stringEnds')) {
+                    var reportsubValues = Object.values(reportsub);
+                    var matchReportsubKeys = [];
+                    for (var j = 0; j < reportsubKeys.length; j++) {
+                        var key = reportsubKeys[j];
+                        var value = reportsubValues[j];
+                        if ((colFilter.test == 'stringStarts' && value.startsWith(val)) ||
+                            (colFilter.test == 'stringEnds' && value.endsWith(val)) ||
+                            (colFilter.test == 'stringContains' && value.includes(val))) {
+                            matchReportsubKeys.push(key);
+                        }
+                    }
+                    if (matchReportsubKeys.length > 0) {
+                        colFilter.test = 'equals';
+                        colFilter.value = matchReportsubKeys;
+                    } else {
+                        continue;
+                    }
+                } else {
+                    colFilter.value = doReportSub(reportsub, reportsubKeys, val);
+                }
             } else {
                 colFilter.value = [];
                 for (let j=0; j<valInputs.length; j++){
