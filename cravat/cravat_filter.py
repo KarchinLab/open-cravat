@@ -333,12 +333,14 @@ class CravatFilter ():
         if self.filter == None:
             sample_needed = False
             tag_needed = False
-            where = ''
+            include_where = ''
+            exclude_where = ''
         else:
             if level not in self.filter:
                 sample_needed = False
                 tag_needed = False
-                where = ''
+                include_where = ''
+                exclude_where = ''
             else:
                 criteria = self.filter[level]
                 main_group = FilterGroup(criteria)
