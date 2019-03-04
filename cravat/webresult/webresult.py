@@ -28,6 +28,16 @@ def get_nowg_annot_modules (request):
     dbpath = queries['dbpath']
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
+    remote_widget_modules = au.get_remote_module_infos_of_type('webviewerwidget')
+    remote_widget_names = remote_widget_modules.keys()
+    remote_annot_to_widgets = {}
+    for remote_widget_name in remote_widget_names:
+        conf = au.get_remote_module_config(remote_widget_name)
+        if 'required_annotator' in conf:
+            req_annot = conf['required_annotator']
+            if req_annot not in remote_annot_to_widgets:
+                remote_annot_to_widgets[req_annot] = []
+            remote_annot_to_widgets[req_annot].append(remote_widget_name)
     wgmodules = au.get_local_module_infos_of_type('webviewerwidget')
     annot_modules_with_wg = []
     for wgmodule in wgmodules:
@@ -46,7 +56,7 @@ def get_nowg_annot_modules (request):
                 continue
             annot_module = r[0]
             displayname = r[1]
-            if annot_module not in annot_modules_with_wg and annot_module not in nowg_annot_modules:
+            if annot_module not in annot_modules_with_wg and annot_module not in nowg_annot_modules and annot_module in remote_annot_to_widgets:
                 nowg_annot_modules[annot_module] = displayname
     content = nowg_annot_modules
     return web.json_response(content)

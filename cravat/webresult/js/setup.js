@@ -460,12 +460,12 @@ function makeSampleMappingTab (tabName, rightDiv) {
 function populateWgNoticeDiv (noWgAnnotModules) {
 	var contentDiv = document.getElementById('missing-widgets-div');
 	if (Object.keys(noWgAnnotModules).length == 0) {
+        $(contentDiv).empty();
 		var span = getEl('span');
         span.className = 'detailContent';
         span.textContent = 'None';
         addEl(contentDiv, span);
 		return;
-	} else {
     }
     emptyElement(contentDiv);
 	var msg = 'Your system does not have viwer widgets for the following annotator results are not installed in the system. ';

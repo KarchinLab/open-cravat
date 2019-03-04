@@ -682,6 +682,14 @@ def get_local_module_infos_of_type (t):
             modules[module_name] = mic.local[module_name] 
     return modules
 
+def get_remote_module_infos_of_type (t):
+    modules = {}
+    mic.update_remote()
+    for module_name in mic.remote:
+        if mic.remote[module_name]['type'] == t:
+            modules[module_name] = mic.remote[module_name] 
+    return modules
+
 def refresh_cache ():
     """
     Refresh the local modules cache
