@@ -59,11 +59,13 @@ class CravatReport:
 
     def substitute_val (self, level, row):
         if level in self.column_subs:
+            column_sub_level = self.column_subs[level]
             for i in self.column_subs[level]:
-                if row[i] is not None:
-                    sub = self.column_subs[level][i]
-                    for target in sub:
-                        row[i] = re.sub('\\b' + target + '\\b', sub[target], row[i])
+                column_sub_i = column_sub_level[i]
+                value = row[i]
+                if value is not None:
+                    if value in column_sub_i:
+                        row[i] = column_sub_i[value]
         return row
 
     def run_level (self, level):
@@ -80,12 +82,7 @@ class CravatReport:
             self.write_header(level)
             if level == 'variant':
                 hugo_present = 'base__hugo' in self.colnos['variant']
-            print('starting iterating over filtered rows')
-            count = 0
             for row in self.cf.get_filtered_iterator(level):
-                count += 1
-                if count % 1000 == 0:
-                    print('   ', count)
                 row = list(row)
                 if level == 'variant':
                     if hugo_present:
