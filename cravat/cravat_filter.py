@@ -95,7 +95,6 @@ class FilterColumn(object):
                 s += ' '+sql_val
         if self.negate and incexc != 'exclude':
             s = 'not('+s+')'
-        print('[', s, ']', incexc)
         return s, incexc
 
 class FilterGroup(object):

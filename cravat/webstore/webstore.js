@@ -1087,6 +1087,8 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
 		mdDiv.innerHTML = data;
         // output column description
         var d = getEl('div');
+        d.id = 'moduledetail-output-column-div-' + currentTab;
+        d.style.display = 'none';
         var h2 = getEl('h2');
         h2.textContent = 'Output Columns';
         addEl(d, h2);
@@ -1110,25 +1112,33 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
             data: {'module': moduleName},
             success: function (data) {
                 var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
+                var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + currentTab);
                 var outputs = data['output_columns'];
+                var descs = [];
                 for (var i1 = 0; i1 < outputs.length; i1++) {
                     var o = outputs[i1];
-                    var otr = getEl('tr');
-                    var otd = getEl('td');
-                    var ospan = getEl('span');
-                    ospan.textContent = o['title'];
-                    addEl(otd, ospan);
-                    addEl(otr, otd);
-                    var otd = getEl('td');
-                    var ospan = getEl('span');
-                    var desc = o['desc'];
-                    if (desc == undefined) {
-                        desc = '';
+                    if (o['desc'] != undefined) {
+                        descs.push([o['title'], o['desc']]);
                     }
-                    ospan.textContent = desc;
-                    addEl(otd, ospan);
-                    addEl(otr, otd);
-                    addEl(otbody, otr);
+                }
+                if (descs.length > 0) {
+                    outputColumnDiv.style.display = 'block';
+                    for (var i1 = 0; i1 < descs.length; i1++) {
+                        var title = descs[i1][0];
+                        var desc = descs[i1][1];
+                        var otr = getEl('tr');
+                        var otd = getEl('td');
+                        var ospan = getEl('span');
+                        ospan.textContent = title;
+                        addEl(otd, ospan);
+                        addEl(otr, otd);
+                        var otd = getEl('td');
+                        var ospan = getEl('span');
+                        ospan.textContent = desc;
+                        addEl(otd, ospan);
+                        addEl(otr, otd);
+                        addEl(otbody, otr);
+                    }
                 }
             },
         });
