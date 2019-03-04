@@ -705,6 +705,16 @@ function executeWidgetClose (widgetName, tabName, repack) {
     if (button != undefined) {
         button.checked = false;
     }
+    onClickDetailRedraw();
+}
+
+function grayOutWidgetSelect (widgetName, tabName) {
+    var button = document.getElementById(
+        'widgettogglecheckbox_' + tabName + '_' + widgetName);
+    if (button != undefined) {
+        button.disabled = 'disabled';
+        button.nextSibling.style.color = 'gray';
+    }
 }
 
 function changeWidgetShowHideAll (checked) {
@@ -766,13 +776,7 @@ function drawSummaryWidgetGivenData (widgetName, widgetContentDiv, generator, da
         } else {
             setTimeout(function () {
                 executeWidgetClose(widgetName, 'info');
-                var button = document.getElementById(
-                    'widgettogglecheckbox_info_' + widgetName);
-                if (button != undefined) {
-                    button.disabled = 'disabled';
-                    button.nextSibling.style.color = 'gray';
-                }
-                onClickDetailRedraw();
+                grayOutWidgetSelect(widgetName, currentTab);
             }, 500);
         }
     } catch (e) {
@@ -1440,7 +1444,6 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             });
 		}
 	}
-    /*
     gridObject.columnDrag = function (evt, ui) {
         console.log(ui.column.parent);
         if (ui.column.parent != undefined) {
@@ -1449,6 +1452,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
         }
         evt.stopPropagation();
     }
+    /*
     gridObject.columnOrder = function (evt, ui) {
         console.log('@@@', evt);
         console.log('@@@', ui.column.parent);
