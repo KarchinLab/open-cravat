@@ -32,8 +32,9 @@ class FilterColumn(object):
         self.test = d['test']
         self.value = d.get('value')
         self.negate = d.get('negate', False)
-    
+
     def get_sql(self):
+        incexc = 'include'
         if self.column == 'tagsampler__samples' and type(self.value) == list:
             if type(self.value) == list:
                 s = 's.base__sample_id="' + self.value[0] + '"'
@@ -41,6 +42,8 @@ class FilterColumn(object):
                     s += ' or s.base__sample_id="' + v + '"'
             elif type(self.value) == str:
                 s = 's.base__sample_id="' + self.value + '"'
+            if self.negate:
+                incexc = 'exclude'
         elif self.column == 'tagsampler__tags':
             s = 'm.base__tags="' + self.value[0] + '"'
             for v in self.value[1:]:
@@ -90,9 +93,9 @@ class FilterColumn(object):
                 sql_val = str(self.value)
             if sql_val:
                 s += ' '+sql_val
-        if self.negate:
+        if self.negate and incexc != 'exclude':
             s = 'not('+s+')'
-        return s
+        return s, incexc
 
 class FilterGroup(object):
     def __init__(self, d):
@@ -105,15 +108,35 @@ class FilterGroup(object):
         all_operands = self.groups + self.columns
         if len(all_operands) == 0:
             return ''
+        include_sqls = []
+        exclude_sqls = []
+        for operand in all_operands:
+            sql, incexc = operand.get_sql()
+            if sql == '':
+                continue
+            if incexc == 'include':
+                include_sqls.append(sql)
+            elif incexc == 'exclude':
+                exclude_sqls.append(sql)
         s = '('
-        sql_operator = ' '+self.operator+' '
-        s += sql_operator.join([x.get_sql() for x in all_operands if x.get_sql() != ''])
+        sql_operator = ' ' + self.operator + ' '
+        s += sql_operator.join([sql for sql in include_sqls])
         s += ')'
         if self.negate:
             s = 'not'+s
         if s == '()' or s == 'not()':
             s = ''
-        return s
+        include_sql = s
+        s = '('
+        sql_operator = ' ' + self.operator + ' '
+        s += sql_operator.join([sql for sql in exclude_sqls])
+        s += ')'
+        if self.negate:
+            s = 'not'+s
+        if s == '()' or s == 'not()':
+            s = ''
+        exclude_sql = s
+        return include_sql, exclude_sql
 
 class CravatFilter ():
     def __init__ (self, dbpath=None, filterpath=None, filtername=None, 
@@ -319,14 +342,18 @@ class CravatFilter ():
             else:
                 criteria = self.filter[level]
                 main_group = FilterGroup(criteria)
-                sql_criteria = main_group.get_sql()
-                if sql_criteria == '':
-                    where = ''
+                include_sql, exclude_sql = main_group.get_sql()
+                if include_sql == '':
+                    include_where = ''
                 else:
-                    where = ' where ' + main_group.get_sql()
-                sample_needed = 's.base__sample_id' in where
-                tag_needed = 'm.base__tags' in where
-        return (sample_needed, tag_needed, where)
+                    include_where = ' where ' + include_sql
+                if exclude_sql == '':
+                    exclude_where = ''
+                else:
+                    exclude_where = ' where ' + exclude_sql
+                sample_needed = 's.base__sample_id' in include_where or 's.base__sample_id' in exclude_where
+                tag_needed = 'm.base__tags' in include_where or 'm.base__tags' in exclude_where
+        return (sample_needed, tag_needed, include_where, exclude_where)
 
     def getvariantcount (self):
         return self.getcount('variant')
@@ -353,8 +380,8 @@ class CravatFilter ():
         return self.getrows('gene')
     
     def getrows (self, level='variant'):
-        (sample_needed, tag_needed, where) = self.getwhere(level)
-        q = 'select *  from ' + level + where
+        (sample_needed, tag_needed, include_where, exclude_where) = self.getwhere(level)
+        q = 'select *  from ' + level + include_where + ' except select * from ' + level + exclude_where
         self.cursor.execute(q)
         
         ret = [list(v) for v in self.cursor.fetchall()]
@@ -379,8 +406,8 @@ class CravatFilter ():
         return self.getiterator('gene')
     
     def getiterator (self, level='variant'):
-        (sample_needed, tag_needed, where) = self.getwhere(level)
-        sql = 'select * from ' + level + where
+        (sample_needed, tag_needed, include_where, exclude_where) = self.getwhere(level)
+        sql = 'select *  from ' + level + include_where + ' except select * from ' + level + exclude_where
         self.cursor.execute(sql)
         it = self.cursor.fetchall()
         return it
@@ -413,17 +440,28 @@ class CravatFilter ():
         vftable = level + '_filtered'
         q = 'drop table if exists ' + vftable
         self.cursor.execute(q)
-        (sample_needed, tag_needed, where) = self.getwhere(level)
-        q = 'create table {} as select distinct(t.base__uid) from {} as t '.format(vftable, level) 
+        (sample_needed, tag_needed, include_where, exclude_where) = self.getwhere(level)
+        q = 'create table {} as select distinct(t.base__uid) from {} as t'.format(vftable, level) 
         if sample_needed:
             q += ', sample as s '
         if tag_needed:
             q += ', mapping as m '
-        q += where
+        q += include_where
         if sample_needed:
             q += ' and s.base__uid=t.base__uid'
         if tag_needed:
             q += ' and m.base__uid=t.base__uid'
+        if exclude_where != '':
+            q += ' except select distinct(t.base__uid) from {} as t'.format(level)
+            if sample_needed:
+                q += ', sample as s '
+            if tag_needed:
+                q += ', mapping as m '
+            q += exclude_where
+            if sample_needed:
+                q += ' and s.base__uid=t.base__uid'
+            if tag_needed:
+                q += ' and m.base__uid=t.base__uid'
         self.cursor.execute(q)
         self.cursor.execute('pragma synchronous=2')
 
