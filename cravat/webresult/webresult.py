@@ -312,11 +312,11 @@ def get_result (request):
         args.extend(['--filterstring', filterstring])
     reporter = m.Reporter(args)
     dbbasename = os.path.basename(dbpath)
-    print('getting result from {} for viewer...'.format(dbbasename))
+    print('getting result [{}] from {} for viewer...'.format(tab, dbbasename))
     t = time.time()
     data = reporter.run(tab=tab)
     t = round(time.time() - t, 3)
-    print('result obtained from {} in {}s. packing...'.format(dbbasename, t))
+    print('result [{}] obtained from {} in {}s. packing...'.format(tab, dbbasename, t))
     t = time.time()
     content = {}
     content['stat'] = {'rowsreturned': True, 

@@ -80,7 +80,12 @@ class CravatReport:
             self.write_header(level)
             if level == 'variant':
                 hugo_present = 'base__hugo' in self.colnos['variant']
+            print('starting iterating over filtered rows')
+            count = 0
             for row in self.cf.get_filtered_iterator(level):
+                count += 1
+                if count % 1000 == 0:
+                    print('   ', count)
                 row = list(row)
                 if level == 'variant':
                     if hugo_present:

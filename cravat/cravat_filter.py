@@ -443,7 +443,7 @@ class CravatFilter ():
         q = 'drop table if exists ' + vftable
         self.cursor.execute(q)
         (sample_needed, tag_needed, include_where, exclude_where) = self.getwhere(level)
-        q = 'create table {} as select distinct(t.base__uid) from {} as t'.format(vftable, level) 
+        q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level) 
         if sample_needed:
             q += ', sample as s '
         if tag_needed:
@@ -454,7 +454,7 @@ class CravatFilter ():
         if tag_needed:
             q += ' and m.base__uid=t.base__uid'
         if exclude_where != '':
-            q += ' except select distinct(t.base__uid) from {} as t'.format(level)
+            q += ' except select t.base__uid from {} as t'.format(level)
             if sample_needed:
                 q += ', sample as s '
             if tag_needed:
@@ -464,7 +464,12 @@ class CravatFilter ():
                 q += ' and s.base__uid=t.base__uid'
             if tag_needed:
                 q += ' and m.base__uid=t.base__uid'
+        print('q=', q)
+        import time
+        t = time.time()
         self.cursor.execute(q)
+        t = time.time() - t
+        print(t, 's for query')
         self.cursor.execute('pragma synchronous=2')
 
     def make_filtered_hugo_table (self):
