@@ -1445,22 +1445,31 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 		}
 	}
     gridObject.columnDrag = function (evt, ui) {
-        console.log(ui.column.parent);
-        if (ui.column.parent != undefined) {
-            console.log('should be prevented');
-            ui.column.nodrop = true;
+        var colGroups = $grids[currentTab].pqGrid('option', 'colModel');
+        var colLevel = null;
+        if (ui.column.parent == undefined) {
+            colLevel = 'group';
+        } else {
+            colLevel = 'column';
         }
-        evt.stopPropagation();
-    }
-    /*
-    gridObject.columnOrder = function (evt, ui) {
-        console.log('@@@', evt);
-        console.log('@@@', ui.column.parent);
-        if (ui.column.parent != undefined) {
-            console.log('should be prevented');
+        for (var i = 0; i < colGroups.length; i++) {
+            var colGroup = colGroups[i];
+            if (colLevel == 'column') {
+                colGroup.nodrop = true;
+            } else if (colLevel == 'group') {
+                colGroup.nodrop = false;
+            }
+            var cols = colGroup.colModel;
+            for (var j = 0; j < cols.length; j++) {
+                var col = cols[j];
+                if (colLevel == 'group') {
+                    col.nodrop = true;
+                } else if (colLevel == 'column') {
+                    col.nodrop = false;
+                }
+            }
         }
     }
-    */
 	return gridObject;
 }
 
