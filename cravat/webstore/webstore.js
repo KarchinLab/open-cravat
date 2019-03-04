@@ -1992,6 +1992,7 @@ function onClickStoreInstallAllButton () {
     span.textContent = 'Modules to install are:';
     addEl(div, span);
     addEl(div, getEl('br'));
+    addEl(div, getEl('br'));
     var totalSize = 0;
     for (var i = 0; i < notInstalledModuleNames.length; i++) {
         totalSize += remoteModuleInfo[notInstalledModuleNames[i]].size;
@@ -2039,16 +2040,12 @@ function getModulesToUpdate () {
 
 function onClickStoreUpdateAllButton () {
     var modulesToUpdate = getModulesToUpdate();
-    for (var moduleName in remoteModuleInfo) {
-        if (remoteModuleInfo[moduleName]['tags'].indexOf('newavailable') >= 0) {
-            modulesToUpdate.push(moduleName);
-        }
-    }
     var div = getEl('div');
     div.id = 'yesnodialog-contentdiv';
     var span = getEl('span');
     span.textContent = 'Modules to update are:';
     addEl(div, span);
+    addEl(div, getEl('br'));
     addEl(div, getEl('br'));
     var totalSize = 0;
     for (var i = 0; i < modulesToUpdate.length; i++) {

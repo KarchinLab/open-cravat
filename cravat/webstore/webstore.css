@@ -316,6 +316,7 @@ input:checked + .store-switch-slider:before {
     background-color: white;
     text-align: center;
     box-shadow: 3px 3px 12px 0px;
+    z-index: 300;
 }
 
 #yesnodialog .buttondiv {
