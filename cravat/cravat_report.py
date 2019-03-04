@@ -385,6 +385,7 @@ class CravatReport:
             default=None,
             help='report module name')
         parsed_args = parser.parse_args(cmd_args[1:])
+        self.parsed_args = parsed_args
         self.dbpath = parsed_args.dbpath
         self.filterpath = parsed_args.filterpath
         self.filtername = parsed_args.filtername

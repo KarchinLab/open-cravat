@@ -182,6 +182,7 @@ cravat_cmd_parser.add_argument('--mp',
                     help='number of processes to use to run annotators')
 
 class Cravat (object):
+
     def __init__ (self, **kwargs):
         self.runlevels = {
             'converter': 1, 
@@ -209,30 +210,33 @@ class Cravat (object):
         self.logger.info('input assembly: {}'.format(self.input_assembly))
         if self.run_conf_path != '':
             self.logger.info('conf file: {}'.format(self.run_conf_path))
-        if self.towritestatusjson:
-            self.write_initial_status_json()
+        self.write_initial_status_json()
         self.unique_logs = {}
 
     def write_initial_status_json (self):
         status_fname = '{}.status.json'.format(self.run_name)
         self.status_fpath = os.path.join(self.output_dir, status_fname)
-        self.status_json = {}
-        self.status_json['job_dir'] = self.output_dir
-        self.status_json['id'] = os.path.basename(os.path.normpath(self.output_dir))
-        self.status_json['run_name'] = self.run_name
-        self.status_json['assembly'] = self.input_assembly
-        self.status_json['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
-        self.status_json['orig_input_fname'] = os.path.basename(self.input)
-        self.status_json['orig_input_path'] = self.input
-        self.status_json['submission_time'] = datetime.datetime.now().isoformat()
-        self.status_json['viewable'] = False
-        self.status_json['note'] = self.args.note
-        self.status_json['status'] = 'Starting'
-        self.status_json['reports'] = self.args.reports if self.args.reports != None else []
-        self.pkg_ver = au.get_current_package_version()
-        self.status_json['open_cravat_version'] = self.pkg_ver
-        with open(self.status_fpath,'w') as wf:
-            wf.write(json.dumps(self.status_json))
+        if os.path.exists(self.status_fpath) == True:
+            with open(self.status_fpath) as f:
+                self.status_json = json.load(f)
+        else:
+            self.status_json = {}
+            self.status_json['job_dir'] = self.output_dir
+            self.status_json['id'] = os.path.basename(os.path.normpath(self.output_dir))
+            self.status_json['run_name'] = self.run_name
+            self.status_json['assembly'] = self.input_assembly
+            self.status_json['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
+            self.status_json['orig_input_fname'] = os.path.basename(self.input)
+            self.status_json['orig_input_path'] = self.input
+            self.status_json['submission_time'] = datetime.datetime.now().isoformat()
+            self.status_json['viewable'] = False
+            self.status_json['note'] = self.args.note
+            self.status_json['status'] = 'Starting'
+            self.status_json['reports'] = self.args.reports if self.args.reports != None else []
+            self.pkg_ver = au.get_current_package_version()
+            self.status_json['open_cravat_version'] = self.pkg_ver
+            with open(self.status_fpath,'w') as wf:
+                wf.write(json.dumps(self.status_json))
 
     def get_logger (self):
         self.logger = logging.getLogger('cravat')
@@ -260,8 +264,7 @@ class Cravat (object):
     def main (self):
         no_problem_in_run = True
         try:
-            if self.towritestatusjson:
-                self.update_status('Started')
+            self.update_status('Started')
             self.set_and_check_input_files()
             self.make_module_run_list()
             if self.args.sc == False and \
@@ -324,8 +327,7 @@ class Cravat (object):
                 ):
                 print('Running reporter...')
                 no_problem_in_run = self.run_reporter()
-            if self.towritestatusjson:
-                self.update_status('Finished')
+            self.update_status('Finished')
         except Exception as e:
             self.handle_exception(e)
             no_problem_in_run = False
@@ -342,10 +344,8 @@ class Cravat (object):
                 self.logger.info('runtime: {0:0.3f}s'.format(runtime))
                 print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
                 print('Check {}'.format(self.log_path))
-                if self.towritestatusjson:
-                    self.update_status('Error')
+                self.update_status('Error')
             self.close_logger()
-
 
     def handle_exception (self, e):
         exc_str = traceback.format_exc()
@@ -411,10 +411,6 @@ class Cravat (object):
             self.logmode = 'w'
         else:
             self.logmode = 'a'
-        if self.runlevel == self.runlevels['reporter']:
-            self.towritestatusjson = False
-        else:
-            self.towritestatusjson = True
 
     def set_and_check_input_files (self):
         if self.input.split('.')[-1] == 'crv':
@@ -451,7 +447,7 @@ class Cravat (object):
             self.add_annotator_to_queue(module)
         annot_names = [v.name for v in self.ordered_annotators]
         annot_names.sort()
-        if self.towritestatusjson:
+        if self.runlevel <= self.runlevels['annotator']:
             cu.update_status_json(self, 'annotators', annot_names)
 
     def add_annotator_to_queue (self, module):
@@ -794,8 +790,4 @@ class Cravat (object):
 
     def announce_module (self, module):
         print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
-        if self.towritestatusjson:
-            self.update_status(
-                'Running {title} ({name})'\
-                .format(title=module.title, name=module.name)
-                )
+        self.update_status('Running {title} ({name})'.format(title=module.title, name=module.name))
