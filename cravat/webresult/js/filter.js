@@ -213,7 +213,7 @@ const populateFilterValues = (valsContainer, testName, value) => {
             for (var j = 0; j < value.length; j++) {
                 for (let k = 0; k < valSubDicKeys.length; k++) {
                     const key = valSubDicKeys[k];
-                    value[j] = value[j].replace(new RegExp(key, 'g'), valSubDic[key]);
+                    value[j] = value[j].replace(new RegExp('\\bkey\\b', 'g'), valSubDic[key]);
                 }
             }
         }
@@ -225,7 +225,7 @@ const populateFilterValues = (valsContainer, testName, value) => {
                 }
                 for (let k = 0; k < valSubDicKeys.length; k++) {
                     const key = valSubDicKeys[k];
-                    optionValue = optionValue.replace(new RegExp(key, 'g'), valSubDic[key]);
+                    optionValue = optionValue.replace(new RegExp('\\bkey\\b', 'g'), valSubDic[key]);
                 }
                 let vals = optionValue.split(';');
                 for (let k = 0; k < vals.length; k++) {

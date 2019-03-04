@@ -199,7 +199,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                     column['filter']['init'] = function () {
                         $(this).pqSelect({
                             checkbox: true, 
-                            displayText: '\u25BC',
+                            displayText: '&#x25BC;',
                             singlePlaceholder: '&#x25BD;',
                             multiplePlaceholder: '&#x25BD;',
                             radio: true, 
@@ -213,7 +213,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                     column['filter']['init'] = function () {
                         $(this).pqSelect({
                             checkbox: true, 
-                            displayText: '\u25BC',
+                            displayText: '&#x25BC;',
                             singlePlaceholder: '&#x25BD;',
                             multiplePlaceholder: '&#x25BD;',
                             radio: true, 

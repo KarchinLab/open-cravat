@@ -12,6 +12,7 @@ import re
 import logging
 import time
 import cravat.cravat_util as cu
+import re
 
 class CravatReport:
 
@@ -62,7 +63,7 @@ class CravatReport:
                 if row[i] is not None:
                     sub = self.column_subs[level][i]
                     for target in sub:
-                        row[i] = row[i].replace(target, sub[target])
+                        row[i] = re.sub('\\b' + target + '\\b', sub[target], row[i])
         return row
 
     def run_level (self, level):
