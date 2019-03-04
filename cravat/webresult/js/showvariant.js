@@ -369,6 +369,7 @@ function showVariantDetail (row, tabName) {
 			} else {
 				[widgetDiv, widgetContentDiv] = 
 					getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
+                generator['variables']['parentdiv'] = widgetContentDiv;
                 if (generator['init'] != undefined) {
                     generator['init']();
                 }
@@ -399,32 +400,48 @@ function showVariantDetail (row, tabName) {
                 $outerDiv.packery();
             },
 		}).resizable({
-			grid: [widgetGridSize, widgetGridSize]
+			grid: [widgetGridSize, widgetGridSize],
+            start: function (evt, ui) {
+                var widgetName = evt.target.getAttribute('widgetkey');
+                var generator = widgetGenerators[widgetName][tabName];
+                var v = generator['variables'];
+                var parentDiv = v['parentdiv'];
+                if (generator['beforeresize'] != undefined) {
+                    generator['beforeresize']();
+                }
+            },
+            stop: function (evt, ui) {
+                var widgetName = evt.target.getAttribute('widgetkey');
+                var generator = widgetGenerators[widgetName][tabName];
+                var v = generator['variables'];
+                var widgetContentDiv = v['parentdiv'];
+                var row = $grids[tabName].pqGrid('getData')[selectedRowNos[tabName]];
+                if (generator['donterase'] != true) {
+                    $(widgetContentDiv).empty();
+                }
+                generator['variables']['resized'] = true;
+                if (generator['confirmonresize'] == true) {
+                    var div = getEl('div');
+                    div.className = 'widget-redraw-confirm';
+                    var span = getEl('span');
+                    span.textContent = 'Click to redraw';
+                    addEl(div, span);
+                    addEl(widgetContentDiv, div);
+                    div.addEventListener('click', function () {
+                        generator['function'](widgetContentDiv, row, tabName);
+                        $outerDiv.packery('fit', ui.element[0]);
+                    });
+                } else {
+                    generator['function'](widgetContentDiv, row, tabName);
+                    $outerDiv.packery('fit', ui.element[0]);
+                }
+                var sEvt = evt;
+                var sUi = ui;
+                $(sEvt.target.parentElement).packery('fit', sUi.element[0]);
+            },
 		});
 		$outerDiv.packery('bindUIDraggableEvents', $widgets);
 		var resizeTimeout;
-		$widgets.on('resize', function (evt, ui) {
-			if (resizeTimeout) {
-				clearTimeout(resizeTimeout);
-			}
-			resizeTimeout = setTimeout(function () {
-				var widgetDiv = ui.element[0];
-				var widgetKey = widgetDiv.getAttribute('widgetkey');
-				var generator = widgetGenerators[widgetKey][tabName];
-				var widgetContentDiv = document.getElementById(
-						'widgetcontentdiv_' + widgetKey + '_' + tabName);
-				if (generator['variables'] == undefined) {
-					generator['variables'] = {};
-				}
-				generator['variables']['resized'] = true;
-				var row = $grids[tabName].pqGrid('getData')[selectedRowNos[tabName]];
-				if (generator['donterase'] != true) {
-					$(widgetContentDiv).empty();
-				}
-				generator['function'](widgetContentDiv, row, tabName);
-				$outerDiv.packery('fit', ui.element[0]);
-			}, 100);
-		});
 		$outerDiv.on('layoutComplete', onLayoutComplete);
 	}
 }

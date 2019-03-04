@@ -163,8 +163,8 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	var detailContentDiv = getEl('div');
 	detailContentDiv.id = 'widgetcontentdiv_' + widgetName + '_' + tabName;
 	detailContentDiv.className = 'detailcontentdiv';
-	detailContentDiv.style.height = 'calc(100% - 32px)';
-    detailContentDiv.style.padding = '0px';
+	//detailContentDiv.style.height = 'calc(100% - 32px)';
+    //detailContentDiv.style.padding = '0px';
 	addEl(div, detailContentDiv);
 
 	return [div, detailContentDiv];

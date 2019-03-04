@@ -281,8 +281,9 @@ div.tabContent.hide {
 
 .detailcontentdiv {
 	overflow: auto;
-	height: calc(100% - 38px);
-	padding: 5px;
+	height: calc(100% - 32px);
+	padding: 0px;
+    /*width: 100%;*/
 }
 
 .tablecolumnselectorpanel {
@@ -682,5 +683,25 @@ div.pq-select-button {
     background-color: white;
     border: 2px solid white;
     box-shadow: 3px 3px 12px 0px;
+}
+
+.widget-redraw-confirm {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 3;
+    background-color: rgba(67, 67, 67, 0.47);
+    width: 100%;
+    height: 100%;
+}
+
+.widget-redraw-confirm span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    color: white;
+    transform: translateX(-50%) translateY(-50%);
+    cursor: default;
+    font-size: 20px;
 }
 

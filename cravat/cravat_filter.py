@@ -134,12 +134,10 @@ class CravatFilter ():
         self.filterstring = None
         self.conn = None
         self.cursor = None
-        
         if dbpath != None:
             self.dbpath = dbpath
             if mode == 'sub':
                 self.connect_db()
-                
         if filter != None:
             self.filter = filter
         else:
@@ -245,7 +243,6 @@ class CravatFilter ():
     def connect_db (self, dbpath=None):
         if dbpath != None:
             self.dbpath = dbpath
-        
         self.conn = sqlite3.connect(self.dbpath)
         self.cursor = self.conn.cursor()
         self.conn.create_function('regexp', 2, regexp)

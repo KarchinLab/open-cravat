@@ -214,6 +214,7 @@ function populateSummaryWidgetDiv () {
 				} else {
 					[widgetDiv, widgetContentDiv] = 
 						getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
+                    generator['variables']['parentdiv'] = widgetContentDiv;
 				}
 				if (reuseWidgets != true) {
 					widgetDiv.clientWidth = generator['width'];
@@ -248,24 +249,50 @@ function populateSummaryWidgetDiv () {
 		grid: [widgetGridSize, widgetGridSize],
         autoHide: true,
         handles: 'all',
+        start: function (evt, ui) {
+            var widgetName = evt.target.getAttribute('widgetkey');
+            var generator = widgetGenerators[widgetName][currentTab];
+            var v = generator['variables'];
+            var parentDiv = v['parentdiv'];
+            if (generator['beforeresize'] != undefined) {
+                generator['beforeresize']();
+            }
+        },
+        stop: function (evt, ui) {
+            var widgetName = evt.target.getAttribute('widgetkey');
+            var generator = widgetGenerators[widgetName][currentTab];
+            var v = generator['variables'];
+            var parentDiv = v['parentdiv'];
+            if (generator['confirmonresize'] == true) {
+                $(parentDiv).empty();
+                var div = getEl('div');
+                div.className = 'widget-redraw-confirm';
+                var span = getEl('span');
+                span.textContent = 'Click to redraw';
+                addEl(div, span);
+                addEl(parentDiv, div);
+                div.addEventListener('click', function () {
+                    generator['function']();
+                });
+            } else if (generator['onresize'] != undefined) {
+                $(parentDiv).empty();
+                if (resizeTimeout) {
+                    clearTimeout(resizeTimeout);
+                }
+                resizeTimeout = setTimeout(function () {
+                    var widgetDiv = parentDiv.parentElement;
+                    parentDiv.style.height = (widgetDiv.offsetHeight - 38) + 'px';
+                    parentDiv.style.width = (widgetDiv.offsetWidth - 17) + 'px';
+                    generator['onresize']();
+                }, 100);
+            }
+            var sEvt = evt;
+            var sUi = ui;
+            $(sEvt.target.parentElement).packery('fit', sUi.element[0]);
+        },
 	});
 	$outerDiv.packery('bindUIDraggableEvents', $widgets);
 	var resizeTimeout;
-	$widgets.on('resize', function (evt, ui) {
-        var widgetName = evt.target.getAttribute('widgetkey');
-        var generator = widgetGenerators[widgetName][currentTab];
-        if (generator['onresize'] != undefined) {
-            generator['onresize']();
-        }
-		if (resizeTimeout) {
-			clearTimeout(resizeTimeout);
-		}
-        var sEvt = evt;
-        var sUi = ui;
-		resizeTimeout = setTimeout(function () {
-			$(sEvt.target.parentElement).packery('fit', sUi.element[0]);
-		}, 100);
-	});
 	if (reuseWidgets != true) {
 		applyWidgetSetting('info');
 	}
@@ -719,81 +746,55 @@ function showHideWidget (tabName, widgetName, state, repack) {
     }
 }
 
+function drawSummaryWidgetGivenData (widgetContentDiv, generator, data) {
+    try {
+        if (generator['init'] != undefined) {
+            generator['init'](data);
+        }
+        var shouldDraw = false;
+        if (generator['shoulddraw'] != undefined) {
+            shouldDraw = generator['shoulddraw']();
+        } else {
+            shouldDraw = true;
+        }
+        if (generator['variables'] == undefined) {
+            generator['variables'] = {};
+        }
+        generator['variables']['shoulddraw'] = shouldDraw;
+        if (shouldDraw) {
+            generator['function'](widgetContentDiv, data);
+        } else {
+            setTimeout(function () {
+                executeWidgetClose(widgetName, 'info');
+                var button = document.getElementById(
+                    'widgettogglecheckbox_info_' + widgetName);
+                if (button != undefined) {
+                    button.disabled = 'disabled';
+                    button.nextSibling.style.color = 'gray';
+                }
+                onClickDetailRedraw();
+            }, 500);
+        }
+    } catch (e) {
+        console.log(e);
+    }
+}
+
 function drawSummaryWidget (widgetName) {
 	var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
 	emptyElement(widgetContentDiv);
 	var generator = widgetGenerators[widgetName]['info'];
 	var callServer = generator['callserver'];
-	if (callServer) {
+    var data = generator['variables']['data'];
+	if (callServer && data == undefined) {
 		$.get('/result/runwidget/' + widgetName, {dbpath: dbPath}).done(function (response) {
 			var data = response['data'];
-			if (data == {}) {
-			} else {
-                try {
-                    if (generator['init'] != undefined) {
-                        generator['init'](data);
-                    }
-                    var shouldDraw = false;
-                    if (generator['shoulddraw'] != undefined) {
-                        shouldDraw = generator['shoulddraw']();
-                    } else {
-                        shouldDraw = true;
-                    }
-                    if (generator['variables'] == undefined) {
-                        generator['variables'] = {};
-                    }
-                    generator['variables']['shoulddraw'] = shouldDraw;
-                    if (shouldDraw) {
-                        generator['function'](widgetContentDiv, data);
-                    } else {
-                        setTimeout(function () {
-                            executeWidgetClose(widgetName, 'info');
-                            var button = document.getElementById(
-                                'widgettogglecheckbox_info_' + widgetName);
-                            if (button != undefined) {
-                                button.disabled = 'disabled';
-                                button.nextSibling.style.color = 'gray';
-                            }
-                            onClickDetailRedraw();
-                        }, 500);
-                    }
-                } catch (e) {
-                    console.log(e);
-                }
-			}
+            drawSummaryWidgetGivenData(widgetContentDiv, generator, data);
 		});
+    } else if (callServer && data != undefined) {
+        drawSummaryWidgetGivenData(widgetContentDiv, generator, data);
 	} else {
-        try {
-            if (generator['init'] != undefined) {
-                generator['init']();
-            }
-            var shouldDraw = false;
-            if (generator['shoulddraw'] != undefined) {
-                shouldDraw = generator['shoulddraw']();
-            } else {
-                shouldDraw = true;
-            }
-            if (generator['variables'] == undefined) {
-                generator['variables'] = {};
-            }
-            generator['variables']['shoulddraw'] = shouldDraw;
-            if (shouldDraw) {
-                generator['function'](widgetContentDiv);
-            } else {
-                setTimeout(function () {
-                    executeWidgetClose(widgetName, 'info');
-                    var button = document.getElementById(
-                        'widgettogglecheckbox_' + currentTab + '_' + widgetName);
-                    if (button != undefined) {
-                        button.disabled = 'disabled';
-                        button.nextSibling.style.color = 'gray';
-                    }
-                    onClickDetailRedraw();
-                }, 500);
-            }
-        } catch (e) {
-            console.log(e);
-        }
+        drawSummaryWidgetGivenData(widgetContentDiv, generator, undefined);
 	}
 }
 

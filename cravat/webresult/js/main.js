@@ -472,6 +472,10 @@ function firstLoadData () {
                             var generator = widgetGenerators[widgetName];
                             for (var j = 0; j < widgetTabs.length; j++) {
                                 var widgetTab = widgetTabs[j];
+                                if (generator[widgetTab]['variables'] == undefined) {
+                                    generator[widgetTab]['variables'] = {};
+                                }
+                                generator[widgetTab]['variables']['widgetname'] = widgetName;
                                 var dh = widgetGenerators[widgetName][widgetTab]['default_hidden'];
                                 if (dh != undefined) {
                                     if (dh == true) {
