@@ -746,7 +746,7 @@ function showHideWidget (tabName, widgetName, state, repack) {
     }
 }
 
-function drawSummaryWidgetGivenData (widgetContentDiv, generator, data) {
+function drawSummaryWidgetGivenData (widgetName, widgetContentDiv, generator, data) {
     try {
         if (generator['init'] != undefined) {
             generator['init'](data);
@@ -789,12 +789,12 @@ function drawSummaryWidget (widgetName) {
 	if (callServer && data == undefined) {
 		$.get('/result/runwidget/' + widgetName, {dbpath: dbPath}).done(function (response) {
 			var data = response['data'];
-            drawSummaryWidgetGivenData(widgetContentDiv, generator, data);
+            drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
 		});
     } else if (callServer && data != undefined) {
-        drawSummaryWidgetGivenData(widgetContentDiv, generator, data);
+        drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
 	} else {
-        drawSummaryWidgetGivenData(widgetContentDiv, generator, undefined);
+        drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, undefined);
 	}
 }
 
