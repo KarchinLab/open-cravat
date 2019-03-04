@@ -95,6 +95,7 @@ class FilterColumn(object):
                 s += ' '+sql_val
         if self.negate and incexc != 'exclude':
             s = 'not('+s+')'
+        print('[', s, ']', incexc)
         return s, incexc
 
 class FilterGroup(object):
@@ -107,7 +108,7 @@ class FilterGroup(object):
     def get_sql(self):
         all_operands = self.groups + self.columns
         if len(all_operands) == 0:
-            return ''
+            return '', ''
         include_sqls = []
         exclude_sqls = []
         for operand in all_operands:
