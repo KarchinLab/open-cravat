@@ -1,0 +1,16 @@
+chr10	8097619	+	A	T	s3	var001
+chr10	89624227	+	A	T	s4	var002
+chr10	89624243	+	A	-	s0	var003
+chr10	89624243	+	AA	-	s1	var004
+chr10	89653784	+	-	CG	s2	var005
+chr10	89653784	+	-	CT	s3	var006
+chr1	101185417	+	A	T	s4	var007
+chr1	10100	+	C	T	s0	var008
+chr1	110883275	+	CGGCTTT	-	s1	var009
+chr11	108098352	+	A	T	s2	var010
+chr11	113660116	+	G	A	s3	var011
+chr1	112305306	+	G	A	s4	var012
+chr11	119077128	+	A	T	s0	var013
+chr1	115256502	+	TGGTC	-	s1	var014
+chr1	115256502	+	TGGTCTC	-	s2	var015
+chr1	115258781	-	A	T	s3	var016

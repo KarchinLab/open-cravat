@@ -559,17 +559,19 @@ function deleteJob (jobId) {
 
 function inputExampleChangeHandler (event) {
     var elem = $(event.target);
-    var val = elem.val();
+    var format = elem.val();
+    var assembly = $('#assembly-select').val();
+    var formatAssembly = format + '.' + assembly;
     var getExampleText = new Promise((resolve, reject) => {
-        var cachedText = GLOBALS.inputExamples[val];
+        var cachedText = GLOBALS.inputExamples[formatAssembly];
         if (cachedText === undefined) {
-            var fname = val+'.txt'
+            var fname = formatAssembly + '.txt';
             $.ajax({
                 url:'input-examples/'+fname,
                 type: 'GET',
                 contentType: 'application/json',
                 success: function (data) {
-                    GLOBALS.inputExamples[val] = data;
+                    GLOBALS.inputExamples[formatAssembly] = data;
                     resolve(data);
                 }
             })
