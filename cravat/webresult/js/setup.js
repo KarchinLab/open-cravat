@@ -791,9 +791,20 @@ function drawSummaryWidget (widgetName) {
 	var callServer = generator['callserver'];
     var data = generator['variables']['data'];
 	if (callServer && data == undefined) {
-		$.get('/result/runwidget/' + widgetName, {dbpath: dbPath}).done(function (response) {
-			var data = response['data'];
-            drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
+        if (generator['beforecallserver'] != undefined) {
+            generator['beforecallserver']();
+        }
+        var callServerParams = {};
+        if (generator['variables']['callserverparams'] != undefined) {
+            callServerParams = generator['variables']['callserverparams'];
+        }
+		$.ajax({
+            url: '/result/runwidget/' + widgetName, 
+            data: {dbpath: dbPath, params: JSON.stringify(callServerParams)},
+            success: function (response) {
+                var data = response['data'];
+                drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
+            },
 		});
     } else if (callServer && data != undefined) {
         drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
