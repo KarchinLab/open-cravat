@@ -111,13 +111,18 @@ class FilterGroup(object):
         include_sqls = []
         exclude_sqls = []
         for operand in all_operands:
-            sql, incexc = operand.get_sql()
-            if sql == '':
-                continue
-            if incexc == 'include':
-                include_sqls.append(sql)
-            elif incexc == 'exclude':
-                exclude_sqls.append(sql)
+            if type(operand) == FilterColumn:
+                sql, incexc = operand.get_sql()
+                if sql == '':
+                    continue
+                if incexc == 'include':
+                    include_sqls.append(sql)
+                elif incexc == 'exclude':
+                    exclude_sqls.append(sql)
+            elif type(operand) == FilterGroup:
+                g_inc_sqls, g_exc_sqls = operand.get_sql()
+                include_sqls.append(g_inc_sqls)
+                exclude_sqls.append(g_exc_sqls)
         s = '('
         sql_operator = ' ' + self.operator + ' '
         s += sql_operator.join([sql for sql in include_sqls])
