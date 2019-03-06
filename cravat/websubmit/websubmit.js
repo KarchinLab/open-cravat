@@ -943,6 +943,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         checkDiv.classList.add('checkbox-group-element');
         addEl(flexbox, checkDiv);
         var check = getEl('input');
+        check.className = 'checkbox-group-check';
         check.setAttribute('type', 'checkbox');
         check.setAttribute('name', checkData.name);
         check.setAttribute('value', checkData.value);
