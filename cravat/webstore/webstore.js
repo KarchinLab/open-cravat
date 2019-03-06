@@ -1,6 +1,8 @@
 var currentDetailModule = null;
 var remoteModuleInfo = {};
 var localModuleInfo = {};
+var updates = {};
+var updateConflicts;
 var filter = {};
 var installQueue = [];
 var installInfo = {};
@@ -75,156 +77,173 @@ function clickTab (value) {
 function getLocal () {
 	$.get('/store/local').done(function(data){
         localModuleInfo = data;
-        newModuleAvailable = false;
-        var moduleNamesInInstallQueue = Object.keys(installInfo);
-        for (var remoteModuleName in remoteModuleInfo) {
-            var mI = remoteModuleInfo[remoteModuleName];
-            var tags = mI['tags'];
-            if (tags == null) {
-                tags = [];
-                mI['tags'] = tags;
-            }
-            if (remoteModuleName in localModuleInfo) {
-                var idx = tags.indexOf('installed');
-                if (idx == -1) {
-                    tags.push('installed');
+        $.get('/store/updates').done(function(data){
+            updates = data.updates;
+            updateConflicts = data.conflicts;
+            console.log(updateConflicts);
+            newModuleAvailable = false;
+            var moduleNamesInInstallQueue = Object.keys(installInfo);
+            for (var remoteModuleName in remoteModuleInfo) {
+                var mI = remoteModuleInfo[remoteModuleName];
+                var tags = mI['tags'];
+                if (tags == null) {
+                    tags = [];
+                    mI['tags'] = tags;
                 }
-                if (moduleNamesInInstallQueue.indexOf(remoteModuleName) == -1) {
-                    var localVersion = localModuleInfo[remoteModuleName].version;
-                    var remoteVersion = getHighestVersionForRemoteModule(remoteModuleName);
-                    c = compareVersion(remoteVersion, localVersion);
-                    if (c > 0) {
-                        var idx = tags.indexOf('newavailable');
-                        if (idx == -1) {
-                            tags.push('newavailable');
-                        }
-                        newModuleAvailable = true;
-                    } else {
-                        var idx = tags.indexOf('newavailable');
-                        if (idx >= 0) {
-                            tags.splice(idx, 1);
+                if (remoteModuleName in localModuleInfo) {
+                    var idx = tags.indexOf('installed');
+                    if (idx == -1) {
+                        tags.push('installed');
+                    }
+                    if (moduleNamesInInstallQueue.indexOf(remoteModuleName) == -1) {
+                        // if (updates.hasOwnProperty(remoteModuleName)) {
+                        //     var idx = tags.indexOf('newavailable');
+                        //     if (idx == -1) {
+                        //         tags.push('newavailable');
+                        //     }
+                        //     newModuleAvailable = true;
+                        // } else {
+                        //     var idx = tags.indexOf('newavailable');
+                        //     if (idx >= 0) {
+                        //         tags.splice(idx, 1);
+                        //     }
+                        // }
+                        var localVersion = localModuleInfo[remoteModuleName].version;
+                        var remoteVersion = getHighestVersionForRemoteModule(remoteModuleName);
+                        c = compareVersion(remoteVersion, localVersion);
+                        if (c > 0) {
+                            var idx = tags.indexOf('newavailable');
+                            if (idx == -1) {
+                                tags.push('newavailable');
+                            }
+                            newModuleAvailable = true;
+                        } else {
+                            var idx = tags.indexOf('newavailable');
+                            if (idx >= 0) {
+                                tags.splice(idx, 1);
+                            }
                         }
                     }
-                }
-            } else {
-                var idx = tags.indexOf('installed');
-                if (idx >= 0) {
-                    tags.splice(idx, 1);
-                }
-            }
-        }
-        for (var mn in localModuleInfo) {
-            var localModule = localModuleInfo[mn];
-            if (! ('tags' in localModule)) {
-                localModule['tags'] = [];
-            }
-            var remoteModule = remoteModuleInfo[mn];
-            if (remoteModule == undefined) {
-                continue;
-            }
-            var localTags = localModule.tags;
-            var remoteTags = remoteModule.tags;
-            for (var i = 0; i < localTags.length; i++) {
-                var tag = localTags[i];
-                if (remoteTags.indexOf(tag) == -1) {
-                    remoteTags.push(tag);
+                } else {
+                    var idx = tags.indexOf('installed');
+                    if (idx >= 0) {
+                        tags.splice(idx, 1);
+                    }
                 }
             }
-            remoteModule.tags = remoteTags;
-        }
-        var baseInstalled = true;
-        var moduleNamesInInstallQueue = Object.keys(installInfo);
-        var baseToInstall = [];
-        for (var i = 0; i < baseModuleNames.length; i++) {
-            var baseModuleName = baseModuleNames[i];
-            if (! (baseModuleName in localModuleInfo)) {
-                baseInstalled = false;
-                if (moduleNamesInInstallQueue.indexOf(baseModuleName) == -1) {
-                    baseToInstall.push(baseModuleName);
+            for (var mn in localModuleInfo) {
+                var localModule = localModuleInfo[mn];
+                if (! ('tags' in localModule)) {
+                    localModule['tags'] = [];
+                }
+                var remoteModule = remoteModuleInfo[mn];
+                if (remoteModule == undefined) {
+                    continue;
+                }
+                var localTags = localModule.tags;
+                var remoteTags = remoteModule.tags;
+                for (var i = 0; i < localTags.length; i++) {
+                    var tag = localTags[i];
+                    if (remoteTags.indexOf(tag) == -1) {
+                        remoteTags.push(tag);
+                    }
+                }
+                remoteModule.tags = remoteTags;
+            }
+            var baseInstalled = true;
+            var moduleNamesInInstallQueue = Object.keys(installInfo);
+            var baseToInstall = [];
+            for (var i = 0; i < baseModuleNames.length; i++) {
+                var baseModuleName = baseModuleNames[i];
+                if (! (baseModuleName in localModuleInfo)) {
+                    baseInstalled = false;
+                    if (moduleNamesInInstallQueue.indexOf(baseModuleName) == -1) {
+                        baseToInstall.push(baseModuleName);
+                    }
                 }
             }
-        }
-        var div = document.getElementById('remotemodulepanels');
-        if (div == null) {
-            return;
-        }
-        if (baseInstalled) {
-            trimRemote();
-            var div = document.getElementById('messagediv');
-            div.style.display = 'none';
-            div = document.getElementById('remotemodulepanels');
-            var input = document.getElementById('store-namefilter');
-            input.disabled = false;
-            var div = document.getElementById('moduledetaildiv_store');
-            if (div != null) {
-                if (div.style.display != 'none') {
-                    makeModuleDetailDialog(currentDetailModule, null, null);
-                }
+            var div = document.getElementById('remotemodulepanels');
+            if (div == null) {
+                return;
             }
-            populateStoreHome();
-            populateAllModulesDiv();
-            if (storeFirstOpen) {
-                showStoreHome();
-            }
-            storeFirstOpen = false;
-        } else {
-            hideStoreHome();
-            showAllModulesDiv();
-            populateAllModulesDiv('basetoinstall');
-            if (baseToInstall.length > 0) {
+            if (baseInstalled) {
+                trimRemote();
                 var div = document.getElementById('messagediv');
-                emptyElement(div);
-                div.style.display = 'block';
-                div.style.top = '163px';
-                div.style.left = '127px';
-                var span = getEl('span');
-                span.style.position = 'relative';
-                span.textContent = 'Base modules (shown below) need to be installed to use Open-CRAVAT.';
-                addEl(div, span);
-                addEl(div, getEl('br'));
-                var span = getEl('span');
-                span.style.position = 'relative';
-                span.textContent = 'Click this button to install them all: ';
-                addEl(div, span);
-                var button = getEl('button');
-                button.style.position = 'relative';
-                button.style.top = '-2px';
-                button.textContent = 'Install base components';
-                button.addEventListener('click', function (evt) {
-                    installBaseComponents();
-                    document.getElementById('messagediv').style.display = 'none';
-                });
-                addEl(div, button);
+                div.style.display = 'none';
                 div = document.getElementById('remotemodulepanels');
-                div.style.top = '114px';
+                var input = document.getElementById('store-namefilter');
+                input.disabled = false;
+                var div = document.getElementById('moduledetaildiv_store');
+                if (div != null) {
+                    if (div.style.display != 'none') {
+                        makeModuleDetailDialog(currentDetailModule, null, null);
+                    }
+                }
+                populateStoreHome();
+                populateAllModulesDiv();
+                if (storeFirstOpen) {
+                    showStoreHome();
+                }
+                storeFirstOpen = false;
+            } else {
+                hideStoreHome();
+                showAllModulesDiv();
+                populateAllModulesDiv('basetoinstall');
+                if (baseToInstall.length > 0) {
+                    var div = document.getElementById('messagediv');
+                    emptyElement(div);
+                    div.style.display = 'block';
+                    div.style.top = '163px';
+                    div.style.left = '127px';
+                    var span = getEl('span');
+                    span.style.position = 'relative';
+                    span.textContent = 'Base modules (shown below) need to be installed to use Open-CRAVAT.';
+                    addEl(div, span);
+                    addEl(div, getEl('br'));
+                    var span = getEl('span');
+                    span.style.position = 'relative';
+                    span.textContent = 'Click this button to install them all: ';
+                    addEl(div, span);
+                    var button = getEl('button');
+                    button.style.position = 'relative';
+                    button.style.top = '-2px';
+                    button.textContent = 'Install base components';
+                    button.addEventListener('click', function (evt) {
+                        installBaseComponents();
+                        document.getElementById('messagediv').style.display = 'none';
+                    });
+                    addEl(div, button);
+                    div = document.getElementById('remotemodulepanels');
+                    div.style.top = '114px';
+                }
+                if (baseInstalled == false) {
+                    clickTab('storediv');
+                }
             }
-            if (baseInstalled == false) {
-                clickTab('storediv');
+            var d = document.getElementById('store-update-all-div');
+            var btn = document.getElementById('store-update-all-button');
+            if (newModuleAvailable) {
+                var modulesInInstallQueue = Object.keys(installInfo);
+                
+                d.style.display = 'block';
+                btn.style.display = 'inline-block';
+                announceStoreUpdateAllAvailable();
+            } else {
+                d.style.display = 'none';
+                btn.style.display = 'none';
             }
-        }
-        var d = document.getElementById('store-update-all-div');
-        var btn = document.getElementById('store-update-all-button');
-        if (newModuleAvailable) {
-            var modulesInInstallQueue = Object.keys(installInfo);
-
-            d.style.display = 'block';
-            btn.style.display = 'inline-block';
-            announceStoreUpdateAllAvailable();
-        } else {
-            d.style.display = 'none';
-            btn.style.display = 'none';
-        }
-        populateStoreTagPanel();
-        showOrHideInstallAllButton();
-        showOrHideUpdateAllButton();
-        enableStoreTabHead();
-	});
+            populateStoreTagPanel();
+            showOrHideInstallAllButton();
+            showOrHideUpdateAllButton();
+            enableStoreTabHead();
+        });
+    });
 }
-
+    
 function enableStoreTabHead () {
     document.getElementById('storediv_tabhead').setAttribute('disabled', 'f');
 }
-
+    
 function showOrHideInstallAllButton () {
     var notInstalledModuleNames = getNotInstalledModuleNames();
     var div = document.getElementById('store-install-all-button');
@@ -233,8 +252,8 @@ function showOrHideInstallAllButton () {
         display = 'none';
     } else {
         display = 'inline-block';
-    }
-    div.style.display = display;
+}
+div.style.display = display;
 }
 
 function showOrHideUpdateAllButton () {
@@ -642,6 +661,16 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
             button.className = 'modulepanel-update-button';
             button.textContent = 'Install update';
             button.setAttribute('module', moduleName);
+            if (updateConflicts.hasOwnProperty(moduleName)) {
+                button.setAttribute('disabled','true');
+                var blockList = [];
+                for (blockName in updateConflicts[moduleName]) {
+                    blockList.push(blockName);
+                }
+                blockString = blockList.join(', ');
+                var titleText = `Update blocked by: ${blockString}. Uninstall blocking modules to update.`;
+                button.setAttribute('title',titleText);
+            }
             button.addEventListener('click', function (evt) {
                 var moduleName = evt.target.getAttribute('module');
                 queueInstall(moduleName);
@@ -1188,6 +1217,16 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
                 button.id = 'updatebutton';
                 buttonText = 'Update';
                 button.style.backgroundColor = '#beeaff';
+                if (updateConflicts.hasOwnProperty(moduleName)) {
+                    button.setAttribute('disabled','true');
+                    var blockList = [];
+                    for (blockName in updateConflicts[moduleName]) {
+                        blockList.push(blockName);
+                    }
+                    blockString = blockList.join(', ');
+                    var titleText = `Update blocked by: ${blockString}. Uninstall blocking modules to update.`;
+                    button.setAttribute('title',titleText);
+                }
                 button.addEventListener('click', function (evt) {
                     var btn = evt.target;
                     var btnModuleName = btn.getAttribute('module');
@@ -2032,7 +2071,9 @@ function getModulesToUpdate () {
     var modulesToUpdate = [];
     for (var moduleName in remoteModuleInfo) {
         if (remoteModuleInfo[moduleName]['tags'].indexOf('newavailable') >= 0) {
-            modulesToUpdate.push(moduleName);
+            if (!updateConflicts.hasOwnProperty(moduleName)) {
+                modulesToUpdate.push(moduleName);
+            }
         }
     }
     return modulesToUpdate;

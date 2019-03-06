@@ -339,8 +339,14 @@ def get_module_updates (request):
         modules = smodules.split(',')
     else:
         modules = []
-    updates, _, _ = au.get_updatable(modules=modules)
-    return web.json_response(updates)
+    updates, _, conflicts = au.get_updatable(modules=modules)
+    sconflicts = {}
+    for mname, reqd in conflicts.items():
+        sconflicts[mname] = {}
+        for req_name, req in reqd.items():
+            sconflicts[mname][req_name] = str(req)
+    out = {'updates':updates,'conflicts':sconflicts}
+    return web.json_response(out)
 
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
