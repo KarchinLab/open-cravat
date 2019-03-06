@@ -301,4 +301,6 @@ button {
 
 .checkbox-group-element {
     width: 50%;
+    overflow: hidden;
+    white-space: nowrap;
 }
