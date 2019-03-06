@@ -273,8 +273,17 @@ function getMostDownloadedModuleNames () {
         }
     }
     var top10ModuleNames = [];
-    for (var i = 0; i < 10; i++) {
-        top10ModuleNames.push(moduleNames[i]);
+    var count = 0;
+    for (var i = 0; i < moduleNames.length; i++) {
+        var moduleName = moduleNames[i];
+        if (moduleName == 'base') {
+            continue;
+        }
+        top10ModuleNames.push(moduleNames[count]);
+        count++;
+        if (count == 10) {
+            break;
+        }
     }
     return top10ModuleNames;
 }
@@ -293,8 +302,17 @@ function getNewestModuleNames () {
         }
     }
     var top10ModuleNames = [];
-    for (var i = 0; i < 10; i++) {
-        top10ModuleNames.push(moduleNames[i]);
+    var count = 0;
+    for (var i = 0; i < moduleNames.length; i++) {
+        var moduleName = moduleNames[i];
+        if (moduleName == 'base') {
+            continue;
+        }
+        top10ModuleNames.push(moduleNames[count]);
+        count++;
+        if (count == 10) {
+            break;
+        }
     }
     return top10ModuleNames;
 }
@@ -1114,6 +1132,9 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
                 var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
                 var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + currentTab);
                 var outputs = data['output_columns'];
+                if (outputs == undefined) {
+                    return;
+                }
                 var descs = [];
                 for (var i1 = 0; i1 < outputs.length; i1++) {
                     var o = outputs[i1];
