@@ -934,15 +934,15 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
     // flexbox
     var flexbox = getEl('div');
     addEl(parentDiv, flexbox);
-    //flexbox.addClass('checkbox-group-flexbox');
+    flexbox.classList.add('checkbox-group-flexbox');
     var checkDivs = [];
     // checks
     for (let i=0; i<checkDatas.length; i++) {
         var checkData = checkDatas[i];
         var checkDiv = getEl('div');
+        checkDiv.classList.add('checkbox-group-element');
         addEl(flexbox, checkDiv);
         var check = getEl('input');
-        check.className = 'checkbox-group-check';
         check.setAttribute('type', 'checkbox');
         check.setAttribute('name', checkData.name);
         check.setAttribute('value', checkData.value);

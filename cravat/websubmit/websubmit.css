@@ -294,3 +294,11 @@ button {
     border-style: ridge;
 }
 
+.checkbox-group-flexbox {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.checkbox-group-element {
+    width: 50%;
+}
