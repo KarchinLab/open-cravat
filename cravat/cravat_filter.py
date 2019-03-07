@@ -36,7 +36,7 @@ class FilterColumn(object):
 
     def get_sql(self):
         incexc = 'include'
-        if self.column == 'tagsampler__samples' and type(self.value) == list:
+        if self.column == 'tagsampler__samples':
             if type(self.value) == list:
                 s = 's.base__sample_id="' + self.value[0] + '"'
                 for v in self.value[1:]:
@@ -46,9 +46,14 @@ class FilterColumn(object):
             if self.negate and self.parent_operator == 'AND':
                 incexc = 'exclude'
         elif self.column == 'tagsampler__tags':
-            s = 'm.base__tags="' + self.value[0] + '"'
-            for v in self.value[1:]:
-                s += ' or m.base__tags="' + v + '"'
+            if type(self.value) == list:
+                s = 'm.base__tags="' + self.value[0] + '"'
+                for v in self.value[1:]:
+                    s += ' or m.base__tags="' + v + '"'
+            elif type(self.value) == str:
+                s = 'm.base__tags="' + self.value + '"'
+            if self.negate and self.parent_operator == 'AND':
+                incexc = 'exclude'
         elif self.test == 'multicategory':
             s = 't.{} like "%{}%"'.format(self.column, self.value[0])
             for v in self.value[1:]:
@@ -444,6 +449,7 @@ class CravatFilter ():
         return it
 
     def make_filtered_uid_table (self):
+        t = time.time()
         self.cursor.execute('pragma synchronous=0')
         level = 'variant'
         vtable = level
@@ -474,6 +480,8 @@ class CravatFilter ():
                 q += ' and m.base__uid=t.base__uid'
         print(q)
         self.cursor.execute(q)
+        t = time.time() - t
+        print(t, 's in creating variant_filtered')
         self.cursor.execute('pragma synchronous=2')
 
     def make_filtered_hugo_table (self):
