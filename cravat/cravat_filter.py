@@ -27,11 +27,12 @@ class FilterColumn(object):
         'select': 'in',
     }
 
-    def __init__(self, d):
+    def __init__(self, d, parent_operator):
         self.column = d['column']
         self.test = d['test']
         self.value = d.get('value')
         self.negate = d.get('negate', False)
+        self.parent_operator = parent_operator
 
     def get_sql(self):
         incexc = 'include'
@@ -42,7 +43,7 @@ class FilterColumn(object):
                     s += ' or s.base__sample_id="' + v + '"'
             elif type(self.value) == str:
                 s = 's.base__sample_id="' + self.value + '"'
-            if self.negate:
+            if self.negate and self.parent_operator == 'AND':
                 incexc = 'exclude'
         elif self.column == 'tagsampler__tags':
             s = 'm.base__tags="' + self.value[0] + '"'
@@ -102,7 +103,7 @@ class FilterGroup(object):
         self.operator = d.get('operator', 'and')
         self.negate = d.get('negate',False)
         self.groups = [FilterGroup(x) for x in d.get('groups',[])]
-        self.columns = [FilterColumn(x) for x in d.get('columns', [])]
+        self.columns = [FilterColumn(x, self.operator) for x in d.get('columns', [])]
 
     def get_sql(self):
         all_operands = self.groups + self.columns
@@ -121,8 +122,10 @@ class FilterGroup(object):
                     exclude_sqls.append(sql)
             elif type(operand) == FilterGroup:
                 g_inc_sqls, g_exc_sqls = operand.get_sql()
-                include_sqls.append(g_inc_sqls)
-                exclude_sqls.append(g_exc_sqls)
+                if g_inc_sqls != '':
+                    include_sqls.append(g_inc_sqls)
+                if g_exc_sqls != '':
+                    exclude_sqls.append(g_exc_sqls)
         s = '('
         sql_operator = ' ' + self.operator + ' '
         s += sql_operator.join([sql for sql in include_sqls])
@@ -469,6 +472,7 @@ class CravatFilter ():
                 q += ' and s.base__uid=t.base__uid'
             if tag_needed:
                 q += ' and m.base__uid=t.base__uid'
+        print(q)
         self.cursor.execute(q)
         self.cursor.execute('pragma synchronous=2')
 
