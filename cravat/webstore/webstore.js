@@ -298,7 +298,10 @@ function getMostDownloadedModuleNames () {
         if (moduleName == 'base') {
             continue;
         }
-        top10ModuleNames.push(moduleNames[count]);
+        if (baseModuleNames.indexOf(moduleName) >= 0) {
+            continue;
+        }
+        top10ModuleNames.push(moduleName);
         count++;
         if (count == 10) {
             break;
@@ -327,7 +330,11 @@ function getNewestModuleNames () {
         if (moduleName == 'base') {
             continue;
         }
-        top10ModuleNames.push(moduleNames[count]);
+        console.log(moduleName, baseModuleNames.indexOf(moduleName));
+        if (baseModuleNames.indexOf(moduleName) >= 0) {
+            continue;
+        }
+        top10ModuleNames.push(moduleName);
         count++;
         if (count == 10) {
             break;
