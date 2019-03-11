@@ -66,6 +66,7 @@ class CravatReader (CravatFile):
                 col_ctg = col_info[8] if col_info[8] else None
                 col_filterable = json.loads(col_info[9].lower()) if col_info[9] else True
                 link_format = col_info[10] if col_info[9] else None
+                if link_format == '': link_format = None
                 self.columns[col_index] = {'title':col_title,
                                            'name':col_name,
                                            'type':col_type,
