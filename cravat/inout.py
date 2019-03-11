@@ -51,7 +51,7 @@ class CravatReader (CravatFile):
                 cols = l.split('=')[1].split(',')
                 self.index_columns.append(cols)
             elif l.startswith('#column='):
-                csv_row = l.split('=')[1]
+                csv_row = '='.join(l.split('=')[1:])
                 col_info = list(csv.reader([csv_row], dialect='cravat'))[0]
                 col_index = int(col_info[0])
                 col_title = col_info[1]
@@ -65,7 +65,7 @@ class CravatReader (CravatFile):
                 col_hidden = json.loads(col_info[7].lower()) if col_info[7] else True
                 col_ctg = col_info[8] if col_info[8] else None
                 col_filterable = json.loads(col_info[9].lower()) if col_info[9] else True
-                link_format = col_info[10] if col_info[9] else None
+                link_format = col_info[10] if col_info[10] else None
                 if link_format == '': link_format = None
                 self.columns[col_index] = {'title':col_title,
                                            'name':col_name,
