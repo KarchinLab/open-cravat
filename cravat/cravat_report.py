@@ -210,6 +210,7 @@ class CravatReport:
                 for r in rs:
                     col_cats.append(r[0])
             col_filterable = bool(row[8]) if len(row) > 8 else True
+            link_format = row[9] if len(row) > 8 else None
             column = {'col_name': colname,
                       'col_title': coltitle,
                       'col_type': col_type,
@@ -219,6 +220,7 @@ class CravatReport:
                       'col_hidden':col_hidden,
                       'col_ctg': col_ctg,
                       'col_filterable': col_filterable,
+                      'link_format': link_format,
                       }
             self.colnos[level][colname] = colcount
             colcount += 1
@@ -268,6 +270,7 @@ class CravatReport:
                         for r in rs:
                             col_cats.append(r[0])
                     col_filterable = col.get('filterable',True)
+                    col_link_format = col.get('link_format')
                     column = {'col_name': colname,
                               'col_title': col['title'],
                               'col_type': col_type,
@@ -277,6 +280,7 @@ class CravatReport:
                               'col_hidden':col_hidden,
                               'col_ctg': col_ctg,
                               'col_filterable': col_filterable,
+                              'col_link_format': col_link_format,
                               }
                     columns.append(column)
                     self.var_added_cols.append(colname)
@@ -315,6 +319,7 @@ class CravatReport:
                             for r in rs:
                                 col_cats.append(r[0])
                         col_filterable = col.get('filterable', True)
+                        col_link_format = col.get('link_format')
                         column = {'col_name': conf['name'] + '__' + col['name'],
                                   'col_title': col['title'],
                                   'col_type': col_type,
@@ -324,6 +329,7 @@ class CravatReport:
                                   'col_hidden':col.get('hidden',False),
                                   'col_ctg': col_ctg,
                                   'col_filterable': col_filterable,
+                                  'col_link_format': col_link_format,
                                   }
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
