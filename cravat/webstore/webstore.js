@@ -743,7 +743,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
             }
             button.addEventListener('click', function (evt) {
                 var moduleName = evt.target.getAttribute('module');
-                queueInstall(moduleName);
+                queueInstall(moduleName, updates[moduleName].version);
             });
             addEl(div, button);
             btnAddedFlag = true;
@@ -1302,7 +1302,7 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
                     } else {
                         buttonText = 'Queued';
                     }
-                    queueInstall(btnModuleName);
+                    queueInstall(btnModuleName, updates[btnModuleName].version);
                     btn.textContent = buttonText;
                     btn.style.color = 'red';
                     document.getElementById('moduledetaildiv_store').style.display = 'none';
@@ -1534,8 +1534,8 @@ function getSizeText (size) {
     return size;
 }
 
-function queueInstall (moduleName) {
-    $.get('/store/queueinstall', {'module': moduleName}).done(
+function queueInstall (moduleName, version) {
+    $.get('/store/queueinstall', {'module': moduleName, 'version': version}).done(
         function (response) {
             installInfo[moduleName] = {'msg': 'queued'};
             installQueue.push(moduleName);
