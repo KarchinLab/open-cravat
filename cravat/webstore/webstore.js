@@ -317,7 +317,6 @@ function getNewestModuleNames () {
         if (moduleName == 'base') {
             continue;
         }
-        console.log(moduleName, baseModuleNames.indexOf(moduleName));
         if (baseModuleNames.indexOf(moduleName) >= 0) {
             continue;
         }
