@@ -51,7 +51,7 @@ class CravatReader (CravatFile):
                 cols = l.split('=')[1].split(',')
                 self.index_columns.append(cols)
             elif l.startswith('#column='):
-                csv_row = l.split('=')[1]
+                csv_row = '='.join(l.split('=')[1:])
                 col_info = list(csv.reader([csv_row], dialect='cravat'))[0]
                 col_index = int(col_info[0])
                 col_title = col_info[1]
@@ -65,6 +65,8 @@ class CravatReader (CravatFile):
                 col_hidden = json.loads(col_info[7].lower()) if col_info[7] else True
                 col_ctg = col_info[8] if col_info[8] else None
                 col_filterable = json.loads(col_info[9].lower()) if col_info[9] else True
+                link_format = col_info[10] if col_info[10] else None
+                if link_format == '': link_format = None
                 self.columns[col_index] = {'title':col_title,
                                            'name':col_name,
                                            'type':col_type,
@@ -74,6 +76,7 @@ class CravatReader (CravatFile):
                                            'hidden':col_hidden,
                                            'category': col_ctg,
                                            'filterable': col_filterable,
+                                           'link_format': link_format,
                                            }
             elif l.startswith('#report_substitution='):
                 self.report_substitution = json.loads(l.split('=')[1])
@@ -193,6 +196,7 @@ class CravatWriter(CravatFile):
         col_hidden = col_def.get('hidden',False)
         col_ctg = col_def.get('category', None)
         col_filterable = col_def.get('filterable',True)
+        link_format = col_def.get('link_format',None)
         if not(override):
             try:
                 self.columns[col_index]
@@ -213,6 +217,7 @@ class CravatWriter(CravatFile):
                                    'hidden': col_hidden,
                                    'category': col_ctg,
                                    'filterable': col_filterable,
+                                   'link_format': link_format,
                                    }
 
     def add_columns(self, col_list, append=False):
@@ -259,7 +264,7 @@ class CravatWriter(CravatFile):
 
     def write_definition(self, conf=None):
         self._prep_for_write()
-        val_order = ['title','name','type','categories','width','desc','hidden','category','filterable']
+        val_order = ['title','name','type','categories','width','desc','hidden','category','filterable','link_format']
         for col_index, col_def in enumerate(self.ordered_columns):
             ordered_vals = [col_index]+[col_def[k] for k in val_order]
             s_buffer = StringIO()

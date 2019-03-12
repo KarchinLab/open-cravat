@@ -36,6 +36,7 @@ class FilterColumn(object):
 
     def get_sql(self):
         incexc = 'include'
+        s = ''
         if self.column == 'tagsampler__samples':
             if type(self.value) == list:
                 s = 's.base__sample_id="' + self.value[0] + '"'

@@ -345,7 +345,8 @@ def get_module_updates (request):
         sconflicts[mname] = {}
         for req_name, req in reqd.items():
             sconflicts[mname][req_name] = str(req)
-    out = {'updates':updates,'conflicts':sconflicts}
+    updatesd = {mname:{'version':info.version,'size':info.size} for mname, info in updates.items()}
+    out = {'updates':updatesd,'conflicts':sconflicts}
     return web.json_response(out)
 
 routes = []

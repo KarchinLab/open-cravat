@@ -283,24 +283,26 @@ def main ():
         else:
             requested_modules = []
         update_strategy = args.strategy
-        status_table = [['Name','New Version']]
-        updates, reqs_applied, reqs_failed = au.get_updatable(requested_modules, strategy=update_strategy)
+        status_table = [['Name','New Version','Size']]
+        updates, _, reqs_failed = au.get_updatable(requested_modules, strategy=update_strategy)
         if reqs_failed:
             print('Newer versions of ({}) are available, but would break dependencies. You may use --strategy=force to force installation.'\
                 .format(', '.join(reqs_failed.keys())))
         if not updates:
             print('No module updates are needed')
             exit()
-        for mname, version in updates.items():
-            status_table.append([mname, version])
+        for mname, update_info in updates.items():
+            version = update_info.version
+            size = update_info.size
+            status_table.append([mname, version, humanize_bytes(size)])
         print_tabular_lines(status_table)
         user_cont = input('Update the above modules? (y/n) > ')
         if user_cont.lower() not in ['y','yes']:
             exit()
-        for mname, version in updates.items():
+        for mname, update_info in updates.items():
             args.modules = [mname]
             args.force_data = False
-            args.version = version
+            args.version = update_info.version
             args.yes = True
             args.include_private = False
             args.skip_dependencies = False

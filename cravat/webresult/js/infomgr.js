@@ -148,17 +148,30 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 					val = '';
 				}
 				var content = '' + val;
-				if (content != '' && content.indexOf('http') > -1) {
-                    var linkToks = content.split('[WEB:]');
-                    var linkUrl = null;
-                    var linkText = null;
-                    if (linkToks.length != 2) {
-                        linkUrl = linkToks[0];
-                        linkText = linkToks[0];
-                    } else {
-                        linkText = linkToks[0];
-                        linkUrl = linkToks[1];
-                    }
+				if (ui.column.link_format !== null) {
+					var linkFormat = ui.column.link_format;
+					var linkRe = /\$\{(.*)\}/;
+					var linkMatch = linkFormat.match(linkRe);
+					var valSegment = '';
+					var linkUrl = '';
+					var linkText = '';
+					if (linkMatch !== null) {
+						var reString = linkMatch[1];
+						var valRe = new RegExp(reString);
+						var valMatch = val.match(valRe)
+						if (valMatch !== null && valMatch[0] !== '') {
+							if (valMatch.length===1) {
+								valSegment = valMatch[0];
+							} else {
+								valSegment = '';
+								for (var i=1; i<valMatch.length; i++) {
+									valSegment += valMatch[i];
+								}
+							}
+							var linkUrl = linkFormat.replace(linkRe, valSegment);
+							var linkText = val;
+						}
+					}
 					content = '<a href="' + linkUrl + '" target="_blank">' +
 						linkText + '</a>';
 				}

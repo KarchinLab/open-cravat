@@ -14,6 +14,7 @@ import re
 from distutils.version import StrictVersion, LooseVersion
 import pkg_resources
 from collections import defaultdict
+from types import SimpleNamespace
 
 def load_yml_conf(yml_conf_path):
     """
@@ -157,7 +158,7 @@ class RemoteModuleInfo(object):
         self.developer = get_developer_dict(**dev_dict)
 
     def has_version(self, version):
-        return version in self.versions
+        return version in self.versions    
 
 def get_developer_dict (**kwargs):
     d = {}
@@ -260,6 +261,12 @@ class ModuleInfoCache(object):
                 self.remote_config[module_name] = {}
             self.remote_config[module_name][version] = config
         return config
+    
+    def get_code_size(self, module_name, version):
+        code_url = self._store_path_builder.module_code(module_name, version)
+        r = requests.get(code_url)
+        r.close()
+        return int(r.headers['Content-Length'])
 
 def get_widgets_for_annotator(annotator_name, skip_installed=False):
     """
@@ -1043,6 +1050,7 @@ def get_updatable(modules=[], strategy='consensus'):
         if mname not in list_local():
             continue
         local_info = get_local_module_info(mname)
+        remote_info = get_remote_module_info(mname)
         reqs = reqs_by_dep[mname]
         versions = all_versions.get(mname,[])
         if not versions:
@@ -1068,7 +1076,12 @@ def get_updatable(modules=[], strategy='consensus'):
                         passing_versions.append(version)
                 selected_version = passing_versions[-1] if passing_versions else None
         if selected_version and LooseVersion(selected_version) > LooseVersion(local_info.version):
-            update_vers[mname] = selected_version
+            remote_data_version = get_remote_data_version(mname, selected_version)
+            if remote_data_version is not None and remote_data_version != local_info.version:
+                update_size = remote_info.size
+            else:
+                update_size = mic.get_code_size(mname, selected_version)
+            update_vers[mname] = SimpleNamespace(version=selected_version, size=update_size)
         else:
             resolution_failed[mname] = reqs
     return update_vers, resolution_applied, resolution_failed
