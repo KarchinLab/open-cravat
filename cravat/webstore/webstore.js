@@ -768,6 +768,11 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
             var moduleName = evt.target.getAttribute('module');
             queueInstall(moduleName);
         });
+        if (installQueue.includes(moduleName)) {
+            button.disabled = true;
+        } else {
+            button.disabled = false;
+        }
         addEl(div, button);
     }
     return div
