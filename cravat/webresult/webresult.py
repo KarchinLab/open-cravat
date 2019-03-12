@@ -416,7 +416,7 @@ def get_colmodel (tab, colinfo):
                 'hidden': d['col_hidden'],
                 'ctg': d['col_ctg'],
                 'filterable': d['col_filterable'],
-                'link_format': d['link_format'],
+                'link_format': d.get('link_format'),
                 }
             if d['col_type'] == 'string':
                 if d['col_ctg'] == 'single':
