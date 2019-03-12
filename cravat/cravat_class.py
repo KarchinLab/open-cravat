@@ -219,6 +219,7 @@ class Cravat (object):
         if os.path.exists(self.status_fpath) == True:
             with open(self.status_fpath) as f:
                 self.status_json = json.load(f)
+                self.pkg_ver = self.status_json['open_cravat_version']
         else:
             self.status_json = {}
             self.status_json['job_dir'] = self.output_dir

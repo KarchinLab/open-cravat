@@ -87,6 +87,7 @@ function showPageselect () {
 }
 
 function onClickInstallBaseComponents () {
+    document.getElementById('store-systemmodule-msg-div').textContent = '';
     document.getElementById('store-systemmodule-install-button').disabled = true;
     installBaseComponents();
     document.getElementById('messagediv').style.display = 'none';
@@ -130,10 +131,7 @@ function getLocal () {
                         tags.push('installed');
                     }
                     if (moduleNamesInInstallQueue.indexOf(remoteModuleName) == -1) {
-                        var localVersion = localModuleInfo[remoteModuleName].version;
-                        var remoteVersion = getHighestVersionForRemoteModule(remoteModuleName);
-                        c = compareVersion(remoteVersion, localVersion);
-                        if (c > 0) {
+                        if (updates[remoteModuleName] != undefined) {
                             var idx = tags.indexOf('newavailable');
                             if (idx == -1) {
                                 tags.push('newavailable');
@@ -188,7 +186,10 @@ function getLocal () {
             if (div == null) {
                 return;
             }
-            origRemoteModuleInfo = JSON.parse(JSON.stringify(remoteModuleInfo));
+            if (origRemoteModuleInfo == null) {
+                origRemoteModuleInfo = JSON.parse(JSON.stringify(remoteModuleInfo));
+            }
+            showOrHideSystemModuleUpdateButton();
             if (baseInstalled) {
                 showPageselect();
                 hideSystemModulePage();
@@ -270,7 +271,15 @@ function enableStoreTabHead () {
 }
 
 function showOrHideSystemModuleUpdateButton () {
-    var btn = document.getElementById('store-systemmoduleupdate-button');
+    baseModuleUpdateAvailable = false;
+    var moduleNames = Object.keys(updates);
+    for (var i = 0; i < moduleNames.length; i++) {
+        if (baseModuleNames.includes(moduleNames[i])) {
+            baseModuleUpdateAvailable = true;
+            break;
+        }
+    }
+    var btn = document.getElementById('store-systemmoduleupdate-announce-div');
     if (baseModuleUpdateAvailable) {
         btn.style.display = 'inline-block';
     } else {
@@ -1572,7 +1581,6 @@ function connectWebSocket () {
     }
     ws.onmessage = function (evt) {
         var data = JSON.parse(evt.data);
-        console.log('msg:', data);
         var module = data['module'];
         var msg = data['msg'];
         var isbase = data['isbase'];
@@ -1708,10 +1716,12 @@ function getSystemModulesToUpdate () {
 
 function getModulesToUpdate () {
     var modulesToUpdate = [];
-    for (var moduleName in remoteModuleInfo) {
-        if (remoteModuleInfo[moduleName]['tags'].indexOf('newavailable') >= 0) {
-            if (!updateConflicts.hasOwnProperty(moduleName)) {
-                modulesToUpdate.push(moduleName);
+    for (var moduleName in updates) {
+        if (remoteModuleInfo[moduleName] != undefined) {
+            if (remoteModuleInfo[moduleName]['tags'].indexOf('newavailable') >= 0) {
+                if (!updateConflicts.hasOwnProperty(moduleName)) {
+                    modulesToUpdate.push(moduleName);
+                }
             }
         }
     }
@@ -1721,9 +1731,16 @@ function getModulesToUpdate () {
 function onClickSystemModuleUpdateButton () {
     var modulesToUpdate = getSystemModulesToUpdate();
     var div = getEl('div');
+    var updateModuleNames = Object.keys(updates);
     var totalSize = 0;
-    for (var i = 0; i < modulesToUpdate.length; i++) {
-        totalSize += origRemoteModuleInfo[modulesToUpdate[i]].size;
+    baseToInstall = [];
+    for (var i = 0; i < updateModuleNames.length; i++) {
+        var moduleName = updateModuleNames[i];
+        var module = updates[moduleName];
+        if (baseModuleNames.includes(moduleName)) {
+            baseToInstall.push(moduleName);
+            totalSize += module['size'];
+        }
     }
     totalSize = getSizeText(totalSize);
     var span = getEl('span');
@@ -1739,13 +1756,19 @@ function onClickSystemModuleUpdateButton () {
     addEl(div, span);
     var yescallback = function (yn) {
         if (yn == true) {
-            announceUpdatingSystemModules();
-            for (var i = 0; i < modulesToUpdate.length; i++) {
-                queueInstall(modulesToUpdate[i]);
-            }
+            startUpdatingSystemModules();
         }
     };
     showYesNoDialog(div, yescallback);
+}
+
+function startUpdatingSystemModules () {
+    document.getElementById('store-systemmodule-msg-div').textContent = '';
+    showSystemModulePage();
+    document.getElementById('store-systemmodule-update-div').style.display = 'block';
+    for (var i = 0; i < baseToInstall.length; i++) {
+        queueInstall(baseToInstall[i]);
+    }
 }
 
 function onClickStoreUpdateAllButton () {
@@ -1758,7 +1781,7 @@ function onClickStoreUpdateAllButton () {
     addEl(div, getEl('br'));
     var totalSize = 0;
     for (var i = 0; i < modulesToUpdate.length; i++) {
-        totalSize += remoteModuleInfo[modulesToUpdate[i]].size;
+        totalSize += updates[modulesToUpdate[i]].size;
         var span = getEl('span');
         span.textContent = modulesToUpdate[i];
         span.style.fontWeight = 'bold';
@@ -1766,7 +1789,6 @@ function onClickStoreUpdateAllButton () {
         addEl(div, getEl('br'));
     }
     addEl(div, getEl('br'));
-    /*
     totalSize = getSizeText(totalSize);
     var span = getEl('span');
     span.textContent = 'Total update size is ';
@@ -1776,7 +1798,6 @@ function onClickStoreUpdateAllButton () {
     span.style.fontWeight = 'bold';
     addEl(div, span);
     addEl(div, getEl('br'));
-    */
     var span = getEl('span');
     span.textContent = 'Update them all?';
     addEl(div, span);
@@ -1798,15 +1819,7 @@ function announceStoreUpdatingAll () {
     button.style.display = 'none';
 }
 
-function announceUpdatingSystemModules () {
-    var span = document.getElementById('store-update-all-span');
-    var button = document.getElementById('store-systemmoduleupdate-button');
-    span.textContent = 'Updating all available modules...';
-    button.style.display = 'none';
-}
-
 function announceStoreUpdateAllAvailable () {
-    var div = document.getElementById('store-update-all-div');
     var span = document.getElementById('store-update-all-span');
     var button = document.getElementById('store-update-all-button');
     span.textContent = 'Updates to your installed modules are available!';

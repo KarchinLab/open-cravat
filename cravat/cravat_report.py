@@ -210,7 +210,7 @@ class CravatReport:
                 for r in rs:
                     col_cats.append(r[0])
             col_filterable = bool(row[8]) if len(row) > 8 else True
-            link_format = row[9] if len(row) > 8 else None
+            link_format = row[9] if len(row) > 9 else None
             column = {'col_name': colname,
                       'col_title': coltitle,
                       'col_type': col_type,

@@ -96,6 +96,14 @@
     </div>
 </div>
 
+<div id='store-systemmoduleupdate-announce-div'>
+    System is outdated. 
+    <button id='store-systemmoduleupdate-button' onclick='onClickSystemModuleUpdateButton();'>Update</button>
+</div>
+<div id='verdiv' >
+    Version: <span class="curverspan" style="font-family: monospace;"></span>
+</div>
+
 <div id='submitdiv' class='appdiv'>
     <div class = 'headerdiv' />
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
@@ -105,9 +113,6 @@
         <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='email.png' class='email-icon' onclick='mailto:support@cravat.us' /></a>
         <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' onclick='onClickThreeDots();'>
             <img src='threedots.png' class='threedots' />
-        </div>
-        <div id='verdiv' >
-            Version: <span class="curverspan" style="font-family: monospace;"></span>
         </div>
     </div>
 
@@ -211,12 +216,6 @@
         <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' onclick='onClickThreeDots();'>
             <img src='threedots.png' class='threedots' />
         </div>
-        <div id='store-update-all-div' style='display: none; position: absolute; right: 102px; bottom: 5px;'>
-            <span id='store-update-all-span' style='color: red; font-size: 12px;'>Updates to your installed modules are available!</span>
-        </div>
-        <div id='verdiv' >
-            Version: <span class="curverspan" style="font-family: monospace;"></span>
-        </div>
     </div>
     <div id='messagediv'></div>
     <div id='storebodydiv'>
@@ -245,13 +244,15 @@
                 <hr />
                 <div id='store-install-all-button-div'>
                     <button id='store-install-all-button' onclick='onClickStoreInstallAllButton();' style='font-size: 14px;'>Install All</button>
-                    <button id='store-update-all-button' onclick='onClickStoreUpdateAllButton();' style='font-size: 14px;'>Update All</button>
-                <button id='store-systemmoduleupdate-button' onclick='onClickSystemModuleUpdateButton();' style='font-size: 14px;'>Update System Modules</button>
                 <br />
                 <br />
             </div>
         </div>
         <div>
+            <div id='store-update-all-div' >
+                <span id='store-update-all-span' style='color: red; font-size: 12px;'>Updates to your installed modules are available!</span>
+                <button id='store-update-all-button' onclick='onClickStoreUpdateAllButton();' style='font-size: 12px;'>Update All</button>
+            </div>
             <div id='store-home-div'>
                 <span class='store-home-sectiontitle'>Most Downloaded</span>
                 <br />
@@ -290,11 +291,7 @@
         <br />
     </div>
     <div id='store-systemmodule-update-div' style='display: none;'>
-        There are updates available to system modules.
-        <br />
-        Click this button to update them:
-        <button style='position: relative; top: -2px;' onclick='onClickUpdateSystemModules();'>Update system modules</button>
-        <br />
+        System modules are updating...
     </div>
     <div id='store-systemmodule-msg-div'>
     </div>
