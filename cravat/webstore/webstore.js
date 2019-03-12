@@ -80,7 +80,6 @@ function getLocal () {
         $.get('/store/updates').done(function(data){
             updates = data.updates;
             updateConflicts = data.conflicts;
-            console.log(updateConflicts);
             newModuleAvailable = false;
             var moduleNamesInInstallQueue = Object.keys(installInfo);
             for (var remoteModuleName in remoteModuleInfo) {
@@ -96,18 +95,6 @@ function getLocal () {
                         tags.push('installed');
                     }
                     if (moduleNamesInInstallQueue.indexOf(remoteModuleName) == -1) {
-                        // if (updates.hasOwnProperty(remoteModuleName)) {
-                        //     var idx = tags.indexOf('newavailable');
-                        //     if (idx == -1) {
-                        //         tags.push('newavailable');
-                        //     }
-                        //     newModuleAvailable = true;
-                        // } else {
-                        //     var idx = tags.indexOf('newavailable');
-                        //     if (idx >= 0) {
-                        //         tags.splice(idx, 1);
-                        //     }
-                        // }
                         var localVersion = localModuleInfo[remoteModuleName].version;
                         var remoteVersion = getHighestVersionForRemoteModule(remoteModuleName);
                         c = compareVersion(remoteVersion, localVersion);
