@@ -224,28 +224,29 @@
             <input type='text' id='store-namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()'/>
             <br />
             <br />
-            <button id='store-home-button' onclick='onClickStoreHome();' class='store-front-all-button-on'>Front Page</button>
-            <button id='store-tag-reset-button' onclick='onClickStoreTagResetButton();' class='store-front-all-button-off'>View All</button>
-            <br />
-            <br />
-            <span class='store-switch-text'>and</span>
-            <label class='store-switch'>
-                <input type='checkbox' id='store-tag-andor-checkbox' onchange='onStoreTagCheckboxChange();'/>
-                <span class='store-switch-slider'></span>
-            </label>
-            <span class='store-switch-text'>or</span>
-            <br />
-            <hr />
-            <input type='checkbox' class='store-tag-checkbox' value='installed' id='store-tag-checkbox-installed' onclick='onStoreTagCheckboxChange();'/> Installed
-            <br />
-            <input type='checkbox' class='store-tag-checkbox' value='newavailable' id='store-tag-checkbox-newavailable' onclick='onStoreTagCheckboxChange();'/> Update available
-            <br />
-            <hr />
-            <div id='store-tag-custom-div'></div>
-            <hr />
-            <div id='store-install-all-button-div'>
-                <button id='store-install-all-button' onclick='onClickStoreInstallAllButton();' style='font-size: 14px;'>Install All</button>
-                <button id='store-update-all-button' onclick='onClickStoreUpdateAllButton();' style='font-size: 14px;'>Update All</button>
+                <button id='store-home-button' onclick='onClickStoreHome();' class='store-front-all-button-on'>Front Page</button>
+                <button id='store-tag-reset-button' onclick='onClickStoreTagResetButton();' class='store-front-all-button-off'>View All</button>
+                <br />
+                <br />
+                <span class='store-switch-text'>and</span>
+                <label class='store-switch'>
+                    <input type='checkbox' id='store-tag-andor-checkbox' onchange='onStoreTagCheckboxChange();'/>
+                    <span class='store-switch-slider'></span>
+                </label>
+                <span class='store-switch-text'>or</span>
+                <br />
+                <hr />
+                <input type='checkbox' class='store-tag-checkbox' value='installed' id='store-tag-checkbox-installed' onclick='onStoreTagCheckboxChange();'/> Installed
+                <br />
+                <input type='checkbox' class='store-tag-checkbox' value='newavailable' id='store-tag-checkbox-newavailable' onclick='onStoreTagCheckboxChange();'/> Update available
+                <br />
+                <hr />
+                <div id='store-tag-custom-div'></div>
+                <hr />
+                <div id='store-install-all-button-div'>
+                    <button id='store-install-all-button' onclick='onClickStoreInstallAllButton();' style='font-size: 14px;'>Install All</button>
+                    <button id='store-update-all-button' onclick='onClickStoreUpdateAllButton();' style='font-size: 14px;'>Update All</button>
+                <button id='store-systemmoduleupdate-button' onclick='onClickSystemModuleUpdateButton();' style='font-size: 14px;'>Update System Modules</button>
                 <br />
                 <br />
             </div>
@@ -279,6 +280,25 @@
         </div>
     </div>
 </div> <!-- storediv -->
+
+<div id='store-systemmodule-div'>
+    <div id='store-systemmodule-missing-div' style='display: none;'>
+        There are missing system modules which Open-CRAVAT needs.
+        <br />
+        Click this button to install them:
+        <button id='store-systemmodule-install-button' style='position: relative; top: -2px;' onclick="onClickInstallBaseComponents();">Install system modules</button>
+        <br />
+    </div>
+    <div id='store-systemmodule-update-div' style='display: none;'>
+        There are updates available to system modules.
+        <br />
+        Click this button to update them:
+        <button style='position: relative; top: -2px;' onclick='onClickUpdateSystemModules();'>Update system modules</button>
+        <br />
+    </div>
+    <div id='store-systemmodule-msg-div'>
+    </div>
+</div> <!-- systemmodule-div -->
 
 <div id='settingsdiv' >
     <span>System configuration file:</span>
