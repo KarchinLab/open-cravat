@@ -136,7 +136,9 @@ function getLocal () {
                             if (idx == -1) {
                                 tags.push('newavailable');
                             }
-                            newModuleAvailable = true;
+                            if (baseModuleNames.includes(remoteModuleName) == false) {
+                                newModuleAvailable = true;
+                            }
                         } else {
                             var idx = tags.indexOf('newavailable');
                             if (idx >= 0) {
@@ -214,42 +216,8 @@ function getLocal () {
             } else {
                 hidePageselect();
                 showSystemModulePage();
-                /*
-                populateAllModulesDiv('basetoinstall');
-                if (baseToInstall.length > 0) {
-                    var div = document.getElementById('messagediv');
-                    emptyElement(div);
-                    div.style.display = 'block';
-                    div.style.top = '163px';
-                    div.style.left = '127px';
-                    var span = getEl('span');
-                    span.style.position = 'relative';
-                    span.textContent = 'Base modules (shown below) need to be installed to use Open-CRAVAT.';
-                    addEl(div, span);
-                    addEl(div, getEl('br'));
-                    var span = getEl('span');
-                    span.style.position = 'relative';
-                    span.textContent = 'Click this button to install them all: ';
-                    addEl(div, span);
-                    var button = getEl('button');
-                    button.style.position = 'relative';
-                    button.style.top = '-2px';
-                    button.textContent = 'Install base components';
-                    button.addEventListener('click', function (evt) {
-                        installBaseComponents();
-                        document.getElementById('messagediv').style.display = 'none';
-                    });
-                    addEl(div, button);
-                    div = document.getElementById('remotemodulepanels');
-                    div.style.top = '114px';
-                }
-                if (baseInstalled == false) {
-                    clickTab('storediv');
-                }
-                */
             }
             var d = document.getElementById('store-update-all-div');
-            var btn = document.getElementById('store-update-all-button');
             if (newModuleAvailable) {
                 var modulesInInstallQueue = Object.keys(installInfo);
                 d.style.display = 'block';
