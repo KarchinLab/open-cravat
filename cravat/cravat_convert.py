@@ -118,7 +118,7 @@ class MasterCravatConverter(object):
             self.lifter = LiftOver(constants.liftover_chain_paths[self.input_assembly])
         else:
             self.lifter = None
-        self.status_fpath = os.path.join(self.input_dir, self.input_fname + '.status.json')
+        self.status_fpath = os.path.join(self.output_dir, self.output_base_fname + '.status.json')
         cu.load_status_json(self)
 
     def setup (self):
