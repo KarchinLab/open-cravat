@@ -481,7 +481,6 @@ class CravatFilter ():
                 q += ' and m.base__uid=t.base__uid'
         self.cursor.execute(q)
         t = time.time() - t
-        print(t, 's in creating variant_filtered')
         self.cursor.execute('pragma synchronous=2')
 
     def make_filtered_hugo_table (self):
