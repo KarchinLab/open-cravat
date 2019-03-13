@@ -219,6 +219,10 @@ async def submit (request):
         run_args.extend(job_options['reports'])
     else:
         run_args.append('--sr')
+    # Note
+    if 'note' in job_options:
+        run_args.append('--note')
+        run_args.append(job_options['note'])
     p = subprocess.Popen(run_args)
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
