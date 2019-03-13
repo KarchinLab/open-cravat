@@ -213,8 +213,8 @@ class BaseAnnotator(object):
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
             print('        {}: finished at {}'.format(self.annotator_name, time.asctime(time.localtime(end_time))))
             run_time = end_time - start_time
-            self.logger.info('runtime: {0:0.3f}'.format(run_time))
-            print('        {}: runtime {}'.format(self.annotator_name, time.asctime(time.localtime(run_time))))
+            self.logger.info('runtime: {0:0.3f}s'.format(run_time))
+            print('        {}: runtime {}s'.format(self.annotator_name, run_time))
             if self.update_status_json_flag:
                 self.add_annotator_version_to_status_json()
                 cu.update_status_json(self, 'status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
