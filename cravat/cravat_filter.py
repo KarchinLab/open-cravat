@@ -616,18 +616,3 @@ def regexp (y, x, search=re.search):
 def main ():
     cv = CravatFilter(mode='main')
     cv.run(args=sys.argv[1:])
-
-def test ():
-    cf = CravatFilter(dbpath='d:\\git\\cravat-newarch\\tmp\\job\\in1000.sqlite',
-                      mode='sub',
-                      filterstring='{"variant": {"thousandgenomes__af": ">0.1"}}')
-    print(cf.getcount())
-    cf.make_filtered_uid_table()
-    for row in cf.get_filtered_iterator(level='variant'):
-        print(row)
-    for row in cf.get_filtered_iterator(level='gene'):
-        print(row)
-
-if __name__ == '__main__':
-    #main()
-    test()

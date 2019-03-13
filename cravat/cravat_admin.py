@@ -328,7 +328,6 @@ def main ():
             print('No modules found')
             
     def publish_module (args):
-        print('args force yes in publish', args.force_yes)
         au.publish_module(args.module, args.user, args.password, args.overwrite_same_version, include_data=args.data)
         
     def install_base (args):
