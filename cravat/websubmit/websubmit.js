@@ -11,6 +11,7 @@ var GLOBALS = {
     inputExamples: {}
 }
 var currentTab = 'submit';
+var websubmitReportBeingGenerated = {};
 
 function submit () {
     if (servermode && logged == false) {
@@ -109,8 +110,15 @@ function addJob (jsonObj) {
 }
 
 function createJobExcelReport (evt) {
-    var jobid = evt.target.getAttribute('jobId');
+    var button = evt.target;
+    var jobid = button.getAttribute('jobId');
+    if (websubmitReportBeingGenerated[jobid] == undefined) {
+        websubmitReportBeingGenerated[jobid] = {};
+    }
+    websubmitReportBeingGenerated[jobid]['excel'] = true;
+    buildJobsTable();
     generateReport(jobid, 'excel', function () {
+        websubmitReportBeingGenerated[jobid]['excel'] = false;
         populateJobs().then(function () {
             buildJobsTable();
         });
@@ -119,7 +127,13 @@ function createJobExcelReport (evt) {
 
 function createJobTextReport (evt) {
     var jobid = evt.target.getAttribute('jobId');
+    if (websubmitReportBeingGenerated[jobid] == undefined) {
+        websubmitReportBeingGenerated[jobid] = {};
+    }
+    websubmitReportBeingGenerated[jobid]['text'] = true;
+    buildJobsTable();
     generateReport(jobid, 'text', function () {
+        websubmitReportBeingGenerated[jobid]['text'] = false;
         populateJobs().then(function () {
             buildJobsTable();
         });
@@ -260,26 +274,38 @@ function buildJobsTable () {
         var excelButton = $(getEl('button'))
             .append('Excel')
             .attr('jobId',job.id)
-        if (job.reports.includes('excel') == false) {
+        if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['excel'] == true) {
             excelButton.css('background-color', '#cccccc');
-            excelButton.click(createJobExcelReport);
-            excelButton[0].title = 'Click to create.';
+            excelButton.prop('disabled', true);
+            excelButton.text('being generated...');
         } else {
-            excelButton.click(jobExcelDownloadButtonHandler);
-            excelButton[0].title = 'Click to download.';
+            if (job.reports.includes('excel') == false) {
+                excelButton.css('background-color', '#cccccc');
+                excelButton.click(createJobExcelReport);
+                excelButton[0].title = 'Click to create.';
+            } else {
+                excelButton.click(jobExcelDownloadButtonHandler);
+                excelButton[0].title = 'Click to download.';
+            }
         }
         dbTd.append(excelButton);
         // Text
         var textButton = $(getEl('button'))
             .append('Text')
             .attr('jobId',job.id)
-        if (job.reports.includes('text') == false) {
+        if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['text'] == true) {
             textButton.css('background-color', '#cccccc');
-            textButton.click(createJobTextReport);
-            textButton[0].title = 'Click to create.';
+            textButton.prop('disabled', true);
+            textButton.text('being generated...');
         } else {
-            textButton.click(jobTextDownloadButtonHandler);
-            textButton[0].title = 'Click to download.';
+            if (job.reports.includes('text') == false) {
+                textButton.css('background-color', '#cccccc');
+                textButton.click(createJobTextReport);
+                textButton[0].title = 'Click to create.';
+            } else {
+                textButton.click(jobTextDownloadButtonHandler);
+                textButton[0].title = 'Click to download.';
+            }
         }
         dbTd.append(textButton);
         // Log
