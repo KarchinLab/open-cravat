@@ -22,7 +22,6 @@ function setupTab (tabName) {
 	}
 
 	// Populates the right panel.
-	var detailDiv = null;
 	if (tabName == 'info') {
 		makeInfoTab(rightDiv);
 	} else if (tabName == 'variant' || tabName == 'gene') {

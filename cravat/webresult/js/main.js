@@ -215,6 +215,15 @@ function disableUpdateButton () {
     document.getElementById('load_button').disabled = true;
 }
 
+function clearVariantGeneTab () {
+    var tabs = ['variant', 'gene'];
+    for (var i = 0; i < tabs.length; i++) {
+        var tab = tabs[i];
+        var div = document.getElementById('tab_' + tab);
+        div.innerHTML = '';
+    }
+}
+
 function loadData (alertFlag, finalcallback) {
     disableUpdateButton();
 	var infoReset = resetTab['info'];
@@ -255,6 +264,7 @@ function loadData (alertFlag, finalcallback) {
             console.log(e);
             console.trace();
         }
+        clearVariantGeneTab();
 		if (currentTab == 'variant' || currentTab == 'gene') {
 			setupTab(currentTab);
             resizesTheWindow();
@@ -264,22 +274,6 @@ function loadData (alertFlag, finalcallback) {
         document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.';
         enableUpdateButton();
 	}
-    /*
-	var loadMappingResult = function () {
-		if (resultLevels.indexOf('mapping') != -1) {
-			infomgr.load(jobId, 'mapping', removeSpinner, null, filterJson);
-		} else {
-			removeSpinner();
-		}
-	}
-	var loadSampleResult = function () {
-		if (resultLevels.indexOf('sample') != -1) {
-			infomgr.load(jobId, 'sample', loadMappingResult, null, filterJson);
-		} else {
-			loadMappingResult();
-		}
-	}
-    */
 	var loadGeneResult = function () {
 		var numvar = infomgr.getData('variant').length;
 		if (numvar > NUMVAR_LIMIT) {
