@@ -1082,8 +1082,11 @@ function populateLoadDiv (tabName, filterDiv) {
         makeFilterJson();
         infomgr.count(dbPath, 'variant', function (msg, data) {
             updateLoadMsgDiv(msg);
-            if (data['n'] <= NUMVAR_LIMIT) {
+            var count = data['n'];
+            if (count <= NUMVAR_LIMIT && count > 0) {
                 enableUpdateButton();
+            } else {
+                disableUpdateButton();
             }
         });
     }

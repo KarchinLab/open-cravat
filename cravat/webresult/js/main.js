@@ -211,6 +211,10 @@ function enableUpdateButton () {
     document.getElementById('load_button').disabled = false;
 }
 
+function disableUpdateButton () {
+    document.getElementById('load_button').disabled = true;
+}
+
 function loadData (alertFlag, finalcallback) {
     disableUpdateButton();
 	var infoReset = resetTab['info'];
