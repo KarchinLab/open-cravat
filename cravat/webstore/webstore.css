@@ -413,6 +413,6 @@ input:checked + .store-switch-slider:before {
     height: 15px;
     font-size: 13px;
     vertical-align: bottom;
-    z-index: 300;
+    z-index: 201;
 }
 
