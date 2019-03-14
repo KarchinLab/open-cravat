@@ -367,7 +367,7 @@ input:checked + .store-switch-slider:before {
 }
 
 #store-systemmoduleupdate-announce-div {
-    position: absolute;
+    position: fixed;
     top: 48px;
     right: 10px;
     font-size: 12px;
