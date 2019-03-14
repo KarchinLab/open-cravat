@@ -316,7 +316,7 @@ def set_jobs_dir (d):
 
 def get_jobs_dir():
     jobs_dir = get_system_conf().get('jobs_dir')
-    if jobs_dir is None:
+    if jobs_dir is None or jobs_dir == '':
         home_dir = os.path.expanduser('~')
         jobs_dir = os.path.join(home_dir,'open-cravat','jobs')
         set_jobs_dir(jobs_dir)
