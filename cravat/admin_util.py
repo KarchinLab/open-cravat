@@ -564,13 +564,13 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         local_info = get_local_module_info(module_name)
         if (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
             data_url = store_path_builder.module_data(module_name, remote_data_version)
-            if local_info.data_dir_exists:
-                uninstall_module_data(module_name)
             data_fname = '.'.join([module_name,'data','zip'])
             data_path = os.path.join(module_dir, data_fname)
             stage_handler.stage_start('download_data')
             r = su.stream_to_file(data_url, data_path, stage_handler=stage_handler.stage_progress, **kwargs)
             if r.status_code == 200:
+                if local_info.data_dir_exists:
+                    uninstall_module_data(module_name)
                 stage_handler.stage_start('extract_data')
                 zf = zipfile.ZipFile(data_path)
                 zf.extractall(module_dir)
