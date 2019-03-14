@@ -983,7 +983,13 @@ def get_latest_package_version():
         return None
 
 def get_current_package_version():
-    return pkg_resources.get_distribution('open-cravat').version    
+    curdir = os.path.dirname(os.path.abspath(__file__))
+    setup_path = os.path.join(curdir, '..', 'setup.py')
+    f = open(setup_path)
+    for line in f:
+        if 'version=' in line:
+            version = line.split('=')[1].split(',')[0].strip("'")
+    return version
 
 def get_remote_module_config (module_name):
     conf = mic.get_remote_config(module_name)
