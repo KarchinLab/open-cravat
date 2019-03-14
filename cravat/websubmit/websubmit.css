@@ -213,15 +213,6 @@ button {
     right: 0px;
 }
 
-#verdiv {
-    position: absolute; 
-    right: 25px; 
-    vertical-align: bottom; 
-    bottom: 2px; 
-    right: 10px;
-    font-size: 13px;
-}
-
 #settingsdiv {
     display: none;
     position: fixed;
