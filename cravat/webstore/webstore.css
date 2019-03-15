@@ -372,7 +372,7 @@ input:checked + .store-switch-slider:before {
     right: 10px;
     font-size: 12px;
     color: #f7684b;
-    z-index: 300;
+    z-index: 201;
     display: none;
 }
 
