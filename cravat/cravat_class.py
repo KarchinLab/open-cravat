@@ -688,17 +688,18 @@ class Cravat (object):
         # Logging queue
         manager = mp.Manager()
         annot_log_queue = manager.Queue()
+        d = manager.dict()
+        d['status_json_being_written'] = False
+        ds = [d for i in range(len(self.ordered_annotators))]
         pool_args = zip(
             self.ordered_annotators,
             all_cmds,
-            len(self.ordered_annotators)*[annot_log_queue]
+            ds,
+            len(self.ordered_annotators)*[annot_log_queue],
             )
         self.logger.removeHandler(self.log_handler)
-        #ql = QueueListener(annot_log_queue, *self.logger.handlers)
         with mp.Pool(processes=num_workers) as pool:
-            #ql.start()
             results = pool.starmap_async(run_annotator_mp, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
-            #ql.stop()
             pool.close()
             pool.join()
         try:

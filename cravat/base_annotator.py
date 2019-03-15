@@ -30,8 +30,9 @@ class BaseAnnotator(object):
                              'crg':[x['name'] for x in crg_def]}
     required_conf_keys = ['level', 'output_columns']
 
-    def __init__(self, cmd_args):
+    def __init__(self, cmd_args, shared_dict):
         try:
+            self.shared_dict = shared_dict
             self.logger = None
             main_fpath = cmd_args[0]
             main_basename = os.path.basename(main_fpath)
@@ -70,7 +71,7 @@ class BaseAnnotator(object):
 
             # Loads status.json file.
             if self.update_status_json_flag:
-                cu.load_status_json(self)
+                cu.load_status_json(self, module=self.annotator_name, shared_dict=self.shared_dict)
         except Exception as e:
             self._log_exception(e)
 
@@ -173,7 +174,7 @@ class BaseAnnotator(object):
     # Runs the annotator.
     def run(self):
         if self.update_status_json_flag:
-            cu.update_status_json(self, 'status', 'Started {} ({})'.format(self.conf['title'], self.annotator_name))
+            cu.update_status_json(self, 'status', 'Started {} ({})'.format(self.conf['title'], self.annotator_name), shared_dict=self.shared_dict)
         try:
             start_time = time.time()
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
