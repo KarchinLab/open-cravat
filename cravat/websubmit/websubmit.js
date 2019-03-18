@@ -405,7 +405,7 @@ function buildJobsTable () {
         if (job.open_cravat_version != undefined) {
             var tr = getEl('tr');
             var td = getEl('td');
-            td.textContent = 'cravat';
+            td.textContent = 'OpenCRAVAT ver';
             addEl(tr, td);
             var td = getEl('td');
             td.textContent = job.open_cravat_version;

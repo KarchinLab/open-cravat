@@ -285,6 +285,12 @@ button {
     border-style: ridge;
 }
 
+.checkbox-group-all-none-div {
+    position: absolute;
+    top: 8px;
+    right: 5px;
+}
+
 .checkbox-group-flexbox {
     display: flex;
     flex-wrap: wrap;
