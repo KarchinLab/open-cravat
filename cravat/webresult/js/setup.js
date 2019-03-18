@@ -1465,8 +1465,10 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
         } else {
             colLevel = 'column';
         }
+        var uiColGroup = ui.column.colgroup;
         for (var i = 0; i < colGroups.length; i++) {
             var colGroup = colGroups[i];
+            var sameColGroup = (uiColGroup == colGroup.pqtitle);
             if (colLevel == 'column') {
                 colGroup.nodrop = true;
             } else if (colLevel == 'group') {
@@ -1478,7 +1480,11 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
                 if (colLevel == 'group') {
                     col.nodrop = true;
                 } else if (colLevel == 'column') {
-                    col.nodrop = false;
+                    if (sameColGroup) {
+                        col.nodrop = false;
+                    } else {
+                        col.nodrop = true;
+                    }
                 }
             }
         }
