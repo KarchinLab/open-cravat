@@ -1484,7 +1484,7 @@ function getHighestVersionForRemoteModule (module) {
 function getSizeText (size) {
     size = parseInt(size);
     if (size < 1024) {
-        size = size + ' B';
+        size = size + ' bytes';
     } else {
         size = size / 1024;
         if (size < 1024) {
