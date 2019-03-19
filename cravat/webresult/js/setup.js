@@ -1489,6 +1489,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             }
         }
     }
+    gridObject.flex = {on: true};
 	return gridObject;
 }
 
