@@ -16,6 +16,7 @@ import sqlite3
 import hashlib
 from distutils.version import LooseVersion
 import glob
+import platform
 
 class FileRouter(object):
 
@@ -615,6 +616,25 @@ async def get_package_versions(request):
     }
     return web.json_response(d)
 
+def open_terminal (request):
+    p = sys.platform
+    if p.startswith('win'):
+        cmd = ['start', 'cmd']
+    elif p.startswith('darwin'):
+        cmd = ['open', '/bin/bash']
+    elif p.startswith('linux'):
+        p2 = platform.platform()
+        if p2.startswith('Linux') and 'Microsoft' in p2:
+            cmd = ['ubuntu1804.exe']
+        else:
+            return
+    else:
+        return
+    print(os.environ['PATH'])
+    subprocess.call(cmd, shell=True)
+    response = 'done'
+    return web.json_response(response)
+
 filerouter = FileRouter()
 VIEW_PROCESS = None
 
@@ -643,6 +663,7 @@ routes.append(['GET', '/submit/passwordanswer', check_password_answer])
 routes.append(['GET', '/submit/changepassword', change_password])
 routes.append(['GET', '/submit/checklogged', check_logged])
 routes.append(['GET', '/submit/packageversions', get_package_versions])
+routes.append(['GET', '/submit/openterminal', open_terminal])
 
 if __name__ == '__main__':
     app = web.Application()

@@ -1472,6 +1472,12 @@ function onClickThreeDots () {
     div.style.display = display;
 }
 
+function openTerminal () {
+    $.ajax({
+        url: '/submit/openterminal',
+    });
+}
+
 function resizePage () {
     var div = document.getElementById('submit-form');
     var h = window.innerHeight - 195;
