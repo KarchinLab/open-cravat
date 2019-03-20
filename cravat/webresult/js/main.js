@@ -314,6 +314,7 @@ function loadData (alertFlag, finalcallback) {
                 callback();
 		    }
 		}
+        console.log(filterJson);
 		if (firstLoad) {
 			firstLoad = false;
             var numvar = Number(infomgr.jobinfo['Number of unique input variants']);
