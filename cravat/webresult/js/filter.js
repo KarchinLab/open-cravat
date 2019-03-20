@@ -90,7 +90,6 @@ const makeFilterColDiv = (filter, filterLevel) => {
         // Test select
         testSel.val(filter.test);
         // Test values
-        console.log('filter.value=', filter.value);
         populateFilterValues(filterValsSpan, filter.test, filter.value);
         // Check negate
         if (filter.negate) {
@@ -207,7 +206,6 @@ function swapJson (d) {
 }
 
 const populateFilterValues = (valsContainer, testName, value) => {
-    console.log('value=', value);
     valsContainer.empty();
     const testDesc = filterTests[testName];
     var testDiv = valsContainer.siblings('.filter-column-selector');
@@ -215,18 +213,14 @@ const populateFilterValues = (valsContainer, testName, value) => {
     var column = getFilterColByName(col);
     var filter = column.filter;
     var valSubDic = column.reportsub;
-    console.log('valSubDic=', valSubDic);
     var valSubDicKeys = Object.keys(valSubDic);
     var valToKeys = swapJson(valSubDic);
-    console.log('valSubDicKeys=', valSubDicKeys);
-    console.log('valToKeys=', valToKeys);
     if (testName == 'select' && filter.type == 'select') {
         var select = getEl('select');
         select.className = 'filter-value-input';
         select.multiple = 'multiple';
         addEl(valsContainer[0], select);
         var optionValues = column.filter.options;
-        console.log('optionValues=', optionValues);
         var writtenOptionValues = [];
         /*
         if (value != undefined) {
@@ -254,7 +248,6 @@ const populateFilterValues = (valsContainer, testName, value) => {
                 for (let k = 0; k < vals.length; k++) {
                     let val = vals[k];
                     var keys = valToKeys[val];
-                    console.log('========== val=', val, ', keys=', keys);
                     if (writtenOptionValues.indexOf(val) < 0) {
                         writtenOptionValues.push(val);
                         var option = getEl('option');
@@ -265,11 +258,9 @@ const populateFilterValues = (valsContainer, testName, value) => {
                         }
                         option.textContent = val;
                         if (value != undefined) {
-                            console.log('   value=', value);
                             for (var l = 0; l < value.length; l++) {
                                 for (var m = 0; m < keys.length; m++) {
                                     if (value[l] == keys[m]) {
-                                        console.log('@@@ match.', value[l], keys[m]);
                                         option.selected = true;
                                         break;
                                     }
