@@ -347,45 +347,50 @@ function showVariantDetail (row, tabName) {
 	var orderNums = Object.keys(detailWidgetOrder[tabName]);
 	for (var i = 0; i < orderNums.length; i++) {
 		var colGroupKey = detailWidgetOrder[tabName][orderNums[i]];
-		if (widgetGenerators[colGroupKey] == undefined) {
-			continue;
-		}
-		var colGroupTitle = infomgr.colgroupkeytotitle[colGroupKey];
-		if (colGroupTitle == undefined) {
-			colGroupTitle = widgetGenerators[colGroupKey]['name'];
-		}
-		if (widgetGenerators[colGroupKey][tabName] != undefined && 
-			widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
-			var generator = widgetGenerators[colGroupKey][tabName];
-			var widgetDiv = null;
-			var detailContentDiv = null;
-			if (reuseWidgets) {
-				widgetContentDiv = document.getElementById(
-					'widgetcontentdiv_' + colGroupKey + '_' + tabName);
-				if (generator['donterase'] != true) {
-					$(widgetContentDiv).empty();
-				}
-				generator['function'](widgetContentDiv, row, tabName);
-			} else {
-				[widgetDiv, widgetContentDiv] = 
-					getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
-                generator['variables']['parentdiv'] = widgetContentDiv;
-                if (generator['init'] != undefined) {
-                    generator['init']();
-                }
-				generator['function'](widgetContentDiv, row, tabName);
-				widgetDiv.style.width = generator['width'] + 'px';
-				widgetDiv.style.height = generator['height'] + 'px';
-                var setting = getViewerWidgetSettingByWidgetkey(tabName, colGroupKey);
-                if (setting != null) {
-                    var display = setting['display'];
-                    if (display != undefined) {
-                        widgetDiv.style.display = display;
+        try {
+            if (widgetGenerators[colGroupKey] == undefined) {
+                continue;
+            }
+            var colGroupTitle = infomgr.colgroupkeytotitle[colGroupKey];
+            if (colGroupTitle == undefined) {
+                colGroupTitle = widgetGenerators[colGroupKey]['name'];
+            }
+            if (widgetGenerators[colGroupKey][tabName] != undefined && 
+                widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
+                var generator = widgetGenerators[colGroupKey][tabName];
+                var widgetDiv = null;
+                var detailContentDiv = null;
+                if (reuseWidgets) {
+                    widgetContentDiv = document.getElementById(
+                        'widgetcontentdiv_' + colGroupKey + '_' + tabName);
+                    if (generator['donterase'] != true) {
+                        $(widgetContentDiv).empty();
                     }
+                    generator['function'](widgetContentDiv, row, tabName);
+                } else {
+                    [widgetDiv, widgetContentDiv] = 
+                        getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
+                    generator['variables']['parentdiv'] = widgetContentDiv;
+                    if (generator['init'] != undefined) {
+                        generator['init']();
+                    }
+                    generator['function'](widgetContentDiv, row, tabName);
+                    widgetDiv.style.width = generator['width'] + 'px';
+                    widgetDiv.style.height = generator['height'] + 'px';
+                    var setting = getViewerWidgetSettingByWidgetkey(tabName, colGroupKey);
+                    if (setting != null) {
+                        var display = setting['display'];
+                        if (display != undefined) {
+                            widgetDiv.style.display = display;
+                        }
+                    }
+                    addEl(outerDiv, widgetDiv);
                 }
-				addEl(outerDiv, widgetDiv);
-			}
-		}
+            }
+        } catch (err) {
+            console.log(err);
+            console.log('### continuing to the next widget ###');
+        }
 	}
 	if (reuseWidgets == false) {
 		$outerDiv.packery({
