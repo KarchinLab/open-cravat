@@ -140,10 +140,16 @@
                     </tr><tr>
                         <td valign='top' class='variant-input-border-bottom' style='text-align: right;'>
                             <br />
-                            <div>
-                                Type:
+                            <div style='text-align: left;'>
+                                <span style='vertical-align: top;'>Type:</span>
                                 <textarea rows="1" id="input-text" style='' placeholder="Input text" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
+                            <span style='font-size: 9px;'>(Force format:</span>
+                            <select id='submit-input-format-select'>
+                                <option value=''></option>
+                                <option value='vcf'>VCF</option>
+                            </select>
+                            <span style='font-size: 10px;'>)</span>
                             <span style='font-size: 13px;'>Example:</span>
                             <button value="vcf" class='input-example-button'>VCF</button>
                             <button value="cravat" class='input-example-button'>tsv</button>

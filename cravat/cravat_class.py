@@ -180,6 +180,10 @@ cravat_cmd_parser.add_argument('--mp',
                     dest='mp',
                     default=None,
                     help='number of processes to use to run annotators')
+cravat_cmd_parser.add_argument('--forcedinputformat',
+                    dest='forcedinputformat',
+                    default=None,
+                    help='Force input format')
 
 class Cravat (object):
 
@@ -504,6 +508,8 @@ class Cravat (object):
                '-n', self.run_name,
                '-d', self.output_dir,
                '-l', self.input_assembly]
+        if self.args.forcedinputformat is not None:
+            cmd.extend(['-f', self.args.forcedinputformat])
         self.announce_module(module)
         if self.verbose:
             print(' '.join(cmd))

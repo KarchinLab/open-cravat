@@ -301,3 +301,13 @@ button {
     overflow: hidden;
     white-space: nowrap;
 }
+
+#submit-input-format-select {
+    font-size: 9px;
+    width: 60px;
+}
+
+#submit-input-format-select option {
+    font-size: 9px;
+}
+

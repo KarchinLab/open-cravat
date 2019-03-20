@@ -224,6 +224,10 @@ async def submit (request):
     if 'note' in job_options:
         run_args.append('--note')
         run_args.append(job_options['note'])
+    # Forced input format
+    if 'forcedinputformat' in job_options:
+        run_args.append('--forcedinputformat')
+        run_args.append(job_options['forcedinputformat'])
     p = subprocess.Popen(run_args)
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)

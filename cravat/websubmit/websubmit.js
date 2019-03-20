@@ -61,6 +61,7 @@ function submit () {
         }
     }
     submitOpts.assembly = $('#assembly-select').val();
+    submitOpts.forcedinputformat = $('#submit-input-format-select').val();
     var note = document.getElementById('jobnoteinput').value;
     submitOpts.note = note;
     fd.append('options',JSON.stringify(submitOpts));
