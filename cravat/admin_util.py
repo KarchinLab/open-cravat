@@ -1076,8 +1076,9 @@ def get_updatable(modules=[], strategy='consensus'):
                         passing_versions.append(version)
                 selected_version = passing_versions[-1] if passing_versions else None
         if selected_version and LooseVersion(selected_version) > LooseVersion(local_info.version):
-            remote_data_version = get_remote_data_version(mname, selected_version)
-            if remote_data_version is not None and remote_data_version != local_info.version:
+            update_data_version = get_remote_data_version(mname, selected_version)
+            installed_data_version = get_remote_data_version(mname, local_info.version)
+            if update_data_version is not None and update_data_version != installed_data_version:
                 update_size = remote_info.size
             else:
                 update_size = mic.get_code_size(mname, selected_version)

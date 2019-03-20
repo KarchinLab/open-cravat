@@ -90,6 +90,7 @@ const makeFilterColDiv = (filter, filterLevel) => {
         // Test select
         testSel.val(filter.test);
         // Test values
+        console.log('filter.value=', filter.value);
         populateFilterValues(filterValsSpan, filter.test, filter.value);
         // Check negate
         if (filter.negate) {
@@ -193,7 +194,20 @@ const filterTestChangeHandler = (event) => {
     testSel[0].setAttribute('prevselidx', testSel[0].selectedIndex);
 }
 
+function swapJson (d) {
+    var newd = {};
+    for (var k in d) {
+        var v = d[k];
+        if (newd[v] == undefined) {
+            newd[v] = [];
+        }
+        newd[v].push(k);
+    }
+    return newd;
+}
+
 const populateFilterValues = (valsContainer, testName, value) => {
+    console.log('value=', value);
     valsContainer.empty();
     const testDesc = filterTests[testName];
     var testDiv = valsContainer.siblings('.filter-column-selector');
@@ -201,44 +215,66 @@ const populateFilterValues = (valsContainer, testName, value) => {
     var column = getFilterColByName(col);
     var filter = column.filter;
     var valSubDic = column.reportsub;
+    console.log('valSubDic=', valSubDic);
     var valSubDicKeys = Object.keys(valSubDic);
+    var valToKeys = swapJson(valSubDic);
+    console.log('valSubDicKeys=', valSubDicKeys);
+    console.log('valToKeys=', valToKeys);
     if (testName == 'select' && filter.type == 'select') {
         var select = getEl('select');
         select.className = 'filter-value-input';
         select.multiple = 'multiple';
         addEl(valsContainer[0], select);
         var optionValues = column.filter.options;
+        console.log('optionValues=', optionValues);
         var writtenOptionValues = [];
+        /*
         if (value != undefined) {
             for (var j = 0; j < value.length; j++) {
                 for (let k = 0; k < valSubDicKeys.length; k++) {
                     const key = valSubDicKeys[k];
-                    value[j] = value[j].replace(new RegExp('\\bkey\\b', 'g'), valSubDic[key]);
+                    value[j] = value[j].replace(new RegExp('\\b' + key + '\\b', 'g'), valSubDic[key]);
                 }
             }
         }
+        */
         if (optionValues != undefined) {
             for (var j = 0; j < optionValues.length; j++) {
                 var optionValue = optionValues[j];
                 if (optionValue == null) {
                     continue;
                 }
+                /*
                 for (let k = 0; k < valSubDicKeys.length; k++) {
                     const key = valSubDicKeys[k];
-                    optionValue = optionValue.replace(new RegExp('\\bkey\\b', 'g'), valSubDic[key]);
+                    optionValue = optionValue.replace(new RegExp('\\b' + key + '\\b', 'g'), valSubDic[key]);
                 }
+                */
                 let vals = optionValue.split(';');
                 for (let k = 0; k < vals.length; k++) {
                     let val = vals[k];
+                    var keys = valToKeys[val];
+                    console.log('========== val=', val, ', keys=', keys);
                     if (writtenOptionValues.indexOf(val) < 0) {
                         writtenOptionValues.push(val);
                         var option = getEl('option');
-                        option.value = val;
+                        if (keys == undefined) {
+                            option.value = val;
+                        } else {
+                            option.value = keys[0];
+                        }
                         option.textContent = val;
                         if (value != undefined) {
+                            console.log('   value=', value);
                             for (var l = 0; l < value.length; l++) {
-                                if (value[l] == val) {
-                                    option.selected = true;
+                                for (var m = 0; m < keys.length; m++) {
+                                    if (value[l] == keys[m]) {
+                                        console.log('@@@ match.', value[l], keys[m]);
+                                        option.selected = true;
+                                        break;
+                                    }
+                                }
+                                if (option.selected == true) {
                                     break;
                                 }
                             }
