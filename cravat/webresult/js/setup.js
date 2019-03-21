@@ -40,7 +40,7 @@ function setupTab (tabName) {
 		dataLengths[tabName] = data.length;
 
 		makeGrid(columns, data, tabName);
-		$grids[tabName].pqGrid('refresh');
+		$grids[tabName].pqGrid('refreshDataAndView');
 
 		// Selects the first row.
 		if (tabName == currentTab) {
@@ -243,6 +243,7 @@ function populateSummaryWidgetDiv () {
 		handle: '.detailwidgettitle',
         stop: function (evt, ui) {
             $outerDiv.packery();
+            loadedViewerWidgetSettings[currentTab] = undefined;
         },
 	}).resizable({
 		grid: [widgetGridSize, widgetGridSize],
@@ -288,6 +289,7 @@ function populateSummaryWidgetDiv () {
             var sEvt = evt;
             var sUi = ui;
             $(sEvt.target.parentElement).packery('fit', sUi.element[0]);
+            loadedViewerWidgetSettings[currentTab] = undefined;
         },
 	});
 	$outerDiv.packery('bindUIDraggableEvents', $widgets);

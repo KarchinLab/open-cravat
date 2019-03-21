@@ -403,6 +403,7 @@ function showVariantDetail (row, tabName) {
 			handle: '.detailwidgettitle',
             stop: function (evt, ui) {
                 $outerDiv.packery();
+                loadedViewerWidgetSettings[currentTab] = undefined;
             },
 		}).resizable({
 			grid: [widgetGridSize, widgetGridSize],
@@ -443,6 +444,7 @@ function showVariantDetail (row, tabName) {
                 var sEvt = evt;
                 var sUi = ui;
                 $(sEvt.target.parentElement).packery('fit', sUi.element[0]);
+                loadedViewerWidgetSettings[currentTab] = undefined;
             },
 		});
 		$outerDiv.packery('bindUIDraggableEvents', $widgets);
