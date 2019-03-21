@@ -229,6 +229,8 @@ function loadData (alertFlag, finalcallback) {
 	var infoReset = resetTab['info'];
 	resetTab = {'info': infoReset};
 	resetTab['summary'] = true;
+    resetTab['variant'] = true;
+    resetTab['gene'] = true;
 	infomgr.datas = {};
     var makeVariantByGene = function () {
         if (infomgr.datas.variant != undefined) {
@@ -679,47 +681,45 @@ function afterGetResultLevels () {
     lockTabs();
     currentTab = 'info';
     $('#tabheads .tabhead').click(function(event) {
-            var targetTab = "#" + this.id.replace('head', '');
-            var tabName = targetTab.split('_')[1];
-            currentTab = tabName;
-            showTab(tabName);
-            var tab = document.getElementById('tab_' + tabName);
-            if (tab.innerHTML == '') {
-                setupTab(tabName);
-            }
-            var detailContainer = document.getElementById('detailcontainerdiv_' + tabName);
-            if (detailContainer != null && detailContainer.innerHTML == '') {
-                setupTab(tabName);
-            }
-            if (tabName == 'variant' || tabName == 'gene' || tabName == 'info') {
+        var targetTab = "#" + this.id.replace('head', '');
+        var tabName = targetTab.split('_')[1];
+        currentTab = tabName;
+        showTab(tabName);
+        var tab = document.getElementById('tab_' + tabName);
+        var detailContainer = document.getElementById('detailcontainerdiv_' + tabName);
+        if (resetTab[tabName] == true || tab.innerHTML == '' || (detailContainer != null && detailContainer.innerHTML == '')) {
+            setupTab(tabName);
+            resizesTheWindow();
+        }
+        if (tabName == 'variant' || tabName == 'gene' || tabName == 'info') {
             $(document.getElementById('detailcontainerdiv_' + tabName)).packery();
-            }
-            changeMenu();
-            });
+        }
+        changeMenu();
+    });
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
     $.get('/result/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
-            filterCols = jsonResponseData['columns']['variant'];
-            usedAnnotators = {};
-            var cols = jsonResponseData['columns']['variant'];
-            usedAnnotators['variant'] = [];
-            usedAnnotators['info'] = [];
-            for (var i = 0; i < cols.length; i++) {
+        filterCols = jsonResponseData['columns']['variant'];
+        usedAnnotators = {};
+        var cols = jsonResponseData['columns']['variant'];
+        usedAnnotators['variant'] = [];
+        usedAnnotators['info'] = [];
+        for (var i = 0; i < cols.length; i++) {
             var col = cols[i];
             var annotator = col.colModel[0].colgroupkey;
             usedAnnotators['variant'].push(annotator);
             usedAnnotators['info'].push(annotator);
-            }
-            if (jsonResponseData['columns']['gene']) {
+        }
+        if (jsonResponseData['columns']['gene']) {
             var cols = jsonResponseData['columns']['gene'];
             usedAnnotators['gene'] = [];
             for (var i = 0; i < cols.length; i++) {
-            var col = cols[i];
-            var annotator = col.colModel[0].colgroupkey;
-            usedAnnotators['gene'].push(annotator);
-            usedAnnotators['info'].push(annotator);
+                var col = cols[i];
+                var annotator = col.colModel[0].colgroupkey;
+                usedAnnotators['gene'].push(annotator);
+                usedAnnotators['info'].push(annotator);
             }
-            }
-            firstLoadData();
+        }
+        firstLoadData();
     });
 }
 
@@ -733,18 +733,18 @@ function webresult_run () {
     document.title = 'CRAVAT: ' + jobId;
     var resizeTimeout = null;
     $(window).resize(function(event) {
-            shouldResizeScreen = {};
-            var curWinWidth = window.innerWidth;
-            var curWinHeight = window.innerHeight;
-            if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
+        shouldResizeScreen = {};
+        var curWinWidth = window.innerWidth;
+        var curWinHeight = window.innerHeight;
+        if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
             windowWidth = curWinWidth;
             windowHeight = curWinHeight;
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(function () {
-                    resizesTheWindow();
-                    }, 200);
-            }
-            });
+                resizesTheWindow();
+            }, 200);
+        }
+    });
     // Chrome won't let you directly set this as window.onbeforeunload = function(){}
     // it wont work on a refresh then.
     function triggerAutosave() {
@@ -757,12 +757,12 @@ function webresult_run () {
     //window.onbeforeunload = triggerAutosave;
     getResultLevels(afterGetResultLevels);
     document.addEventListener('click', function (evt) {
-            var tableHeaderContextmenuId = 'table-header-contextmenu-' + currentTab;
-            if (evt.target.closest(tableHeaderContextmenuId) == null) {
+        var tableHeaderContextmenuId = 'table-header-contextmenu-' + currentTab;
+        if (evt.target.closest(tableHeaderContextmenuId) == null) {
             var div = document.getElementById(tableHeaderContextmenuId);
             if (div != null) {
-            div.style.display = 'none';
+                div.style.display = 'none';
             }
-            }
-            });
+        }
+    });
 }
