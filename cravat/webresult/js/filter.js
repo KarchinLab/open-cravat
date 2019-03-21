@@ -214,7 +214,6 @@ const populateFilterValues = (valsContainer, testName, value) => {
     var filter = column.filter;
     var valSubDic = column.reportsub;
     var valSubDicKeys = Object.keys(valSubDic);
-    var valToKeys = swapJson(valSubDic);
     if (testName == 'select' && filter.type == 'select') {
         var select = getEl('select');
         select.className = 'filter-value-input';
@@ -222,6 +221,16 @@ const populateFilterValues = (valsContainer, testName, value) => {
         addEl(valsContainer[0], select);
         var optionValues = column.filter.options;
         var writtenOptionValues = [];
+        var valToKeys = null;
+        if (valSubDicKeys.length == 0) {
+            valToKeys = {};
+            for (var i = 0; i < optionValues.length; i++) {
+                var val = optionValues[i];
+                valToKeys[val] = [val];
+            }
+        } else {
+            swapJson(valSubDic);
+        }
         /*
         if (value != undefined) {
             for (var j = 0; j < value.length; j++) {
@@ -257,7 +266,7 @@ const populateFilterValues = (valsContainer, testName, value) => {
                             option.value = keys[0];
                         }
                         option.textContent = val;
-                        if (value != undefined) {
+                        if (value != undefined && keys != undefined) {
                             for (var l = 0; l < value.length; l++) {
                                 for (var m = 0; m < keys.length; m++) {
                                     if (value[l] == keys[m]) {

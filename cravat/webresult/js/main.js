@@ -264,7 +264,7 @@ function loadData (alertFlag, finalcallback) {
             console.log(e);
             console.trace();
         }
-        clearVariantGeneTab();
+        //clearVariantGeneTab();
 		if (currentTab == 'variant' || currentTab == 'gene') {
 			setupTab(currentTab);
             resizesTheWindow();
@@ -297,8 +297,8 @@ function loadData (alertFlag, finalcallback) {
 		if (resultLevels.indexOf('gene') != -1) {
 			infomgr.load(jobId, 'gene', removeSpinner, null, filterJson);
 		} else {
-			loadSampleResult();
-		}
+            removeSpinner();
+        }
 	}
 	var loadVariantResult = function () {
 		function callLoadVariant () {
@@ -306,7 +306,7 @@ function loadData (alertFlag, finalcallback) {
 		    if (usedAnnotators['gene']) {
                 callback = loadGeneResult;
 		    } else {
-                callback = loadSampleResult;
+                callback = removeSpinner;
 		    }
 		    if (resultLevels.indexOf('variant') != -1) {
                 infomgr.load(jobId, 'variant', callback, null, filterJson);
@@ -545,25 +545,27 @@ function firstLoadData () {
 	    	}
 	    });
 	}
-	var afterLoadDefaultWidgetSetting = function (args) {
-		infomgr.load(
-			jobId, 
-			'info', 
-			function () {
-				populateInfoDiv(document.getElementById('info_div'));
-				checkWidgets();
-				loadData(false, showTab('info'));
-			}, 
-			null, 
-			filterJson
-		);
-	}
-	var afterLoadDefaultFilter = function (args) {
-		loadLayoutSetting(quickSaveName, afterLoadDefaultWidgetSetting, true);
-	}
 	loadWidgets();
 	setupTab('info');
 	loadFilterSetting(quickSaveName, afterLoadDefaultFilter, true);
+}
+
+var afterLoadDefaultWidgetSetting = function (args) {
+    infomgr.load(
+        jobId, 
+        'info', 
+        function () {
+            populateInfoDiv(document.getElementById('info_div'));
+            checkWidgets();
+            loadData(false, showTab('info'));
+        }, 
+        null, 
+        filterJson
+    );
+}
+
+var afterLoadDefaultFilter = function (args) {
+    loadLayoutSetting(quickSaveName, afterLoadDefaultWidgetSetting, true);
 }
 
 function checkWidgets () {
@@ -673,94 +675,94 @@ function quicksave () {
 }
 
 function afterGetResultLevels () {
-	addTabHeadsAndTabContentDivs();
+    addTabHeadsAndTabContentDivs();
     lockTabs();
-	currentTab = 'info';
+    currentTab = 'info';
     $('#tabheads .tabhead').click(function(event) {
-    	var targetTab = "#" + this.id.replace('head', '');
-    	var tabName = targetTab.split('_')[1];
-    	currentTab = tabName;
-    	showTab(tabName);
-    	var tab = document.getElementById('tab_' + tabName);
-    	if (tab.innerHTML == '') {
-    		setupTab(tabName);
-    	}
-    	var detailContainer = document.getElementById('detailcontainerdiv_' + tabName);
-    	if (detailContainer != null && detailContainer.innerHTML == '') {
-    		setupTab(tabName);
-    	}
-    	if (tabName == 'variant' || tabName == 'gene' || tabName == 'info') {
-    		$(document.getElementById('detailcontainerdiv_' + tabName)).packery();
-    	}
-    	changeMenu();
-    });
+            var targetTab = "#" + this.id.replace('head', '');
+            var tabName = targetTab.split('_')[1];
+            currentTab = tabName;
+            showTab(tabName);
+            var tab = document.getElementById('tab_' + tabName);
+            if (tab.innerHTML == '') {
+                setupTab(tabName);
+            }
+            var detailContainer = document.getElementById('detailcontainerdiv_' + tabName);
+            if (detailContainer != null && detailContainer.innerHTML == '') {
+                setupTab(tabName);
+            }
+            if (tabName == 'variant' || tabName == 'gene' || tabName == 'info') {
+            $(document.getElementById('detailcontainerdiv_' + tabName)).packery();
+            }
+            changeMenu();
+            });
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
     $.get('/result/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
-    	filterCols = jsonResponseData['columns']['variant'];
-    	usedAnnotators = {};
-    	var cols = jsonResponseData['columns']['variant'];
-    	usedAnnotators['variant'] = [];
-    	usedAnnotators['info'] = [];
-    	for (var i = 0; i < cols.length; i++) {
-    		var col = cols[i];
-    		var annotator = col.colModel[0].colgroupkey;
-    		usedAnnotators['variant'].push(annotator);
-    		usedAnnotators['info'].push(annotator);
-    	}
-    	if (jsonResponseData['columns']['gene']) {
-	    	var cols = jsonResponseData['columns']['gene'];
-	    	usedAnnotators['gene'] = [];
-	    	for (var i = 0; i < cols.length; i++) {
-	    		var col = cols[i];
-	    		var annotator = col.colModel[0].colgroupkey;
-	    		usedAnnotators['gene'].push(annotator);
-	    		usedAnnotators['info'].push(annotator);
-	    	}
-    	}
-    	firstLoadData();
+            filterCols = jsonResponseData['columns']['variant'];
+            usedAnnotators = {};
+            var cols = jsonResponseData['columns']['variant'];
+            usedAnnotators['variant'] = [];
+            usedAnnotators['info'] = [];
+            for (var i = 0; i < cols.length; i++) {
+            var col = cols[i];
+            var annotator = col.colModel[0].colgroupkey;
+            usedAnnotators['variant'].push(annotator);
+            usedAnnotators['info'].push(annotator);
+            }
+            if (jsonResponseData['columns']['gene']) {
+            var cols = jsonResponseData['columns']['gene'];
+            usedAnnotators['gene'] = [];
+            for (var i = 0; i < cols.length; i++) {
+            var col = cols[i];
+            var annotator = col.colModel[0].colgroupkey;
+            usedAnnotators['gene'].push(annotator);
+            usedAnnotators['info'].push(annotator);
+            }
+            }
+            firstLoadData();
     });
 }
 
 function webresult_run () {
-	var urlParams = new URLSearchParams(window.location.search);
-	jobId = urlParams.get('job_id');
-	dbPath = urlParams.get('dbpath');
-	confPath = urlParams.get('confpath');
-	$grids = {};
-	gridObjs = {};
-	document.title = 'CRAVAT: ' + jobId;
+    var urlParams = new URLSearchParams(window.location.search);
+    jobId = urlParams.get('job_id');
+    dbPath = urlParams.get('dbpath');
+    confPath = urlParams.get('confpath');
+    $grids = {};
+    gridObjs = {};
+    document.title = 'CRAVAT: ' + jobId;
     var resizeTimeout = null;
     $(window).resize(function(event) {
-    	shouldResizeScreen = {};
-        var curWinWidth = window.innerWidth;
-        var curWinHeight = window.innerHeight;
-        if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
+            shouldResizeScreen = {};
+            var curWinWidth = window.innerWidth;
+            var curWinHeight = window.innerHeight;
+            if (curWinWidth != windowWidth || curWinHeight != windowHeight) {
             windowWidth = curWinWidth;
             windowHeight = curWinHeight;
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(function () {
-                resizesTheWindow();
-            }, 200);
-        }
-    });
+                    resizesTheWindow();
+                    }, 200);
+            }
+            });
     // Chrome won't let you directly set this as window.onbeforeunload = function(){}
-	// it wont work on a refresh then.
-	function triggerAutosave() {
-		if (autoSaveLayout) {
+    // it wont work on a refresh then.
+    function triggerAutosave() {
+        if (autoSaveLayout) {
             filterJson = filterArmed;
-    		saveLayoutSetting(quickSaveName);
-			saveFilterSetting(quickSaveName, true);
-    	}
-	}
+            saveLayoutSetting(quickSaveName);
+            saveFilterSetting(quickSaveName, true);
+        }
+    }
     //window.onbeforeunload = triggerAutosave;
     getResultLevels(afterGetResultLevels);
     document.addEventListener('click', function (evt) {
-        var tableHeaderContextmenuId = 'table-header-contextmenu-' + currentTab;
-        if (evt.target.closest(tableHeaderContextmenuId) == null) {
+            var tableHeaderContextmenuId = 'table-header-contextmenu-' + currentTab;
+            if (evt.target.closest(tableHeaderContextmenuId) == null) {
             var div = document.getElementById(tableHeaderContextmenuId);
             if (div != null) {
-                div.style.display = 'none';
+            div.style.display = 'none';
             }
-        }
-    });
+            }
+            });
 }

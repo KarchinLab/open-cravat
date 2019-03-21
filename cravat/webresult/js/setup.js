@@ -40,7 +40,7 @@ function setupTab (tabName) {
 		dataLengths[tabName] = data.length;
 
 		makeGrid(columns, data, tabName);
-		$grids[tabName].pqGrid('refresh');
+		$grids[tabName].pqGrid('refreshDataAndView');
 
 		// Selects the first row.
 		if (tabName == currentTab) {
@@ -243,6 +243,7 @@ function populateSummaryWidgetDiv () {
 		handle: '.detailwidgettitle',
         stop: function (evt, ui) {
             $outerDiv.packery();
+            loadedViewerWidgetSettings[currentTab] = undefined;
         },
 	}).resizable({
 		grid: [widgetGridSize, widgetGridSize],
@@ -288,6 +289,7 @@ function populateSummaryWidgetDiv () {
             var sEvt = evt;
             var sUi = ui;
             $(sEvt.target.parentElement).packery('fit', sUi.element[0]);
+            loadedViewerWidgetSettings[currentTab] = undefined;
         },
 	});
 	$outerDiv.packery('bindUIDraggableEvents', $widgets);
@@ -1465,8 +1467,10 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
         } else {
             colLevel = 'column';
         }
+        var uiColGroup = ui.column.colgroup;
         for (var i = 0; i < colGroups.length; i++) {
             var colGroup = colGroups[i];
+            var sameColGroup = (uiColGroup == colGroup.pqtitle);
             if (colLevel == 'column') {
                 colGroup.nodrop = true;
             } else if (colLevel == 'group') {
@@ -1478,11 +1482,16 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
                 if (colLevel == 'group') {
                     col.nodrop = true;
                 } else if (colLevel == 'column') {
-                    col.nodrop = false;
+                    if (sameColGroup) {
+                        col.nodrop = false;
+                    } else {
+                        col.nodrop = true;
+                    }
                 }
             }
         }
     }
+    gridObject.flex = {on: true};
 	return gridObject;
 }
 
