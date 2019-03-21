@@ -163,9 +163,6 @@ class BaseAnnotator(object):
                 self.update_status_json_flag = True
             else:
                 self.update_status_json_flag = False
-            if self.update_status_json_flag:
-                status_fname = '{}.status.json'.format(self.output_basename)
-                self.status_fpath = os.path.join(self.output_dir, status_fname)
             if parsed_args.conf:
                 self.job_conf_path = parsed_args.conf
         except Exception as e:
@@ -217,7 +214,7 @@ class BaseAnnotator(object):
             self.logger.info('runtime: {0:0.3f}s'.format(run_time))
             print('        {}: runtime {}s'.format(self.annotator_name, run_time))
             if self.update_status_json_flag:
-                self.add_annotator_version_to_status_json()
+                cu.add_annotator_version_to_status_json(self.annotator_name)
                 cu.update_status_json(self, 'status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
         except Exception as e:
             self._log_exception(e)
@@ -227,13 +224,6 @@ class BaseAnnotator(object):
 
     def postprocess (self):
         pass
-
-    def add_annotator_version_to_status_json (self):
-        if 'annotator_version' not in self.status_json:
-            self.status_json['annotator_version'] = {}
-        version = self.conf.get('version', 'unknown')
-        self.status_json['annotator_version'][self.annotator_name] = version
-        cu.update_status_json(self, 'annotator_version', self.status_json['annotator_version'])
 
     def get_gene_summary_data (self, cf):
         cols = [self.annotator_name + '__' + coldef['name'] \

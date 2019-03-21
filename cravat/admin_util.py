@@ -716,12 +716,12 @@ def get_system_conf():
     """
     Get the system config. Fill in the default modules dir if not set.
     """
-    if os.path.exists(constants.system_conf_path):
-        conf = load_yml_conf(constants.system_conf_path)
-    else:
-        conf = load_yml_conf(constants.system_conf_template_path)
+    if os.path.exists(constants.system_conf_path) == False:
+        shutil.copyfile(constants.system_conf_template_path, constants.system_conf_path)
+    conf = load_yml_conf(constants.system_conf_path)
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
+        write_system_conf_file(conf)
     return conf
 
 def get_modules_dir():

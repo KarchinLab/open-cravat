@@ -119,7 +119,6 @@ class MasterCravatConverter(object):
         else:
             self.lifter = None
         self.status_fpath = os.path.join(self.output_dir, self.output_base_fname + '.status.json')
-        cu.load_status_json(self)
 
     def setup (self):
         """ Do necesarry pre-run tasks """

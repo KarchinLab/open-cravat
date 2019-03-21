@@ -140,29 +140,34 @@ def hg19tohg38 (args):
     newdb.commit()
 
 def load_status_json (self, module=None, shared_dict=None):
-    while True:
-        if shared_dict is not None and shared_dict['status_json_being_written']:
-            time.sleep(0.5)
-            continue
-        f = open(self.status_fpath)
-        lines = '\n'.join(f.readlines())
-        if lines == '':
-            time.sleep(0.5)
-            continue
-        try:
-            self.status_json = json.loads(lines)
-        except:
-            f.close()
-            exit()
+    if shared_dict is not None and shared_dict['status_json_being_written']:
+        return None
+    f = open(self.status_fpath)
+    lines = '\n'.join(f.readlines())
+    if lines == '':
+        time.sleep(0.5)
+        continue
+    try:
+        self.status_json = json.loads(lines)
+    except:
         f.close()
-        break
+        exit()
+    f.close()
+    break
 
-def update_status_json (self, k, v, shared_dict=None):
+def add_annotator_version_to_status_json (annotator_name):
+    status_json = load_status_json(
+    if 'annotator_version' not in self.status_json:
+        self.status_json['annotator_version'] = {}
+    version = self.conf.get('version', 'unknown')
+    self.status_json['annotator_version'][self.annotator_name] = version
+    cu.update_status_json(self, 'annotator_version', self.status_json['annotator_version'])
+
+def update_status_json (k, v, shared_dict=None):
     if shared_dict is None or shared_dict['status_json_being_written'] == False:
         if shared_dict is not None:
             shared_dict['status_json_being_written'] = True
         self.status_json[k] = v
-        #tmp_path = self.status_fpath + '.tmp'
         wf = open(self.status_fpath, 'w')
         json.dump(self.status_json, wf)
         wf.close()

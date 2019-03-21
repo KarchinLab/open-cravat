@@ -53,7 +53,6 @@ class BaseMapper(object):
         config_loader = ConfigLoader()
         self.conf = config_loader.get_module_conf(self.module_name)
         self.cravat_version = pkg_resources.get_distribution('open-cravat').version
-        cu.load_status_json(self)
 
     def _define_main_cmd_args(self):
         self.cmd_parser = argparse.ArgumentParser()

@@ -30,8 +30,6 @@ class CravatReport:
         self._setup_logger()
         self.connect_db()
         self.load_filter()
-        if self.module_conf is not None:
-            cu.load_status_json(self)
 
     def _setup_logger(self):
         if hasattr(self, 'no_log') and self.no_log:
