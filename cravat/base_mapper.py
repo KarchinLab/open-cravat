@@ -21,7 +21,8 @@ class BaseMapper(object):
     It handles command line arguments, option parsing and file io for the
     mapping process.
     """
-    def __init__(self, cmd_args):
+    def __init__(self, cmd_args, status_writer):
+        self.status_writer = status_writer
         main_fpath = cmd_args[0]
         main_basename = os.path.basename(main_fpath)
         if '.' in main_basename:
@@ -87,8 +88,6 @@ class BaseMapper(object):
             self.output_base_fname = self.cmd_args.name
         else:
             self.output_base_fname = self.input_fname
-        status_fname = '{}.status.json'.format(os.path.basename(self.output_base_fname))
-        self.status_fpath = os.path.join(self.output_dir, status_fname)
 
     def base_setup(self):
         self._setup_io()
@@ -152,6 +151,8 @@ class BaseMapper(object):
         start_time = time.time()
         self.logger.info('started: %s' \
                          %time.asctime(time.localtime(start_time)))
+        if self.status_writer is not None:
+            self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.conf['title'], self.module_name))
         count = 0
         last_status_update_time = time.time()
         crx_data = None
@@ -160,9 +161,10 @@ class BaseMapper(object):
             try:
                 count += 1
                 cur_time = time.time()
-                if count % 10000 == 0 or cur_time - last_status_update_time > 5:
-                    cu.update_status_json(self, 'status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, count))
-                    last_status_update_time = cur_time
+                if self.status_writer is not None:
+                    if count % 10000 == 0 or cur_time - last_status_update_time > 3:
+                        self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, count))
+                        last_status_update_time = cur_time
                 crx_data, alt_transcripts = self.map(crv_data)
                 # Skip cases where there was no change. Can result if ref_base not in original input
                 if crx_data['ref_base'] == crx_data['alt_base']:
@@ -180,6 +182,8 @@ class BaseMapper(object):
                          %time.asctime(time.localtime(stop_time)))
         runtime = stop_time - start_time
         self.logger.info('runtime: %6.3f' %runtime)
+        if self.status_writer is not None:
+            self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.module_name))
 
     def _write_to_crt(self, alt_transcripts):
         for primary, alts in alt_transcripts.items():

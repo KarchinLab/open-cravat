@@ -53,8 +53,9 @@ class MasterCravatConverter(object):
         correct converter, and writes a crv file.
     """
     ALREADYCRV = 2
-    def __init__(self, args=None):
+    def __init__(self, args=None, status_writer=None):
         args = args if args else sys.argv
+        self.status_writer = status_writer
         self.input_path = None
         self.f = None
         self.input_format = None
@@ -308,9 +309,10 @@ class MasterCravatConverter(object):
                     self.crs_writer.write_data(wdict)
         self.logger.info('error lines: %d' %num_errors)
         self._close_files()
-        cu.update_status_json(self, 'num_input_var', read_lnum)
-        cu.update_status_json(self, 'num_unique_var', write_lnum)
-        cu.update_status_json(self, 'num_error_input', num_errors)
+        if self.status_writer is not None:
+            self.status_writer.queue_status_update('num_input_var', read_lnum)
+            self.status_writer.queue_status_update('num_unique_var', write_lnum)
+            self.status_writer.queue_status_update('num_error_input', num_errors)
         end_time = time.time()
         self.logger.info('finished: %s' %\
             time.asctime(time.localtime(end_time)))

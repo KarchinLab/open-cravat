@@ -19,6 +19,7 @@ from .aggregator import Aggregator
 from .exceptions import *
 import yaml
 import cravat.cravat_util as cu
+import collections
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
@@ -216,6 +217,9 @@ class Cravat (object):
             self.logger.info('conf file: {}'.format(self.run_conf_path))
         self.write_initial_status_json()
         self.unique_logs = {}
+        manager = mp.Manager()
+        manager.register('status_writer', StatusWriter, exposed=['queue_status_update'])
+        self.status_writer = manager.status_writer()
 
     def write_initial_status_json (self):
         status_fname = '{}.status.json'.format(self.run_name)
@@ -264,12 +268,13 @@ class Cravat (object):
         logging.shutdown()
     
     def update_status (self, status):
-        cu.update_status_json(self, 'status', status)
+        print('@', repr(self.status_writer))
+        self.status_writer.queue_status_update('status', status)
 
     def main (self):
         no_problem_in_run = True
         try:
-            self.update_status('Started')
+            self.update_status('Started cravat')
             self.set_and_check_input_files()
             self.make_module_run_list()
             if self.args.sc == False and \
@@ -351,6 +356,8 @@ class Cravat (object):
                 print('Check {}'.format(self.log_path))
                 self.update_status('Error')
             self.close_logger()
+            print('######## in cravat_class. json=', self.status_writer.status_json)
+            self.status_writer.flush()
 
     def handle_exception (self, e):
         exc_str = traceback.format_exc()
@@ -453,7 +460,7 @@ class Cravat (object):
         annot_names = [v.name for v in self.ordered_annotators]
         annot_names.sort()
         if self.runlevel <= self.runlevels['annotator']:
-            cu.update_status_json(self, 'annotators', annot_names)
+            self.status_writer.queue_status_update('annotators', annot_names)
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
@@ -514,7 +521,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         converter_class = util.load_class('MasterCravatConverter', module.script_path)
-        converter = converter_class(cmd)
+        converter = converter_class(cmd, self.status_writer)
         converter.run()
 
     def run_genemapper (self):
@@ -529,7 +536,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         genemapper_class = util.load_class('Mapper', module.script_path)
-        genemapper = genemapper_class(cmd)
+        genemapper = genemapper_class(cmd, self.status_writer)
         genemapper.run()
 
     def run_aggregator (self):
@@ -691,18 +698,12 @@ class Cravat (object):
             if self.output_dir != None:
                 cmd.extend(['-d', self.output_dir])
             all_cmds.append(cmd)
-        # Logging queue
-        manager = mp.Manager()
-        annot_log_queue = manager.Queue()
-        d = manager.dict()
-        d['status_json_being_written'] = False
-        ds = [d for i in range(len(self.ordered_annotators))]
+        ds = [self.status_writer for i in range(len(self.ordered_annotators))]
         pool_args = zip(
             self.ordered_annotators,
             all_cmds,
             ds,
-            len(self.ordered_annotators)*[annot_log_queue],
-            )
+        )
         self.logger.removeHandler(self.log_handler)
         with mp.Pool(processes=num_workers) as pool:
             results = pool.starmap_async(run_annotator_mp, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
@@ -799,3 +800,50 @@ class Cravat (object):
     def announce_module (self, module):
         print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
         self.update_status('Running {title} ({name})'.format(title=module.title, name=module.name))
+
+class StatusWriter:
+    def __init__ (self, status_json_path):
+        self.status_json_path = status_json_path
+        self.status_queue = []
+        self.load_status_json() 
+        self.t = time.time()
+        self.lock = False
+
+    def load_status_json (self):
+        f = open(self.status_json_path)
+        lines = '\n'.join(f.readlines())
+        self.status_json = json.loads(lines)
+        f.close()
+
+    def add_annotator_version_to_status_json (self, annotator_name, version):
+        if 'annotator_version' not in self.status_json:
+            self.status_json['annotator_version'] = {}
+        self.status_json['annotator_version'][annotator_name] = version
+        self.queue_status_update('annotator_version', self.status_json['annotator_version'])
+
+    def queue_status_update (self, k, v):
+        self.status_json[k] = v
+        print('@ queued', k, '=', v)
+        print('@ result status=', self.status_json)
+        if time.time() - self.t > 3 and self.lock == False:
+            print('### writing after 3 sec')
+            self.lock = True
+            self.update_status_json()
+            self.t = time.time()
+            self.lock = False
+        print('# leaving queue_. json=', self.status_json)
+
+    def update_status_json (self):
+        print('@@@ writing')
+        print('#content:', self.status_json)
+        wf = open(self.status_json_path, 'w')
+        json.dump(self.status_json, wf)
+        wf.close()
+
+    def flush (self):
+        print('@@@ flushing')
+        self.lock = True
+        print('@ status_json=', self.status_json)
+        self.update_status_json()
+        self.t = time.time()
+        self.lock = False
