@@ -12,3 +12,4 @@ cravat/__pycache__/*
 *.swp
 cravat/modules/**
 /dist/
+.DS*
