@@ -621,21 +621,34 @@ async def get_package_versions(request):
     return web.json_response(d)
 
 def open_terminal (request):
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    python_dir = os.path.dirname(sys.executable)
     p = sys.platform
     if p.startswith('win'):
-        cmd = ['start', 'cmd']
+        cmd = {'cmd': ['start', 'cmd'], 'shell': True}
     elif p.startswith('darwin'):
-        cmd = ['open', '/bin/bash']
+        cmd_script_path = os.path.join(filedir, 'cmd.mac')
+        wf = open(cmd_script_path, 'w')
+        wf.write('''
+            if [ -f ~/.bashrc ]; then
+                source ~/.bashrc
+            fi
+            if [ -f ~/.bash_profile ]; then
+                source ~/.bash_profile
+            fi
+            export PATH=''' + python_dir + ''':$PATH
+            exec $SHELL''')
+        wf.close()
+        cmd = {'cmd': ['open', '-a', 'Terminal', cmd_script_path], 'shell': False}
     elif p.startswith('linux'):
         p2 = platform.platform()
         if p2.startswith('Linux') and 'Microsoft' in p2:
-            cmd = ['ubuntu1804.exe']
+            cmd = {'cmd': ['ubuntu1804.exe'], 'shell': True}
         else:
             return
     else:
         return
-    print(os.environ['PATH'])
-    subprocess.call(cmd, shell=True)
+    subprocess.call(cmd['cmd'], shell=cmd['shell'])
     response = 'done'
     return web.json_response(response)
 
