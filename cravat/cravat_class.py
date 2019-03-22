@@ -14,6 +14,7 @@ import logging
 import traceback
 from .mp_runners import run_annotator_mp
 import multiprocessing as mp
+import multiprocessing.managers
 from logging.handlers import QueueListener
 from .aggregator import Aggregator
 from .exceptions import *
@@ -186,6 +187,9 @@ cravat_cmd_parser.add_argument('--forcedinputformat',
                     default=None,
                     help='Force input format')
 
+class MyManager (multiprocessing.managers.SyncManager):
+    pass
+
 class Cravat (object):
 
     def __init__ (self, **kwargs):
@@ -217,15 +221,16 @@ class Cravat (object):
             self.logger.info('conf file: {}'.format(self.run_conf_path))
         self.write_initial_status_json()
         self.unique_logs = {}
-        manager = mp.Manager()
-        manager.register('status_writer', StatusWriter, exposed=['queue_status_update'])
-        self.status_writer = manager.status_writer()
+        manager = MyManager()
+        manager.register('StatusWriter', StatusWriter)
+        manager.start()
+        self.status_writer = manager.StatusWriter(self.status_json_path)
 
     def write_initial_status_json (self):
         status_fname = '{}.status.json'.format(self.run_name)
-        self.status_fpath = os.path.join(self.output_dir, status_fname)
-        if os.path.exists(self.status_fpath) == True:
-            with open(self.status_fpath) as f:
+        self.status_json_path = os.path.join(self.output_dir, status_fname)
+        if os.path.exists(self.status_json_path) == True:
+            with open(self.status_json_path) as f:
                 self.status_json = json.load(f)
                 self.pkg_ver = self.status_json['open_cravat_version']
         else:
@@ -244,7 +249,7 @@ class Cravat (object):
             self.status_json['reports'] = self.args.reports if self.args.reports != None else []
             self.pkg_ver = au.get_current_package_version()
             self.status_json['open_cravat_version'] = self.pkg_ver
-            with open(self.status_fpath,'w') as wf:
+            with open(self.status_json_path,'w') as wf:
                 wf.write(json.dumps(self.status_json))
 
     def get_logger (self):
@@ -268,7 +273,6 @@ class Cravat (object):
         logging.shutdown()
     
     def update_status (self, status):
-        print('@', repr(self.status_writer))
         self.status_writer.queue_status_update('status', status)
 
     def main (self):
@@ -356,7 +360,6 @@ class Cravat (object):
                 print('Check {}'.format(self.log_path))
                 self.update_status('Error')
             self.close_logger()
-            print('######## in cravat_class. json=', self.status_writer.status_json)
             self.status_writer.flush()
 
     def handle_exception (self, e):
@@ -638,7 +641,7 @@ class Cravat (object):
                 if self.verbose:
                     print(' '.join(cmd))
                 reporter_cls = util.load_class('Reporter', module.script_path)
-                reporter = reporter_cls(cmd)
+                reporter = reporter_cls(cmd, self.status_writer)
                 stime = time.time()
                 reporter.run()
                 rtime = time.time() - stime
@@ -823,27 +826,22 @@ class StatusWriter:
 
     def queue_status_update (self, k, v):
         self.status_json[k] = v
-        print('@ queued', k, '=', v)
-        print('@ result status=', self.status_json)
         if time.time() - self.t > 3 and self.lock == False:
-            print('### writing after 3 sec')
             self.lock = True
             self.update_status_json()
             self.t = time.time()
             self.lock = False
-        print('# leaving queue_. json=', self.status_json)
 
     def update_status_json (self):
-        print('@@@ writing')
-        print('#content:', self.status_json)
         wf = open(self.status_json_path, 'w')
         json.dump(self.status_json, wf)
         wf.close()
 
+    def get_status_json (self):
+        return self.status_json
+
     def flush (self):
-        print('@@@ flushing')
         self.lock = True
-        print('@ status_json=', self.status_json)
         self.update_status_json()
         self.t = time.time()
         self.lock = False

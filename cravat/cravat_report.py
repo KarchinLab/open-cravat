@@ -16,7 +16,8 @@ import re
 
 class CravatReport:
 
-    def __init__ (self, cmd_args):
+    def __init__ (self, cmd_args, status_writer):
+        self.status_writer = status_writer
         self.parse_cmd_args(cmd_args)
         self.cursor = None
         self.cf = None
@@ -126,7 +127,7 @@ class CravatReport:
         if not (hasattr(self, 'no_log') and self.no_log):
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
         if self.module_conf is not None:
-            cu.update_status_json(self, 'status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
+            self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
         self.setup()
         if tab == 'all':
             for level in self.cf.get_result_levels():
@@ -144,7 +145,7 @@ class CravatReport:
                 self.make_col_info(tab)
             self.run_level(tab)
         if self.module_conf is not None:
-            cu.update_status_json(self, 'status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
+            self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
         end_time = time.time()
         if not (hasattr(self, 'no_log') and self.no_log):
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
