@@ -18,7 +18,8 @@ if os.path.exists(system_conf_path) == False:
 system_conf_template_fname = 'cravat-system.template.yml'
 system_conf_template_path = os.path.join(packagedir, system_conf_template_fname)
 modules_dir_key = 'modules_dir'
-default_modules_dir = os.path.join(cravat_data_dir, modules_dir_key)
+modules_dir_name = 'modules'
+default_modules_dir = os.path.join(cravat_data_dir, modules_dir_name)
 if os.path.exists(default_modules_dir) == False:
     os.mkdir(default_modules_dir)
 base_modules_key = 'base_modules'

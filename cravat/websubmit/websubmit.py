@@ -627,19 +627,12 @@ def open_terminal (request):
     if p.startswith('win'):
         cmd = {'cmd': ['start', 'cmd'], 'shell': True}
     elif p.startswith('darwin'):
-        cmd_script_path = os.path.join(filedir, 'cmd.mac')
-        wf = open(cmd_script_path, 'w')
-        wf.write('''
-            if [ -f ~/.bashrc ]; then
-                source ~/.bashrc
-            fi
-            if [ -f ~/.bash_profile ]; then
-                source ~/.bash_profile
-            fi
-            export PATH=''' + python_dir + ''':$PATH
-            exec $SHELL''')
-        wf.close()
-        cmd = {'cmd': ['open', '-a', 'Terminal', cmd_script_path], 'shell': False}
+        cmd = {'cmd': '''
+osascript -e 'tell app "Terminal"
+do script "export PATH=''' + python_dir + ''':$PATH"
+do script "echo Welcome to OpenCRAVAT" in window 1
+end tell'
+''', 'shell': True}
     elif p.startswith('linux'):
         p2 = platform.platform()
         if p2.startswith('Linux') and 'Microsoft' in p2:
