@@ -453,7 +453,6 @@ class Cravat (object):
             self.crg_present = True
         else:
             self.crg_present = False
-        
 
     def make_module_run_list (self):
         self.ordered_annotators = []
@@ -461,9 +460,20 @@ class Cravat (object):
         for module in self.annotators.values():
             self.add_annotator_to_queue(module)
         annot_names = [v.name for v in self.ordered_annotators]
+        annot_names = list(set(annot_names))
+        filenames = os.listdir(self.output_dir)
+        for filename in filenames:
+            toks = filename.split('.')
+            if len(toks) == 3:
+                extension = toks[2]
+                if toks[0] == self.run_name and\
+                    (extension == 'var' or extension == 'gen'):
+                    annot_name = toks[1]
+                    if annot_name not in annot_names:
+                        annot_names.append(annot_name)
         annot_names.sort()
         if self.runlevel <= self.runlevels['annotator']:
-            self.status_writer.queue_status_update('annotators', annot_names)
+            self.status_writer.queue_status_update('annotators', annot_names, force=True)
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
@@ -824,9 +834,10 @@ class StatusWriter:
         self.status_json['annotator_version'][annotator_name] = version
         self.queue_status_update('annotator_version', self.status_json['annotator_version'])
 
-    def queue_status_update (self, k, v):
+    def queue_status_update (self, k, v, force=False):
         self.status_json[k] = v
-        if time.time() - self.t > 3 and self.lock == False:
+        if force == True or\
+                (time.time() - self.t > 3 and self.lock == False):
             self.lock = True
             self.update_status_json()
             self.t = time.time()
