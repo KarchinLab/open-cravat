@@ -305,6 +305,16 @@ input:checked + .store-switch-slider:before {
     border-bottom: 1px dotted #aaaaaa;
 }
 
+#moduledetaildiv-infodiv {
+    height: 100%;
+    overflow: auto;
+    line-height: 18px;
+}
+
+#moduledetaildiv-infodiv>div {
+    margin-top: 12px;
+}
+
 #yesnodialog {
 	position: fixed;
     font-size: 14px;

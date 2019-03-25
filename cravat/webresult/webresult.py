@@ -310,7 +310,7 @@ def get_result (request):
         args.extend(['-c', confpath])
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
-    reporter = m.Reporter(args)
+    reporter = m.Reporter(args, None)
     dbbasename = os.path.basename(dbpath)
     print('getting result [{}] from {} for viewer...'.format(tab, dbbasename))
     t = time.time()
@@ -471,7 +471,7 @@ def get_colinfo (dbpath, confpath, filterstring):
         args.extend(['-c', confpath])
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
-    reporter = m.Reporter(args)
+    reporter = m.Reporter(args, None)
     colinfo = reporter.get_variant_colinfo()
     return colinfo
 

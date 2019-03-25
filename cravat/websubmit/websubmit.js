@@ -61,6 +61,7 @@ function submit () {
         }
     }
     submitOpts.assembly = $('#assembly-select').val();
+    submitOpts.forcedinputformat = $('#submit-input-format-select').val();
     var note = document.getElementById('jobnoteinput').value;
     submitOpts.note = note;
     fd.append('options',JSON.stringify(submitOpts));
@@ -405,7 +406,7 @@ function buildJobsTable () {
         if (job.open_cravat_version != undefined) {
             var tr = getEl('tr');
             var td = getEl('td');
-            td.textContent = 'cravat';
+            td.textContent = 'OpenCRAVAT ver';
             addEl(tr, td);
             var td = getEl('td');
             td.textContent = job.open_cravat_version;
@@ -1470,6 +1471,12 @@ function onClickThreeDots () {
         display = 'block';
     }
     div.style.display = display;
+}
+
+function openTerminal () {
+    $.ajax({
+        url: '/submit/openterminal',
+    });
 }
 
 function resizePage () {

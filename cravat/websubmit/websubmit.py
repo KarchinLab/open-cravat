@@ -16,6 +16,7 @@ import sqlite3
 import hashlib
 from distutils.version import LooseVersion
 import glob
+import platform
 
 class FileRouter(object):
 
@@ -223,6 +224,10 @@ async def submit (request):
     if 'note' in job_options:
         run_args.append('--note')
         run_args.append(job_options['note'])
+    # Forced input format
+    if 'forcedinputformat' in job_options:
+        run_args.append('--forcedinputformat')
+        run_args.append(job_options['forcedinputformat'])
     p = subprocess.Popen(run_args)
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
@@ -615,6 +620,31 @@ async def get_package_versions(request):
     }
     return web.json_response(d)
 
+def open_terminal (request):
+    filedir = os.path.dirname(os.path.abspath(__file__))
+    python_dir = os.path.dirname(sys.executable)
+    p = sys.platform
+    if p.startswith('win'):
+        cmd = {'cmd': ['start', 'cmd'], 'shell': True}
+    elif p.startswith('darwin'):
+        cmd = {'cmd': '''
+osascript -e 'tell app "Terminal"
+do script "export PATH=''' + python_dir + ''':$PATH"
+do script "echo Welcome to OpenCRAVAT" in window 1
+end tell'
+''', 'shell': True}
+    elif p.startswith('linux'):
+        p2 = platform.platform()
+        if p2.startswith('Linux') and 'Microsoft' in p2:
+            cmd = {'cmd': ['ubuntu1804.exe'], 'shell': True}
+        else:
+            return
+    else:
+        return
+    subprocess.call(cmd['cmd'], shell=cmd['shell'])
+    response = 'done'
+    return web.json_response(response)
+
 filerouter = FileRouter()
 VIEW_PROCESS = None
 
@@ -643,6 +673,7 @@ routes.append(['GET', '/submit/passwordanswer', check_password_answer])
 routes.append(['GET', '/submit/changepassword', change_password])
 routes.append(['GET', '/submit/checklogged', check_logged])
 routes.append(['GET', '/submit/packageversions', get_package_versions])
+routes.append(['GET', '/submit/openterminal', open_terminal])
 
 if __name__ == '__main__':
     app = web.Application()

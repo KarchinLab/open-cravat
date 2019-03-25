@@ -627,6 +627,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     */
     var sdiv = getEl('div');
     sdiv.className = 'modulepanel-typesizedate-div';
+    /*
     span = getEl('span');
     span.className = 'modulepanel-type-span';
     span.textContent = moduleInfo['type'];
@@ -636,6 +637,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     span.className = 'modulepanel-divider-span';
     span.textContent = ' | ';
     addEl(sdiv, span);
+    */
     span = getEl('span');
     span.className = 'modulepanel-size-span';
     span.textContent = getSizeText(moduleInfo['size']);
@@ -1212,20 +1214,17 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     td.style.verticalAlign = 'top';
     td.style.height = tdHeight;
     var infodiv = getEl('div');
-    infodiv.style.height = '100%';
-    infodiv.style.overflow = 'auto';
+    infodiv.id = 'moduledetaildiv-infodiv';
     infodiv.style.maxWidth = (wiw * 0.8 * 0.3) + 'px';
-    infodiv.lineHeight = '18px';
     var d = getEl('div');
     span = getEl('span');
     span.textContent = mInfo.description;
     addEl(d, span);
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
-    span.textContent = 'Version: ';
+    span.textContent = 'Module version: ';
     addEl(d, span);
     span = getEl('span');
     var remoteVersion = mInfo['latest_version'];
@@ -1286,7 +1285,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     }
     if (currentTab == 'store') {
         addEl(infodiv, d);
-        addEl(infodiv, getEl('br'));
         d = getEl('div');
         span = getEl('span');
         span.style.fontWeight = 'bold';
@@ -1299,10 +1297,8 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         }
         span.textContent = datasource;
         addEl(d, span);
-        addEl(d, getEl('br'));
     }
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
@@ -1312,7 +1308,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span.textContent = mInfo['developer']['name'];
     addEl(d, span);
     addEl(d, getEl('br'));
-    addEl(d, getEl('br'));
     span = getEl('span');
     span.style.fontWeight = 'bold';
     span.textContent = 'e-mail: ';
@@ -1320,7 +1315,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span = getEl('span');
     span.textContent = mInfo['developer']['email'];
     addEl(d, span);
-    addEl(d, getEl('br'));
     addEl(d, getEl('br'));
     addEl(infodiv, d);
     d = getEl('div');
@@ -1344,7 +1338,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     }
     addEl(d, span);
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
@@ -1354,7 +1347,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span.textContent = mInfo['developer']['organization'];
     addEl(d, span);
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
@@ -1367,7 +1359,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span.style.wordBreak = 'break-all';
     addEl(d, span);
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
@@ -1377,7 +1368,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span.textContent = mInfo['type'];
     addEl(d, span);
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     if (currentTab == 'store') {
         d = getEl('div');
         span = getEl('span');
@@ -1388,7 +1378,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         span.textContent = getSizeText(mInfo['size']);
         addEl(d, span);
         addEl(infodiv, d);
-        addEl(infodiv, getEl('br'));
         d = getEl('div');
         span = getEl('span');
         span.style.fontWeight = 'bold';
@@ -1399,7 +1388,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         span.textContent = t.toLocaleDateString();
         addEl(d, span);
         addEl(infodiv, d);
-        addEl(infodiv, getEl('br'));
         d = getEl('div');
         span = getEl('span');
         span.style.fontWeight = 'bold';
