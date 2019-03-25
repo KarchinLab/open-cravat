@@ -20,8 +20,8 @@ class FilterColumn(object):
         'hasData': 'is not null',
         'noData': 'is null',
         'stringContains': 'like',
-        'stringStarts': 'like',
-        'stringEnds': 'like',
+        'stringStarts': 'like', # Deprecated. Eliminate later
+        'stringEnds': 'like', # Deprecated. Eliminate later
         'between': 'between',
         'in': 'in',
         'select': 'in',

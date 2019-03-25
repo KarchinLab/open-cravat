@@ -658,14 +658,12 @@ const loadFilter = (filter) => {
 const filterTests = {
     equals: {title:'equals', inputs: 1, colTypes: ['string', 'float', 'int', 'select'], },
     lessThanEq: {title:'<=', inputs: 1, colTypes: ['float', 'int']},
-    lessThan: {title:'<', inputs:1, colTypes: ['float', 'int']},
+    lessThan: {title:'<', inputs:1, colTypes: ['float']},
     greaterThanEq: {title:'>=', inputs:1, colTypes: ['float', 'int']},
-    greaterThan: {title:'>', inputs:1, colTypes: ['float', 'int']},
+    greaterThan: {title:'>', inputs:1, colTypes: ['float']},
     hasData: {title:'has data', inputs:0, colTypes: ['float', 'int', 'string']},
     noData: {title:'is empty', inputs:0, colTypes: ['float', 'int', 'string']},
     stringContains: {title: 'contains', inputs:1, colTypes: ['string']},
-    stringStarts: {title: 'starts with', inputs:1, colTypes: ['string']},
-    stringEnds: {title: 'ends with', inputs:1, colTypes: ['string']},
     between: {title: 'in range', inputs:2, colTypes: ['float', 'int']},
     select: {title: 'one of', inputs: 1, colTypes: ['select']},
 }
@@ -680,8 +678,6 @@ const filterTestNames = [
     'hasData',
     'noData',
     'stringContains',
-    'stringStarts',
-    'stringEnds',
     'select',
 ];
 
