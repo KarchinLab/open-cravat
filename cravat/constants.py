@@ -1,7 +1,11 @@
 import os
 import copy
+import pathlib
+import shutil
+import sys
 
 packagedir = os.path.dirname(os.path.abspath(__file__))
+user_dir = str(pathlib.Path.home())
 system_conf_fname = 'cravat-system-dev.yml'
 system_conf_path = os.path.join(packagedir, system_conf_fname)
 if os.path.exists(system_conf_path) == False:

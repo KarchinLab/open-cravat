@@ -122,7 +122,7 @@ class BasePostAggregator (object):
         self.dbconn.commit()
 
     def write_output (self, input_data, output_dict):
-        q = 'update ' + self.level + ' set '
+        q = ''
         for col_def in self.conf['output_columns']:
             col_name = col_def['name']
             if col_name in output_dict:
@@ -136,6 +136,9 @@ class BasePostAggregator (object):
                     val = str(val)
                 q += col_name + '=' + val + ','
         q = q.rstrip(',')
+        if q == '':
+            return
+        q = 'update ' + self.level + ' set ' + q
         q += ' where '
         if self.levelno == VARIANT:
             q += 'base__uid=' + str(input_data['base__uid'])
