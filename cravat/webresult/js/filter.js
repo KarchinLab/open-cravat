@@ -229,7 +229,7 @@ const populateFilterValues = (valsContainer, testName, value) => {
                 valToKeys[val] = [val];
             }
         } else {
-            swapJson(valSubDic);
+            valToKeys = swapJson(valSubDic);
         }
         /*
         if (value != undefined) {
