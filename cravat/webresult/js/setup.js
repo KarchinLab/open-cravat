@@ -786,6 +786,7 @@ function drawSummaryWidgetGivenData (widgetName, widgetContentDiv, generator, da
 }
 
 function drawSummaryWidget (widgetName) {
+    console.log('@ starting drawing', widgetName);
 	var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
 	emptyElement(widgetContentDiv);
 	var generator = widgetGenerators[widgetName]['info'];
@@ -793,25 +794,36 @@ function drawSummaryWidget (widgetName) {
     var data = generator['variables']['data'];
 	if (callServer && data == undefined) {
         if (generator['beforecallserver'] != undefined) {
+            console.log('   - beforecallserver', widgetName);
             generator['beforecallserver']();
+            console.log('   - ended beforecallserver', widgetName);
         }
         var callServerParams = {};
         if (generator['variables']['callserverparams'] != undefined) {
             callServerParams = generator['variables']['callserverparams'];
         }
+        console.log('   - calling ajax runwidget', widgetName);
 		$.ajax({
             url: '/result/runwidget/' + widgetName, 
             data: {dbpath: dbPath, params: JSON.stringify(callServerParams)},
             success: function (response) {
                 var data = response['data'];
+                console.log('   - ended ajax runwidget', widgetName);
+                console.log('   - calling drawSummaryWidgetGivenData', widgetName);
                 drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
+                console.log('   - ended drawSummaryWidgetGivenData', widgetName);
             },
 		});
     } else if (callServer && data != undefined) {
+        console.log('   - calling drawSummaryWidgetGivenData', widgetName);
         drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
+        console.log('   - ended drawSummaryWidgetGivenData', widgetName);
 	} else {
+        console.log('   - calling drawSummaryWidgetGivenData', widgetName);
         drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, undefined);
+        console.log('   - ended drawSummaryWidgetGivenData', widgetName);
 	}
+    console.log('# ended drawing', widgetName);
 }
 
 function setupEvents (tabName) {
@@ -1491,7 +1503,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             }
         }
     }
-    gridObject.flex = {on: true};
+    gridObject.flex = {on: true, all: false};
 	return gridObject;
 }
 
