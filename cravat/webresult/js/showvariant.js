@@ -6,7 +6,7 @@ function getWidgetTableFrame () {
 	table.style.borderTop = widgetTableBorderStyle;
 	table.style.borderBottom = widgetTableBorderStyle;
 	table.style.tableLayout = 'fixed';
-	table.style['word-break'] = 'normal';
+	table.style['word-break'] = 'break-all';
 	table.style.width = 'calc(100% - 0px)';
 	table.style['table-layout'] = 'fixed';
 	return table;
@@ -15,6 +15,7 @@ function getWidgetTableFrame () {
 function getWidgetTableHead (headers, widths) {
 	var thead = getEl('thead');
 	thead.style.textAlign = 'left';
+	thead.style['word-break'] = 'normal';
 	thead.style.borderBottom = widgetTableBorderStyle;
 	var tr = getEl('tr');
 	var numBorder = headers.length - 1;
