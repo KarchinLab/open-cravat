@@ -1,4 +1,4 @@
-function getWidgetTableFrame (columnWidths) {
+function getWidgetTableFrame () {
 	var table = getEl('table');
 	table.style.fontSize = '12px';
 	table.style.borderSpacing = '0px';
@@ -6,8 +6,9 @@ function getWidgetTableFrame (columnWidths) {
 	table.style.borderTop = widgetTableBorderStyle;
 	table.style.borderBottom = widgetTableBorderStyle;
 	table.style.tableLayout = 'fixed';
+	table.style['word-break'] = 'normal';
 	table.style.width = 'calc(100% - 0px)';
-	table.setAttribute('columnwidths', columnWidths);
+	table.style['table-layout'] = 'fixed';
 	return table;
 }
 
