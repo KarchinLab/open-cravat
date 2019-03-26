@@ -1223,6 +1223,7 @@ function populateTableColumnSelectorPanel () {
 		legend.style.fontSize = '14px';
 		legend.style.fontWeight = 'bold';
 		var checkbox = getEl('input');
+        checkbox.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_' + '_checkbox';
 		checkbox.type = 'checkbox';
 		checkbox.checked = true;
 		checkbox.setAttribute('colgroupno', i);
@@ -1441,13 +1442,15 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             row.css('background-color', '#ffc500');
         }
 	}
-	gridObject.refreshHeader = function () {
+	gridObject.refreshHeader = function (evt, ui) {
         var colModel = null;
         if ($grids[currentTab] == undefined) {
             colModel = this.colModel;
         } else {
             colModel = $grids[currentTab].pqGrid('getColModel');
         }
+        var $groupHeaderTr = null;
+        var groupHeaderTitleToKey = {};
 		for (let i=0; i < colModel.length; i++) {
 			var col = colModel[i];
             var $headerCell = this.getCellHeader({colIndx: col.leftPos});
@@ -1457,8 +1460,10 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 			if (col.desc !== null) {
 				$headerCell.attr('title', col.desc).tooltip();
 			}
+            $groupHeaderTr = $headerCell.parent().prev();
             $headerCell.attr('col', col.col);
             $headerCell.attr('colgroup', col.colgroup);
+            groupHeaderTitleToKey[col.colgroup] = col.colgroupkey;
             $headerCell.contextmenu(function (evt) {
                 var headerCell = evt.target;
                 if (headerCell.classList.contains('pq-td-div')) {
@@ -1470,6 +1475,21 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
                 return false;
             });
 		}
+        var $groupHeaderTds = $groupHeaderTr.children();
+        for (var i = 0; i < $groupHeaderTds.length; i++) {
+            var th = $groupHeaderTds[i];
+            var title = $(th).children('div').text();
+            th.setAttribute('colgrouptitle', title);
+            $(th).contextmenu(function (evt) {
+                var th = evt.target;
+                if (th.tagName == 'DIV') {
+                    th = th.parentElement;
+                }
+                var title = th.getAttribute('colgrouptitle');
+                makeTableGroupHeaderRightClickMenu(evt, th, title);
+                return false;
+            });
+        }
 	}
     gridObject.columnDrag = function (evt, ui) {
         var colGroups = $grids[currentTab].pqGrid('option', 'colModel');
@@ -1505,6 +1525,35 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
     }
     gridObject.flex = {on: true, all: false};
 	return gridObject;
+}
+
+function makeTableGroupHeaderRightClickMenu (evt, td, colgrouptitle) {
+    var rightDiv = document.getElementById('tablediv_' + currentTab);
+    var divId = 'table-header-contextmenu-' + currentTab;
+    var div = document.getElementById(divId);
+    if (div == undefined) {
+        div = getEl('div');
+        div.id = divId;
+        div.className = 'table-header-contextmenu-div';
+    } else {
+        $(div).empty();
+    }
+    div.style.top = evt.pageY;
+    div.style.left = evt.pageX;
+    var ul = getEl('ul');
+    var li = getEl('li');
+    var a = getEl('a');
+    a.textContent = 'Hide all columns under ' + colgrouptitle;
+    li.addEventListener('click', function (evt) {
+        var checkboxId = 'columngroup__' + currentTab + '_' + colgrouptitle + '__checkbox';
+        var checkbox = document.getElementById(checkboxId);
+        checkbox.click();
+        div.style.display = 'none';
+    });
+    addEl(ul, addEl(li, a));
+    addEl(div, ul);
+    div.style.display = 'block';
+    addEl(rightDiv, div);
 }
 
 function makeTableHeaderRightClickMenu (evt, col, colgroup) {
