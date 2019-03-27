@@ -785,8 +785,15 @@ function drawSummaryWidgetGivenData (widgetName, widgetContentDiv, generator, da
     }
 }
 
+function getSpinner () {
+	var spinner = getEl('img');
+	spinner.src = '/result/images/spinner.gif';
+	spinner.style.width = '15px';
+    return spinner;
+}
+
 function drawSummaryWidget (widgetName) {
-    console.log('@ starting drawing', widgetName);
+    //console.log('@ starting drawing', widgetName);
 	var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
 	emptyElement(widgetContentDiv);
 	var generator = widgetGenerators[widgetName]['info'];
@@ -794,36 +801,43 @@ function drawSummaryWidget (widgetName) {
     var data = generator['variables']['data'];
 	if (callServer && data == undefined) {
         if (generator['beforecallserver'] != undefined) {
-            console.log('   - beforecallserver', widgetName);
+            //console.log('   - beforecallserver', widgetName);
             generator['beforecallserver']();
-            console.log('   - ended beforecallserver', widgetName);
+            //console.log('   - ended beforecallserver', widgetName);
         }
         var callServerParams = {};
         if (generator['variables']['callserverparams'] != undefined) {
             callServerParams = generator['variables']['callserverparams'];
         }
-        console.log('   - calling ajax runwidget', widgetName);
+        var spinner = getSpinner();
+        spinner.className = 'widgetspinner';
+        addEl(widgetContentDiv, spinner);
+        console.log(widgetName, ': ajax start');
 		$.ajax({
             url: '/result/runwidget/' + widgetName, 
             data: {dbpath: dbPath, params: JSON.stringify(callServerParams)},
+            async: true,
             success: function (response) {
+                var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
+                var spinner = widgetContentDiv.getElementsByClassName('widgetspinner')[0];
+                $(spinner).remove();
                 var data = response['data'];
-                console.log('   - ended ajax runwidget', widgetName);
-                console.log('   - calling drawSummaryWidgetGivenData', widgetName);
+                console.log(widgetName, ': ajax end');
+                //console.log('   - calling drawSummaryWidgetGivenData', widgetName);
                 drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
-                console.log('   - ended drawSummaryWidgetGivenData', widgetName);
+                //console.log('   - ended drawSummaryWidgetGivenData', widgetName);
             },
 		});
     } else if (callServer && data != undefined) {
-        console.log('   - calling drawSummaryWidgetGivenData', widgetName);
+        //console.log('   - calling drawSummaryWidgetGivenData', widgetName);
         drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
-        console.log('   - ended drawSummaryWidgetGivenData', widgetName);
+        //console.log('   - ended drawSummaryWidgetGivenData', widgetName);
 	} else {
-        console.log('   - calling drawSummaryWidgetGivenData', widgetName);
+        //console.log('   - calling drawSummaryWidgetGivenData', widgetName);
         drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, undefined);
-        console.log('   - ended drawSummaryWidgetGivenData', widgetName);
+        //console.log('   - ended drawSummaryWidgetGivenData', widgetName);
 	}
-    console.log('# ended drawing', widgetName);
+    //console.log('# ended drawing', widgetName);
 }
 
 function setupEvents (tabName) {

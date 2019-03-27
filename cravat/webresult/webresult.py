@@ -288,7 +288,7 @@ def get_count (request):
     content = {'n': n}        
     return web.json_response(content)
 
-def get_result (request):
+async def get_result (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     tab = queries['tab']
@@ -311,10 +311,11 @@ def get_result (request):
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
     reporter = m.Reporter(args, None)
+    await reporter.second_setup()
     dbbasename = os.path.basename(dbpath)
     print('getting result [{}] from {} for viewer...'.format(tab, dbbasename))
     t = time.time()
-    data = reporter.run(tab=tab)
+    data = await reporter.run(tab=tab)
     t = round(time.time() - t, 3)
     print('result [{}] obtained from {} in {}s. packing...'.format(tab, dbbasename, t))
     t = time.time()
@@ -349,7 +350,7 @@ def get_result_levels (request):
     content.remove('mapping')
     return web.json_response(content)
 
-def get_variant_cols (request):
+async def get_variant_cols (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     if 'confpath' in queries:
@@ -364,7 +365,7 @@ def get_variant_cols (request):
     data['data'] = {}
     data['stat'] = {}
     data['status'] = {}
-    colinfo = get_colinfo(dbpath, confpath, filterstring)
+    colinfo = await get_colinfo(dbpath, confpath, filterstring)
     data['columns'] = {}
     if 'variant' in colinfo:
         data['columns']['variant'] = get_colmodel('variant', colinfo)
@@ -460,7 +461,7 @@ def get_colmodel (tab, colinfo):
         colModel.append(columngroupdef)
     return colModel
 
-def get_colinfo (dbpath, confpath, filterstring):
+async def get_colinfo (dbpath, confpath, filterstring):
     reporter_name = 'jsonreporter'
     f, fn, d = imp.find_module(
         reporter_name, 
@@ -472,7 +473,8 @@ def get_colinfo (dbpath, confpath, filterstring):
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
     reporter = m.Reporter(args, None)
-    colinfo = reporter.get_variant_colinfo()
+    await reporter.second_setup()
+    colinfo = await reporter.get_variant_colinfo()
     return colinfo
 
 def table_exists (cursor, table):
@@ -484,8 +486,6 @@ def table_exists (cursor, table):
     else:
         return True
 
-### widgetfiles ###
-
 def serve_widgetfile (request):
     filepath = os.path.join(
         au.get_modules_dir(),
@@ -496,16 +496,14 @@ def serve_widgetfile (request):
     if os.path.exists(filepath):
         return web.FileResponse(filepath)
 
-### runwidget ###
-
-def serve_runwidget (request):
+async def serve_runwidget (request):
     path = 'wg' + request.match_info['module']
     queries = request.rel_url.query
     f, fn, d = imp.find_module(path, 
         [os.path.join(au.get_modules_dir(), 
                       'webviewerwidgets', path)])
     m = imp.load_module(path, f, fn, d)
-    content = m.get_data(queries)
+    content = await m.get_data(queries)
     return web.json_response(content)
 
 routes = []

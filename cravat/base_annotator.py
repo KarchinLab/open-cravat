@@ -215,9 +215,9 @@ class BaseAnnotator(object):
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
         except Exception as e:
             self._log_exception(e)
-        #self.log_handler.close()
-        #if self.output_basename == '__dummy__':
-        #    os.remove(self.log_path)
+        self.log_handler.close()
+        if self.output_basename == '__dummy__':
+            os.remove(self.log_path)
 
     def postprocess (self):
         pass
