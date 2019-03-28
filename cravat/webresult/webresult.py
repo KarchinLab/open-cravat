@@ -268,7 +268,7 @@ def get_widgetlist (request):
                         'helphtml_exists': module.helphtml_exists})
     return web.json_response(content)
 
-def get_count (request):
+async def get_count (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     tab = queries['tab']
@@ -276,13 +276,13 @@ def get_count (request):
         filterstring = queries['filter']
     else:
         filterstring = None
-    cf = CravatFilter(dbpath=dbpath, 
+    cf = await CravatFilter.create(dbpath=dbpath, 
                       mode='sub', 
                       filterstring=filterstring)
     dbbasename = os.path.basename(dbpath)
     print('calling count for {}'.format(dbbasename))
     t = time.time()
-    n = cf.getcount(level=tab)
+    n = await cf.getcount(level=tab)
     t = round(time.time() - t, 3)
     print('count obtained from {} in {}s'.format(dbbasename, t))
     content = {'n': n}        
@@ -305,13 +305,13 @@ async def get_result (request):
         reporter_name, 
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
-    args = ['', dbpath]
+    args = ['', dbpath, '--module-name', reporter_name]
     if confpath != None:
         args.extend(['-c', confpath])
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
     reporter = m.Reporter(args, None)
-    await reporter.second_setup()
+    await reporter.prep()
     dbbasename = os.path.basename(dbpath)
     print('getting result [{}] from {} for viewer...'.format(tab, dbbasename))
     t = time.time()
@@ -473,7 +473,7 @@ async def get_colinfo (dbpath, confpath, filterstring):
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
     reporter = m.Reporter(args, None)
-    await reporter.second_setup()
+    await reporter.prep()
     colinfo = await reporter.get_variant_colinfo()
     return colinfo
 

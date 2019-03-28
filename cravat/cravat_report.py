@@ -31,9 +31,9 @@ class CravatReport:
         self.column_subs = {}
         self._setup_logger()
 
-    async def second_setup (self):
+    async def prep (self):
         await self.connect_db()
-        self.load_filter()
+        await self.load_filter()
 
     def _setup_logger(self):
         if hasattr(self, 'no_log') and self.no_log:
@@ -56,7 +56,7 @@ class CravatReport:
         ret = None
         if await self.table_exists(level) == False:
             return ret
-        for row in self.cf.getiterator(level):
+        for row in await self.cf.getiterator(level):
             row = self.substitute_val(level, row)
             return json.dumps(row) 
 
@@ -74,23 +74,23 @@ class CravatReport:
     async def run_level (self, level):
         if await self.table_exists(level):
             if level == 'variant':
-                self.cf.make_filtered_uid_table()
+                await self.cf.make_filtered_uid_table()
             elif level == 'gene':
-                self.cf.make_filtered_hugo_table()
+                await self.cf.make_filtered_hugo_table()
                 gene_summary_datas = {}
                 for mi, o, cols in self.summarizing_modules:
-                    gene_summary_data = o.get_gene_summary_data(self.cf)
+                    gene_summary_data = await o.get_gene_summary_data(self.cf)
                     gene_summary_datas[mi.name] = [gene_summary_data, cols]
             self.write_preface(level)
             self.write_header(level)
             if level == 'variant':
                 hugo_present = 'base__hugo' in self.colnos['variant']
-            for row in self.cf.get_filtered_iterator(level):
+            for row in await self.cf.get_filtered_iterator(level):
                 row = list(row)
                 if level == 'variant':
                     if hugo_present:
                         hugo = row[self.colnos['variant']['base__hugo']]
-                        generow = self.cf.get_gene_row(hugo)
+                        generow = await self.cf.get_gene_row(hugo)
                         for colname in self.var_added_cols:
                             if generow == None:
                                 colval = None
@@ -134,10 +134,10 @@ class CravatReport:
             self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
         self.setup()
         if tab == 'all':
-            for level in self.cf.get_result_levels():
+            for level in await self.cf.get_result_levels():
                 if await self.table_exists(level):
                     await self.make_col_info(level)
-            for level in self.cf.get_result_levels():
+            for level in await self.cf.get_result_levels():
                 if await self.table_exists(level):
                     await self.run_level(level)
         else:
@@ -426,9 +426,9 @@ class CravatReport:
         self.conn = await aiosqlite3.connect(self.dbpath)
         self.cursor = await self.conn.cursor()
 
-    def load_filter (self):
-        self.cf = CravatFilter(dbpath=self.dbpath)
-        self.cf.loadfilter(filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
+    async def load_filter (self):
+        self.cf = await CravatFilter.create(dbpath=self.dbpath)
+        await self.cf.loadfilter(filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
 
     async def table_exists (self, tablename):
         sql = 'select name from sqlite_master where ' + \

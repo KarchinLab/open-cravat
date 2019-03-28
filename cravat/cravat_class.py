@@ -275,7 +275,7 @@ class Cravat (object):
     def update_status (self, status):
         self.status_writer.queue_status_update('status', status)
 
-    def main (self):
+    async def main (self):
         no_problem_in_run = True
         try:
             self.update_status('Started cravat')
@@ -340,7 +340,7 @@ class Cravat (object):
                     self.args.rr
                 ):
                 print('Running reporter...')
-                no_problem_in_run = self.run_reporter()
+                no_problem_in_run = await self.run_reporter()
             self.update_status('Finished')
         except Exception as e:
             self.handle_exception(e)
@@ -633,7 +633,7 @@ class Cravat (object):
             rtime = time.time() - stime
             print('finished in {0:.3f}s'.format(rtime))
 
-    def run_reporter (self):
+    async def run_reporter (self):
         if self.reports != None:
             module_names = [v + 'reporter' for v in self.reports]
         else:
@@ -650,10 +650,11 @@ class Cravat (object):
                        '--module-name', module_name]
                 if self.verbose:
                     print(' '.join(cmd))
-                reporter_cls = util.load_class('Reporter', module.script_path)
-                reporter = reporter_cls(cmd, self.status_writer)
+                Reporter = util.load_class('Reporter', module.script_path)
+                reporter = Reporter(cmd, self.status_writer)
+                await reporter.prep()
                 stime = time.time()
-                reporter.run()
+                await reporter.run()
                 rtime = time.time() - stime
                 print('finished in {0:.3f}s'.format(rtime))
             except Exception as e:

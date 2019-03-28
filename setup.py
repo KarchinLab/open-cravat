@@ -123,5 +123,5 @@ setup(
               'install':InstallCommand,
               },
     #install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'aiohttp_session', 'cryptography'],
-    install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'chardet'],
+    install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'chardet', 'aiosqlite3'],
 )
