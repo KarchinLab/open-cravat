@@ -184,22 +184,48 @@ class CravatReport:
         pass
 
     async def make_col_info (self, level):
-        self.colnos[level] = {}
         # Columns from aggregator
+        priority_colgroups = self.conf.get_cravat_conf()['report_module_order']
         self.columngroups[level] = []
         sql = 'select name, displayname from ' + level + '_annotator'
         await self.cursor.execute(sql)
-        for row in await self.cursor.fetchall():
-            (name, displayname) = row
-            self.columngroups[level].append(
-                {'name': name,
-                 'displayname': displayname,
-                 'count': 0})
+        rows = await self.cursor.fetchall()
+        for priority_colgroup in priority_colgroups:
+            for row in rows:
+                colgroup = row[0]
+                if colgroup == priority_colgroup:
+                    (name, displayname) = row
+                    self.columngroups[level].append(
+                        {'name': name,
+                         'displayname': displayname,
+                         'count': 0})
+        for row in rows:
+            colgroup = row[0]
+            if colgroup in priority_colgroups:
+                pass
+            else:
+                (name, displayname) = row
+                self.columngroups[level].append(
+                    {'name': name,
+                     'displayname': displayname,
+                     'count': 0})
         sql = 'select * from ' + level + '_header'
         await self.cursor.execute(sql)
         columns = []
         colcount = 0
-        for row in await self.cursor.fetchall():
+        unordered_rows = await self.cursor.fetchall()
+        rows = []
+        for group in priority_colgroups:
+            for row in unordered_rows:
+                col_group = row[0].split('__')[0]
+                if col_group == group:
+                    rows.append(row)
+        for row in unordered_rows:
+            col_group = row[0].split('__')[0]
+            if col_group not in priority_colgroups:
+                rows.append(row)
+        self.colnos[level] = {}
+        for row in rows:
             (colname, coltitle, col_type) = row[:3]
             col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else []
             col_width = row[4] if len(row) > 4 else None
