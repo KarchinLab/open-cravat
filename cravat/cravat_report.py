@@ -184,8 +184,11 @@ class CravatReport:
         pass
 
     async def make_col_info (self, level):
-        # Columns from aggregator
-        priority_colgroups = self.conf.get_cravat_conf()['report_module_order']
+        cravat_conf = self.conf.get_cravat_conf()
+        if 'report_module_order' in cravat_conf:
+            priority_colgroups = cravat_conf['report_module_order']
+        else:
+            priority_colgroups = ['base', 'hg19', 'hg18', 'tagsampler']
         self.columngroups[level] = []
         sql = 'select name, displayname from ' + level + '_annotator'
         await self.cursor.execute(sql)
