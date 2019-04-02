@@ -56,8 +56,10 @@ class MasterCravatConverter(object):
     def __init__(self, args=None, status_writer=None):
         args = args if args else sys.argv
         self.status_writer = status_writer
-        self.input_path = None
-        self.f = None
+        # self.input_path = None
+        # self.f = None
+        self.input_paths = []
+        self.input_files = []
         self.input_format = None
         self.logger = None
         self.crv_writer = None
@@ -81,8 +83,9 @@ class MasterCravatConverter(object):
         parser = argparse.ArgumentParser()
         parser.add_argument('path',
                             help='Path to this converter\'s python module')
-        parser.add_argument('input',
-                            help='File to be converted to .crv')
+        parser.add_argument('inputs',
+                            nargs='+',
+                            help='Files to be converted to .crv')
         parser.add_argument('-f',
                             dest='format',
                             help='Specify an input format')
@@ -99,10 +102,10 @@ class MasterCravatConverter(object):
                             default='hg38',
                             help='Input gene assembly. Will be lifted over to hg38')
         parsed_args = parser.parse_args(args)
-        self.input_path = os.path.abspath(parsed_args.input)
+        self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs]
         if parsed_args.format:
             self.input_format = parsed_args.format
-        self.input_dir, self.input_fname = os.path.split(self.input_path)
+        self.input_dir = os.path.dirname(self.input_paths[0])
         if parsed_args.output_dir:
             self.output_dir = parsed_args.output_dir
         else:
@@ -112,7 +115,7 @@ class MasterCravatConverter(object):
         if parsed_args.name:
             self.output_base_fname = parsed_args.name
         else:
-            self.output_base_fname = self.input_fname
+            self.output_base_fname = os.path.basename(self.input_paths[0])
         self.input_assembly = parsed_args.liftover
         self.do_liftover = self.input_assembly != 'hg38'
         if self.do_liftover:
@@ -125,18 +128,20 @@ class MasterCravatConverter(object):
         """ Do necesarry pre-run tasks """
         if self.ready_to_convert: return
         # Open file handle to input path
-        encoding = detect_encoding(self.input_path)
-        self.f = open(self.input_path, encoding=encoding)
+        for input_path in self.input_paths:
+            encoding = detect_encoding(input_path)
+            self.input_files.append(open(input_path, encoding=encoding))
         # Read in the available converters
         self._initialize_converters()
         # Select the converter that matches the input format
         self._select_primary_converter()
         
-        # A correct .crv file is not processed. 
-        if self.input_format == 'crv' and \
-            self.input_path.split('.')[-1] == 'crv':
-            self.logger.info('Input file is already a crv file. Exiting converter.')
-            exit(0)
+        # A correct .crv file is not processed.
+        #todo handle this for multiple inputs. have to convert them so they can be merged 
+        # if self.input_format == 'crv' and \
+        #     self.input_paths[0].split('.')[-1] == 'crv':
+        #     self.logger.info('Input file is already a crv file. Exiting converter.')
+        #     exit(0)
         
         # Open the output files
         self._open_output_files()
@@ -146,7 +151,7 @@ class MasterCravatConverter(object):
         """ Open a log file and set up log handler """
         self.logger = logging.getLogger('cravat.converter')
         self.logger.info('started: %s' %time.asctime())
-        self.logger.info('input file: %s' %self.input_path)
+        self.logger.info('input files: %s' %', '.join(self.input_paths))
         if self.do_liftover:
             self.logger.info('liftover from %s' %self.input_assembly)
         self.error_logger = logging.getLogger('error.converter')
@@ -187,10 +192,11 @@ class MasterCravatConverter(object):
                          %', '.join(self.possible_formats))
         else:
             valid_formats = []
-            self.f.seek(0)
+            first_file = self.input_files[0]
+            first_file.seek(0)
             for converter_name, converter in self.converters.items():
-                check_success = converter.check_format(self.f)
-                self.f.seek(0)
+                check_success = converter.check_format(first_file)
+                first_file.seek(0)
                 if check_success: valid_formats.append(converter_name)
             if len(valid_formats) == 0:
                 raise ExpectedException('Input format could not be determined. ' +\
@@ -257,56 +263,61 @@ class MasterCravatConverter(object):
         """ Convert input file to a .crv file using the primary converter."""
         self.setup()
         start_time = time.time()
-        self.primary_converter.setup(self.f)
-        self.f.seek(0)
-        read_lnum = 0
-        write_lnum = 0
-        num_errors = 0
-        for l in self.f:
-            read_lnum += 1
-            try:
-                # all_wdicts is a list, since one input line can become
-                # multiple output lines
-                all_wdicts = self.primary_converter.convert_line(l)
-                if all_wdicts is None:
-                    continue
-            except Exception as e:
-                num_errors += 1
-                self._log_conversion_error(read_lnum, l, e)
-                continue
-            if all_wdicts:
-                UIDMap = [] 
-                for wdict in all_wdicts:
-                    chrom = wdict['chrom']
-                    if not chrom.startswith('chr'): chrom = 'chr' + chrom
-                    wdict['chrom'] = self.chromdict.get(chrom, chrom)
-                    if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
-                        num_errors += 1
-                        e = BadFormatError('Reference base required for non SNV')
-                        self._log_conversion_error(read_lnum, l, e)
+        multiple_files = len(self.input_files) > 1
+        for f in self.input_files:
+            self.primary_converter.setup(f)
+            f.seek(0)
+            read_lnum = 0
+            write_lnum = 0
+            num_errors = 0
+            for l in f:
+                cur_fname = os.path.basename(f.name)
+                read_lnum += 1
+                try:
+                    # all_wdicts is a list, since one input line can become
+                    # multiple output lines
+                    all_wdicts = self.primary_converter.convert_line(l)
+                    if all_wdicts is None:
                         continue
-                    if self.do_liftover:
-                        prelift_wdict = copy.copy(wdict)
-                        try:
-                            wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'],
-                                                                         wdict['pos'])
-                        except LiftoverFailure as e:
+                except Exception as e:
+                    num_errors += 1
+                    self._log_conversion_error(read_lnum, l, e)
+                    continue
+                if all_wdicts:
+                    UIDMap = [] 
+                    for wdict in all_wdicts:
+                        chrom = wdict['chrom']
+                        if not chrom.startswith('chr'): chrom = 'chr' + chrom
+                        wdict['chrom'] = self.chromdict.get(chrom, chrom)
+                        if multiple_files:
+                            wdict['sample_id'] = '_'.join([cur_fname, wdict['sample_id']])
+                        if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
                             num_errors += 1
+                            e = BadFormatError('Reference base required for non SNV')
                             self._log_conversion_error(read_lnum, l, e)
                             continue
-                    unique, UID = self.vtracker.addVar(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])                       
-                    wdict['uid'] = UID
-                    if unique:
-                        write_lnum += 1
-                        self.crv_writer.write_data(wdict)
                         if self.do_liftover:
-                            prelift_wdict['uid'] = UID
-                            self.crl_writer.write_data(prelift_wdict)
-                    if UID not in UIDMap: 
-                        #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
-                        self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID})
-                        UIDMap.append(UID)
-                    self.crs_writer.write_data(wdict)
+                            prelift_wdict = copy.copy(wdict)
+                            try:
+                                wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'],
+                                                                            wdict['pos'])
+                            except LiftoverFailure as e:
+                                num_errors += 1
+                                self._log_conversion_error(read_lnum, l, e)
+                                continue
+                        unique, UID = self.vtracker.addVar(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])                       
+                        wdict['uid'] = UID
+                        if unique:
+                            write_lnum += 1
+                            self.crv_writer.write_data(wdict)
+                            if self.do_liftover:
+                                prelift_wdict['uid'] = UID
+                                self.crl_writer.write_data(prelift_wdict)
+                        if UID not in UIDMap: 
+                            #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
+                            self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID})
+                            UIDMap.append(UID)
+                        self.crs_writer.write_data(wdict)
         self.logger.info('error lines: %d' %num_errors)
         self._close_files()
         if self.status_writer is not None:
@@ -343,7 +354,8 @@ class MasterCravatConverter(object):
 
     def _close_files(self):
         """ Close the input and output files. """
-        self.f.close()
+        for f in self.input_files:
+            f.close()
         self.crv_writer.close()
         self.crm_writer.close()
         self.crs_writer.close()
