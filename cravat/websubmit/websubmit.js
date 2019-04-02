@@ -21,25 +21,30 @@ function submit () {
     let fd = new FormData();
     var textInputElem = $('#input-text');
     var textVal = textInputElem.val();
-    let inputFile = null;
+    let inputFiles = [];
     if (textVal.length > 0) {
         var textBlob = new Blob([textVal], {type:'text/plain'})
-        inputFile = new File([textBlob], 'input');
+        inputFiles.push(new File([textBlob], 'input'));
     } else {
         var fileInputElem = $('#input-file')[0];
-        if (fileInputElem.files.length > 0) {
-            inputFile = fileInputElem.files[0];
+        var files = fileInputElem.files;
+        if (files.length > 0) {
+            for (var i=0; i<files.length; i++) {
+                inputFiles.push(files[i]);
+            }
         }
     }
-    if (inputFile == null) {
-        alert('Choose a input variants file, enter variants, or click an input example button.');
+    if (inputFiles.length === 0) {
+        alert('Choose a input variant files, enter variants, or click an input example button.');
         return;
     }
     document.getElementById('submit-job-button').disabled = true;
     setTimeout(function () {
         document.getElementById('submit-job-button').disabled = false;
     }, 1000);
-    fd.append('file', inputFile);
+    for (var i=0; i<inputFiles.length; i++) {
+        fd.append('file_'+i,inputFiles[i]);
+    }
     var submitOpts = {
         annotators: [],
         reports: []
