@@ -19,32 +19,32 @@ class VTracker:
         so the crv file will not contain multiple copies of the same variant.
     """
     var_by_chrom = {}
-    current_UID = 1;
+    current_UID = 1
     
     #Add a variant - Returns true if the variant is a new unique variant, false
     #if it is a duplicate.  Also returns the UID.
     def addVar(self, chrom, pos, ref, alt):
-        change = ref+":"+alt; 
+        change = ref+":"+alt
         if chrom not in self.var_by_chrom:
-            self.var_by_chrom[chrom] = {};
+            self.var_by_chrom[chrom] = {}
         
-        chr_dict = self.var_by_chrom[chrom];
+        chr_dict = self.var_by_chrom[chrom]
         if pos not in chr_dict:
             #we have not seen this position before, add the position and change
-            chr_dict[pos] = {};
-            chr_dict[pos][change] = self.current_UID;
-            self.current_UID += 1;
-            return True, chr_dict[pos][change];
+            chr_dict[pos] = {}
+            chr_dict[pos][change] = self.current_UID
+            self.current_UID += 1
+            return True, chr_dict[pos][change]
         else:
-            variants = chr_dict[pos];
+            variants = chr_dict[pos]
             if change not in variants:
                 #we have the position but not this base change, add it.
-                chr_dict[pos][change] = self.current_UID;
-                self.current_UID = self.current_UID + 1;
-                return True, chr_dict[pos][change];
+                chr_dict[pos][change] = self.current_UID
+                self.current_UID = self.current_UID + 1
+                return True, chr_dict[pos][change]
             else:
                 #this variant has been seen before.
-                return False, chr_dict[pos][change];      
+                return False, chr_dict[pos][change] 
 
 class MasterCravatConverter(object):
     """ Convert a file of ambiguous format to .crv format.
