@@ -272,6 +272,7 @@ class MasterCravatConverter(object):
             num_errors = 0
             for l in f:
                 cur_fname = os.path.basename(f.name)
+                samp_prefix = '.'.join(cur_fname.split('.')[:-1])
                 read_lnum += 1
                 try:
                     # all_wdicts is a list, since one input line can become
@@ -290,7 +291,7 @@ class MasterCravatConverter(object):
                         if not chrom.startswith('chr'): chrom = 'chr' + chrom
                         wdict['chrom'] = self.chromdict.get(chrom, chrom)
                         if multiple_files:
-                            wdict['sample_id'] = '_'.join([cur_fname, wdict['sample_id']])
+                            wdict['sample_id'] = '_'.join([samp_prefix, wdict['sample_id']])
                         if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
                             num_errors += 1
                             e = BadFormatError('Reference base required for non SNV')
