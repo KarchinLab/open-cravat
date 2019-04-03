@@ -242,8 +242,8 @@ class Cravat (object):
             self.status_json['assembly'] = self.input_assembly
             self.status_json['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
             #todo adapt to multiple inputs
-            self.status_json['orig_input_fname'] = os.path.basename(self.inputs[0])
-            self.status_json['orig_input_path'] = self.inputs[0]
+            self.status_json['orig_input_fname'] = ', '.join([os.path.basename(x) for x in self.inputs])
+            self.status_json['orig_input_path'] = ', '.join(self.inputs)
             self.status_json['submission_time'] = datetime.datetime.now().isoformat()
             self.status_json['viewable'] = False
             self.status_json['note'] = self.args.note
@@ -760,7 +760,7 @@ class Cravat (object):
         created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         q = 'insert into info values ("Result created at", "' + created + '")'
         cursor.execute(q)
-        q = 'insert into info values ("Input file name", "' + self.inputs[0] + '")' #todo adapt to multiple inputs
+        q = 'insert into info values ("Input file name", "{}")'.format(';'.join(self.inputs)) #todo adapt to multiple inputs
         cursor.execute(q)
         q = 'insert into info values ("Input genome", "' + self.input_assembly + '")'
         cursor.execute(q)
