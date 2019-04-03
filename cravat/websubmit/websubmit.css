@@ -311,3 +311,9 @@ button {
     font-size: 9px;
 }
 
+#mult-inputs-list p {
+    margin-top: 1px;
+    margin-bottom: 1px;
+    margin-left: 45px;
+}
+
