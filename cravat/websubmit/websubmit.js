@@ -643,6 +643,7 @@ function inputChangeHandler (event) {
         elem.wrap('<form>').closest('form').get(0).reset();
         elem.unwrap();
     }
+    populateMultInputsMessage();
 }
 
 var JOB_IDS = []
@@ -1511,6 +1512,24 @@ function fileInputChange(event) {
     }
 }
 
+function populateMultInputsMessage() {
+    var fileInputElem = document.getElementById('input-file');
+    var files = fileInputElem.files;
+    if (files.length > 1) {
+        $('#mult-inputs-message').css('display','block');
+        var $fileListDiv = $('#mult-inputs-list');
+        $fileListDiv.empty();
+        for (var i=0; i<files.length; i++) {
+            var file = files[i];
+            var $p = $(getEl('p'))
+                .text(file.name);
+            $fileListDiv.append($p);
+        }
+    } else {
+        $('#mult-inputs-message').css('display','none');
+    }
+}
+
 function addListeners () {
     $('#submit-job-button').click(submit);
     $('#input-text').change(inputChangeHandler);
@@ -1520,8 +1539,6 @@ function addListeners () {
     $('.input-example-button').click(inputExampleChangeHandler)
     $('#refresh-jobs-table-btn').click(refreshJobsTable);
     $('.jobsdirinput').change(setJobsDir);
-    $('#input-file').change(fileInputChange);
-    $('#input-file').change();
     document.addEventListener('click', function (evt) {
         if (evt.target.classList.contains('moduledetaildiv-submit-elem') == false && evt.target.closest('.moduledetailbutton') == null ) {
             var div = document.getElementById('moduledetaildiv_submit');
@@ -1619,5 +1636,6 @@ function websubmit_run () {
     }
     loadSystemConf();
     populatePackageVersions();
+    populateMultInputsMessage();
 };
 
