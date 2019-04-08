@@ -124,6 +124,8 @@ class CravatReport:
                     newvals.sort()
                     newcell = '; '.join(newvals)
                     row[colno] = newcell
+                print(row)
+                print(self.colinfo[level]['columns'])
                 self.write_table_row(row)
 
     async def run (self, tab='all'):

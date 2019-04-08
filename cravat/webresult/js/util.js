@@ -71,8 +71,12 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 		for (var i = 0; i < viewerWidgetSettings['info'].length; i++) {
 			var setting = viewerWidgetSettings['info'][i];
 			if (setting['widgetkey'] == widgetName) {
-				width = parseInt(setting['width'].replace('px', ''));
-				height = parseInt(setting['height'].replace('px', ''));
+                if (setting['width'] != undefined) {
+                    width = parseInt(setting['width'].replace('px', ''));
+                }
+                if (setting['height'] != undefined) {
+                    height = parseInt(setting['height'].replace('px', ''));
+                }
 				if (setting['word-break'] != undefined){
 					wordBreak = setting['word-break'];
 				}

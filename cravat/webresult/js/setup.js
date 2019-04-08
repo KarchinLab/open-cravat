@@ -709,6 +709,16 @@ function executeWidgetClose (widgetName, tabName, repack) {
     onClickDetailRedraw();
 }
 
+function executeWidgetOpen (widgetName, tabName, repack) {
+	showHideWidget(tabName, widgetName, true, repack);
+	var button = document.getElementById(
+			'widgettogglecheckbox_' + tabName + '_' + widgetName);
+    if (button != undefined) {
+        button.checked = true;
+    }
+    onClickDetailRedraw();
+}
+
 function grayOutWidgetSelect (widgetName, tabName) {
     var button = document.getElementById(
         'widgettogglecheckbox_' + tabName + '_' + widgetName);
@@ -740,6 +750,15 @@ function onClickWidgetSelectorCheckbox (tabName, evt) {
 function showHideWidget (tabName, widgetName, state, repack) {
 	var widget = document.getElementById(
 			'detailwidget_' + tabName + '_' + widgetName);
+    if (widget == null) {
+        return;
+    }
+    var display = widget.style.display;
+    if (state == false && display == 'none') {
+        return;
+    } else if (state == true && display != 'none') {
+        return;
+    }
 	if (state == false) {
 		widget.style.display = 'none';
 	} else {
@@ -754,6 +773,7 @@ function showHideWidget (tabName, widgetName, state, repack) {
 	var $detailContainerDiv = $(document.getElementById('detailcontainerdiv_' + tabName));
     if (repack == true) {
         $detailContainerDiv.packery('fit', widget);
+        onClickDetailReset();
     }
 }
 
@@ -812,7 +832,6 @@ function drawSummaryWidget (widgetName) {
         var spinner = getSpinner();
         spinner.className = 'widgetspinner';
         addEl(widgetContentDiv, spinner);
-        console.log(widgetName, ': ajax start');
 		$.ajax({
             url: '/result/runwidget/' + widgetName, 
             data: {dbpath: dbPath, params: JSON.stringify(callServerParams)},
@@ -822,7 +841,6 @@ function drawSummaryWidget (widgetName) {
                 var spinner = widgetContentDiv.getElementsByClassName('widgetspinner')[0];
                 $(spinner).remove();
                 var data = response['data'];
-                console.log(widgetName, ': ajax end');
                 //console.log('   - calling drawSummaryWidgetGivenData', widgetName);
                 drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
                 //console.log('   - ended drawSummaryWidgetGivenData', widgetName);

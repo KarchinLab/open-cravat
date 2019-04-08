@@ -362,13 +362,21 @@ function showVariantDetail (row, tabName) {
                 var generator = widgetGenerators[colGroupKey][tabName];
                 var widgetDiv = null;
                 var detailContentDiv = null;
+                var shouldDraw = false;
+                if (generator['shoulddraw'] != undefined) {
+                    shouldDraw = generator['shoulddraw']();
+                } else {
+                    shouldDraw = true;
+                }
                 if (reuseWidgets) {
                     widgetContentDiv = document.getElementById(
                         'widgetcontentdiv_' + colGroupKey + '_' + tabName);
                     if (generator['donterase'] != true) {
                         $(widgetContentDiv).empty();
                     }
-                    generator['function'](widgetContentDiv, row, tabName);
+                    if (shouldDraw) {
+                        generator['function'](widgetContentDiv, row, tabName);
+                    }
                 } else {
                     [widgetDiv, widgetContentDiv] = 
                         getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
@@ -376,9 +384,12 @@ function showVariantDetail (row, tabName) {
                     if (generator['init'] != undefined) {
                         generator['init']();
                     }
-                    generator['function'](widgetContentDiv, row, tabName);
                     widgetDiv.style.width = generator['width'] + 'px';
                     widgetDiv.style.height = generator['height'] + 'px';
+                    addEl(outerDiv, widgetDiv);
+                    if (shouldDraw) {
+                        generator['function'](widgetContentDiv, row, tabName);
+                    }
                     var setting = getViewerWidgetSettingByWidgetkey(tabName, colGroupKey);
                     if (setting != null) {
                         var display = setting['display'];
@@ -386,7 +397,6 @@ function showVariantDetail (row, tabName) {
                             widgetDiv.style.display = display;
                         }
                     }
-                    addEl(outerDiv, widgetDiv);
                 }
             }
         } catch (err) {
@@ -453,6 +463,26 @@ function showVariantDetail (row, tabName) {
 		var resizeTimeout;
 		$outerDiv.on('layoutComplete', onLayoutComplete);
 	}
+	for (var i = 0; i < orderNums.length; i++) {
+		var colGroupKey = detailWidgetOrder[tabName][orderNums[i]];
+        if (widgetGenerators[colGroupKey] == undefined) {
+            continue;
+        }
+        var widgetDiv = document.getElementById(
+            'detailwidget_' + tabName + '_' + colGroupKey);
+        var display = widgetDiv.style.display;
+        if (widgetGenerators[colGroupKey][tabName] != undefined) {
+            var generator = widgetGenerators[colGroupKey][tabName];
+            if (generator['showhide'] != undefined) {
+                state = generator['showhide']();
+                if (state == false && display != 'none') {
+                    executeWidgetClose(colGroupKey, tabName, true);
+                } else if (state == true && display == 'none') {
+                    executeWidgetOpen(colGroupKey, tabName, true);
+                }
+            }
+        }
+    }
 }
 
 

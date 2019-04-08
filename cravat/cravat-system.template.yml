@@ -20,7 +20,6 @@ base_modules:
 - wggosummary
 - wgsosamplesummary
 - wgsosummary
-- wgtopgenessummary
 - wgnote
 - wgvcfinfo
 
