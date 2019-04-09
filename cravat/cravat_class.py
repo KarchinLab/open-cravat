@@ -26,7 +26,8 @@ cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
     description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.',
     epilog='* input_file_path should precede any option.')
-cravat_cmd_parser.add_argument('input',
+cravat_cmd_parser.add_argument('inputs',
+                    nargs='+',
                     help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument('-a',
                     nargs="+",
@@ -240,8 +241,9 @@ class Cravat (object):
             self.status_json['run_name'] = self.run_name
             self.status_json['assembly'] = self.input_assembly
             self.status_json['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
-            self.status_json['orig_input_fname'] = os.path.basename(self.input)
-            self.status_json['orig_input_path'] = self.input
+            #todo adapt to multiple inputs
+            self.status_json['orig_input_fname'] = ', '.join([os.path.basename(x) for x in self.inputs])
+            self.status_json['orig_input_path'] = ', '.join(self.inputs)
             self.status_json['submission_time'] = datetime.datetime.now().isoformat()
             self.status_json['viewable'] = False
             self.status_json['note'] = self.args.note
@@ -391,13 +393,13 @@ class Cravat (object):
             for m in self.excludes:
                 if m in self.annotators:
                     del self.annotators[m]
-        self.input = os.path.abspath(self.args.input)
+        self.inputs = [os.path.abspath(x) for x in self.args.inputs]
         self.run_name = self.args.run_name
-        if self.run_name == None:
-            self.run_name = os.path.basename(self.input)
+        if self.run_name == None: #todo set run name different if multiple inputs
+            self.run_name = os.path.basename(self.inputs[0])
         self.output_dir = self.args.output_dir
         if self.output_dir == None:
-            self.output_dir = os.path.dirname(os.path.abspath(self.input))
+            self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
         else:
             self.output_dir = os.path.abspath(self.output_dir)
         if os.path.exists(self.output_dir) == False:
@@ -428,18 +430,21 @@ class Cravat (object):
             self.logmode = 'a'
 
     def set_and_check_input_files (self):
-        if self.input.split('.')[-1] == 'crv':
-            self.crvinput = self.input
-        else:
-            self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
-        if self.input.split('.')[-1] == 'crx':
-            self.crxinput = self.input
-        else:
-            self.crxinput = os.path.join(self.output_dir, self.run_name + '.crx')
-        if self.input.split('.')[-1] == 'crg':
-            self.crginput = self.input
-        else:
-            self.crginput = os.path.join(self.output_dir, self.run_name + '.crg')
+        self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
+        self.crxinput = os.path.join(self.output_dir, self.run_name + '.crx')
+        self.crginput = os.path.join(self.output_dir, self.run_name + '.crg')
+        # if self.input.split('.')[-1] == 'crv':
+        #     self.crvinput = self.input
+        # else:
+        #     self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
+        # if self.input.split('.')[-1] == 'crx':
+        #     self.crxinput = self.input
+        # else:
+        #     self.crxinput = os.path.join(self.output_dir, self.run_name + '.crx')
+        # if self.input.split('.')[-1] == 'crg':
+        #     self.crginput = self.input
+        # else:
+        #     self.crginput = os.path.join(self.output_dir, self.run_name + '.crg')
 
         if os.path.exists(self.crvinput):
             self.crv_present = True
@@ -524,7 +529,7 @@ class Cravat (object):
                                  name='converter',
                                  script_path=converter_path)
         cmd = [module.script_path,
-                self.input,
+                *self.inputs,
                '-n', self.run_name,
                '-d', self.output_dir,
                '-l', self.input_assembly]
@@ -689,7 +694,8 @@ class Cravat (object):
                     elif input_format == 'crx':
                         inputpath = self.crxinput
                     else:
-                        inputpath = self.input
+                        raise Exception('Incorrect input_format value')
+                        # inputpath = self.input
                 else:
                     inputpath = self.crvinput
             elif module.level == 'gene':
@@ -754,7 +760,7 @@ class Cravat (object):
         created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         q = 'insert into info values ("Result created at", "' + created + '")'
         cursor.execute(q)
-        q = 'insert into info values ("Input file name", "' + self.input + '")'
+        q = 'insert into info values ("Input file name", "{}")'.format(';'.join(self.inputs)) #todo adapt to multiple inputs
         cursor.execute(q)
         q = 'insert into info values ("Input genome", "' + self.input_assembly + '")'
         cursor.execute(q)

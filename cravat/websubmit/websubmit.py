@@ -170,39 +170,42 @@ def get_next_job_id():
 
 async def submit (request):
     global filerouter
-    reader = await request.multipart()
-    input_file = None
-    job_options = None
-    while True:
-        part = await reader.next()
-        if not part: 
-            break 
-        if part.name == 'file':
-            input_file = part
-            input_data = await input_file.read()
-        elif part.name == 'options':
-            job_options = await part.json()
-        if input_file is not None and job_options is not None: 
-            break
-    orig_input_fname = input_file.filename
     job_id = get_next_job_id()
     jobs_dir = await filerouter.get_jobs_dir(request)
     job_dir = os.path.join(jobs_dir, job_id)
     os.makedirs(job_dir, exist_ok=True)
-    info_fname = '{}.status.json'.format(orig_input_fname)
+    reader = await request.multipart()
+    input_file = None
+    job_options = None
+    input_files = []
+    while True:
+        part = await reader.next()
+        if not part: 
+            break 
+        if part.name.startswith('file_'):
+            input_files.append(part)
+            # Have to write to disk here
+            wfname = part.filename
+            wpath = os.path.join(job_dir, wfname)
+            with open(wpath,'wb') as wf:
+                wf.write(await part.read())
+        elif part.name == 'options':
+            job_options = await part.json()
+    input_fnames = [fp.filename for fp in input_files]
+    info_fname = '{}.status.json'.format(input_fnames[0])
     job_info_fpath = os.path.join(job_dir, info_fname)
     job = WebJob(job_dir, job_info_fpath)
     job.save_job_options(job_options)
-    input_fpath = os.path.join(job_dir, orig_input_fname)
-    with open(input_fpath, 'wb') as wf:
-        wf.write(input_data)
-    job.set_info_values(orig_input_fname=orig_input_fname,
+    job.set_info_values(
+                        orig_input_files=input_fnames,
                         submission_time=datetime.datetime.now().isoformat(),
                         viewable=False
                         )
     # Subprocess arguments
-    run_args = ['cravat',
-                input_fpath]
+    input_fpaths = [os.path.join(job_dir, fn) for fn in input_fnames]
+    run_args = ['cravat']
+    for fn in input_fnames:
+        run_args.append(os.path.join(job_dir, fn))
     # Annotators
     if len(job_options['annotators']) > 0:
         run_args.append('-a')

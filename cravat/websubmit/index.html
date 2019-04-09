@@ -132,10 +132,15 @@
                 </div>
                 <table>
                     <tr>
-                        <td valign='top' class='variant-input-border-bottom'>
+                        <td valign='top' class='variant-input-border-bottom' title="Upload file(s). Select multiple files using ctrl and shift keys">
                                 <br />
                             Upload:
-                            <input type="file" name="input-file" id="input-file" />
+                            <input type="file" name="input-file" id="input-file" multiple/>
+                            <div id="mult-inputs-message" style="display: none">
+                                Files:
+                                <div id="mult-inputs-list"></div>
+                            </div>
+                            
                         </td>
                     </tr><tr>
                         <td valign='top' class='variant-input-border-bottom' style='text-align: right;'>
