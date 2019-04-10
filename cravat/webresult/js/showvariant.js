@@ -487,14 +487,15 @@ function showVariantDetail (row, tabName) {
 
 
 function onLayoutComplete () {
-	for (var i = 0; i < viewerWidgetSettings.length; i++) {
-		var setting = viewerWidgetSettings[i];
+	for (var i = 0; i < viewerWidgetSettings[currentTab].length; i++) {
+		var setting = viewerWidgetSettings[currentTab][i];
 		var el = document.getElementById(setting.id);
 		if (el) {
 			el.style.top = setting.top;
 			el.style.left = setting.left;
 			el.style.width = setting.width;
 			el.style.height = setting.height;
+            el.style.display = setting.display;
 			viewerWidgetSettings.splice(i, 1);
 			i--;
 		}

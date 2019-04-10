@@ -565,7 +565,7 @@ function applyWidgetSetting (level) {
 			var setting = settings[i];
 			for (var j = 0; j < items.length; j++) {
 				var item = items[j];
-				if (item.element.id == setting.id) {
+				if (item.element.getAttribute('widgetkey') == setting.widgetkey) {
 					item.element.style.top = setting['top'];
 					item.element.style.left = setting['left'];
 					item.element.style.width = setting['width'];
