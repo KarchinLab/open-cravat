@@ -818,7 +818,17 @@ function getSortedFilteredRemoteModuleNames () {
     var sortedNames = null;
     if (sortKey == 'name') {
         sortedNames = Object.keys(filteredRemoteModules);
-        sortedNames.sort();
+        for (var i = 0; i < sortedNames.length - 1; i++) {
+            for (var j = i + 1; j < sortedNames.length; j++) {
+                var t1 = filteredRemoteModules[sortedNames[i]].title;
+                var t2 = filteredRemoteModules[sortedNames[j]].title;
+                if (t1.localeCompare(t2) > 0) {
+                    var tmp = sortedNames[i];
+                    sortedNames[i] = sortedNames[j];
+                    sortedNames[j] = tmp;
+                }
+            }
+        }
     } else if (sortKey == 'size') {
         sortedNames = Object.keys(filteredRemoteModules);
         for (var i = 0; i < sortedNames.length - 1; i++) {
