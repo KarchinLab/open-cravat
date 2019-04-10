@@ -154,7 +154,7 @@ function addBarComponent (outerDiv, row, header, col, tabName) {
 	if (value == null) {
 		value = '';
 	} else {
-		value = value.toFixed(3);
+        value = value.toFixed(3);
 	}
 	
 	// Div
@@ -474,11 +474,13 @@ function showVariantDetail (row, tabName) {
         if (widgetGenerators[colGroupKey][tabName] != undefined) {
             var generator = widgetGenerators[colGroupKey][tabName];
             if (generator['showhide'] != undefined) {
-                state = generator['showhide']();
-                if (state == false && display != 'none') {
-                    executeWidgetClose(colGroupKey, tabName, true);
-                } else if (state == true && display == 'none') {
-                    executeWidgetOpen(colGroupKey, tabName, true);
+                var state = generator['showhide']();
+                var widgetContainerDiv = document.getElementById('widgetcontentdiv_' + colGroupKey + '_' + tabName);
+                if (state == false) {
+                    var span = getEl('span');
+                    addEl(span, getTn('No data'));
+                    addEl(widgetContainerDiv, span);
+                } else if (state == true) {
                 }
             }
         }

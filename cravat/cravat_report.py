@@ -25,6 +25,7 @@ class CravatReport:
         self.filtertable = 'filter'
         self.colinfo = {}
         self.colnos = {}
+        self.ord_cols = {}
         self.var_added_cols = []
         self.summarizing_modules = []
         self.columngroups = {}
@@ -124,7 +125,12 @@ class CravatReport:
                     newvals.sort()
                     newcell = '; '.join(newvals)
                     row[colno] = newcell
-                self.write_table_row(row)
+                newrow = []
+                for colname in self.ord_cols[level]:
+                    colno = self.colnos[level][colname]
+                    value = row[colno]
+                    newrow.append(value)
+                self.write_table_row(newrow)
 
     async def run (self, tab='all'):
         start_time = time.time()
@@ -189,6 +195,7 @@ class CravatReport:
             priority_colgroups = cravat_conf['report_module_order']
         else:
             priority_colgroups = ['base', 'hg19', 'hg18', 'tagsampler']
+        # ordered column groups
         self.columngroups[level] = []
         sql = 'select name, displayname from ' + level + '_annotator'
         await self.cursor.execute(sql)
@@ -212,22 +219,31 @@ class CravatReport:
                     {'name': name,
                      'displayname': displayname,
                      'count': 0})
+        # ordered column names
         sql = 'select * from ' + level + '_header'
         await self.cursor.execute(sql)
         columns = []
-        colcount = 0
         unordered_rows = await self.cursor.fetchall()
         rows = []
+        self.ord_cols[level] = []
         for group in priority_colgroups:
             for row in unordered_rows:
-                col_group = row[0].split('__')[0]
+                [col_group, col_name] = row[0].split('__')
                 if col_group == group:
                     rows.append(row)
+                    self.ord_cols[level].append(row[0])
         for row in unordered_rows:
-            col_group = row[0].split('__')[0]
+            [col_group, col_name] = row[0].split('__')
             if col_group not in priority_colgroups:
                 rows.append(row)
+                self.ord_cols[level].append(row[0])
+        # unordered column numbers
         self.colnos[level] = {}
+        colcount = 0
+        for row in unordered_rows:
+            self.colnos[level][row[0]] = colcount
+            colcount += 1
+        # ordered column details
         for row in rows:
             (colname, coltitle, col_type) = row[:3]
             col_cats = json.loads(row[3]) if len(row) > 3 and row[3] else []
@@ -254,8 +270,6 @@ class CravatReport:
                       'col_filterable': col_filterable,
                       'link_format': link_format,
                       }
-            self.colnos[level][colname] = colcount
-            colcount += 1
             columns.append(column)
             groupname = colname.split('__')[0]
             for columngroup in self.columngroups[level]:
@@ -286,9 +300,10 @@ class CravatReport:
                                      'displayname': mi.title,
                                      'count': len(cols)})
                 for col in cols:
-                    self.colnos[level][colname] = colcount
-                    colcount += 1
                     colname = mi.name + '__' + col['name']
+                    self.colnos[level][colname] = colcount
+                    self.ord_cols[level].append(colname)
+                    colcount += 1
                     col_type = col['type']
                     col_cats = col.get('categories',[])
                     col_width = col.get('width')
