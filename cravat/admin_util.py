@@ -296,7 +296,8 @@ def list_remote():
     """
     Returns a list of remotely available modules.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     return sorted(list(mic.remote.keys()))
 
 def get_local_module_infos(types=[], names=[]):
@@ -354,7 +355,8 @@ def module_exists_remote(module_name, version=None, include_private=False):
     """
     Returns true if a module (optionally versioned) exists in remote
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     found = False
     if module_name in mic.remote:
         if version is None:
@@ -376,14 +378,16 @@ def get_remote_latest_version(module_name):
     """
     Returns latest remotely available version of a module.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     return mic.remote[module_name]['latest_version']
 
 def get_remote_module_info(module_name):
     """
     Returns a RemoteModuleInfo object for a module.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     if module_exists_remote(module_name, version=None):
         mdict = mic.remote[module_name]
         module = RemoteModuleInfo(module_name, **mdict)
@@ -606,7 +610,8 @@ def get_remote_data_version(module_name, version):
     Get the data version to install for a module.
     Return the input version if module_name or version is not found.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     try:
         manifest_entry = mic.remote[module_name]
     except KeyError:
@@ -691,7 +696,8 @@ def get_local_module_infos_of_type (t):
 
 def get_remote_module_infos_of_type (t):
     modules = {}
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     for module_name in mic.remote:
         if mic.remote[module_name]['type'] == t:
             modules[module_name] = mic.remote[module_name] 
@@ -927,7 +933,7 @@ def report_issue ():
     webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
 
 def get_system_conf_info ():
-    set_jobs_dir(get_jobs_dir())
+    #set_jobs_dir(get_jobs_dir())
     confpath = constants.system_conf_path
     if os.path.exists(confpath):
         conf = load_yml_conf(confpath)
@@ -941,7 +947,7 @@ def get_system_conf_info ():
     return system_conf_info
 
 def get_system_conf_info_json ():
-    set_jobs_dir(get_jobs_dir())
+    #set_jobs_dir(get_jobs_dir())
     confpath = constants.system_conf_path
     if os.path.exists(confpath):
         conf = load_yml_conf(confpath)
@@ -995,7 +1001,8 @@ def get_download_counts ():
     return counts
 
 def get_install_deps (module_name, version=None, skip_installed=True):
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     # If input module version not provided, set to highest
     if version is None:
         version = get_remote_latest_version(module_name)
