@@ -277,5 +277,8 @@ class VersionDecrease(ClientError):
 class EmailUnverified(ClientError):
     code = 6
     message = 'Email address unverified. Check your email for instructions to verify your email address'
+class NoSuchModule(ClientError):
+    code = 7
+    message = 'Module does not exist'
 def client_error_json(error_class):
     return json.dumps({'code':error_class.code,'message':error_class.message})

@@ -203,6 +203,12 @@ async def submit (request):
                         )
     # Subprocess arguments
     input_fpaths = [os.path.join(job_dir, fn) for fn in input_fnames]
+    tot_lines = 0
+    for fpath in input_fpaths:
+        with open(fpath) as f:
+            tot_lines += count_lines(f)
+    expected_runtime = get_expected_runtime(tot_lines, job_options['annotators'])
+    job.set_info_values(expected_runtime=expected_runtime)
     run_args = ['cravat']
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))
@@ -235,21 +241,33 @@ async def submit (request):
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
     # admin.sqlite
-    if servermode:
-        root_jobs_dir = au.get_jobs_dir()
-        admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-        db = await aiosqlite3.connect(admin_db_path)
-        cursor = await db.cursor()
-        '''
-        session = await get_session(request)
-        username = session['username']
-        '''
-        username = 'default'
-        await cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, username, job.get_info_dict()['submission_time'], -1, -1, '', job_options['assembly']))
-        await db.commit()
-        cursor.close()
-        db.close()
+    # if servermode:
+    #     root_jobs_dir = au.get_jobs_dir()
+    #     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
+    #     db = await aiosqlite3.connect(admin_db_path)
+    #     cursor = await db.cursor()
+    #     '''
+    #     session = await get_session(request)
+    #     username = session['username']
+    #     '''
+    #     username = 'default'
+    #     await cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, username, job.get_info_dict()['submission_time'], -1, -1, '', job_options['assembly']))
+    #     await db.commit()
+    #     cursor.close()
+    #     db.close()
     return web.json_response(job.get_info_dict())
+
+def count_lines(f):
+    n = 0
+    for _ in f:
+        n+=1
+    return n
+
+def get_expected_runtime(num_lines, annotators):
+    mapper_vps = 1000
+    annot_vps = 5000
+    agg_vps = 8000
+    return num_lines*(1/mapper_vps + len(annotators)/annot_vps + 1/agg_vps)
 
 def get_annotators(request):
     out = {}

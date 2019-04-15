@@ -83,6 +83,13 @@ function submit () {
                 sortJobs();
                 buildJobsTable();
             }
+            if (data.expected_runtime > 1800) {
+                var sec_num = Math.ceil(data.expected_runtime);
+                var hours   = Math.floor(sec_num / 3600) % 24
+                var minutes = Math.floor(sec_num / 60) % 60
+                var seconds = sec_num % 60
+                alert(`Expected runtime: ${hours}:${minutes}:${seconds} (h:m:s)`);
+            }
         }
     })
     $('#submit-job-button').attr('disabled','disabled');
