@@ -28,12 +28,12 @@ class InstallCommand(install):
         Needed because pip runs install commands 
         """
         def _post_install():
-            wf = open('test.txt', 'w')
+            wf = open('open-cravat-install-log.txt', 'w')
             try:
                 from cravat import constants as c
                 def find_cravat_path():
                     for p in sys.path:
-                        if os.path.isdir(p) and 'cravat' in os.listdir(p):
+                        if os.path.isdir(p) and 'site-packages' in p and 'cravat' in os.listdir(p):
                             return os.path.join(p, 'cravat')
                 install_path = find_cravat_path()
                 system_conf_path = os.path.join(install_path,
