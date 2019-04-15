@@ -2,6 +2,8 @@ import os
 import yaml
 import copy
 from cravat import admin_util as au
+import shutil
+from cravat import constants
 
 class ConfigLoader():
     
@@ -18,8 +20,9 @@ class ConfigLoader():
         
     def _load_main_conf(self, build_all=True):
         self._main = {}
-        if os.path.exists(self.main_conf_path):
-            self._main = au.load_yml_conf(self.main_conf_path)
+        if os.path.exists(self.main_conf_path) == False:
+            shutil.copy(os.path.join(constants.packagedir, 'cravat.yml'), self.main_conf_path)
+        self._main = au.load_yml_conf(self.main_conf_path)
         if build_all:
             self._build_all()
         
