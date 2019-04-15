@@ -5,10 +5,6 @@ import shutil
 import sys
 
 packagedir = os.path.dirname(os.path.abspath(__file__))
-user_dir = str(pathlib.Path.home())
-cravat_data_dir = os.path.join(user_dir, 'open-cravat')
-if os.path.exists(cravat_data_dir) == False:
-    os.mkdir(cravat_data_dir)
 system_conf_fname = 'cravat-system-dev.yml'
 system_conf_path = os.path.join(packagedir, system_conf_fname)
 if os.path.exists(system_conf_path) == False:
@@ -19,8 +15,6 @@ system_conf_template_path = os.path.join(packagedir, system_conf_template_fname)
 modules_dir_key = 'modules_dir'
 default_modules_dir_relative = os.path.join('modules')
 default_modules_dir = os.path.join(packagedir, default_modules_dir_relative)
-if os.path.exists(default_modules_dir) == False:
-    os.mkdir(default_modules_dir)
 base_modules_key = 'base_modules'
 main_conf_fname = 'cravat.yml'
 liftover_chains_dir = os.path.join(packagedir, 'liftover')
