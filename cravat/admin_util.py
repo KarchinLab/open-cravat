@@ -670,6 +670,7 @@ def set_modules_dir (path, overwrite=False):
     if not(os.path.isdir(path)):
         os.makedirs(path)
     old_conf_path = get_main_conf_path()
+    path = 'test'
     update_system_conf_file({constants.modules_dir_key:path})
     if not(os.path.exists(get_main_conf_path())):
         if os.path.exists(old_conf_path):
