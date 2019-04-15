@@ -40,19 +40,19 @@ crm_idx = [['uid'],['tags']]
 crs_def = [{'name':'uid', 'title':'UID', 'type':'string', 'width': 70},
            {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90, 'category': 'multi'}]
 crs_idx = [['uid'], ['sample_id']]
-crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 60, 'filterable': False},
+crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 60, 'hidden':True, 'filterable': False},
            {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 50, 'category': 'single', 'filterable': True},
            {'name':'pos', 'title':'Position', 'type':'int', 'width': 80, 'filterable': True},
            {'name':'ref_base', 'title':'Ref Base', 'type':'string', 'width': 50, 'filterable': False},
            {'name':'alt_base', 'title':'Alt Base', 'type':'string', 'width': 50, 'filterable': False},
-           {'name': 'note', 'title': 'Note', 'type': 'string', 'width': 100},
+           {'name': 'note', 'title': 'Note', 'type': 'string', 'width': 50},
            ]
 crv_idx = [['uid']]
 crx_def = crv_def + \
           [{'name':'coding', 'title':'Coding', 'type':'string', 'width': 50, 'category': 'single'},
-           {'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 50, 'filterable': True},
-           {'name':'transcript', 'title':'Transcript', 'type':'string', 'width': 150, 'filterable': False},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 150, 'category': 'single',
+           {'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70, 'filterable': True},
+           {'name':'transcript', 'title':'Transcript', 'type':'string', 'width': 135, 'hidden':True, 'filterable': False},
+           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 120, 'category': 'single',
                'categories': [
                    '2KD',
                    '2KU', 
@@ -70,13 +70,13 @@ crx_def = crv_def + \
                    'STG', 
                    'FSD', 
                    'FSI'], 'filterable': True},
-           {'name':'achange', 'title':'Protein Change', 'type':'string', 'width': 70, 'filterable': False},
+           {'name':'achange', 'title':'Protein Change', 'type':'string', 'width': 55, 'filterable': False},
            {'name':'all_mappings', 'title':'All Mappings', 'type':'string', 'width': 100, 'hidden':True, 'filterable': False},
            ]
 crx_idx = [['uid']]
-crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 80, 'filterable': True},
+crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70, 'filterable': True},
            {'name':'num_variants', 'title':'Variants in Gene', 'type':'int', 'width': 60, 'filterable': False},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 200, 'category': 'single',
+           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 120, 'category': 'single',
                'categories': [
                    '2KD',
                    '2KU', 
@@ -94,8 +94,8 @@ crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 80, 'filter
                    'STG', 
                    'FSD', 
                    'FSI'], 'filterable': True},
-           {'name':'all_so', 'title':'All Sequence Ontologies', 'type':'string', 'width': 190, 'filterable': False},
-           {'name': 'note', 'title': 'Note', 'type': 'string', 'width': 100},
+           {'name':'all_so', 'title':'All Sequence Ontologies', 'type':'string', 'width': 90, 'filterable': False},
+           {'name': 'note', 'title': 'Note', 'type': 'string', 'width': 50},
           ]
 crg_idx = [['hugo']]
 crt_def = [{'name':'primary_transcript', 'title':'Primary transcript', 
