@@ -916,7 +916,7 @@ function addLogo (moduleName, sdiv) {
         span.className = 'moduletile-title';
         var title = moduleInfo.title;
         span.textContent = title
-        if (title.length > 30) {
+        if (title.length > 26) {
             span.style.fontSize = '30px';
         }
         addEl(sdiv, span);
