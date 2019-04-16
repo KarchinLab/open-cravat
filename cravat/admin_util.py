@@ -224,7 +224,8 @@ class ModuleInfoCache(object):
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
-        self.update_remote()
+        if mic.remote == {}:
+            self.update_remote()
         # Resolve name and version
         if module_name not in self.remote:
             raise LookupError(module_name)
@@ -246,7 +247,8 @@ class ModuleInfoCache(object):
         return readme
     
     def get_remote_config(self, module_name, version=None):
-        self.update_remote()
+        if mic.remote == {}:
+            self.update_remote()
         if version == None:
             version = self.remote[module_name]['latest_version']
         # Check cache
@@ -670,7 +672,6 @@ def set_modules_dir (path, overwrite=False):
     if not(os.path.isdir(path)):
         os.makedirs(path)
     old_conf_path = get_main_conf_path()
-    path = 'test'
     update_system_conf_file({constants.modules_dir_key:path})
     if not(os.path.exists(get_main_conf_path())):
         if os.path.exists(old_conf_path):
@@ -723,12 +724,12 @@ def get_system_conf():
     """
     Get the system config. Fill in the default modules dir if not set.
     """
-    if os.path.exists(constants.system_conf_path) == False:
-        shutil.copyfile(constants.system_conf_template_path, constants.system_conf_path)
-    conf = load_yml_conf(constants.system_conf_path)
+    if os.path.exists(constants.system_conf_path):
+        conf = load_yml_conf(constants.system_conf_path)
+    else:
+        conf = load_yml_conf(constants.system_conf_template_path)
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
-        write_system_conf_file(conf)
     return conf
 
 def get_modules_dir():
@@ -934,7 +935,7 @@ def report_issue ():
     webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
 
 def get_system_conf_info ():
-    #set_jobs_dir(get_jobs_dir())
+    set_jobs_dir(get_jobs_dir())
     confpath = constants.system_conf_path
     if os.path.exists(confpath):
         conf = load_yml_conf(confpath)
@@ -948,7 +949,7 @@ def get_system_conf_info ():
     return system_conf_info
 
 def get_system_conf_info_json ():
-    #set_jobs_dir(get_jobs_dir())
+    set_jobs_dir(get_jobs_dir())
     confpath = constants.system_conf_path
     if os.path.exists(confpath):
         conf = load_yml_conf(confpath)
