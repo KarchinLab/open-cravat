@@ -192,11 +192,16 @@ async def submit (request):
         elif part.name == 'options':
             job_options = await part.json()
     input_fnames = [fp.filename for fp in input_files]
-    info_fname = '{}.status.json'.format(input_fnames[0])
+    if len(input_fnames) == 1:
+        orig_input_fname = input_fnames[0]
+    elif len(input_fnames) > 1:
+        orig_input_fname = ', '.join([os.path.basename(x) for x in input_fnames])
+    info_fname = '{}.status.json'.format(orig_input_fname)
     job_info_fpath = os.path.join(job_dir, info_fname)
     job = WebJob(job_dir, job_info_fpath)
     job.save_job_options(job_options)
     job.set_info_values(
+                        orig_input_fname=orig_input_fname,
                         orig_input_files=input_fnames,
                         submission_time=datetime.datetime.now().isoformat(),
                         viewable=False
