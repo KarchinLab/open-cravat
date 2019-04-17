@@ -352,7 +352,7 @@ function saveWidgetSetting (name) {
     });
 }
 
-function saveLayoutSetting (name) {
+function saveLayoutSetting (name, nextAction) {
 	var saveData = {};
 	// Table layout
 	saveData['tableSettings'] = {};
@@ -501,6 +501,9 @@ function saveLayoutSetting (name) {
 		success: function (response) {
 			lastUsedLayoutName = name;
 			writeLogDiv('Layout setting has been saved.');
+            if (nextAction == 'quicksave') {
+                saveFilterSetting(name, true);
+            }
 		}
     });
 }

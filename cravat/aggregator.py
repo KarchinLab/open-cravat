@@ -380,6 +380,11 @@ class Aggregator (object):
                         )
                         self.cursor.execute(q)
         self.make_reportsub()
+        # filter and layout save table
+        q = 'drop table if exists viewersetup'
+        self.cursor.execute(q)
+        q = 'create table viewersetup (datatype text, name text, viewersetup text, unique (datatype, name))'
+        self.cursor.execute(q)
         self.dbconn.commit()
 
     def _setup_io(self):

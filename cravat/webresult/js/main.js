@@ -676,8 +676,8 @@ function doNothing () {
 
 function quicksave () {
     filterJson = filterArmed;
-    saveLayoutSetting(quickSaveName);
-    saveFilterSetting(quickSaveName, true);
+    saveLayoutSetting(quickSaveName, 'quicksave');
+    //saveFilterSetting(quickSaveName, true);
 }
 
 function afterGetResultLevels () {
