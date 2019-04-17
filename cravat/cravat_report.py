@@ -100,7 +100,8 @@ class CravatReport:
                             row.append(colval)
                 elif level == 'gene':
                     hugo = row[0]
-                    for module_name in gene_summary_datas:
+                    for mi, _, _ in self.summarizing_modules:
+                        module_name = mi.name
                         [gene_summary_data, cols] = gene_summary_datas[module_name]
                         if hugo in gene_summary_data:
                             row.extend([gene_summary_data[hugo][col['name']] for col in cols])
@@ -378,6 +379,10 @@ class CravatReport:
                                   }
                         columns.append(column)
                     self.summarizing_modules.append([mi, annot, cols])
+                    for col in cols:
+                        fullname = module_name+'__'+col['name']
+                        self.ord_cols[level].append(fullname)
+                        self.colnos[level][fullname] = len(self.colnos[level])
         colno = 0
         for colgroup in self.columngroups[level]:
             colno += colgroup['count']
