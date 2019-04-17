@@ -312,6 +312,9 @@ function getMostDownloadedModuleNames () {
         if (baseModuleNames.indexOf(moduleName) >= 0) {
             continue;
         }
+        if (remoteModuleInfo[moduleName].hidden == true) {
+            continue;
+        }
         top10ModuleNames.push(moduleName);
         count++;
         if (count == 10) {
@@ -342,6 +345,9 @@ function getNewestModuleNames () {
             continue;
         }
         if (baseModuleNames.indexOf(moduleName) >= 0) {
+            continue;
+        }
+        if (remoteModuleInfo[moduleName].hidden == true) {
             continue;
         }
         top10ModuleNames.push(moduleName);
@@ -428,6 +434,10 @@ function trimRemote () {
         var remoteModule = remoteModuleInfo[remoteModuleName];
         if (remoteModule.type == 'webviewerwidget' && 
                 defaultWidgetNames.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false) {
+            delete remoteModuleInfo[remoteModuleName];
+            continue;
+        }
+        if (remoteModule.hidden == true && remoteModule.tags.includes('newavailable') == false) {
             delete remoteModuleInfo[remoteModuleName];
             continue;
         }
