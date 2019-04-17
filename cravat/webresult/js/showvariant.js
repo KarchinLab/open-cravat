@@ -489,6 +489,9 @@ function showVariantDetail (row, tabName) {
 
 
 function onLayoutComplete () {
+    if (viewerWidgetSettings[currentTab] == undefined) {
+        return;
+    }
 	for (var i = 0; i < viewerWidgetSettings[currentTab].length; i++) {
 		var setting = viewerWidgetSettings[currentTab][i];
 		var el = document.getElementById(setting.id);
@@ -498,7 +501,7 @@ function onLayoutComplete () {
 			el.style.width = setting.width;
 			el.style.height = setting.height;
             el.style.display = setting.display;
-			viewerWidgetSettings.splice(i, 1);
+			viewerWidgetSettings[currentTab].splice(i, 1);
 			i--;
 		}
 	}

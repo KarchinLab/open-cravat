@@ -696,7 +696,7 @@ function onClickWidgetPinButton (evt, tabName) {
 
 function onClickWidgetCloseButton (tabName, evt) {
 	var widgetName = evt.target.getAttribute('widgetname');
-    executeWidgetClose(widgetName, tabName, true);
+    executeWidgetClose(widgetName, tabName, false);
 }
 
 function executeWidgetClose (widgetName, tabName, repack) {

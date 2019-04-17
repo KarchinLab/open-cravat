@@ -95,7 +95,6 @@ function afterDragNSBar (self, tabName) {
 	}
 }
 
-
 function resizesTheWindow () {
 	var pqTable = $grids[currentTab];
 	if (pqTable == undefined){
