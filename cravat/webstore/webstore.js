@@ -23,6 +23,7 @@ var storeLogos = {};
 var moduleLists = {};
 var baseToInstall = [];
 var baseInstalled = false;
+var defaultWidgetNames = [];
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -315,6 +316,9 @@ function getMostDownloadedModuleNames () {
         if (remoteModuleInfo[moduleName].hidden == true) {
             continue;
         }
+        if (remoteModuleInfo[moduleName].type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
+            continue;
+        }
         top10ModuleNames.push(moduleName);
         count++;
         if (count == 10) {
@@ -348,6 +352,9 @@ function getNewestModuleNames () {
             continue;
         }
         if (remoteModuleInfo[moduleName].hidden == true) {
+            continue;
+        }
+        if (remoteModuleInfo[moduleName].type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
             continue;
         }
         top10ModuleNames.push(moduleName);
@@ -406,7 +413,7 @@ function onClickStoreHomeRightArrow (el) {
 
 function trimRemote () {
     var remoteModuleNames = Object.keys(remoteModuleInfo);
-    var defaultWidgetNames = [];
+    defaultWidgetNames = [];
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
         var remoteModule = remoteModuleInfo[remoteModuleName];
