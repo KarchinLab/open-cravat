@@ -607,6 +607,7 @@ async def logout (request):
     '''
 
 def get_servermode (request):
+    servermode=False
     return web.json_response({'servermode': servermode})
 
 async def get_package_versions(request):

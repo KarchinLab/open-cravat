@@ -824,3 +824,57 @@ function toggleAutoLayoutSave () {
 		writeLogDiv('Layout autosave disabled');
 	}
 }
+
+function setServerStatus (connected) {
+	var loadingDiv = document.getElementById('connection-lost-div');
+    if (! connected) {
+		if (loadingDiv === null) {
+			var loadingDiv = getEl('div');
+			loadingDiv.id = 'connection-lost-div';
+			loadingDiv.className = 'data-retrieving-msg-div';
+			var loadingTxtDiv = getEl('div');
+			loadingTxtDiv.className = 'data-retrieving-msg-div-content';
+			var span = getEl('span');
+			span.textContent = 'Lost connection to server';
+			addEl(loadingTxtDiv, span);
+			addEl(loadingDiv, loadingTxtDiv);
+			var dW = document.body.offsetWidth;
+			var dH = document.body.offsetHeight;
+			loadingDiv.style.top = 0;
+			loadingDiv.style.left = 0;
+			jobDataLoadingDiv = loadingDiv;
+			var parentDiv = document.body;
+			addEl(parentDiv, loadingDiv);
+		}
+    } else {
+		if (loadingDiv !== null) {
+			loadingDiv.parentNode.removeChild(loadingDiv);
+		}
+    }
+}
+
+function checkConnection(failures) {
+	failures = failures !== undefined ? failures : 0;
+	console.log(failures);
+	$.get('/hello')
+	.done(function () {
+		failures = 0;
+		setServerStatus(true);
+	})
+	.fail(function() {
+		failures += 1;
+		if (failures >= 3) {
+			setServerStatus(false);
+		}
+	})
+	.always(function() {
+		var timeout = 5000;
+		if (failures > 0) {
+			timeout = 2000 * failures;
+		}
+		console.log(timeout);
+		setTimeout(function () {
+			checkConnection(failures)
+		}, timeout);
+	});
+}

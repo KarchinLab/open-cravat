@@ -765,4 +765,5 @@ function webresult_run () {
             }
         }
     });
+    checkConnection();
 }

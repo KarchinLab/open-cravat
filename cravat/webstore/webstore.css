@@ -404,6 +404,26 @@ input:checked + .store-switch-slider:before {
     color: white;
 }
 
+#store-noconnect-div {
+    display: none;
+    position: fixed;
+    top: 94px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 94px);
+    z-index: 9;
+    text-align: center;
+    background-color: rgba(100, 100, 100, 0.77);
+}
+
+#store-noconnect-msg-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    color: #cddc39;
+}
+
 #pageselect {
     display: none;
 }

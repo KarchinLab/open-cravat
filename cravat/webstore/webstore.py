@@ -284,7 +284,9 @@ async def connect_websocket (request):
         await install_ws.close()
     install_ws = web.WebSocketResponse(timeout=60*60*24*365)
     await install_ws.prepare(request)
+    n=0
     while True:
+        n+=1
         await asyncio.sleep(1)
         if last_update_time < install_state['update_time']:
             data = {}
@@ -295,6 +297,7 @@ async def connect_websocket (request):
             print(data['msg'])
             await install_ws.send_str(json.dumps(data))
             last_update_time = install_state['update_time']
+        # await install_ws.send_str(str(n))
     return install_ws
 
 def queue_install (request):
