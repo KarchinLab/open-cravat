@@ -671,14 +671,14 @@ const filterTests = {
 }
 
 const filterTestNames = [
+    'hasData',
     'equals',
+    'noData',
     'between',
     'lessThanEq',
     'lessThan',
     'greaterThanEq',
     'greaterThan',
-    'hasData',
-    'noData',
     'stringContains',
     'stringStarts',
     'stringEnds',

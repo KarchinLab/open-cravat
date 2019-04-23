@@ -333,7 +333,14 @@ def main ():
     def install_base (args):
         sys_conf = au.get_system_conf()
         base_modules = sys_conf.get(constants.base_modules_key,[])
-        args = SimpleNamespace(modules=base_modules,force_data=False,skip_installed=True,version=None,yes=True)
+        args = SimpleNamespace(modules=base_modules,
+                               force_data=False,
+                               skip_installed=True,
+                               version=None,
+                               yes=True,
+                               include_private=False,
+                               skip_dependencies=False,
+                               )
         install_modules(args)
             
     def create_account (args):

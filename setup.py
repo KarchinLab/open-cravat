@@ -93,7 +93,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='1.4.2',
+    version='1.4.3',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
@@ -123,5 +123,5 @@ setup(
               'install':InstallCommand,
               },
     #install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'aiohttp_session', 'cryptography'],
-    install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'chardet'],
+    install_requires=['pyyaml<5.1', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'chardet'],
 )
