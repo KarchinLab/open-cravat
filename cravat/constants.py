@@ -9,7 +9,6 @@ user_dir = str(pathlib.Path.home())
 cravat_data_dir = os.path.join(user_dir, 'open-cravat')
 if os.path.exists(cravat_data_dir) == False:
     os.mkdir(cravat_data_dir)
->>>>>>> b6eb7e249b39c18bd178947ad4c5ff1f5888908b
 system_conf_fname = 'cravat-system-dev.yml'
 system_conf_path = os.path.join(packagedir, system_conf_fname)
 if os.path.exists(system_conf_path) == False:
