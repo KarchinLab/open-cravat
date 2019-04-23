@@ -855,7 +855,6 @@ function setServerStatus (connected) {
 
 function checkConnection(failures) {
 	failures = failures !== undefined ? failures : 0;
-	console.log(failures);
 	$.get('/hello')
 	.done(function () {
 		failures = 0;
@@ -872,7 +871,6 @@ function checkConnection(failures) {
 		if (failures > 0) {
 			timeout = 2000 * failures;
 		}
-		console.log(timeout);
 		setTimeout(function () {
 			checkConnection(failures)
 		}, timeout);
