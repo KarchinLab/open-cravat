@@ -177,15 +177,6 @@ async def hello(request):
 async def heartbeat(request):
     ws = web.WebSocketResponse(timeout=60*60*24*365)
     await ws.prepare(request)
-    n = 0
-    messages = ['ah','ha','ha','ha','staying alive','staying alive']
-    while True:
-        await asyncio.sleep(5)
-        a = await ws.send_str(messages[n])
-        if n >= len(messages) - 1:
-            n = 0
-        else:
-            n += 1
     return ws
 
 def main ():
