@@ -1,7 +1,7 @@
 import os
 import webbrowser
 import multiprocessing
-import sqlite3
+import aiosqlite3
 import urllib.parse
 import json
 import sys
@@ -23,11 +23,14 @@ def get_filepath (path):
         )
     return filepath
 
-def get_nowg_annot_modules (request):
+async def get_nowg_annot_modules (request):
+    # disabling this until required_annotator is included in the remote manifest.
+    return web.json_response({})
+    # Below is not run. Delete the above and change the below so that remote manifest's required_annotator is used.
     queries = request.rel_url.query
     dbpath = queries['dbpath']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     remote_widget_modules = au.get_remote_module_infos_of_type('webviewerwidget')
     remote_widget_names = remote_widget_modules.keys()
     remote_annot_to_widgets = {}
@@ -47,10 +50,11 @@ def get_nowg_annot_modules (request):
             if annot_module not in annot_modules_with_wg:
                 annot_modules_with_wg.append(annot_module)
     nowg_annot_modules = {}
-    if table_exists(cursor, 'variant'):
+    r = await table_exists(cursor, 'variant')
+    if r:
         q = 'select name, displayname from variant_annotator'
-        cursor.execute(q)
-        for r in cursor.fetchall():
+        await cursor.execute(q)
+        for r in await cursor.fetchall():
             m = r[0]
             if m in ['example_annotator', 'testannot', 'tagsampler']:
                 continue
@@ -59,119 +63,127 @@ def get_nowg_annot_modules (request):
             if annot_module not in annot_modules_with_wg and annot_module not in nowg_annot_modules and annot_module in remote_annot_to_widgets:
                 nowg_annot_modules[annot_module] = displayname
     content = nowg_annot_modules
+    await cursor.close()
+    await conn.close()
     return web.json_response(content)
 
-def get_filter_save_names (request):
+async def get_filter_save_names (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     table = 'viewersetup'
     content = []
-    if table_exists(cursor, table) == False:
+    r = await table_exists(cursor, table)
+    if r == False:
         pass
     else:
         q = 'select distinct name from ' + table + ' where datatype="filter"'
-        cursor.execute(q)
-        rs = cursor.fetchall()
+        await cursor.execute(q)
+        rs = await cursor.fetchall()
         for r in rs:
             content.append(r[0])
-    cursor.close()
-    conn.close()
+    await cursor.close()
+    await conn.close()
     return web.json_response(content)
 
-def get_layout_save_names (request):
+async def get_layout_save_names (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     table = 'viewersetup'
     content = []
-    if table_exists(cursor, table):
+    r = await table_exists(cursor, table)
+    if r:
         q = 'select distinct name from ' + table + ' where datatype="layout"'
-        cursor.execute(q)
-        rs = cursor.fetchall()
+        await cursor.execute(q)
+        rs = await cursor.fetchall()
         for r in rs:
             content.append(r[0])
-    cursor.close()
-    conn.close()
+    await cursor.close()
+    await conn.close()
     return web.json_response(content)
 
-def rename_layout_setting (request):
+async def rename_layout_setting (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     name = queries['name']
     new_name = queries['newname']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     table = 'viewersetup'
-    if table_exists(cursor, table) == True:
+    r = await table_exists(cursor, table)
+    if r == True:
         q = 'update ' + table + ' set name="' + new_name + '" where datatype="layout" and name="' + name + '"'
-        cursor.execute(q)
-    conn.commit()
-    cursor.close()
-    conn.close()
+        await cursor.execute(q)
+    await conn.commit()
+    await cursor.close()
+    await conn.close()
     content = {}
     return web.json_response(content)
 
-def delete_layout_setting (request):
+async def delete_layout_setting (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     name = queries['name']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     table = 'viewersetup'
-    if table_exists(cursor, table) == True:
+    r = await table_exists(cursor, table)
+    if r == True:
         q = 'DELETE FROM ' + table + ' WHERE datatype="layout" and name="' + name + '"'
-        cursor.execute(q)
-    conn.commit()
-    cursor.close()
-    conn.close()
+        await cursor.execute(q)
+    await conn.commit()
+    await cursor.close()
+    await conn.close()
     content = {}
     return web.json_response(content)
 
-def load_layout_setting (request):
+async def load_layout_setting (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     name = queries['name']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     table = 'viewersetup'
-    if table_exists(cursor, table) == False:
+    r = await table_exists(cursor, table)
+    if r == False:
         content = {"widgetSettings": []}
     else:
         q = 'select viewersetup from ' + table + ' where datatype="layout" and name="' + name + '"'
-        cursor.execute(q)
-        r = cursor.fetchone()
+        await cursor.execute(q)
+        r = await cursor.fetchone()
         if r != None:
             data = r[0]
             content = json.loads(data)
         else:
             content = {"widgetSettings": []}
-    cursor.close()
-    conn.close()
+    await cursor.close()
+    await conn.close()
     return web.json_response(content)
 
-def load_filter_setting (request):
+async def load_filter_setting (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     name = queries['name']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     table = 'viewersetup'
-    if table_exists(cursor, table) == False:
+    r = await table_exists(cursor, table)
+    if r == False:
         content = {"filterSet": []}
     else:
         q = 'select viewersetup from ' + table + ' where datatype="filter" and name="' + name + '"'
-        cursor.execute(q)
-        r = cursor.fetchone()
+        await cursor.execute(q)
+        r = await cursor.fetchone()
         if r != None:
             data = r[0]
             content = json.loads(data)
         else:
             content = {"filterSet": []}
-    cursor.close()
-    conn.close()
+    await cursor.close()
+    await conn.close()
     return web.json_response(content)
 
 async def save_layout_setting (request):
@@ -180,74 +192,79 @@ async def save_layout_setting (request):
     dbpath = queries['dbpath']
     name = queries['name']
     savedata = queries['savedata']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     table = 'viewersetup'
-    if table_exists(cursor, table) == False:
+    r = await table_exists(cursor, table)
+    if r == False:
         q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
-        cursor.execute(q)
+        await cursor.execute(q)
     q = 'replace into ' + table + ' values ("layout", "' + name + '", \'' + savedata + '\')'
-    cursor.execute(q)
-    conn.commit()
-    cursor.close()
+    await cursor.execute(q)
+    await conn.commit()
+    await cursor.close()
     conn.close()
     content = 'saved'
     return web.json_response(content)
 
-def save_filter_setting (request):
+async def save_filter_setting (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     name = queries['name']
     savedata = queries['savedata']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     table = 'viewersetup'
-    if table_exists(cursor, table) == False:
+    r = await table_exists(cursor, table)
+    if r == False:
         q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
-        cursor.execute(q)
+        await cursor.execute(q)
     q = 'select * from {} where datatype="filter" and name="{}"'.format(table, name)
-    cursor.execute(q)
-    r = cursor.fetchone()
+    await cursor.execute(q)
+    r = await cursor.fetchone()
     if r is not None:
         q = 'delete from {} where datatype="filter" and name="{}"'.format(table, name)
-        cursor.execute(q)
+        await cursor.execute(q)
         conn.commit()
     q = 'replace into ' + table + ' values ("filter", "' + name + '", \'' + savedata + '\')'
-    cursor.execute(q)
-    conn.commit()
-    cursor.close()
-    conn.close()
+    await cursor.execute(q)
+    await conn.commit()
+    await cursor.close()
+    await conn.close()
     content = 'saved'
     return web.json_response(content)
 
-def delete_filter_setting (request):
+async def delete_filter_setting (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     name = queries['name']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     table = 'viewersetup'
-    if table_exists(cursor, table):
+    r = await table_exists(cursor, table)
+    if r:
         q = 'delete from ' + table + ' where name="' + name + '" and datatype="filter"'
-        cursor.execute(q)
+        await cursor.execute(q)
         conn.commit()
         content = 'deleted'
     else:
         content = 'no such table'
-    cursor.close()
-    conn.close()
+    await cursor.close()
+    await conn.close()
     return web.json_response(content)
 
-def get_status (request):
+async def get_status (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
-    conn = sqlite3.connect(dbpath)
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
     q = 'select * from info'
-    cursor.execute(q)
+    await cursor.execute(q)
     content = {}
-    for row in cursor.fetchall():
+    for row in await cursor.fetchall():
         content[row[0]] = row[1]
+    await cursor.close()
+    await conn.close()
     return web.json_response(content)
 
 def get_widgetlist (request):
@@ -268,7 +285,7 @@ def get_widgetlist (request):
                         'helphtml_exists': module.helphtml_exists})
     return web.json_response(content)
 
-def get_count (request):
+async def get_count (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     tab = queries['tab']
@@ -276,19 +293,19 @@ def get_count (request):
         filterstring = queries['filter']
     else:
         filterstring = None
-    cf = CravatFilter(dbpath=dbpath, 
+    cf = await CravatFilter.create(dbpath=dbpath, 
                       mode='sub', 
                       filterstring=filterstring)
     dbbasename = os.path.basename(dbpath)
     print('calling count for {}'.format(dbbasename))
     t = time.time()
-    n = cf.getcount(level=tab)
+    n = await cf.getcount(level=tab)
     t = round(time.time() - t, 3)
     print('count obtained from {} in {}s'.format(dbbasename, t))
     content = {'n': n}        
     return web.json_response(content)
 
-def get_result (request):
+async def get_result (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     tab = queries['tab']
@@ -305,16 +322,17 @@ def get_result (request):
         reporter_name, 
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
-    args = ['', dbpath]
+    args = ['', dbpath, '--module-name', reporter_name]
     if confpath != None:
         args.extend(['-c', confpath])
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
     reporter = m.Reporter(args, None)
+    await reporter.prep()
     dbbasename = os.path.basename(dbpath)
     print('getting result [{}] from {} for viewer...'.format(tab, dbbasename))
     t = time.time()
-    data = reporter.run(tab=tab)
+    data = await reporter.run(tab=tab)
     t = round(time.time() - t, 3)
     print('result [{}] obtained from {} in {}s. packing...'.format(tab, dbbasename, t))
     t = time.time()
@@ -332,14 +350,14 @@ def get_result (request):
     print('done in {}s. sending result of {}...'.format(t, dbbasename))
     return web.json_response(content)
 
-def get_result_levels (request):
+async def get_result_levels (request):
     queries = request.rel_url.query
-    conn = sqlite3.connect(queries['dbpath'])
-    cursor = conn.cursor()
+    conn = await aiosqlite3.connect(queries['dbpath'])
+    cursor = await conn.cursor()
     sql = 'select name from sqlite_master where type="table" and ' +\
         'name like "%_header"'
-    cursor.execute(sql)
-    ret = cursor.fetchall()
+    await cursor.execute(sql)
+    ret = await cursor.fetchall()
     if len(ret) > 0:
         content = [v[0].split('_')[0] for v in ret]
         content.insert(0, 'info')
@@ -347,9 +365,11 @@ def get_result_levels (request):
         content = []
     content.remove('sample')
     content.remove('mapping')
+    await cursor.close()
+    await conn.close()
     return web.json_response(content)
 
-def get_variant_cols (request):
+async def get_variant_cols (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
     if 'confpath' in queries:
@@ -364,7 +384,7 @@ def get_variant_cols (request):
     data['data'] = {}
     data['stat'] = {}
     data['status'] = {}
-    colinfo = get_colinfo(dbpath, confpath, filterstring)
+    colinfo = await get_colinfo(dbpath, confpath, filterstring)
     data['columns'] = {}
     if 'variant' in colinfo:
         data['columns']['variant'] = get_colmodel('variant', colinfo)
@@ -460,7 +480,7 @@ def get_colmodel (tab, colinfo):
         colModel.append(columngroupdef)
     return colModel
 
-def get_colinfo (dbpath, confpath, filterstring):
+async def get_colinfo (dbpath, confpath, filterstring):
     reporter_name = 'jsonreporter'
     f, fn, d = imp.find_module(
         reporter_name, 
@@ -472,19 +492,19 @@ def get_colinfo (dbpath, confpath, filterstring):
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
     reporter = m.Reporter(args, None)
-    colinfo = reporter.get_variant_colinfo()
+    await reporter.prep()
+    colinfo = await reporter.get_variant_colinfo()
     return colinfo
 
-def table_exists (cursor, table):
+async def table_exists (cursor, table):
     q = 'select name from sqlite_master where type="table" and ' +\
         'name="' + table + '"'
-    cursor.execute(q)
-    if cursor.fetchone() == None:
+    await cursor.execute(q)
+    r = await cursor.fetchone()
+    if r == None:
         return False
     else:
         return True
-
-### widgetfiles ###
 
 def serve_widgetfile (request):
     filepath = os.path.join(
@@ -496,16 +516,14 @@ def serve_widgetfile (request):
     if os.path.exists(filepath):
         return web.FileResponse(filepath)
 
-### runwidget ###
-
-def serve_runwidget (request):
+async def serve_runwidget (request):
     path = 'wg' + request.match_info['module']
     queries = request.rel_url.query
     f, fn, d = imp.find_module(path, 
         [os.path.join(au.get_modules_dir(), 
                       'webviewerwidgets', path)])
     m = imp.load_module(path, f, fn, d)
-    content = m.get_data(queries)
+    content = await m.get_data(queries)
     return web.json_response(content)
 
 routes = []

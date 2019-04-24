@@ -95,7 +95,6 @@ function afterDragNSBar (self, tabName) {
 	}
 }
 
-
 function resizesTheWindow () {
 	var pqTable = $grids[currentTab];
 	if (pqTable == undefined){
@@ -571,9 +570,14 @@ var afterLoadDefaultFilter = function (args) {
 }
 
 function checkWidgets () {
-	$.get('/result/service/getnowgannotmodules', {dbpath: dbPath}).done(function (jsonResponseData) {
-		var noWgAnnotModules = jsonResponseData;
-		populateWgNoticeDiv(noWgAnnotModules);
+	$.ajax({
+        url: '/result/service/getnowgannotmodules', 
+        data: {dbpath: dbPath},
+        async: true,
+        success: function (jsonResponseData) {
+            var noWgAnnotModules = jsonResponseData;
+            populateWgNoticeDiv(noWgAnnotModules);
+        },
 	});
 }
 
@@ -672,8 +676,8 @@ function doNothing () {
 
 function quicksave () {
     filterJson = filterArmed;
-    saveLayoutSetting(quickSaveName);
-    saveFilterSetting(quickSaveName, true);
+    saveLayoutSetting(quickSaveName, 'quicksave');
+    //saveFilterSetting(quickSaveName, true);
 }
 
 function afterGetResultLevels () {

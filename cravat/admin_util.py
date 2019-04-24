@@ -224,7 +224,8 @@ class ModuleInfoCache(object):
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
-        self.update_remote()
+        if mic.remote == {}:
+            self.update_remote()
         # Resolve name and version
         if module_name not in self.remote:
             raise LookupError(module_name)
@@ -246,7 +247,8 @@ class ModuleInfoCache(object):
         return readme
     
     def get_remote_config(self, module_name, version=None):
-        self.update_remote()
+        if mic.remote == {}:
+            self.update_remote()
         if version == None:
             version = self.remote[module_name]['latest_version']
         # Check cache
@@ -296,7 +298,8 @@ def list_remote():
     """
     Returns a list of remotely available modules.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     return sorted(list(mic.remote.keys()))
 
 def get_local_module_infos(types=[], names=[]):
@@ -354,7 +357,8 @@ def module_exists_remote(module_name, version=None, include_private=False):
     """
     Returns true if a module (optionally versioned) exists in remote
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     found = False
     if module_name in mic.remote:
         if version is None:
@@ -376,14 +380,16 @@ def get_remote_latest_version(module_name):
     """
     Returns latest remotely available version of a module.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     return mic.remote[module_name]['latest_version']
 
 def get_remote_module_info(module_name):
     """
     Returns a RemoteModuleInfo object for a module.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     if module_exists_remote(module_name, version=None):
         mdict = mic.remote[module_name]
         module = RemoteModuleInfo(module_name, **mdict)
@@ -606,7 +612,8 @@ def get_remote_data_version(module_name, version):
     Get the data version to install for a module.
     Return the input version if module_name or version is not found.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     try:
         manifest_entry = mic.remote[module_name]
     except KeyError:
@@ -691,7 +698,8 @@ def get_local_module_infos_of_type (t):
 
 def get_remote_module_infos_of_type (t):
     modules = {}
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     for module_name in mic.remote:
         if mic.remote[module_name]['type'] == t:
             modules[module_name] = mic.remote[module_name] 
@@ -716,12 +724,12 @@ def get_system_conf():
     """
     Get the system config. Fill in the default modules dir if not set.
     """
-    if os.path.exists(constants.system_conf_path) == False:
-        shutil.copyfile(constants.system_conf_template_path, constants.system_conf_path)
-    conf = load_yml_conf(constants.system_conf_path)
+    if os.path.exists(constants.system_conf_path):
+        conf = load_yml_conf(constants.system_conf_path)
+    else:
+        conf = load_yml_conf(constants.system_conf_template_path)
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
-        write_system_conf_file(conf)
     return conf
 
 def get_modules_dir():
@@ -995,7 +1003,8 @@ def get_download_counts ():
     return counts
 
 def get_install_deps (module_name, version=None, skip_installed=True):
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     # If input module version not provided, set to highest
     if version is None:
         version = get_remote_latest_version(module_name)

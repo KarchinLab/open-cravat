@@ -148,6 +148,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 					val = '';
 				}
 				var content = '' + val;
+				var title = content;
 				if (ui.column.link_format !== null) {
 					var linkFormat = ui.column.link_format;
 					var linkRe = /\$\{(.*)\}/;
@@ -172,10 +173,14 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 							var linkText = val;
 						}
 					}
-					content = '<a href="' + linkUrl + '" target="_blank">' +
-						linkText + '</a>';
+					content = `<a href="${linkUrl}" target="_blank">${linkText}</a>`;
+					title = linkUrl;
+				} else if (content.startsWith('http')) {
+					content = `<a href="${content}" target="_blank">Link</a>`;
+
 				}
-				return '<span title="' + linkUrl + '">' + content + '</span>'};
+				return `<span title="${title}">${content}</span>`;
+			};
             var filter = column['filter'];
             if (filter != undefined && filter['type'] == 'select') {
                 var colType = column['type'];

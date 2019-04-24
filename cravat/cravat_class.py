@@ -26,7 +26,8 @@ cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
     description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.',
     epilog='* input_file_path should precede any option.')
-cravat_cmd_parser.add_argument('input',
+cravat_cmd_parser.add_argument('inputs',
+                    nargs='+',
                     help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument('-a',
                     nargs="+",
@@ -240,8 +241,9 @@ class Cravat (object):
             self.status_json['run_name'] = self.run_name
             self.status_json['assembly'] = self.input_assembly
             self.status_json['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
-            self.status_json['orig_input_fname'] = os.path.basename(self.input)
-            self.status_json['orig_input_path'] = self.input
+            #todo adapt to multiple inputs
+            self.status_json['orig_input_fname'] = ', '.join([os.path.basename(x) for x in self.inputs])
+            self.status_json['orig_input_path'] = ', '.join(self.inputs)
             self.status_json['submission_time'] = datetime.datetime.now().isoformat()
             self.status_json['viewable'] = False
             self.status_json['note'] = self.args.note
@@ -275,7 +277,7 @@ class Cravat (object):
     def update_status (self, status):
         self.status_writer.queue_status_update('status', status)
 
-    def main (self):
+    async def main (self):
         no_problem_in_run = True
         try:
             self.update_status('Started cravat')
@@ -340,7 +342,7 @@ class Cravat (object):
                     self.args.rr
                 ):
                 print('Running reporter...')
-                no_problem_in_run = self.run_reporter()
+                no_problem_in_run = await self.run_reporter()
             self.update_status('Finished')
         except Exception as e:
             self.handle_exception(e)
@@ -391,13 +393,13 @@ class Cravat (object):
             for m in self.excludes:
                 if m in self.annotators:
                     del self.annotators[m]
-        self.input = os.path.abspath(self.args.input)
+        self.inputs = [os.path.abspath(x) for x in self.args.inputs]
         self.run_name = self.args.run_name
-        if self.run_name == None:
-            self.run_name = os.path.basename(self.input)
+        if self.run_name == None: #todo set run name different if multiple inputs
+            self.run_name = os.path.basename(self.inputs[0])
         self.output_dir = self.args.output_dir
         if self.output_dir == None:
-            self.output_dir = os.path.dirname(os.path.abspath(self.input))
+            self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
         else:
             self.output_dir = os.path.abspath(self.output_dir)
         if os.path.exists(self.output_dir) == False:
@@ -428,18 +430,21 @@ class Cravat (object):
             self.logmode = 'a'
 
     def set_and_check_input_files (self):
-        if self.input.split('.')[-1] == 'crv':
-            self.crvinput = self.input
-        else:
-            self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
-        if self.input.split('.')[-1] == 'crx':
-            self.crxinput = self.input
-        else:
-            self.crxinput = os.path.join(self.output_dir, self.run_name + '.crx')
-        if self.input.split('.')[-1] == 'crg':
-            self.crginput = self.input
-        else:
-            self.crginput = os.path.join(self.output_dir, self.run_name + '.crg')
+        self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
+        self.crxinput = os.path.join(self.output_dir, self.run_name + '.crx')
+        self.crginput = os.path.join(self.output_dir, self.run_name + '.crg')
+        # if self.input.split('.')[-1] == 'crv':
+        #     self.crvinput = self.input
+        # else:
+        #     self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
+        # if self.input.split('.')[-1] == 'crx':
+        #     self.crxinput = self.input
+        # else:
+        #     self.crxinput = os.path.join(self.output_dir, self.run_name + '.crx')
+        # if self.input.split('.')[-1] == 'crg':
+        #     self.crginput = self.input
+        # else:
+        #     self.crginput = os.path.join(self.output_dir, self.run_name + '.crg')
 
         if os.path.exists(self.crvinput):
             self.crv_present = True
@@ -453,7 +458,6 @@ class Cravat (object):
             self.crg_present = True
         else:
             self.crg_present = False
-        
 
     def make_module_run_list (self):
         self.ordered_annotators = []
@@ -461,9 +465,20 @@ class Cravat (object):
         for module in self.annotators.values():
             self.add_annotator_to_queue(module)
         annot_names = [v.name for v in self.ordered_annotators]
+        annot_names = list(set(annot_names))
+        filenames = os.listdir(self.output_dir)
+        for filename in filenames:
+            toks = filename.split('.')
+            if len(toks) == 3:
+                extension = toks[2]
+                if toks[0] == self.run_name and\
+                    (extension == 'var' or extension == 'gen'):
+                    annot_name = toks[1]
+                    if annot_name not in annot_names:
+                        annot_names.append(annot_name)
         annot_names.sort()
         if self.runlevel <= self.runlevels['annotator']:
-            self.status_writer.queue_status_update('annotators', annot_names)
+            self.status_writer.queue_status_update('annotators', annot_names, force=True)
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
@@ -514,7 +529,7 @@ class Cravat (object):
                                  name='converter',
                                  script_path=converter_path)
         cmd = [module.script_path,
-                self.input,
+                *self.inputs,
                '-n', self.run_name,
                '-d', self.output_dir,
                '-l', self.input_assembly]
@@ -623,7 +638,7 @@ class Cravat (object):
             rtime = time.time() - stime
             print('finished in {0:.3f}s'.format(rtime))
 
-    def run_reporter (self):
+    async def run_reporter (self):
         if self.reports != None:
             module_names = [v + 'reporter' for v in self.reports]
         else:
@@ -640,10 +655,11 @@ class Cravat (object):
                        '--module-name', module_name]
                 if self.verbose:
                     print(' '.join(cmd))
-                reporter_cls = util.load_class('Reporter', module.script_path)
-                reporter = reporter_cls(cmd, self.status_writer)
+                Reporter = util.load_class('Reporter', module.script_path)
+                reporter = Reporter(cmd, self.status_writer)
+                await reporter.prep()
                 stime = time.time()
-                reporter.run()
+                await reporter.run()
                 rtime = time.time() - stime
                 print('finished in {0:.3f}s'.format(rtime))
             except Exception as e:
@@ -678,7 +694,8 @@ class Cravat (object):
                     elif input_format == 'crx':
                         inputpath = self.crxinput
                     else:
-                        inputpath = self.input
+                        raise Exception('Incorrect input_format value')
+                        # inputpath = self.input
                 else:
                     inputpath = self.crvinput
             elif module.level == 'gene':
@@ -743,7 +760,7 @@ class Cravat (object):
         created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         q = 'insert into info values ("Result created at", "' + created + '")'
         cursor.execute(q)
-        q = 'insert into info values ("Input file name", "' + self.input + '")'
+        q = 'insert into info values ("Input file name", "{}")'.format(';'.join(self.inputs)) #todo adapt to multiple inputs
         cursor.execute(q)
         q = 'insert into info values ("Input genome", "' + self.input_assembly + '")'
         cursor.execute(q)
@@ -824,9 +841,10 @@ class StatusWriter:
         self.status_json['annotator_version'][annotator_name] = version
         self.queue_status_update('annotator_version', self.status_json['annotator_version'])
 
-    def queue_status_update (self, k, v):
+    def queue_status_update (self, k, v, force=False):
         self.status_json[k] = v
-        if time.time() - self.t > 3 and self.lock == False:
+        if force == True or\
+                (time.time() - self.t > 3 and self.lock == False):
             self.lock = True
             self.update_status_json()
             self.t = time.time()

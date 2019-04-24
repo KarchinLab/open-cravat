@@ -284,7 +284,7 @@ class Aggregator (object):
             annotator_table)
         self.cursor.execute(q)
         q = 'insert into {:} values ("{:}", "{:}", "{:}")'.format(
-            annotator_table, 'base', 'Base Information', "")
+            annotator_table, 'base', 'Variant Annotation', "")
         self.cursor.execute(q)
         for _, col_def in self.base_reader.get_all_col_defs().items():
             col_name = self.base_prefix + '__' + col_def['name']
@@ -380,6 +380,11 @@ class Aggregator (object):
                         )
                         self.cursor.execute(q)
         self.make_reportsub()
+        # filter and layout save table
+        q = 'drop table if exists viewersetup'
+        self.cursor.execute(q)
+        q = 'create table viewersetup (datatype text, name text, viewersetup text, unique (datatype, name))'
+        self.cursor.execute(q)
         self.dbconn.commit()
 
     def _setup_io(self):

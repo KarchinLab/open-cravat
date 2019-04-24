@@ -23,6 +23,7 @@ var storeLogos = {};
 var moduleLists = {};
 var baseToInstall = [];
 var baseInstalled = false;
+var defaultWidgetNames = [];
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -312,6 +313,12 @@ function getMostDownloadedModuleNames () {
         if (baseModuleNames.indexOf(moduleName) >= 0) {
             continue;
         }
+        if (remoteModuleInfo[moduleName].hidden == true) {
+            continue;
+        }
+        if (remoteModuleInfo[moduleName].type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
+            continue;
+        }
         top10ModuleNames.push(moduleName);
         count++;
         if (count == 10) {
@@ -342,6 +349,12 @@ function getNewestModuleNames () {
             continue;
         }
         if (baseModuleNames.indexOf(moduleName) >= 0) {
+            continue;
+        }
+        if (remoteModuleInfo[moduleName].hidden == true) {
+            continue;
+        }
+        if (remoteModuleInfo[moduleName].type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
             continue;
         }
         top10ModuleNames.push(moduleName);
@@ -400,7 +413,7 @@ function onClickStoreHomeRightArrow (el) {
 
 function trimRemote () {
     var remoteModuleNames = Object.keys(remoteModuleInfo);
-    var defaultWidgetNames = [];
+    defaultWidgetNames = [];
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
         var remoteModule = remoteModuleInfo[remoteModuleName];
@@ -428,6 +441,10 @@ function trimRemote () {
         var remoteModule = remoteModuleInfo[remoteModuleName];
         if (remoteModule.type == 'webviewerwidget' && 
                 defaultWidgetNames.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false) {
+            delete remoteModuleInfo[remoteModuleName];
+            continue;
+        }
+        if (remoteModule.hidden == true && remoteModule.tags.includes('newavailable') == false) {
             delete remoteModuleInfo[remoteModuleName];
             continue;
         }
@@ -818,7 +835,17 @@ function getSortedFilteredRemoteModuleNames () {
     var sortedNames = null;
     if (sortKey == 'name') {
         sortedNames = Object.keys(filteredRemoteModules);
-        sortedNames.sort();
+        for (var i = 0; i < sortedNames.length - 1; i++) {
+            for (var j = i + 1; j < sortedNames.length; j++) {
+                var t1 = filteredRemoteModules[sortedNames[i]].title;
+                var t2 = filteredRemoteModules[sortedNames[j]].title;
+                if (t1.localeCompare(t2) > 0) {
+                    var tmp = sortedNames[i];
+                    sortedNames[i] = sortedNames[j];
+                    sortedNames[j] = tmp;
+                }
+            }
+        }
     } else if (sortKey == 'size') {
         sortedNames = Object.keys(filteredRemoteModules);
         for (var i = 0; i < sortedNames.length - 1; i++) {
@@ -906,7 +933,7 @@ function addLogo (moduleName, sdiv) {
         span.className = 'moduletile-title';
         var title = moduleInfo.title;
         span.textContent = title
-        if (title.length > 30) {
+        if (title.length > 26) {
             span.style.fontSize = '30px';
         }
         addEl(sdiv, span);
