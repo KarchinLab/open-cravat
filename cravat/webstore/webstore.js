@@ -1542,27 +1542,12 @@ function setServerStatus (connected) {
     }
 }
 
-function connectWebSocket (attempt) {
-    attempt = attempt !== undefined ? attempt : 1;
+function connectWebSocket () {
     var host = window.location.host;
-    if (attempt>=3) {
-        console.log('Websocket failure');
-        setServerStatus(false);
-    }
     var ws = new WebSocket(`ws://${host}/store/connectwebsocket`);
     ws.onopen = function (evt) {
-        setServerStatus(true);
-        attempt=0;
     }
     ws.onclose = function (evt) {
-        attempt += 1;
-        var waitTime = 2000*attempt;
-        console.log('attempt websocket reconnect in '+waitTime);
-        setTimeout(function() {
-            connectWebSocket(attempt);
-        }, waitTime)
-    }
-    ws.onerror = function(evt) {
     }
     ws.onmessage = function (evt) {
         var data = JSON.parse(evt.data);
@@ -1602,6 +1587,34 @@ function connectWebSocket (attempt) {
                 installInfo[module] = {'msg': 'installing'};
             }
         }
+    }
+}
+
+
+function checkConnection(failures) {
+	failures = failures !== undefined ? failures : 0;
+    var host = window.location.host;
+    if (failures>=3) {
+        console.log('Websocket failure');
+        setServerStatus(false);
+    }
+    var ws = new WebSocket(`ws://${host}/heartbeat`);
+    ws.onopen = function (evt) {
+		console.log('websocket open');
+        setServerStatus(true);
+        failures=0;
+    }
+    ws.onclose = function (evt) {
+        failures += 1;
+        var waitTime = 2000*failures;
+        console.log('attempt websocket reconnect in '+waitTime);
+        setTimeout(function() {
+            checkConnection(failures);
+        }, waitTime)
+    }
+    ws.onerror = function(evt) {
+    }
+    ws.onmessage = function (evt) {
     }
 }
 

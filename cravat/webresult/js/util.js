@@ -855,24 +855,27 @@ function setServerStatus (connected) {
 
 function checkConnection(failures) {
 	failures = failures !== undefined ? failures : 0;
-	$.get('/hello')
-	.done(function () {
-		failures = 0;
-		setServerStatus(true);
-	})
-	.fail(function() {
-		failures += 1;
-		if (failures >= 3) {
-			setServerStatus(false);
-		}
-	})
-	.always(function() {
-		var timeout = 5000;
-		if (failures > 0) {
-			timeout = 2000 * failures;
-		}
-		setTimeout(function () {
-			checkConnection(failures)
-		}, timeout);
-	});
+    var host = window.location.host;
+    if (failures>=3) {
+        console.log('Websocket failure');
+        setServerStatus(false);
+    }
+    var ws = new WebSocket(`ws://${host}/heartbeat`);
+    ws.onopen = function (evt) {
+		console.log('websocket open');
+        setServerStatus(true);
+        failures=0;
+    }
+    ws.onclose = function (evt) {
+        failures += 1;
+        var waitTime = 2000*failures;
+        console.log('attempt websocket reconnect in '+waitTime);
+        setTimeout(function() {
+            checkConnection(failures);
+        }, waitTime)
+    }
+    ws.onerror = function(evt) {
+    }
+    ws.onmessage = function (evt) {
+    }
 }

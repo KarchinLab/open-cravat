@@ -168,10 +168,25 @@ class WebServer (object):
         self.app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
         self.app.router.add_static('/submit', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
         self.app.router.add_get('/hello', hello)
+        self.app.router.add_get('/heartbeat', heartbeat)
         ws.start_worker()
 
 async def hello(request):
     return web.Response(text='OpenCRAVAT server is running here. '+str(dt.datetime.now()))
+
+async def heartbeat(request):
+    ws = web.WebSocketResponse(timeout=60*60*24*365)
+    await ws.prepare(request)
+    n = 0
+    messages = ['ah','ha','ha','ha','staying alive','staying alive']
+    while True:
+        await asyncio.sleep(5)
+        a = await ws.send_str(messages[n])
+        if n >= len(messages) - 1:
+            n = 0
+        else:
+            n += 1
+    return ws
 
 def main ():
     '''

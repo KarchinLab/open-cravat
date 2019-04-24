@@ -1575,6 +1575,7 @@ function websubmit_run () {
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
     connectWebSocket();
+    checkConnection();
     getBaseModuleNames();
     getRemote();
     addListeners();
