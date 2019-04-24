@@ -696,7 +696,7 @@ function onClickWidgetPinButton (evt, tabName) {
 
 function onClickWidgetCloseButton (tabName, evt) {
 	var widgetName = evt.target.getAttribute('widgetname');
-    executeWidgetClose(widgetName, tabName, true);
+    executeWidgetClose(widgetName, tabName, false);
 }
 
 function executeWidgetClose (widgetName, tabName, repack) {
@@ -705,6 +705,16 @@ function executeWidgetClose (widgetName, tabName, repack) {
 			'widgettogglecheckbox_' + tabName + '_' + widgetName);
     if (button != undefined) {
         button.checked = false;
+    }
+    onClickDetailRedraw();
+}
+
+function executeWidgetOpen (widgetName, tabName, repack) {
+	showHideWidget(tabName, widgetName, true, repack);
+	var button = document.getElementById(
+			'widgettogglecheckbox_' + tabName + '_' + widgetName);
+    if (button != undefined) {
+        button.checked = true;
     }
     onClickDetailRedraw();
 }
@@ -740,6 +750,15 @@ function onClickWidgetSelectorCheckbox (tabName, evt) {
 function showHideWidget (tabName, widgetName, state, repack) {
 	var widget = document.getElementById(
 			'detailwidget_' + tabName + '_' + widgetName);
+    if (widget == null) {
+        return;
+    }
+    var display = widget.style.display;
+    if (state == false && display == 'none') {
+        return;
+    } else if (state == true && display != 'none') {
+        return;
+    }
 	if (state == false) {
 		widget.style.display = 'none';
 	} else {
@@ -754,6 +773,7 @@ function showHideWidget (tabName, widgetName, state, repack) {
 	var $detailContainerDiv = $(document.getElementById('detailcontainerdiv_' + tabName));
     if (repack == true) {
         $detailContainerDiv.packery('fit', widget);
+        onClickDetailReset();
     }
 }
 
@@ -785,6 +805,13 @@ function drawSummaryWidgetGivenData (widgetName, widgetContentDiv, generator, da
     }
 }
 
+function getSpinner () {
+	var spinner = getEl('img');
+	spinner.src = '/result/images/spinner.gif';
+	spinner.style.width = '15px';
+    return spinner;
+}
+
 function drawSummaryWidget (widgetName) {
 	var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
 	emptyElement(widgetContentDiv);
@@ -799,10 +826,17 @@ function drawSummaryWidget (widgetName) {
         if (generator['variables']['callserverparams'] != undefined) {
             callServerParams = generator['variables']['callserverparams'];
         }
+        var spinner = getSpinner();
+        spinner.className = 'widgetspinner';
+        addEl(widgetContentDiv, spinner);
 		$.ajax({
             url: '/result/runwidget/' + widgetName, 
             data: {dbpath: dbPath, params: JSON.stringify(callServerParams)},
+            async: true,
             success: function (response) {
+                var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
+                var spinner = widgetContentDiv.getElementsByClassName('widgetspinner')[0];
+                $(spinner).remove();
                 var data = response['data'];
                 drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
             },
@@ -1211,6 +1245,7 @@ function populateTableColumnSelectorPanel () {
 		legend.style.fontSize = '14px';
 		legend.style.fontWeight = 'bold';
 		var checkbox = getEl('input');
+        checkbox.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_' + '_checkbox';
 		checkbox.type = 'checkbox';
 		checkbox.checked = true;
 		checkbox.setAttribute('colgroupno', i);
@@ -1429,13 +1464,15 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             row.css('background-color', '#ffc500');
         }
 	}
-	gridObject.refreshHeader = function () {
+	gridObject.refreshHeader = function (evt, ui) {
         var colModel = null;
         if ($grids[currentTab] == undefined) {
             colModel = this.colModel;
         } else {
             colModel = $grids[currentTab].pqGrid('getColModel');
         }
+        var $groupHeaderTr = null;
+        var groupHeaderTitleToKey = {};
 		for (let i=0; i < colModel.length; i++) {
 			var col = colModel[i];
             var $headerCell = this.getCellHeader({colIndx: col.leftPos});
@@ -1445,8 +1482,10 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 			if (col.desc !== null) {
 				$headerCell.attr('title', col.desc).tooltip();
 			}
+            $groupHeaderTr = $headerCell.parent().prev();
             $headerCell.attr('col', col.col);
             $headerCell.attr('colgroup', col.colgroup);
+            groupHeaderTitleToKey[col.colgroup] = col.colgroupkey;
             $headerCell.contextmenu(function (evt) {
                 var headerCell = evt.target;
                 if (headerCell.classList.contains('pq-td-div')) {
@@ -1458,6 +1497,21 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
                 return false;
             });
 		}
+        var $groupHeaderTds = $groupHeaderTr.children();
+        for (var i = 0; i < $groupHeaderTds.length; i++) {
+            var th = $groupHeaderTds[i];
+            var title = $(th).children('div').text();
+            th.setAttribute('colgrouptitle', title);
+            $(th).contextmenu(function (evt) {
+                var th = evt.target;
+                if (th.tagName == 'DIV') {
+                    th = th.parentElement;
+                }
+                var title = th.getAttribute('colgrouptitle');
+                makeTableGroupHeaderRightClickMenu(evt, th, title);
+                return false;
+            });
+        }
 	}
     gridObject.columnDrag = function (evt, ui) {
         var colGroups = $grids[currentTab].pqGrid('option', 'colModel');
@@ -1491,8 +1545,37 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             }
         }
     }
-    gridObject.flex = {on: true};
+    gridObject.flex = {on: true, all: false};
 	return gridObject;
+}
+
+function makeTableGroupHeaderRightClickMenu (evt, td, colgrouptitle) {
+    var rightDiv = document.getElementById('tablediv_' + currentTab);
+    var divId = 'table-header-contextmenu-' + currentTab;
+    var div = document.getElementById(divId);
+    if (div == undefined) {
+        div = getEl('div');
+        div.id = divId;
+        div.className = 'table-header-contextmenu-div';
+    } else {
+        $(div).empty();
+    }
+    div.style.top = evt.pageY;
+    div.style.left = evt.pageX;
+    var ul = getEl('ul');
+    var li = getEl('li');
+    var a = getEl('a');
+    a.textContent = 'Hide all columns under ' + colgrouptitle;
+    li.addEventListener('click', function (evt) {
+        var checkboxId = 'columngroup__' + currentTab + '_' + colgrouptitle + '__checkbox';
+        var checkbox = document.getElementById(checkboxId);
+        checkbox.click();
+        div.style.display = 'none';
+    });
+    addEl(ul, addEl(li, a));
+    addEl(div, ul);
+    div.style.display = 'block';
+    addEl(rightDiv, div);
 }
 
 function makeTableHeaderRightClickMenu (evt, col, colgroup) {

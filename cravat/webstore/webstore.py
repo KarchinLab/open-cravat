@@ -82,21 +82,24 @@ def fetch_install_queue (install_queue, install_state):
     while True:
         try:
             data = install_queue.get()
-            au.refresh_cache()
+            #au.refresh_cache()
+            au.mic.update_local()
             module_name = data['module']
             module_version = data['version']
             stage_handler = InstallProgressMpDict(module_name, module_version, install_state)
             au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
-            au.refresh_cache()
+            #au.refresh_cache()
+            au.mic.update_local()
             time.sleep(1)
         except:
             sys.exit()
 
 ###################### start from store_handler #####################
 
-def get_remote_manifest(request):
+async def get_remote_manifest(request):
     try:
-        au.mic.update_remote()
+        if au.mic.remote == {}:
+            au.mic.update_remote()
         content = au.mic.remote
     except:
         traceback.print_exc()
@@ -111,7 +114,6 @@ def get_remote_manifest(request):
         install_queue.put({'module': module, 'version': version})
     try:
         counts = au.get_download_counts()
-        
     except:
         traceback.print_exc()
         counts = {}
@@ -119,7 +121,7 @@ def get_remote_manifest(request):
         content[mname]['downloads'] = counts.get(mname,0)
     return web.json_response(content)
 
-def get_remote_module_config (request):
+async def get_remote_module_config (request):
     queries = request.rel_url.query
     module = queries['module']
     conf = au.get_remote_module_config(module)
@@ -128,18 +130,19 @@ def get_remote_module_config (request):
     response = conf
     return web.json_response(response)
 
-def get_local_manifest (request):
-    au.refresh_cache()
+async def get_local_manifest (request):
+    #au.refresh_cache()
+    au.mic.update_local()
     content = {}
     for k, v in au.mic.local.items():
         content[k] = v.serialize()
     return web.json_response(content)
 
-def get_storeurl (request):
+async def get_storeurl (request):
     conf = au.get_system_conf()
     return web.Response(text=conf['store_url'])
 
-def get_module_readme (request):
+async def get_module_readme (request):
     module_name = request.match_info['module']
     version = request.match_info['version']
     if version == 'latest': 
@@ -237,7 +240,7 @@ async def install_module (request):
         response = 'failure'
     return web.json_response(content)
 
-def install_widgets_for_module (request):
+async def install_widgets_for_module (request):
     queries = request.rel_url.query
     module_name = queries['name']
     au.install_widgets_for_module(module_name)
@@ -294,13 +297,12 @@ async def connect_websocket (request):
             data['msg'] = install_state['message']
             if data['msg'].startswith('Downloading'):
                 data['msg'] = data['msg'] + ' ' + str(install_state['cur_chunk']) + '%'
-            print(data['msg'])
             await install_ws.send_str(json.dumps(data))
             last_update_time = install_state['update_time']
         # await install_ws.send_str(str(n))
     return install_ws
 
-def queue_install (request):
+async def queue_install (request):
     global install_queue
     queries = request.rel_url.query
     if 'version' in queries:
@@ -315,7 +317,7 @@ def queue_install (request):
         install_queue.put({'module':dep_name,'version':dep_version})
     return web.Response(text = 'queued ' + queries['module'])
 
-def get_base_modules (request):
+async def get_base_modules (request):
     global system_conf
     base_modules = system_conf['base_modules']
     return web.json_response(base_modules)
@@ -331,11 +333,11 @@ async def install_base_modules (request):
         response = 'failed'
     return web.json_response(response)
 
-def get_md (request):
+async def get_md (request):
     modules_dir = au.get_modules_dir()
     return web.Response(text=modules_dir)
 
-def get_module_updates (request):
+async def get_module_updates (request):
     queries = request.rel_url.query
     smodules = queries.get('modules','')
     if smodules:

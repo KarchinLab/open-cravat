@@ -229,8 +229,9 @@ def main ():
     serv = get_server()
     hello_url = 'http://{host}:{port}/hello'.format(host=serv.get('host'),port=serv.get('port'))
     try:
-        r = requests.get(hello_url, timeout=1)
-        print('{}:{} already in use'.format(serv['host'], serv['port']))
+        r = requests.get(hello_url, timeout=0.01)
+        # print('{}:{} already in use'.format(serv['host'], serv['port']))
+        print('OpenCRAVAT is already running.')
         return
     except requests.exceptions.ConnectionError:
         pass

@@ -12,7 +12,7 @@ import shutil
 from aiohttp import web
 #from cryptography import fernet
 #from aiohttp_session import get_session, new_session
-import sqlite3
+import aiosqlite3
 import hashlib
 from distutils.version import LooseVersion
 import glob
@@ -170,39 +170,53 @@ def get_next_job_id():
 
 async def submit (request):
     global filerouter
-    reader = await request.multipart()
-    input_file = None
-    job_options = None
-    while True:
-        part = await reader.next()
-        if not part: 
-            break 
-        if part.name == 'file':
-            input_file = part
-            input_data = await input_file.read()
-        elif part.name == 'options':
-            job_options = await part.json()
-        if input_file is not None and job_options is not None: 
-            break
-    orig_input_fname = input_file.filename
     job_id = get_next_job_id()
     jobs_dir = await filerouter.get_jobs_dir(request)
     job_dir = os.path.join(jobs_dir, job_id)
     os.makedirs(job_dir, exist_ok=True)
+    reader = await request.multipart()
+    input_file = None
+    job_options = None
+    input_files = []
+    while True:
+        part = await reader.next()
+        if not part: 
+            break 
+        if part.name.startswith('file_'):
+            input_files.append(part)
+            # Have to write to disk here
+            wfname = part.filename
+            wpath = os.path.join(job_dir, wfname)
+            with open(wpath,'wb') as wf:
+                wf.write(await part.read())
+        elif part.name == 'options':
+            job_options = await part.json()
+    input_fnames = [fp.filename for fp in input_files]
+    if len(input_fnames) == 1:
+        orig_input_fname = input_fnames[0]
+    elif len(input_fnames) > 1:
+        orig_input_fname = ', '.join([os.path.basename(x) for x in input_fnames])
     info_fname = '{}.status.json'.format(orig_input_fname)
     job_info_fpath = os.path.join(job_dir, info_fname)
     job = WebJob(job_dir, job_info_fpath)
     job.save_job_options(job_options)
-    input_fpath = os.path.join(job_dir, orig_input_fname)
-    with open(input_fpath, 'wb') as wf:
-        wf.write(input_data)
-    job.set_info_values(orig_input_fname=orig_input_fname,
+    job.set_info_values(
+                        orig_input_fname=orig_input_fname,
+                        orig_input_files=input_fnames,
                         submission_time=datetime.datetime.now().isoformat(),
                         viewable=False
                         )
     # Subprocess arguments
-    run_args = ['cravat',
-                input_fpath]
+    input_fpaths = [os.path.join(job_dir, fn) for fn in input_fnames]
+    tot_lines = 0
+    for fpath in input_fpaths:
+        with open(fpath) as f:
+            tot_lines += count_lines(f)
+    expected_runtime = get_expected_runtime(tot_lines, job_options['annotators'])
+    job.set_info_values(expected_runtime=expected_runtime)
+    run_args = ['cravat']
+    for fn in input_fnames:
+        run_args.append(os.path.join(job_dir, fn))
     # Annotators
     if len(job_options['annotators']) > 0:
         run_args.append('-a')
@@ -232,19 +246,33 @@ async def submit (request):
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
     # admin.sqlite
-    if servermode:
-        root_jobs_dir = au.get_jobs_dir()
-        admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-        db = sqlite3.connect(admin_db_path)
-        cursor = db.cursor()
-        '''
-        session = await get_session(request)
-        username = session['username']
-        '''
-        username = 'default'
-        cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, username, job.get_info_dict()['submission_time'], -1, -1, '', job_options['assembly']))
-        db.commit()
+    # if servermode:
+    #     root_jobs_dir = au.get_jobs_dir()
+    #     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
+    #     db = await aiosqlite3.connect(admin_db_path)
+    #     cursor = await db.cursor()
+    #     '''
+    #     session = await get_session(request)
+    #     username = session['username']
+    #     '''
+    #     username = 'default'
+    #     await cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, username, job.get_info_dict()['submission_time'], -1, -1, '', job_options['assembly']))
+    #     await db.commit()
+    #     cursor.close()
+    #     db.close()
     return web.json_response(job.get_info_dict())
+
+def count_lines(f):
+    n = 0
+    for _ in f:
+        n+=1
+    return n
+
+def get_expected_runtime(num_lines, annotators):
+    mapper_vps = 1000
+    annot_vps = 5000
+    agg_vps = 8000
+    return num_lines*(1/mapper_vps + len(annotators)/annot_vps + 1/agg_vps)
 
 def get_annotators(request):
     out = {}
@@ -459,16 +487,16 @@ async def signup (request):
     answerhash = m.hexdigest()
     root_jobs_dir = au.get_jobs_dir()
     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = sqlite3.connect(admin_db_path)
-    cursor = db.cursor()
-    cursor.execute('select * from users where email="{}"'.format(username))
-    r = cursor.fetchone()
+    db = await aiosqlite3.connect(admin_db_path)
+    cursor = await db.cursor()
+    await cursor.execute('select * from users where email="{}"'.format(username))
+    r = await cursor.fetchone()
     if r is not None:
         return web.json_response('already registered')
-    cursor.execute('insert into users values ("{}", "{}", "{}", "{}")'.format(username, passwordhash, question, answerhash))
-    cursor.close()
-    db.commit()
-    db.close()
+    await cursor.execute('insert into users values ("{}", "{}", "{}", "{}")'.format(username, passwordhash, question, answerhash))
+    await db.commit()
+    await cursor.close()
+    await db.close()
     '''
     session['username'] = username
     session['logged'] = True
@@ -486,10 +514,10 @@ async def login (request):
     passwordhash = m.hexdigest()
     root_jobs_dir = au.get_jobs_dir()
     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = sqlite3.connect(admin_db_path)
-    cursor = db.cursor()
-    cursor.execute('select * from users where email="{}" and passwordhash="{}"'.format(username, passwordhash))
-    r = cursor.fetchone()
+    db = await aiosqlite3.connect(admin_db_path)
+    cursor = await db.cursor()
+    await cursor.execute('select * from users where email="{}" and passwordhash="{}"'.format(username, passwordhash))
+    r = await cursor.fetchone()
     if r is not None:
         response = 'success'
         '''
@@ -499,6 +527,8 @@ async def login (request):
         await create_user_dir(request, username)
     else:
         response = 'fail'
+    await cursor.close()
+    await db.close()
     return web.json_response(response)
 
 async def get_password_question (request):
@@ -507,13 +537,15 @@ async def get_password_question (request):
     email = queries['email']
     root_jobs_dir = au.get_jobs_dir()
     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = sqlite3.connect(admin_db_path)
-    cursor = db.cursor()
-    cursor.execute('select question from users where email="{}"'.format(email))
-    r = cursor.fetchone()
+    db = await aiosqlite3.connect(admin_db_path)
+    cursor = await db.cursor()
+    await cursor.execute('select question from users where email="{}"'.format(email))
+    r = await cursor.fetchone()
     if r is None:
         return web.json_response({'status':'fail', 'msg':'No such email'})
     answer = r[0]
+    await cursor.close()
+    await db.close()
     return web.json_response({'status':'success', 'msg':answer})
 
 async def check_password_answer (request):
@@ -526,19 +558,23 @@ async def check_password_answer (request):
     answerhash = m.hexdigest()
     root_jobs_dir = au.get_jobs_dir()
     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = sqlite3.connect(admin_db_path)
-    cursor = db.cursor()
-    cursor.execute('select * from users where email="{}" and answerhash="{}"'.format(email, answerhash))
-    r = cursor.fetchone()
+    db = await aiosqlite3.connect(admin_db_path)
+    cursor = await db.cursor()
+    await cursor.execute('select * from users where email="{}" and answerhash="{}"'.format(email, answerhash))
+    r = await cursor.fetchone()
     if r is not None:
         temppassword = 'open_cravat_temp_password'
         m = hashlib.sha256()
         m.update(temppassword.encode('utf-16be'))
         temppasswordhash = m.hexdigest()
-        cursor.execute('update users set passwordhash="{}" where email="{}"'.format(temppasswordhash, email))
-        db.commit()
+        await cursor.execute('update users set passwordhash="{}" where email="{}"'.format(temppasswordhash, email))
+        await db.commit()
+        await cursor.close()
+        await db.close()
         return web.json_response({'success': True, 'msg': temppassword})
     else:
+        await cursor.close()
+        await db.close()
         return web.json_response({'success': False, 'msg': 'Wrong answer'})
 
 async def change_password (request):
@@ -549,24 +585,28 @@ async def change_password (request):
     email = 'default'
     root_jobs_dir = au.get_jobs_dir()
     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = sqlite3.connect(admin_db_path)
-    cursor = db.cursor()
+    db = await aiosqlite3.connect(admin_db_path)
+    cursor = await db.cursor()
     queries = request.rel_url.query
     oldpassword = queries['oldpassword']
     newpassword = queries['newpassword']
     m = hashlib.sha256()
     m.update(oldpassword.encode('utf-16be'))
     oldpasswordhash = m.hexdigest()
-    cursor.execute('select * from users where email="{}" and passwordhash="{}"'.format(email, oldpasswordhash))
-    r = cursor.fetchone()
+    await cursor.execute('select * from users where email="{}" and passwordhash="{}"'.format(email, oldpasswordhash))
+    r = await cursor.fetchone()
     if r is None:
+        await cursor.close()
+        await db.close()
         return web.json_response('User authentication failed.')
     else:
         m = hashlib.sha256()
         m.update(newpassword.encode('utf-16be'))
         newpasswordhash = m.hexdigest()
-        cursor.execute('update users set passwordhash="{}" where email="{}"'.format(newpasswordhash, email))
-        db.commit()
+        await cursor.execute('update users set passwordhash="{}" where email="{}"'.format(newpasswordhash, email))
+        await db.commit()
+        await cursor.close()
+        await db.close()
         return web.json_response('success')
 
 async def check_logged (request):
@@ -592,10 +632,10 @@ async def logout (request):
     username = session['username']
     root_jobs_dir = au.get_jobs_dir()
     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = sqlite3.connect(admin_db_path)
-    cursor = db.cursor()
-    cursor.execute('select * from users where email="{}" and passwordhash="{}"'.format(username, passwordhash))
-    r = cursor.fetchone()
+    db = await aiosqlite3.connect(admin_db_path)
+    cursor = await db.cursor()
+    await cursor.execute('select * from users where email="{}" and passwordhash="{}"'.format(username, passwordhash))
+    r = await cursor.fetchone()
     if r is not None:
         response = 'success'
         session['username'] = username
@@ -603,6 +643,8 @@ async def logout (request):
         await create_user_dir(request, username)
     else:
         response = 'fail'
+    await cursor.close()
+    await db.close()
     return web.json_response(response)
     '''
 
