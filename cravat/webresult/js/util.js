@@ -844,6 +844,10 @@ function setServerStatus (connected) {
 			var span = getEl('span');
 			span.textContent = 'Lost connection to server';
 			addEl(loadingTxtDiv, span);
+            addEl(loadingTxtDiv, getEl('br'));
+			var span = getEl('span');
+			span.textContent = 'Please launch OpenCRAVAT again.';
+			addEl(loadingTxtDiv, span);
 			addEl(loadingDiv, loadingTxtDiv);
 			var dW = document.body.offsetWidth;
 			var dH = document.body.offsetHeight;
@@ -864,19 +868,16 @@ function checkConnection(failures) {
 	failures = failures !== undefined ? failures : 0;
     var host = window.location.host;
     if (failures>=3) {
-        console.log('Websocket failure');
         setServerStatus(false);
     }
     var ws = new WebSocket(`ws://${host}/heartbeat`);
     ws.onopen = function (evt) {
-		console.log('websocket open');
         setServerStatus(true);
         failures=0;
     }
     ws.onclose = function (evt) {
         failures += 1;
         var waitTime = 2000*failures;
-        console.log('attempt websocket reconnect in '+waitTime);
         setTimeout(function() {
             checkConnection(failures);
         }, waitTime)

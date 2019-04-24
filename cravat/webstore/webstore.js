@@ -1622,19 +1622,16 @@ function checkConnection(failures) {
 	failures = failures !== undefined ? failures : 0;
     var host = window.location.host;
     if (failures>=3) {
-        console.log('Websocket failure');
         setServerStatus(false);
     }
     var ws = new WebSocket(`ws://${host}/heartbeat`);
     ws.onopen = function (evt) {
-		console.log('websocket open');
         setServerStatus(true);
         failures=0;
     }
     ws.onclose = function (evt) {
         failures += 1;
         var waitTime = 2000*failures;
-        console.log('attempt websocket reconnect in '+waitTime);
         setTimeout(function() {
             checkConnection(failures);
         }, waitTime)
