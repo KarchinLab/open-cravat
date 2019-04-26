@@ -55,6 +55,13 @@ class LocalModuleInfo (object):
         self.conf_path = os.path.join(self.directory, self.name+'.yml')
         self.conf_exists = os.path.exists(self.conf_path)
         self.exists = self.conf_exists
+        startofinstall_path = os.path.join(self.directory, 'startofinstall')
+        if os.path.exists(startofinstall_path):
+            endofinstall_path = os.path.join(self.directory, 'endofinstall')
+            if os.path.exists(endofinstall_path):
+                self.exists = True
+            else:
+                self.exists = False
         self.data_dir = os.path.join(dir_path, 'data')
         self.data_dir_exists = os.path.isdir(self.data_dir)
         self.has_data = self.data_dir_exists \
@@ -552,6 +559,8 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             os.makedirs(module_dir)
         else:
             uninstall_module_code(module_name)
+        wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
+        wf.close()
         zipfile_path = os.path.join(module_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
         r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, **kwargs)
@@ -566,8 +575,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         code_manifest = yaml.load(su.get_file_to_string(code_manifest_url))
         su.verify_against_manifest(module_dir, code_manifest)
         os.remove(zipfile_path)
-        mic.update_local()
-        local_info = get_local_module_info(module_name)
+        local_info = LocalModuleInfo(module_dir)
         if (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
             data_url = store_path_builder.module_data(module_name, remote_data_version)
             data_fname = '.'.join([module_name,'data','zip'])
@@ -593,11 +601,13 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                 raise(requests.HTTPError(r))
         mic.update_local()
         stage_handler.stage_start('finish')
+        wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
+        wf.close()
         if module_name.startswith('wg') == False:
             try:
                 install_module('wg' + module_name)
             except:
-                pass
+                traceback.print_exc()
     except:
         try:
             shutil.rmtree(module_dir)
