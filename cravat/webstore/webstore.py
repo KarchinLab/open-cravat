@@ -15,6 +15,7 @@ from cravat import store_utils as su
 from cravat import constants
 import cravat.admin_util as au
 import markdown
+import shutil
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
@@ -354,6 +355,11 @@ async def get_module_updates (request):
     out = {'updates':updatesd,'conflicts':sconflicts}
     return web.json_response(out)
 
+async def get_free_modules_space (request):
+    modules_dir = au.get_modules_dir()
+    free_space = shutil.disk_usage(modules_dir).free
+    return web.json_response(free_space)
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/install', install_module])
@@ -368,4 +374,5 @@ routes.append(['GET', '/store/getbasemodules', get_base_modules])
 routes.append(['GET', '/store/installbasemodules', install_base_modules])
 routes.append(['GET', '/store/remotemoduleconfig', get_remote_module_config])
 routes.append(['GET', '/store/getmd', get_md])
-routes.append(['GET','/store/updates', get_module_updates])
+routes.append(['GET', '/store/updates', get_module_updates])
+routes.append(['GET', '/store/freemodulesspace', get_free_modules_space])
