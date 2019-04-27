@@ -22,8 +22,6 @@ pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
 install_queue = None
 install_state = None
 install_worker = None
-install_ws = None
-last_update_time = 0
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -269,11 +267,8 @@ def start_worker ():
         install_worker.start()
 
 async def connect_websocket (request):
-    global install_worker
     global install_state
-    global install_ws
-    global last_update_time
-    if install_state == None or len(install_state.keys()) == 0:
+    if not install_state:
         install_state['stage'] = ''
         install_state['message'] = ''
         install_state['module_name'] = ''
@@ -283,14 +278,10 @@ async def connect_websocket (request):
         install_state['cur_size'] = 0
         install_state['total_size'] = 0
         install_state['update_time'] = time.time()
-        last_update_time = install_state['update_time']
-    if install_ws != None:
-        await install_ws.close()
+    last_update_time = install_state['update_time']
     install_ws = web.WebSocketResponse(timeout=60*60*24*365)
     await install_ws.prepare(request)
-    n=0
     while True:
-        n+=1
         await asyncio.sleep(1)
         if last_update_time < install_state['update_time']:
             data = {}
@@ -300,7 +291,6 @@ async def connect_websocket (request):
                 data['msg'] = data['msg'] + ' ' + str(install_state['cur_chunk']) + '%'
             await install_ws.send_str(json.dumps(data))
             last_update_time = install_state['update_time']
-        # await install_ws.send_str(str(n))
     return install_ws
 
 async def queue_install (request):

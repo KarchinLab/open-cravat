@@ -177,6 +177,8 @@ async def hello(request):
 async def heartbeat(request):
     ws = web.WebSocketResponse(timeout=60*60*24*365)
     await ws.prepare(request)
+    async for msg in ws:
+        pass
     return ws
 
 def main ():

@@ -155,6 +155,8 @@ class RemoteModuleInfo(object):
         self.title = kwargs.get('title','')
         self.description = kwargs.get('description','')
         self.size = kwargs.get('size',0)
+        self.data_size = kwargs.get('data_size',0)
+        self.code_size = kwargs.get('code_size',0)
         self.datasource = kwargs.get('datasource', '')
         self.hidden = kwargs.get('hidden',False)
         if self.datasource == None:
@@ -271,11 +273,11 @@ class ModuleInfoCache(object):
             self.remote_config[module_name][version] = config
         return config
     
-    def get_code_size(self, module_name, version):
-        code_url = self._store_path_builder.module_code(module_name, version)
-        r = requests.get(code_url)
-        r.close()
-        return int(r.headers['Content-Length'])
+    # def get_code_size(self, module_name, version):
+    #     code_url = self._store_path_builder.module_code(module_name, version)
+    #     r = requests.get(code_url)
+    #     r.close()
+    #     return int(r.headers['Content-Length'])
 
 def get_widgets_for_annotator(annotator_name, skip_installed=False):
     """
@@ -1100,7 +1102,7 @@ def get_updatable(modules=[], strategy='consensus'):
             if update_data_version is not None and update_data_version != installed_data_version:
                 update_size = remote_info.size
             else:
-                update_size = mic.get_code_size(mname, selected_version)
+                update_size = remote_info.code_size
             update_vers[mname] = SimpleNamespace(version=selected_version, size=update_size)
         else:
             resolution_failed[mname] = reqs
