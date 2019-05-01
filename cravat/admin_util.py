@@ -606,10 +606,12 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
         wf.close()
         if module_name.startswith('wg') == False:
-            try:
-                install_module('wg' + module_name)
-            except:
-                traceback.print_exc()
+            wgmodule_name = 'wg' + module_name
+            if wgmodule_name is mic.remote:
+                try:
+                    install_module('wg' + module_name)
+                except:
+                    traceback.print_exc()
     except:
         try:
             shutil.rmtree(module_dir)
