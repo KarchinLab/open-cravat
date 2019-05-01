@@ -607,7 +607,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         wf.close()
         if module_name.startswith('wg') == False:
             wgmodule_name = 'wg' + module_name
-            if wgmodule_name is mic.remote:
+            if module_exists_remote(wgmodule_name)
                 try:
                     install_module('wg' + module_name)
                 except:
