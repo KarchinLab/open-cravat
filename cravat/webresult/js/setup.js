@@ -1385,7 +1385,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
 	gridObject.selectionModel = {type: 'cell', mode: 'block'};
 	gridObject.hoverMode = 'cell';
 	gridObject.colModel = infomgr.getColModel(tabName);
-	gridObject.dataModel = {data: data};
+	gridObject.dataModel = {data: Array.from(data)};
 	var sortColumnToUse = 'input_line_number';
 	gridObject.sortModel = {
 			cancel: true, 
