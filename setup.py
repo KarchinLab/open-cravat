@@ -124,4 +124,5 @@ setup(
               },
     #install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'aiohttp_session', 'cryptography'],
     install_requires=['pyyaml<5.1', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'chardet', 'aiosqlite3'],
+    python_requires='>=3.6',
 )
