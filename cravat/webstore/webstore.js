@@ -23,6 +23,7 @@ var storeLogos = {};
 var moduleLists = {};
 var baseToInstall = [];
 var baseInstalled = false;
+var defaultWidgetNames = [];
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -312,6 +313,12 @@ function getMostDownloadedModuleNames () {
         if (baseModuleNames.indexOf(moduleName) >= 0) {
             continue;
         }
+        if (remoteModuleInfo[moduleName].hidden == true) {
+            continue;
+        }
+        if (remoteModuleInfo[moduleName].type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
+            continue;
+        }
         top10ModuleNames.push(moduleName);
         count++;
         if (count == 10) {
@@ -342,6 +349,12 @@ function getNewestModuleNames () {
             continue;
         }
         if (baseModuleNames.indexOf(moduleName) >= 0) {
+            continue;
+        }
+        if (remoteModuleInfo[moduleName].hidden == true) {
+            continue;
+        }
+        if (remoteModuleInfo[moduleName].type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
             continue;
         }
         top10ModuleNames.push(moduleName);
@@ -400,7 +413,7 @@ function onClickStoreHomeRightArrow (el) {
 
 function trimRemote () {
     var remoteModuleNames = Object.keys(remoteModuleInfo);
-    var defaultWidgetNames = [];
+    defaultWidgetNames = [];
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
         var remoteModule = remoteModuleInfo[remoteModuleName];
@@ -428,6 +441,10 @@ function trimRemote () {
         var remoteModule = remoteModuleInfo[remoteModuleName];
         if (remoteModule.type == 'webviewerwidget' && 
                 defaultWidgetNames.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false) {
+            delete remoteModuleInfo[remoteModuleName];
+            continue;
+        }
+        if (remoteModule.hidden == true && remoteModule.tags.includes('newavailable') == false) {
             delete remoteModuleInfo[remoteModuleName];
             continue;
         }
@@ -627,6 +644,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     */
     var sdiv = getEl('div');
     sdiv.className = 'modulepanel-typesizedate-div';
+    /*
     span = getEl('span');
     span.className = 'modulepanel-type-span';
     span.textContent = moduleInfo['type'];
@@ -636,6 +654,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     span.className = 'modulepanel-divider-span';
     span.textContent = ' | ';
     addEl(sdiv, span);
+    */
     span = getEl('span');
     span.className = 'modulepanel-size-span';
     span.textContent = getSizeText(moduleInfo['size']);
@@ -711,7 +730,31 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
             }
             button.addEventListener('click', function (evt) {
                 var moduleName = evt.target.getAttribute('module');
-                queueInstall(moduleName, updates[moduleName].version);
+                var installSize = updates[moduleName].size;
+                $.ajax({
+                    url: '/store/freemodulesspace',
+                    ajax: true,
+                    success: function (response) {
+                        var freeSpace = response;
+                        var noSpace = false;
+                        if (installSize > freeSpace) {
+                            noSpace = true;
+                        }
+                        if (noSpace) {
+                            var mdiv = getEl('div');
+                            var span = getEl('span');
+                            span.textContent = 'Not enough space for updating the module!';
+                            addEl(mdiv, span);
+                            addEl(mdiv, getEl('br'));
+                            addEl(mdiv, getEl('br'));
+                            var justOk = true;
+                            showYesNoDialog(mdiv, null, noSpace, justOk);
+                            return;
+                        } else {
+                            queueInstall(moduleName, updates[moduleName].version);
+                        }
+                    },
+                });
             });
             addEl(div, button);
             btnAddedFlag = true;
@@ -734,7 +777,31 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
         button.setAttribute('module', moduleName);
         button.addEventListener('click', function (evt) {
             var moduleName = evt.target.getAttribute('module');
-            queueInstall(moduleName);
+            var installSize = remoteModuleInfo[moduleName].size;
+            $.ajax({
+                url: '/store/freemodulesspace',
+                ajax: true,
+                success: function (response) {
+                    var freeSpace = response;
+                    var noSpace = false;
+                    if (installSize > freeSpace) {
+                        noSpace = true;
+                    }
+                    if (noSpace) {
+                        var mdiv = getEl('div');
+                        var span = getEl('span');
+                        span.textContent = 'Not enough space for installing the module!';
+                        addEl(mdiv, span);
+                        addEl(mdiv, getEl('br'));
+                        addEl(mdiv, getEl('br'));
+                        var justOk = true;
+                        showYesNoDialog(mdiv, null, noSpace, justOk);
+                        return;
+                    } else {
+                        queueInstall(moduleName);
+                    }
+                },
+            });
         });
         if (installQueue.includes(moduleName)) {
             button.disabled = true;
@@ -816,7 +883,17 @@ function getSortedFilteredRemoteModuleNames () {
     var sortedNames = null;
     if (sortKey == 'name') {
         sortedNames = Object.keys(filteredRemoteModules);
-        sortedNames.sort();
+        for (var i = 0; i < sortedNames.length - 1; i++) {
+            for (var j = i + 1; j < sortedNames.length; j++) {
+                var t1 = filteredRemoteModules[sortedNames[i]].title;
+                var t2 = filteredRemoteModules[sortedNames[j]].title;
+                if (t1.localeCompare(t2) > 0) {
+                    var tmp = sortedNames[i];
+                    sortedNames[i] = sortedNames[j];
+                    sortedNames[j] = tmp;
+                }
+            }
+        }
     } else if (sortKey == 'size') {
         sortedNames = Object.keys(filteredRemoteModules);
         for (var i = 0; i < sortedNames.length - 1; i++) {
@@ -904,7 +981,7 @@ function addLogo (moduleName, sdiv) {
         span.className = 'moduletile-title';
         var title = moduleInfo.title;
         span.textContent = title
-        if (title.length > 30) {
+        if (title.length > 26) {
             span.style.fontSize = '30px';
         }
         addEl(sdiv, span);
@@ -998,22 +1075,46 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
             buttonText = 'Install';
             button.style.backgroundColor = '#beeaff';
             button.addEventListener('click', function (evt) {
-                var btn = evt.target;
-                var btnModuleName = btn.getAttribute('module');
-                if (btnModuleName == 'chasmplus') {
-                    var select = document.getElementById('chasmplustissueselect');
-                    btnModuleName = select.value;
-                }
-                var buttonText = null;
-                if (installQueue.length == 0) {
-                    buttonText = 'Installing...';
-                } else {
-                    buttonText = 'Queued';
-                }
-                queueInstall(btnModuleName);
-                btn.textContent = buttonText;
-                btn.style.color = 'red';
-                document.getElementById('moduledetaildiv_store').style.display = 'none';
+                $.ajax({
+                    url: '/store/freemodulesspace',
+                    ajax: true,
+                    success: function (response) {
+                        var freeSpace = response;
+                        var btn = evt.target;
+                        var btnModuleName = btn.getAttribute('module');
+                        if (btnModuleName == 'chasmplus') {
+                            var select = document.getElementById('chasmplustissueselect');
+                            btnModuleName = select.value;
+                        }
+                        var installSize = remoteModuleInfo[btnModuleName].size;
+                        var noSpace = false;
+                        if (installSize > freeSpace) {
+                            noSpace = true;
+                        }
+                        if (noSpace) {
+                            var mdiv = getEl('div');
+                            var span = getEl('span');
+                            span.textContent = 'Not enough space for installing the module!';
+                            addEl(mdiv, span);
+                            addEl(mdiv, getEl('br'));
+                            addEl(mdiv, getEl('br'));
+                            var justOk = true;
+                            showYesNoDialog(mdiv, null, noSpace, justOk);
+                            return;
+                        } else {
+                            var buttonText = null;
+                            if (installQueue.length == 0) {
+                                buttonText = 'Installing...';
+                            } else {
+                                buttonText = 'Queued';
+                            }
+                            queueInstall(btnModuleName);
+                            btn.textContent = buttonText;
+                            btn.style.color = 'red';
+                            document.getElementById('moduledetaildiv_store').style.display = 'none';
+                        }
+                    },
+                });
             });
         }
         button.textContent = buttonText;
@@ -1212,20 +1313,17 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     td.style.verticalAlign = 'top';
     td.style.height = tdHeight;
     var infodiv = getEl('div');
-    infodiv.style.height = '100%';
-    infodiv.style.overflow = 'auto';
+    infodiv.id = 'moduledetaildiv-infodiv';
     infodiv.style.maxWidth = (wiw * 0.8 * 0.3) + 'px';
-    infodiv.lineHeight = '18px';
     var d = getEl('div');
     span = getEl('span');
     span.textContent = mInfo.description;
     addEl(d, span);
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
-    span.textContent = 'Version: ';
+    span.textContent = 'Module version: ';
     addEl(d, span);
     span = getEl('span');
     var remoteVersion = mInfo['latest_version'];
@@ -1264,16 +1362,40 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
                         var select = document.getElementById('chasmplustissueselect');
                         btnModuleName = select.value;
                     }
-                    var buttonText = null;
-                    if (installQueue.length == 0) {
-                        buttonText = 'Updating...';
-                    } else {
-                        buttonText = 'Queued';
-                    }
-                    queueInstall(btnModuleName, updates[btnModuleName].version);
-                    btn.textContent = buttonText;
-                    btn.style.color = 'red';
-                    document.getElementById('moduledetaildiv_store').style.display = 'none';
+                    var installSize = updates[moduleName].size;
+                    $.ajax({
+                        url: '/store/freemodulesspace',
+                        ajax: true,
+                        success: function (response) {
+                            var freeSpace = response;
+                            var noSpace = false;
+                            if (installSize > freeSpace) {
+                                noSpace = true;
+                            }
+                            if (noSpace) {
+                                var mdiv = getEl('div');
+                                var span = getEl('span');
+                                span.textContent = 'Not enough space for updating the module!';
+                                addEl(mdiv, span);
+                                addEl(mdiv, getEl('br'));
+                                addEl(mdiv, getEl('br'));
+                                var justOk = true;
+                                showYesNoDialog(mdiv, null, noSpace, justOk);
+                                return;
+                            } else {
+                                var buttonText = null;
+                                if (installQueue.length == 0) {
+                                    buttonText = 'Updating...';
+                                } else {
+                                    buttonText = 'Queued';
+                                }
+                                queueInstall(btnModuleName, updates[btnModuleName].version);
+                                btn.textContent = buttonText;
+                                btn.style.color = 'red';
+                                document.getElementById('moduledetaildiv_store').style.display = 'none';
+                            }
+                        },
+                    });
                 });
                 button.textContent = buttonText;
                 button.style.padding = '8px';
@@ -1286,7 +1408,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     }
     if (currentTab == 'store') {
         addEl(infodiv, d);
-        addEl(infodiv, getEl('br'));
         d = getEl('div');
         span = getEl('span');
         span.style.fontWeight = 'bold';
@@ -1299,10 +1420,8 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         }
         span.textContent = datasource;
         addEl(d, span);
-        addEl(d, getEl('br'));
     }
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
@@ -1312,7 +1431,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span.textContent = mInfo['developer']['name'];
     addEl(d, span);
     addEl(d, getEl('br'));
-    addEl(d, getEl('br'));
     span = getEl('span');
     span.style.fontWeight = 'bold';
     span.textContent = 'e-mail: ';
@@ -1320,7 +1438,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span = getEl('span');
     span.textContent = mInfo['developer']['email'];
     addEl(d, span);
-    addEl(d, getEl('br'));
     addEl(d, getEl('br'));
     addEl(infodiv, d);
     d = getEl('div');
@@ -1344,7 +1461,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     }
     addEl(d, span);
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
@@ -1354,7 +1470,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span.textContent = mInfo['developer']['organization'];
     addEl(d, span);
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
@@ -1367,7 +1482,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span.style.wordBreak = 'break-all';
     addEl(d, span);
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     d = getEl('div');
     span = getEl('span');
     span.style.fontWeight = 'bold';
@@ -1377,7 +1491,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span.textContent = mInfo['type'];
     addEl(d, span);
     addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
     if (currentTab == 'store') {
         d = getEl('div');
         span = getEl('span');
@@ -1388,7 +1501,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         span.textContent = getSizeText(mInfo['size']);
         addEl(d, span);
         addEl(infodiv, d);
-        addEl(infodiv, getEl('br'));
         d = getEl('div');
         span = getEl('span');
         span.style.fontWeight = 'bold';
@@ -1399,7 +1511,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         span.textContent = t.toLocaleDateString();
         addEl(d, span);
         addEl(infodiv, d);
-        addEl(infodiv, getEl('br'));
         d = getEl('div');
         span = getEl('span');
         span.style.fontWeight = 'bold';
@@ -1484,7 +1595,7 @@ function getHighestVersionForRemoteModule (module) {
 function getSizeText (size) {
     size = parseInt(size);
     if (size < 1024) {
-        size = size + ' B';
+        size = size + ' bytes';
     } else {
         size = size / 1024;
         if (size < 1024) {
@@ -1545,6 +1656,15 @@ function moduleChange (data) {
 	getLocal();
 }
 
+function setServerStatus (connected) {
+    var overlay = document.getElementById('store-noconnect-div');
+    if (! connected) {
+        overlay.style.display = 'block';
+    } else {
+        overlay.style.display = 'none';
+    }
+}
+
 function connectWebSocket () {
     var host = window.location.host;
     var ws = new WebSocket(`ws://${host}/store/connectwebsocket`);
@@ -1593,6 +1713,31 @@ function connectWebSocket () {
     }
 }
 
+
+function checkConnection(failures) {
+	failures = failures !== undefined ? failures : 0;
+    var host = window.location.host;
+    if (failures>=3) {
+        setServerStatus(false);
+    }
+    var ws = new WebSocket(`ws://${host}/heartbeat`);
+    ws.onopen = function (evt) {
+        setServerStatus(true);
+        failures=0;
+    }
+    ws.onclose = function (evt) {
+        failures += 1;
+        var waitTime = 2000*failures;
+        setTimeout(function() {
+            checkConnection(failures);
+        }, waitTime)
+    }
+    ws.onerror = function(evt) {
+    }
+    ws.onmessage = function (evt) {
+    }
+}
+
 function getBaseModuleNames () {
     $.get('/store/getbasemodules').done(function (response) {
         baseModuleNames = response;
@@ -1603,7 +1748,7 @@ function onStoreTagCheckboxChange () {
     updateFilter();
 }
 
-function showYesNoDialog (content, yescallback) {
+function showYesNoDialog (content, yescallback, noSpace, justOk) {
     var div = document.getElementById('yesnodialog');
     if (div != undefined) {
         $(div).remove();
@@ -1614,63 +1759,104 @@ function showYesNoDialog (content, yescallback) {
     addEl(div, content);
     addEl(div, getEl('br'));
     var btnDiv = getEl('div');
-    btnDiv.className = 'buttondiv';
-    var btn = getEl('button');
-    btn.textContent = 'Yes';
-    btn.addEventListener('click', function (evt) {
-        $('#yesnodialog').remove();
-        yescallback(true);
-    });
-    addEl(btnDiv, btn);
-    var btn = getEl('button');
-    btn.textContent = 'No';
-    btn.addEventListener('click', function (evt) {
-        $('#yesnodialog').remove();
-        yescallback(false);
-    });
-    addEl(btnDiv, btn);
+    if (justOk) {
+        btnDiv.className = 'buttondiv';
+        var btn = getEl('button');
+        btn.textContent = 'Ok';
+        btn.addEventListener('click', function (evt) {
+            $('#yesnodialog').remove();
+        });
+        addEl(btnDiv, btn);
+    } else {
+        btnDiv.className = 'buttondiv';
+        var btn = getEl('button');
+        btn.textContent = 'Yes';
+        btn.addEventListener('click', function (evt) {
+            $('#yesnodialog').remove();
+            yescallback(true);
+        });
+        if (noSpace) {
+            btn.disabled = true;
+            btn.style.backgroundColor = '#e0e0e0';
+        }
+        addEl(btnDiv, btn);
+        var btn = getEl('button');
+        btn.textContent = 'No';
+        btn.addEventListener('click', function (evt) {
+            $('#yesnodialog').remove();
+            yescallback(false);
+        });
+        addEl(btnDiv, btn);
+    }
     addEl(div, btnDiv);
     addEl(document.body, div);
 }
 
 function onClickStoreInstallAllButton () {
-    var notInstalledModuleNames = getNotInstalledModuleNames();
-    var div = getEl('div');
-    var span = getEl('span');
-    span.textContent = 'Modules to install are:';
-    addEl(div, span);
-    addEl(div, getEl('br'));
-    addEl(div, getEl('br'));
-    var totalSize = 0;
-    for (var i = 0; i < notInstalledModuleNames.length; i++) {
-        totalSize += remoteModuleInfo[notInstalledModuleNames[i]].size;
-        var span = getEl('span');
-        span.textContent = notInstalledModuleNames[i];
-        span.style.fontWeight = 'bold';
-        addEl(div, span);
-        addEl(div, getEl('br'));
-    }
-    addEl(div, getEl('br'));
-    totalSize = getSizeText(totalSize);
-    var span = getEl('span');
-    span.textContent = 'Total installation size is ';
-    addEl(div, span);
-    var span = getEl('span');
-    span.textContent = totalSize;
-    span.style.fontWeight = 'bold';
-    addEl(div, span);
-    addEl(div, getEl('br'));
-    var span = getEl('span');
-    span.textContent = 'Install them all?';
-    addEl(div, span);
-    var yescallback = function (yn) {
-        if (yn == true) {
+    $.ajax({
+        url: '/store/freemodulesspace', 
+        async: true,
+        success: function (response) {
+            var freeSpace = response;
+            var notInstalledModuleNames = getNotInstalledModuleNames();
+            var div = getEl('div');
+            var span = getEl('span');
+            span.textContent = 'Modules to install are:';
+            addEl(div, span);
+            addEl(div, getEl('br'));
+            addEl(div, getEl('br'));
+            var totalSizeN = 0;
             for (var i = 0; i < notInstalledModuleNames.length; i++) {
-                queueInstall(notInstalledModuleNames[i]);
+                totalSizeN += remoteModuleInfo[notInstalledModuleNames[i]].size;
+                var span = getEl('span');
+                span.textContent = notInstalledModuleNames[i];
+                span.style.fontWeight = 'bold';
+                addEl(div, span);
+                addEl(div, getEl('br'));
             }
-        }
-    };
-    showYesNoDialog(div, yescallback);
+            var noSpace = false;
+            if (totalSizeN > freeSpace) {
+                noSpace = true;
+            }
+            addEl(div, getEl('br'));
+            totalSize = getSizeText(totalSizeN);
+            var span = getEl('span');
+            if (noSpace) {
+                span.textContent = 'Total installation size is ';
+                addEl(div, span);
+                var span = getEl('span');
+                span.textContent = totalSize;
+                span.style.fontWeight = 'bold';
+                addEl(div, span);
+                addEl(div, getEl('br'));
+                addEl(div, getEl('br'));
+                var span = getEl('span');
+                span.textContent = 'Not enough space on your modules disk!';
+                //span.style.fontWeight = 'bold';
+                span.style.color = 'red';
+                addEl(div, span);
+            } else {
+                span.textContent = 'Total installation size is ';
+                addEl(div, span);
+                var span = getEl('span');
+                span.textContent = totalSize;
+                span.style.fontWeight = 'bold';
+                addEl(div, span);
+                addEl(div, getEl('br'));
+                var span = getEl('span');
+                span.textContent = 'Install them all?';
+                addEl(div, span);
+            }
+            var yescallback = function (yn) {
+                if (yn == true) {
+                    for (var i = 0; i < notInstalledModuleNames.length; i++) {
+                        queueInstall(notInstalledModuleNames[i]);
+                    }
+                }
+            };
+            showYesNoDialog(div, yescallback, noSpace);
+        },
+    });
 }
 
 function getSystemModulesToUpdate () {
@@ -1705,34 +1891,54 @@ function onClickSystemModuleUpdateButton () {
     var modulesToUpdate = getSystemModulesToUpdate();
     var div = getEl('div');
     var updateModuleNames = Object.keys(updates);
-    var totalSize = 0;
+    var totalSizeN = 0;
     baseToInstall = [];
     for (var i = 0; i < updateModuleNames.length; i++) {
         var moduleName = updateModuleNames[i];
         var module = updates[moduleName];
         if (baseModuleNames.includes(moduleName)) {
             baseToInstall.push(moduleName);
-            totalSize += module['size'];
+            totalSizeN += module['size'];
         }
     }
-    totalSize = getSizeText(totalSize);
-    var span = getEl('span');
-    span.textContent = 'Total update size is ';
-    addEl(div, span);
-    var span = getEl('span');
-    span.textContent = totalSize;
-    span.style.fontWeight = 'bold';
-    addEl(div, span);
-    addEl(div, getEl('br'));
-    var span = getEl('span');
-    span.textContent = 'Update system modules?';
-    addEl(div, span);
-    var yescallback = function (yn) {
-        if (yn == true) {
-            startUpdatingSystemModules();
-        }
-    };
-    showYesNoDialog(div, yescallback);
+    $.ajax({
+        url: '/store/freemodulesspace',
+        ajax: true,
+        success: function (response) {
+            var freeSpace = response;
+            var noSpace = false;
+            if (totalSizeN > freeSpace) {
+                noSpace = true;
+            }
+            var totalSize = getSizeText(totalSizeN);
+            var span = getEl('span');
+            span.textContent = 'Total update size is ';
+            addEl(div, span);
+            var span = getEl('span');
+            span.textContent = totalSize;
+            span.style.fontWeight = 'bold';
+            addEl(div, span);
+            addEl(div, getEl('br'));
+            addEl(div, getEl('br'));
+            if (noSpace) {
+                var span = getEl('span');
+                span.textContent = 'Not enough space on your modules disk!';
+                //span.style.fontWeight = 'bold';
+                span.style.color = 'red';
+                addEl(div, span);
+            } else {
+                var span = getEl('span');
+                span.textContent = 'Update system modules?';
+                addEl(div, span);
+                var yescallback = function (yn) {
+                    if (yn == true) {
+                        startUpdatingSystemModules();
+                    }
+                };
+            }
+            showYesNoDialog(div, yescallback, noSpace);
+        },
+    });
 }
 
 function startUpdatingSystemModules () {
@@ -1752,37 +1958,57 @@ function onClickStoreUpdateAllButton () {
     addEl(div, span);
     addEl(div, getEl('br'));
     addEl(div, getEl('br'));
-    var totalSize = 0;
+    var totalSizeN = 0;
     for (var i = 0; i < modulesToUpdate.length; i++) {
-        totalSize += updates[modulesToUpdate[i]].size;
+        totalSizeN += updates[modulesToUpdate[i]].size;
         var span = getEl('span');
         span.textContent = modulesToUpdate[i];
         span.style.fontWeight = 'bold';
         addEl(div, span);
         addEl(div, getEl('br'));
     }
-    addEl(div, getEl('br'));
-    totalSize = getSizeText(totalSize);
-    var span = getEl('span');
-    span.textContent = 'Total update size is ';
-    addEl(div, span);
-    var span = getEl('span');
-    span.textContent = totalSize;
-    span.style.fontWeight = 'bold';
-    addEl(div, span);
-    addEl(div, getEl('br'));
-    var span = getEl('span');
-    span.textContent = 'Update them all?';
-    addEl(div, span);
-    var yescallback = function (yn) {
-        if (yn == true) {
-            announceStoreUpdatingAll();
-            for (var i = 0; i < modulesToUpdate.length; i++) {
-                queueInstall(modulesToUpdate[i]);
+    $.ajax({
+        url: '/store/freemodulesspace',
+        ajax: true,
+        success: function (response) {
+            var freeSpace = response;
+            var noSpace = false;
+            if (totalSizeN > freeSpace) {
+                noSpace = true;
             }
-        }
-    };
-    showYesNoDialog(div, yescallback);
+            addEl(div, getEl('br'));
+            var totalSize = getSizeText(totalSizeN);
+            var span = getEl('span');
+            span.textContent = 'Total update size is ';
+            addEl(div, span);
+            var span = getEl('span');
+            span.textContent = totalSize;
+            span.style.fontWeight = 'bold';
+            addEl(div, span);
+            addEl(div, getEl('br'));
+                addEl(div, getEl('br'));
+            if (noSpace) {
+                var span = getEl('span');
+                span.textContent = 'Not enough space on your modules disk!';
+                //span.style.fontWeight = 'bold';
+                span.style.color = 'red';
+                addEl(div, span);
+            } else {
+                var span = getEl('span');
+                span.textContent = 'Update them all?';
+                addEl(div, span);
+                var yescallback = function (yn) {
+                    if (yn == true) {
+                        announceStoreUpdatingAll();
+                        for (var i = 0; i < modulesToUpdate.length; i++) {
+                            queueInstall(modulesToUpdate[i]);
+                        }
+                    }
+                };
+            }
+            showYesNoDialog(div, yescallback, noSpace);
+        },
+    });
 }
 
 function announceStoreUpdatingAll () {

@@ -14,17 +14,20 @@ import logging
 import traceback
 from .mp_runners import run_annotator_mp
 import multiprocessing as mp
+import multiprocessing.managers
 from logging.handlers import QueueListener
 from .aggregator import Aggregator
 from .exceptions import *
 import yaml
 import cravat.cravat_util as cu
+import collections
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
     description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.',
     epilog='* input_file_path should precede any option.')
-cravat_cmd_parser.add_argument('input',
+cravat_cmd_parser.add_argument('inputs',
+                    nargs='+',
                     help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument('-a',
                     nargs="+",
@@ -180,6 +183,13 @@ cravat_cmd_parser.add_argument('--mp',
                     dest='mp',
                     default=None,
                     help='number of processes to use to run annotators')
+cravat_cmd_parser.add_argument('--forcedinputformat',
+                    dest='forcedinputformat',
+                    default=None,
+                    help='Force input format')
+
+class MyManager (multiprocessing.managers.SyncManager):
+    pass
 
 class Cravat (object):
 
@@ -212,12 +222,16 @@ class Cravat (object):
             self.logger.info('conf file: {}'.format(self.run_conf_path))
         self.write_initial_status_json()
         self.unique_logs = {}
+        manager = MyManager()
+        manager.register('StatusWriter', StatusWriter)
+        manager.start()
+        self.status_writer = manager.StatusWriter(self.status_json_path)
 
     def write_initial_status_json (self):
         status_fname = '{}.status.json'.format(self.run_name)
-        self.status_fpath = os.path.join(self.output_dir, status_fname)
-        if os.path.exists(self.status_fpath) == True:
-            with open(self.status_fpath) as f:
+        self.status_json_path = os.path.join(self.output_dir, status_fname)
+        if os.path.exists(self.status_json_path) == True:
+            with open(self.status_json_path) as f:
                 self.status_json = json.load(f)
                 self.pkg_ver = self.status_json['open_cravat_version']
         else:
@@ -227,8 +241,9 @@ class Cravat (object):
             self.status_json['run_name'] = self.run_name
             self.status_json['assembly'] = self.input_assembly
             self.status_json['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
-            self.status_json['orig_input_fname'] = os.path.basename(self.input)
-            self.status_json['orig_input_path'] = self.input
+            #todo adapt to multiple inputs
+            self.status_json['orig_input_fname'] = ', '.join([os.path.basename(x) for x in self.inputs])
+            self.status_json['orig_input_path'] = ', '.join(self.inputs)
             self.status_json['submission_time'] = datetime.datetime.now().isoformat()
             self.status_json['viewable'] = False
             self.status_json['note'] = self.args.note
@@ -236,7 +251,7 @@ class Cravat (object):
             self.status_json['reports'] = self.args.reports if self.args.reports != None else []
             self.pkg_ver = au.get_current_package_version()
             self.status_json['open_cravat_version'] = self.pkg_ver
-            with open(self.status_fpath,'w') as wf:
+            with open(self.status_json_path,'w') as wf:
                 wf.write(json.dumps(self.status_json))
 
     def get_logger (self):
@@ -260,12 +275,12 @@ class Cravat (object):
         logging.shutdown()
     
     def update_status (self, status):
-        cu.update_status_json(self, 'status', status)
+        self.status_writer.queue_status_update('status', status)
 
-    def main (self):
+    async def main (self):
         no_problem_in_run = True
         try:
-            self.update_status('Started')
+            self.update_status('Started cravat')
             self.set_and_check_input_files()
             self.make_module_run_list()
             if self.args.sc == False and \
@@ -327,7 +342,7 @@ class Cravat (object):
                     self.args.rr
                 ):
                 print('Running reporter...')
-                no_problem_in_run = self.run_reporter()
+                no_problem_in_run = await self.run_reporter()
             self.update_status('Finished')
         except Exception as e:
             self.handle_exception(e)
@@ -347,6 +362,7 @@ class Cravat (object):
                 print('Check {}'.format(self.log_path))
                 self.update_status('Error')
             self.close_logger()
+            self.status_writer.flush()
 
     def handle_exception (self, e):
         exc_str = traceback.format_exc()
@@ -377,13 +393,13 @@ class Cravat (object):
             for m in self.excludes:
                 if m in self.annotators:
                     del self.annotators[m]
-        self.input = os.path.abspath(self.args.input)
+        self.inputs = [os.path.abspath(x) for x in self.args.inputs]
         self.run_name = self.args.run_name
-        if self.run_name == None:
-            self.run_name = os.path.basename(self.input)
+        if self.run_name == None: #todo set run name different if multiple inputs
+            self.run_name = os.path.basename(self.inputs[0])
         self.output_dir = self.args.output_dir
         if self.output_dir == None:
-            self.output_dir = os.path.dirname(os.path.abspath(self.input))
+            self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
         else:
             self.output_dir = os.path.abspath(self.output_dir)
         if os.path.exists(self.output_dir) == False:
@@ -414,18 +430,21 @@ class Cravat (object):
             self.logmode = 'a'
 
     def set_and_check_input_files (self):
-        if self.input.split('.')[-1] == 'crv':
-            self.crvinput = self.input
-        else:
-            self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
-        if self.input.split('.')[-1] == 'crx':
-            self.crxinput = self.input
-        else:
-            self.crxinput = os.path.join(self.output_dir, self.run_name + '.crx')
-        if self.input.split('.')[-1] == 'crg':
-            self.crginput = self.input
-        else:
-            self.crginput = os.path.join(self.output_dir, self.run_name + '.crg')
+        self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
+        self.crxinput = os.path.join(self.output_dir, self.run_name + '.crx')
+        self.crginput = os.path.join(self.output_dir, self.run_name + '.crg')
+        # if self.input.split('.')[-1] == 'crv':
+        #     self.crvinput = self.input
+        # else:
+        #     self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
+        # if self.input.split('.')[-1] == 'crx':
+        #     self.crxinput = self.input
+        # else:
+        #     self.crxinput = os.path.join(self.output_dir, self.run_name + '.crx')
+        # if self.input.split('.')[-1] == 'crg':
+        #     self.crginput = self.input
+        # else:
+        #     self.crginput = os.path.join(self.output_dir, self.run_name + '.crg')
 
         if os.path.exists(self.crvinput):
             self.crv_present = True
@@ -439,7 +458,6 @@ class Cravat (object):
             self.crg_present = True
         else:
             self.crg_present = False
-        
 
     def make_module_run_list (self):
         self.ordered_annotators = []
@@ -447,9 +465,20 @@ class Cravat (object):
         for module in self.annotators.values():
             self.add_annotator_to_queue(module)
         annot_names = [v.name for v in self.ordered_annotators]
+        annot_names = list(set(annot_names))
+        filenames = os.listdir(self.output_dir)
+        for filename in filenames:
+            toks = filename.split('.')
+            if len(toks) == 3:
+                extension = toks[2]
+                if toks[0] == self.run_name and\
+                    (extension == 'var' or extension == 'gen'):
+                    annot_name = toks[1]
+                    if annot_name not in annot_names:
+                        annot_names.append(annot_name)
         annot_names.sort()
         if self.runlevel <= self.runlevels['annotator']:
-            cu.update_status_json(self, 'annotators', annot_names)
+            self.status_writer.queue_status_update('annotators', annot_names, force=True)
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
@@ -500,15 +529,17 @@ class Cravat (object):
                                  name='converter',
                                  script_path=converter_path)
         cmd = [module.script_path,
-                self.input,
+                *self.inputs,
                '-n', self.run_name,
                '-d', self.output_dir,
                '-l', self.input_assembly]
+        if self.args.forcedinputformat is not None:
+            cmd.extend(['-f', self.args.forcedinputformat])
         self.announce_module(module)
         if self.verbose:
             print(' '.join(cmd))
         converter_class = util.load_class('MasterCravatConverter', module.script_path)
-        converter = converter_class(cmd)
+        converter = converter_class(cmd, self.status_writer)
         converter.run()
 
     def run_genemapper (self):
@@ -523,7 +554,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         genemapper_class = util.load_class('Mapper', module.script_path)
-        genemapper = genemapper_class(cmd)
+        genemapper = genemapper_class(cmd, self.status_writer)
         genemapper.run()
 
     def run_aggregator (self):
@@ -607,7 +638,7 @@ class Cravat (object):
             rtime = time.time() - stime
             print('finished in {0:.3f}s'.format(rtime))
 
-    def run_reporter (self):
+    async def run_reporter (self):
         if self.reports != None:
             module_names = [v + 'reporter' for v in self.reports]
         else:
@@ -624,10 +655,11 @@ class Cravat (object):
                        '--module-name', module_name]
                 if self.verbose:
                     print(' '.join(cmd))
-                reporter_cls = util.load_class('Reporter', module.script_path)
-                reporter = reporter_cls(cmd)
+                Reporter = util.load_class('Reporter', module.script_path)
+                reporter = Reporter(cmd, self.status_writer)
+                await reporter.prep()
                 stime = time.time()
-                reporter.run()
+                await reporter.run()
                 rtime = time.time() - stime
                 print('finished in {0:.3f}s'.format(rtime))
             except Exception as e:
@@ -662,7 +694,8 @@ class Cravat (object):
                     elif input_format == 'crx':
                         inputpath = self.crxinput
                     else:
-                        inputpath = self.input
+                        raise Exception('Incorrect input_format value')
+                        # inputpath = self.input
                 else:
                     inputpath = self.crvinput
             elif module.level == 'gene':
@@ -685,20 +718,15 @@ class Cravat (object):
             if self.output_dir != None:
                 cmd.extend(['-d', self.output_dir])
             all_cmds.append(cmd)
-        # Logging queue
-        manager = mp.Manager()
-        annot_log_queue = manager.Queue()
+        ds = [self.status_writer for i in range(len(self.ordered_annotators))]
         pool_args = zip(
             self.ordered_annotators,
             all_cmds,
-            len(self.ordered_annotators)*[annot_log_queue]
-            )
+            ds,
+        )
         self.logger.removeHandler(self.log_handler)
-        #ql = QueueListener(annot_log_queue, *self.logger.handlers)
         with mp.Pool(processes=num_workers) as pool:
-            #ql.start()
             results = pool.starmap_async(run_annotator_mp, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
-            #ql.stop()
             pool.close()
             pool.join()
         try:
@@ -732,7 +760,7 @@ class Cravat (object):
         created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         q = 'insert into info values ("Result created at", "' + created + '")'
         cursor.execute(q)
-        q = 'insert into info values ("Input file name", "' + self.input + '")'
+        q = 'insert into info values ("Input file name", "{}")'.format(';'.join(self.inputs)) #todo adapt to multiple inputs
         cursor.execute(q)
         q = 'insert into info values ("Input genome", "' + self.input_assembly + '")'
         cursor.execute(q)
@@ -792,3 +820,46 @@ class Cravat (object):
     def announce_module (self, module):
         print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
         self.update_status('Running {title} ({name})'.format(title=module.title, name=module.name))
+
+class StatusWriter:
+    def __init__ (self, status_json_path):
+        self.status_json_path = status_json_path
+        self.status_queue = []
+        self.load_status_json() 
+        self.t = time.time()
+        self.lock = False
+
+    def load_status_json (self):
+        f = open(self.status_json_path)
+        lines = '\n'.join(f.readlines())
+        self.status_json = json.loads(lines)
+        f.close()
+
+    def add_annotator_version_to_status_json (self, annotator_name, version):
+        if 'annotator_version' not in self.status_json:
+            self.status_json['annotator_version'] = {}
+        self.status_json['annotator_version'][annotator_name] = version
+        self.queue_status_update('annotator_version', self.status_json['annotator_version'])
+
+    def queue_status_update (self, k, v, force=False):
+        self.status_json[k] = v
+        if force == True or\
+                (time.time() - self.t > 3 and self.lock == False):
+            self.lock = True
+            self.update_status_json()
+            self.t = time.time()
+            self.lock = False
+
+    def update_status_json (self):
+        wf = open(self.status_json_path, 'w')
+        json.dump(self.status_json, wf)
+        wf.close()
+
+    def get_status_json (self):
+        return self.status_json
+
+    def flush (self):
+        self.lock = True
+        self.update_status_json()
+        self.t = time.time()
+        self.lock = False

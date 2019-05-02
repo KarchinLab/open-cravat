@@ -305,6 +305,16 @@ input:checked + .store-switch-slider:before {
     border-bottom: 1px dotted #aaaaaa;
 }
 
+#moduledetaildiv-infodiv {
+    height: 100%;
+    overflow: auto;
+    line-height: 18px;
+}
+
+#moduledetaildiv-infodiv>div {
+    margin-top: 12px;
+}
+
 #yesnodialog {
 	position: fixed;
     font-size: 14px;
@@ -367,12 +377,12 @@ input:checked + .store-switch-slider:before {
 }
 
 #store-systemmoduleupdate-announce-div {
-    position: absolute;
+    position: fixed;
     top: 48px;
     right: 10px;
     font-size: 12px;
     color: #f7684b;
-    z-index: 300;
+    z-index: 201;
     display: none;
 }
 
@@ -392,6 +402,26 @@ input:checked + .store-switch-slider:before {
     width: 100%;
     min-height: 100px;
     color: white;
+}
+
+#store-noconnect-div {
+    display: none;
+    position: fixed;
+    top: 94px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 94px);
+    z-index: 9;
+    text-align: center;
+    background-color: rgba(100, 100, 100, 0.77);
+}
+
+#store-noconnect-msg-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    color: #cddc39;
 }
 
 #pageselect {

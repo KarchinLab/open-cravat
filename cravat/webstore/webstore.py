@@ -15,14 +15,13 @@ from cravat import store_utils as su
 from cravat import constants
 import cravat.admin_util as au
 import markdown
+import shutil
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
 install_queue = None
 install_state = None
 install_worker = None
-install_ws = None
-last_update_time = 0
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -82,21 +81,24 @@ def fetch_install_queue (install_queue, install_state):
     while True:
         try:
             data = install_queue.get()
-            au.refresh_cache()
+            #au.refresh_cache()
+            au.mic.update_local()
             module_name = data['module']
             module_version = data['version']
             stage_handler = InstallProgressMpDict(module_name, module_version, install_state)
             au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
-            au.refresh_cache()
+            #au.refresh_cache()
+            au.mic.update_local()
             time.sleep(1)
         except:
             sys.exit()
 
 ###################### start from store_handler #####################
 
-def get_remote_manifest(request):
+async def get_remote_manifest(request):
     try:
-        au.mic.update_remote()
+        if au.mic.remote == {}:
+            au.mic.update_remote()
         content = au.mic.remote
     except:
         traceback.print_exc()
@@ -111,7 +113,6 @@ def get_remote_manifest(request):
         install_queue.put({'module': module, 'version': version})
     try:
         counts = au.get_download_counts()
-        
     except:
         traceback.print_exc()
         counts = {}
@@ -119,7 +120,7 @@ def get_remote_manifest(request):
         content[mname]['downloads'] = counts.get(mname,0)
     return web.json_response(content)
 
-def get_remote_module_config (request):
+async def get_remote_module_config (request):
     queries = request.rel_url.query
     module = queries['module']
     conf = au.get_remote_module_config(module)
@@ -128,18 +129,19 @@ def get_remote_module_config (request):
     response = conf
     return web.json_response(response)
 
-def get_local_manifest (request):
-    au.refresh_cache()
+async def get_local_manifest (request):
+    #au.refresh_cache()
+    au.mic.update_local()
     content = {}
     for k, v in au.mic.local.items():
         content[k] = v.serialize()
     return web.json_response(content)
 
-def get_storeurl (request):
+async def get_storeurl (request):
     conf = au.get_system_conf()
     return web.Response(text=conf['store_url'])
 
-def get_module_readme (request):
+async def get_module_readme (request):
     module_name = request.match_info['module']
     version = request.match_info['version']
     if version == 'latest': 
@@ -237,7 +239,7 @@ async def install_module (request):
         response = 'failure'
     return web.json_response(content)
 
-def install_widgets_for_module (request):
+async def install_widgets_for_module (request):
     queries = request.rel_url.query
     module_name = queries['name']
     au.install_widgets_for_module(module_name)
@@ -265,11 +267,8 @@ def start_worker ():
         install_worker.start()
 
 async def connect_websocket (request):
-    global install_worker
     global install_state
-    global install_ws
-    global last_update_time
-    if install_state == None or len(install_state.keys()) == 0:
+    if not install_state:
         install_state['stage'] = ''
         install_state['message'] = ''
         install_state['module_name'] = ''
@@ -279,9 +278,7 @@ async def connect_websocket (request):
         install_state['cur_size'] = 0
         install_state['total_size'] = 0
         install_state['update_time'] = time.time()
-        last_update_time = install_state['update_time']
-    if install_ws != None:
-        await install_ws.close()
+    last_update_time = install_state['update_time']
     install_ws = web.WebSocketResponse(timeout=60*60*24*365)
     await install_ws.prepare(request)
     while True:
@@ -292,12 +289,11 @@ async def connect_websocket (request):
             data['msg'] = install_state['message']
             if data['msg'].startswith('Downloading'):
                 data['msg'] = data['msg'] + ' ' + str(install_state['cur_chunk']) + '%'
-            print(data['msg'])
             await install_ws.send_str(json.dumps(data))
             last_update_time = install_state['update_time']
     return install_ws
 
-def queue_install (request):
+async def queue_install (request):
     global install_queue
     queries = request.rel_url.query
     if 'version' in queries:
@@ -312,7 +308,7 @@ def queue_install (request):
         install_queue.put({'module':dep_name,'version':dep_version})
     return web.Response(text = 'queued ' + queries['module'])
 
-def get_base_modules (request):
+async def get_base_modules (request):
     global system_conf
     base_modules = system_conf['base_modules']
     return web.json_response(base_modules)
@@ -328,11 +324,11 @@ async def install_base_modules (request):
         response = 'failed'
     return web.json_response(response)
 
-def get_md (request):
+async def get_md (request):
     modules_dir = au.get_modules_dir()
     return web.Response(text=modules_dir)
 
-def get_module_updates (request):
+async def get_module_updates (request):
     queries = request.rel_url.query
     smodules = queries.get('modules','')
     if smodules:
@@ -349,6 +345,11 @@ def get_module_updates (request):
     out = {'updates':updatesd,'conflicts':sconflicts}
     return web.json_response(out)
 
+async def get_free_modules_space (request):
+    modules_dir = au.get_modules_dir()
+    free_space = shutil.disk_usage(modules_dir).free
+    return web.json_response(free_space)
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/install', install_module])
@@ -363,4 +364,5 @@ routes.append(['GET', '/store/getbasemodules', get_base_modules])
 routes.append(['GET', '/store/installbasemodules', install_base_modules])
 routes.append(['GET', '/store/remotemoduleconfig', get_remote_module_config])
 routes.append(['GET', '/store/getmd', get_md])
-routes.append(['GET','/store/updates', get_module_updates])
+routes.append(['GET', '/store/updates', get_module_updates])
+routes.append(['GET', '/store/freemodulesspace', get_free_modules_space])

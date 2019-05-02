@@ -5,10 +5,11 @@ from cravat.config_loader import ConfigLoader
 import cravat.constants as constants
 
 class Reporter (CravatReport):
-    def __init__ (self, cmd_args):
+
+    def __init__ (self, cmd_args, status_writer):
         self.no_log = True
         self.no_status_update = True
-        super().__init__(cmd_args)
+        super().__init__(cmd_args, status_writer)
 
     def setup (self):
         self.data = {}

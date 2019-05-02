@@ -71,8 +71,12 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 		for (var i = 0; i < viewerWidgetSettings['info'].length; i++) {
 			var setting = viewerWidgetSettings['info'][i];
 			if (setting['widgetkey'] == widgetName) {
-				width = parseInt(setting['width'].replace('px', ''));
-				height = parseInt(setting['height'].replace('px', ''));
+                if (setting['width'] != undefined) {
+                    width = parseInt(setting['width'].replace('px', ''));
+                }
+                if (setting['height'] != undefined) {
+                    height = parseInt(setting['height'].replace('px', ''));
+                }
 				if (setting['word-break'] != undefined){
 					wordBreak = setting['word-break'];
 				}
@@ -348,7 +352,7 @@ function saveWidgetSetting (name) {
     });
 }
 
-function saveLayoutSetting (name) {
+function saveLayoutSetting (name, nextAction) {
 	var saveData = {};
 	// Table layout
 	saveData['tableSettings'] = {};
@@ -497,6 +501,9 @@ function saveLayoutSetting (name) {
 		success: function (response) {
 			lastUsedLayoutName = name;
 			writeLogDiv('Layout setting has been saved.');
+            if (nextAction == 'quicksave') {
+                saveFilterSetting(name, true);
+            }
 		}
     });
 }
@@ -561,7 +568,7 @@ function applyWidgetSetting (level) {
 			var setting = settings[i];
 			for (var j = 0; j < items.length; j++) {
 				var item = items[j];
-				if (item.element.id == setting.id) {
+				if (item.element.getAttribute('widgetkey') == setting.widgetkey) {
 					item.element.style.top = setting['top'];
 					item.element.style.left = setting['left'];
 					item.element.style.width = setting['width'];
@@ -823,4 +830,60 @@ function toggleAutoLayoutSave () {
 		a.text = 'Autosave';
 		writeLogDiv('Layout autosave disabled');
 	}
+}
+
+function setServerStatus (connected) {
+	var loadingDiv = document.getElementById('connection-lost-div');
+    if (! connected) {
+		if (loadingDiv === null) {
+			var loadingDiv = getEl('div');
+			loadingDiv.id = 'connection-lost-div';
+			loadingDiv.className = 'data-retrieving-msg-div';
+			var loadingTxtDiv = getEl('div');
+			loadingTxtDiv.className = 'data-retrieving-msg-div-content';
+			var span = getEl('span');
+			span.textContent = 'Lost connection to server';
+			addEl(loadingTxtDiv, span);
+            addEl(loadingTxtDiv, getEl('br'));
+			var span = getEl('span');
+			span.textContent = 'Please launch OpenCRAVAT again.';
+			addEl(loadingTxtDiv, span);
+			addEl(loadingDiv, loadingTxtDiv);
+			var dW = document.body.offsetWidth;
+			var dH = document.body.offsetHeight;
+			loadingDiv.style.top = 0;
+			loadingDiv.style.left = 0;
+			jobDataLoadingDiv = loadingDiv;
+			var parentDiv = document.body;
+			addEl(parentDiv, loadingDiv);
+		}
+    } else {
+		if (loadingDiv !== null) {
+			loadingDiv.parentNode.removeChild(loadingDiv);
+		}
+    }
+}
+
+function checkConnection(failures) {
+	failures = failures !== undefined ? failures : 0;
+    var host = window.location.host;
+    if (failures>=3) {
+        setServerStatus(false);
+    }
+    var ws = new WebSocket(`ws://${host}/heartbeat`);
+    ws.onopen = function (evt) {
+        setServerStatus(true);
+        failures=0;
+    }
+    ws.onclose = function (evt) {
+        failures += 1;
+        var waitTime = 2000*failures;
+        setTimeout(function() {
+            checkConnection(failures);
+        }, waitTime)
+    }
+    ws.onerror = function(evt) {
+    }
+    ws.onmessage = function (evt) {
+    }
 }

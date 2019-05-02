@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="websubmit.css">
     <link rel="stylesheet" href="/store/webstore.css">
     <script src="/submit/jquery-3.3.1.min.js"></script>
-    <script src="websubmit.js?ver=1.4.0"></script>
-    <script src='../store/webstore.js?ver=1.4.0'></script>
+    <script src="websubmit.js?ver=1.4.4"></script>
+    <script src='../store/webstore.js?ver=1.4.4'></script>
     <script>
         $(document).ready(function() {
             websubmit_run();
@@ -97,7 +97,7 @@
 </div>
 
 <div id='store-systemmoduleupdate-announce-div'>
-    System is outdated. 
+    System update available
     <button id='store-systemmoduleupdate-button' onclick='onClickSystemModuleUpdateButton();'>Update</button>
 </div>
 <div id='verdiv' >
@@ -132,18 +132,29 @@
                 </div>
                 <table>
                     <tr>
-                        <td valign='top' class='variant-input-border-bottom'>
+                        <td valign='top' class='variant-input-border-bottom' title="Upload file(s). Select multiple files using ctrl and shift keys">
                                 <br />
                             Upload:
-                            <input type="file" name="input-file" id="input-file" />
+                            <input type="file" name="input-file" id="input-file" multiple/>
+                            <div id="mult-inputs-message" style="display: none">
+                                Files:
+                                <div id="mult-inputs-list"></div>
+                            </div>
+                            
                         </td>
                     </tr><tr>
                         <td valign='top' class='variant-input-border-bottom' style='text-align: right;'>
                             <br />
-                            <div>
-                                Type:
+                            <div style='text-align: left;'>
+                                <span style='vertical-align: top;'>Type:</span>
                                 <textarea rows="1" id="input-text" style='' placeholder="Input text" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
+                            <span style='font-size: 9px;'>(Force format:</span>
+                            <select id='submit-input-format-select'>
+                                <option value=''></option>
+                                <option value='vcf'>VCF</option>
+                            </select>
+                            <span style='font-size: 10px;'>)</span>
                             <span style='font-size: 13px;'>Example:</span>
                             <button value="vcf" class='input-example-button'>VCF</button>
                             <button value="cravat" class='input-example-button'>tsv</button>
@@ -291,7 +302,7 @@
         <br />
     </div>
     <div id='store-systemmodule-update-div' style='display: none;'>
-        System modules are updating...
+        System updates in progress...
     </div>
     <div id='store-systemmodule-msg-div'>
     </div>
@@ -308,7 +319,17 @@
     <br />
     <button onclick='onClickSaveSystemConf();'>Save</button>
     <button onclick='resetSystemConf();'>Reset</button>
+    <br />
+    <button onclick='openTerminal();'>Open open-cravat terminal</button>
 </div> <!-- settingsdiv -->
+
+<div id='store-noconnect-div'>
+    <div id='store-noconnect-msg-div'>
+        Lost connection to the server.
+        <br />
+        Please launch OpenCRAVAT again.
+    </div>
+</div>
 
 </body>
 </html>

@@ -55,6 +55,13 @@ class LocalModuleInfo (object):
         self.conf_path = os.path.join(self.directory, self.name+'.yml')
         self.conf_exists = os.path.exists(self.conf_path)
         self.exists = self.conf_exists
+        startofinstall_path = os.path.join(self.directory, 'startofinstall')
+        if os.path.exists(startofinstall_path):
+            endofinstall_path = os.path.join(self.directory, 'endofinstall')
+            if os.path.exists(endofinstall_path):
+                self.exists = True
+            else:
+                self.exists = False
         self.data_dir = os.path.join(dir_path, 'data')
         self.data_dir_exists = os.path.isdir(self.data_dir)
         self.has_data = self.data_dir_exists \
@@ -148,6 +155,8 @@ class RemoteModuleInfo(object):
         self.title = kwargs.get('title','')
         self.description = kwargs.get('description','')
         self.size = kwargs.get('size',0)
+        self.data_size = kwargs.get('data_size',0)
+        self.code_size = kwargs.get('code_size',0)
         self.datasource = kwargs.get('datasource', '')
         self.hidden = kwargs.get('hidden',False)
         if self.datasource == None:
@@ -224,7 +233,8 @@ class ModuleInfoCache(object):
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
-        self.update_remote()
+        if mic.remote == {}:
+            self.update_remote()
         # Resolve name and version
         if module_name not in self.remote:
             raise LookupError(module_name)
@@ -246,7 +256,8 @@ class ModuleInfoCache(object):
         return readme
     
     def get_remote_config(self, module_name, version=None):
-        self.update_remote()
+        if mic.remote == {}:
+            self.update_remote()
         if version == None:
             version = self.remote[module_name]['latest_version']
         # Check cache
@@ -262,11 +273,11 @@ class ModuleInfoCache(object):
             self.remote_config[module_name][version] = config
         return config
     
-    def get_code_size(self, module_name, version):
-        code_url = self._store_path_builder.module_code(module_name, version)
-        r = requests.get(code_url)
-        r.close()
-        return int(r.headers['Content-Length'])
+    # def get_code_size(self, module_name, version):
+    #     code_url = self._store_path_builder.module_code(module_name, version)
+    #     r = requests.get(code_url)
+    #     r.close()
+    #     return int(r.headers['Content-Length'])
 
 def get_widgets_for_annotator(annotator_name, skip_installed=False):
     """
@@ -296,7 +307,8 @@ def list_remote():
     """
     Returns a list of remotely available modules.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     return sorted(list(mic.remote.keys()))
 
 def get_local_module_infos(types=[], names=[]):
@@ -354,7 +366,8 @@ def module_exists_remote(module_name, version=None, include_private=False):
     """
     Returns true if a module (optionally versioned) exists in remote
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     found = False
     if module_name in mic.remote:
         if version is None:
@@ -376,14 +389,16 @@ def get_remote_latest_version(module_name):
     """
     Returns latest remotely available version of a module.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     return mic.remote[module_name]['latest_version']
 
 def get_remote_module_info(module_name):
     """
     Returns a RemoteModuleInfo object for a module.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     if module_exists_remote(module_name, version=None):
         mdict = mic.remote[module_name]
         module = RemoteModuleInfo(module_name, **mdict)
@@ -546,6 +561,8 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             os.makedirs(module_dir)
         else:
             uninstall_module_code(module_name)
+        wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
+        wf.close()
         zipfile_path = os.path.join(module_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
         r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, **kwargs)
@@ -560,17 +577,16 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         code_manifest = yaml.load(su.get_file_to_string(code_manifest_url))
         su.verify_against_manifest(module_dir, code_manifest)
         os.remove(zipfile_path)
-        mic.update_local()
-        local_info = get_local_module_info(module_name)
+        local_info = LocalModuleInfo(module_dir)
         if (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
             data_url = store_path_builder.module_data(module_name, remote_data_version)
-            if local_info.data_dir_exists:
-                uninstall_module_data(module_name)
             data_fname = '.'.join([module_name,'data','zip'])
             data_path = os.path.join(module_dir, data_fname)
             stage_handler.stage_start('download_data')
             r = su.stream_to_file(data_url, data_path, stage_handler=stage_handler.stage_progress, **kwargs)
             if r.status_code == 200:
+                if local_info.data_dir_exists:
+                    uninstall_module_data(module_name)
                 stage_handler.stage_start('extract_data')
                 zf = zipfile.ZipFile(data_path)
                 zf.extractall(module_dir)
@@ -587,11 +603,15 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                 raise(requests.HTTPError(r))
         mic.update_local()
         stage_handler.stage_start('finish')
+        wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
+        wf.close()
         if module_name.startswith('wg') == False:
-            try:
-                install_module('wg' + module_name)
-            except:
-                pass
+            wgmodule_name = 'wg' + module_name
+            if module_exists_remote(wgmodule_name):
+                try:
+                    install_module('wg' + module_name)
+                except:
+                    traceback.print_exc()
     except:
         try:
             shutil.rmtree(module_dir)
@@ -606,7 +626,8 @@ def get_remote_data_version(module_name, version):
     Get the data version to install for a module.
     Return the input version if module_name or version is not found.
     """
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     try:
         manifest_entry = mic.remote[module_name]
     except KeyError:
@@ -691,7 +712,8 @@ def get_local_module_infos_of_type (t):
 
 def get_remote_module_infos_of_type (t):
     modules = {}
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     for module_name in mic.remote:
         if mic.remote[module_name]['type'] == t:
             modules[module_name] = mic.remote[module_name] 
@@ -1001,7 +1023,8 @@ def get_download_counts ():
     return counts
 
 def get_install_deps (module_name, version=None, skip_installed=True):
-    mic.update_remote()
+    if mic.remote == {}:
+        mic.update_remote()
     # If input module version not provided, set to highest
     if version is None:
         version = get_remote_latest_version(module_name)
@@ -1082,11 +1105,12 @@ def get_updatable(modules=[], strategy='consensus'):
                         passing_versions.append(version)
                 selected_version = passing_versions[-1] if passing_versions else None
         if selected_version and LooseVersion(selected_version) > LooseVersion(local_info.version):
-            remote_data_version = get_remote_data_version(mname, selected_version)
-            if remote_data_version is not None and remote_data_version != local_info.version:
+            update_data_version = get_remote_data_version(mname, selected_version)
+            installed_data_version = get_remote_data_version(mname, local_info.version)
+            if update_data_version is not None and update_data_version != installed_data_version:
                 update_size = remote_info.size
             else:
-                update_size = mic.get_code_size(mname, selected_version)
+                update_size = remote_info.code_size
             update_vers[mname] = SimpleNamespace(version=selected_version, size=update_size)
         else:
             resolution_failed[mname] = reqs

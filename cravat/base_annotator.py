@@ -30,8 +30,9 @@ class BaseAnnotator(object):
                              'crg':[x['name'] for x in crg_def]}
     required_conf_keys = ['level', 'output_columns']
 
-    def __init__(self, cmd_args):
+    def __init__(self, cmd_args, status_writer):
         try:
+            self.status_writer = status_writer
             self.logger = None
             main_fpath = cmd_args[0]
             main_basename = os.path.basename(main_fpath)
@@ -67,10 +68,6 @@ class BaseAnnotator(object):
                 self.annotator_display_name = os.path.basename(self.annotator_dir).upper()
             self.dbconn = None
             self.cursor = None
-
-            # Loads status.json file.
-            if self.update_status_json_flag:
-                cu.load_status_json(self)
         except Exception as e:
             self._log_exception(e)
 
@@ -162,9 +159,6 @@ class BaseAnnotator(object):
                 self.update_status_json_flag = True
             else:
                 self.update_status_json_flag = False
-            if self.update_status_json_flag:
-                status_fname = '{}.status.json'.format(self.output_basename)
-                self.status_fpath = os.path.join(self.output_dir, status_fname)
             if parsed_args.conf:
                 self.job_conf_path = parsed_args.conf
         except Exception as e:
@@ -173,7 +167,7 @@ class BaseAnnotator(object):
     # Runs the annotator.
     def run(self):
         if self.update_status_json_flag:
-            cu.update_status_json(self, 'status', 'Started {} ({})'.format(self.conf['title'], self.annotator_name))
+            self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.conf['title'], self.annotator_name))
         try:
             start_time = time.time()
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
@@ -185,7 +179,7 @@ class BaseAnnotator(object):
                     if self.update_status_json_flag:
                         cur_time = time.time()
                         if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
-                            cu.update_status_json(self, 'status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
+                            self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
                             last_status_update_time = cur_time
                     if secondary_data == {}:
                         output_dict = self.annotate(input_data)
@@ -214,32 +208,27 @@ class BaseAnnotator(object):
             print('        {}: finished at {}'.format(self.annotator_name, time.asctime(time.localtime(end_time))))
             run_time = end_time - start_time
             self.logger.info('runtime: {0:0.3f}s'.format(run_time))
-            print('        {}: runtime {}s'.format(self.annotator_name, run_time))
+            print('        {}: runtime {:0.3f}s'.format(self.annotator_name, run_time))
             if self.update_status_json_flag:
-                self.add_annotator_version_to_status_json()
-                cu.update_status_json(self, 'status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
+                version = self.conf.get('version', 'unknown')
+                self.status_writer.add_annotator_version_to_status_json(self.annotator_name, version)
+                self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
         except Exception as e:
             self._log_exception(e)
-        #self.log_handler.close()
-        #if self.output_basename == '__dummy__':
-        #    os.remove(self.log_path)
+        if hasattr(self, 'log_handler'):
+            self.log_handler.close()
+        if self.output_basename == '__dummy__':
+            os.remove(self.log_path)
 
     def postprocess (self):
         pass
 
-    def add_annotator_version_to_status_json (self):
-        if 'annotator_version' not in self.status_json:
-            self.status_json['annotator_version'] = {}
-        version = self.conf.get('version', 'unknown')
-        self.status_json['annotator_version'][self.annotator_name] = version
-        cu.update_status_json(self, 'annotator_version', self.status_json['annotator_version'])
-
-    def get_gene_summary_data (self, cf):
+    async def get_gene_summary_data (self, cf):
         cols = [self.annotator_name + '__' + coldef['name'] \
                 for coldef in self.conf['output_columns']]
         cols[0] = 'base__hugo'
         gene_collection = {}
-        for d in cf.get_variant_iterator_filtered_uids_cols(cols):
+        async for d in cf.get_variant_iterator_filtered_uids_cols(cols):
             hugo = d['hugo']
             if hugo == None:
                 continue

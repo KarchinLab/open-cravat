@@ -193,6 +193,18 @@ const filterTestChangeHandler = (event) => {
     testSel[0].setAttribute('prevselidx', testSel[0].selectedIndex);
 }
 
+function swapJson (d) {
+    var newd = {};
+    for (var k in d) {
+        var v = d[k];
+        if (newd[v] == undefined) {
+            newd[v] = [];
+        }
+        newd[v].push(k);
+    }
+    return newd;
+}
+
 const populateFilterValues = (valsContainer, testName, value) => {
     valsContainer.empty();
     const testDesc = filterTests[testName];
@@ -209,36 +221,60 @@ const populateFilterValues = (valsContainer, testName, value) => {
         addEl(valsContainer[0], select);
         var optionValues = column.filter.options;
         var writtenOptionValues = [];
+        var valToKeys = null;
+        if (valSubDicKeys.length == 0) {
+            valToKeys = {};
+            for (var i = 0; i < optionValues.length; i++) {
+                var val = optionValues[i];
+                valToKeys[val] = [val];
+            }
+        } else {
+            valToKeys = swapJson(valSubDic);
+        }
+        /*
         if (value != undefined) {
             for (var j = 0; j < value.length; j++) {
                 for (let k = 0; k < valSubDicKeys.length; k++) {
                     const key = valSubDicKeys[k];
-                    value[j] = value[j].replace(new RegExp('\\bkey\\b', 'g'), valSubDic[key]);
+                    value[j] = value[j].replace(new RegExp('\\b' + key + '\\b', 'g'), valSubDic[key]);
                 }
             }
         }
+        */
         if (optionValues != undefined) {
             for (var j = 0; j < optionValues.length; j++) {
                 var optionValue = optionValues[j];
                 if (optionValue == null) {
                     continue;
                 }
+                /*
                 for (let k = 0; k < valSubDicKeys.length; k++) {
                     const key = valSubDicKeys[k];
-                    optionValue = optionValue.replace(new RegExp('\\bkey\\b', 'g'), valSubDic[key]);
+                    optionValue = optionValue.replace(new RegExp('\\b' + key + '\\b', 'g'), valSubDic[key]);
                 }
+                */
                 let vals = optionValue.split(';');
                 for (let k = 0; k < vals.length; k++) {
                     let val = vals[k];
+                    var keys = valToKeys[val];
                     if (writtenOptionValues.indexOf(val) < 0) {
                         writtenOptionValues.push(val);
                         var option = getEl('option');
-                        option.value = val;
+                        if (keys == undefined) {
+                            option.value = val;
+                        } else {
+                            option.value = keys[0];
+                        }
                         option.textContent = val;
-                        if (value != undefined) {
+                        if (value != undefined && keys != undefined) {
                             for (var l = 0; l < value.length; l++) {
-                                if (value[l] == val) {
-                                    option.selected = true;
+                                for (var m = 0; m < keys.length; m++) {
+                                    if (value[l] == keys[m]) {
+                                        option.selected = true;
+                                        break;
+                                    }
+                                }
+                                if (option.selected == true) {
                                     break;
                                 }
                             }
@@ -622,30 +658,26 @@ const loadFilter = (filter) => {
 const filterTests = {
     equals: {title:'equals', inputs: 1, colTypes: ['string', 'float', 'int', 'select'], },
     lessThanEq: {title:'<=', inputs: 1, colTypes: ['float', 'int']},
-    lessThan: {title:'<', inputs:1, colTypes: ['float', 'int']},
+    lessThan: {title:'<', inputs:1, colTypes: ['float']},
     greaterThanEq: {title:'>=', inputs:1, colTypes: ['float', 'int']},
-    greaterThan: {title:'>', inputs:1, colTypes: ['float', 'int']},
+    greaterThan: {title:'>', inputs:1, colTypes: ['float']},
     hasData: {title:'has data', inputs:0, colTypes: ['float', 'int', 'string']},
     noData: {title:'is empty', inputs:0, colTypes: ['float', 'int', 'string']},
     stringContains: {title: 'contains', inputs:1, colTypes: ['string']},
-    stringStarts: {title: 'starts with', inputs:1, colTypes: ['string']},
-    stringEnds: {title: 'ends with', inputs:1, colTypes: ['string']},
     between: {title: 'in range', inputs:2, colTypes: ['float', 'int']},
     select: {title: 'one of', inputs: 1, colTypes: ['select']},
 }
 
 const filterTestNames = [
+    'hasData',
     'equals',
+    'noData',
     'between',
     'lessThanEq',
     'lessThan',
     'greaterThanEq',
     'greaterThan',
-    'hasData',
-    'noData',
     'stringContains',
-    'stringStarts',
-    'stringEnds',
     'select',
 ];
 

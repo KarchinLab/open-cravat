@@ -168,10 +168,18 @@ class WebServer (object):
         self.app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
         self.app.router.add_static('/submit', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
         self.app.router.add_get('/hello', hello)
+        self.app.router.add_get('/heartbeat', heartbeat)
         ws.start_worker()
 
 async def hello(request):
     return web.Response(text='OpenCRAVAT server is running here. '+str(dt.datetime.now()))
+
+async def heartbeat(request):
+    ws = web.WebSocketResponse(timeout=60*60*24*365)
+    await ws.prepare(request)
+    async for msg in ws:
+        pass
+    return ws
 
 def main ():
     '''
@@ -223,8 +231,9 @@ def main ():
     serv = get_server()
     hello_url = 'http://{host}:{port}/hello'.format(host=serv.get('host'),port=serv.get('port'))
     try:
-        r = requests.get(hello_url, timeout=1)
-        print('{}:{} already in use'.format(serv['host'], serv['port']))
+        r = requests.get(hello_url, timeout=0.01)
+        # print('{}:{} already in use'.format(serv['host'], serv['port']))
+        print('OpenCRAVAT is already running.')
         return
     except requests.exceptions.ConnectionError:
         pass

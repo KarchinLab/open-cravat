@@ -19,3 +19,8 @@ from .store_utils import ProgressStager
 from .webresult.webresult import *
 from .webstore.webstore import *
 from .cravat_class import Cravat, cravat_cmd_parser
+
+def system_ready():
+    if not admin_util.module_exists_local('hg38'):
+        return False, 'No mapper installed. Try running "cravat-admin install-base" to fix.'
+    return True,''

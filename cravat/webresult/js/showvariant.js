@@ -1,4 +1,4 @@
-function getWidgetTableFrame (columnWidths) {
+function getWidgetTableFrame () {
 	var table = getEl('table');
 	table.style.fontSize = '12px';
 	table.style.borderSpacing = '0px';
@@ -6,14 +6,16 @@ function getWidgetTableFrame (columnWidths) {
 	table.style.borderTop = widgetTableBorderStyle;
 	table.style.borderBottom = widgetTableBorderStyle;
 	table.style.tableLayout = 'fixed';
+	table.style['word-break'] = 'break-all';
 	table.style.width = 'calc(100% - 0px)';
-	table.setAttribute('columnwidths', columnWidths);
+	table.style['table-layout'] = 'fixed';
 	return table;
 }
 
 function getWidgetTableHead (headers, widths) {
 	var thead = getEl('thead');
 	thead.style.textAlign = 'left';
+	thead.style['word-break'] = 'normal';
 	thead.style.borderBottom = widgetTableBorderStyle;
 	var tr = getEl('tr');
 	var numBorder = headers.length - 1;
@@ -152,7 +154,7 @@ function addBarComponent (outerDiv, row, header, col, tabName) {
 	if (value == null) {
 		value = '';
 	} else {
-		value = value.toFixed(3);
+        value = value.toFixed(3);
 	}
 	
 	// Div
@@ -347,45 +349,60 @@ function showVariantDetail (row, tabName) {
 	var orderNums = Object.keys(detailWidgetOrder[tabName]);
 	for (var i = 0; i < orderNums.length; i++) {
 		var colGroupKey = detailWidgetOrder[tabName][orderNums[i]];
-		if (widgetGenerators[colGroupKey] == undefined) {
-			continue;
-		}
-		var colGroupTitle = infomgr.colgroupkeytotitle[colGroupKey];
-		if (colGroupTitle == undefined) {
-			colGroupTitle = widgetGenerators[colGroupKey]['name'];
-		}
-		if (widgetGenerators[colGroupKey][tabName] != undefined && 
-			widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
-			var generator = widgetGenerators[colGroupKey][tabName];
-			var widgetDiv = null;
-			var detailContentDiv = null;
-			if (reuseWidgets) {
-				widgetContentDiv = document.getElementById(
-					'widgetcontentdiv_' + colGroupKey + '_' + tabName);
-				if (generator['donterase'] != true) {
-					$(widgetContentDiv).empty();
-				}
-				generator['function'](widgetContentDiv, row, tabName);
-			} else {
-				[widgetDiv, widgetContentDiv] = 
-					getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
-                generator['variables']['parentdiv'] = widgetContentDiv;
-                if (generator['init'] != undefined) {
-                    generator['init']();
+        try {
+            if (widgetGenerators[colGroupKey] == undefined) {
+                continue;
+            }
+            var colGroupTitle = infomgr.colgroupkeytotitle[colGroupKey];
+            if (colGroupTitle == undefined) {
+                colGroupTitle = widgetGenerators[colGroupKey]['name'];
+            }
+            if (widgetGenerators[colGroupKey][tabName] != undefined && 
+                widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
+                var generator = widgetGenerators[colGroupKey][tabName];
+                var widgetDiv = null;
+                var detailContentDiv = null;
+                var shouldDraw = false;
+                if (generator['shoulddraw'] != undefined) {
+                    shouldDraw = generator['shoulddraw']();
+                } else {
+                    shouldDraw = true;
                 }
-				generator['function'](widgetContentDiv, row, tabName);
-				widgetDiv.style.width = generator['width'] + 'px';
-				widgetDiv.style.height = generator['height'] + 'px';
-                var setting = getViewerWidgetSettingByWidgetkey(tabName, colGroupKey);
-                if (setting != null) {
-                    var display = setting['display'];
-                    if (display != undefined) {
-                        widgetDiv.style.display = display;
+                if (reuseWidgets) {
+                    widgetContentDiv = document.getElementById(
+                        'widgetcontentdiv_' + colGroupKey + '_' + tabName);
+                    if (generator['donterase'] != true) {
+                        $(widgetContentDiv).empty();
+                    }
+                    if (shouldDraw) {
+                        generator['function'](widgetContentDiv, row, tabName);
+                    }
+                } else {
+                    [widgetDiv, widgetContentDiv] = 
+                        getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
+                    generator['variables']['parentdiv'] = widgetContentDiv;
+                    if (generator['init'] != undefined) {
+                        generator['init']();
+                    }
+                    widgetDiv.style.width = generator['width'] + 'px';
+                    widgetDiv.style.height = generator['height'] + 'px';
+                    addEl(outerDiv, widgetDiv);
+                    if (shouldDraw) {
+                        generator['function'](widgetContentDiv, row, tabName);
+                    }
+                    var setting = getViewerWidgetSettingByWidgetkey(tabName, colGroupKey);
+                    if (setting != null) {
+                        var display = setting['display'];
+                        if (display != undefined) {
+                            widgetDiv.style.display = display;
+                        }
                     }
                 }
-				addEl(outerDiv, widgetDiv);
-			}
-		}
+            }
+        } catch (err) {
+            console.log(err);
+            console.log('### continuing to the next widget ###');
+        }
 	}
 	if (reuseWidgets == false) {
 		$outerDiv.packery({
@@ -398,6 +415,7 @@ function showVariantDetail (row, tabName) {
 			handle: '.detailwidgettitle',
             stop: function (evt, ui) {
                 $outerDiv.packery();
+                loadedViewerWidgetSettings[currentTab] = undefined;
             },
 		}).resizable({
 			grid: [widgetGridSize, widgetGridSize],
@@ -438,25 +456,52 @@ function showVariantDetail (row, tabName) {
                 var sEvt = evt;
                 var sUi = ui;
                 $(sEvt.target.parentElement).packery('fit', sUi.element[0]);
+                loadedViewerWidgetSettings[currentTab] = undefined;
             },
 		});
 		$outerDiv.packery('bindUIDraggableEvents', $widgets);
 		var resizeTimeout;
 		$outerDiv.on('layoutComplete', onLayoutComplete);
 	}
+	for (var i = 0; i < orderNums.length; i++) {
+		var colGroupKey = detailWidgetOrder[tabName][orderNums[i]];
+        if (widgetGenerators[colGroupKey] == undefined) {
+            continue;
+        }
+        var widgetDiv = document.getElementById(
+            'detailwidget_' + tabName + '_' + colGroupKey);
+        var display = widgetDiv.style.display;
+        if (widgetGenerators[colGroupKey][tabName] != undefined) {
+            var generator = widgetGenerators[colGroupKey][tabName];
+            if (generator['showhide'] != undefined) {
+                var state = generator['showhide']();
+                var widgetContainerDiv = document.getElementById('widgetcontentdiv_' + colGroupKey + '_' + tabName);
+                if (state == false) {
+                    var span = getEl('span');
+                    addEl(span, getTn('No data'));
+                    addEl(widgetContainerDiv, span);
+                } else if (state == true) {
+                }
+            }
+        }
+    }
 }
 
 
 function onLayoutComplete () {
-	for (var i = 0; i < viewerWidgetSettings.length; i++) {
-		var setting = viewerWidgetSettings[i];
+    if (viewerWidgetSettings[currentTab] == undefined) {
+        return;
+    }
+	for (var i = 0; i < viewerWidgetSettings[currentTab].length; i++) {
+		var setting = viewerWidgetSettings[currentTab][i];
 		var el = document.getElementById(setting.id);
 		if (el) {
 			el.style.top = setting.top;
 			el.style.left = setting.left;
 			el.style.width = setting.width;
 			el.style.height = setting.height;
-			viewerWidgetSettings.splice(i, 1);
+            el.style.display = setting.display;
+			viewerWidgetSettings[currentTab].splice(i, 1);
 			i--;
 		}
 	}

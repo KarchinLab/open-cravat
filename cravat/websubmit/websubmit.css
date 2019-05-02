@@ -34,7 +34,7 @@ body * {
 }
 
 #pageselect div[selval="t"] {
-    background-color: #bbbbbb;
+    background-color: #c4cdd1;
     color: #000000;
 }
 
@@ -107,7 +107,7 @@ body * {
 
 .divbanner {
     position: absolute;
-    background-color: #c0c0c0;
+    background-color: #c4cdd1;
     width: 100%;
     height: 36px;
     top: 0px;
@@ -280,9 +280,15 @@ button {
     font-size: 24px; 
     padding: 10px; 
     width: 100%; 
-    background-color: #e3e3e3; 
+    background-color: #c4cdd1;
     margin-bottom: 10px;
     border-style: ridge;
+}
+
+.checkbox-group-all-none-div {
+    position: absolute;
+    top: 8px;
+    right: 5px;
 }
 
 .checkbox-group-flexbox {
@@ -294,4 +300,19 @@ button {
     width: 50%;
     overflow: hidden;
     white-space: nowrap;
+}
+
+#submit-input-format-select {
+    font-size: 9px;
+    width: 60px;
+}
+
+#submit-input-format-select option {
+    font-size: 9px;
+}
+
+#mult-inputs-list p {
+    margin-top: 1px;
+    margin-bottom: 1px;
+    margin-left: 40px;
 }
