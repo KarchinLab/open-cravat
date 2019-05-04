@@ -15,6 +15,7 @@ from distutils.version import StrictVersion, LooseVersion
 import pkg_resources
 from collections import defaultdict
 from types import SimpleNamespace
+from . import exceptions
 
 def load_yml_conf(yml_conf_path):
     """
@@ -514,6 +515,8 @@ class InstallProgressHandler(object):
             return 'Verifying %s data integrity' %self.display_name
         elif stage=='finish':
             return 'Finished installation of %s' %self.display_name
+        elif stage == 'killed':
+            return 'Aborted {} installation'.format(self.display_name)
         else:
             raise ValueError(stage)
 
@@ -533,6 +536,10 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         if version is None:
             version = get_remote_latest_version(module_name)
             stage_handler.set_module_version(version)
+        if hasattr(stage_handler, 'install_state') == True:
+            install_state = stage_handler.install_state
+        else:
+            install_state = None
         stage_handler.stage_start('start')
         modules_dir = get_modules_dir()
         sys_conf = get_system_conf()
@@ -561,29 +568,44 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             os.makedirs(module_dir)
         else:
             uninstall_module_code(module_name)
+        if install_state:
+            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                raise exceptions.KillInstallException
         wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
         wf.close()
         zipfile_path = os.path.join(module_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
-        r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, **kwargs)
+        r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
         if r.status_code != 200:
             raise(requests.HTTPError(r))
+        if install_state:
+            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                raise exceptions.KillInstallException
         stage_handler.stage_start('extract_code')
         zf = zipfile.ZipFile(zipfile_path)
         zf.extractall(module_dir)
         zf.close()
+        if install_state:
+            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                raise exceptions.KillInstallException
         stage_handler.stage_start('verify_code')
         code_manifest_url = store_path_builder.module_code_manifest(module_name, version)
         code_manifest = yaml.load(su.get_file_to_string(code_manifest_url))
         su.verify_against_manifest(module_dir, code_manifest)
         os.remove(zipfile_path)
         local_info = LocalModuleInfo(module_dir)
+        if install_state:
+            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                raise exceptions.KillInstallException
         if (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
             data_url = store_path_builder.module_data(module_name, remote_data_version)
             data_fname = '.'.join([module_name,'data','zip'])
             data_path = os.path.join(module_dir, data_fname)
             stage_handler.stage_start('download_data')
-            r = su.stream_to_file(data_url, data_path, stage_handler=stage_handler.stage_progress, **kwargs)
+            r = su.stream_to_file(data_url, data_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
+            if install_state:
+                if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                    raise exceptions.KillInstallException
             if r.status_code == 200:
                 if local_info.data_dir_exists:
                     uninstall_module_data(module_name)
@@ -591,11 +613,17 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                 zf = zipfile.ZipFile(data_path)
                 zf.extractall(module_dir)
                 zf.close()
+                if install_state:
+                    if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                        raise exceptions.KillInstallException
                 stage_handler.stage_start('verify_data')
                 data_manifest_url = store_path_builder.module_data_manifest(module_name, remote_data_version)
                 data_manifest = yaml.load(su.get_file_to_string(data_manifest_url))
                 su.verify_against_manifest(module_dir, data_manifest)
                 os.remove(data_path)
+                if install_state:
+                    if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                        raise exceptions.KillInstallException
             elif r.status_code == 404:
                 # Probably a private module that does not have data
                 pass
@@ -609,17 +637,31 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             wgmodule_name = 'wg' + module_name
             if module_exists_remote(wgmodule_name):
                 try:
-                    install_module('wg' + module_name)
+                    stage_handler.module_name = wgmodule_name
+                    stage_handler.module_version = None
+                    install_module(
+                        'wg' + module_name, 
+                        stage_handler=stage_handler, 
+                        version=None, 
+                        force_data=False)
+                    stage_handler.module_name = module_name
+                    stage_handler.module_version = version
+                    stage_handler.stage_start('finish')
                 except:
                     traceback.print_exc()
-    except:
+    except Exception as e:
+        if type(e) == exceptions.KillInstallException:
+            stage_handler.stage_start('killed')
         try:
             shutil.rmtree(module_dir)
         except (NameError, FileNotFoundError):
             pass
         except:
             raise
-        raise
+        if type(e) == exceptions.KillInstallException:
+            return
+        else:
+            raise
 
 def get_remote_data_version(module_name, version):
     """

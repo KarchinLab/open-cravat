@@ -22,3 +22,6 @@ class CravatProfileException():
 
 class ExpectedException (Exception):
     pass
+
+class KillInstallException (Exception):
+    pass

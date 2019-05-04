@@ -35,8 +35,8 @@ class InstallProgressMpDict(au.InstallProgressHandler):
 
     def __init__(self, module_name, module_version, install_state):
         super().__init__(module_name, module_version)
-        self._module_name = module_name
-        self._module_version = module_version
+        self.module_name = module_name
+        self.module_version = module_version
         self.install_state = install_state
 
     def _reset_progress(self, update_time=False):
@@ -63,12 +63,14 @@ class InstallProgressMpDict(au.InstallProgressHandler):
             self.install_state['update_time'] = time.time()
             last_update_time = self.install_state['update_time']
         self.cur_stage = stage
-        self.install_state['module_name'] = self._module_name
-        self.install_state['module_version'] = self._module_version
+        self.install_state['module_name'] = self.module_name
+        self.install_state['module_version'] = self.module_version
         self.install_state['stage'] = self.cur_stage
         self.install_state['message'] = self._stage_msg(self.cur_stage)
+        self.install_state['kill_signal'] = False
         self._reset_progress()
         self.install_state['update_time'] = time.time()
+        print(self.install_state['message'])
 
     def stage_progress(self, cur_chunk, total_chunks, cur_size, total_size):
         self.install_state['cur_chunk'] = cur_chunk
@@ -81,13 +83,12 @@ def fetch_install_queue (install_queue, install_state):
     while True:
         try:
             data = install_queue.get()
-            #au.refresh_cache()
             au.mic.update_local()
             module_name = data['module']
             module_version = data['version']
+            install_state['kill_signal'] = False
             stage_handler = InstallProgressMpDict(module_name, module_version, install_state)
             au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
-            #au.refresh_cache()
             au.mic.update_local()
             time.sleep(1)
         except:
@@ -278,6 +279,7 @@ async def connect_websocket (request):
         install_state['cur_size'] = 0
         install_state['total_size'] = 0
         install_state['update_time'] = time.time()
+        install_state['kill_signal'] = False
     last_update_time = install_state['update_time']
     install_ws = web.WebSocketResponse(timeout=60*60*24*365)
     await install_ws.prepare(request)
@@ -350,6 +352,22 @@ async def get_free_modules_space (request):
     free_space = shutil.disk_usage(modules_dir).free
     return web.json_response(free_space)
 
+async def kill_install (request):
+    global install_queue
+    global install_state
+    queries = request.rel_url.query
+    module = queries.get('module', None)
+    if 'module_name' in install_state and install_state['module_name'] == module:
+        install_state['kill_signal'] = True
+    if module is not None:
+        tmp_queue_data = []
+        while True:
+            if install_queue.empty():
+                break
+            data = install_queue.get()
+            tmp_queue_data.append([data['module'], data.get('version', '')])
+    return web.json_response('done')
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/install', install_module])
@@ -366,3 +384,4 @@ routes.append(['GET', '/store/remotemoduleconfig', get_remote_module_config])
 routes.append(['GET', '/store/getmd', get_md])
 routes.append(['GET', '/store/updates', get_module_updates])
 routes.append(['GET', '/store/freemodulesspace', get_free_modules_space])
+routes.append(['GET', '/store/killinstall', kill_install])

@@ -584,6 +584,57 @@ function updateFilter () {
     document.getElementById('store-home-button').className = 'store-front-all-button-off';
 }
 
+function onClickModuleTileAbortButton (evt) {
+    var moduleName = evt.target.getAttribute('module');
+    $.ajax({
+        url: '/store/killinstall',
+        data: {'module': moduleName},
+        ajax: true,
+        success: function (response) {
+            moduleChange(null);
+            populateAnnotators();
+        }
+    });
+}
+
+function onClickModuleTileInstallButton (evt) {
+    var button = evt.target;
+    var moduleName = button.getAttribute('module');
+    var installSize = remoteModuleInfo[moduleName].size;
+    $.ajax({
+        url: '/store/freemodulesspace',
+        ajax: true,
+        success: function (response) {
+            var freeSpace = response;
+            var noSpace = false;
+            if (installSize > freeSpace) {
+                noSpace = true;
+            }
+            if (noSpace) {
+                var mdiv = getEl('div');
+                var span = getEl('span');
+                span.textContent = 'Not enough space for installing the module!';
+                addEl(mdiv, span);
+                addEl(mdiv, getEl('br'));
+                addEl(mdiv, getEl('br'));
+                var justOk = true;
+                showYesNoDialog(mdiv, null, noSpace, justOk);
+                return;
+            } else {
+                queueInstall(moduleName);
+                $('div.moduletile button[module=' + moduleName + ']').each(function (i, obj) {
+                    obj.className = 'modulepanel-stopinstall-button';
+                    obj.textContent = 'Abort';
+                    obj.setAttribute('module', moduleName);
+                    obj.removeEventListener('click', onClickModuleDetailInstallButton);
+                    obj.removeEventListener('click', onClickModuleTileInstallButton);
+                    obj.addEventListener('click', onClickModuleTileAbortButton);
+                });
+            }
+        },
+    });
+}
+
 function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     var moduleInfo = remoteModuleInfo[moduleName];
     var div = getEl('div');
@@ -772,41 +823,17 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
         }
     } else {
         var button = getEl('button');
-        button.className = 'modulepanel-install-button';
-        button.textContent = 'Install';
-        button.setAttribute('module', moduleName);
-        button.addEventListener('click', function (evt) {
-            var moduleName = evt.target.getAttribute('module');
-            var installSize = remoteModuleInfo[moduleName].size;
-            $.ajax({
-                url: '/store/freemodulesspace',
-                ajax: true,
-                success: function (response) {
-                    var freeSpace = response;
-                    var noSpace = false;
-                    if (installSize > freeSpace) {
-                        noSpace = true;
-                    }
-                    if (noSpace) {
-                        var mdiv = getEl('div');
-                        var span = getEl('span');
-                        span.textContent = 'Not enough space for installing the module!';
-                        addEl(mdiv, span);
-                        addEl(mdiv, getEl('br'));
-                        addEl(mdiv, getEl('br'));
-                        var justOk = true;
-                        showYesNoDialog(mdiv, null, noSpace, justOk);
-                        return;
-                    } else {
-                        queueInstall(moduleName);
-                    }
-                },
-            });
-        });
         if (installQueue.includes(moduleName)) {
-            button.disabled = true;
+            button.className = 'modulepanel-stopinstall-button';
+            button.textContent = 'Abort';
+            button.setAttribute('module', moduleName);
+            button.removeEventListener('click', onClickModuleTileInstallButton);
+            button.addEventListener('click', onClickModuleTileAbortButton);
         } else {
-            button.disabled = false;
+            button.className = 'modulepanel-install-button';
+            button.textContent = 'Install';
+            button.setAttribute('module', moduleName);
+            button.addEventListener('click', onClickModuleTileInstallButton);
         }
         addEl(div, button);
     }
@@ -989,6 +1016,67 @@ function addLogo (moduleName, sdiv) {
     return img;
 }
 
+function onClicModuleDetailAbortButton (evt) {
+    var moduleName = evt.target.getAttribute('module');
+    $.ajax({
+        url: '/store/killinstall',
+        data: {'module': moduleName},
+        ajax: true,
+    });
+}
+
+function onClickModuleDetailInstallButton (evt) {
+    $.ajax({
+        url: '/store/freemodulesspace',
+        ajax: true,
+        success: function (response) {
+            var freeSpace = response;
+            var btn = evt.target;
+            var btnModuleName = btn.getAttribute('module');
+            if (btnModuleName == 'chasmplus') {
+                var select = document.getElementById('chasmplustissueselect');
+                btnModuleName = select.value;
+            }
+            var installSize = remoteModuleInfo[btnModuleName].size;
+            var noSpace = false;
+            if (installSize > freeSpace) {
+                noSpace = true;
+            }
+            if (noSpace) {
+                var mdiv = getEl('div');
+                var span = getEl('span');
+                span.textContent = 'Not enough space for installing the module!';
+                addEl(mdiv, span);
+                addEl(mdiv, getEl('br'));
+                addEl(mdiv, getEl('br'));
+                var justOk = true;
+                showYesNoDialog(mdiv, null, noSpace, justOk);
+                return;
+            } else {
+                var buttonText = null;
+                if (installQueue.length == 0) {
+                    buttonText = 'Installing...';
+                } else {
+                    buttonText = 'Queued';
+                }
+                queueInstall(btnModuleName);
+                btn.textContent = buttonText;
+                btn.style.color = 'red';
+                document.getElementById('moduledetaildiv_store').style.display = 'none';
+                var moduleName = btn.getAttribute('module');
+                $('div.moduletile button[module=' + moduleName + ']').each(function (i, obj) {
+                    obj.className = 'modulepanel-stopinstall-button';
+                    obj.textContent = 'Abort';
+                    obj.setAttribute('module', moduleName);
+                    obj.removeEventListener('click', onClickModuleDetailInstallButton);
+                    obj.removeEventListener('click', onClickModuleTileInstallButton);
+                    obj.addEventListener('click', onClickModuleTileAbortButton);
+                });
+            }
+        },
+    });
+}
+
 function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     var mInfo = null;
     if (currentTab == 'store') {
@@ -1074,48 +1162,7 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         } else {
             buttonText = 'Install';
             button.style.backgroundColor = '#beeaff';
-            button.addEventListener('click', function (evt) {
-                $.ajax({
-                    url: '/store/freemodulesspace',
-                    ajax: true,
-                    success: function (response) {
-                        var freeSpace = response;
-                        var btn = evt.target;
-                        var btnModuleName = btn.getAttribute('module');
-                        if (btnModuleName == 'chasmplus') {
-                            var select = document.getElementById('chasmplustissueselect');
-                            btnModuleName = select.value;
-                        }
-                        var installSize = remoteModuleInfo[btnModuleName].size;
-                        var noSpace = false;
-                        if (installSize > freeSpace) {
-                            noSpace = true;
-                        }
-                        if (noSpace) {
-                            var mdiv = getEl('div');
-                            var span = getEl('span');
-                            span.textContent = 'Not enough space for installing the module!';
-                            addEl(mdiv, span);
-                            addEl(mdiv, getEl('br'));
-                            addEl(mdiv, getEl('br'));
-                            var justOk = true;
-                            showYesNoDialog(mdiv, null, noSpace, justOk);
-                            return;
-                        } else {
-                            var buttonText = null;
-                            if (installQueue.length == 0) {
-                                buttonText = 'Installing...';
-                            } else {
-                                buttonText = 'Queued';
-                            }
-                            queueInstall(btnModuleName);
-                            btn.textContent = buttonText;
-                            btn.style.color = 'red';
-                            document.getElementById('moduledetaildiv_store').style.display = 'none';
-                        }
-                    },
-                });
-            });
+            button.addEventListener('click', onClickModuleDetailInstallButton);
         }
         button.textContent = buttonText;
         button.style.padding = '8px';
@@ -1701,6 +1748,15 @@ function connectWebSocket () {
             sdiv.textContent = msg;
         }
         if (msg.startsWith('Finished installation of')) {
+            delete installInfo[module];
+            installQueue = installQueue.filter(e => e != module);
+            moduleChange(null);
+            populateAnnotators();
+            if (installQueue.length > 0) {
+                var module = installQueue.shift();
+                installInfo[module] = {'msg': 'installing'};
+            }
+        } else if (msg == 'Installation aborted') {
             delete installInfo[module];
             installQueue = installQueue.filter(e => e != module);
             moduleChange(null);
