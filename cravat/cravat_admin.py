@@ -106,11 +106,11 @@ def main ():
             for i, stok in enumerate(stoks):
                 jline += stok + ' ' * (max_lens[i] + col_spacing - len(stok))
             yield jline
-    
+
     def print_tabular_lines(l, *kwargs):
         for line in yield_tabular_lines(l, *kwargs):
             print(line)
-        
+
     def list_local_modules(pattern=r'.*', types=[], include_hidden=False):
         header = ['Name','Type','Version','Data source ver','Size']
         all_toks = [header]

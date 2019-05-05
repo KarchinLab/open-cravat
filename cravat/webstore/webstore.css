@@ -99,6 +99,14 @@
     background-color: #ffaaaa;
 }
 
+.modulepanel-unqueueinstall-button {
+    position: absolute;
+    bottom: 3px;
+    right: 9px;
+    font-size: 13px;
+    background-color: #ffaaaa;
+}
+
 .moduletile {
     display: inline-block;
     width: 250px;

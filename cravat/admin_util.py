@@ -517,6 +517,8 @@ class InstallProgressHandler(object):
             return 'Finished installation of %s' %self.display_name
         elif stage == 'killed':
             return 'Aborted {} installation'.format(self.display_name)
+        elif stage == 'Unqueued':
+            return 'Unqueued {} from installation'.format(self.display_name)
         else:
             raise ValueError(stage)
 
@@ -633,11 +635,12 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         stage_handler.stage_start('finish')
         wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
         wf.close()
+        '''
         if module_name.startswith('wg') == False:
             wgmodule_name = 'wg' + module_name
             if module_exists_remote(wgmodule_name):
                 try:
-                    stage_handler.module_name = wgmodule_name
+                    stage_handler.module_name = module_name
                     stage_handler.module_version = None
                     install_module(
                         'wg' + module_name, 
@@ -649,6 +652,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                     stage_handler.stage_start('finish')
                 except:
                     traceback.print_exc()
+        '''
     except Exception as e:
         if type(e) == exceptions.KillInstallException:
             stage_handler.stage_start('killed')
