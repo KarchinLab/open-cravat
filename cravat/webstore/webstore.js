@@ -858,6 +858,12 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
             uninstalledModules.push(moduleName);
         }
     }
+    if (moduleInfo.type == 'webviewerwidget') {
+        var sdiv = getEl('div');
+        sdiv.className = 'moduletile-typediv';
+        sdiv.textContent = 'Widget';
+        addEl(div, sdiv);
+    }
     return div
 }
 

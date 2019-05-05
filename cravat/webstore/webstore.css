@@ -157,6 +157,15 @@
     background-image: url('/store/genericmodulelogo.png');
 }
 
+.moduletile-typediv {
+    position: absolute;
+    top: 0px;
+    left: 2px;
+    color: green;
+    font-size: 10px;
+    font-weight: bold;
+}
+
 .panelinstallstatusspan {
     background-color: white;
     font-size: 12px;
