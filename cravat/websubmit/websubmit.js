@@ -290,7 +290,7 @@ function buildJobsTable () {
         if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['excel'] == true) {
             excelButton.css('background-color', '#cccccc');
             excelButton.prop('disabled', true);
-            excelButton.text('being generated...');
+            excelButton.text('Generating...');
         } else {
             if (job.reports.includes('excel') == false) {
                 excelButton.css('background-color', '#cccccc');
@@ -309,7 +309,7 @@ function buildJobsTable () {
         if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['text'] == true) {
             textButton.css('background-color', '#cccccc');
             textButton.prop('disabled', true);
-            textButton.text('being generated...');
+            textButton.text('Generating...');
         } else {
             if (job.reports.includes('text') == false) {
                 textButton.css('background-color', '#cccccc');
