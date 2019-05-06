@@ -367,7 +367,7 @@ class Cravat (object):
     def handle_exception (self, e):
         exc_str = traceback.format_exc()
         exc_class = e.__class__
-        if exc_class == LiftoverFailure or exc_class == InvalidData:
+        if exc_class == InvalidData:
             pass
         elif exc_class == ExpectedException:
             self.logger.exception('An expected exception occurred.')

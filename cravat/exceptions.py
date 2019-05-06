@@ -8,10 +8,8 @@ class BadFormatError(InvalidData):
     pass
 
 class LiftoverFailure(InvalidData):
-    def __init__(self,chrom,pos):
-        msg = '%s:%s' %(chrom,str(pos))
-        super().__init__(msg)
-        
+    pass
+
 class FileIntegrityError(Exception):
     def __init__(self, path):
         super().__init__(path)

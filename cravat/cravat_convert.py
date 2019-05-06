@@ -339,7 +339,7 @@ class MasterCravatConverter(object):
             new_pos = new_coords[0][1]
             return new_chrom, new_pos
         else:
-            raise LiftoverFailure(old_chrom, old_pos)
+            raise LiftoverFailure('Liftover failure')
 
     def _log_conversion_error(self, ln, line, e):
         """ Log exceptions thrown by primary converter.
