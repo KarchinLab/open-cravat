@@ -653,7 +653,7 @@ function onClickModuleTileUnqueueButton (evt) {
 function getModuleTileUnqueueButton (moduleName) {
     var button = getEl('button');
     button.className = 'modulepanel-unqueueinstall-button';
-    button.textContent = 'Unqueue';
+    button.textContent = 'Cancel download';
     button.setAttribute('module', moduleName);
     button.addEventListener('click', onClickModuleTileUnqueueButton);
     return button;
@@ -736,7 +736,7 @@ function getModuleTileInstallButton (moduleName) {
 function getModuleTileAbortButton (moduleName) {
     var button = getEl('button');
     button.className = 'modulepanel-stopinstall-button';
-    button.textContent = 'Abort';
+    button.textContent = 'Cancel download';
     button.setAttribute('module', moduleName);
     button.removeEventListener('click', onClickModuleTileInstallButton);
     button.addEventListener('click', onClickModuleTileAbortButton);
@@ -750,6 +750,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     div.setAttribute('module', moduleName);
     div.setAttribute('modulelistname', moduleListName);
     div.setAttribute('modulelistpos', moduleListPos);
+    div.setAttribute('moduletype', moduleInfo.type);
     var sdiv = getEl('div');
     sdiv.id = 'logodiv_' + moduleName;
     sdiv.className = 'moduletile-logodiv';

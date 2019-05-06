@@ -159,11 +159,15 @@
 
 .moduletile-typediv {
     position: absolute;
-    top: 0px;
-    left: 2px;
+    top: 233px;
+    left: 86px;
     color: green;
     font-size: 10px;
     font-weight: bold;
+}
+
+.moduletile[moduletype=webviewerwidget] {
+    background-color: #f0f6fc;
 }
 
 .panelinstallstatusspan {
