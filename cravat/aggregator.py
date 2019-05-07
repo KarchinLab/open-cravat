@@ -5,7 +5,7 @@ import sqlite3
 import re
 import time
 import logging
-import yaml
+import oyaml as yaml
 from cravat import CravatReader
 from cravat import CravatWriter
 import json

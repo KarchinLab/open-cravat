@@ -2,7 +2,7 @@ import re
 import os
 import importlib
 import sys
-import yaml
+import oyaml as yaml
 import chardet
 
 def get_ucsc_bins (start, stop=None):

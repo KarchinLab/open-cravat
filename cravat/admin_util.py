@@ -2,7 +2,7 @@ import zipfile
 import shutil
 import os
 import sys
-import yaml
+import oyaml as yaml
 import copy
 import json
 from . import constants

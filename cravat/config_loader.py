@@ -1,5 +1,5 @@
 import os
-import yaml
+import oyaml as yaml
 import copy
 from cravat import admin_util as au
 import shutil

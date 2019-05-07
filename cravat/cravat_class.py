@@ -18,7 +18,7 @@ import multiprocessing.managers
 from logging.handlers import QueueListener
 from .aggregator import Aggregator
 from .exceptions import *
-import yaml
+import oyaml as yaml
 import cravat.cravat_util as cu
 import collections
 

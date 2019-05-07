@@ -5,7 +5,7 @@ import pyliftover
 import argparse
 import os
 import sys
-import yaml
+import oyaml as yaml
 import json
 import traceback
 import shutil

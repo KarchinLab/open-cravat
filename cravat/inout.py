@@ -3,7 +3,7 @@ from .exceptions import BadFormatError
 import json
 import re
 from collections import OrderedDict
-import yaml
+import oyaml as yaml
 import json
 import csv
 from io import StringIO

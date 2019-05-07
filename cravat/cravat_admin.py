@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import yaml
+import oyaml as yaml
 import sys
 import traceback
 from cravat import admin_util as au

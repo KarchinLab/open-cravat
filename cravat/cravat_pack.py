@@ -2,7 +2,7 @@ import sys
 import os
 import shutil
 import zipfile
-import yaml
+import oyaml as yaml
 
 def main ():
     dataname = 'data'

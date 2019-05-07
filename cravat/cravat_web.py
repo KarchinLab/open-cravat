@@ -9,7 +9,7 @@ import json
 import sys
 import argparse
 import imp
-import yaml
+import oyaml as yaml
 import re
 from cravat import ConfigLoader
 from cravat import admin_util as au
