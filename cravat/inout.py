@@ -34,6 +34,7 @@ class CravatReader (CravatFile):
         super().__init__(path)
         self.annotator_name = ''
         self.annotator_displayname = ''
+        self.annotator_version = ''
         self.no_aggregate_cols = []
         self.index_columns = []
         self.report_substitution = None
@@ -45,6 +46,8 @@ class CravatReader (CravatFile):
                 self.annotator_name = l.split('=')[1]
             elif l.startswith('#displayname='):
                 self.annotator_displayname = l.split('=')[1]
+            elif l.startswith('#version='):
+                self.annotator_version = l.split('=')[1]
             elif l.startswith('#no_aggregate='):
                 self.no_aggregate_cols = l.split('=')[1].split(',')
             elif l.startswith('#index='):
@@ -104,6 +107,9 @@ class CravatReader (CravatFile):
 
     def get_annotator_displayname (self):
         return self.annotator_displayname
+
+    def get_annotator_version (self):
+        return self.annotator_version
 
     def get_no_aggregate_columns (self):
         return self.no_aggregate_cols
@@ -248,6 +254,8 @@ class CravatWriter(CravatFile):
         line = '#name={:}\n'.format(annotator_name)
         self.wf.write(line)
         line = '#displayname={:}\n'.format(annotator_display_name)
+        self.wf.write(line)
+        line = '#version={:}\n'.format(annotator_version)
         self.wf.write(line)
         self.wf.flush()
 
