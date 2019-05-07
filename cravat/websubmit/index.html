@@ -122,15 +122,19 @@
         <div id="submit-form" style='overflow-y: auto;'>
             <div class='container'>
                 <span class='divtitle'>Variants</span>
-                <div id='assembly-select-div'>
-                    Genome:
-                    <select id="assembly-select">
-                        <option value="hg38">hg38</option>
-                        <option value="hg19" selected=true>hg19</option>
-                        <option value="hg18">hg18</option>
-                    </select>
-                </div>
                 <table>
+                    <tr>
+                        <td>
+                            <div id='assembly-select-div'>
+                                Genome:
+                                <select id="assembly-select">
+                                    <option value="hg38">hg38</option>
+                                    <option value="hg19" selected=true>hg19</option>
+                                    <option value="hg18">hg18</option>
+                                </select>
+                            </div>
+                        </td>
+                    </tr>
                     <tr>
                         <td valign='top' class='variant-input-border-bottom' title="Upload file(s). Select multiple files using ctrl and shift keys">
                                 <br />

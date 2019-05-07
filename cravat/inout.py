@@ -250,7 +250,7 @@ class CravatWriter(CravatFile):
             self.name_to_col_index[col_def['name']] = col_index
         self._ready_to_write = True
 
-    def write_names (self, annotator_name, annotator_display_name):                    
+    def write_names (self, annotator_name, annotator_display_name, annotator_version):
         line = '#name={:}\n'.format(annotator_name)
         self.wf.write(line)
         line = '#displayname={:}\n'.format(annotator_display_name)

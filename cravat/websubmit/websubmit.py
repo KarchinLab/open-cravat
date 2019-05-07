@@ -18,6 +18,8 @@ from distutils.version import LooseVersion
 import glob
 import platform
 
+cfl = ConfigLoader()
+
 class FileRouter(object):
 
     def __init__(self):
@@ -228,6 +230,7 @@ async def submit (request):
     # Liftover assembly
     run_args.append('-l')
     run_args.append(job_options['assembly'])
+    au.set_cravat_conf_prop('last_assembly', job_options['assembly'])
     # Reports
     if len(job_options['reports']) > 0:
         run_args.append('-t')
@@ -403,7 +406,7 @@ def get_valid_report_types():
     return report_types
 
 def get_report_types(request):
-    cfl = ConfigLoader()
+    global cfl
     default_reporter = cfl.get_cravat_conf_value('reporter')
     default_type = default_reporter.split('reporter')[0]
     valid_types = get_valid_report_types()
@@ -688,6 +691,10 @@ end tell'
     response = 'done'
     return web.json_response(response)
 
+def get_last_assembly (request):
+    last_assembly = au.get_last_assembly()
+    return web.json_response(last_assembly)
+
 filerouter = FileRouter()
 VIEW_PROCESS = None
 
@@ -717,6 +724,7 @@ routes.append(['GET', '/submit/changepassword', change_password])
 routes.append(['GET', '/submit/checklogged', check_logged])
 routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
+routes.append(['GET', '/submit/lastassembly', get_last_assembly])
 
 if __name__ == '__main__':
     app = web.Application()

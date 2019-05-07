@@ -1625,12 +1625,23 @@ function addListeners () {
     });
 }
 
+function setLastAssembly () {
+    $.ajax({
+        url: '/submit/lastassembly',
+        ajax: true,
+        success: function (response) {
+            document.getElementById('assembly-select').value = response;
+        },
+    });
+}
+
 function websubmit_run () {
     getServermode();
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
     connectWebSocket();
     checkConnection();
+    setLastAssembly();
     getBaseModuleNames();
     getRemote();
     addListeners();

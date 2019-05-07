@@ -1009,6 +1009,19 @@ def get_system_conf_info ():
     system_conf_info = {'path': confpath, 'exists': confexists, 'content': yaml.dump(conf, default_flow_style=False)}
     return system_conf_info
 
+def get_cravat_conf ():
+    confpath = get_main_conf_path()
+    if os.path.exists(confpath):
+        cravat_conf = load_yml_conf(confpath)
+    else:
+        cravat_conf = {}
+    return cravat_conf
+
+def get_cravat_conf_info ():
+    cravat_conf = get_cravat_conf()
+    cravat_conf_info = {'path': get_main_conf_path(), 'content': yaml.dump(cravat_conf, default_flow_style=False)}
+    return cravat_conf_info
+
 def get_system_conf_info_json ():
     set_jobs_dir(get_jobs_dir())
     confpath = constants.system_conf_path
@@ -1027,6 +1040,18 @@ def show_system_conf ():
     system_conf_info = get_system_conf_info()
     print('Configuration file path:', system_conf_info['path'])
     print(system_conf_info['content'])
+
+def show_cravat_conf ():
+    cravat_conf_info = get_cravat_conf_info()
+    print('Configuration file path:', cravat_conf_info['path'])
+    print(cravat_conf_info['content'])
+
+def set_cravat_conf_prop (key, val):
+    conf = get_cravat_conf()
+    conf[key] = val
+    wf = open(get_main_conf_path(), 'w')
+    yaml.dump(conf, wf, default_flow_style=False)
+    wf.close()
 
 def get_package_versions():
     """
@@ -1156,6 +1181,11 @@ def get_updatable(modules=[], strategy='consensus'):
         else:
             resolution_failed[mname] = reqs
     return update_vers, resolution_applied, resolution_failed
+
+def get_last_assembly ():
+    conf = get_cravat_conf()
+    last_assembly = conf.get('last_assembly', '')
+    return last_assembly
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

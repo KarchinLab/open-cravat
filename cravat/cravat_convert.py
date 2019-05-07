@@ -257,7 +257,8 @@ class MasterCravatConverter(object):
             self.crl_writer.add_columns(assm_crl_def)
             self.crl_writer.write_definition()
             self.crl_writer.write_names(self.input_assembly,
-                                        self.input_assembly.title())
+                                        self.input_assembly.title(),
+                                        '')
 
     def run(self):
         """ Convert input file to a .crv file using the primary converter."""

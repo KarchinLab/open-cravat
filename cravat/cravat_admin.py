@@ -383,6 +383,9 @@ def main ():
     def show_system_conf (args):
         au.show_system_conf()
     
+    def show_cravat_conf (args):
+        au.show_cravat_conf()
+    
     ###########################################################################
     # PARSERS START HERE
     ###########################################################################
@@ -616,6 +619,11 @@ def main ():
     parser_new_annotator = subparsers.add_parser('show-system-conf',
                                                help='shows system configuration.')
     parser_new_annotator.set_defaults(func=show_system_conf)
+    
+    # shows cravat conf content.
+    parser_new_annotator = subparsers.add_parser('show-cravat-conf',
+                                               help='shows cravat configuration.')
+    parser_new_annotator.set_defaults(func=show_cravat_conf)
     
     ###########################################################################
     
