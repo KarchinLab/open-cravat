@@ -1562,6 +1562,12 @@ function addListeners () {
         } else {
             storeModuleDivClicked = true;
         }
+        if (evt.target.id != 'settingsdots' && evt.target.id != 'settingsdiv') {
+            var div = document.getElementById('settingsdiv');
+            if (div != null) {
+                div.style.display = 'none';
+            }
+        }
     });
     window.addEventListener('resize', function (evt) {
         var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
