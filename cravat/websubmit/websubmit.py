@@ -17,6 +17,7 @@ import hashlib
 from distutils.version import LooseVersion
 import glob
 import platform
+import signal
 
 class FileRouter(object):
 
@@ -170,6 +171,7 @@ def get_next_job_id():
 
 async def submit (request):
     global filerouter
+    global job_tracker
     job_id = get_next_job_id()
     jobs_dir = await filerouter.get_jobs_dir(request)
     job_dir = os.path.join(jobs_dir, job_id)
@@ -243,6 +245,7 @@ async def submit (request):
         run_args.append('--forcedinputformat')
         run_args.append(job_options['forcedinputformat'])
     p = subprocess.Popen(run_args)
+    job_tracker.add_job(job_id, p)
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
     # admin.sqlite
@@ -371,7 +374,11 @@ async def view_job(request):
 
 async def delete_job(request):
     global filerouter
+    global job_tracker
     job_id = request.match_info['job_id']
+    if job_tracker.get_process(job_id) is not None:
+        print('Killing job {}'.format(job_id))
+        job_tracker.cancel_job(job_id)
     job_dir = await filerouter.job_dir(request, job_id)
     if os.path.exists(job_dir):
         shutil.rmtree(job_dir)
@@ -688,6 +695,45 @@ end tell'
     response = 'done'
     return web.json_response(response)
 
+class JobTracker (object):
+
+    def __init__(self):
+        self._jobs = {}
+
+    def add_job(self, id, proc):
+        # Add a job to tracking
+        self._jobs[id] = proc
+
+    def get_process(self, id):
+        # Return the process for a job
+        return self._jobs.get(id)
+
+    def cancel_job(self, id):
+        # Cancel a job
+        proc = self._jobs.get(id)
+        if proc:
+            if platform.platform().lower().startswith('windows'):
+                # proc.kill() doesn't work well on windows
+                os.kill(proc.pid, signal.CTRL_C_EVENT)
+            else:
+                proc.kill()
+            del self._jobs[id]
+
+    def clean_jobs(self, id):
+        # Clean up completed jobs
+        to_del = []
+        for id, proc in self._jobs.items():
+            if proc.poll() is not None:
+                to_del.append(id)
+        for id in to_del:
+            del self._jobs[id]
+    
+    def list_jobs(self):
+        # List currently tracked jobs
+        return list(self._jobs.keys())
+
+
+job_tracker = JobTracker()
 filerouter = FileRouter()
 VIEW_PROCESS = None
 
