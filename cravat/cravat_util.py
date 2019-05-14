@@ -5,7 +5,6 @@ import pyliftover
 import argparse
 import os
 import sys
-import oyaml as yaml
 import json
 import traceback
 import shutil
@@ -16,30 +15,37 @@ def get_args ():
         sys.argv.append('-h')
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='Commands')
-    subparser = subparsers.add_parser('hg19tohg38',
+    subparser = subparsers.add_parser('converttohg38',
         help='converts hg19 coordinates in sqlite3 database to hg38 ones.')
     subparser.add_argument('--db',
         nargs='?',
         required=True,
         help='path to sqlite3 database file')
+    subparser.add_argument('--sourcegenome',
+        required=True,
+        help='genome assembly of source database')
     subparser.add_argument('--cols',
         nargs='+',
         required=True,
         help='names of the columns to convert')
     subparser.add_argument('--tables',
+        nargs='*',
         help='table(s) to convert. If omitted, table name will be used as chromosome name.')
     subparser.add_argument('--chromcol',
         required=False,
         help='chromosome column. If omitted, all tables will be tried to be converted.')
-    subparser.set_defaults(func=hg19tohg38)
+    subparser.set_defaults(func=converttohg38)
     args = parser.parse_args()
     return args
 
-def hg19tohg38 (args):
+def converttohg38 (args):
+    if args.sourcegenome not in ['hg18', 'hg19']:
+        print('Source genome should be either hg18 or hg19.')
+        exit()
     if os.path.exists(args.db) == False:
         print(args.db, 'does not exist.')
         exit()
-    liftover = pyliftover.LiftOver(constants.liftover_chain_paths['hg19'])
+    liftover = pyliftover.LiftOver(constants.get_liftover_chain_path_for_src_genome(args.sourcegenome))
     print('Extracting table schema from DB...')
     cmd = ['sqlite3', args.db, '.schema']
     output = subprocess.check_output(cmd)
@@ -108,10 +114,10 @@ def hg19tohg38 (args):
             if chrom.startswith('chr') == False:
                 chrom = 'chr' + chrom
             for colno in colnos:
-                pos = row[colno]
+                pos = int(row[colno])
                 liftover_out = liftover.convert_coordinate(chrom, pos)
                 if liftover_out == None:
-                    print('None:', row)
+                    print('- no liftover mapping:', chrom + ':' + str(pos))
                     continue
                 if liftover_out == []:
                     wf.write(table + ':' + ','.join([str(v) for v in row]) + '\n')
