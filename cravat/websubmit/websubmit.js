@@ -87,10 +87,16 @@ function submit () {
             }
             if (data.expected_runtime > 1800) {
                 var sec_num = Math.ceil(data.expected_runtime);
-                var hours   = Math.floor(sec_num / 3600) % 24
-                var minutes = Math.floor(sec_num / 60) % 60
-                var seconds = sec_num % 60
-                alert(`Expected runtime: ${hours}:${minutes}:${seconds} (h:m:s)`);
+                var hours   = Math.floor(sec_num / 3600) % 24;
+                var minutes = Math.floor(sec_num / 60) % 60;
+                var seconds = sec_num % 60;
+                var alertDiv = getEl('div');
+                var alertSpan = getEl('span');
+                addEl(alertDiv, alertSpan);
+                alertSpan.textContent = `Expected runtime: ${hours}:${minutes}:${seconds} (h:m:s)`;
+                addEl(alertDiv,getEl('br'));
+                addEl(alertDiv,getEl('br'));
+                showYesNoDialog(alertDiv, null, false, true);
             }
             jobRunning[data['id']] = true;
         }
