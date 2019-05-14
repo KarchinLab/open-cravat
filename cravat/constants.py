@@ -18,14 +18,20 @@ default_modules_dir = os.path.join(packagedir, default_modules_dir_relative)
 base_modules_key = 'base_modules'
 main_conf_fname = 'cravat.yml'
 liftover_chains_dir = os.path.join(packagedir, 'liftover')
-liftover_chain_paths = {
-                        'hg19': os.path.join(liftover_chains_dir,
-                                             'hg19ToHg38.over.chain'
-                                             ),
-                        'hg18': os.path.join(liftover_chains_dir,
-                                             'hg18ToHg38.over.chain'
-                                             )
-                        }
+
+def get_liftover_chain_path_for_src_genome (src_genome):
+    for fn in os.listdir(liftover_chains_dir):
+        if fn.upper() == src_genome.upper() + 'ToHg38.over.chain'.upper():
+            return os.path.join(liftover_chains_dir, fn)
+    return None
+
+def get_liftover_chain_paths ():
+    liftover_chain_paths = {}
+    for fn in os.listdir(liftover_chains_dir):
+        if fn.endswith('ToHg38.over.chain'):
+            liftover_chain_paths[fn.replace('ToHg38.over.chain', '')] =\
+                os.path.join(liftover_chains_dir, fn)
+    return liftover_chain_paths
 
 crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'width': 90},
            {'name':'tags', 'title':'User Tags', 'type':'string', 'width': 90},
