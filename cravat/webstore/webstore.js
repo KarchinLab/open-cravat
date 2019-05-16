@@ -1265,9 +1265,11 @@ function getModuleDetailInstallButton (moduleName, td, buttonDiv) {
                     btn.style.color = 'red';
                     document.getElementById('moduledetaildiv_store').style.display = 'none';
                 });
+                /*
                 var img2 = document.getElementById('installedicon');
                 img2.src = '/store/empty.png';
                 img2.title = 'Uninstalled';
+                */
             }
         });
         addEl(td, select);

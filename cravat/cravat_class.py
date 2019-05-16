@@ -8,7 +8,6 @@ from .config_loader import ConfigLoader
 import sqlite3
 import datetime
 from types import SimpleNamespace
-from .constants import liftover_chain_paths
 import json
 import logging
 import traceback
@@ -18,9 +17,10 @@ import multiprocessing.managers
 from logging.handlers import QueueListener
 from .aggregator import Aggregator
 from .exceptions import *
-import yaml
+import oyaml as yaml
 import cravat.cravat_util as cu
 import collections
+from . import constants
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
@@ -161,7 +161,7 @@ cravat_cmd_parser.add_argument('-t',
                     help='report types. If omitted, default one in cravat.yml is used.')
 cravat_cmd_parser.add_argument('-l',
                     dest='liftover',
-                    choices=['hg38', 'hg19', 'hg18'],
+                    choices=['hg38'].extend(list(constants.get_liftover_chain_paths().keys())),
                     default='hg38',
                     help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
 cravat_cmd_parser.add_argument('-x',
@@ -479,6 +479,7 @@ class Cravat (object):
         annot_names.sort()
         if self.runlevel <= self.runlevels['annotator']:
             self.status_writer.queue_status_update('annotators', annot_names, force=True)
+        self.annot_names = annot_names
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
@@ -784,15 +785,26 @@ class Cravat (object):
         q = 'update gene_annotator set version="{}" where name="{}"'.format(version, modulename)
         cursor.execute(q)
         '''
+        q = 'select name, displayname, version from variant_annotator'
+        cursor.execute(q)
+        rows = list(cursor.fetchall())
+        q = 'select name, displayname, version from gene_annotator'
+        cursor.execute(q)
+        tmp_rows = list(cursor.fetchall())
+        if tmp_rows is not None:
+            rows.extend(tmp_rows)
         annotators_str = ''
-        for modulename in self.annotators.keys():
-            annot = self.annotators[modulename]
-            version = annot.conf['version']
-            title = annot.conf['title']
-            level = annot.conf['level']
-            q = 'update {}_annotator set version="{}" where name="{}"'.format(level, version, modulename)
-            cursor.execute(q)
-            annotators_str += '{} ({}), '.format(title, version)
+        annotator_version = {}
+        for row in rows:
+            (name, displayname, version) = row
+            if name in ['base', 'tagsampler', 'hg19', 'hg18']:
+                continue
+            if version is not None and version != '':
+                annotators_str += '{} ({}), '.format(displayname, version)
+            else:
+                annotators_str += '{}, '.format(displayname)
+            annotator_version[name] = version
+        self.status_writer.queue_status_update('annotator_version', annotator_version)
         annotators = annotators_str.rstrip(', ')
         q = 'insert into info values ("Annotators", "' + annotators_str + '")'
         cursor.execute(q)
@@ -835,11 +847,13 @@ class StatusWriter:
         self.status_json = json.loads(lines)
         f.close()
 
+    '''
     def add_annotator_version_to_status_json (self, annotator_name, version):
         if 'annotator_version' not in self.status_json:
             self.status_json['annotator_version'] = {}
         self.status_json['annotator_version'][annotator_name] = version
         self.queue_status_update('annotator_version', self.status_json['annotator_version'])
+    '''
 
     def queue_status_update (self, k, v, force=False):
         self.status_json[k] = v

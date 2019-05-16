@@ -66,6 +66,10 @@ class BaseAnnotator(object):
                 self.annotator_display_name = self.conf['title']
             else:
                 self.annotator_display_name = os.path.basename(self.annotator_dir).upper()
+            if 'version' in self.conf:
+                self.annotator_version = self.conf['version']
+            else:
+                self.annotator_version = ''
             self.dbconn = None
             self.cursor = None
         except Exception as e:
@@ -211,7 +215,7 @@ class BaseAnnotator(object):
             print('        {}: runtime {:0.3f}s'.format(self.annotator_name, run_time))
             if self.update_status_json_flag:
                 version = self.conf.get('version', 'unknown')
-                self.status_writer.add_annotator_version_to_status_json(self.annotator_name, version)
+                #self.status_writer.add_annotator_version_to_status_json(self.annotator_name, version)
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
         except Exception as e:
             self._log_exception(e)
@@ -365,6 +369,8 @@ class BaseAnnotator(object):
                                                    self.annotator_name)
                 self.output_writer.write_meta_line('displayname',
                                                    self.annotator_display_name)
+                self.output_writer.write_meta_line('version',
+                                                   self.annotator_version)
             skip_aggregation = []
             for col_index, col_def in enumerate(self.conf['output_columns']):
                 self.output_writer.add_column(col_index, col_def)

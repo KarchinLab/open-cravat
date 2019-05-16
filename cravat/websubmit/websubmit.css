@@ -185,16 +185,6 @@ button {
 #annotator-select-div span {
 }
 
-#assembly-select-div {
-    position: absolute;
-    top: 12px;
-    right: 7px;
-    height: 21px;
-}
-
-#assembly-select {
-}
-
 .logo {
     width: 260px;
     position: relative;

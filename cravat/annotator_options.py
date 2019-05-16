@@ -1,5 +1,5 @@
 import os
-import yaml
+import oyaml as yaml
 from .exceptions import ConfigurationError
 from .constants import crv_def, crx_def, crg_def
 

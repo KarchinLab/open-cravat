@@ -60,6 +60,8 @@ class BaseAnnotator(object):
                 self.annotator_display_name = self.conf['title']
             else:
                 self.annotator_display_name = os.path.basename(self.annotator_dir).upper()
+            if 'version' in self.conf:
+                self.annotator_version = self.conf['version']
             self.logger.info('Initialized %s' %self.annotator_name)
             
             self.dbconn = None
@@ -342,6 +344,8 @@ class BaseAnnotator(object):
                                                    self.annotator_name)
                 self.output_writer.write_meta_line('displayname',
                                                    self.annotator_display_name)
+                self.output_writer.write_meta_line('version',
+                                                   self.annotator_version)
 #                 self.output_writer.write_names(self.annotator_name,
 #                                                self.annotator_display_name)
             skip_aggregation = []
