@@ -98,7 +98,7 @@ class MasterCravatConverter(object):
                                  +'Default is input file directory.')
         parser.add_argument('-l','--liftover',
                             dest='liftover',
-                            choices=list(constants.get_liftover_chain_paths().keys()),
+                            choices=['hg38']+list(constants.liftover_chain_paths.keys()),
                             default='hg38',
                             help='Input gene assembly. Will be lifted over to hg38')
         parsed_args = parser.parse_args(args)
@@ -119,7 +119,7 @@ class MasterCravatConverter(object):
         self.input_assembly = parsed_args.liftover
         self.do_liftover = self.input_assembly != 'hg38'
         if self.do_liftover:
-            self.lifter = LiftOver(constants.get_liftover_chain_path_for_src_genome(self.input_assembly))
+            self.lifter = LiftOver(constants.liftover_chain_paths[self.input_assembly])
         else:
             self.lifter = None
         self.status_fpath = os.path.join(self.output_dir, self.output_base_fname + '.status.json')
@@ -272,7 +272,6 @@ class MasterCravatConverter(object):
             write_lnum = 0
             num_errors = 0
             for l in f:
-                print(l)
                 cur_fname = os.path.basename(f.name)
                 samp_prefix = '.'.join(cur_fname.split('.')[:-1])
                 read_lnum += 1
@@ -302,10 +301,8 @@ class MasterCravatConverter(object):
                         if self.do_liftover:
                             prelift_wdict = copy.copy(wdict)
                             try:
-                                # pyliftover uses 0-based coordinates.
                                 wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'],
-                                                                            int(wdict['pos']) - 1)
-                                wdict['pos'] += 1
+                                                                            wdict['pos'])
                             except LiftoverFailure as e:
                                 num_errors += 1
                                 self._log_conversion_error(read_lnum, l, e)

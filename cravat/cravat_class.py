@@ -8,6 +8,7 @@ from .config_loader import ConfigLoader
 import sqlite3
 import datetime
 from types import SimpleNamespace
+from .constants import liftover_chain_paths
 import json
 import logging
 import traceback
@@ -20,7 +21,6 @@ from .exceptions import *
 import oyaml as yaml
 import cravat.cravat_util as cu
 import collections
-from . import constants
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
@@ -161,7 +161,7 @@ cravat_cmd_parser.add_argument('-t',
                     help='report types. If omitted, default one in cravat.yml is used.')
 cravat_cmd_parser.add_argument('-l',
                     dest='liftover',
-                    choices=['hg38'].extend(list(constants.get_liftover_chain_paths().keys())),
+                    choices=['hg38', 'hg19', 'hg18'],
                     default='hg38',
                     help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
 cravat_cmd_parser.add_argument('-x',
