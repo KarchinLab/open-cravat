@@ -489,6 +489,11 @@ async def update_system_conf (request):
     sysconf = json.loads(queries['sysconf'])
     try:
         success = au.update_system_conf_file(sysconf)
+        if 'modules_dir' in sysconf:
+            modules_dir = sysconf['modules_dir']
+            cravat_yml_path = os.path.join(modules_dir, 'cravat.yml')
+            if os.path.exists(cravat_yml_path) == False:
+                au.set_modules_dir(modules_dir)
     except:
         raise
         sysconf = {}
