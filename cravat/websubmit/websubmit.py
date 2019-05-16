@@ -433,7 +433,7 @@ async def get_job_log (request):
         with open(log_path) as f:
             return web.Response(text=f.read())
     else:
-        return web.Response(text='loo file does not exist.')
+        return web.Response(text='log file does not exist.')
 
 def get_valid_report_types():
     reporter_infos = au.get_local_module_infos(types=['reporter'])
