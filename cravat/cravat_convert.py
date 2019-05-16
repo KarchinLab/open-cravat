@@ -98,7 +98,7 @@ class MasterCravatConverter(object):
                                  +'Default is input file directory.')
         parser.add_argument('-l','--liftover',
                             dest='liftover',
-                            choices=list(constants.get_liftover_chain_paths().keys()),
+                            choices=list(constants.get_liftover_chain_paths().keys())+['hg38'],
                             default='hg38',
                             help='Input gene assembly. Will be lifted over to hg38')
         parsed_args = parser.parse_args(args)
@@ -272,7 +272,6 @@ class MasterCravatConverter(object):
             write_lnum = 0
             num_errors = 0
             for l in f:
-                print(l)
                 cur_fname = os.path.basename(f.name)
                 samp_prefix = '.'.join(cur_fname.split('.')[:-1])
                 read_lnum += 1
