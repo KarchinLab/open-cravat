@@ -1616,7 +1616,7 @@ function addListeners () {
         } else {
             storeModuleDivClicked = true;
         }
-        if (evt.target.id != 'settingsdots' && evt.target.id != 'settingsdiv') {
+        if (evt.target.id != 'settingsdots' && evt.target.id != 'settingsdiv' && evt.target.classList.contains('settingsdiv-elem') == false) {
             var div = document.getElementById('settingsdiv');
             if (div != null) {
                 div.style.display = 'none';
