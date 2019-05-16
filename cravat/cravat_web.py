@@ -237,7 +237,7 @@ def main ():
         return
     except requests.exceptions.ConnectionError:
         pass
-    print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
+    print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')
     loop = asyncio.get_event_loop()
     loop.call_later(0.1, wakeup)
     server = WebServer(loop=loop)
