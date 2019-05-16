@@ -220,34 +220,46 @@ async def submit (request):
     expected_runtime = get_expected_runtime(tot_lines, job_options['annotators'])
     job.set_info_values(expected_runtime=expected_runtime)
     run_args = ['cravat']
+    dargs = {}
+    dargs['inputs'] = []
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))
+        dargs['inputs'].append(os.path.join(job_dir, fn))
     # Annotators
     if len(job_options['annotators']) > 0:
         run_args.append('-a')
         run_args.extend(job_options['annotators'])
+        dargs['annotators'] = job_options['annotators']
     else:
         run_args.append('--sa')
         run_args.append('-e')
         run_args.append('*')
+        dargs['sa'] = True
+        dargs['excludes'] = ['*']
     # Liftover assembly
     run_args.append('-l')
     run_args.append(job_options['assembly'])
+    dargs['liftover'] = job_options['assembly']
     au.set_cravat_conf_prop('last_assembly', job_options['assembly'])
     # Reports
     if len(job_options['reports']) > 0:
         run_args.append('-t')
         run_args.extend(job_options['reports'])
+        dargs['reports'] = job_options['reports']
     else:
         run_args.append('--sr')
+        dargs['sr'] = True
     # Note
     if 'note' in job_options:
         run_args.append('--note')
         run_args.append(job_options['note'])
+        dargs['note'] = job_options['note']
     # Forced input format
     if 'forcedinputformat' in job_options:
         run_args.append('--forcedinputformat')
         run_args.append(job_options['forcedinputformat'])
+        dargs['forcedinputformat'] = job_options['forcedinputformat']
+    print(dargs)
     p = subprocess.Popen(run_args)
     job_tracker.add_job(job_id, p)
     status = {'status': 'Submitted'}
