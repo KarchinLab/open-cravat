@@ -812,8 +812,12 @@ def update_system_conf_file(d):
     """
     Recursively update the system config and re-write to disk.
     """
+    print('@@@ d=', d)
+    import traceback
+    traceback.print_stack()
     try:
         sys_conf = recursive_update(get_system_conf(), d)
+        print('#### sys_conf=', sys_conf)
         write_system_conf_file(sys_conf)
         refresh_cache()
         return True
