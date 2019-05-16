@@ -199,9 +199,9 @@ button {
     padding-bottom: 20px; 
     height: 74px; 
     background-color: white; 
-    box-shadow: 0px 0px 20px gray; 
     left: 0px; 
     right: 0px;
+    border-bottom: 1px solid #a7a7a7;
 }
 
 #settingsdiv {

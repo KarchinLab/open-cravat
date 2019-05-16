@@ -3,4 +3,4 @@
 /cravat_view_test.py
 *.bak
 .vscode
-liftover/canFam3ToHg38.over.chain
+liftover/canFam*
