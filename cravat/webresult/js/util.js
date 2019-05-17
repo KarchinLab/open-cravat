@@ -157,11 +157,11 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	});
 	addEl(iconDiv, closeButton);
 
+    /*
 	var hr = getEl('hr');
-    hr.style.margin = '5px';
-    hr.style.marginInlineStart = '0px';
-    hr.style.marginInlineEnd = '0px';
+    hr.className = 'detailwidget-hr';
 	addEl(div, hr);
+    */
 
 	// Content div
 	var detailContentDiv = getEl('div');
