@@ -397,12 +397,9 @@ class Cravat (object):
         self.inputs = [os.path.abspath(x) for x in self.args.inputs]
         self.run_name = self.args.run_name
         if self.run_name == None:
-            print(self.inputs)
             self.run_name = os.path.basename(self.inputs[0])
-            print(self.run_name)
             if len(self.inputs) > 1:
                 self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
-            print(self.run_name)
         self.output_dir = self.args.output_dir
         if self.output_dir == None:
             self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
