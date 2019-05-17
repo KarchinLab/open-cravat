@@ -21,6 +21,7 @@ from .exceptions import *
 import oyaml as yaml
 import cravat.cravat_util as cu
 import collections
+import asyncio
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
@@ -832,6 +833,11 @@ class Cravat (object):
     def announce_module (self, module):
         print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
         self.update_status('Running {title} ({name})'.format(title=module.title, name=module.name))
+
+def run_cravat_job(**kwargs):
+    module = Cravat(**kwargs)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(module.main())
 
 class StatusWriter:
     def __init__ (self, status_json_path):

@@ -513,7 +513,7 @@ function buildJobsTable () {
             }
         } else {
             submittedJob.status = 'Submitted';
-            allJobs.unshift(submittedJob);
+            allJobs.unshift(submittedJob.id);
         }
         i--;
     }
@@ -642,6 +642,17 @@ function deleteJob (jobId) {
             });
         }
     })
+    delete jobRunning[jobId];
+    let delIdx = null;
+    for (var i=0; i<submittedJobs.length; i++) {
+        if (submittedJobs[i].id === jobId) {
+            delIdx = i;
+            break;
+        }
+    }
+    if (delIdx !== null) {
+        submittedJobs = submittedJobs.slice(0,delIdx).concat(submittedJobs.slice(delIdx+1));
+    }
 }
 
 function inputExampleChangeHandler (event) {

@@ -5,7 +5,7 @@ import subprocess
 import yaml
 import json
 from cravat import admin_util as au
-from cravat import ConfigLoader
+from cravat import ConfigLoader, run_cravat_job
 import sys
 import traceback
 import shutil
@@ -18,6 +18,8 @@ from distutils.version import LooseVersion
 import glob
 import platform
 import signal
+import multiprocessing as mp
+import asyncio
 
 cfl = ConfigLoader()
 
@@ -180,7 +182,6 @@ async def submit (request):
     job_dir = os.path.join(jobs_dir, job_id)
     os.makedirs(job_dir, exist_ok=True)
     reader = await request.multipart()
-    input_file = None
     job_options = None
     input_files = []
     while True:
@@ -219,48 +220,31 @@ async def submit (request):
             tot_lines += count_lines(f)
     expected_runtime = get_expected_runtime(tot_lines, job_options['annotators'])
     job.set_info_values(expected_runtime=expected_runtime)
-    run_args = ['cravat']
-    dargs = {}
-    dargs['inputs'] = []
+    cravat_kwargs = {}
+    cravat_kwargs['inputs'] = []
     for fn in input_fnames:
-        run_args.append(os.path.join(job_dir, fn))
-        dargs['inputs'].append(os.path.join(job_dir, fn))
+        cravat_kwargs['inputs'].append(os.path.join(job_dir, fn))
     # Annotators
     if len(job_options['annotators']) > 0:
-        run_args.append('-a')
-        run_args.extend(job_options['annotators'])
-        dargs['annotators'] = job_options['annotators']
+        cravat_kwargs['annotators'] = job_options['annotators']
     else:
-        run_args.append('--sa')
-        run_args.append('-e')
-        run_args.append('*')
-        dargs['sa'] = True
-        dargs['excludes'] = ['*']
+        cravat_kwargs['excludes'] = ['*']
     # Liftover assembly
-    run_args.append('-l')
-    run_args.append(job_options['assembly'])
-    dargs['liftover'] = job_options['assembly']
+    cravat_kwargs['liftover'] = job_options['assembly']
     au.set_cravat_conf_prop('last_assembly', job_options['assembly'])
     # Reports
     if len(job_options['reports']) > 0:
-        run_args.append('-t')
-        run_args.extend(job_options['reports'])
-        dargs['reports'] = job_options['reports']
+        cravat_kwargs['reports'] = job_options['reports']
     else:
-        run_args.append('--sr')
-        dargs['sr'] = True
+        cravat_kwargs['sr'] = True
     # Note
     if 'note' in job_options:
-        run_args.append('--note')
-        run_args.append(job_options['note'])
-        dargs['note'] = job_options['note']
+        cravat_kwargs['note'] = job_options['note']
     # Forced input format
     if 'forcedinputformat' in job_options:
-        run_args.append('--forcedinputformat')
-        run_args.append(job_options['forcedinputformat'])
-        dargs['forcedinputformat'] = job_options['forcedinputformat']
-    print(dargs)
-    p = subprocess.Popen(run_args)
+        cravat_kwargs['forcedinputformat'] = job_options['forcedinputformat']
+    p = mp.Process(target=run_cravat_job, kwargs=cravat_kwargs)
+    p.start()
     job_tracker.add_job(job_id, p)
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
@@ -423,13 +407,12 @@ async def view_job(request):
         return web.Response(status=404)
 
 async def delete_job(request):
-    t=time.time()
     global filerouter
     global job_tracker
     job_id = request.match_info['job_id']
     if job_tracker.get_process(job_id) is not None:
         print('Killing job {}'.format(job_id))
-        job_tracker.cancel_job(job_id)
+        await job_tracker.cancel_job(job_id)
     job_dir = await filerouter.job_dir(request, job_id)
     if os.path.exists(job_dir):
         shutil.rmtree(job_dir)
@@ -759,22 +742,22 @@ class JobTracker (object):
         # Return the process for a job
         return self._jobs.get(id)
 
-    def cancel_job(self, id):
+    async def cancel_job(self, id):
         # Cancel a job
         proc = self._jobs.get(id)
         if proc:
-            if platform.platform().lower().startswith('windows'):
-                # proc.kill() doesn't work well on windows
-                os.kill(proc.pid, signal.CTRL_C_EVENT)
-            else:
-                proc.kill()
+            proc.terminate()
+            while True:
+                await asyncio.sleep(0.25)
+                if not proc.is_alive():
+                    break
             del self._jobs[id]
 
     def clean_jobs(self, id):
         # Clean up completed jobs
         to_del = []
         for id, proc in self._jobs.items():
-            if proc.poll() is not None:
+            if not proc.is_alive():
                 to_del.append(id)
         for id in to_del:
             del self._jobs[id]
