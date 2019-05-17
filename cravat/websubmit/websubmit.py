@@ -67,7 +67,7 @@ class FileRouter(object):
             return os.path.join(jobs_dir, job_id)
 
     async def job_input(self, request, job_id):
-        job_dir, statusjson = await filerouter.job_status(request, job_id)
+        job_dir, statusjson = await self.job_status(request, job_id)
         orig_input_fname = None
         if 'orig_input_fname' in statusjson:
             orig_input_fname = statusjson['orig_input_fname']
@@ -82,16 +82,36 @@ class FileRouter(object):
         else:
             orig_input_path = None
         return orig_input_path
+    
+    async def job_run_name(self, request, job_id):
+        _, statusjson = await self.job_status(request, job_id)
+        run_name = statusjson.get('run_name')
+        if run_name is None:
+            fns = os.listdir(job_dir)
+            for fn in fns:
+                if fn.endswith('.crv'):
+                    run_name = fn[:-4]
+                    break
+        return run_name
+
+    async def job_run_path(self, request, job_id):
+        job_dir, _ = await self.job_status(request, job_id)
+        run_name = await self.job_run_name(request, job_id)
+        if run_name is not None:
+            run_path = os.path.join(job_dir, run_name)
+        else:
+            run_path = None
+        return run_path
 
     async def job_db(self, request, job_id):
-        orig_input_path = await self.job_input(request, job_id)
-        output_fname = orig_input_path + self.db_extension
+        run_path = await self.job_run_path(request, job_id)
+        output_fname = run_path + self.db_extension
         return output_fname
 
     async def job_report(self, request, job_id, report_type):
         ext = self.report_extensions.get(report_type, '.'+report_type)
-        orig_input_path = await self.job_input(request, job_id)
-        report_path = orig_input_path + ext
+        run_path = await self.job_run_path(request, job_id)
+        report_path = run_path + ext
         return report_path
 
     async def job_status (self, request, job_id):
@@ -133,17 +153,14 @@ class FileRouter(object):
     '''
 
     async def job_log (self, request, job_id):
-        orig_input_path = await self.job_input(request, job_id)
-        if orig_input_path is not None:
-            log_path = orig_input_path + '.log'
+        run_path = await self.job_run_path(request, job_id)
+        if run_path is not None:
+            log_path = run_path + '.log'
             if os.path.exists(log_path) == False:
                 log_path = None
         else:
             log_path = None
-        if log_path != None:
-            return log_path
-        else:
-            return None
+        return log_path
 
 class WebJob(object):
     def __init__(self, job_dir, job_status_fpath):
@@ -341,13 +358,14 @@ async def get_job (job_id, request):
     )
     existing_reports = []
     for report_type in get_valid_report_types():
-        ext = filerouter.report_extensions.get(report_type, '.'+report_type)
-        job_input = await filerouter.job_input(request, job_id)
-        if job_input is None:
-            continue
-        report_fname = job_input + ext
-        report_file = os.path.join(job_dir, report_fname)
-        if os.path.exists(report_file):
+        # ext = filerouter.report_extensions.get(report_type, '.'+report_type)
+        # job_input = await filerouter.job_input(request, job_id)
+        # if job_input is None:
+        #     continue
+        # report_fname = job_input + ext
+        # report_file = os.path.join(job_dir, report_fname)
+        report_path = await filerouter.job_report(request, job_id, report_type)
+        if os.path.exists(report_path):
             existing_reports.append(report_type)
     job.set_info_values(reports=existing_reports)
     return job
@@ -455,7 +473,7 @@ async def generate_report(request):
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
     if report_type in get_valid_report_types():
-        job_input = await filerouter.job_input(request, job_id)
+        job_input = await filerouter.job_run_path(request, job_id)
         cmd_args = ['cravat', job_input]
         cmd_args.append('--str')
         cmd_args.extend(['-t', report_type])
