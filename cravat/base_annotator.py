@@ -259,9 +259,12 @@ class BaseAnnotator(object):
     def _log_runtime_exception (self, lnum, line, input_data, e):
         try:
             err_str = traceback.format_exc().rstrip()
-            if err_str not in self.unique_excs:
-                self.unique_excs.append(err_str)
-                self.logger.error(err_str)
+            lines = err_str.split('\n')
+            last_line = lines[-1]
+            err_str_log = '\n'.join(lines[:-1]) + '\n' + ':'.join(last_line.split(':')[:2])
+            if err_str_log not in self.unique_excs:
+                self.unique_excs.append(err_str_log)
+                self.logger.error(err_str_log)
             self.error_logger.error('\n[{:d}]{}\n({})\n#'.format(lnum, line[:-1], str(e)))
         except Exception as e:
             self._log_exception(e, halt=False)
