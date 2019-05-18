@@ -365,7 +365,7 @@ function populateJobDetailTr (job) {
     var annots = job.annotators;
     var annotVers = job.annotator_version;
     var annotVerStr = '';
-    if (annots.length == 0) {
+    if (annots == undefined || annots.length == 0) {
         annotVerStr = 'None';
     } else {
         for (var j = 0; j < annots.length; j++) {
