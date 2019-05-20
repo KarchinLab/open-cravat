@@ -117,6 +117,7 @@ setup(
             'cravat-report=cravat.cravat_report:main',
             'cravat-test=cravat.cravat_test:main',
             'cravat-util=cravat.cravat_util:main',
+            'wincravat=cravat.wincravat:main',
         ]
     },
     cmdclass={
