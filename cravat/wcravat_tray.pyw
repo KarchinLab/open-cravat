@@ -108,7 +108,7 @@ systray = SysTrayIcon(
     "OpenCRAVAT", 
     menu_options, 
     on_quit=on_quit_callback,
-    default_menu_index=1,
+    default_menu_index=0,
 )
 systray.start()
 
