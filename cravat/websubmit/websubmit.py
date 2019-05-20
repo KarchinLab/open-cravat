@@ -84,7 +84,7 @@ class FileRouter(object):
         return orig_input_path
     
     async def job_run_name(self, request, job_id):
-        _, statusjson = await self.job_status(request, job_id)
+        job_dir, statusjson = await self.job_status(request, job_id)
         run_name = statusjson.get('run_name')
         if run_name is None:
             fns = os.listdir(job_dir)
