@@ -103,7 +103,7 @@ def on_quit_callback (arg):
 menu_options = (
     ('Show log', None, show_log),
     ('Hide log', None, hide_log),)
-systray = SysTrayIcon("icon.ico", "OpenCRAVAT", menu_options, on_quit=on_quit_callback)
+systray = SysTrayIcon("icon_16x16.png", "OpenCRAVAT", menu_options, on_quit=on_quit_callback)
 systray.start()
 
 log_window_thread.join()
