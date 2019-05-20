@@ -111,6 +111,8 @@ class FileRouter(object):
     async def job_report(self, request, job_id, report_type):
         ext = self.report_extensions.get(report_type, '.'+report_type)
         run_path = await self.job_run_path(request, job_id)
+        if run_path is None:
+            return None
         report_path = run_path + ext
         return report_path
 
@@ -235,8 +237,7 @@ async def submit (request):
     for fpath in input_fpaths:
         with open(fpath) as f:
             tot_lines += count_lines(f)
-    expected_runtime = get_expected_runtime(tot_lines, job_options['annotators'])
-    job.set_info_values(expected_runtime=expected_runtime)
+    #expected_runtime = get_expected_runtime(tot_lines, job_options['annotators'])
     cravat_kwargs = {}
     cravat_kwargs['inputs'] = []
     for fn in input_fnames:
@@ -365,7 +366,7 @@ async def get_job (job_id, request):
         # report_fname = job_input + ext
         # report_file = os.path.join(job_dir, report_fname)
         report_path = await filerouter.job_report(request, job_id, report_type)
-        if os.path.exists(report_path):
+        if report_path is not None and os.path.exists(report_path):
             existing_reports.append(report_type)
     job.set_info_values(reports=existing_reports)
     return job

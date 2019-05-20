@@ -72,41 +72,78 @@ function submit () {
     var note = document.getElementById('jobnoteinput').value;
     submitOpts.note = note;
     fd.append('options',JSON.stringify(submitOpts));
-    $.ajax({
-        url:'submit',
-        data: fd,
-        type: 'POST',
-        processData: false,
-        contentType: false,
-        success: function (data) {
-            if (data['status']['status'] == 'Submitted') {
-                submittedJobs.push(data);
-                addJob(data);
-                sortJobs();
-                buildJobsTable();
-            }
-            if (data.expected_runtime > 1800) {
-                var sec_num = Math.ceil(data.expected_runtime);
+    // reads number of input lines
+    var reader = new FileReader();
+    var lineCount = 0;
+    var numFileRead = 0;
+    reader.onload = function (evt) {
+        var file = evt.target.result;
+        var allLines = file.split(/\r\n|\n/);
+        allLines.forEach((line) => {
+            lineCount++;
+        });
+        numFileRead++;
+        if (numFileRead == inputFiles.length) {
+            var numAnnots = submitOpts.annotators.length;
+            var mapper_vps = 1000;
+            var annot_vps = 5000;
+            var agg_vps = 8000;
+            var runtimeEst = lineCount*(1/mapper_vps + numAnnots/annot_vps + 1/agg_vps);
+            if (runtimeEst > 1800) {
+                var sec_num = Math.ceil(runtimeEst);
                 var hours   = Math.floor(sec_num / 3600) % 24;
+                hours = ('0' + hours).substr(0, 2);
                 var minutes = Math.floor(sec_num / 60) % 60;
+                minutes = ('0' + minutes).substr(0, 2);
                 var seconds = sec_num % 60;
+                seconds = ('0' + seconds).substr(0, 2);
                 var alertDiv = getEl('div');
                 var alertSpan = getEl('span');
                 addEl(alertDiv, alertSpan);
-                alertSpan.textContent = `Expected runtime: ${hours}:${minutes}:${seconds} (h:m:s)`;
+                alertSpan.textContent = 'Expected runtime: ' + hours + 'hr ' + minutes + 'min ' + seconds + 's';
                 addEl(alertDiv,getEl('br'));
                 addEl(alertDiv,getEl('br'));
-                showYesNoDialog(alertDiv, null, false, true);
+                addEl(alertDiv, addEl(getEl('span'), getTn('Proceed?')));
+                addEl(alertDiv,getEl('br'));
+                showYesNoDialog(alertDiv, commitSubmit, false, false);
+            } else {
+                commitSubmit();
             }
-            jobRunning[data['id']] = true;
         }
-    })
-    $('#submit-job-button').attr('disabled','disabled');
-    setTimeout(function(){
-            $('#submit-job-button').removeAttr('disabled');
-        },
-        1500
-    );
+    };
+    for (var i = 0; i < inputFiles.length; i++) {
+        reader.readAsText(inputFiles[i]);
+    }
+
+    function commitSubmit (proceed) {
+        if (proceed == false) {
+            return;
+        }
+        $.ajax({
+            url:'submit',
+            data: fd,
+            type: 'POST',
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                if (data['status']['status'] == 'Submitted') {
+                    submittedJobs.push(data);
+                    addJob(data);
+                    sortJobs();
+                    buildJobsTable();
+                }
+                if (data.expected_runtime > 0) {
+                }
+                jobRunning[data['id']] = true;
+            }
+        })
+        $('#submit-job-button').attr('disabled','disabled');
+        setTimeout(function(){
+                $('#submit-job-button').removeAttr('disabled');
+            },
+            1500
+        );
+    }
 };
 
 function sortJobs () {
