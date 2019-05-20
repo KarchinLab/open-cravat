@@ -64,7 +64,7 @@ class LogWriter (threading.Thread):
         while True:
             if self.stopped.is_set():
                 break
-            self.stopped.wait(1)
+            self.stopped.wait(0.5)
             global wcravat_stdout_queue
             global log_window
             while wcravat_stdout_queue.empty() == False:
