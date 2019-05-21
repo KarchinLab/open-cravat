@@ -193,8 +193,10 @@ def main ():
             new_versions = []
             for version in versions:
                 data_version = data_versions.get(version, None)
+                '''
                 if data_version:
                     version = version + ' (data version ' + data_version + ')'
+                '''
                 new_versions.append(version)
             remote_info.versions = new_versions
             del remote_info.data_versions
