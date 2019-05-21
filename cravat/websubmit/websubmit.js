@@ -76,6 +76,7 @@ function submit () {
     var reader = new FileReader();
     var lineCount = 0;
     var numFileRead = 0;
+    var numInputLineCutoff = parseInt(document.getElementById('settings_num_input_line_warning_cutoff').value);
     reader.onload = function (evt) {
         var file = evt.target.result;
         var allLines = file.split(/\r\n|\n/);
@@ -89,21 +90,44 @@ function submit () {
             var annot_vps = 5000;
             var agg_vps = 8000;
             var runtimeEst = lineCount*(1/mapper_vps + numAnnots/annot_vps + 1/agg_vps);
-            if (runtimeEst > 1800) {
+            if (lineCount > numInputLineCutoff) {
                 var sec_num = Math.ceil(runtimeEst);
                 var hours   = Math.floor(sec_num / 3600) % 24;
-                hours = ('0' + hours).substr(0, 2);
+                if (hours > 0) {
+                    hours = hours + ' hours ';
+                } else if (hours == 1) {
+                    hours = hours + ' hour ';
+                } else {
+                    hours = '';
+                }
                 var minutes = Math.floor(sec_num / 60) % 60;
-                minutes = ('0' + minutes).substr(0, 2);
+                if (minutes > 1) {
+                    minutes = minutes + ' minutes ';
+                } else if (minutes == 1) {
+                    minutes = minutes + ' minute ';
+                } else {
+                    minutes = '';
+                }
                 var seconds = sec_num % 60;
-                seconds = ('0' + seconds).substr(0, 2);
+                if (seconds <= 1) {
+                    seconds = seconds + ' second';
+                } else {
+                    seconds = seconds + ' seconds';
+                }
                 var alertDiv = getEl('div');
-                var alertSpan = getEl('span');
-                addEl(alertDiv, alertSpan);
-                alertSpan.textContent = 'Expected runtime: ' + hours + 'hr ' + minutes + 'min ' + seconds + 's';
+                var span = getEl('span');
+                span.textContent = 'You are submitting ' + lineCount + ' lines of input. Proceed?';
+                addEl(alertDiv, span);
                 addEl(alertDiv,getEl('br'));
                 addEl(alertDiv,getEl('br'));
-                addEl(alertDiv, addEl(getEl('span'), getTn('Proceed?')));
+                var span = getEl('span');
+                span.style.fontSize = '12px';
+                span.textContent = '(Assuming one variant per line, in our benchmark with a typical system with a solid state drive, such a job as this usually took ' + hours + minutes + seconds + '. ';
+                addEl(alertDiv, span);
+                var span = getEl('span');
+                span.style.fontSize = '12px';
+                span.textContent = 'Variant number cutoff for this message can be changed at the Settings menu at the top right corner.)';
+                addEl(alertDiv, span);
                 addEl(alertDiv,getEl('br'));
                 showYesNoDialog(alertDiv, commitSubmit, false, false);
             } else {
@@ -1253,6 +1277,12 @@ function loadSystemConf () {
         }
         var s = document.getElementById('settings_modules_dir_input');
         s.value = response['content']['modules_dir'];
+        var s = document.getElementById('settings_num_input_line_warning_cutoff');
+        var cutoff = response['content']['num_input_line_warning_cutoff'];
+        if (cutoff == undefined) {
+            cutoff = 250000;
+        }
+        s.value = cutoff;
     });
 }
 
@@ -1269,15 +1299,31 @@ function updateSystemConf () {
         response['content']['jobs_dir'] = s.value;
         var s = document.getElementById('settings_modules_dir_input');
         response['content']['modules_dir'] = s.value;
+        var s = document.getElementById('settings_num_input_line_warning_cutoff');
+        response['content']['num_input_line_warning_cutoff'] = s.value;
         $.ajax({
             url:'/submit/updatesystemconf',
             data: {'sysconf': JSON.stringify(response['content'])},
             type: 'GET',
             success: function (response) {
                 if (response['success'] == true) {
-                    alert('System configuration has been updated.');
+                    var mdiv = getEl('div');
+                    var span = getEl('span');
+                    span.textContent = 'System configuration has been updated.';
+                    addEl(mdiv, span);
+                    addEl(mdiv, getEl('br'));
+                    addEl(mdiv, getEl('br'));
+                    var justOk = true;
+                    showYesNoDialog(mdiv, null, false, justOk);
                 } else {
-                    alert('System configuration was not successful');
+                    var mdiv = getEl('div');
+                    var span = getEl('span');
+                    span.textContent = 'System configuration was not successful';
+                    addEl(mdiv, span);
+                    addEl(mdiv, getEl('br'));
+                    addEl(mdiv, getEl('br'));
+                    var justOk = true;
+                    showYesNoDialog(mdiv, null, false, justOk);
                 }
                 if (response['sysconf']['jobs_dir'] != undefined) {
                     populateJobs();
