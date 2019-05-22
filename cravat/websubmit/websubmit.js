@@ -1623,7 +1623,7 @@ function onBlurInputTextArea () {
     input.rows = 1;
 }
 
-function onClickThreeDots () {
+function onClickThreeDots (evt) {
     var div = document.getElementById('settingsdiv');
     var display = div.style.display;
     if (display == 'block') {
@@ -1632,6 +1632,7 @@ function onClickThreeDots () {
         display = 'block';
     }
     div.style.display = display;
+    evt.stopPropagation();
 }
 
 function openTerminal () {
@@ -1693,6 +1694,7 @@ function addListeners () {
     $('#no-annotators-button').click(allNoAnnotatorsHandler);
     $('.input-example-button').click(inputExampleChangeHandler)
     $('#refresh-jobs-table-btn').click(refreshJobsTable);
+    $('.threedotsdiv').click(onClickThreeDots);
     $('.jobsdirinput').change(setJobsDir);
     document.addEventListener('click', function (evt) {
         if (evt.target.classList.contains('moduledetaildiv-submit-elem') == false && evt.target.closest('.moduledetailbutton') == null ) {
