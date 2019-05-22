@@ -188,6 +188,11 @@ cravat_cmd_parser.add_argument('--forcedinputformat',
                     dest='forcedinputformat',
                     default=None,
                     help='Force input format')
+cravat_cmd_parser.add_argument('--cleanup',
+    dest='cleanup',
+    action='store_true',
+    default=False,
+    help='At the end of the run, cravat will erase all intermediary files for the job created by cravat, except the log (.log and .err) and the result (.sqlite) files.')
 
 class MyManager (multiprocessing.managers.SyncManager):
     pass
@@ -364,6 +369,8 @@ class Cravat (object):
                 self.update_status('Error')
             self.close_logger()
             self.status_writer.flush()
+            if no_problem_in_run and self.args.cleanup:
+                self.clean_up_at_end()
 
     def handle_exception (self, e):
         exc_str = traceback.format_exc()
@@ -835,6 +842,17 @@ class Cravat (object):
     def announce_module (self, module):
         print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
         self.update_status('Running {title} ({name})'.format(title=module.title, name=module.name))
+
+    def clean_up_at_end (self):
+        fns = os.listdir(self.output_dir)
+        for fn in fns:
+            fn_path = os.path.join(self.output_dir, fn)
+            if os.path.isfile(fn_path) == False:
+                continue
+            if fn.startswith(self.run_name):
+                fn_end = fn.split('.')[-1]
+                if fn_end in ['var', 'gen', 'crv', 'crx', 'crg', 'crs', 'crm', 'crt', 'json']:
+                    os.remove(os.path.join(self.output_dir, fn))
 
 def run_cravat_job(**kwargs):
     module = Cravat(**kwargs)
