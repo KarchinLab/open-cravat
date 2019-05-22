@@ -25,6 +25,8 @@ var baseToInstall = [];
 var baseInstalled = false;
 var defaultWidgetNames = [];
 var uninstalledModules = [];
+var moduleGroupMembers = {};
+var currentPage = null;
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -42,18 +44,14 @@ function addEl (pelem, child) {
 }
 
 function onClickStoreHome () {
-    var homediv = document.getElementById('store-home-div');
-    var allDiv = document.getElementById('store-allmodule-div');
     var homeButton = document.getElementById('store-home-button');
     var homeButtonClass = homeButton.className;
     if (homeButtonClass == 'store-front-all-button-on') {
-        homediv.style.display = 'none';
-        allDiv.style.display = 'block';
+        showAllModulesDiv();
         homeButton.className = 'store-front-all-button-off';
         updateFilter();
     } else if (homeButtonClass == 'store-front-all-button-off') {
-        homediv.style.display = 'block';
-        allDiv.style.display = 'none';
+        showStoreHome();
         homeButton.className = 'store-front-all-button-on';
         document.getElementById('store-tag-reset-button').className = 'store-front-all-button-off';
     }
@@ -173,6 +171,21 @@ function getLocal () {
                     }
                 }
                 remoteModule.tags = remoteTags;
+                // TODO: change localModule to remoteModule when remote manifest has "in_group". Also, change "= True".
+                var groups = localModule['in_group'];
+                if (groups != undefined && groups != null) {
+                    for (var i = 0; i < groups.length; i++) {
+                        var group = groups[i];
+                        if (remoteModuleInfo[group] == undefined) {
+                            return;
+                        }
+                        if (moduleGroupMembers[group] == undefined) {
+                            moduleGroupMembers[group] = [];
+                        }
+                        moduleGroupMembers[group].push(mn);
+                    }
+                    remoteModuleInfo[mn]['in_group'] = true;
+                }
             }
             baseInstalled = true;
             var moduleNamesInInstallQueue = Object.keys(installInfo);
@@ -284,11 +297,41 @@ function showOrHideUpdateAllButton () {
 function showStoreHome () {
     document.getElementById('store-home-div').style.display = 'block';
     document.getElementById('store-allmodule-div').style.display = 'none';
+    document.getElementById('store-modulegroup-div').style.display = 'none';
 }
 
 function hideStoreHome () {
     document.getElementById('store-home-div').style.display = 'none';
     document.getElementById('store-allmodule-div').style.display = 'block';
+    document.getElementById('store-modulegroup-div').style.display = 'none';
+}
+
+function showAllModulesDiv () {
+    document.getElementById('store-home-div').style.display = 'none';
+    document.getElementById('store-allmodule-div').style.display = 'block';
+    document.getElementById('store-modulegroup-div').style.display = 'none';
+}
+
+function showStoreModuleGroup () {
+    document.getElementById('store-home-div').style.display = 'none';
+    document.getElementById('store-allmodule-div').style.display = 'none';
+    document.getElementById('store-modulegroup-div').style.display = 'block';
+}
+
+function hideStoreModuleGroup () {
+    document.getElementById('store-home-div').style.display = 'none';
+    document.getElementById('store-allmodule-div').style.display = 'block';
+    document.getElementById('store-modulegroup-div').style.display = 'none';
+}
+
+function onClickModuleGroupDivBackArrow (evt) {
+    if (currentPage == 'store-home-div') {
+        showStoreHome();
+    } else if (currentPage == 'store-allmodule-div') {
+        showAllModulesDiv();
+    } else if (currentPage == 'store-modulegroup-div') {
+        showStoreModuleGroup();
+    }
 }
 
 function getMostDownloadedModuleNames () {
@@ -388,7 +431,13 @@ function populateStoreHome () {
     moduleLists['newest'] = newestModules;
     sdiv.style.width = (newestModules.length * storeTileWidthStep) + 'px';
     for (var i = 0; i < newestModules.length; i++) {
-        var panel = getRemoteModulePanel(newestModules[i], 'newest', i);
+        var remoteModuleName = newestModules[i];
+        var panel = null;
+        if (remoteModuleInfo[remoteModuleName]['type'] != 'group') {
+            panel = getRemoteModulePanel(remoteModuleName, 'newest', i);
+        } else {
+            panel = getRemoteModuleGroupPanel(remoteModuleName, 'newest', i);
+        }
         addEl(sdiv, panel);
     }
     addEl(div, sdiv);
@@ -743,6 +792,101 @@ function getModuleTileAbortButton (moduleName) {
     return button;
 }
 
+function populateModuleGroupDiv (moduleGroupName) {
+    document.getElementById('store-modulegroup-title-span').textContent = remoteModuleInfo[moduleGroupName]['title'];
+    var div = document.getElementById('store-modulegroup-content-div');
+    emptyElement(div);
+    var remoteModuleNames = moduleGroupMembers[moduleGroupName];
+    moduleLists['modulegroup'] = remoteModuleNames;
+    for (var i = 0; i < remoteModuleNames.length; i++) {
+        var remoteModuleName = remoteModuleNames[i];
+        var remoteModule = remoteModuleInfo[remoteModuleName];
+        var panel = null;
+        if (remoteModule['type'] != 'group') {
+            panel = getRemoteModulePanel(remoteModuleName, 'modulegroup', i);
+        } else {
+            panel = getRemoteModuleGroupPanel(remoteModuleName, 'modulegroup', i);
+        }
+        addEl(div, panel);
+    }
+    showStoreModuleGroup();
+}
+
+function saveCurrentPage () {
+    var divIds = ['store-home-div', 'store-allmodule-div', 'store-modulegroup-div'];
+    for (var i = 0; i < divIds.length; i++) {
+        var divId = divIds[i];
+        if (document.getElementById(divId).style.display == 'block') {
+            currentPage = divId;
+            break;
+        }
+    }
+}
+
+function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
+    var moduleInfo = remoteModuleInfo[moduleName];
+    var div = getEl('div');
+    div.className = 'moduletile';
+    div.classList.add('modulegroup');
+    div.setAttribute('module', moduleName);
+    div.setAttribute('modulelistname', moduleListName);
+    div.setAttribute('modulelistpos', moduleListPos);
+    div.setAttribute('moduletype', moduleInfo.type);
+    var sdiv = getEl('div');
+    sdiv.id = 'logodiv_' + moduleName;
+    sdiv.className = 'moduletile-logodiv';
+    sdiv.setAttribute('module', moduleName);
+    sdiv.onclick = function (evt) {
+        var moduleName = evt.target.getAttribute('module');
+        saveCurrentPage();
+        populateModuleGroupDiv(moduleName);
+        evt.stopPropagation();
+    }
+    var img = addLogo(moduleName, sdiv);
+    if (img != null) {
+        img.onclick = function (evt) {
+            var moduleName = evt.target.parentElement.getAttribute('module');
+            saveCurrentPage();
+            populateModuleGroupDiv(moduleName);
+            evt.stopPropagation();
+        }
+    }
+    addEl(div, sdiv);
+    var span = null;
+    span = getEl('div');
+    span.className = 'modulepanel-title-span';
+    var moduleTitle = moduleInfo.title;
+    if (moduleTitle.length > 24) {
+        span.style.fontSize = '14px';
+    }
+    addEl(span, getTn(moduleInfo.title));
+    addEl(div, span);
+    span = getEl('span');
+    span.className = 'modulepanel-datasource-span';
+    var datasource = moduleInfo['datasource'];
+    if (datasource == null) {
+        datasource = '';
+    }
+    span.textContent = datasource;
+    span.title = 'Data source version';
+    addEl(div, span);
+    addEl(div, sdiv);
+    addEl(div, getEl('br'));
+    if (moduleInfo.type != 'annotator') {
+        var t = moduleInfo.type;
+        if (t == 'webviewerwidget') {
+            t = 'Widget';
+        } else {
+            t = t.charAt(0).toUpperCase() + t.slice(1);
+        }
+        var sdiv = getEl('div');
+        sdiv.className = 'moduletile-typediv';
+        sdiv.textContent = t;
+        addEl(div, sdiv);
+    }
+    return div
+}
+
 function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     var moduleInfo = remoteModuleInfo[moduleName];
     var div = getEl('div');
@@ -859,10 +1003,16 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
             uninstalledModules.push(moduleName);
         }
     }
-    if (moduleInfo.type == 'webviewerwidget') {
+    if (moduleInfo.type != 'annotator') {
+        var t = moduleInfo.type;
+        if (t == 'webviewerwidget') {
+            t = 'Widget';
+        } else {
+            t = t.charAt(0).toUpperCase() + t.slice(1);
+        }
         var sdiv = getEl('div');
         sdiv.className = 'moduletile-typediv';
-        sdiv.textContent = 'Widget';
+        sdiv.textContent = t;
         addEl(div, sdiv);
     }
     return div
@@ -876,6 +1026,9 @@ function getFilteredRemoteModules () {
         var remoteModuleName = remoteModuleNames[i];
         var remoteModuleNameLower = remoteModuleName.toLowerCase();
         var remoteModule = remoteModuleInfo[remoteModuleName];
+        if (remoteModule['in_group'] != undefined) {
+            continue;
+        }
         if (hasFilter) {
             var typeYes = false;
             var nameYes = false;
@@ -981,13 +1134,6 @@ function getSortedFilteredRemoteModuleNames () {
     return sortedNames;
 }
 
-function showAllModulesDiv () {
-    var homediv = document.getElementById('store-home-div');
-    var allmodulediv = document.getElementById('store-allmodule-div');
-    homediv.style.display = 'none';
-    allmodulediv.style.display = 'block';
-}
-
 function populateAllModulesDiv (group) {
     var div = document.getElementById('remotemodulepanels');
     emptyElement(div);
@@ -995,11 +1141,12 @@ function populateAllModulesDiv (group) {
     moduleLists['all'] = remoteModuleNames;
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
+        var remoteModule = remoteModuleInfo[remoteModuleName];
         if (group == 'basetoinstall') {
             if (baseModuleNames.indexOf(remoteModuleName) == -1) {
                 continue;
             }
-            if (remoteModuleInfo[remoteModuleName].tags.indexOf('installed') > -1) {
+            if (remoteModule.tags.indexOf('installed') > -1) {
                 continue;
             }
         } else {
@@ -1010,8 +1157,12 @@ function populateAllModulesDiv (group) {
                 continue;
             }
         }
-        var remoteModule = remoteModuleInfo[remoteModuleName];
-        var panel = getRemoteModulePanel(remoteModuleName, 'all', i);
+        var panel = null;
+        if (remoteModule['type'] != 'group') {
+            panel = getRemoteModulePanel(remoteModuleName, 'all', i);
+        } else {
+            panel = getRemoteModuleGroupPanel(remoteModuleName, 'all', i);
+        }
         addEl(div, panel);
     }
 }

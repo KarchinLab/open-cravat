@@ -127,6 +127,10 @@ class LocalModuleInfo (object):
             self.datasource = self.conf['datasource']
         else:
             self.datasource = ''
+        if 'in_group' in self.conf:
+            self.in_group = self.conf['in_group']
+        else:
+            self.in_group = None
 
     def is_valid_module(self):
         r = self.exists
