@@ -170,6 +170,13 @@
     background-color: #f0f6fc;
 }
 
+.moduletile-group-updateavailable-span {
+    position: absolute;
+    right: 10px;
+    bottom: 5px;
+    font-size: 10px;
+}
+
 .modulegroup {
     border: 0px;
     background-image: url('/store/folder.png');

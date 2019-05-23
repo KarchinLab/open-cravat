@@ -884,6 +884,24 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
         sdiv.textContent = t;
         addEl(div, sdiv);
     }
+    var members = moduleGroupMembers[moduleName];
+    var updateAvail = false;
+    for (var i = 0; i < members.length; i++) {
+        var member = members[i];
+        if (remoteModuleInfo[member].tags.indexOf('newavailable') != -1) {
+            updateAvail = true;
+            break;
+        }
+    }
+    var span = getEl('button');
+    span.className = 'moduletile-group-updateavailable-span';
+    span.textContent = 'Update available';
+    span.addEventListener('click', function (evt) {
+        saveCurrentPage();
+        populateModuleGroupDiv(evt.target.parentElement.getAttribute('module'));
+        evt.stopPropagation();
+    });
+    addEl(div, span);
     return div
 }
 
@@ -1026,8 +1044,17 @@ function getFilteredRemoteModules () {
         var remoteModuleName = remoteModuleNames[i];
         var remoteModuleNameLower = remoteModuleName.toLowerCase();
         var remoteModule = remoteModuleInfo[remoteModuleName];
+        var newCheck = document.getElementById('store-tag-checkbox-newavailable').checked;
         if (remoteModule['in_group'] != undefined) {
-            continue;
+            var pass = false;
+            if (currentPage == 'storediv-modulegroup-div') {
+                pass = true;
+            } else if (remoteModule['tags'].indexOf('newavailable') != -1 && newCheck == true) {
+                pass = true;
+            }
+            if (pass == false) {
+                continue;
+            }
         }
         if (hasFilter) {
             var typeYes = false;
