@@ -5,7 +5,7 @@ import sqlite3
 import re
 import time
 import logging
-import yaml
+import oyaml as yaml
 from cravat import CravatReader
 from cravat import CravatWriter
 import json
@@ -298,8 +298,9 @@ class Aggregator (object):
             annotator_displayname = reader.get_annotator_displayname()
             if annotator_displayname == '':
                 annotator_displayname = annotator_name.upper()
+            annotator_version = reader.get_annotator_version()
             q = 'insert into {:} values ("{:}", "{:}", "{:}")'.format(
-                annotator_table, annotator_name, annotator_displayname, "")
+                annotator_table, annotator_name, annotator_displayname, annotator_version)
             self.cursor.execute(q)
             orded_col_index = sorted(list(reader.get_all_col_defs().keys()))
             for col_index in orded_col_index:

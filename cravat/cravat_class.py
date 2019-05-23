@@ -18,9 +18,10 @@ import multiprocessing.managers
 from logging.handlers import QueueListener
 from .aggregator import Aggregator
 from .exceptions import *
-import yaml
+import oyaml as yaml
 import cravat.cravat_util as cu
 import collections
+import asyncio
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path',
@@ -187,6 +188,11 @@ cravat_cmd_parser.add_argument('--forcedinputformat',
                     dest='forcedinputformat',
                     default=None,
                     help='Force input format')
+cravat_cmd_parser.add_argument('--cleanup',
+    dest='cleanup',
+    action='store_true',
+    default=False,
+    help='At the end of the run, cravat will erase all intermediary files for the job created by cravat, except the log (.log and .err) and the result (.sqlite) files.')
 
 class MyManager (multiprocessing.managers.SyncManager):
     pass
@@ -363,11 +369,13 @@ class Cravat (object):
                 self.update_status('Error')
             self.close_logger()
             self.status_writer.flush()
+            if no_problem_in_run and self.args.cleanup:
+                self.clean_up_at_end()
 
     def handle_exception (self, e):
         exc_str = traceback.format_exc()
         exc_class = e.__class__
-        if exc_class == LiftoverFailure or exc_class == InvalidData:
+        if exc_class == InvalidData:
             pass
         elif exc_class == ExpectedException:
             self.logger.exception('An expected exception occurred.')
@@ -395,8 +403,10 @@ class Cravat (object):
                     del self.annotators[m]
         self.inputs = [os.path.abspath(x) for x in self.args.inputs]
         self.run_name = self.args.run_name
-        if self.run_name == None: #todo set run name different if multiple inputs
+        if self.run_name == None:
             self.run_name = os.path.basename(self.inputs[0])
+            if len(self.inputs) > 1:
+                self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
         self.output_dir = self.args.output_dir
         if self.output_dir == None:
             self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
@@ -479,6 +489,7 @@ class Cravat (object):
         annot_names.sort()
         if self.runlevel <= self.runlevels['annotator']:
             self.status_writer.queue_status_update('annotators', annot_names, force=True)
+        self.annot_names = annot_names
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
@@ -784,15 +795,26 @@ class Cravat (object):
         q = 'update gene_annotator set version="{}" where name="{}"'.format(version, modulename)
         cursor.execute(q)
         '''
+        q = 'select name, displayname, version from variant_annotator'
+        cursor.execute(q)
+        rows = list(cursor.fetchall())
+        q = 'select name, displayname, version from gene_annotator'
+        cursor.execute(q)
+        tmp_rows = list(cursor.fetchall())
+        if tmp_rows is not None:
+            rows.extend(tmp_rows)
         annotators_str = ''
-        for modulename in self.annotators.keys():
-            annot = self.annotators[modulename]
-            version = annot.conf['version']
-            title = annot.conf['title']
-            level = annot.conf['level']
-            q = 'update {}_annotator set version="{}" where name="{}"'.format(level, version, modulename)
-            cursor.execute(q)
-            annotators_str += '{} ({}), '.format(title, version)
+        annotator_version = {}
+        for row in rows:
+            (name, displayname, version) = row
+            if name in ['base', 'tagsampler', 'hg19', 'hg18']:
+                continue
+            if version is not None and version != '':
+                annotators_str += '{} ({}), '.format(displayname, version)
+            else:
+                annotators_str += '{}, '.format(displayname)
+            annotator_version[name] = version
+        self.status_writer.queue_status_update('annotator_version', annotator_version)
         annotators = annotators_str.rstrip(', ')
         q = 'insert into info values ("Annotators", "' + annotators_str + '")'
         cursor.execute(q)
@@ -821,6 +843,22 @@ class Cravat (object):
         print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
         self.update_status('Running {title} ({name})'.format(title=module.title, name=module.name))
 
+    def clean_up_at_end (self):
+        fns = os.listdir(self.output_dir)
+        for fn in fns:
+            fn_path = os.path.join(self.output_dir, fn)
+            if os.path.isfile(fn_path) == False:
+                continue
+            if fn.startswith(self.run_name):
+                fn_end = fn.split('.')[-1]
+                if fn_end in ['var', 'gen', 'crv', 'crx', 'crg', 'crs', 'crm', 'crt', 'json']:
+                    os.remove(os.path.join(self.output_dir, fn))
+
+def run_cravat_job(**kwargs):
+    module = Cravat(**kwargs)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(module.main())
+
 class StatusWriter:
     def __init__ (self, status_json_path):
         self.status_json_path = status_json_path
@@ -835,11 +873,13 @@ class StatusWriter:
         self.status_json = json.loads(lines)
         f.close()
 
+    '''
     def add_annotator_version_to_status_json (self, annotator_name, version):
         if 'annotator_version' not in self.status_json:
             self.status_json['annotator_version'] = {}
         self.status_json['annotator_version'][annotator_name] = version
         self.queue_status_update('annotator_version', self.status_json['annotator_version'])
+    '''
 
     def queue_status_update (self, k, v, force=False):
         self.status_json[k] = v

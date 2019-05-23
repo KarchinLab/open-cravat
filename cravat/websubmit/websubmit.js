@@ -8,10 +8,12 @@ var GLOBALS = {
     jobs: [],
     annotators: {},
     reports: {},
-    inputExamples: {}
+    inputExamples: {},
+    idToJob: {},
 }
 var currentTab = 'submit';
 var websubmitReportBeingGenerated = {};
+var jobRunning = {};
 
 function submit () {
     if (servermode && logged == false) {
@@ -70,45 +72,115 @@ function submit () {
     var note = document.getElementById('jobnoteinput').value;
     submitOpts.note = note;
     fd.append('options',JSON.stringify(submitOpts));
-    $.ajax({
-        url:'submit',
-        data: fd,
-        type: 'POST',
-        processData: false,
-        contentType: false,
-        success: function (data) {
-            if (data['status']['status'] == 'Submitted') {
-                submittedJobs.push(data);
-                addJob(data);
-                sortJobs();
-                buildJobsTable();
-            }
-            if (data.expected_runtime > 1800) {
-                var sec_num = Math.ceil(data.expected_runtime);
-                var hours   = Math.floor(sec_num / 3600) % 24
-                var minutes = Math.floor(sec_num / 60) % 60
-                var seconds = sec_num % 60
-                alert(`Expected runtime: ${hours}:${minutes}:${seconds} (h:m:s)`);
+    // reads number of input lines
+    var reader = new FileReader();
+    var lineCount = 0;
+    var numFileRead = 0;
+    var numInputLineCutoff = parseInt(document.getElementById('settings_num_input_line_warning_cutoff').value);
+    reader.onload = function (evt) {
+        var file = evt.target.result;
+        var allLines = file.split(/\r\n|\n/);
+        allLines.forEach((line) => {
+            lineCount++;
+        });
+        numFileRead++;
+        if (numFileRead == inputFiles.length) {
+            var numAnnots = submitOpts.annotators.length;
+            var mapper_vps = 1000;
+            var annot_vps = 5000;
+            var agg_vps = 8000;
+            var runtimeEst = lineCount*(1/mapper_vps + numAnnots/annot_vps + 1/agg_vps);
+            if (lineCount > numInputLineCutoff) {
+                var sec_num = Math.ceil(runtimeEst);
+                var hours   = Math.floor(sec_num / 3600) % 24;
+                if (hours > 0) {
+                    hours = hours + ' hours ';
+                } else if (hours == 1) {
+                    hours = hours + ' hour ';
+                } else {
+                    hours = '';
+                }
+                var minutes = Math.floor(sec_num / 60) % 60;
+                if (minutes > 1) {
+                    minutes = minutes + ' minutes ';
+                } else if (minutes == 1) {
+                    minutes = minutes + ' minute ';
+                } else {
+                    minutes = '';
+                }
+                var seconds = sec_num % 60;
+                if (seconds <= 1) {
+                    seconds = seconds + ' second';
+                } else {
+                    seconds = seconds + ' seconds';
+                }
+                var alertDiv = getEl('div');
+                var span = getEl('span');
+                span.textContent = 'You are submitting ' + lineCount + ' lines of input. Proceed?';
+                addEl(alertDiv, span);
+                addEl(alertDiv,getEl('br'));
+                addEl(alertDiv,getEl('br'));
+                var span = getEl('span');
+                span.style.fontSize = '12px';
+                span.textContent = '(Assuming one variant per line, in our benchmark with a typical system with a solid state drive, such a job as this usually took ' + hours + minutes + seconds + '. ';
+                addEl(alertDiv, span);
+                var span = getEl('span');
+                span.style.fontSize = '12px';
+                span.textContent = 'Variant number cutoff for this message can be changed at the Settings menu at the top right corner.)';
+                addEl(alertDiv, span);
+                addEl(alertDiv,getEl('br'));
+                showYesNoDialog(alertDiv, commitSubmit, false, false);
+            } else {
+                commitSubmit();
             }
         }
-    })
-    $('#submit-job-button').attr('disabled','disabled');
-    setTimeout(function(){
-            $('#submit-job-button').removeAttr('disabled');
-        },
-        1500
-    );
+    };
+    for (var i = 0; i < inputFiles.length; i++) {
+        reader.readAsText(inputFiles[i]);
+    }
+
+    function commitSubmit (proceed) {
+        if (proceed == false) {
+            return;
+        }
+        $.ajax({
+            url:'submit',
+            data: fd,
+            type: 'POST',
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                if (data['status']['status'] == 'Submitted') {
+                    submittedJobs.push(data);
+                    addJob(data);
+                    sortJobs();
+                    buildJobsTable();
+                }
+                if (data.expected_runtime > 0) {
+                }
+                jobRunning[data['id']] = true;
+            }
+        })
+        $('#submit-job-button').attr('disabled','disabled');
+        setTimeout(function(){
+                $('#submit-job-button').removeAttr('disabled');
+            },
+            1500
+        );
+    }
 };
 
 function sortJobs () {
     for (var i = 0; i < GLOBALS.jobs.length - 1; i++) {
         for (var j = i + 1; j < GLOBALS.jobs.length; j++) {
-            var j1 = GLOBALS.jobs[i];
-            var j2 = GLOBALS.jobs[j];
+            var ji1 = GLOBALS.jobs[i];
+            var ji2 = GLOBALS.jobs[j];
+            var j1 = GLOBALS.idToJob[ji1];
+            var j2 = GLOBALS.idToJob[ji2];
             var d1 = new Date(j1.submission_time).getTime();
             var d2 = new Date(j2.submission_time).getTime();
             if (d2 > d1) {
-                var tmp = j1;
+                var tmp = ji1;
                 GLOBALS.jobs[i] = GLOBALS.jobs[j];
                 GLOBALS.jobs[j] = tmp;
             }
@@ -119,7 +191,8 @@ function sortJobs () {
 function addJob (jsonObj) {
     var trueDate = new Date(jsonObj.submission_time);
     jsonObj.submission_time = trueDate;
-    GLOBALS.jobs.push(jsonObj);
+    GLOBALS.jobs.push(jsonObj.id);
+    GLOBALS.idToJob[jsonObj.id] = jsonObj;
 }
 
 function createJobExcelReport (evt) {
@@ -157,7 +230,7 @@ function getAnnotatorsForJob (jobid) {
     var jis = GLOBALS.jobs;
     var anns = [];
     for (var j = 0; j < jis.length; j++) {
-        var cji = jis[j];
+        var cji = GLOBALS.idToJob[jis[j]];
         if (cji.id == jobid) {
             anns = cji.annotators;
             break;
@@ -170,13 +243,315 @@ function getAnnotatorVersionForJob (jobid) {
     var jis = GLOBALS.jobs;
     var anns = {};
     for (var j = 0; j < jis.length; j++) {
-        var cji = jis[j];
+        var cji = GLOBALS.idToJob[jis[j]];
         if (cji.id == jobid) {
             anns = cji.annotator_version;
             break;
         }
     }
     return anns;
+}
+
+function onClickJobTableMainTr (evt) {
+    if (evt.target.parentElement.classList.contains('job-table-tr') == false) {
+        return;
+    }
+    var clickedTr = evt.target.parentElement;
+    var detailTr = clickedTr.nextSibling;
+    if (clickedTr.classList.contains('highlighted-tr')) {
+        clickedTr.classList.remove('highlighted-tr');
+        detailTr.classList.add('hidden-tr');
+    } else {
+        clickedTr.classList.add('highlighted-tr');
+        detailTr.classList.remove('hidden-tr');
+    }
+}
+
+function emptyElement (elem) {
+    while (elem.firstChild) {
+        elem.removeChild(elem.firstChild);
+    }
+}
+
+function populateJobTr (job) {
+    var jobTr = $('tr.job-table-main-tr[jobid=' + job.id + ']')[0];
+    emptyElement(jobTr);
+    // Input file name
+    addEl(jobTr, addEl(getEl('td'), getTn(job.orig_input_fname)));
+    // Number of annotators
+    var annots = job.annotators;
+    if (annots == undefined) {
+        annots = '';
+    }
+    var num = annots.length;
+    var td = getEl('td');
+    td.style.textAlign = 'center';
+    td.textContent = '' + num;
+    addEl(jobTr, td);
+    // Genome assembly
+    var td = getEl('td');
+    td.style.textAlign = 'center';
+    addEl(td, getTn(job.assembly));
+    addEl(jobTr, td);
+    // Note
+    var td = getEl('td');
+    addEl(jobTr, addEl(td, getTn(job.note)));
+    // Status
+    var statusC = job.status['status'];
+    if (statusC == undefined) {
+        if (job.status != undefined) {
+            statusC = job.status;
+        } else {
+            return null;
+        }
+    }
+    var viewTd = getEl('td');
+    viewTd.style.textAlign  = 'center';
+    if (statusC == 'Finished') {
+        var a = getEl('a');
+        a.setAttribute('href', '/result/index.html?dbpath=' + job.db_path + '&job_id=' + job.id)
+        a.setAttribute('target', '_blank');
+        var button = getEl('button');
+        addEl(button, getTn('Launch'));
+        button.disabled = !job.viewable;
+        addEl(a, button);
+        addEl(viewTd, a);
+    } else {
+        viewTd.textContent = statusC;
+    }
+    addEl(jobTr, viewTd);
+    var dbTd = getEl('td');
+    dbTd.style.textAlign = 'center';
+    // Excel
+    var excelButton = getEl('button');
+    addEl(excelButton, getTn('Excel'));
+    excelButton.setAttribute('jobId', job.id);
+    if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['excel'] == true) {
+        excelButton.style.backgroundColor = '#cccccc';
+        excelButton.setAttribute('disabled', true);
+        excelButton.textContent = 'Generating...';
+    } else {
+        if (job.reports.includes('excel') == false) {
+            excelButton.style.backgroundColor = '#cccccc';
+            excelButton.addEventListener('click', createJobExcelReport);
+            excelButton.title = 'Click to create.';
+        } else {
+            excelButton.addEventListener('click', jobExcelDownloadButtonHandler);
+            excelButton.title = 'Click to download.';
+        }
+    }
+    addEl(dbTd, excelButton);
+    // Text
+    var textButton = getEl('button');
+    addEl(textButton, getTn('Text'));
+    textButton.setAttribute('jobId', job.id);
+    if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['text'] == true) {
+        textButton.style.backgroundColor = '#cccccc';
+        textButton.setAttribute('disabled', true);
+        textButton.textContent = 'Generating...';
+    } else {
+        if (job.reports.includes('text') == false) {
+            textButton.style.backgroundColor = '#cccccc';
+            textButton.addEventListener('click', createJobTextReport);
+            textButton.title = 'Click to create.';
+        } else {
+            textButton.addEventListener('click', jobTextDownloadButtonHandler);
+            textButton.title = 'Click to download.';
+        }
+    }
+    addEl(dbTd, textButton);
+    // Log
+    var logLink = getEl('a');
+    logLink.setAttribute('href','jobs/' + job.id + '/log?');
+    logLink.setAttribute('target', '_blank');
+    logLink.setAttribute('title', 'Click to download.');
+    var button = getEl('button');
+    addEl(button, getTn('Log'));
+    addEl(logLink, button);
+    addEl(dbTd, logLink);
+    addEl(jobTr, dbTd);
+    /*
+    // Reports
+    var reportTd = $(getEl('td'));
+    jobTr.append(reportTd);
+    var reportSelector = $(getEl('select'))
+        .attr('jobId',job.id)
+        .addClass('report-type-selector')
+        .change(reportSelectorChangeHandler)
+    reportTd.append(reportSelector);
+    jobReports = job.reports;
+    let firstExistingReport;
+    var curSelectedReport = curSelectedReports[job.id];
+    for (let i=0; i<GLOBALS.reports.valid.length; i++) {
+        let reportType = GLOBALS.reports.valid[i];
+        if (firstExistingReport === undefined && jobReports.includes(reportType)) {
+            firstExistingReport = reportType;
+        }
+        let typeOpt = $(getEl('option'))
+        .attr('value', reportType)
+        .append(reportType[0].toUpperCase()+reportType.slice(1));
+        reportSelector.append(typeOpt);
+    }
+    var shownReportType = curSelectedReport ? curSelectedReport : firstExistingReport;
+    reportSelector.val(shownReportType);
+    var repDwnBtn = $(getEl('button'))
+        .addClass('report-download-button')
+        .append('Download')
+        .attr('disabled', !job.reports.includes(shownReportType))
+        .click(reportDownloadButtonHandler);
+    reportTd.append(repDwnBtn);
+    repGenBtn = $(getEl('button'))
+        .append('Generate')
+        .click(reportGenerateButtonHandler)
+    reportTd.append(repGenBtn);
+    */
+    // Delete
+    var deleteTd = getEl('td');
+    deleteTd.title = 'Click to delete.';
+    deleteTd.style.textAlign = 'center';
+    var deleteBtn = getEl('button');
+    addEl(deleteBtn, getTn('X'));
+    addEl(deleteTd, deleteBtn);
+    deleteBtn.setAttribute('jobId', job.id);
+    deleteBtn.addEventListener('click', jobDeleteButtonHandler);
+    addEl(jobTr, deleteTd);
+    return true;
+}
+
+function populateJobDetailTr (job) {
+    var ji = job.id;
+    var detailTr = $('tr.job-detail-tr[jobid=' + ji + ']')[0];
+    emptyElement(detailTr);
+    // Job detail row
+    var annots = job.annotators;
+    var annotVers = job.annotator_version;
+    var annotVerStr = '';
+    if (annots == undefined || annots.length == 0) {
+        annotVerStr = 'None';
+    } else {
+        for (var j = 0; j < annots.length; j++) {
+            var annot = annots[j];
+            var ver = null;
+            if (annotVers != undefined) {
+                ver = annotVers[annot];
+                if (ver == undefined) {
+                    ver = null;
+                }
+            }
+            if (ver == null) {
+                annotVerStr += annot + ', ';
+            } else {
+                annotVerStr += annot + '(' + ver + '), ';
+            }
+        }
+        annotVerStr = annotVerStr.replace(/, $/, '');
+    }
+    var detailTd = getEl('td');
+    detailTd.colSpan = '8';
+    var detailTable = getEl('table');
+    detailTable.style.width = '100%';
+    var tbody = getEl('tbody');
+    addEl(detailTable, tbody);
+    var tr = getEl('tr');
+    var td = getEl('td');
+    td.style.width = '150px';
+    td.textContent = 'Job ID';
+    addEl(tr, td);
+    var td = getEl('td');
+    td.textContent = ji;
+    addEl(tr, td);
+    addEl(tbody, tr);
+    if (job.open_cravat_version != undefined) {
+        var tr = getEl('tr');
+        var td = getEl('td');
+        td.textContent = 'OpenCRAVAT ver';
+        addEl(tr, td);
+        var td = getEl('td');
+        td.textContent = job.open_cravat_version;
+        addEl(tr, td);
+        addEl(tbody, tr);
+    }
+    var tr = getEl('tr');
+    var td = getEl('td');
+    td.textContent = 'Annotators';
+    addEl(tr, td);
+    var td = getEl('td');
+    td.textContent = annotVerStr;
+    addEl(tr, td);
+    addEl(tbody, tr);
+    if (job.num_input_var != undefined) {
+        var tr = getEl('tr');
+        var td = getEl('td');
+        td.textContent = '# input variants';
+        addEl(tr, td);
+        var td = getEl('td');
+        td.textContent = job.num_input_var;
+        addEl(tr, td);
+        addEl(tbody, tr);
+    }
+    if (job.submission_time != undefined) {
+        var tr = getEl('tr');
+        var td = getEl('td');
+        td.textContent = 'Submitted';
+        addEl(tr, td);
+        var td = getEl('td');
+        var t = new Date(job.submission_time);
+        var month = t.getMonth() + 1;
+        if (month < 10) {
+            month = '0' + month;
+        }
+        var d = t.getDate();
+        if (d < 10) {
+            d = '0' + d;
+        }
+        var h = t.getHours();
+        if (h < 10) {
+            h = '0' + h;
+        }
+        var m = t.getMinutes();
+        if (m < 10) {
+            m = '0' + m;
+        }
+        var s = t.getSeconds();
+        if (s < 10) {
+            s = '0' + s;
+        }
+        td.textContent = t.getFullYear() + '.' + month + '.' + d + ' ' + h + ':' + m + ':' + s;
+        addEl(tr, td);
+        addEl(tbody, tr);
+    }
+    if (job.db_path != undefined) {
+        var tr = getEl('tr');
+        var td = getEl('td');
+        td.textContent = 'Result DB';
+        addEl(tr, td);
+        var td = getEl('td');
+        var button = getEl('button');
+        button.textContent = 'DB';
+        button.setAttribute('db', job.id);
+        button.addEventListener('click', function (evt) {
+            window.open('/submit/jobs/' + evt.target.getAttribute('db') + '/db');
+        });
+        addEl(td, button);
+        addEl(tr, td);
+        addEl(tbody, tr);
+        var tr = getEl('tr');
+        var td = getEl('td');
+        td.textContent = 'Job Directory';
+        addEl(tr, td);
+        var td = getEl('td');
+        var a = getEl('span');
+        var d = job.db_path.substring(0, job.db_path.lastIndexOf('/'));
+        /*
+        a.href = 'file://///' + d;
+        */
+        a.textContent = d;
+        addEl(td, a);
+        addEl(tr, td);
+        addEl(tbody, tr);
+    }
+    addEl(detailTd, detailTable);
+    addEl(detailTr, detailTd);
 }
 
 function buildJobsTable () {
@@ -187,9 +562,9 @@ function buildJobsTable () {
         var alreadyInList = false;
         var submittedJobInList = null;
         for (var j = 0; j < allJobs.length; j++) {
-            if (allJobs[j]['id'] == submittedJob['id']) {
+            if (allJobs[j] == submittedJob['id']) {
                 alreadyInList = true;
-                submittedJobInList = allJobs[j];
+                submittedJobInList = GLOBALS.idToJob[allJobs[j]];
                 break;
             }
         }
@@ -199,7 +574,7 @@ function buildJobsTable () {
             }
         } else {
             submittedJob.status = 'Submitted';
-            allJobs.unshift(submittedJob);
+            allJobs.unshift(submittedJob.id);
         }
         i--;
     }
@@ -211,10 +586,10 @@ function buildJobsTable () {
         var val = selector.val();
         curSelectedReports[jobId] = val;
     }
-    $('#jobs-table tbody').empty();
-    var jobsTable = $('#jobs-table tbody');
+    var jobsTable = document.querySelector('#jobs-table tbody');
+    $(jobsTable).empty();
     for (let i = 0; i < allJobs.length; i++) {
-        job = allJobs[i];
+        job = GLOBALS.idToJob[allJobs[i]];
         ji = job.id;
         if (ji == undefined) {
             continue;
@@ -222,291 +597,23 @@ function buildJobsTable () {
         if (job.submission_time == 'Invalid Date') {
             continue;
         }
-        var jobTr = $(getEl('tr'))
-            .addClass('job-table-tr')
-            .addClass('job-table-main-tr');
-        jobTr[0].setAttribute('jobid', ji);
-        jobTr[0].addEventListener('click', function (evt) {
-            if (evt.target.parentElement.classList.contains('job-table-tr') == false) {
-                return;
-            }
-            var clickedTr = evt.target.parentElement;
-            var detailTr = clickedTr.nextSibling;
-            if (clickedTr.classList.contains('highlighted-tr')) {
-                clickedTr.classList.remove('highlighted-tr');
-                detailTr.classList.add('hidden-tr');
-            } else {
-                clickedTr.classList.add('highlighted-tr');
-                detailTr.classList.remove('hidden-tr');
-            }
-        });
-        jobsTable.append(jobTr);
-        // Input file
-        // Number of annotators
-        var annots = getAnnotatorsForJob(ji);
-        if (annots == undefined) {
-            annots = '';
-        }
-        jobTr.append($(getEl('td')).append(job.orig_input_fname));
-        var num = annots.length;
-        var td = getEl('td');
-        td.style.textAlign = 'center';
-        td.textContent = '' + num;
-        addEl(jobTr[0], td);
-        // Genome assembly
-        jobTr.append($(getEl('td')).css('text-align', 'center').append(job.assembly));
-        // Note
-        jobTr.append($(getEl('td')).append(job.note));
-        // Status
-        var statusC = null;
-        if (job.status['status'] == undefined) {
-            if (job.status != undefined) {
-                statusC = job.status;
-            } else {
-                continue;
-            }
-        } else {
-            statusC = job.status.status;
-        }
-        var viewTd = $(getEl('td'))
-            .css('text-align', 'center');
-        jobTr.append(viewTd);
-        if (statusC == 'Finished') {
-            var viewLink = $(getEl('a'))
-                .attr('href',`/result/index.html?dbpath=${job.db_path}&job_id=${job.id}`)
-                .attr('target','_blank')
-                .append($(getEl('button')).append('Launch').attr('disabled', !job.viewable));
-            viewTd.append(viewLink);
-        } else {
-            viewTd[0].textContent = statusC;
-        }
-        var dbTd = $(getEl('td'));
-        dbTd.css('text-align', 'center');
-        jobTr.append(dbTd);
-        // Excel
-        var excelButton = $(getEl('button'))
-            .append('Excel')
-            .attr('jobId',job.id)
-        if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['excel'] == true) {
-            excelButton.css('background-color', '#cccccc');
-            excelButton.prop('disabled', true);
-            excelButton.text('being generated...');
-        } else {
-            if (job.reports.includes('excel') == false) {
-                excelButton.css('background-color', '#cccccc');
-                excelButton.click(createJobExcelReport);
-                excelButton[0].title = 'Click to create.';
-            } else {
-                excelButton.click(jobExcelDownloadButtonHandler);
-                excelButton[0].title = 'Click to download.';
-            }
-        }
-        dbTd.append(excelButton);
-        // Text
-        var textButton = $(getEl('button'))
-            .append('Text')
-            .attr('jobId',job.id)
-        if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['text'] == true) {
-            textButton.css('background-color', '#cccccc');
-            textButton.prop('disabled', true);
-            textButton.text('being generated...');
-        } else {
-            if (job.reports.includes('text') == false) {
-                textButton.css('background-color', '#cccccc');
-                textButton.click(createJobTextReport);
-                textButton[0].title = 'Click to create.';
-            } else {
-                textButton.click(jobTextDownloadButtonHandler);
-                textButton[0].title = 'Click to download.';
-            }
-        }
-        dbTd.append(textButton);
-        // Log
-        var logLink = $(getEl('a'))
-            .attr('href','jobs/'+job.id+'/log?')
-            .attr('target','_blank')
-            .attr('title', 'Click to download.')
-            .append($(getEl('button')).append('Log'))
-        dbTd.append(logLink);
-
-        /*
-        // Reports
-        var reportTd = $(getEl('td'));
-        jobTr.append(reportTd);
-        var reportSelector = $(getEl('select'))
-            .attr('jobId',job.id)
-            .addClass('report-type-selector')
-            .change(reportSelectorChangeHandler)
-        reportTd.append(reportSelector);
-        jobReports = job.reports;
-        let firstExistingReport;
-        var curSelectedReport = curSelectedReports[job.id];
-        for (let i=0; i<GLOBALS.reports.valid.length; i++) {
-            let reportType = GLOBALS.reports.valid[i];
-            if (firstExistingReport === undefined && jobReports.includes(reportType)) {
-                firstExistingReport = reportType;
-            }
-            let typeOpt = $(getEl('option'))
-            .attr('value', reportType)
-            .append(reportType[0].toUpperCase()+reportType.slice(1));
-            reportSelector.append(typeOpt);
-        }
-        var shownReportType = curSelectedReport ? curSelectedReport : firstExistingReport;
-        reportSelector.val(shownReportType);
-        var repDwnBtn = $(getEl('button'))
-            .addClass('report-download-button')
-            .append('Download')
-            .attr('disabled', !job.reports.includes(shownReportType))
-            .click(reportDownloadButtonHandler);
-        reportTd.append(repDwnBtn);
-        repGenBtn = $(getEl('button'))
-            .append('Generate')
-            .click(reportGenerateButtonHandler)
-        reportTd.append(repGenBtn);
-        */
-        // Delete
-        var deleteTd = $(getEl('td'));
-        deleteTd[0].title = 'Click to delete.';
-        deleteTd.css('text-align', 'center');
-        jobTr.append(deleteTd);
-        var deleteBtn = $(getEl('button')).append('X');
-        deleteTd.append(deleteBtn);
-        deleteBtn.attr('jobId', job.id);
-        deleteBtn.click(jobDeleteButtonHandler);
-
-        // Job detail row
-        var annotVers = getAnnotatorVersionForJob(ji);
-        var annotVerStr = '';
-        if (annots.length == 0) {
-            annotVerStr = 'None';
-        } else {
-            for (var j = 0; j < annots.length; j++) {
-                var annot = annots[j];
-                var ver = null;
-                if (annotVers != undefined) {
-                    ver = annotVers[annot];
-                    if (ver == undefined) {
-                        ver = null;
-                    }
-                }
-                if (ver == null) {
-                    annotVerStr += annot + ', ';
-                } else {
-                    annotVerStr += annot + '(' + ver + '), ';
-                }
-            }
-            annotVerStr = annotVerStr.replace(/, $/, '');
+        var jobTr = getEl('tr');
+        jobTr.classList.add('job-table-tr');
+        jobTr.classList.add('job-table-main-tr');
+        jobTr.setAttribute('jobid', ji);
+        jobTr.addEventListener('click', onClickJobTableMainTr);
+        addEl(jobsTable, jobTr);
+        var ret = populateJobTr(job);
+        if (ret == null) {
+            jobsTable.removeChild(jobTr);
+            continue;
         }
         var detailTr = getEl('tr');
-        var detailTd = getEl('td');
         detailTr.classList.add('job-detail-tr');
         detailTr.classList.add('hidden-tr');
-        detailTd.colSpan = '8';
-        var detailTable = getEl('table');
-        detailTable.style.width = '100%';
-        var tbody = getEl('tbody');
-        addEl(detailTable, tbody);
-        var tr = getEl('tr');
-        var td = getEl('td');
-        td.style.width = '150px';
-        td.textContent = 'Job ID';
-        addEl(tr, td);
-        var td = getEl('td');
-        td.textContent = ji;
-        addEl(tr, td);
-        addEl(tbody, tr);
-        if (job.open_cravat_version != undefined) {
-            var tr = getEl('tr');
-            var td = getEl('td');
-            td.textContent = 'OpenCRAVAT ver';
-            addEl(tr, td);
-            var td = getEl('td');
-            td.textContent = job.open_cravat_version;
-            addEl(tr, td);
-            addEl(tbody, tr);
-        }
-        var tr = getEl('tr');
-        var td = getEl('td');
-        td.textContent = 'Annotators';
-        addEl(tr, td);
-        var td = getEl('td');
-        td.textContent = annotVerStr;
-        addEl(tr, td);
-        addEl(tbody, tr);
-        if (job.num_input_var != undefined) {
-            var tr = getEl('tr');
-            var td = getEl('td');
-            td.textContent = '# input variants';
-            addEl(tr, td);
-            var td = getEl('td');
-            td.textContent = job.num_input_var;
-            addEl(tr, td);
-            addEl(tbody, tr);
-        }
-        if (job.submission_time != undefined) {
-            var tr = getEl('tr');
-            var td = getEl('td');
-            td.textContent = 'Submitted';
-            addEl(tr, td);
-            var td = getEl('td');
-            var t = job.submission_time;
-            var month = t.getMonth() + 1;
-            if (month < 10) {
-                month = '0' + month;
-            }
-            var d = t.getDate();
-            if (d < 10) {
-                d = '0' + d;
-            }
-            var h = t.getHours();
-            if (h < 10) {
-                h = '0' + h;
-            }
-            var m = t.getMinutes();
-            if (m < 10) {
-                m = '0' + m;
-            }
-            var s = t.getSeconds();
-            if (s < 10) {
-                s = '0' + s;
-            }
-            td.textContent = t.getFullYear() + '.' + month + '.' + d + ' ' + h + ':' + m + ':' + s;
-            addEl(tr, td);
-            addEl(tbody, tr);
-        }
-        if (job.db_path != undefined) {
-            var tr = getEl('tr');
-            var td = getEl('td');
-            td.textContent = 'Result DB';
-            addEl(tr, td);
-            var td = getEl('td');
-            var button = getEl('button');
-            button.textContent = 'DB';
-            button.setAttribute('db', job.id);
-            button.addEventListener('click', function (evt) {
-                window.open('/submit/jobs/' + evt.target.getAttribute('db') + '/db');
-            });
-            addEl(td, button);
-            addEl(tr, td);
-            addEl(tbody, tr);
-            var tr = getEl('tr');
-            var td = getEl('td');
-            td.textContent = 'Job Directory';
-            addEl(tr, td);
-            var td = getEl('td');
-            var a = getEl('span');
-            var d = job.db_path.substring(0, job.db_path.lastIndexOf('/'));
-            /*
-            a.href = 'file://///' + d;
-            */
-            a.textContent = d;
-            addEl(td, a);
-            addEl(tr, td);
-            addEl(tbody, tr);
-        }
-        addEl(detailTd, detailTable);
-        addEl(detailTr, detailTd);
-        addEl(jobsTable[0], detailTr);
+        detailTr.setAttribute('jobid', ji);
+        addEl(jobsTable, detailTr);
+        populateJobDetailTr(job);
     }
 }
 
@@ -515,13 +622,15 @@ function reportSelectorChangeHandler (event) {
     var downloadBtn = selector.siblings('.report-download-button');
     var jobId = selector.attr('jobId');
     var reportType = selector.val();
-    let job;
+    var job = GLOBALS.idToJob[jobId];
+    /*
     for (let i=0; i<GLOBALS.jobs.length; i++) {
-        if (GLOBALS.jobs[i].id === jobId) {
+        if (GLOBALS.idToJob[GLOBALS.jobs[i].id] === jobId) {
             job = GLOBALS.jobs[i];
             break;
         }
     }
+    */
     downloadBtn.attr('disabled',!job.reports.includes(reportType));
 }
 
@@ -594,6 +703,17 @@ function deleteJob (jobId) {
             });
         }
     })
+    delete jobRunning[jobId];
+    let delIdx = null;
+    for (var i=0; i<submittedJobs.length; i++) {
+        if (submittedJobs[i].id === jobId) {
+            delIdx = i;
+            break;
+        }
+    }
+    if (delIdx !== null) {
+        submittedJobs = submittedJobs.slice(0,delIdx).concat(submittedJobs.slice(delIdx+1));
+    }
 }
 
 function inputExampleChangeHandler (event) {
@@ -664,7 +784,13 @@ function populateJobs () {
             success: function (allJobs) {
                 GLOBALS.jobs = [];
                 for (var i=0; i<allJobs.length; i++) {
-                    let job = allJobs[i];
+                    var job = allJobs[i];
+                    var status = job.status;
+                    if (status == 'Finished' || status == 'Error') {
+                        delete jobRunning[job.id];
+                    } else {
+                        jobRunning[job.id] = true;
+                    }
                     addJob(job);
                 }
                 sortJobs();
@@ -1151,6 +1277,12 @@ function loadSystemConf () {
         }
         var s = document.getElementById('settings_modules_dir_input');
         s.value = response['content']['modules_dir'];
+        var s = document.getElementById('settings_num_input_line_warning_cutoff');
+        var cutoff = response['content']['num_input_line_warning_cutoff'];
+        if (cutoff == undefined) {
+            cutoff = 250000;
+        }
+        s.value = cutoff;
     });
 }
 
@@ -1167,15 +1299,31 @@ function updateSystemConf () {
         response['content']['jobs_dir'] = s.value;
         var s = document.getElementById('settings_modules_dir_input');
         response['content']['modules_dir'] = s.value;
+        var s = document.getElementById('settings_num_input_line_warning_cutoff');
+        response['content']['num_input_line_warning_cutoff'] = s.value;
         $.ajax({
             url:'/submit/updatesystemconf',
             data: {'sysconf': JSON.stringify(response['content'])},
             type: 'GET',
             success: function (response) {
                 if (response['success'] == true) {
-                    alert('System configuration has been updated.');
+                    var mdiv = getEl('div');
+                    var span = getEl('span');
+                    span.textContent = 'System configuration has been updated.';
+                    addEl(mdiv, span);
+                    addEl(mdiv, getEl('br'));
+                    addEl(mdiv, getEl('br'));
+                    var justOk = true;
+                    showYesNoDialog(mdiv, null, false, justOk);
                 } else {
-                    alert('System configuration was not successful');
+                    var mdiv = getEl('div');
+                    var span = getEl('span');
+                    span.textContent = 'System configuration was not successful';
+                    addEl(mdiv, span);
+                    addEl(mdiv, getEl('br'));
+                    addEl(mdiv, getEl('br'));
+                    var justOk = true;
+                    showYesNoDialog(mdiv, null, false, justOk);
                 }
                 if (response['sysconf']['jobs_dir'] != undefined) {
                     populateJobs();
@@ -1475,7 +1623,7 @@ function onBlurInputTextArea () {
     input.rows = 1;
 }
 
-function onClickThreeDots () {
+function onClickThreeDots (evt) {
     var div = document.getElementById('settingsdiv');
     var display = div.style.display;
     if (display == 'block') {
@@ -1484,6 +1632,7 @@ function onClickThreeDots () {
         display = 'block';
     }
     div.style.display = display;
+    evt.stopPropagation();
 }
 
 function openTerminal () {
@@ -1545,6 +1694,7 @@ function addListeners () {
     $('#no-annotators-button').click(allNoAnnotatorsHandler);
     $('.input-example-button').click(inputExampleChangeHandler)
     $('#refresh-jobs-table-btn').click(refreshJobsTable);
+    $('.threedotsdiv').click(onClickThreeDots);
     $('.jobsdirinput').change(setJobsDir);
     document.addEventListener('click', function (evt) {
         if (evt.target.classList.contains('moduledetaildiv-submit-elem') == false && evt.target.closest('.moduledetailbutton') == null ) {
@@ -1561,6 +1711,12 @@ function addListeners () {
             storeModuleDivClicked = false;
         } else {
             storeModuleDivClicked = true;
+        }
+        if (evt.target.id != 'settingsdots' && evt.target.id != 'settingsdiv' && evt.target.classList.contains('settingsdiv-elem') == false) {
+            var div = document.getElementById('settingsdiv');
+            if (div != null) {
+                div.style.display = 'none';
+            }
         }
     });
     window.addEventListener('resize', function (evt) {
@@ -1619,12 +1775,41 @@ function addListeners () {
     });
 }
 
+function setLastAssembly () {
+    $.ajax({
+        url: '/submit/lastassembly',
+        ajax: true,
+        success: function (response) {
+            document.getElementById('assembly-select').value = response;
+        },
+    });
+}
+
+function getJobById (jobId) {
+    return GLOBALS.idToJob[jobId];
+    /*
+    for (var i = 0; i < GLOBALS.jobs.length; i++) {
+        var job = GLOBALS.jobs[i];
+        if (job.id == jobId) {
+            return job;
+        }
+    }
+    */
+    return null;
+}
+
+function updateRunningJobTrs (job) {
+    populateJobTr(job);
+    populateJobDetailTr(job);
+}
+
 function websubmit_run () {
     getServermode();
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
     connectWebSocket();
     checkConnection();
+    setLastAssembly();
     getBaseModuleNames();
     getRemote();
     addListeners();
@@ -1645,5 +1830,34 @@ function websubmit_run () {
     loadSystemConf();
     populatePackageVersions();
     populateMultInputsMessage();
+    setInterval(function () {
+        var runningJobIds = Object.keys(jobRunning);
+        if (runningJobIds.length == 0) {
+            return;
+        }
+        $.ajax({
+            url: '/submit/getjobs',
+            data: {'ids': JSON.stringify(runningJobIds)},
+            ajax: true,
+            success: function (response) {
+                for (var i=0; i < response.length; i++) {
+                    var job = response[i];
+                    GLOBALS.idToJob[job.id] = job;
+                    /*
+                    for (var j = 0; j < GLOBALS.jobs; j++) {
+                        if (job.id == GLOBALS.jobs[j].id) {
+                            GLOBALS.jobs[j] = job;
+                            break;
+                        }
+                    }
+                    */
+                    updateRunningJobTrs(job);
+                    if (job.status == 'Finished') {
+                        delete jobRunning[job.id];
+                    }
+                }
+            },
+        });
+    }, 1000);
 };
 

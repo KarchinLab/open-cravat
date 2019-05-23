@@ -66,6 +66,10 @@ class BaseAnnotator(object):
                 self.annotator_display_name = self.conf['title']
             else:
                 self.annotator_display_name = os.path.basename(self.annotator_dir).upper()
+            if 'version' in self.conf:
+                self.annotator_version = self.conf['version']
+            else:
+                self.annotator_version = ''
             self.dbconn = None
             self.cursor = None
         except Exception as e:
@@ -211,7 +215,7 @@ class BaseAnnotator(object):
             print('        {}: runtime {:0.3f}s'.format(self.annotator_name, run_time))
             if self.update_status_json_flag:
                 version = self.conf.get('version', 'unknown')
-                self.status_writer.add_annotator_version_to_status_json(self.annotator_name, version)
+                #self.status_writer.add_annotator_version_to_status_json(self.annotator_name, version)
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
         except Exception as e:
             self._log_exception(e)
@@ -255,9 +259,12 @@ class BaseAnnotator(object):
     def _log_runtime_exception (self, lnum, line, input_data, e):
         try:
             err_str = traceback.format_exc().rstrip()
-            if err_str not in self.unique_excs:
-                self.unique_excs.append(err_str)
-                self.logger.error(err_str)
+            lines = err_str.split('\n')
+            last_line = lines[-1]
+            err_str_log = '\n'.join(lines[:-1]) + '\n' + ':'.join(last_line.split(':')[:2])
+            if err_str_log not in self.unique_excs:
+                self.unique_excs.append(err_str_log)
+                self.logger.error(err_str_log)
             self.error_logger.error('\n[{:d}]{}\n({})\n#'.format(lnum, line[:-1], str(e)))
         except Exception as e:
             self._log_exception(e, halt=False)
@@ -365,6 +372,8 @@ class BaseAnnotator(object):
                                                    self.annotator_name)
                 self.output_writer.write_meta_line('displayname',
                                                    self.annotator_display_name)
+                self.output_writer.write_meta_line('version',
+                                                   self.annotator_version)
             skip_aggregation = []
             for col_index, col_def in enumerate(self.conf['output_columns']):
                 self.output_writer.add_column(col_index, col_def)

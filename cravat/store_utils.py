@@ -133,7 +133,7 @@ def stream_multipart_post(url, fields, stage_handler=None, stages=50, **kwargs):
     r = requests.post(url, data=monitor, headers=headers, **kwargs)
     return r
 
-def stream_to_file(url, fpath, stage_handler=None, stages=50):
+def stream_to_file(url, fpath, stage_handler=None, stages=50, install_state=None):
     """
     Stream the content at a url to a file. Optionally pass in a callback 
     function which is called when the uploaded size passes each of 
@@ -148,6 +148,8 @@ def stream_to_file(url, fpath, stage_handler=None, stages=50):
                                 stage_handler=stage_handler)
         with open(fpath, 'wb') as wf:
             for chunk in r.iter_content(chunk_size): 
+                if install_state is not None and install_state['kill_signal'] == True:
+                    raise exceptions.KillInstallException()
                 wf.write(chunk)
                 stager.increase_cur_size(len(chunk))
     return r

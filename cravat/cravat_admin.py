@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import yaml
+import oyaml as yaml
 import sys
 import traceback
 from cravat import admin_util as au
@@ -106,11 +106,11 @@ def main ():
             for i, stok in enumerate(stoks):
                 jline += stok + ' ' * (max_lens[i] + col_spacing - len(stok))
             yield jline
-    
+
     def print_tabular_lines(l, *kwargs):
         for line in yield_tabular_lines(l, *kwargs):
             print(line)
-        
+
     def list_local_modules(pattern=r'.*', types=[], include_hidden=False):
         header = ['Name','Type','Version','Data source ver','Size']
         all_toks = [header]
@@ -188,6 +188,18 @@ def main ():
         except LookupError:
             available = False
         if available:
+            versions = remote_info.versions
+            data_versions = remote_info.data_versions
+            new_versions = []
+            for version in versions:
+                data_version = data_versions.get(version, None)
+                '''
+                if data_version:
+                    version = version + ' (data version ' + data_version + ')'
+                '''
+                new_versions.append(version)
+            remote_info.versions = new_versions
+            del remote_info.data_versions
             dump = yaml_string(remote_info)
             print(dump)
         # Local
@@ -372,6 +384,9 @@ def main ():
     
     def show_system_conf (args):
         au.show_system_conf()
+    
+    def show_cravat_conf (args):
+        au.show_cravat_conf()
     
     ###########################################################################
     # PARSERS START HERE
@@ -606,6 +621,11 @@ def main ():
     parser_new_annotator = subparsers.add_parser('show-system-conf',
                                                help='shows system configuration.')
     parser_new_annotator.set_defaults(func=show_system_conf)
+    
+    # shows cravat conf content.
+    parser_new_annotator = subparsers.add_parser('show-cravat-conf',
+                                               help='shows cravat configuration.')
+    parser_new_annotator.set_defaults(func=show_cravat_conf)
     
     ###########################################################################
     
