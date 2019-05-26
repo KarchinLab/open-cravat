@@ -9,7 +9,7 @@ import cravat.constants as constants
 from cravat import CravatWriter
 from cravat.exceptions import LiftoverFailure, InvalidData, BadFormatError, ExpectedException
 import cravat.admin_util as au
-from pyliftover import LiftOver
+from cravat.pyliftover import LiftOver
 import copy
 import cravat.cravat_util as cu
 from cravat.util import detect_encoding

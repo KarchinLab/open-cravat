@@ -1,7 +1,7 @@
 import subprocess
 import sqlite3
 import cravat.constants as constants
-import pyliftover
+from cravat import pyliftover
 import argparse
 import os
 import sys

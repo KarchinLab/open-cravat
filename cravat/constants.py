@@ -19,13 +19,16 @@ base_modules_key = 'base_modules'
 main_conf_fname = 'cravat.yml'
 liftover_chains_dir = os.path.join(packagedir, 'liftover')
 liftover_chain_paths = {
-                        'hg19': os.path.join(liftover_chains_dir,
-                                             'hg19ToHg38.over.chain'
-                                             ),
-                        'hg18': os.path.join(liftover_chains_dir,
-                                             'hg18ToHg38.over.chain'
-                                             )
-                        }
+    'hg19': os.path.join(liftover_chains_dir,
+                         'hg19ToHg38.over.chain'
+     ),
+    'hg18': os.path.join(liftover_chains_dir,
+                         'hg18ToHg38.over.chain'
+     ),
+    'canFam3': os.path.join(liftover_chains_dir,
+                         'canFam3ToHg38.over.chain'
+     )
+}
 
 crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'width': 90},
            {'name':'tags', 'title':'User Tags', 'type':'string', 'width': 90},
