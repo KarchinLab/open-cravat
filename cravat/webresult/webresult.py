@@ -360,7 +360,8 @@ async def get_result_levels (request):
     ret = await cursor.fetchall()
     if len(ret) > 0:
         content = [v[0].split('_')[0] for v in ret]
-        content.insert(0, 'info')
+        content.insert(0,'filter')
+        content.insert(1, 'info')
     else:
         content = []
     content.remove('sample')
