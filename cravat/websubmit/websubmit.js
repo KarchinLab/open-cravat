@@ -1750,9 +1750,6 @@ function addListeners () {
                         moduleListPos = 0;
                     }
                     moduleName = moduleList[moduleListPos];
-                    if (moduleName.startsWith('chasmplus_') == false) {
-                        break;
-                    }
                 }
                 makeModuleDetailDialog(moduleName, moduleListName, moduleListPos);
                 evt.stopPropagation();
@@ -1764,9 +1761,6 @@ function addListeners () {
                         moduleListPos = moduleList.length - 1;
                     }
                     moduleName = moduleList[moduleListPos];
-                    if (moduleName.startsWith('chasmplus_') == false) {
-                        break;
-                    }
                 }
                 makeModuleDetailDialog(moduleName, moduleListName, moduleListPos);
                 evt.stopPropagation();
