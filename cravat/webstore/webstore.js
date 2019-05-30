@@ -171,8 +171,8 @@ function getLocal () {
                     }
                 }
                 remoteModule.tags = remoteTags;
-                // TODO: change localModule to remoteModule when remote manifest has "in_group". Also, change "= True".
-                var groups = localModule['in_group'];
+                // TODO: change localModule to remoteModule when remote manifest has "groups". Also, change "= True".
+                var groups = localModule['groups'];
                 if (groups != undefined && groups != null) {
                     for (var i = 0; i < groups.length; i++) {
                         var group = groups[i];
@@ -184,7 +184,7 @@ function getLocal () {
                         }
                         moduleGroupMembers[group].push(mn);
                     }
-                    remoteModuleInfo[mn]['in_group'] = true;
+                    remoteModuleInfo[mn]['groups'] = true;
                 }
             }
             baseInstalled = true;
@@ -1045,7 +1045,7 @@ function getFilteredRemoteModules () {
         var remoteModuleNameLower = remoteModuleName.toLowerCase();
         var remoteModule = remoteModuleInfo[remoteModuleName];
         var newCheck = document.getElementById('store-tag-checkbox-newavailable').checked;
-        if (remoteModule['in_group'] != undefined) {
+        if (remoteModule['groups'] != undefined) {
             var pass = false;
             if (currentPage == 'storediv-modulegroup-div') {
                 pass = true;
