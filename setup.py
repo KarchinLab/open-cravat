@@ -70,7 +70,8 @@ def readme ():
 data_files = ['cravat.yml', 
               'cravat-system.template.yml', 
               'modules/cravat.yml', 
-              'example_input']
+              'example_input',
+              'wincravat.pyw']
 for root, dirs, files in os.walk(os.path.join('cravat', 'webviewer')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
