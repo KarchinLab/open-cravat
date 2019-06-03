@@ -70,7 +70,8 @@ def readme ():
 data_files = ['cravat.yml', 
               'cravat-system.template.yml', 
               'modules/cravat.yml', 
-              'example_input']
+              'example_input',
+              'wincravat.pyw']
 for root, dirs, files in os.walk(os.path.join('cravat', 'webviewer')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
@@ -123,6 +124,6 @@ setup(
               'install':InstallCommand,
               },
     #install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'aiohttp_session', 'cryptography'],
-    install_requires=['pyyaml<5.1', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'chardet', 'aiosqlite3', 'oyaml', 'infi.systray'],
+    install_requires=['pyyaml<5.1', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'chardet', 'aiosqlite3', 'oyaml', 'infi.systray', 'intervaltree'],
     python_requires='>=3.6',
 )

@@ -628,1053 +628,1094 @@ function populateWidgetSelectorPanel () {
                 var display = vws['display'];
                 if (display != 'none') {
                     input.checked = true;
-                } else {
-                    input.checked = false;
-                }
-            }
-			input.setAttribute('widgetname', widgetName);
-			input.addEventListener('click', function (evt) {
-				onClickWidgetSelectorCheckbox(tabName, evt);
-			});
-			addEl(div, input);
-			var span = getEl('span');
-            span.style.cursor = 'auto';
-			addEl(span, getTn(infomgr.colgroupkeytotitle[widgetName]));
-			addEl(div, span);
-            if (generator['variables'] != undefined &&
-                generator['variables']['shoulddraw'] == false) {
-                input.disabled = 'disabled';
-                span.style.color = 'gray';
-            }
-			addEl(panelDiv, div);
-		}
-	}
-}
-function onClickWidgetHelpButton (evt, tabName) {
-	var widget = evt.target.parentElement.parentElement.parentElement;
-	var container = widget.parentElement;
-    var widgetName = widget.getAttribute('widgetkey');
-    var frame = getEl('iframe');
-    frame.id = 'widgethelpdiv';
-    frame.src = '/result/widgetfile/wg' + widgetName + '/help.html';
-    addEl(document.body, frame);
-    frame.onload = function () {
-        if (this.contentDocument) {
-            var btn = getEl('span');
-            btn.textContent = '\u274c';
-            btn.style.position = 'fixed';
-            btn.style.top = '0';
-            btn.style.right = '0';
-            btn.style.cursor = 'default';
-            btn.addEventListener('click', function (evt) {
-                $('#widgethelpdiv').remove();
-            });
-            addEl(this.contentDocument.body, btn);
-        } else {
-            $(this).remove();
-        }
-    };
-}
-
-function onClickWidgetPinButton (evt, tabName) {
-	var widget = evt.target.parentElement.parentElement.parentElement;
-	var container = widget.parentElement;
-	var button = evt.target;
-	var pinned = button.classList.contains('pinned');
-	if (pinned) {
-		button.classList.remove('pinned');
-		button.classList.add('unpinned');
-		button.src = '/result/images/pin.png';
-		$(container).packery('unstamp', widget);
-	} else {
-		button.src = '/result/images/pin-2.png';
-		button.classList.remove('unpinned');
-		button.classList.add('pinned');
-		$(container).packery('stamp', widget);
-	}
-}
-
-function onClickWidgetCloseButton (tabName, evt) {
-	var widgetName = evt.target.getAttribute('widgetname');
-    executeWidgetClose(widgetName, tabName, false);
-}
-
-function executeWidgetClose (widgetName, tabName, repack) {
-	showHideWidget(tabName, widgetName, false, repack);
-	var button = document.getElementById(
-			'widgettogglecheckbox_' + tabName + '_' + widgetName);
-    if (button != undefined) {
-        button.checked = false;
-    }
-    onClickDetailRedraw();
-}
-
-function executeWidgetOpen (widgetName, tabName, repack) {
-	showHideWidget(tabName, widgetName, true, repack);
-	var button = document.getElementById(
-			'widgettogglecheckbox_' + tabName + '_' + widgetName);
-    if (button != undefined) {
-        button.checked = true;
-    }
-    onClickDetailRedraw();
-}
-
-function grayOutWidgetSelect (widgetName, tabName) {
-    var button = document.getElementById(
-        'widgettogglecheckbox_' + tabName + '_' + widgetName);
-    if (button != undefined) {
-        button.disabled = 'disabled';
-        button.nextSibling.style.color = 'gray';
-    }
-}
-
-function changeWidgetShowHideAll (checked) {
-	var tabName = currentTab;
-	var div = document.getElementById('detailcontainerdiv_' + tabName);
-    var widgets = $(div).packery('getItemElements');
-    for (var i = 0; i < widgets.length; i++) {
-        var widget = widgets[i];
-        var widgetName = widget.getAttribute('widgetkey');
-        document.getElementById('widgettogglecheckbox_' + tabName + '_' + widgetName).checked = checked;
-        showHideWidget(tabName, widgetName, checked, true)
-    }
-}
-
-function onClickWidgetSelectorCheckbox (tabName, evt) {
-	var button = evt.target;
-	var checked = button.checked;
-	var widgetName = button.getAttribute('widgetname');
-	showHideWidget(tabName, widgetName, checked, true)
-}
-
-function showHideWidget (tabName, widgetName, state, repack) {
-	var widget = document.getElementById(
-			'detailwidget_' + tabName + '_' + widgetName);
-    if (widget == null) {
-        return;
-    }
-    var display = widget.style.display;
-    if (state == false && display == 'none') {
-        return;
-    } else if (state == true && display != 'none') {
-        return;
-    }
-	if (state == false) {
-		widget.style.display = 'none';
-	} else {
-		widget.style.display = 'block';
-        if (currentTab == 'info') {
-            var dcd = widget.getElementsByClassName('detailcontentdiv')[0];
-            if (dcd.innerHTML == '') {
-                drawSummaryWidget(widgetName);
-            }
-        }
-	}
-	var $detailContainerDiv = $(document.getElementById('detailcontainerdiv_' + tabName));
-    if (repack == true) {
-        $detailContainerDiv.packery('fit', widget);
-        onClickDetailReset();
-    }
-}
-
-function drawSummaryWidgetGivenData (widgetName, widgetContentDiv, generator, data) {
-    try {
-        if (generator['init'] != undefined) {
-            generator['init'](data);
-        }
-        var shouldDraw = false;
-        if (generator['shoulddraw'] != undefined) {
-            shouldDraw = generator['shoulddraw']();
-        } else {
-            shouldDraw = true;
-        }
-        if (generator['variables'] == undefined) {
-            generator['variables'] = {};
-        }
-        generator['variables']['shoulddraw'] = shouldDraw;
-        if (shouldDraw) {
-            generator['function'](widgetContentDiv, data);
-        } else {
-            setTimeout(function () {
-                executeWidgetClose(widgetName, 'info');
-                grayOutWidgetSelect(widgetName, currentTab);
-            }, 500);
-        }
-    } catch (e) {
-        console.log(e);
-    }
-}
-
-function getSpinner () {
-	var spinner = getEl('img');
-	spinner.src = '/result/images/spinner.gif';
-	spinner.style.width = '15px';
-    return spinner;
-}
-
-function drawSummaryWidget (widgetName) {
-	var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
-	emptyElement(widgetContentDiv);
-	var generator = widgetGenerators[widgetName]['info'];
-	var callServer = generator['callserver'];
-    var data = generator['variables']['data'];
-	if (callServer && data == undefined) {
-        if (generator['beforecallserver'] != undefined) {
-            generator['beforecallserver']();
-        }
-        var callServerParams = {};
-        if (generator['variables']['callserverparams'] != undefined) {
-            callServerParams = generator['variables']['callserverparams'];
-        }
-        var spinner = getSpinner();
-        spinner.className = 'widgetspinner';
-        addEl(widgetContentDiv, spinner);
-		$.ajax({
-            url: '/result/runwidget/' + widgetName, 
-            data: {dbpath: dbPath, params: JSON.stringify(callServerParams)},
-            async: true,
-            success: function (response) {
-                var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
-                var spinner = widgetContentDiv.getElementsByClassName('widgetspinner')[0];
-                $(spinner).remove();
-                var data = response['data'];
-                drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
-            },
-		});
-    } else if (callServer && data != undefined) {
-        drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
-	} else {
-        drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, undefined);
-	}
-}
-
-function setupEvents (tabName) {
-    $("#dragNorthSouthDiv_" + tabName).on('dragstop', function(){
-	    afterDragNSBar(this, tabName);
-    });
-
-    $('.ui-icon-circle-triangle-n').on('click', function(){
-	    minimizeOrMaxmimizeTheDetailsDiv(this, 'minimize');
-    });
-}
-
-function placeDragNSBar (tabName) {
-	var dragBar = document.getElementById('dragNorthSouthDiv_' + tabName);
-	if (! dragBar) {
-		return;
-	}
-	var tableDiv = document.getElementById('tablediv_' + tabName);
-	var tableDivHeight = tableDiv.offsetHeight;
-	dragBar.style.top = tableDivHeight + 29;
-}
-
-function placeCellValueDiv (tabName) {
-	var div = document.getElementById('cellvaluediv_' + tabName);
-	if (! div) {
-		return;
-	}
-	var tableDiv = document.getElementById('tablediv_' + tabName);
-	var tableDivHeight = tableDiv.offsetHeight;
-	div.style.top = tableDivHeight + ARBITRARY_HEIGHT_SUBTRACTION - 10;
-}
-
-function addLeftPanelFieldSet (tabName, parent, fieldSetName) {
-	var fieldSet = getEl('fieldset');
-	var fieldSetId = fieldSetName.toLowerCase().replace(/ /g, '_');
-	fieldSet.id = fieldSetId + '_fieldset_' + tabName;
-	fieldSet.style.display = 'block';
-	var legend = getEl('legend');
-	legend.className = 'toggle_header_' + tabName;
-	legend.style.cursor = 'pointer';
-	legend.style.fontSize = '14px';
-	legend.style.fontWeight = 'bold';
-	addEl(legend, getTn(fieldSetName));
-	var img = getEl('img');
-	img.src = '/result/images/minus.png';
-	img.style.width = '11px';
-	img.style.height = '11px';
-	addEl(legend, img);
-	addEl(fieldSet, legend);
-	var innerDiv = getEl('div');
-	innerDiv.id = fieldSetId + '_innerdiv_' + tabName;
-	innerDiv.className = 'collapsible';
-	addEl(fieldSet, innerDiv);
-	addEl(parent, fieldSet);
-}
-
-function makeGrid (columns, data, tabName) {
-	dataLengths[tabName] = data.length;
-
-	var $tableDiv = $('#tablediv_' + tabName);
-
-	var gridObj = loadGridObject(columns, data, tabName, jobId, 'main');
-	if (gridObj == undefined) {
-		return;
-	}
-
-	gridObj.filterModel = {on: true, header: true, type: 'local'};
-
-	gridObj.headerCellClick = function (evt, ui) {
-		var $grid = $grids[tabName];
-		var sortModel = $grid.pqGrid('option', 'sortModel');
-		if (evt.shiftKey) {
-			sortModel.single = false;
-		} else {
-			sortModel.single = true;
-		}
-		$grid.pqGrid('option', 'sortModel', sortModel);
-	};
-
-	// Creates the grid.
-    try {
-        $tableDiv.pqGrid('destroy');
-    } catch (e) {
-    }
-	var $grid = $tableDiv.pqGrid(gridObj);
-	$grids[tabName] = $grid;
-	gridObjs[tabName] = gridObj;
-
-	// Adds the footer.
-	var footer = $grid.find('.pq-grid-footer')[0];
-	var span = getEl('span');
-	span.id = 'footertext_' + tabName;
-	var button = getEl('button');
-	button.id = 'exportbutton_' + tabName;
-	button.onclick = function(event) {
-		var a = getEl('a');
-		var tsvContent = getExportContent(tabName);
-		a.href = window.URL.createObjectURL(
-				new Blob([tsvContent], {type: 'text/tsv'}));
-		a.download = jobId + '_' + tabName + '.tsv';
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-	};
-	addEl(button, getTn('Export'));
-	addEl(footer, span);
-	addEl(footer, button);
-	var lenStr = dataLengths[tabName] + ' total rows';
-	document.getElementById('footertext_' + tabName).textContent = lenStr;
-}
-
-function emptyElement (elem) {
-    if (elem == null) {
-        return;
-    }
-	var last = null;
-    while (last = elem.lastChild) {
-    	elem.removeChild(last);
-    }
-}
-
-function getFilterCol (columnKey) {
-	for (var i = 0; i < filterCols.length; i++) {
-		var colModel = filterCols[i].colModel;
-		for (var j = 0; j < colModel.length; j++) {
-			var column = colModel[j];
-			if (column.col == columnKey) {
-				return column;
+					} else {
+						input.checked = false;
+					}
+				}
+				input.setAttribute('widgetname', widgetName);
+				input.addEventListener('click', function (evt) {
+					onClickWidgetSelectorCheckbox(tabName, evt);
+				});
+				addEl(div, input);
+				var span = getEl('span');
+				span.style.cursor = 'auto';
+				addEl(span, getTn(infomgr.colgroupkeytotitle[widgetName]));
+				addEl(div, span);
+				if (generator['variables'] != undefined &&
+					generator['variables']['shoulddraw'] == false) {
+					input.disabled = 'disabled';
+					span.style.color = 'gray';
+				}
+				addEl(panelDiv, div);
 			}
 		}
 	}
-	return null;
-}
-
-function getLoadSelectorDiv (tabName) {
-	var div = getEl('div');
-
-	// Selector
-	var selector = getEl('select');
-	selector.id = 'filterselect';
-	selector.className = 'inlineselect';
-	var option = new Option('Choose a column to filter', 'none');
-	selector.options.add(option);
-	for (var i = 0; i < filterCols.length; i++) {
-		var filterCol = filterCols[i];
-		var columnGroupName = filterCol.title;
-		var colModel = filterCol.colModel;
-		for (var j = 0; j < colModel.length; j++) {
-			var column = colModel[j];
-			if (column.retfilt == true) {
-				option = new Option(column.colgroup + ' | ' + column.title, column.col);
-				selector.options.add(option);
-			}
-		}
-	}
-
-	selector.onchange = function (evt) {
-		onChangeFilterSelector(null, null, null, null);
-	}
-	addEl(div, selector);
-
-	// Select detail div
-	var selectDetailDiv = getEl('div');
-	selectDetailDiv.id = 'selectdetaildiv';
-	selectDetailDiv.style.display = 'inline-block';
-	addEl(div, selectDetailDiv);
-
-	return div;
-}
-
-function updateLoadMsgDiv (msg) {
-	var msgDiv = document.getElementById('load_innerdiv_msg_info');
-	emptyElement(msgDiv);
-	addEl(msgDiv, getTn(msg));
-}
-
-function setFilterSelect (div) {
-	var selectDiv = div.parentElement.previousSibling;
-	var col = div.getAttribute('col');
-	var retfilttype = div.getAttribute('retfilttype');
-	var val1 = div.getAttribute('val1');
-	var val2 = div.getAttribute('val2');
-	var checked = div.getAttribute('checked');
-	var select = selectDiv.getElementsByClassName('inlineselect')[0];
-	onChangeFilterSelector(col, retfilttype, val1, val2, checked);
-}
-
-function populateLoadDiv (tabName, filterDiv) {
-	// Title
-	var legend = getEl('legend');
-	legend.className = 'section_header';
-	addEl(legend, getTn('Variant Filters'));
-
-	// Save Filter Set button
-	var button = getEl('button');
-	button.style.marginLeft = '10px';
-	button.onclick = function(event) {
-		saveFilterSettingAs();
-	};
-	addEl(button, getTn('Save...'));
-	addEl(legend, button);
-
-	// Load Filter Set button
-	var button = getEl('button');
-	button.style.marginLeft = '10px';
-	button.onclick = function(event) {
-		var filterDiv = document.getElementById('load_filter_select_div');
-	 	var display = filterDiv.style.display;
-	 	if (display == 'none') {
-	 		filterDiv.style.display = 'block';
-	 		loadFilterSettingAs();
-	 	} else {
-	 		filterDiv.style.display = 'none';
-	 	}
-	};
-	addEl(button, getTn('Load...'));
-	addEl(legend, button);
-
-    // Delete Filter Set button
-    var button = getEl('button');
-    button.style.marginLeft = '10px';
-    button.onclick = function (evt) {
-        deleteFilterSettingAs();
-    }
-    addEl(button, getTn('Delete...'));
-    addEl(legend, button);
-
-	// Filter name div
-	var div = getEl('div');
-	div.id = 'load_filter_select_div';
-	div.style.display = 'none';
-	div.style.position = 'absolute';
-	div.style.left = '198px';
-	div.style.padding = '6px';
-	div.style.overflow = 'auto';
-	div.style.backgroundColor = 'rgb(232, 232, 232)';
-	div.style.border = '1px solid black';
-	addEl(legend, div);
-
-	addEl(filterDiv, legend);
-
-	// Description
-	var div = getEl('div');
-	var p = getEl('p');
-	p.textContent = 'Add variant filters below. Click "Count" to count the '
-				   +'number of variants passing the filter. Click "Update" to '
-				   +'apply the filter.'
-	addEl(div, p);
-	addEl(filterDiv, div);
-
-    // Filter
-    var div = getEl('div');
-    div.id = 'filterwrapdiv';
-    populateFilterWrapDiv(div);
-    $(filterDiv).append(div);
-
-    // Message
-    var div = getEl('div');
-    div.id = prefixLoadDiv + 'msg_' + tabName;
-    div.style.height = '20px';
-    div.style.fontFamily = 'Verdana';
-    div.style.fontSize = '12px';
-    addEl(filterDiv, div);
-
-    // Count button
-    var button = getEl('button');
-    button.id = 'count_button';
-    button.onclick = function (evt) {
-        makeFilterJson();
-        infomgr.count(dbPath, 'variant', function (msg, data) {
-            updateLoadMsgDiv(msg);
-            var count = data['n'];
-            if (count <= NUMVAR_LIMIT && count > 0) {
-                enableUpdateButton();
-            } else {
-                disableUpdateButton();
-            }
-        });
-    }
-    button.textContent = 'Count';
-    addEl(filterDiv, button);
-
-    // Update button
-    var button = getEl('button');
-    button.id = 'load_button';
-    button.onclick = function(evt) {
-        toggleFilterDiv();
-        evt.target.disabled = true;
-        var infoReset = resetTab['info'];
-        resetTab = {'info': infoReset};
-        showSpinner(tabName, document.body);
-        makeFilterJson();
-        loadData(false, null);
-    };
-    addEl(button, getTn('Update'));
-    addEl(filterDiv, button);
-
-    // Close button
-    var button = getEl('div');
-    button.style.position = 'absolute';
-    button.style.top = '2px';
-    button.style.right = '4px';
-    button.style.fontSize = '20px';
-    button.textContent = 'X';
-    button.style.cursor = 'default';
-    button.addEventListener('click', function (evt) {
-        toggleFilterDiv();
-    });
-    addEl(filterDiv, button);
-}
-
-function onClickFilterLevelButton (button) {
-    var simpleFilterDiv = document.getElementById('filter-root-group-div-simple');
-    var advancedFilterDiv = document.getElementById('filter-root-group-div-advanced');
-    if (button.classList.contains('filter-level-simple')) {
-        button.classList.remove('filter-level-simple');
-        button.classList.add('filter-level-advanced');
-        simpleFilterDiv.style.display = 'none';
-        advancedFilterDiv.style.display = null;
-    } else if (button.classList.contains('filter-level-advanced')) {
-        button.classList.remove('filter-level-advanced');
-        button.classList.add('filter-level-simple');
-        simpleFilterDiv.style.display = null;
-        advancedFilterDiv.style.display = 'none';
-    }
-}
-
-function populateFilterWrapDiv (div) {
-    var button = getEl('span');
-    button.className = 'filter-level-button';
-    button.addEventListener('click', function (evt) {
-		onClickFilterLevelButton(evt.target);
-    });
-	button.classList.add('filter-level-simple');
-    addEl(div, button);
-	addEl(div, getEl('br'));
-	var filter = undefined;
-	var filterSimple = undefined;
-	var advancedColumnsPresent = false;
-	if (filterJson.hasOwnProperty('variant')) {
-		filter = filterJson;
-		// Make copy without groups for simple filter
-		filterSimple = JSON.parse(JSON.stringify(filter));
-		filterSimple.variant.groups = [];
-		// Also exclude columns that are only available in advanced
-		const topFilterCols = filterSimple.variant.columns;
-		const topSimpleCols = []
-		for (let i=0; i<topFilterCols.length; i++) {
-			let filterCol = topFilterCols[i];
-			let colModel = getFilterColByName(filterCol.column);
-			if (colModel.filterable) {
-				topSimpleCols.push(filterCol)
+	function onClickWidgetHelpButton (evt, tabName) {
+		var widget = evt.target.parentElement.parentElement.parentElement;
+		var container = widget.parentElement;
+		var widgetName = widget.getAttribute('widgetkey');
+		var frame = getEl('iframe');
+		frame.id = 'widgethelpdiv';
+		frame.src = '/result/widgetfile/wg' + widgetName + '/help.html';
+		addEl(document.body, frame);
+		frame.onload = function () {
+			if (this.contentDocument) {
+				var btn = getEl('span');
+				btn.textContent = '\u274c';
+				btn.style.position = 'fixed';
+				btn.style.top = '0';
+				btn.style.right = '0';
+				btn.style.cursor = 'default';
+				btn.addEventListener('click', function (evt) {
+					$('#widgethelpdiv').remove();
+				});
+				addEl(this.contentDocument.body, btn);
 			} else {
-				advancedColumnsPresent = true;
+				$(this).remove();
 			}
+		};
+	}
+
+	function onClickWidgetPinButton (evt, tabName) {
+		var widget = evt.target.parentElement.parentElement.parentElement;
+		var container = widget.parentElement;
+		var button = evt.target;
+		var pinned = button.classList.contains('pinned');
+		if (pinned) {
+			button.classList.remove('pinned');
+			button.classList.add('unpinned');
+			button.src = '/result/images/pin.png';
+			$(container).packery('unstamp', widget);
+		} else {
+			button.src = '/result/images/pin-2.png';
+			button.classList.remove('unpinned');
+			button.classList.add('pinned');
+			$(container).packery('stamp', widget);
 		}
-		filterSimple.variant.columns = topSimpleCols;
 	}
-	var filterRootGroupDivSimple = makeFilterRootGroupDiv(filterSimple, 'filter-root-group-div-simple', 'simple');
-	$(div).append(filterRootGroupDivSimple);
-	button.classList.remove('filter-level-simple'); // Must toggle to advanced so that advanced filter uses all columns in rules selector
-	button.classList.add('filter-level-advanced');
-	var filterRootGroupDivAdvanced = makeFilterRootGroupDiv(filter, 'filter-root-group-div-advanced', 'advanced');
-	button.classList.remove('filter-level-advanced'); // Toggle back
-	button.classList.add('filter-level-simple');
-	$(div).append(filterRootGroupDivAdvanced);
-	filterRootGroupDivSimple[0].style.display = null;
-	filterRootGroupDivAdvanced[0].style.display = 'none';
-	if ((filter && filter.variant.groups.length > 0) || advancedColumnsPresent) { // Advanced filter
-		filterRootGroupDivSimple[0].style.display = 'none';
-		filterRootGroupDivAdvanced[0].style.display = null; // Setting element.style null means inherited css style is used
-		button.classList.remove('filter-level-simple');
-		button.classList.add('filter-level-advanced');
+
+	function onClickWidgetCloseButton (tabName, evt) {
+		var widgetName = evt.target.getAttribute('widgetname');
+		executeWidgetClose(widgetName, tabName, false);
 	}
-}
 
-function populateTableColumnSelectorPanel () {
-	var tabName = currentTab;
-	var wholeDiv = document.getElementById('columns_showhide_select_div');
-	wholeDiv.innerHTML = '';
-	wholeDiv.style.width = '400px';
-	wholeDiv.style.height = '400px';
-	wholeDiv.style.overflow = 'auto';
-	var columnGroupsForTab = infomgr.getColumnGroups(tabName);
-	var columnGroupNames = Object.keys(columnGroupsForTab);
-	var columns = infomgr.getColumns(tabName);
-	for (var i = 0; i < columnGroupNames.length; i++) {
-		var colGroupNo = i;
-		var columnGroupName = columnGroupNames[i];
-		var columnGroupColumnKeys = columnGroupsForTab[columnGroupName];
+	function onClickWidgetCameraButton (tabName, evt) {
+		var widgetName = evt.target.getAttribute('widgetname');
+		saveWidgetContent(widgetName, tabName);
+	}
 
-		// Group div
-		var groupDiv = document.createElement('fieldset');
-		groupDiv.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_id';
-		groupDiv.className = columnGroupPrefix + '_' + tabName + '_class';
-		var legend = getEl('legend');
-		legend.style.fontSize = '14px';
-		legend.style.fontWeight = 'bold';
-		var checkbox = getEl('input');
-        checkbox.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_' + '_checkbox';
-		checkbox.type = 'checkbox';
-		checkbox.checked = true;
-		checkbox.setAttribute('colgroupno', i);
-		checkbox.setAttribute('colgroupname', columnGroupName);
-		checkbox.addEventListener('change', function (evt, ui) {
-			var colGroupName = evt.target.getAttribute('colgroupname');
-			var cols = infomgr.getColumnGroups(currentTab)[colGroupName];
-			var checkboxes = this.parentElement.parentElement.getElementsByClassName('colcheckbox');
-			var checked = this.checked;
-			for (var i = 0; i < checkboxes.length; i++) {
-				var checkbox = checkboxes[i];
-				checkbox.checked = checked;
-			}
-			updateTableColumns(tabName);
-		});
-		addEl(legend, checkbox);
-		addEl(legend, getTn(columnGroupName));
-		addEl(groupDiv, legend);
-
-		// Columns
-		var columnsDiv = document.createElement('div');
-		for (var columnKeyNo = 0; columnKeyNo < columnGroupColumnKeys.length; 
-				columnKeyNo++) {
-			var columnKey = columnGroupColumnKeys[columnKeyNo];
-			var column = columns[infomgr.getColumnNo(tabName, columnKey)];
-			var span = getEl('span');
-			span.textContent = '\xA0';
-			addEl(columnsDiv, span);
-			var checkbox = getEl('input');
-			checkbox.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_' + column.col + '_' + '_checkbox';
-			checkbox.className = 'colcheckbox';
-			checkbox.type = 'checkbox';
-			checkbox.checked = !column.hidden;
-			checkbox.setAttribute('colgroupname', columnGroupName);
-			checkbox.setAttribute('col', column.col);
-			checkbox.setAttribute('colno', columnKeyNo);
-			checkbox.addEventListener('change', function (evt, ui) {
-				updateTableColumns(tabName);
-			});
-			addEl(columnsDiv, checkbox);
-			var span = document.createElement('span');
-			span.textContent = column.title;
-			addEl(columnsDiv, span);
-			var br = getEl('br');
-			addEl(columnsDiv, br);
+	function executeWidgetClose (widgetName, tabName, repack) {
+		showHideWidget(tabName, widgetName, false, repack);
+		var button = document.getElementById(
+				'widgettogglecheckbox_' + tabName + '_' + widgetName);
+		if (button != undefined) {
+			button.checked = false;
 		}
-		addEl(groupDiv, columnsDiv);
-		addEl(wholeDiv, groupDiv);
+		onClickDetailRedraw();
 	}
-}
 
-function updateTableColumns (tabName) {
-	var selectorPanel = document.getElementById('columns_showhide_select_div');
-	var checkboxes = selectorPanel.getElementsByClassName('colcheckbox');
-	var colModel = $grids[tabName].pqGrid('option', 'colModel');
-	for (var i = 0; i < checkboxes.length; i++) {
-		var checkbox = checkboxes[i];
-		var colgroupname = checkbox.getAttribute('colgroupname');
-		var colkey = checkbox.getAttribute('col');
-		var colno = checkbox.getAttribute('colno');
-		var checked =  ! checkbox.checked;
-		for (var j = 0; j < colModel.length; j++) {
-			var cols = colModel[j].colModel;
-			for (var k = 0; k < cols.length; k++) {
-				var col = cols[k];
-				if (col.colgroup == colgroupname && col.col == colkey) {
-					cols[k].hidden = checked;
-					break;
+	function executeWidgetOpen (widgetName, tabName, repack) {
+		showHideWidget(tabName, widgetName, true, repack);
+		var button = document.getElementById(
+				'widgettogglecheckbox_' + tabName + '_' + widgetName);
+		if (button != undefined) {
+			button.checked = true;
+		}
+		onClickDetailRedraw();
+	}
+
+	function grayOutWidgetSelect (widgetName, tabName) {
+		var button = document.getElementById(
+			'widgettogglecheckbox_' + tabName + '_' + widgetName);
+		if (button != undefined) {
+			button.disabled = 'disabled';
+			button.nextSibling.style.color = 'gray';
+		}
+	}
+
+	function changeWidgetShowHideAll (checked) {
+		var tabName = currentTab;
+		var div = document.getElementById('detailcontainerdiv_' + tabName);
+		var widgets = $(div).packery('getItemElements');
+		for (var i = 0; i < widgets.length; i++) {
+			var widget = widgets[i];
+			var widgetName = widget.getAttribute('widgetkey');
+			document.getElementById('widgettogglecheckbox_' + tabName + '_' + widgetName).checked = checked;
+			showHideWidget(tabName, widgetName, checked, true)
+		}
+	}
+
+	function onClickWidgetSelectorCheckbox (tabName, evt) {
+		var button = evt.target;
+		var checked = button.checked;
+		var widgetName = button.getAttribute('widgetname');
+		showHideWidget(tabName, widgetName, checked, true)
+	}
+
+	function showHideWidget (tabName, widgetName, state, repack) {
+		var widget = document.getElementById(
+				'detailwidget_' + tabName + '_' + widgetName);
+		if (widget == null) {
+			return;
+		}
+		var display = widget.style.display;
+		if (state == false && display == 'none') {
+			return;
+		} else if (state == true && display != 'none') {
+			return;
+		}
+		if (state == false) {
+			widget.style.display = 'none';
+		} else {
+			widget.style.display = 'block';
+			if (currentTab == 'info') {
+				var dcd = widget.getElementsByClassName('detailcontentdiv')[0];
+				if (dcd.innerHTML == '') {
+					drawSummaryWidget(widgetName);
 				}
 			}
 		}
+		var $detailContainerDiv = $(document.getElementById('detailcontainerdiv_' + tabName));
+		if (repack == true) {
+			$detailContainerDiv.packery('fit', widget);
+			onClickDetailReset();
+		}
 	}
-	$grids[tabName].pqGrid('option', 'colModel', colModel).pqGrid('refresh');
-}
-function showSpinner (tabName, elem) {
-	spinner = getEl('img');
-	spinner.src = '/result/images/spinner.gif';
-	spinner.style.width = '15px';
-	addEl(elem.parentElement, spinner);
-}
 
-function pickThroughAndChangeCursorClasses(domElement, classToSkip, 
-			classToAdd) {
-	   var classNames = domElement.className;
-	   var arrayClasses = classNames.split(" ");
-	   var newArrayClassNames = [];
-	   for(var i=0; i<arrayClasses.length; i++){
-		   if (arrayClasses[i] != classToSkip){
-			   newArrayClassNames.push(arrayClasses[i]);
+	function drawSummaryWidgetGivenData (widgetName, widgetContentDiv, generator, data) {
+		try {
+			if (generator['init'] != undefined) {
+				generator['init'](data);
+			}
+			var shouldDraw = false;
+			if (generator['shoulddraw'] != undefined) {
+				shouldDraw = generator['shoulddraw']();
+			} else {
+				shouldDraw = true;
+			}
+			if (generator['variables'] == undefined) {
+				generator['variables'] = {};
+			}
+			generator['variables']['shoulddraw'] = shouldDraw;
+			if (shouldDraw) {
+				generator['function'](widgetContentDiv, data);
+			} else {
+				setTimeout(function () {
+					executeWidgetClose(widgetName, 'info');
+					grayOutWidgetSelect(widgetName, currentTab);
+				}, 500);
+			}
+		} catch (e) {
+			console.log(e);
+		}
+	}
+
+	function getSpinner () {
+		var spinner = getEl('img');
+		spinner.src = '/result/images/spinner.gif';
+		spinner.style.width = '15px';
+		return spinner;
+	}
+
+	function drawSummaryWidget (widgetName) {
+		var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
+		emptyElement(widgetContentDiv);
+		var generator = widgetGenerators[widgetName]['info'];
+		var callServer = generator['callserver'];
+		var data = generator['variables']['data'];
+		if (callServer && data == undefined) {
+			if (generator['beforecallserver'] != undefined) {
+				generator['beforecallserver']();
+			}
+			var callServerParams = {};
+			if (generator['variables']['callserverparams'] != undefined) {
+				callServerParams = generator['variables']['callserverparams'];
+			}
+			var spinner = getSpinner();
+			spinner.className = 'widgetspinner';
+			addEl(widgetContentDiv, spinner);
+			$.ajax({
+				url: '/result/runwidget/' + widgetName, 
+				data: {dbpath: dbPath, params: JSON.stringify(callServerParams)},
+				async: true,
+				success: function (response) {
+					var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
+					var spinner = widgetContentDiv.getElementsByClassName('widgetspinner')[0];
+					$(spinner).remove();
+					var data = response['data'];
+					drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
+				},
+			});
+		} else if (callServer && data != undefined) {
+			drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
+		} else {
+			drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, undefined);
+		}
+	}
+
+	function setupEvents (tabName) {
+		$("#dragNorthSouthDiv_" + tabName).on('dragstop', function(){
+			afterDragNSBar(this, tabName);
+		});
+
+		$('.ui-icon-circle-triangle-n').on('click', function(){
+			minimizeOrMaxmimizeTheDetailsDiv(this, 'minimize');
+		});
+	}
+
+	function placeDragNSBar (tabName) {
+		var dragBar = document.getElementById('dragNorthSouthDiv_' + tabName);
+		if (! dragBar) {
+			return;
+		}
+		var tableDiv = document.getElementById('tablediv_' + tabName);
+		var tableDivHeight = tableDiv.offsetHeight;
+		dragBar.style.top = tableDivHeight + 29;
+	}
+
+	function placeCellValueDiv (tabName) {
+		var div = document.getElementById('cellvaluediv_' + tabName);
+		if (! div) {
+			return;
+		}
+		var tableDiv = document.getElementById('tablediv_' + tabName);
+		var tableDivHeight = tableDiv.offsetHeight;
+		div.style.top = tableDivHeight + ARBITRARY_HEIGHT_SUBTRACTION - 10;
+	}
+
+	function addLeftPanelFieldSet (tabName, parent, fieldSetName) {
+		var fieldSet = getEl('fieldset');
+		var fieldSetId = fieldSetName.toLowerCase().replace(/ /g, '_');
+		fieldSet.id = fieldSetId + '_fieldset_' + tabName;
+		fieldSet.style.display = 'block';
+		var legend = getEl('legend');
+		legend.className = 'toggle_header_' + tabName;
+		legend.style.cursor = 'pointer';
+		legend.style.fontSize = '14px';
+		legend.style.fontWeight = 'bold';
+		addEl(legend, getTn(fieldSetName));
+		var img = getEl('img');
+		img.src = '/result/images/minus.png';
+		img.style.width = '11px';
+		img.style.height = '11px';
+		addEl(legend, img);
+		addEl(fieldSet, legend);
+		var innerDiv = getEl('div');
+		innerDiv.id = fieldSetId + '_innerdiv_' + tabName;
+		innerDiv.className = 'collapsible';
+		addEl(fieldSet, innerDiv);
+		addEl(parent, fieldSet);
+	}
+
+	function makeGrid (columns, data, tabName) {
+		dataLengths[tabName] = data.length;
+
+		var $tableDiv = $('#tablediv_' + tabName);
+
+		var gridObj = loadGridObject(columns, data, tabName, jobId, 'main');
+		if (gridObj == undefined) {
+			return;
+		}
+
+		gridObj.filterModel = {on: true, header: true, type: 'local'};
+
+		gridObj.headerCellClick = function (evt, ui) {
+			var $grid = $grids[tabName];
+			var sortModel = $grid.pqGrid('option', 'sortModel');
+			if (evt.shiftKey) {
+				sortModel.single = false;
+			} else {
+				sortModel.single = true;
+			}
+			$grid.pqGrid('option', 'sortModel', sortModel);
+		};
+
+		// Creates the grid.
+		try {
+			$tableDiv.pqGrid('destroy');
+		} catch (e) {
+		}
+		var $grid = $tableDiv.pqGrid(gridObj);
+		$grids[tabName] = $grid;
+		gridObjs[tabName] = gridObj;
+
+		// Adds the footer.
+		var footer = $grid.find('.pq-grid-footer')[0];
+		var span = getEl('span');
+		span.id = 'footertext_' + tabName;
+		var button = getEl('button');
+		button.id = 'exportbutton_' + tabName;
+		button.onclick = function(event) {
+			var a = getEl('a');
+			var tsvContent = getExportContent(tabName);
+			a.href = window.URL.createObjectURL(
+					new Blob([tsvContent], {type: 'text/tsv'}));
+			a.download = jobId + '_' + tabName + '.tsv';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+		};
+		addEl(button, getTn('Export'));
+		addEl(footer, span);
+		addEl(footer, button);
+		var lenStr = dataLengths[tabName] + ' total rows';
+		document.getElementById('footertext_' + tabName).textContent = lenStr;
+	}
+
+	function emptyElement (elem) {
+		if (elem == null) {
+			return;
+		}
+		var last = null;
+		while (last = elem.lastChild) {
+			elem.removeChild(last);
+		}
+	}
+
+	function getFilterCol (columnKey) {
+		for (var i = 0; i < filterCols.length; i++) {
+			var colModel = filterCols[i].colModel;
+			for (var j = 0; j < colModel.length; j++) {
+				var column = colModel[j];
+				if (column.col == columnKey) {
+					return column;
+				}
+			}
+		}
+		return null;
+	}
+
+	function getLoadSelectorDiv (tabName) {
+		var div = getEl('div');
+
+		// Selector
+		var selector = getEl('select');
+		selector.id = 'filterselect';
+		selector.className = 'inlineselect';
+		var option = new Option('Choose a column to filter', 'none');
+		selector.options.add(option);
+		for (var i = 0; i < filterCols.length; i++) {
+			var filterCol = filterCols[i];
+			var columnGroupName = filterCol.title;
+			var colModel = filterCol.colModel;
+			for (var j = 0; j < colModel.length; j++) {
+				var column = colModel[j];
+				if (column.retfilt == true) {
+					option = new Option(column.colgroup + ' | ' + column.title, column.col);
+					selector.options.add(option);
+				}
+			}
+		}
+
+		selector.onchange = function (evt) {
+			onChangeFilterSelector(null, null, null, null);
+		}
+		addEl(div, selector);
+
+		// Select detail div
+		var selectDetailDiv = getEl('div');
+		selectDetailDiv.id = 'selectdetaildiv';
+		selectDetailDiv.style.display = 'inline-block';
+		addEl(div, selectDetailDiv);
+
+		return div;
+	}
+
+	function updateLoadMsgDiv (msg) {
+		var msgDiv = document.getElementById('load_innerdiv_msg_info');
+		emptyElement(msgDiv);
+		addEl(msgDiv, getTn(msg));
+	}
+
+	function setFilterSelect (div) {
+		var selectDiv = div.parentElement.previousSibling;
+		var col = div.getAttribute('col');
+		var retfilttype = div.getAttribute('retfilttype');
+		var val1 = div.getAttribute('val1');
+		var val2 = div.getAttribute('val2');
+		var checked = div.getAttribute('checked');
+		var select = selectDiv.getElementsByClassName('inlineselect')[0];
+		onChangeFilterSelector(col, retfilttype, val1, val2, checked);
+	}
+
+	function populateLoadDiv (tabName, filterDiv) {
+		// Title
+		var legend = getEl('legend');
+		legend.className = 'section_header';
+		addEl(legend, getTn('Variant Filters'));
+
+		// Save Filter Set button
+		var button = getEl('button');
+		button.style.marginLeft = '10px';
+		button.onclick = function(event) {
+			saveFilterSettingAs();
+		};
+		addEl(button, getTn('Save...'));
+		addEl(legend, button);
+
+		// Load Filter Set button
+		var button = getEl('button');
+		button.style.marginLeft = '10px';
+		button.onclick = function(event) {
+			var filterDiv = document.getElementById('load_filter_select_div');
+			var display = filterDiv.style.display;
+			if (display == 'none') {
+				filterDiv.style.display = 'block';
+				loadFilterSettingAs();
+			} else {
+				filterDiv.style.display = 'none';
+			}
+		};
+		addEl(button, getTn('Load...'));
+		addEl(legend, button);
+
+		// Delete Filter Set button
+		var button = getEl('button');
+		button.style.marginLeft = '10px';
+		button.onclick = function (evt) {
+			deleteFilterSettingAs();
+		}
+		addEl(button, getTn('Delete...'));
+		addEl(legend, button);
+
+		// Filter name div
+		var div = getEl('div');
+		div.id = 'load_filter_select_div';
+		div.style.display = 'none';
+		div.style.position = 'absolute';
+		div.style.left = '198px';
+		div.style.padding = '6px';
+		div.style.overflow = 'auto';
+		div.style.backgroundColor = 'rgb(232, 232, 232)';
+		div.style.border = '1px solid black';
+		addEl(legend, div);
+
+		addEl(filterDiv, legend);
+
+		// Description
+		var div = getEl('div');
+		var p = getEl('p');
+		p.textContent = 'Add variant filters below. Click "Count" to count the '
+					   +'number of variants passing the filter. Click "Update" to '
+					   +'apply the filter.'
+		addEl(div, p);
+		addEl(filterDiv, div);
+
+		// Filter
+		var div = getEl('div');
+		div.id = 'filterwrapdiv';
+		populateFilterWrapDiv(div);
+		$(filterDiv).append(div);
+
+		// Message
+		var div = getEl('div');
+		div.id = prefixLoadDiv + 'msg_' + tabName;
+		div.style.height = '20px';
+		div.style.fontFamily = 'Verdana';
+		div.style.fontSize = '12px';
+		addEl(filterDiv, div);
+
+		// Count button
+		var button = getEl('button');
+		button.id = 'count_button';
+		button.onclick = function (evt) {
+			makeFilterJson();
+			infomgr.count(dbPath, 'variant', function (msg, data) {
+				updateLoadMsgDiv(msg);
+				var count = data['n'];
+				if (count <= NUMVAR_LIMIT && count > 0) {
+					enableUpdateButton();
+				} else {
+					disableUpdateButton();
+				}
+			});
+		}
+		button.textContent = 'Count';
+		addEl(filterDiv, button);
+
+		// Update button
+		var button = getEl('button');
+		button.id = 'load_button';
+		button.onclick = function(evt) {
+			toggleFilterDiv();
+			evt.target.disabled = true;
+			var infoReset = resetTab['info'];
+			resetTab = {'info': infoReset};
+			showSpinner(tabName, document.body);
+			makeFilterJson();
+			loadData(false, null);
+		};
+		addEl(button, getTn('Update'));
+		addEl(filterDiv, button);
+
+		// Close button
+		var button = getEl('div');
+		button.style.position = 'absolute';
+		button.style.top = '2px';
+		button.style.right = '4px';
+		button.style.fontSize = '20px';
+		button.textContent = 'X';
+		button.style.cursor = 'default';
+		button.addEventListener('click', function (evt) {
+			toggleFilterDiv();
+		});
+		addEl(filterDiv, button);
+	}
+
+	function onClickFilterLevelButton (button) {
+		var simpleFilterDiv = document.getElementById('filter-root-group-div-simple');
+		var advancedFilterDiv = document.getElementById('filter-root-group-div-advanced');
+		if (button.classList.contains('filter-level-simple')) {
+			button.classList.remove('filter-level-simple');
+			button.classList.add('filter-level-advanced');
+			simpleFilterDiv.style.display = 'none';
+			advancedFilterDiv.style.display = null;
+		} else if (button.classList.contains('filter-level-advanced')) {
+			button.classList.remove('filter-level-advanced');
+			button.classList.add('filter-level-simple');
+			simpleFilterDiv.style.display = null;
+			advancedFilterDiv.style.display = 'none';
+		}
+	}
+
+	function populateFilterWrapDiv (div) {
+		var button = getEl('span');
+		button.className = 'filter-level-button';
+		button.addEventListener('click', function (evt) {
+			onClickFilterLevelButton(evt.target);
+		});
+		button.classList.add('filter-level-simple');
+		addEl(div, button);
+		addEl(div, getEl('br'));
+		var filter = undefined;
+		var filterSimple = undefined;
+		var advancedColumnsPresent = false;
+		if (filterJson.hasOwnProperty('variant')) {
+			filter = filterJson;
+			// Make copy without groups for simple filter
+			filterSimple = JSON.parse(JSON.stringify(filter));
+			filterSimple.variant.groups = [];
+			// Also exclude columns that are only available in advanced
+			const topFilterCols = filterSimple.variant.columns;
+			const topSimpleCols = []
+			for (let i=0; i<topFilterCols.length; i++) {
+				let filterCol = topFilterCols[i];
+				let colModel = getFilterColByName(filterCol.column);
+				if (colModel.filterable) {
+					topSimpleCols.push(filterCol)
+				} else {
+					advancedColumnsPresent = true;
+				}
+			}
+			filterSimple.variant.columns = topSimpleCols;
+		}
+		var filterRootGroupDivSimple = makeFilterRootGroupDiv(filterSimple, 'filter-root-group-div-simple', 'simple');
+		$(div).append(filterRootGroupDivSimple);
+		button.classList.remove('filter-level-simple'); // Must toggle to advanced so that advanced filter uses all columns in rules selector
+		button.classList.add('filter-level-advanced');
+		var filterRootGroupDivAdvanced = makeFilterRootGroupDiv(filter, 'filter-root-group-div-advanced', 'advanced');
+		button.classList.remove('filter-level-advanced'); // Toggle back
+		button.classList.add('filter-level-simple');
+		$(div).append(filterRootGroupDivAdvanced);
+		filterRootGroupDivSimple[0].style.display = null;
+		filterRootGroupDivAdvanced[0].style.display = 'none';
+		if ((filter && filter.variant.groups.length > 0) || advancedColumnsPresent) { // Advanced filter
+			filterRootGroupDivSimple[0].style.display = 'none';
+			filterRootGroupDivAdvanced[0].style.display = null; // Setting element.style null means inherited css style is used
+			button.classList.remove('filter-level-simple');
+			button.classList.add('filter-level-advanced');
+		}
+	}
+
+	function populateTableColumnSelectorPanel () {
+		var tabName = currentTab;
+		var wholeDiv = document.getElementById('columns_showhide_select_div');
+		wholeDiv.innerHTML = '';
+		wholeDiv.style.width = '400px';
+		wholeDiv.style.height = '400px';
+		wholeDiv.style.overflow = 'auto';
+		var columnGroupsForTab = infomgr.getColumnGroups(tabName);
+		var columnGroupNames = Object.keys(columnGroupsForTab);
+		var columns = infomgr.getColumns(tabName);
+		for (var i = 0; i < columnGroupNames.length; i++) {
+			var colGroupNo = i;
+			var columnGroupName = columnGroupNames[i];
+			var columnGroupColumnKeys = columnGroupsForTab[columnGroupName];
+
+			// Group div
+			var groupDiv = document.createElement('fieldset');
+			groupDiv.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_id';
+			groupDiv.className = columnGroupPrefix + '_' + tabName + '_class';
+			var legend = getEl('legend');
+			legend.style.fontSize = '14px';
+			legend.style.fontWeight = 'bold';
+			var checkbox = getEl('input');
+			checkbox.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_' + '_checkbox';
+			checkbox.type = 'checkbox';
+			checkbox.checked = true;
+			checkbox.setAttribute('colgroupno', i);
+			checkbox.setAttribute('colgroupname', columnGroupName);
+			checkbox.addEventListener('change', function (evt, ui) {
+				var colGroupName = evt.target.getAttribute('colgroupname');
+				var cols = infomgr.getColumnGroups(currentTab)[colGroupName];
+				var checkboxes = this.parentElement.parentElement.getElementsByClassName('colcheckbox');
+				var checked = this.checked;
+				for (var i = 0; i < checkboxes.length; i++) {
+					var checkbox = checkboxes[i];
+					checkbox.checked = checked;
+				}
+				updateTableColumns(tabName);
+			});
+			addEl(legend, checkbox);
+			addEl(legend, getTn(columnGroupName));
+			addEl(groupDiv, legend);
+
+			// Columns
+			var columnsDiv = document.createElement('div');
+			for (var columnKeyNo = 0; columnKeyNo < columnGroupColumnKeys.length; 
+					columnKeyNo++) {
+				var columnKey = columnGroupColumnKeys[columnKeyNo];
+				var column = columns[infomgr.getColumnNo(tabName, columnKey)];
+				var span = getEl('span');
+				span.textContent = '\xA0';
+				addEl(columnsDiv, span);
+				var checkbox = getEl('input');
+				checkbox.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_' + column.col + '_' + '_checkbox';
+				checkbox.className = 'colcheckbox';
+				checkbox.type = 'checkbox';
+				checkbox.checked = !column.hidden;
+				checkbox.setAttribute('colgroupname', columnGroupName);
+				checkbox.setAttribute('col', column.col);
+				checkbox.setAttribute('colno', columnKeyNo);
+				checkbox.addEventListener('change', function (evt, ui) {
+					updateTableColumns(tabName);
+				});
+				addEl(columnsDiv, checkbox);
+				var span = document.createElement('span');
+				span.textContent = column.title;
+				addEl(columnsDiv, span);
+				var br = getEl('br');
+				addEl(columnsDiv, br);
+			}
+			addEl(groupDiv, columnsDiv);
+			addEl(wholeDiv, groupDiv);
+		}
+	}
+
+	function updateTableColumns (tabName) {
+		var selectorPanel = document.getElementById('columns_showhide_select_div');
+		var checkboxes = selectorPanel.getElementsByClassName('colcheckbox');
+		var colModel = $grids[tabName].pqGrid('option', 'colModel');
+		for (var i = 0; i < checkboxes.length; i++) {
+			var checkbox = checkboxes[i];
+			var colgroupname = checkbox.getAttribute('colgroupname');
+			var colkey = checkbox.getAttribute('col');
+			var colno = checkbox.getAttribute('colno');
+			var checked =  ! checkbox.checked;
+			for (var j = 0; j < colModel.length; j++) {
+				var cols = colModel[j].colModel;
+				for (var k = 0; k < cols.length; k++) {
+					var col = cols[k];
+					if (col.colgroup == colgroupname && col.col == colkey) {
+						cols[k].hidden = checked;
+						break;
+					}
+				}
+			}
+		}
+		$grids[tabName].pqGrid('option', 'colModel', colModel).pqGrid('refresh');
+	}
+	function showSpinner (tabName, elem) {
+		spinner = getEl('img');
+		spinner.src = '/result/images/spinner.gif';
+		spinner.style.width = '15px';
+		addEl(elem.parentElement, spinner);
+	}
+
+	function pickThroughAndChangeCursorClasses(domElement, classToSkip, 
+				classToAdd) {
+		   var classNames = domElement.className;
+		   var arrayClasses = classNames.split(" ");
+		   var newArrayClassNames = [];
+		   for(var i=0; i<arrayClasses.length; i++){
+			   if (arrayClasses[i] != classToSkip){
+				   newArrayClassNames.push(arrayClasses[i]);
+			   }
 		   }
-	   }
-	   newArrayClassNames.push(classToAdd);
-	   domElement.className = newArrayClassNames.join(" ");	
-}
-
-function loadGridObject(columns, data, tabName, tableTitle, tableType) {
-	var rightDiv = null;
-	var detailDiv = document.getElementById('detaildiv_' + tabName);
-	var dragBar = document.getElementById('dragNorthSouthDiv_' + tabName);
-	var rightDiv = document.getElementById('rightdiv_' + tabName);
-
-	if (rightDiv == null) {
-		return;
+		   newArrayClassNames.push(classToAdd);
+		   domElement.className = newArrayClassNames.join(" ");	
 	}
 
-	var rightDivWidth = rightDiv.offsetWidth;
-	var rightDivHeight = rightDiv.offsetHeight;
-	var dragBarHeight = 0;
-	if (dragBar) {
-		dragBarHeight = dragBar.offsetHeight;
-	}
-	var detailDivHeight = 0;
-	if (detailDiv) {
-        if (loadedHeightSettings['detail_' + tabName] == undefined) {
-            if (rightDivHeight < 660) {
-                detailDivHeight = 250;
-            } else {
-                detailDivHeight = detailDiv.offsetHeight;
-            }
-        } else {
-            detailDivHeight = Number(loadedHeightSettings['detail_' + tabName].replace('px', ''));
-        }
-        detailDiv.style.height = detailDivHeight + 'px';
-	}
+	function loadGridObject(columns, data, tabName, tableTitle, tableType) {
+		var rightDiv = null;
+		var detailDiv = document.getElementById('detaildiv_' + tabName);
+		var dragBar = document.getElementById('dragNorthSouthDiv_' + tabName);
+		var rightDiv = document.getElementById('rightdiv_' + tabName);
 
-	var gridObject = new Object();
-	gridObject.title = tableTitle;
-	gridObject.width = rightDivWidth;
-	gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight - ARBITRARY_HEIGHT_SUBTRACTION - 15;
-	gridObject.virtualX = true;
-	gridObject.virtualY = true;
-	gridObject.wrap = false;
-	gridObject.hwrap = true;
-	gridObject.sortable = true;
-	gridObject.numberCell = {show: false};
-	gridObject.showTitle = false;
-	gridObject.selectionModel = {type: 'cell', mode: 'block'};
-	gridObject.hoverMode = 'cell';
-	gridObject.colModel = infomgr.getColModel(tabName);
-	gridObject.dataModel = {data: Array.from(data)};
-	var sortColumnToUse = 'input_line_number';
-	gridObject.sortModel = {
-			cancel: true, 
-			on: true, 
-			type: 'local', 
-			single: true, 
-			number: true, 
-			sorter: [{dataIndx: infomgr.getColumnNo(tabName, 
-						sortColumnToUse), dir: 'up'}]};
-	gridObject.selectChange = function (event, ui) {
-		var clickInfo = ui.selection['_areas'][0];
-		var rowNo = clickInfo['r1'];
-		var colNo = clickInfo['c1'];
-		var rowData = $grids[tabName].pqGrid('getData')[rowNo];
-		var cellData = rowData[colNo];
-		var valueText = null;
-		if (cellData == undefined || cellData == '' || cellData == null) {
-			valueText = '';
-		} else {
-			valueText = cellData;
+		if (rightDiv == null) {
+			return;
 		}
-		var celltextel = document.getElementById('cellvaluetext_' + tabName);
-		if (celltextel) {
-			celltextel.value = valueText;
+
+		var rightDivWidth = rightDiv.offsetWidth;
+		var rightDivHeight = rightDiv.offsetHeight;
+		var dragBarHeight = 0;
+		if (dragBar) {
+			dragBarHeight = dragBar.offsetHeight;
 		}
-        if (selectedRowNos[tabName] != undefined) {
-            var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: selectedRowNos[tabName]});
-            row.css('background-color', 'white');
-        }
-        var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: rowNo});
-        row.css('background-color', '#ffc500');
-		if (rowData != undefined) {
-			if (selectedRowIds[tabName] == null || selectedRowIds[tabName] != rowData[0]) {
-				selectedRowIds[tabName] = rowData[0];
-				selectedRowNos[tabName] = rowNo;
-				showVariantDetail(rowData, tabName);
+		var detailDivHeight = 0;
+		if (detailDiv) {
+			if (loadedHeightSettings['detail_' + tabName] == undefined) {
+				if (rightDivHeight < 660) {
+					detailDivHeight = 250;
+				} else {
+					detailDivHeight = detailDiv.offsetHeight;
+				}
+			} else {
+				detailDivHeight = Number(loadedHeightSettings['detail_' + tabName].replace('px', ''));
 			}
+			detailDiv.style.height = detailDivHeight + 'px';
 		}
-	};
-	gridObject.beforeSort = function (evt, ui) {
-		if (evt.shiftKey) {
-			ascendingSort = {};
-			for (var i = 0; i < ui.sorter.length; i++) {
-				var sorter = ui.sorter[i];
-				ascendingSort[sorter.dataIndx] = (sorter.dir == 'up');
+
+		var gridObject = new Object();
+		gridObject.title = tableTitle;
+		gridObject.width = rightDivWidth;
+		gridObject.height = rightDivHeight - dragBarHeight - detailDivHeight - ARBITRARY_HEIGHT_SUBTRACTION - 15;
+		gridObject.virtualX = true;
+		gridObject.virtualY = true;
+		gridObject.wrap = false;
+		gridObject.hwrap = true;
+		gridObject.sortable = true;
+		gridObject.numberCell = {show: false};
+		gridObject.showTitle = false;
+		gridObject.selectionModel = {type: 'cell', mode: 'block'};
+		gridObject.hoverMode = 'cell';
+		gridObject.colModel = infomgr.getColModel(tabName);
+		gridObject.dataModel = {data: Array.from(data)};
+		var sortColumnToUse = 'input_line_number';
+		gridObject.sortModel = {
+				cancel: true, 
+				on: true, 
+				type: 'local', 
+				single: true, 
+				number: true, 
+				sorter: [{dataIndx: infomgr.getColumnNo(tabName, 
+							sortColumnToUse), dir: 'up'}]};
+		gridObject.selectChange = function (event, ui) {
+			var clickInfo = ui.selection['_areas'][0];
+			var rowNo = clickInfo['r1'];
+			var colNo = clickInfo['c1'];
+			var rowData = $grids[tabName].pqGrid('getData')[rowNo];
+			var cellData = rowData[colNo];
+			var valueText = null;
+			if (cellData == undefined || cellData == '' || cellData == null) {
+				valueText = '';
+			} else {
+				valueText = cellData;
 			}
-		} else {
-			ui.sorter = [ui.sorter[ui.sorter.length - 1]];
-			gridObject.sortModel.sorter = ui.sorter;
-			if (ui.sorter[0] != undefined) {
-				var sorter = ui.sorter[0];
+			var celltextel = document.getElementById('cellvaluetext_' + tabName);
+			if (celltextel) {
+				celltextel.value = valueText;
+			}
+			if (selectedRowNos[tabName] != undefined) {
+				var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: selectedRowNos[tabName]});
+				row.css('background-color', 'white');
+			}
+			var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: rowNo});
+			row.css('background-color', '#ffc500');
+			if (rowData != undefined) {
+				if (selectedRowIds[tabName] == null || selectedRowIds[tabName] != rowData[0]) {
+					selectedRowIds[tabName] = rowData[0];
+					selectedRowNos[tabName] = rowNo;
+					showVariantDetail(rowData, tabName);
+				}
+			}
+		};
+		gridObject.beforeSort = function (evt, ui) {
+			if (evt.shiftKey) {
 				ascendingSort = {};
-				ascendingSort[sorter.dataIndx] = (sorter.dir == 'up');
+				for (var i = 0; i < ui.sorter.length; i++) {
+					var sorter = ui.sorter[i];
+					ascendingSort[sorter.dataIndx] = (sorter.dir == 'up');
+				}
+			} else {
+				ui.sorter = [ui.sorter[ui.sorter.length - 1]];
+				gridObject.sortModel.sorter = ui.sorter;
+				if (ui.sorter[0] != undefined) {
+					var sorter = ui.sorter[0];
+					ascendingSort = {};
+					ascendingSort[sorter.dataIndx] = (sorter.dir == 'up');
+				}
+			}
+		};
+		gridObject.sortDir = 'up';
+		gridObject.options = {
+				showBottom: true, 
+				dragColumns: {enabled: false}
+		};
+		gridObject.filter = function () {
+			this.scrollRow({rowIndxPage: 0});
+		};
+		gridObject.collapsible = {on: false, toggle: false};
+		gridObject.roundCorners = false;
+		gridObject.stripeRows = true;
+		gridObject.cellDblClick = function (evt, ui) {
+		}
+		gridObject.columnOrder = function (evt, ui) {
+		}
+		gridObject.refresh = function (evt, ui) {
+			var selRowNo = selectedRowNos[tabName];
+			if (selRowNo >= ui.initV && selRowNo <= ui.finalV) {
+				var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: selRowNo});
+				row.css('background-color', '#ffc500');
 			}
 		}
-	};
-	gridObject.sortDir = 'up';
-	gridObject.options = {
-			showBottom: true, 
-			dragColumns: {enabled: false}
-	};
-	gridObject.filter = function () {
-		this.scrollRow({rowIndxPage: 0});
-	};
-	gridObject.collapsible = {on: false, toggle: false};
-	gridObject.roundCorners = false;
-	gridObject.stripeRows = true;
-	gridObject.cellDblClick = function (evt, ui) {
-	}
-	gridObject.columnOrder = function (evt, ui) {
-	}
-    gridObject.refresh = function (evt, ui) {
-        var selRowNo = selectedRowNos[tabName];
-        if (selRowNo >= ui.initV && selRowNo <= ui.finalV) {
-            var row = $grids[tabName].pqGrid('getRow', {rowIndxPage: selRowNo});
-            row.css('background-color', '#ffc500');
-        }
-	}
-	gridObject.refreshHeader = function (evt, ui) {
-        var colModel = null;
-        if ($grids[currentTab] == undefined) {
-            colModel = this.colModel;
-        } else {
-            colModel = $grids[currentTab].pqGrid('getColModel');
-        }
-        var $groupHeaderTr = null;
-        var groupHeaderTitleToKey = {};
-		for (let i=0; i < colModel.length; i++) {
-			var col = colModel[i];
-            var $headerCell = this.getCellHeader({colIndx: col.leftPos});
-            if ($headerCell.length == 0) {
-                continue;
-            }
-			if (col.desc !== null) {
-				$headerCell.attr('title', col.desc).tooltip();
+		gridObject.refreshHeader = function (evt, ui) {
+			var colModel = null;
+			if ($grids[currentTab] == undefined) {
+				colModel = this.colModel;
+			} else {
+				colModel = $grids[currentTab].pqGrid('getColModel');
 			}
-            $groupHeaderTr = $headerCell.parent().prev();
-            $headerCell.attr('col', col.col);
-            $headerCell.attr('colgroup', col.colgroup);
-            groupHeaderTitleToKey[col.colgroup] = col.colgroupkey;
-            $headerCell.contextmenu(function (evt) {
-                var headerCell = evt.target;
-                if (headerCell.classList.contains('pq-td-div')) {
-                    headerCell = headerCell.parentElement;
-                }
-                var col = headerCell.getAttribute('col');
-                var colgroup = headerCell.getAttribute('colgroup');
-                makeTableHeaderRightClickMenu(evt, col, colgroup);
-                return false;
-            });
+			var $groupHeaderTr = null;
+			var groupHeaderTitleToKey = {};
+			for (let i=0; i < colModel.length; i++) {
+				var col = colModel[i];
+				var $headerCell = this.getCellHeader({colIndx: col.leftPos});
+				if ($headerCell.length == 0) {
+					continue;
+				}
+				if (col.desc !== null) {
+					$headerCell.attr('title', col.desc).tooltip();
+				}
+				$groupHeaderTr = $headerCell.parent().prev();
+				$headerCell.attr('col', col.col);
+				$headerCell.attr('colgroup', col.colgroup);
+				groupHeaderTitleToKey[col.colgroup] = col.colgroupkey;
+				$headerCell.contextmenu(function (evt) {
+					var headerCell = evt.target;
+					if (headerCell.classList.contains('pq-td-div')) {
+						headerCell = headerCell.parentElement;
+					}
+					var col = headerCell.getAttribute('col');
+					var colgroup = headerCell.getAttribute('colgroup');
+					makeTableHeaderRightClickMenu(evt, col, colgroup);
+					return false;
+				});
+			}
+			var $groupHeaderTds = $groupHeaderTr.children();
+			for (var i = 0; i < $groupHeaderTds.length; i++) {
+				var th = $groupHeaderTds[i];
+				var title = $(th).children('div').text();
+				th.setAttribute('colgrouptitle', title);
+				$(th).contextmenu(function (evt) {
+					var th = evt.target;
+					if (th.tagName == 'DIV') {
+						th = th.parentElement;
+					}
+					var title = th.getAttribute('colgrouptitle');
+					makeTableGroupHeaderRightClickMenu(evt, th, title);
+					return false;
+				});
+			}
 		}
-        var $groupHeaderTds = $groupHeaderTr.children();
-        for (var i = 0; i < $groupHeaderTds.length; i++) {
-            var th = $groupHeaderTds[i];
-            var title = $(th).children('div').text();
-            th.setAttribute('colgrouptitle', title);
-            $(th).contextmenu(function (evt) {
-                var th = evt.target;
-                if (th.tagName == 'DIV') {
-                    th = th.parentElement;
-                }
-                var title = th.getAttribute('colgrouptitle');
-                makeTableGroupHeaderRightClickMenu(evt, th, title);
-                return false;
-            });
-        }
+		gridObject.columnDrag = function (evt, ui) {
+			var colGroups = $grids[currentTab].pqGrid('option', 'colModel');
+			var colLevel = null;
+			if (ui.column.parent == undefined) {
+				colLevel = 'group';
+			} else {
+				colLevel = 'column';
+			}
+			var uiColGroup = ui.column.colgroup;
+			for (var i = 0; i < colGroups.length; i++) {
+				var colGroup = colGroups[i];
+				var sameColGroup = (uiColGroup == colGroup.pqtitle);
+				if (colLevel == 'column') {
+					colGroup.nodrop = true;
+				} else if (colLevel == 'group') {
+					colGroup.nodrop = false;
+				}
+				var cols = colGroup.colModel;
+				for (var j = 0; j < cols.length; j++) {
+					var col = cols[j];
+					if (colLevel == 'group') {
+						col.nodrop = true;
+					} else if (colLevel == 'column') {
+						if (sameColGroup) {
+							col.nodrop = false;
+						} else {
+							col.nodrop = true;
+						}
+					}
+				}
+			}
+		}
+		gridObject.flex = {on: true, all: false};
+		return gridObject;
 	}
-    gridObject.columnDrag = function (evt, ui) {
-        var colGroups = $grids[currentTab].pqGrid('option', 'colModel');
-        var colLevel = null;
-        if (ui.column.parent == undefined) {
-            colLevel = 'group';
-        } else {
-            colLevel = 'column';
+
+	function makeTableGroupHeaderRightClickMenu (evt, td, colgrouptitle) {
+		var rightDiv = document.getElementById('tablediv_' + currentTab);
+		var divId = 'table-header-contextmenu-' + currentTab;
+		var div = document.getElementById(divId);
+		if (div == undefined) {
+			div = getEl('div');
+			div.id = divId;
+			div.className = 'table-header-contextmenu-div';
+		} else {
+			$(div).empty();
+		}
+		div.style.top = evt.pageY;
+		div.style.left = evt.pageX;
+		var ul = getEl('ul');
+		var li = getEl('li');
+		var a = getEl('a');
+		a.textContent = 'Hide all columns under ' + colgrouptitle;
+		li.addEventListener('click', function (evt) {
+			var checkboxId = 'columngroup__' + currentTab + '_' + colgrouptitle + '__checkbox';
+			var checkbox = document.getElementById(checkboxId);
+			checkbox.click();
+			div.style.display = 'none';
+		});
+		addEl(ul, addEl(li, a));
+		addEl(div, ul);
+		div.style.display = 'block';
+		addEl(rightDiv, div);
+	}
+
+	function makeTableHeaderRightClickMenu (evt, col, colgroup) {
+		var rightDiv = document.getElementById('tablediv_' + currentTab);
+		var divId = 'table-header-contextmenu-' + currentTab;
+		var div = document.getElementById(divId);
+		if (div == undefined) {
+			div = getEl('div');
+			div.id = divId;
+			div.className = 'table-header-contextmenu-div';
+		} else {
+			$(div).empty();
+		}
+		div.style.top = evt.pageY;
+		div.style.left = evt.pageX;
+		var ul = getEl('ul');
+		var li = getEl('li');
+		var a = getEl('a');
+		a.textContent = 'Hide column';
+		li.addEventListener('click', function (evt) {
+			var checkboxId = 'columngroup__' + currentTab + '_' + colgroup + '_' + col + '__checkbox';
+			var checkbox = document.getElementById(checkboxId);
+			checkbox.click();
+			div.style.display = 'none';
+		});
+		addEl(ul, addEl(li, a));
+		addEl(div, ul);
+		div.style.display = 'block';
+		addEl(rightDiv, div);
+	}
+
+	function applyTableDetailDivSizes () {
+		var tabName = currentTab;
+		var tableDiv = document.getElementById('tablediv_' + tabName);
+		var detailDiv = document.getElementById('detaildiv_' + tabName);
+		var detailContainerDiv = document.getElementById('detailcontainerdiv_' + tabName);
+		var rightDiv = document.getElementById('rightdiv_' + tabName);
+		var drag = document.getElementById('dragNorthSouthDiv_' + tabName);
+		var cell = document.getElementById('cellvaluediv_' + tabName);
+		var stat = tableDetailDivSizes[tabName]['status'];
+		var maxHeight = rightDiv.offsetHeight - 10;
+		if (stat == 'tablemax') {
+			detailDiv.style.display = 'none';
+			drag.style.display = 'none';
+			cell.style.display = 'none';
+			tableDiv.style.display = 'block';
+			tableDiv.style.height = maxHeight + 'px';
+			$grids[tabName].pqGrid('option', 'height', maxHeight).pqGrid('refresh');
+		} else if (stat == 'detailmax') {
+			tableDiv.style.display = 'none';
+			drag.style.display = 'none';
+			cell.style.display = 'none';
+			detailDiv.style.display = 'block';
+			detailDiv.style.height = maxHeight + 'px';
+			detailDiv.style.top = '10px';
+			$(detailContainerDiv).packery();
+		} else if (stat == 'both') {
+			tableDiv.style.display = 'block';
+			detailDiv.style.display = 'block';
+			drag.style.display = 'block';
+			cell.style.display = 'block';
+			var tableHeight = tableDetailDivSizes[tabName]['tableheight'];
+			var detailHeight = tableDetailDivSizes[tabName]['detailheight'];
+			tableDiv.style.height = tableHeight + 'px';
+			$grids[tabName].pqGrid('option', 'height', tableHeight).pqGrid('refresh');
+			drag.style.top = (tableHeight - 1 + cell.offsetHeight) + 'px';
+			cell.style.top = (tableHeight - 9) + 'px';
+			detailDiv.style.height = detailHeight + 'px';
+			detailDiv.style.top = (tableHeight + cell.offsetHeight + 12) + 'px';
+		}
+	}
+
+	function onClickTableDetailMinMaxButton () {
+		var tabName = currentTab;
+		if (tabName != 'variant' && tabName != 'gene') {
+			return;
+		}
+		var tableDiv = document.getElementById('tablediv_' + tabName);
+		var detailDiv = document.getElementById('detaildiv_' + tabName);
+		var detailContainerDiv = document.getElementById('detailcontainerdiv_' + tabName);
+		var rightDiv = document.getElementById('rightdiv_' + tabName);
+		var drag = document.getElementById('dragNorthSouthDiv_' + tabName);
+		var cell = document.getElementById('cellvaluediv_' + tabName);
+		if (tableDetailDivSizes[tabName] == undefined) {
+			tableDetailDivSizes[tabName] = {'status': 'both'};
+		}
+		var stat = tableDetailDivSizes[tabName]['status'];
+		if (stat == 'both') {
+			tableDetailDivSizes[tabName]['tableheight'] = tableDiv.offsetHeight;
+			tableDetailDivSizes[tabName]['detailheight'] = detailDiv.offsetHeight;
+		}
+		if (stat == 'both') {
+			stat = 'tablemax';
+		} else if (stat == 'tablemax') {
+			stat = 'detailmax';
+		} else if (stat == 'detailmax') {
+			stat = 'both';
+		}
+		tableDetailDivSizes[tabName]['status'] = stat;
+		applyTableDetailDivSizes();
+		changeTableDetailMaxButtonText();
+	}
+
+	function saveWidgetContent (widgetName, tabName) {
+		var loadingDiv = drawingWidgetCaptureSpinnerDiv();
+		var div = document.getElementById('widgetcontentdiv_' + widgetName + '_' + tabName);
+        var divW = div.scrollWidth;
+        var divH = div.scrollHeight;
+        // Table rows are taller than original somehow.
+        var trs = div.getElementsByTagName('tr');
+        if (trs.length > 0) {
+            divH = divH * 3;
         }
-        var uiColGroup = ui.column.colgroup;
-        for (var i = 0; i < colGroups.length; i++) {
-            var colGroup = colGroups[i];
-            var sameColGroup = (uiColGroup == colGroup.pqtitle);
-            if (colLevel == 'column') {
-                colGroup.nodrop = true;
-            } else if (colLevel == 'group') {
-                colGroup.nodrop = false;
-            }
-            var cols = colGroup.colModel;
-            for (var j = 0; j < cols.length; j++) {
-                var col = cols[j];
-                if (colLevel == 'group') {
-                    col.nodrop = true;
-                } else if (colLevel == 'column') {
-                    if (sameColGroup) {
-                        col.nodrop = false;
-                    } else {
-                        col.nodrop = true;
-                    }
-                }
-            }
-        }
-    }
-    gridObject.flex = {on: true, all: false};
-	return gridObject;
-}
-
-function makeTableGroupHeaderRightClickMenu (evt, td, colgrouptitle) {
-    var rightDiv = document.getElementById('tablediv_' + currentTab);
-    var divId = 'table-header-contextmenu-' + currentTab;
-    var div = document.getElementById(divId);
-    if (div == undefined) {
-        div = getEl('div');
-        div.id = divId;
-        div.className = 'table-header-contextmenu-div';
-    } else {
-        $(div).empty();
-    }
-    div.style.top = evt.pageY;
-    div.style.left = evt.pageX;
-    var ul = getEl('ul');
-    var li = getEl('li');
-    var a = getEl('a');
-    a.textContent = 'Hide all columns under ' + colgrouptitle;
-    li.addEventListener('click', function (evt) {
-        var checkboxId = 'columngroup__' + currentTab + '_' + colgrouptitle + '__checkbox';
-        var checkbox = document.getElementById(checkboxId);
-        checkbox.click();
-        div.style.display = 'none';
-    });
-    addEl(ul, addEl(li, a));
-    addEl(div, ul);
-    div.style.display = 'block';
-    addEl(rightDiv, div);
-}
-
-function makeTableHeaderRightClickMenu (evt, col, colgroup) {
-    var rightDiv = document.getElementById('tablediv_' + currentTab);
-    var divId = 'table-header-contextmenu-' + currentTab;
-    var div = document.getElementById(divId);
-    if (div == undefined) {
-        div = getEl('div');
-        div.id = divId;
-        div.className = 'table-header-contextmenu-div';
-    } else {
-        $(div).empty();
-    }
-    div.style.top = evt.pageY;
-    div.style.left = evt.pageX;
-    var ul = getEl('ul');
-    var li = getEl('li');
-    var a = getEl('a');
-    a.textContent = 'Hide column';
-    li.addEventListener('click', function (evt) {
-        var checkboxId = 'columngroup__' + currentTab + '_' + colgroup + '_' + col + '__checkbox';
-        var checkbox = document.getElementById(checkboxId);
-        checkbox.click();
-        div.style.display = 'none';
-    });
-    addEl(ul, addEl(li, a));
-    addEl(div, ul);
-    div.style.display = 'block';
-    addEl(rightDiv, div);
-}
-
-function applyTableDetailDivSizes () {
-    var tabName = currentTab;
-    var tableDiv = document.getElementById('tablediv_' + tabName);
-    var detailDiv = document.getElementById('detaildiv_' + tabName);
-    var detailContainerDiv = document.getElementById('detailcontainerdiv_' + tabName);
-    var rightDiv = document.getElementById('rightdiv_' + tabName);
-    var drag = document.getElementById('dragNorthSouthDiv_' + tabName);
-    var cell = document.getElementById('cellvaluediv_' + tabName);
-    var stat = tableDetailDivSizes[tabName]['status'];
-    var maxHeight = rightDiv.offsetHeight - 10;
-    if (stat == 'tablemax') {
-        detailDiv.style.display = 'none';
-        drag.style.display = 'none';
-        cell.style.display = 'none';
-        tableDiv.style.display = 'block';
-        tableDiv.style.height = maxHeight + 'px';
-        $grids[tabName].pqGrid('option', 'height', maxHeight).pqGrid('refresh');
-    } else if (stat == 'detailmax') {
-        tableDiv.style.display = 'none';
-        drag.style.display = 'none';
-        cell.style.display = 'none';
-        detailDiv.style.display = 'block';
-        detailDiv.style.height = maxHeight + 'px';
-        detailDiv.style.top = '10px';
-        $(detailContainerDiv).packery();
-    } else if (stat == 'both') {
-        tableDiv.style.display = 'block';
-        detailDiv.style.display = 'block';
-        drag.style.display = 'block';
-        cell.style.display = 'block';
-        var tableHeight = tableDetailDivSizes[tabName]['tableheight'];
-        var detailHeight = tableDetailDivSizes[tabName]['detailheight'];
-        tableDiv.style.height = tableHeight + 'px';
-        $grids[tabName].pqGrid('option', 'height', tableHeight).pqGrid('refresh');
-        drag.style.top = (tableHeight - 1 + cell.offsetHeight) + 'px';
-        cell.style.top = (tableHeight - 9) + 'px';
-        detailDiv.style.height = detailHeight + 'px';
-        detailDiv.style.top = (tableHeight + cell.offsetHeight + 12) + 'px';
-    }
-}
-
-function onClickTableDetailMinMaxButton () {
-    var tabName = currentTab;
-    if (tabName != 'variant' && tabName != 'gene') {
-        return;
-    }
-    var tableDiv = document.getElementById('tablediv_' + tabName);
-    var detailDiv = document.getElementById('detaildiv_' + tabName);
-    var detailContainerDiv = document.getElementById('detailcontainerdiv_' + tabName);
-    var rightDiv = document.getElementById('rightdiv_' + tabName);
-    var drag = document.getElementById('dragNorthSouthDiv_' + tabName);
-    var cell = document.getElementById('cellvaluediv_' + tabName);
-    if (tableDetailDivSizes[tabName] == undefined) {
-        tableDetailDivSizes[tabName] = {'status': 'both'};
-    }
-    var stat = tableDetailDivSizes[tabName]['status'];
-    if (stat == 'both') {
-        tableDetailDivSizes[tabName]['tableheight'] = tableDiv.offsetHeight;
-        tableDetailDivSizes[tabName]['detailheight'] = detailDiv.offsetHeight;
-    }
-    if (stat == 'both') {
-        stat = 'tablemax';
-    } else if (stat == 'tablemax') {
-        stat = 'detailmax';
-    } else if (stat == 'detailmax') {
-        stat = 'both';
-    }
-    tableDetailDivSizes[tabName]['status'] = stat;
-    applyTableDetailDivSizes();
-    changeTableDetailMaxButtonText();
+        // 7480 is 1000 dpi double-column pixel size from 
+        // https://www.elsevier.com/authors/author-schemas/artwork-and-media-instructions/artwork-sizing
+        var maxWorH = 7480; 
+        var ratioW = maxWorH / divW;
+        var ratioH = maxWorH / divH;
+        var minRatio = Math.min(ratioW, ratioH);
+		domtoimage.toSvg(
+				div, 
+				{'width': divW, 'height': divH}).then(function (response) {
+					var img = new Image();
+					img.src = response;
+					img.onload = function () {
+						var canvas = getEl('canvas');
+						canvas.width = divW * minRatio;
+						canvas.height = divH * minRatio;
+						ctx = canvas.getContext('2d');
+						ctx.scale(minRatio, minRatio);
+						ctx.clearRect(0, 0, canvas.width, canvas.height);
+						ctx.drawImage(img, 0, 0);
+						var dataUrl = canvas.toDataURL('image/png');
+						download(dataUrl, jobId + '_' + tabName + '_' + widgetName + '.png', 'image/png');
+						loadingDiv.parentNode.removeChild(loadingDiv);
+				};
+	});
 }
