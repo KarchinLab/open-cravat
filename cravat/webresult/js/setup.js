@@ -1687,12 +1687,20 @@ function populateWidgetSelectorPanel () {
 	function saveWidgetContent (widgetName, tabName) {
 		var loadingDiv = drawingWidgetCaptureSpinnerDiv();
 		var div = document.getElementById('widgetcontentdiv_' + widgetName + '_' + tabName);
+        var divToCapture = div;
+        if (divToCapture.childNodes.length == 1) {
+            divToCapture = divToCapture.childNodes[0];
+        }
         var divW = div.scrollWidth;
         var divH = div.scrollHeight;
         // Table rows are taller than original somehow.
         var trs = div.getElementsByTagName('tr');
         if (trs.length > 0) {
             divH = divH * 3;
+        }
+        console.log(divW, divToCapture.scrollWidth);
+        if (divW < divToCapture.scrollWidth) {
+            divW = divToCapture.scrollWidth;
         }
         // 7480 is 1000 dpi double-column pixel size from 
         // https://www.elsevier.com/authors/author-schemas/artwork-and-media-instructions/artwork-sizing
@@ -1701,7 +1709,7 @@ function populateWidgetSelectorPanel () {
         var ratioH = maxWorH / divH;
         var minRatio = Math.min(ratioW, ratioH);
 		domtoimage.toSvg(
-				div, 
+				divToCapture, 
 				{'width': divW, 'height': divH}).then(function (response) {
 					var img = new Image();
 					img.src = response;
