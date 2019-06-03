@@ -11,7 +11,7 @@ import traceback
 import shutil
 from aiohttp import web
 #from cryptography import fernet
-#from aiohttp_session import get_session, new_session
+from aiohttp_session import get_session, new_session
 import aiosqlite3
 import hashlib
 from distutils.version import LooseVersion
@@ -37,8 +37,8 @@ class FileRouter(object):
 
     async def get_jobs_dir (self, request):
         root_jobs_dir = au.get_jobs_dir()
-        '''
         session = await get_session(request)
+        global servermode
         if servermode:
             if 'logged' in session:
                 if session['logged'] != True:
@@ -54,8 +54,6 @@ class FileRouter(object):
         else:
             username = 'default'
         session['username'] = username
-        '''
-        username = 'default'
         jobs_dir = os.path.join(root_jobs_dir, username)
         return jobs_dir
 
@@ -271,20 +269,18 @@ async def submit (request):
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
     # admin.sqlite
-    # if servermode:
-    #     root_jobs_dir = au.get_jobs_dir()
-    #     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    #     db = await aiosqlite3.connect(admin_db_path)
-    #     cursor = await db.cursor()
-    #     '''
-    #     session = await get_session(request)
-    #     username = session['username']
-    #     '''
-    #     username = 'default'
-    #     await cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, username, job.get_info_dict()['submission_time'], -1, -1, '', job_options['assembly']))
-    #     await db.commit()
-    #     cursor.close()
-    #     db.close()
+    global servermode
+    if servermode:
+        root_jobs_dir = au.get_jobs_dir()
+        admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
+        db = await aiosqlite3.connect(admin_db_path)
+        cursor = await db.cursor()
+        session = await get_session(request)
+        username = session['username']
+        await cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, username, job.get_info_dict()['submission_time'], -1, -1, '', job_options['assembly']))
+        await db.commit()
+        cursor.close()
+        db.close()
     return web.json_response(job.get_info_dict())
 
 def count_lines(f):
@@ -542,7 +538,7 @@ async def create_user_dir (request, username):
         os.mkdir(jobs_dir)
 
 async def signup (request):
-    #session = await new_session(request)
+    session = await new_session(request)
     queries = request.rel_url.query
     username = queries['username']
     password = queries['password']
@@ -566,15 +562,13 @@ async def signup (request):
     await db.commit()
     await cursor.close()
     await db.close()
-    '''
     session['username'] = username
     session['logged'] = True
-    '''
     await create_user_dir(request, username)
     return web.json_response('success')
 
 async def login (request):
-    #session = await new_session(request)
+    session = await new_session(request)
     queries = request.rel_url.query
     username = queries['username']
     password = queries['password']
@@ -589,10 +583,8 @@ async def login (request):
     r = await cursor.fetchone()
     if r is not None:
         response = 'success'
-        '''
         session['username'] = username
         session['logged'] = True
-        '''
         await create_user_dir(request, username)
     else:
         response = 'fail'
@@ -601,7 +593,7 @@ async def login (request):
     return web.json_response(response)
 
 async def get_password_question (request):
-    #session = await get_session(request)
+    session = await get_session(request)
     queries = request.rel_url.query
     email = queries['email']
     root_jobs_dir = au.get_jobs_dir()
@@ -618,7 +610,7 @@ async def get_password_question (request):
     return web.json_response({'status':'success', 'msg':answer})
 
 async def check_password_answer (request):
-    #session = await get_session(request)
+    session = await get_session(request)
     queries = request.rel_url.query
     email = queries['email']
     answer = queries['answer']
@@ -647,11 +639,8 @@ async def check_password_answer (request):
         return web.json_response({'success': False, 'msg': 'Wrong answer'})
 
 async def change_password (request):
-    '''
     session = await get_session(request)
     email = session['username']
-    '''
-    email = 'default'
     root_jobs_dir = au.get_jobs_dir()
     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
     db = await aiosqlite3.connect(admin_db_path)
@@ -679,12 +668,9 @@ async def change_password (request):
         return web.json_response('success')
 
 async def check_logged (request):
-    '''
     session = await get_session(request)
     username = session['username']
     logged = session['logged']
-    '''
-    username = 'default'
     logged = False
     if logged:
         return web.json_response({'logged': True, 'email': username})
@@ -692,10 +678,8 @@ async def check_logged (request):
         return web.json_response({'logged': False, 'email': ''})
 
 async def logout (request):
-    '''
     session = await new_session(request)
     session['username'] = None
-    '''
     return web.json_response('success')
     '''
     username = session['username']
@@ -718,7 +702,7 @@ async def logout (request):
     '''
 
 def get_servermode (request):
-    servermode=False
+    global servermode
     return web.json_response({'servermode': servermode})
 
 async def get_package_versions(request):

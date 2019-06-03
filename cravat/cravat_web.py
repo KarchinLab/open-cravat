@@ -21,9 +21,9 @@ import websockets
 from aiohttp import web, web_runner
 import socket
 import base64
-#from cryptography import fernet
-#from aiohttp_session import setup, get_session, new_session
-#from aiohttp_session.cookie_storage import EncryptedCookieStorage
+from cryptography import fernet
+from aiohttp_session import setup
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
 import hashlib
 import platform
 import asyncio
@@ -150,6 +150,9 @@ class WebServer (object):
 
     async def start (self):
         self.app = web.Application(loop=self.loop)
+        fernet_key = fernet.Fernet.generate_key()
+        secret_key = base64.urlsafe_b64decode(fernet_key)
+        setup(self.app, EncryptedCookieStorage(secret_key))
         self.setup_routes()
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
@@ -182,7 +185,6 @@ async def heartbeat(request):
     return ws
 
 def main ():
-    '''
     if servermode:
         jobs_dir = au.get_jobs_dir()
         admin_sqlite_path = os.path.join(jobs_dir, 'admin.sqlite')
@@ -199,6 +201,7 @@ def main ():
             cursor.close()
             db.commit()
             db.close()
+    '''
     s = socket.socket()
     try:
         s.bind(('localhost', 8060))
@@ -225,6 +228,7 @@ def main ():
         import traceback
         traceback.print_exc()
     '''
+
     def wakeup ():
         loop.call_later(0.1, wakeup)
 
@@ -232,7 +236,6 @@ def main ():
     hello_url = 'http://{host}:{port}/hello'.format(host=serv.get('host'),port=serv.get('port'))
     try:
         r = requests.get(hello_url, timeout=0.01)
-        # print('{}:{} already in use'.format(serv['host'], serv['port']))
         print('OpenCRAVAT is already running.')
         return
     except requests.exceptions.ConnectionError:

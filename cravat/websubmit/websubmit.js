@@ -1361,14 +1361,14 @@ function setupNoServerMode () {
 function setupServerMode () {
     document.getElementById('accountdiv').style.display = 'block';
     document.getElementById('settingsdiv').style.display = 'none';
-    document.getElementById('settingspageselect').style.display = 'none';
+    //document.getElementById('settingspageselect').style.display = 'none';
     checkLogged();
 }
 
 function setupAdminMode () {
     document.getElementById('accountdiv').style.display = 'block';
     document.getElementById('settingsdiv').style.display = 'block';
-    document.getElementById('settingspageselect').style.display = 'inline-block';
+    //document.getElementById('settingspageselect').style.display = 'inline-block';
 }
 
 function showLoggedControl (username) {
@@ -1377,7 +1377,12 @@ function showLoggedControl (username) {
     userDiv.style.display = 'inline-block';
     document.getElementById('logoutdiv').style.display = 'inline-block';
     document.getElementById('loginsignupbutton').style.display = 'none';
-    document.getElementById('settingspageselect').style.display = 'none';
+    //document.getElementById('settingspageselect').style.display = 'none';
+}
+
+function showUnloggedControl () {
+    document.getElementById('loginsignupbutton').style.display = 'inline-block';
+    document.getElementById('logoutdiv').style.display = 'none';
 }
 
 function doAfterLogin () {
@@ -1587,6 +1592,8 @@ function checkLogged () {
                 username = response['email'];
                 logged = true;
                 doAfterLogin();
+            } else {
+                showUnloggedControl();
             }
         }
     });

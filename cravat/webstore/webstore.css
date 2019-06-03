@@ -529,13 +529,3 @@ input:checked + .store-switch-slider:before {
     width: calc(100% - 240px);
 }
 
-#verdiv {
-    position: fixed;
-    top: 74px;
-    right: 10px;
-    height: 15px;
-    font-size: 13px;
-    vertical-align: bottom;
-    z-index: 201;
-}
-

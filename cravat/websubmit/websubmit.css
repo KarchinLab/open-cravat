@@ -307,3 +307,32 @@ button {
     margin-bottom: 1px;
     margin-left: 40px;
 }
+
+#accountdiv {
+    position: absolute;
+    right: 99px;
+    top: 3px;
+}
+
+#loginsignupdialog {
+    position: absolute;
+    padding: 10px;
+    background-color: white;
+    border: 1px solid black;
+    box-shadow: 6px 6px 6px #b5b5b5;
+    right: 0px;
+    top: 20px;
+    width: 220px;
+    font-size: 13px;
+    display: none;
+}
+
+#verdiv {
+    position: absolute;
+    top: 3px;
+    left: 5px;
+    height: 15px;
+    font-size: 13px;
+    vertical-align: bottom;
+}
+
