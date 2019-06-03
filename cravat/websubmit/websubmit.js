@@ -122,7 +122,7 @@ function submit () {
                 addEl(alertDiv,getEl('br'));
                 var span = getEl('span');
                 span.style.fontSize = '12px';
-                span.textContent = '(Assuming one variant per line, in our benchmark with a typical system with a solid state drive, such a job as this usually took ' + hours + minutes + seconds + '. ';
+                span.textContent = 'Runtime estimate is ' + hours + minutes + seconds + ' on a system with a solid state drive. Systems with a hard disk will take longer. ';
                 addEl(alertDiv, span);
                 var span = getEl('span');
                 span.style.fontSize = '12px';
