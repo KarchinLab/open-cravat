@@ -16,8 +16,8 @@ class InstallCommand(install):
     
     def initialize_options (self):
         install.initialize_options(self)
-        self.modules_dir = None
-        self.install_defaults = 'True'
+        #self.modules_dir = None
+        #self.install_defaults = 'True'
     
     def finalize_options (self):
         install.finalize_options(self)
@@ -27,6 +27,7 @@ class InstallCommand(install):
         Using method found at https://stackoverflow.com/a/43078078
         Needed because pip runs install commands 
         """
+        '''
         def _post_install():
             wf = open('open-cravat-install-log.txt', 'w')
             try:
@@ -56,8 +57,9 @@ class InstallCommand(install):
                 wf.write(traceback.format_exc() + '\n')
             wf.write('done\n')
             wf.close()
+        '''
             
-        atexit.register(_post_install)
+        #atexit.register(_post_install)
         install.run(self)
 
 def readme ():

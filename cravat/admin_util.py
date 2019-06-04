@@ -332,16 +332,6 @@ def get_local_module_infos(types=[], names=[]):
 def set_jobs_dir (d):
     update_system_conf_file({'jobs_dir': d})
 
-def get_jobs_dir():
-    jobs_dir = get_system_conf().get('jobs_dir')
-    if jobs_dir is None:
-        home_dir = os.path.expanduser('~')
-        jobs_dir = os.path.join(home_dir,'open-cravat','jobs')
-        set_jobs_dir(jobs_dir)
-    if not(os.path.isdir(jobs_dir)):
-        os.makedirs(jobs_dir)
-    return jobs_dir
-
 def search_remote(*patterns):
     """
     Return remote module names which match any of supplied patterns
@@ -737,7 +727,7 @@ def set_modules_dir (path, overwrite=False):
     if not(os.path.isdir(path)):
         os.makedirs(path)
     old_conf_path = get_main_conf_path()
-    update_system_conf_file({constants.modules_dir_key:path})
+    update_system_conf_file({constants.modules_dir_name:path})
     if not(os.path.exists(get_main_conf_path())):
         if os.path.exists(old_conf_path):
             overwrite_conf_path = old_conf_path
@@ -785,16 +775,29 @@ def get_local_module_infos_by_names (module_names):
             modules[module_name] = module
     return modules
 
-def get_system_conf():
+def get_system_conf ():
     """
     Get the system config. Fill in the default modules dir if not set.
     """
+    conf = load_yml_conf(constants.system_conf_path)
+    '''
     if os.path.exists(constants.system_conf_path):
         conf = load_yml_conf(constants.system_conf_path)
     else:
         conf = load_yml_conf(constants.system_conf_template_path)
-    if constants.modules_dir_key not in conf:
-        conf[constants.modules_dir_key] = constants.default_modules_dir
+    '''
+    conf_modified = False
+    if constants.modules_dir_name not in conf:
+        conf[constants.modules_dir_name] = constants.default_modules_dir
+        conf_modified = True
+    if constants.conf_dir_name not in conf:
+        conf[constants.conf_dir_name] = constants.default_conf_dir
+        conf_modified = True
+    if constants.jobs_dir_name not in conf:
+        conf[constants.jobs_dir_name] = constants.default_jobs_dir
+        conf_modified = True
+    if conf_modified:
+        write_system_conf_file(conf)
     return conf
 
 def get_modules_dir():
@@ -802,8 +805,28 @@ def get_modules_dir():
     Get the current modules directory
     """
     conf = get_system_conf()
-    modules_dir = conf[constants.modules_dir_key]
+    modules_dir = conf[constants.modules_dir_name]
     return modules_dir
+
+def get_conf_dir ():
+    conf = get_system_conf()
+    conf_dir = conf[constants.conf_dir_name]
+    return conf_dir
+
+def get_jobs_dir():
+    conf = get_system_conf()
+    jobs_dir = conf[constants.jobs_dir_name]
+    return jobs_dir
+    '''
+    jobs_dir = get_system_conf().get('jobs_dir')
+    if jobs_dir is None:
+        home_dir = os.path.expanduser('~')
+        jobs_dir = os.path.join(home_dir,'open-cravat','jobs')
+        set_jobs_dir(jobs_dir)
+    if not(os.path.isdir(jobs_dir)):
+        os.makedirs(jobs_dir)
+    '''
+    return jobs_dir
 
 def write_system_conf_file(d):
     """
@@ -835,7 +858,7 @@ def get_main_conf_path():
     """
     Get the path to where the main cravat config (cravat.yml) should be.
     """
-    return os.path.join(get_modules_dir(), constants.main_conf_fname)
+    return os.path.join(get_conf_dir(), constants.main_conf_fname)
 
 def get_main_default_path():
     """
@@ -999,8 +1022,8 @@ def report_issue ():
     import webbrowser
     webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
 
-def get_system_conf_info ():
-    set_jobs_dir(get_jobs_dir())
+def get_system_conf_info (json=False):
+    #set_jobs_dir(get_jobs_dir())
     confpath = constants.system_conf_path
     if os.path.exists(confpath):
         conf = load_yml_conf(confpath)
@@ -1008,9 +1031,15 @@ def get_system_conf_info ():
     else:
         conf = {}
         confexists = False
-    if constants.modules_dir_key not in conf:
-        conf[constants.modules_dir_key] = constants.default_modules_dir
-    system_conf_info = {'path': confpath, 'exists': confexists, 'content': yaml.dump(conf, default_flow_style=False)}
+    '''
+    if constants.modules_dir_name not in conf:
+        conf[constants.modules_dir_name] = constants.default_modules_dir
+    '''
+    if json:
+        content = conf
+    else:
+        content = yaml.dump(conf, default_flow_style=False)
+    system_conf_info = {'path': confpath, 'exists': confexists, 'content': content}
     return system_conf_info
 
 def get_cravat_conf ():
@@ -1025,20 +1054,6 @@ def get_cravat_conf_info ():
     cravat_conf = get_cravat_conf()
     cravat_conf_info = {'path': get_main_conf_path(), 'content': yaml.dump(cravat_conf, default_flow_style=False)}
     return cravat_conf_info
-
-def get_system_conf_info_json ():
-    set_jobs_dir(get_jobs_dir())
-    confpath = constants.system_conf_path
-    if os.path.exists(confpath):
-        conf = load_yml_conf(confpath)
-        confexists = True
-    else:
-        conf = {}
-        confexists = False
-    if constants.modules_dir_key not in conf:
-        conf[constants.modules_dir_key] = constants.default_modules_dir
-    system_conf_info = {'path': confpath, 'exists': confexists, 'content': conf}
-    return system_conf_info
 
 def show_system_conf ():
     system_conf_info = get_system_conf_info()
