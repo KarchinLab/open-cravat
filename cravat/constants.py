@@ -16,7 +16,7 @@ if pl.startswith('Windows'):
 elif pl.startswith('Linux'):
     oc_root_dir = packagedir
 elif pl.startswith('Darwin'):
-    oc_root_dir = '/home/Shared/open-cravat'
+    oc_root_dir = '/Users/Shared/open-cravat'
 if os.path.exists(oc_root_dir) == False:
     os.mkdir(oc_root_dir)
 default_modules_dir = os.path.join(oc_root_dir, modules_dir_name)
