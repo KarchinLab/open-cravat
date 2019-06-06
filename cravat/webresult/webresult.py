@@ -360,8 +360,8 @@ async def get_result_levels (request):
     ret = await cursor.fetchall()
     if len(ret) > 0:
         content = [v[0].split('_')[0] for v in ret]
-        content.insert(0,'filter')
-        content.insert(1, 'info')
+        content.insert(0, 'info')
+        content.insert(1,'filter')
     else:
         content = []
     content.remove('sample')
@@ -527,6 +527,28 @@ async def serve_runwidget (request):
     content = await m.get_data(queries)
     return web.json_response(content)
 
+async def load_smartfilters (request):
+    sfs = {
+        'base':[
+        {
+            'name': 'test',
+            'title': 'Test',
+            'defaultValue': 'chr1',
+            'description': 'Test smartfilter for testing reasons',
+            'filter': {
+                'operator': 'and',
+                'rules': [
+                    {
+                        'column': 'base__chrom', 
+                        'test': 'equals'
+                    }
+                ]
+            }
+        }
+    ]
+    }
+    return web.json_response(sfs)
+
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
 routes.append(['GET', '/result/service/getsummarywidgetnames', get_summary_widget_names])
@@ -547,4 +569,4 @@ routes.append(['GET', '/result/service/getnowgannotmodules', get_nowg_annot_modu
 routes.append(['GET', '/result/widgetfile/{module_dir}/{filename}', serve_widgetfile])
 routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])
 routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
-
+routes.append(['GET', '/result/service/smartfilters', load_smartfilters])

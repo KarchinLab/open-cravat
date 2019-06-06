@@ -665,20 +665,34 @@ function loadFilterSettingAs () {
 }
 
 function loadFilterSetting (name, callback, doNotCount) {
-	$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
-		writeLogDiv('Filter setting loaded');
-		var data = response;
-		filterJson = data['filterSet'];
-		var filterWrapDiv = document.getElementById('filterwrapdiv');
-		$(filterWrapDiv).empty();
-        populateFilterWrapDiv(filterWrapDiv);
-        if (! doNotCount) {
-            infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
-        }
-		if (callback != null) {
-			callback();
+	$.get('/result/service/smartfilters').done(function (response) {
+		smartFilters = {};
+		for (var source in response) {
+			refac = {order:[],definitions:{}}
+			sfs = response[source];
+			for (var i=0; i<sfs.length; i++) {
+				sf = sfs[i];
+				refac.order.push(sf.name);
+				refac.definitions[sf.name] = sf;
+			}
+			smartFilters[source] = refac;
 		}
-    });
+		setupTab('filter');
+		$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+			writeLogDiv('Filter setting loaded');
+			var data = response;
+			filterJson = data['filterSet'];
+			var filterWrapDiv = document.getElementById('filterwrapdiv');
+			$(filterWrapDiv).empty();
+			populateFilterWrapDiv(filterWrapDiv);
+			if (! doNotCount) {
+				infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
+			}
+			if (callback != null) {
+				callback();
+			}
+		});
+	})
 }
 
 function hideAllMenu3 () {

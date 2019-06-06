@@ -28,12 +28,14 @@ function setupTab (tabName) {
 		makeVariantGeneTab(tabName, rightDiv);
 	} else if (tabName == 'sample' || tabName == 'mapping') {
 		makeSampleMappingTab(tabName, rightDiv);
+	} else if (tabName == 'filter') {
+		makeFilterTab(rightDiv);
 	}
 	addEl(tabDiv, rightDiv);
 
 	setupEvents(tabName);
 
-	if (tabName != 'info') {
+	if (tabName != 'info' && tabName != 'filter') {
 		var stat = infomgr.getStat(tabName);
 		var columns = infomgr.getColumns(tabName);
 		var data = infomgr.getData(tabName);
@@ -67,6 +69,68 @@ function setupTab (tabName) {
         applyTableDetailDivSizes();
     }
 	changeMenu();
+}
+
+function makeFilterTab (rightDiv) {
+	if (smartFilters === undefined) { 
+		return;
+	}
+	rightDiv = $(rightDiv);
+	activeSfDiv = $(getEl('div'))
+		.attr('id','active-sf-div');
+	rightDiv.append(activeSfDiv);
+	let sfSelector = $(getEl('select'))
+		.on('change', onSmartFilterSelectChange);
+	sfSelector.append($(getEl('option')))
+	rightDiv.append(sfSelector);
+	for (let sfSource in smartFilters) {
+		sfGroup = smartFilters[sfSource];
+		for (let i=0; i<sfGroup.order.length; i++) {
+			sfName = sfGroup.order[i];
+			sfDef = sfGroup.definitions[sfName];
+			sfFullName = sfSource + '.' + sfName;
+			sfTitle = sfSource + ' | ' + sfDef.title;
+			sfOpt = $(getEl('option'))
+				.val(sfFullName)
+				.append(sfTitle);
+			sfSelector.append(sfOpt);
+		}
+	}
+}
+
+function onSmartFilterSelectChange(event) {
+	let sfSel = $(event.target);
+	let sfFullName = sfSel.val();
+	if (!sfFullName) {
+		return;
+	}
+	activateSmartFilter(sfFullName)
+}
+
+function activateSmartFilter (sfFullName) {
+	let sfSource = sfFullName.split('.')[0];
+	let sfName = sfFullName.split('.')[1];
+	let sfDef = smartFilters[sfSource].definitions[sfName];
+	let activeSfDiv = $('#active-sf-div');
+	activeSfDiv.empty();
+	sfDiv = getSmartFilterDiv(sfDef);
+	activeSfDiv.append(sfDiv);
+}
+
+function getSmartFilterDiv (sfDef) {
+	let outerDiv = $(getEl('div'));
+	let titleSpan = $(getEl('span'))
+		.append(sfDef.title)
+		.attr('title', sfDef.description);
+	outerDiv.append(titleSpan);
+	let defaultValue = sf.defaultValue;
+	if (defaultValue === undefined || defaultValue === null) {
+		defaultValue = '';
+	}
+	let valueInput = $(getEl('input'))
+		.val(defaultValue);
+	outerDiv.append(valueInput);
+	return outerDiv;
 }
 
 function changeTableDetailMaxButtonText () {
