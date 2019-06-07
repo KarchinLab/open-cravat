@@ -340,7 +340,7 @@ def main ():
             print('No modules found')
             
     def publish_module (args):
-        au.publish_module(args.module, args.user, args.password, args.overwrite_same_version, include_data=args.data)
+        au.publish_module(args.module, args.user, args.password, overwrite=args.overwrite, include_data=args.data)
         
     def install_base (args):
         sys_conf = au.get_system_conf()
@@ -549,10 +549,10 @@ def main ():
                                 default=False,
                                 action='store_true',
                                 help='overrides yes to overwrite question')
-    parser_publish.add_argument('--overwrite-same-version',
+    parser_publish.add_argument('--overwrite',
                                 default=False,
                                 action='store_true',
-                                help='overwrites the same version already published.')
+                                help='overwrites a published module/version')
     parser_publish.set_defaults(func=publish_module)
     
     # create-account
