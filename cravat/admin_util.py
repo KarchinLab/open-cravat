@@ -866,7 +866,7 @@ def get_main_default_path():
     """
     return os.path.join(constants.packagedir, constants.main_conf_fname)
 
-def publish_module(module_name, user, password, overwrite_version=False, include_data=True):
+def publish_module(module_name, user, password, overwrite=False, include_data=True):
     sys_conf = get_system_conf()
     publish_url = sys_conf['publish_url']
     mic.update_local()
@@ -885,11 +885,11 @@ def publish_module(module_name, user, password, overwrite_version=False, include
             err = json.loads(r.text)
             if err['code'] == su.VersionExists.code:
                 while True:
-                    if overwrite_version:
+                    if overwrite:
                         break
                     resp = input('Version exists. Do you wish to overwrite (y/n)? ')
                     if resp == 'y':
-                        overwrite_version = True
+                        overwrite = True
                         break
                     if resp == 'n':
                         exit()
@@ -918,7 +918,7 @@ def publish_module(module_name, user, password, overwrite_version=False, include
     manifest = zip_builder.get_manifest()
     zip_builder.close()
     post_url = '/'.join([publish_url, module_name, local_info.version])
-    if overwrite_version:
+    if overwrite:
         post_url += '?overwrite=1'
     fields={
             'manifest': (
