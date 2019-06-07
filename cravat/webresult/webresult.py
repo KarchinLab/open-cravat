@@ -149,7 +149,7 @@ async def load_layout_setting (request):
     table = 'viewersetup'
     r = await table_exists(cursor, table)
     if r == False:
-        content = {"widgetSettings": []}
+        content = {"widgetSettings": {}}
     else:
         q = 'select viewersetup from ' + table + ' where datatype="layout" and name="' + name + '"'
         await cursor.execute(q)
@@ -158,9 +158,10 @@ async def load_layout_setting (request):
             data = r[0]
             content = json.loads(data)
         else:
-            content = {"widgetSettings": []}
+            content = {"widgetSettings": {}}
     await cursor.close()
     await conn.close()
+    print('@@ widgetSettings=', content)
     return web.json_response(content)
 
 async def load_filter_setting (request):

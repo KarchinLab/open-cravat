@@ -1698,7 +1698,6 @@ function populateWidgetSelectorPanel () {
         if (trs.length > 0) {
             divH = divH * 3;
         }
-        console.log(divW, divToCapture.scrollWidth);
         if (divW < divToCapture.scrollWidth) {
             divW = divToCapture.scrollWidth;
         }
