@@ -889,15 +889,19 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
             break;
         }
     }
-    var span = getEl('button');
-    span.className = 'moduletile-group-updateavailable-span';
-    span.textContent = 'Update available';
-    span.addEventListener('click', function (evt) {
-        saveCurrentPage();
-        populateModuleGroupDiv(evt.target.parentElement.getAttribute('module'));
-        evt.stopPropagation();
-    });
-    addEl(div, span);
+    if (updateAvail) {
+        var span = getEl('span');
+        span.className = 'moduletile-group-updateavailable-span';
+        span.textContent = 'Update available';
+        /*
+        span.addEventListener('click', function (evt) {
+            saveCurrentPage();
+            populateModuleGroupDiv(evt.target.parentElement.getAttribute('module'));
+            evt.stopPropagation();
+        });
+        */
+        addEl(div, span);
+    }
     return div
 }
 
