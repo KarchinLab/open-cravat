@@ -111,7 +111,7 @@ def main ():
         stdout=subprocess.PIPE, 
         stderr=subprocess.STDOUT, 
         creationflags=subprocess.CREATE_NO_WINDOW,
-        #shell=True
+        shell=True
     )
 
     # wcravat reader
