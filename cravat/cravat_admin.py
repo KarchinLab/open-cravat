@@ -183,23 +183,22 @@ def main ():
         # Remote
         try:
             remote_info = au.get_remote_module_info(module_name)
+            print(remote_info)
             if remote_info != None:
                 available = True
         except LookupError:
             available = False
         if available:
             versions = remote_info.versions
-            data_versions = remote_info.data_versions
+            data_sources = remote_info.data_sources
             new_versions = []
             for version in versions:
-                data_version = data_versions.get(version, None)
-                '''
-                if data_version:
-                    version = version + ' (data version ' + data_version + ')'
-                '''
+                data_source = data_sources.get(version, None)
+                if data_source:
+                    version = version + ' (data source ' + data_source + ')'
                 new_versions.append(version)
             remote_info.versions = new_versions
-            del remote_info.data_versions
+            del remote_info.data_sources
             dump = yaml_string(remote_info)
             print(dump)
         # Local
