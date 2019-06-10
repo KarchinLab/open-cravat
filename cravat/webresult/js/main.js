@@ -372,7 +372,7 @@ function loadData (alertFlag, finalcallback) {
 	loadVariantResult();
     filterArmed = filterJson;
     var filterButton = document.getElementById('filterbutton');
-    if (filterArmed.variant != undefined && (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0)) {
+    if (filterArmed.variant != undefined && filterArmed.variant.rules.length > 0) {
         filterButton.style.backgroundColor = 'red';
     } else {
         filterButton.style.backgroundColor = '#c5dbdb';

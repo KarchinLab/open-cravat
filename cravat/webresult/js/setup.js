@@ -81,7 +81,7 @@ function makeFilterTab (rightDiv) {
 	rightDiv.append(activeSfDiv);
 	let sfSelector = $(getEl('select'))
 		.on('change', onSmartFilterSelectChange);
-	sfSelector.append($(getEl('option')))
+	sfSelector.append($(getEl('option')).append('Select a filter'))
 	rightDiv.append(sfSelector);
 	for (let sfSource in smartFilters) {
 		sfGroup = smartFilters[sfSource];
@@ -89,13 +89,23 @@ function makeFilterTab (rightDiv) {
 			sfName = sfGroup.order[i];
 			sfDef = sfGroup.definitions[sfName];
 			sfFullName = sfSource + '.' + sfName;
-			sfTitle = sfSource + ' | ' + sfDef.title;
 			sfOpt = $(getEl('option'))
 				.val(sfFullName)
-				.append(sfTitle);
+				.append(sfDef.title);
 			sfSelector.append(sfOpt);
 		}
 	}
+	rightDiv.append($(getEl('br')));
+	let filterApply = $(getEl('button'))
+		.append('Apply filter');
+	filterApply.click(function(evt) {
+        var infoReset = resetTab['info'];
+        resetTab = {'info': infoReset};
+        showSpinner('filter', document.body);
+        makeSmartfilterJson();
+        loadData(false, null);
+    });
+	rightDiv.append(filterApply);
 }
 
 function onSmartFilterSelectChange(event) {
@@ -114,6 +124,7 @@ function activateSmartFilter (sfFullName) {
 	let activeSfDiv = $('#active-sf-div');
 	activeSfDiv.empty();
 	sfDiv = getSmartFilterDiv(sfDef);
+	sfDiv.attr('full-name',sfFullName);
 	activeSfDiv.append(sfDiv);
 }
 
@@ -127,10 +138,58 @@ function getSmartFilterDiv (sfDef) {
 	if (defaultValue === undefined || defaultValue === null) {
 		defaultValue = '';
 	}
-	let valueInput = $(getEl('input'))
-		.val(defaultValue);
-	outerDiv.append(valueInput);
+	let selectorSpan = $(getEl('span'))
+		.addClass('sf-selector');
+	outerDiv.append(selectorSpan);
+	if (sfDef.selector === 'inputFloat') {
+		let valueInput = $(getEl('input'))
+			.val(defaultValue);
+		selectorSpan.append(valueInput);
+	}
 	return outerDiv;
+}
+
+function makeSmartfilterJson () {
+	let sfWrapDiv = $('#active-sf-div');
+	let sfDivs = sfWrapDiv.children('div');
+	let fullSf = {operator: 'or', rules:[]}
+	for (let i=0; i<sfDivs.length; i++) {
+		sfDiv = $(sfDivs[i]);
+		let fullName = sfDiv.attr('full-name');
+		let sfSource = fullName.split('.')[0];
+		let sfName = fullName.split('.')[1];
+		let sfDef = smartFilters[sfSource].definitions[sfName];
+		let val = pullSfValue(sfDiv);
+		let sfTemplate = JSON.parse(JSON.stringify(sfDef.filter));
+		let sfResult = addSfValue(sfTemplate, val);
+		fullSf.rules.push(sfResult);
+	}
+	filterJson = {'variant': fullSf};
+    
+}
+
+function addSfValue(filterGroup, value) {
+	for (let i=0; i<filterGroup.rules.length; i++) {
+		let rule = filterGroup.rules[i];
+		if (rule.operator !== undefined) {
+			rule = addSfValue(rule, value);
+		} else {
+			rule.value = value;
+		}
+	}
+	return filterGroup;
+}
+
+function pullSfValue(selectorDiv) {
+	let fullName = selectorDiv.attr('full-name');
+	let sfSource = fullName.split('.')[0];
+	let sfName = fullName.split('.')[1];
+	let sfDef = smartFilters[sfSource].definitions[sfName];
+	let selectorType = sfDef.selector;
+	let selectorWrapper = selectorDiv.children('.sf-selector');
+	if (selectorType === 'inputFloat') {
+		return parseFloat(selectorWrapper.children('input').val());
+	}
 }
 
 function changeTableDetailMaxButtonText () {

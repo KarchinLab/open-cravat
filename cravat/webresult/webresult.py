@@ -531,17 +531,40 @@ async def load_smartfilters (request):
     sfs = {
         'base':[
         {
-            'name': 'test',
-            'title': 'Test',
-            'defaultValue': 'chr1',
-            'description': 'Test smartfilter for testing reasons',
+            'name': 'popstats',
+            'title': 'Population AF',
+            'defaultValue': '0.1',
+            'description': 'Set a maximum allele frequency.',
+            'selector': 'inputFloat',
             'filter': {
                 'operator': 'and',
                 'rules': [
                     {
-                        'column': 'base__chrom', 
-                        'test': 'equals'
-                    }
+                        'operator': 'or',
+                        'rules': [
+                            {
+                                'column': 'gnomad__af', 
+                                'test': 'lessThanEq'
+                            },
+                            {
+                                'column': 'gnomad__af',
+                                'test': 'noData'
+                            }
+                        ]
+                    },
+                    {
+                        'operator': 'or',
+                        'rules': [
+                            {
+                                'column': 'thousandgenomes__af', 
+                                'test': 'lessThanEq'
+                            },
+                            {
+                                'column': 'thousandgenomes__af',
+                                'test': 'noData'
+                            }
+                        ]
+                    },
                 ]
             }
         }

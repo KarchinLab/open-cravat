@@ -110,14 +110,19 @@ class FilterGroup(object):
         self.negate = d.get('negate',False)
         self.groups = [FilterGroup(x) for x in d.get('groups',[])]
         self.columns = [FilterColumn(x, self.operator) for x in d.get('columns', [])]
+        self.rules = []
+        for rule in d.get('rules',[]):
+            if 'operator' in rule:
+                self.rules.append(FilterGroup(rule))
+            else:
+                self.rules.append(FilterColumn(rule,self.operator))
 
     def get_sql(self):
-        all_operands = self.groups + self.columns
-        if len(all_operands) == 0:
+        if len(self.rules) == 0:
             return '', ''
         include_sqls = []
         exclude_sqls = []
-        for operand in all_operands:
+        for operand in self.rules:
             if type(operand) == FilterColumn:
                 sql, incexc = operand.get_sql()
                 if sql == '':
