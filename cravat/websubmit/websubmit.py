@@ -669,6 +669,8 @@ async def change_password (request):
 
 async def check_logged (request):
     session = await get_session(request)
+    if not 'username' in session:
+        return web.json_response({'logged': False, 'email': ''})
     username = session['username']
     logged = session['logged']
     logged = False

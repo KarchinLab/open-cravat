@@ -1361,13 +1361,16 @@ function setupNoServerMode () {
 function setupServerMode () {
     document.getElementById('accountdiv').style.display = 'block';
     document.getElementById('settingsdiv').style.display = 'none';
+    document.getElementById('threedotsdiv').style.display = 'none';
     //document.getElementById('settingspageselect').style.display = 'none';
-    checkLogged();
+    checkLogged(username);
 }
 
 function setupAdminMode () {
     document.getElementById('accountdiv').style.display = 'block';
-    document.getElementById('settingsdiv').style.display = 'block';
+    document.getElementById('settingsdiv').style.display = 'none';
+    document.getElementById('threedotsdiv').style.display = 'block';
+    $('#storediv_tabhead[value=storediv]')[0].style.display = 'inline-block';
     //document.getElementById('settingspageselect').style.display = 'inline-block';
 }
 
@@ -1377,12 +1380,18 @@ function showLoggedControl (username) {
     userDiv.style.display = 'inline-block';
     document.getElementById('logoutdiv').style.display = 'inline-block';
     document.getElementById('loginsignupbutton').style.display = 'none';
-    //document.getElementById('settingspageselect').style.display = 'none';
 }
 
 function showUnloggedControl () {
+    var userDiv = document.getElementById('userdiv');
+    userDiv.textContent = '';
+    userDiv.style.display = 'none';
     document.getElementById('loginsignupbutton').style.display = 'inline-block';
     document.getElementById('logoutdiv').style.display = 'none';
+    document.getElementById('threedotsdiv').style.display = 'none';
+    $('#storediv_tabhead[value=storediv]')[0].style.display = 'none';
+    document.getElementById('submitdiv').style.display = 'block';
+    document.getElementById('storediv').style.display = 'none';
 }
 
 function doAfterLogin () {
@@ -1427,11 +1436,7 @@ function logout () {
                 username = '';
                 logged = false;
                 populateJobs();
-                var userDiv = document.getElementById('userdiv');
-                userDiv.textContent = '';
-                userDiv.style.display = 'none';
-                document.getElementById('loginsignupbutton').style.display = 'inline-block';
-                document.getElementById('logoutdiv').style.display = 'none';
+                showUnloggedControl();
             }
         }
     });
@@ -1583,9 +1588,10 @@ function signupSubmit () {
     });
 }
 
-function checkLogged () {
+function checkLogged (username) {
     $.ajax({
         url: '/submit/checklogged',
+        data: {'username': username},
         success: function (response) {
             logged = response['logged'];
             if (logged == true) {
@@ -1701,7 +1707,7 @@ function addListeners () {
     $('#no-annotators-button').click(allNoAnnotatorsHandler);
     $('.input-example-button').click(inputExampleChangeHandler)
     $('#refresh-jobs-table-btn').click(refreshJobsTable);
-    $('.threedotsdiv').click(onClickThreeDots);
+    $('#threedotsdiv').click(onClickThreeDots);
     $('.jobsdirinput').change(setJobsDir);
     document.addEventListener('click', function (evt) {
         if (evt.target.classList.contains('moduledetaildiv-submit-elem') == false && evt.target.closest('.moduledetailbutton') == null ) {

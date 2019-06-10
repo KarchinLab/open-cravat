@@ -46,7 +46,7 @@
     </div>
     <a href='http://github.com/KarchinLab/open-cravat/wiki' target='_blank'><img src='question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
     <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='email.png' class='email-icon' onclick='mailto:support@cravat.us' /></a>
-    <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' class='threedotsdiv'>
+    <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' id='threedotsdiv' >
         <img src='threedots.png' class='threedots' />
     </div>
     <div id='accountdiv'>
@@ -65,7 +65,7 @@
             </div>
         </div>
         <button id='loginsignupbutton' onclick='toggleloginsignupdiv();' style='display: none;'>Log in</button>
-        <div id='loginsignupdialog'>
+        <div id='loginsignupdialog' style='display: none;'>
             <div id='logindiv' style='display: block;'>
                 <span style='font-weight: bold;'>Login:</span>
                 <br />
