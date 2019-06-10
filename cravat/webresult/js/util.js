@@ -736,7 +736,11 @@ function loadLayoutSetting (name, callback) {
 		if (loadedViewerWidgetSettings == undefined) {
 			loadedViewerWidgetSettings = {};
 		}
-		viewerWidgetSettings = loadedViewerWidgetSettings;
+        var loadedViewerWidgetSettingsKeys = Object.keys(loadedViewerWidgetSettings);
+        for (var i = 0; i < loadedViewerWidgetSettingsKeys.length; i++) {
+            var k = loadedViewerWidgetSettingsKeys[i];
+            viewerWidgetSettings[k] = loadedViewerWidgetSettings[k];
+        }
 		if ((currentTab == 'variant' || currentTab == 'gene' || currentTab == 'info') && viewerWidgetSettings[currentTab] != undefined) {
 			applyWidgetSetting(currentTab);
 		}

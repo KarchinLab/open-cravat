@@ -430,7 +430,7 @@ async def delete_job(request):
     global job_tracker
     job_id = request.match_info['job_id']
     if job_tracker.get_process(job_id) is not None:
-        print('Killing job {}'.format(job_id))
+        print('\nKilling job {}'.format(job_id))
         await job_tracker.cancel_job(job_id)
     job_dir = await filerouter.job_dir(request, job_id)
     if os.path.exists(job_dir):
@@ -502,7 +502,7 @@ def set_jobs_dir (request):
     return web.json_response(d)
 
 async def get_system_conf_info (request):
-    info = au.get_system_conf_info_json()
+    info = au.get_system_conf_info(json=True)
     global filerouter
     return web.json_response(info)
 
