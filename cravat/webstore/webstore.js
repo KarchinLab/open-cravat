@@ -705,7 +705,8 @@ function getModuleTileUnqueueButton (moduleName) {
 }
 
 function onClickModuleTileUpdateButton (evt) {
-    var moduleName = evt.target.getAttribute('module');
+    var button = evt.target;
+    var moduleName = button.getAttribute('module');
     var installSize = updates[moduleName].size;
     $.ajax({
         url: '/store/freemodulesspace',
@@ -981,6 +982,11 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
             installStatus = 'Installing...';
         } else if (msg == 'queued') {
             installStatus = 'Queued';
+        } else if (msg.includes('Downloading') || 
+                msg.includes('Start install') || 
+                msg.includes('Extracting') ||
+                msg.includes('Verifying')) {
+            installStatus = 'Installing...';
         }
     } else {
         if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName]['exists']) {
@@ -992,6 +998,9 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     var progSpan = getEl('div');
     progSpan.id = 'panelinstallprogress_' + moduleName;
     progSpan.className = 'panelinstallprogressspan';
+    if (installInfo[moduleName] != undefined && installStatus == 'Installing...') {
+        progSpan.textContent = installInfo[moduleName]['msg'];
+    }
     addEl(div, progSpan);
     var span = getEl('div');
     span.id = 'panelinstallstatus_' + moduleName;
@@ -1800,7 +1809,12 @@ function getSizeText (size) {
 function queueInstall (moduleName, version) {
     $.get('/store/queueinstall', {'module': moduleName, 'version': version}).done(
         function (response) {
-            installInfo[moduleName] = {'msg': 'queued'};
+            var keys = Object.keys(installInfo);
+            if (keys.length == 0) {
+                installInfo[moduleName] = {'msg': 'installing'};
+            } else {
+                installInfo[moduleName] = {'msg': 'queued'};
+            }
             installQueue.push(moduleName);
             if (baseInstalled) {
                 populateAllModulesDiv();

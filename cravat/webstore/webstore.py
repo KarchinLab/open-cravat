@@ -372,7 +372,6 @@ def unqueue (module):
             if data['module'] != module:
                 tmp_queue_data.append([data['module'], data.get('version', '')])
     for data in tmp_queue_data:
-        print('@ data=', data)
         install_queue.put({'module': data[0], 'version': data[1]})
 
 async def kill_install (request):
