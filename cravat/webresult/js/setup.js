@@ -145,6 +145,50 @@ function getSmartFilterDiv (sfDef) {
 		let valueInput = $(getEl('input'))
 			.val(defaultValue);
 		selectorSpan.append(valueInput);
+	} else if (sfDef.selector === 'select') {
+		let select = $(getEl('select'))
+			.addClass('filter-value-input')
+			.attr('multiple','multiple');
+        // select.className = 'filter-value-input';
+		// select.multiple = 'multiple';
+		selectorSpan.append(select);
+		// addEl(selectorSpan[0], select);
+		let optsColName = sfDef.optionsColumn;
+		let optsCol = getFilterColByName(optsColName);
+		var optionValues = optsCol.filter.options;
+		var valSubDic = optsCol.reportsub;
+		var valSubDicKeys = Object.keys(valSubDic);
+		var valToKeys = null;
+        if (valSubDicKeys.length == 0) {
+            valToKeys = {};
+            for (var i = 0; i < optionValues.length; i++) {
+                var val = optionValues[i];
+                valToKeys[val] = [val];
+            }
+        } else {
+            valToKeys = swapJson(valSubDic);
+        }
+		// optionValues = ['a','b','c']; //debug
+		for (let i=0; i<optionValues.length; i++) {
+			let optText = optionValues[i];
+			let optVal = valToKeys[optText];
+			let opt = $(getEl('option'))
+				.val(optVal)
+				.append(optText);
+			// opt.val = valToKeys[optionValues[i]];
+			// opt.innerHTML = optionValues[i];
+			select.append(opt)
+		}
+		select.pqSelect({
+			checkbox: true, 
+			displayText: '{0} selected',
+			singlePlaceholder: '&#x25BD;',
+			multiplePlaceholder: '&#x25BD;',
+			maxDisplay: 0,
+			width: 200,
+			search: false,
+			selectallText: 'Select all',
+		});
 	}
 	return outerDiv;
 }
@@ -189,6 +233,14 @@ function pullSfValue(selectorDiv) {
 	let selectorWrapper = selectorDiv.children('.sf-selector');
 	if (selectorType === 'inputFloat') {
 		return parseFloat(selectorWrapper.children('input').val());
+	} else if (selectorType === 'select') {
+		let selector = selectorWrapper.children('.filter-value-input').first();
+		let selOpts = selector[0].selectedOptions;
+		let vals = [];
+		for (let i=0; i<selOpts.length; i++) {
+			vals.push($(selOpts[i]).val());
+		}
+		return vals;
 	}
 }
 

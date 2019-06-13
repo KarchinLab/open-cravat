@@ -567,6 +567,23 @@ async def load_smartfilters (request):
                     },
                 ]
             }
+        },
+        {
+            'name': 'so',
+            'title': 'Sequence Ontology',
+            'defaultValue': [],
+            'description': 'Select sequence ontologies.',
+            'selector': 'select',
+            'optionsColumn': 'base__so',
+            'filter': {
+                'operator': 'and',
+                'rules': [
+                            {
+                                'column': 'base__so', 
+                                'test': 'in'
+                            },
+                ]
+            }
         }
     ]
     }
