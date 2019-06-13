@@ -333,7 +333,6 @@ def get_local_module_infos(types=[], names=[]):
 def set_jobs_dir (d):
     update_system_conf_file({'jobs_dir': d})
 
-<<<<<<< HEAD
 def get_jobs_dir():
     conf = get_system_conf()
     jobs_dir = conf[constants.jobs_dir_name]
@@ -349,8 +348,6 @@ def get_jobs_dir():
     '''
     return jobs_dir
 
-=======
->>>>>>> 1.5.0
 def search_remote(*patterns):
     """
     Return remote module names which match any of supplied patterns
