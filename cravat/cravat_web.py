@@ -236,10 +236,11 @@ def main ():
     hello_url = 'http://{host}:{port}/hello'.format(host=serv.get('host'),port=serv.get('port'))
     try:
         r = requests.get(hello_url, timeout=0.01)
-        print('OpenCRAVAT is already running.')
+        print('OpenCRAVAT is already running at port {}:{}.'.format(serv.get('host'), serv.get('port')))
         return
     except requests.exceptions.ConnectionError:
         pass
+    print('OpenCRAVAT is served at {}:{}'.format(serv.get('host'), serv.get('port')))
     print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')
     loop = asyncio.get_event_loop()
     loop.call_later(0.1, wakeup)

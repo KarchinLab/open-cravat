@@ -743,7 +743,7 @@ def set_modules_dir (path, overwrite=False):
     if not(os.path.isdir(path)):
         os.makedirs(path)
     old_conf_path = get_main_conf_path()
-    update_system_conf_file({constants.modules_dir_name:path})
+    update_system_conf_file({constants.modules_dir_key:path})
     if not(os.path.exists(get_main_conf_path())):
         if os.path.exists(old_conf_path):
             overwrite_conf_path = old_conf_path
@@ -803,14 +803,14 @@ def get_system_conf ():
         conf = load_yml_conf(constants.system_conf_template_path)
     '''
     conf_modified = False
-    if constants.modules_dir_name not in conf:
-        conf[constants.modules_dir_name] = constants.default_modules_dir
+    if constants.modules_dir_key not in conf:
+        conf[constants.modules_dir_key] = constants.default_modules_dir
         conf_modified = True
-    if constants.conf_dir_name not in conf:
-        conf[constants.conf_dir_name] = constants.default_conf_dir
+    if constants.conf_dir_key not in conf:
+        conf[constants.conf_dir_key] = constants.default_conf_dir
         conf_modified = True
-    if constants.jobs_dir_name not in conf:
-        conf[constants.jobs_dir_name] = constants.default_jobs_dir
+    if constants.jobs_dir_key not in conf:
+        conf[constants.jobs_dir_key] = constants.default_jobs_dir
         conf_modified = True
     if conf_modified:
         write_system_conf_file(conf)
@@ -821,12 +821,12 @@ def get_modules_dir():
     Get the current modules directory
     """
     conf = get_system_conf()
-    modules_dir = conf[constants.modules_dir_name]
+    modules_dir = conf[constants.modules_dir_key]
     return modules_dir
 
 def get_conf_dir ():
     conf = get_system_conf()
-    conf_dir = conf[constants.conf_dir_name]
+    conf_dir = conf[constants.conf_dir_key]
     return conf_dir
 
 def write_system_conf_file(d):
@@ -1033,8 +1033,8 @@ def get_system_conf_info (json=False):
         conf = {}
         confexists = False
     '''
-    if constants.modules_dir_name not in conf:
-        conf[constants.modules_dir_name] = constants.default_modules_dir
+    if constants.modules_dir_key not in conf:
+        conf[constants.modules_dir_key] = constants.default_modules_dir
     '''
     if json:
         content = conf
