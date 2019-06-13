@@ -148,12 +148,12 @@ class Tester():
         if (self.module.type == 'annotator'):
             self.verify_level(self.module.level, self.module.title)
         elif (self.module.type == 'mapper'):
-            self.verify_level('variant', 'Base Information')
-            self.verify_level('gene', 'Base Information')  
+            self.verify_level('variant', 'Variant Annotation')
+            self.verify_level('gene', 'Variant Annotation')  
         elif (self.module.type == 'converter'):
-            self.verify_level('variant', 'Base Information')
-            self.verify_level('sample', 'Base Information')
-            self.verify_level('mapping', 'Base Information')
+            self.verify_level('variant', 'Variant Annotation')
+            self.verify_level('sample', 'Variant Annotation')
+            self.verify_level('mapping', 'Variant Annotation')
                  
     
     #See if key and result are floating point numbers.  If so, allow tiny 

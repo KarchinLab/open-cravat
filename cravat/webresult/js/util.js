@@ -135,6 +135,16 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
         addEl(iconDiv, btn);
     }
 
+	// Camera button
+	var button = getEl('img');
+	button.src = '/result/images/camera.png';
+	button.className = 'detailwidget-camerabutton';
+	button.setAttribute('widgetname', widgetName);
+	button.addEventListener('click', function (evt) {
+		onClickWidgetCameraButton(tabName, evt);
+	});
+	addEl(iconDiv, button);
+
 	// Pin button
 	var pinButton = getEl('img');
 	pinButton.src = '/result/images/pin.png';
@@ -149,8 +159,7 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	// Close button
 	var closeButton = getEl('img');
 	closeButton.src = '/result/images/close-button.png';
-	closeButton.className = 'closebutton';
-	//closeButton.className = 'detailwidgetclosebutton';
+	closeButton.className = 'detailwidget-closebutton';
 	closeButton.setAttribute('widgetname', widgetName);
 	closeButton.addEventListener('click', function (evt) {
 		onClickWidgetCloseButton(tabName, evt);
@@ -727,7 +736,11 @@ function loadLayoutSetting (name, callback) {
 		if (loadedViewerWidgetSettings == undefined) {
 			loadedViewerWidgetSettings = {};
 		}
-		viewerWidgetSettings = loadedViewerWidgetSettings;
+        var loadedViewerWidgetSettingsKeys = Object.keys(loadedViewerWidgetSettings);
+        for (var i = 0; i < loadedViewerWidgetSettingsKeys.length; i++) {
+            var k = loadedViewerWidgetSettingsKeys[i];
+            viewerWidgetSettings[k] = loadedViewerWidgetSettings[k];
+        }
 		if ((currentTab == 'variant' || currentTab == 'gene' || currentTab == 'info') && viewerWidgetSettings[currentTab] != undefined) {
 			applyWidgetSetting(currentTab);
 		}

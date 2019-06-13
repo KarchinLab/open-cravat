@@ -276,7 +276,7 @@ div.tabContent.hide {
 
 .detailwidgettitle {
 	display: inline-block;
-	width: calc(100% - 37px);
+	width: calc(100% - 4px);
 	background: #d1dae0;
 	font-size: 13px;
 	font-weight: bold;
@@ -337,16 +337,16 @@ div.tabContent.hide {
 
 .detailwidgeticondiv {
 	display: inline-block;
-	width: 55px;
+	width: 70px;
 	position: absolute;
 	right: 0px;
 	top: 0px;
     text-align: right;
 }
 
-.detailwidgetclosebutton {
-	cursor: default;
-	margin-left: 4px;
+.detailwidget-closebutton {
+	width: 16px;
+	height: 16px;
 }
 
 .detailwidgetpinbutton {
@@ -367,6 +367,10 @@ div.tabContent.hide {
 .detailwidgetpinbutton.pinned {
 	color: white;
 	background-color: #848484;
+}
+
+.detailwidget-camerabutton {
+    height: 16px;
 }
 
 .detailwidgetselect {
@@ -398,11 +402,6 @@ div.tabContent.hide {
 	minHeight: 50px;
 	padding: 4px;
 	fontSize: 13px;
-}
-
-.closebutton {
-	width: 16px;
-	height: 16px;
 }
 
 p {

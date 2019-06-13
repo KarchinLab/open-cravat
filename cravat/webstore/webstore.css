@@ -227,7 +227,9 @@ div.modulegroup span.modulepanel-datasource-span {
 #storemenudiv {
     position: fixed;
     top: 108px;
-    width: 200px;
+    width: 201px;
+    height: calc(100% - 110px);
+    overflow: auto;
 }
 
 .store-switch {
