@@ -4,12 +4,10 @@ import pathlib
 import shutil
 import sys
 import platform
+import yaml
 
 # Directories
 packagedir = os.path.dirname(os.path.abspath(__file__))
-modules_dir_name = 'modules'
-jobs_dir_name = 'jobs'
-conf_dir_name = 'conf'
 pl = platform.platform()
 if pl.startswith('Windows'):
     oc_root_dir = os.path.join(os.path.expandvars('%systemdrive%'), os.sep, 'open-cravat')
@@ -19,24 +17,45 @@ elif pl.startswith('Darwin'):
     oc_root_dir = '/Users/Shared/open-cravat'
 if os.path.exists(oc_root_dir) == False:
     os.mkdir(oc_root_dir)
-default_modules_dir = os.path.join(oc_root_dir, modules_dir_name)
-if os.path.exists(default_modules_dir) == False:
-    os.mkdir(default_modules_dir)
-default_jobs_dir = os.path.join(oc_root_dir, jobs_dir_name)
-if os.path.exists(default_jobs_dir) == False:
-    os.mkdir(default_jobs_dir)
+# conf dir
+conf_dir_name = 'conf'
+conf_dir_key = 'conf_dir'
 default_conf_dir = os.path.join(oc_root_dir, conf_dir_name)
 if os.path.exists(default_conf_dir) == False:
     os.mkdir(default_conf_dir)
-system_conf_fname = 'cravat-system-dev.yml'
+system_conf_fname = 'cravat-system.yml'
 system_conf_path = os.path.join(default_conf_dir, system_conf_fname)
-if os.path.exists(system_conf_path) == False:
-    system_conf_fname = 'cravat-system.yml'
-    system_conf_path = os.path.join(default_conf_dir, system_conf_fname)
 system_conf_template_fname = 'cravat-system.template.yml'
 system_conf_template_path = os.path.join(packagedir, system_conf_template_fname)
 if os.path.exists(system_conf_path) == False:
     shutil.copyfile(system_conf_template_path, system_conf_path)
+# conf
+f = open(system_conf_path)
+conf = yaml.load(f)
+f.close()
+# modules dir
+modules_dir_key = 'modules_dir'
+modules_dir_name = 'modules'
+if not modules_dir_key in conf:
+    default_modules_dir = os.path.join(oc_root_dir, modules_dir_name)
+    if os.path.exists(default_modules_dir) == False:
+        os.mkdir(default_modules_dir)
+    conf[modules_dir_key] = default_modules_dir
+    wf = open(system_conf_path, 'w')
+    yaml.dump(conf, wf, default_flow_style=False)
+    wf.close()
+# jobs dir
+jobs_dir_key = 'jobs_dir'
+jobs_dir_name = 'jobs'
+if not jobs_dir_key in conf:
+    default_jobs_dir = os.path.join(oc_root_dir, jobs_dir_name)
+    if os.path.exists(default_jobs_dir) == False:
+        os.mkdir(default_jobs_dir)
+    conf[jobs_dir_key] = default_jobs_dir
+    wf = open(system_conf_path, 'w')
+    yaml.dump(conf, wf, default_flow_style=False)
+    wf.close()
+
 base_modules_key = 'base_modules'
 main_conf_fname = 'cravat.yml'
 main_conf_path = os.path.join(default_conf_dir, main_conf_fname)

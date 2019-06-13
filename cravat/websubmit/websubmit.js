@@ -1268,7 +1268,7 @@ function loadSystemConf () {
         var s = document.getElementById('sysconfpathspan');
         s.value = response['path'];
         var s = document.getElementById('settings_jobs_dir_input');
-        s.value = response['content']['jobs'];
+        s.value = response['content']['jobs_dir'];
         var span = document.getElementById('server_user_span');
         if (! servermode) {
             span.textContent = '/default';
@@ -1276,7 +1276,7 @@ function loadSystemConf () {
             span.textContent = '';
         }
         var s = document.getElementById('settings_modules_dir_input');
-        s.value = response['content']['modules'];
+        s.value = response['content']['modules_dir'];
         var s = document.getElementById('settings_num_input_line_warning_cutoff');
         var cutoff = response['content']['num_input_line_warning_cutoff'];
         if (cutoff == undefined) {
@@ -1296,9 +1296,9 @@ function updateSystemConf () {
         var s = document.getElementById('sysconfpathspan');
         response['path'] = s.value;
         var s = document.getElementById('settings_jobs_dir_input');
-        response['content']['jobs'] = s.value;
+        response['content']['jobs_dir'] = s.value;
         var s = document.getElementById('settings_modules_dir_input');
-        response['content']['modules'] = s.value;
+        response['content']['modules_dir'] = s.value;
         var s = document.getElementById('settings_num_input_line_warning_cutoff');
         response['content']['num_input_line_warning_cutoff'] = s.value;
         $.ajax({
@@ -1325,7 +1325,7 @@ function updateSystemConf () {
                     var justOk = true;
                     showYesNoDialog(mdiv, null, false, justOk);
                 }
-                if (response['sysconf']['jobs'] != undefined) {
+                if (response['sysconf']['jobs_dir'] != undefined) {
                     populateJobs();
                     getLocal();
                     populateAnnotators();
