@@ -1392,6 +1392,8 @@ function showUnloggedControl () {
     $('#storediv_tabhead[value=storediv]')[0].style.display = 'none';
     document.getElementById('submitdiv').style.display = 'block';
     document.getElementById('storediv').style.display = 'none';
+    document.getElementById('loginsignupdialog').style.display = 'block';
+    document.getElementById('loginsignupbutton').style.display = 'none';
 }
 
 function doAfterLogin () {
@@ -1466,6 +1468,11 @@ function showSignupDiv () {
     document.getElementById('signupdiv').style.display = 'block';
 }
 
+function showLoginDiv () {
+    document.getElementById('logindiv').style.display = 'block';
+    document.getElementById('signupdiv').style.display = 'none';
+}
+
 function submitForgotPasswordAnswer () {
     var email = document.getElementById('forgotpasswordemail').value;
     var answer = document.getElementById('forgotpasswordanswer').value;
@@ -1489,6 +1496,7 @@ function submitForgotPasswordAnswer () {
 }
 
 function forgotPassword () {
+    document.getElementById('logindiv').style.display = 'none';
     document.getElementById('forgotpasswordquestion').textContent = '';
     document.getElementById('forgotpasswordgetquestiondiv').style.display = 'block';
     document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'none';

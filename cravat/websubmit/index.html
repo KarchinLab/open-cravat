@@ -37,6 +37,51 @@
     <button id='store-systemmoduleupdate-button' onclick='onClickSystemModuleUpdateButton();'>Update</button>
 </div>
 
+<div id='loginsignupdialog' style='display: none;'>
+    <div id='logindiv' style='display: block;'>
+        <table><tbody><tr>
+        <td>Email</td><td><input type='text' id='login_username' /></td></tr>
+        <tr><td>Password</td><td><input type='password' id='login_password' /></td></tr>
+        </tbody></table>
+        <button onclick='login();'>Login</button>
+        <br />
+        <span style='text-decoration: underline; color: blue; cursor: default;' onclick='forgotPassword();'>Forgot password?</span>
+        <br />
+        <span style='text-decoration: underline; color: blue; cursor: default;' onclick='showSignupDiv();'>Sign up</span>
+        <div id='forgotpassworddiv' style='display: none;'>
+            <div id='forgotpasswordgetquestiondiv'>
+                <table><tbody>
+                <tr><td>Email</td><td><input type='text' id='forgotpasswordemail' /></td></tr>
+                </tbody></table>
+                <button id='forgotpasswordgetquestionbutton' onclick='getPasswordQuestion();'>Get password question</button>
+            </div>
+            <div id='forgotpasswordquestionanswerdiv'>
+                Question: <span id='forgotpasswordquestion'></span>
+                <br />
+                Answer: <input type='text' id='forgotpasswordanswer' />
+                <br />
+                <button id='forgotpasswordsubmitbutton' onclick='submitForgotPasswordAnswer();'>Submit</button>
+            </div>
+        </div>
+        <br />
+    </div>
+    <div id='signupdiv' style='display: none;'>
+        <table><tbody>
+        <tr><td>Email</td><td><input type='text' id='signupemail' /></td></tr>
+        <tr><td>Password</td><td><input type='password' id='signuppassword' /></td></tr>
+        <tr><td>Re-type password</td><td><input type='password' id='signupretypepassword' /></td></tr>
+        <tr><td>Question</td><td><input type='text' id='signupquestion' /></td></tr>
+        <tr><td>Answer</td><td><input type='text' id='signupanswer' /></td></tr>
+        </tbody></table>
+        <button id='signupbutton' onclick='signupSubmit();'>Create account</button>
+        <br />
+        <span style='text-decoration: underline; color: blue; cursor: default;' onclick='showLoginDiv();'>Back to Login</span>
+    </div>
+    <br />
+    <div id='accountmsgdiv'></div>
+    <div style='position: absolute; top: 6px; right: 6px; cursor: default;' onclick='closeLoginSignupDialog();'>X</div>
+</div>
+ 
 <div class = 'headerdiv' />
     <div id='verdiv' >
         Version: <span class="curverspan" style="font-family: monospace;"></span>
@@ -65,54 +110,6 @@
             </div>
         </div>
         <button id='loginsignupbutton' onclick='toggleloginsignupdiv();' style='display: none;'>Log in</button>
-        <div id='loginsignupdialog' style='display: none;'>
-            <div id='logindiv' style='display: block;'>
-                <span style='font-weight: bold;'>Login:</span>
-                <br />
-                Email: <input type='text' id='login_username' />
-                <br />
-                Password: <input type='password' id='login_password' />
-                <span style='text-decoration: underline; color: blue; cursor: default;' onclick='forgotPassword();'>Forgot password?</span>
-                <br />
-                <button onclick='login();'>Login</button> or <span style='text-decoration: underline; color: blue; cursor: default;' onclick='showSignupDiv();'>Sign up</span>
-                <div id='forgotpassworddiv' style='display: none;'>
-                    <br />
-                    <span style='font-weight: bold;'>Forgot Password:</span>
-                    <br />
-                    <div id='forgotpasswordgetquestiondiv'>
-                        Email: <input type='text' id='forgotpasswordemail' />
-                        <br />
-                        <button id='forgotpasswordgetquestionbutton' onclick='getPasswordQuestion();'>Get password question</button>
-                    </div>
-                    <div id='forgotpasswordquestionanswerdiv'>
-                        Question: <span id='forgotpasswordquestion'></span>
-                        <br />
-                        Answer: <input type='text' id='forgotpasswordanswer' />
-                        <br />
-                        <button id='forgotpasswordsubmitbutton' onclick='submitForgotPasswordAnswer();'>Submit</button>
-                    </div>
-                </div>
-                <br />
-            </div>
-            <div id='signupdiv' style='display: none;'>
-                <span style='font-weight: bold;'>Sign-up:</span>
-                <br />
-                Email: <input type='text' id='signupemail' />
-                <br />
-                Password: <input type='password' id='signuppassword' />
-                <br />
-                Re-type password: <input type='password' id='signupretypepassword' />
-                <br />
-                Question: <input type='text' id='signupquestion' />
-                <br />
-                Answer: <input type='text' id='signupanswer' />
-                <br />
-                <button id='signupbutton' onclick='signupSubmit();'>Create account</button>
-            </div>
-            <br />
-            <div id='accountmsgdiv' style='color: red;'></div>
-            <div style='position: absolute; top: 6px; right: 6px; cursor: default;' onclick='closeLoginSignupDialog();'>X</div>
-        </div>
     </div>
 </div>
 
