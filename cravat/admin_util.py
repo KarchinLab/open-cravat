@@ -333,21 +333,6 @@ def get_local_module_infos(types=[], names=[]):
 def set_jobs_dir (d):
     update_system_conf_file({'jobs_dir': d})
 
-def get_jobs_dir():
-    conf = get_system_conf()
-    jobs_dir = conf[constants.jobs_dir_name]
-    return jobs_dir
-    '''
-    jobs_dir = get_system_conf().get('jobs_dir')
-    if jobs_dir is None:
-        home_dir = os.path.expanduser('~')
-        jobs_dir = os.path.join(home_dir,'open-cravat','jobs')
-        set_jobs_dir(jobs_dir)
-    if not(os.path.isdir(jobs_dir)):
-        os.makedirs(jobs_dir)
-    '''
-    return jobs_dir
-
 def search_remote(*patterns):
     """
     Return remote module names which match any of supplied patterns
@@ -828,6 +813,11 @@ def get_conf_dir ():
     conf = get_system_conf()
     conf_dir = conf[constants.conf_dir_key]
     return conf_dir
+
+def get_jobs_dir():
+    conf = get_system_conf()
+    jobs_dir = conf[constants.jobs_dir_key]
+    return jobs_dir
 
 def write_system_conf_file(d):
     """
