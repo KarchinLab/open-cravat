@@ -315,11 +315,11 @@ button {
 
 #loginsignupdialog {
     position: absolute;
-    background-color: #e2e2e2;
-    left: 10px;
-    top: 99px;
-    width: calc(100% - 20px);
-    height: calc(100% - 107px);
+    background-color: #000000;
+    left: 0px;
+    top: 0px;
+    width: calc(100% - 0px);
+    height: calc(100% - 0px);
     font-size: 13px;
     display: none;
     margin: 0px;
@@ -340,14 +340,22 @@ button {
     line-height: 33px;
     text-align: center;
     transform: translate(-50%, -50%);
+    color: white;
 }
 
 #logindiv table tbody tr td:first-child {
     text-align: right;
 }
 
-#signupdiv table tbody tr td:first-child {
-    text-align: right;
+#forgotpassworddiv {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    font-size: 18px;
+    line-height: 33px;
+    text-align: center;
+    transform: translate(-50%, -50%);
+    color: white;
 }
 
 #signupdiv {
@@ -357,6 +365,11 @@ button {
     font-size: 18px;
     line-height: 33px;
     text-align: center;
+    color: white;
+}
+
+#signupdiv table tbody tr td:first-child {
+    text-align: right;
 }
 
 #forgotpasswordgetquestiondiv {

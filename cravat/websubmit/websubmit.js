@@ -1488,6 +1488,7 @@ function submitForgotPasswordAnswer () {
                 document.getElementById('forgotpasswordquestion').textContent = '';
                 document.getElementById('forgotpasswordanswer').textContent = '';
                 alert('Password has been reset to ' + msg);
+                showLoginDiv();
             } else {
                 msgAccountDiv(msg);
             }

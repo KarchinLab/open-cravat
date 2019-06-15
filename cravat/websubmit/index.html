@@ -45,25 +45,24 @@
         </tbody></table>
         <button onclick='login();'>Login</button>
         <br />
-        <span style='text-decoration: underline; color: blue; cursor: default;' onclick='forgotPassword();'>Forgot password?</span>
+        <span style='text-decoration: underline; color: #4d4d4d; cursor: default;' onclick='forgotPassword();'>Forgot password?</span>
         <br />
-        <span style='text-decoration: underline; color: blue; cursor: default;' onclick='showSignupDiv();'>Sign up</span>
-        <div id='forgotpassworddiv' style='display: none;'>
-            <div id='forgotpasswordgetquestiondiv'>
-                <table><tbody>
-                <tr><td>Email</td><td><input type='text' id='forgotpasswordemail' /></td></tr>
-                </tbody></table>
-                <button id='forgotpasswordgetquestionbutton' onclick='getPasswordQuestion();'>Get password question</button>
-            </div>
-            <div id='forgotpasswordquestionanswerdiv'>
-                Question: <span id='forgotpasswordquestion'></span>
-                <br />
-                Answer: <input type='text' id='forgotpasswordanswer' />
-                <br />
-                <button id='forgotpasswordsubmitbutton' onclick='submitForgotPasswordAnswer();'>Submit</button>
-            </div>
+        <span style='text-decoration: underline; color: #4d4d4d; cursor: default;' onclick='showSignupDiv();'>Sign up</span>
+    </div>
+    <div id='forgotpassworddiv' style='display: none;'>
+        <div id='forgotpasswordgetquestiondiv'>
+            <table><tbody>
+            <tr><td>Email</td><td><input type='text' id='forgotpasswordemail' /></td></tr>
+            </tbody></table>
+            <button id='forgotpasswordgetquestionbutton' onclick='getPasswordQuestion();'>Get password question</button>
         </div>
-        <br />
+        <div id='forgotpasswordquestionanswerdiv'>
+            Question: <span id='forgotpasswordquestion'></span>
+            <br />
+            Answer: <input type='text' id='forgotpasswordanswer' />
+            <br />
+            <button id='forgotpasswordsubmitbutton' onclick='submitForgotPasswordAnswer();'>Submit</button>
+        </div>
     </div>
     <div id='signupdiv' style='display: none;'>
         <table><tbody>
@@ -75,7 +74,7 @@
         </tbody></table>
         <button id='signupbutton' onclick='signupSubmit();'>Create account</button>
         <br />
-        <span style='text-decoration: underline; color: blue; cursor: default;' onclick='showLoginDiv();'>Back to Login</span>
+        <span style='text-decoration: underline; color: #4d4d4d; cursor: default;' onclick='showLoginDiv();'>Back to Login</span>
     </div>
     <br />
     <div id='accountmsgdiv'></div>
