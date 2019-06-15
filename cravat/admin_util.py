@@ -818,16 +818,6 @@ def get_jobs_dir():
     conf = get_system_conf()
     jobs_dir = conf[constants.jobs_dir_key]
     return jobs_dir
-    '''
-    jobs_dir = get_system_conf().get('jobs_dir')
-    if jobs_dir is None:
-        home_dir = os.path.expanduser('~')
-        jobs_dir = os.path.join(home_dir,'open-cravat','jobs')
-        set_jobs_dir(jobs_dir)
-    if not(os.path.isdir(jobs_dir)):
-        os.makedirs(jobs_dir)
-    return jobs_dir
-    '''
 
 def write_system_conf_file(d):
     """
