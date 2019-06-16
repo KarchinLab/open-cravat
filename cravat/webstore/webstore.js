@@ -1879,9 +1879,45 @@ function unqueue (moduleName) {
     }
 }
 
+function checkConnection(failures) {
+	failures = failures !== undefined ? failures : 0;
+    var host = window.location.host;
+    if (failures>=3) {
+        setServerStatus(false);
+    }
+    var protocol = window.location.protocol;
+    var ws = null;
+    if (protocol == 'http:') {
+        ws = new WebSocket('ws://' + host + '/heartbeat');
+    } else if (protocol == 'https:') {
+        ws = new WebSocket('wss://' + host + '/heartbeat');
+    }
+    ws.onopen = function (evt) {
+        setServerStatus(true);
+        failures=0;
+    }
+    ws.onclose = function (evt) {
+        failures += 1;
+        var waitTime = 2000*failures;
+        setTimeout(function() {
+            checkConnection(failures);
+        }, waitTime)
+    }
+    ws.onerror = function(evt) {
+    }
+    ws.onmessage = function (evt) {
+    }
+}
+
 function connectWebSocket () {
     var host = window.location.host;
-    var ws = new WebSocket('ws://' + host + '/store/connectwebsocket');
+    var protocol = window.location.protocol;
+    var ws = null;
+    if (protocol == 'http:') {
+        ws = new WebSocket('ws://' + host + '/store/connectwebsocket');
+    } else if (protocol == 'https:') {
+        ws = new WebSocket('wss://' + host + '/store/connectwebsocket');
+    }
     ws.onopen = function (evt) {
     }
     ws.onclose = function (evt) {
@@ -1945,30 +1981,6 @@ function setModuleTileAbortButton (module) {
         var button = getModuleTileAbortButton(module);
         addEl(div, button);
     });
-}
-
-function checkConnection(failures) {
-	failures = failures !== undefined ? failures : 0;
-    var host = window.location.host;
-    if (failures>=3) {
-        setServerStatus(false);
-    }
-    var ws = new WebSocket('ws://' + host + '/heartbeat');
-    ws.onopen = function (evt) {
-        setServerStatus(true);
-        failures=0;
-    }
-    ws.onclose = function (evt) {
-        failures += 1;
-        var waitTime = 2000*failures;
-        setTimeout(function() {
-            checkConnection(failures);
-        }, waitTime)
-    }
-    ws.onerror = function(evt) {
-    }
-    ws.onmessage = function (evt) {
-    }
 }
 
 function getBaseModuleNames () {

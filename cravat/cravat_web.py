@@ -30,8 +30,23 @@ import asyncio
 import datetime as dt
 import requests
 import traceback
+import ssl
 
 donotopenbrowser = False
+ssl_enabled = False
+protocol = None
+conf = ConfigLoader()
+sysconf = au.get_system_conf()
+if 'conf_dir' in sysconf:
+    pem_path = os.path.join(sysconf['conf_dir'], 'cert.pem')
+    if os.path.exists(pem_path):
+        ssl_enabled = True
+        sc = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        sc.load_cert_chain(pem_path)
+if ssl_enabled:
+    protocol = 'https://'
+else:
+    protocol = 'http://'
 
 def check_donotopenbrowser ():
     parser = argparse.ArgumentParser()
@@ -72,7 +87,8 @@ def result ():
     global donotopenbrowser
     if not donotopenbrowser:
         server = get_server()
-        webbrowser.open('http://{host}:{port}/result/index.html?job_id='.format(host=server.get('host'), port=server.get('port')) + runid + '&dbpath=' + dbpath)
+        global protocol
+        webbrowser.open(protocol + '{host}:{port}/result/index.html?job_id='.format(host=server.get('host'), port=server.get('port')) + runid + '&dbpath=' + dbpath)
     main()
 
 def store ():
@@ -81,14 +97,16 @@ def store ():
     global donotopenbrowser
     if not donotopenbrowser:
         server = get_server()
-        webbrowser.open('http://{host}:{port}/store/index.html'.format(host=server.get('host'), port=server.get('port')))
+        global protocol
+        webbrowser.open(protocol + '{host}:{port}/store/index.html'.format(host=server.get('host'), port=server.get('port')))
 
 def submit ():
     check_donotopenbrowser()
     global donotopenbrowser
     if not donotopenbrowser:
         server = get_server()
-        webbrowser.open('http://{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port')))
+        global protocol
+        webbrowser.open(protocol + '{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port')))
     main()
 
 def get_server():
@@ -135,7 +153,7 @@ class TCPSitePatched (web_runner.BaseSite):
         self._server = await self.loop.create_server(self._runner.server, self._host, self._port, ssl=self._ssl_context, backlog=self._backlog, reuse_address=self._reuse_address, reuse_port=self._reuse_port)
 
 class WebServer (object):
-    def __init__ (self, host=None, port=None, loop=None):
+    def __init__ (self, host=None, port=None, loop=None, ssl_context=None):
         serv = get_server()
         if host is None:
             host = serv['host']
@@ -145,6 +163,7 @@ class WebServer (object):
         self.port = port
         if loop is None:
             loop = asyncio.get_event_loop()
+        self.ssl_context = ssl_context
         self.loop = loop
         asyncio.ensure_future(self.start(), loop=self.loop)
 
@@ -156,7 +175,7 @@ class WebServer (object):
         self.setup_routes()
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
-        self.site = TCPSitePatched(self.runner, self.host, self.port, loop=self.loop)
+        self.site = TCPSitePatched(self.runner, self.host, self.port, loop=self.loop, ssl_context=self.ssl_context)
         await self.site.start()
 
     def setup_routes (self):
@@ -201,39 +220,13 @@ def main ():
             cursor.close()
             db.commit()
             db.close()
-    '''
-    s = socket.socket()
-    try:
-        s.bind(('localhost', 8060))
-        app = web.Application()
-        fernet_key = fernet.Fernet.generate_key()
-        secret_key = base64.urlsafe_b64decode(fernet_key)
-        setup(app, EncryptedCookieStorage(secret_key))
-        routes = list()
-        routes.extend(ws.routes)
-        routes.extend(wr.routes)
-        routes.extend(wu.routes)
-        for route in routes:
-            method, path, func_name = route
-            app.router.add_route(method, path, func_name)
-        app.router.add_static('/store', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webstore'))
-        app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
-        app.router.add_static('/submit',os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
-        ws.start_worker()
-        print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
-        web.run_app(app, port=8060)
-    except KeyboardInterrupt:
-    except BrokenPipeError:
-    except:
-        import traceback
-        traceback.print_exc()
-    '''
 
     def wakeup ():
         loop.call_later(0.1, wakeup)
 
     serv = get_server()
-    hello_url = 'http://{host}:{port}/hello'.format(host=serv.get('host'),port=serv.get('port'))
+    global protocol
+    hello_url = protocol + '{host}:{port}/hello'.format(host=serv.get('host'),port=serv.get('port'))
     try:
         r = requests.get(hello_url, timeout=0.01)
         print('OpenCRAVAT is already running at port {}:{}.'.format(serv.get('host'), serv.get('port')))
@@ -244,7 +237,12 @@ def main ():
     print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')
     loop = asyncio.get_event_loop()
     loop.call_later(0.1, wakeup)
-    server = WebServer(loop=loop)
+    global ssl_enabled
+    if ssl_enabled:
+        global sc
+        server = WebServer(loop=loop, ssl_context=sc)
+    else:
+        server = WebServer(loop=loop)
     try:
         loop.run_forever()
     except KeyboardInterrupt:

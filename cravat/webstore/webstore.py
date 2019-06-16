@@ -141,7 +141,10 @@ async def get_local_manifest (request):
 
 async def get_storeurl (request):
     conf = au.get_system_conf()
-    return web.Response(text=conf['store_url'])
+    store_url = conf['store_url']
+    if request.scheme == 'https':
+        store_url = store_url.replace('http://', 'https://')
+    return web.Response(text=store_url)
 
 async def get_module_readme (request):
     module_name = request.match_info['module']
