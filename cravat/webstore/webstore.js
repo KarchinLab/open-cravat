@@ -1494,7 +1494,12 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     addEl(td, mdDiv);
     addEl(tr, td);
 	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
-		mdDiv.innerHTML = data;
+        var protocol = window.location.protocol;
+        if (protocol == 'http:') {
+            mdDiv.innerHTML = data;
+        } else if (protocol == 'https:') {
+            mdDiv.innerHTML = data.replace(/http:/g, 'https:');
+        }
         // output column description
         var d = getEl('div');
         d.id = 'moduledetail-output-column-div-' + currentTab;
