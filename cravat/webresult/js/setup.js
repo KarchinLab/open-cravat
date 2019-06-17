@@ -239,7 +239,7 @@ function makeSmartfilterJson () {
 
 function addSfValue(topRule, value) {
 	topRule = JSON.parse(JSON.stringify(topRule));
-	if (topRule.hasOwnProperty('operator')) {
+	if (topRule.hasOwnProperty('rules')) {
 		for (let i=0; i<topRule.rules.length; i++) {
 			let subRule = topRule.rules[i];
 			topRule.rules[i] = addSfValue(subRule, value);
@@ -253,6 +253,34 @@ function addSfValue(topRule, value) {
 		}
 	}
 	return topRule;
+}
+
+function reduceSf (topRule, allowPartial) {
+	topRule = JSON.parse(JSON.stringify(topRule));
+	if (topRule.hasOwnProperty('rules')) {
+		let newSubRules = [];
+		for (let i=0; i<topRule.rules.length; i++) {
+			let subRule = topRule.rules[i];
+			let newSubRule = reduceSf(subRule, allowPartial);
+			if (newSubRule !== null) {
+				if (allowPartial) {
+					newSubRules.push(newSubRule);
+				} else {
+					return null;
+				}
+			}
+		}
+		topRule.rules = newSubRules;
+		if (topRule.rules.length > 1) {
+			return topRule;
+		} else if (topRule.rules.length === 1) {
+			return topRule.rules[0];
+		} else {
+			return null;
+		}
+	} else {
+		return getFilterColByName(topRule.column) !== null ? topRule : null;
+	}
 }
 
 function pullSfValue(selectorDiv) {

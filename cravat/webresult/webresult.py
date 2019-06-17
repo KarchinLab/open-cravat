@@ -534,6 +534,7 @@ async def load_smartfilters (request):
             'name': 'popstats',
             'title': 'Population AF',
             'description': 'Set a maximum allele frequency.',
+            'allowPartial': True,
             'selector': {
                 'type': 'inputFloat',
                 'defaultValue': '0.1',
@@ -555,20 +556,20 @@ async def load_smartfilters (request):
                             }
                         ]
                     },
-                    # {
-                    #     'operator': 'or',
-                    #     'rules': [
-                    #         {
-                    #             'column': 'thousandgenomes__af', 
-                    #             'test': 'lessThanEq',
-                    #             'value': '${value}'
-                    #         },
-                    #         {
-                    #             'column': 'thousandgenomes__af',
-                    #             'test': 'noData'
-                    #         }
-                    #     ]
-                    # },
+                    {
+                        'operator': 'or',
+                        'rules': [
+                            {
+                                'column': 'thousandgenomes__af', 
+                                'test': 'lessThanEq',
+                                'value': '${value}'
+                            },
+                            {
+                                'column': 'thousandgenomes__af',
+                                'test': 'noData'
+                            }
+                        ]
+                    },
                 ]
             }
         },

@@ -42,7 +42,6 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 		if (jobDataLoadingDiv == null) {
 			drawingRetrievingDataDiv(tabName);
 		}
-		console.log(filterJson);
 		$.ajax({
 			url: '/result/service/result', 
 			type: 'get',

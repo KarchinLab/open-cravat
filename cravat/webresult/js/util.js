@@ -667,15 +667,22 @@ function loadFilterSettingAs () {
 function loadFilterSetting (name, callback, doNotCount) {
 	$.get('/result/service/smartfilters').done(function (response) {
 		smartFilters = {};
-		for (var source in response) {
-			var refac = {order:[],definitions:{}}
-			var sfs = response[source];
-			for (var i=0; i<sfs.length; i++) {
-				var sf = sfs[i];
-				refac.order.push(sf.name);
-				refac.definitions[sf.name] = sf;
+		for (let source in response) {
+			let sfs = response[source];
+			let refac = {order:[],definitions:{}}
+			for (let i=0; i<sfs.length; i++) {
+				let sf = sfs[i];
+				sf.allowPartial = sf.allowPartial !== undefined ? sf.allowPartial : false;
+				let reducedFilter = reduceSf(sf.filter, sf.allowPartial);
+				if (reducedFilter !== null) {
+					sf.filter = reducedFilter;
+					refac.order.push(sf.name);
+					refac.definitions[sf.name] = sf;
+				}
 			}
-			smartFilters[source] = refac;
+			if (refac.order.length > 0) {
+				smartFilters[source] = refac;
+			}
 		}
 		setupTab('filter');
 		$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
