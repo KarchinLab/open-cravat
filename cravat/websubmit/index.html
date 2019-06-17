@@ -38,6 +38,7 @@
 </div>
 
 <div id='loginsignupdialog' style='display: none;'>
+    <img src='logo_new.png' />
     <div id='logindiv' style='display: block;'>
         <table><tbody><tr>
         <td>Email</td><td><input type='text' id='login_username' /></td></tr>
@@ -55,6 +56,8 @@
             <tr><td>Email</td><td><input type='text' id='forgotpasswordemail' /></td></tr>
             </tbody></table>
             <button id='forgotpasswordgetquestionbutton' onclick='getPasswordQuestion();'>Get password question</button>
+            <br />
+            <span style='text-decoration: underline; color: #4d4d4d; cursor: default;' onclick='showLoginDiv();'>Back to Login</span>
         </div>
         <div id='forgotpasswordquestionanswerdiv'>
             Question: <span id='forgotpasswordquestion'></span>

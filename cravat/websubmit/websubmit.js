@@ -1471,6 +1471,7 @@ function showSignupDiv () {
 function showLoginDiv () {
     document.getElementById('logindiv').style.display = 'block';
     document.getElementById('signupdiv').style.display = 'none';
+    document.getElementById('forgotpassworddiv').style.display = 'none';
 }
 
 function submitForgotPasswordAnswer () {

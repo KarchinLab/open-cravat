@@ -315,7 +315,7 @@ button {
 
 #loginsignupdialog {
     position: absolute;
-    background-color: #000000;
+    background-color: #ffffff;
     left: 0px;
     top: 0px;
     width: calc(100% - 0px);
@@ -324,12 +324,20 @@ button {
     display: none;
     margin: 0px;
     padding: 0px;
-    opacity: 0.9;
+    /*opacity: 0.9;*/
     z-index: 201;
 }
 
 #loginsignupdialog button {
     font-size: 16px;
+}
+
+#loginsignupdialog img {
+    width: 130px;
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 #logindiv {
@@ -340,7 +348,7 @@ button {
     line-height: 33px;
     text-align: center;
     transform: translate(-50%, -50%);
-    color: white;
+    color: black;
 }
 
 #logindiv table tbody tr td:first-child {
@@ -355,7 +363,7 @@ button {
     line-height: 33px;
     text-align: center;
     transform: translate(-50%, -50%);
-    color: white;
+    color: black;
 }
 
 #signupdiv {
@@ -365,7 +373,7 @@ button {
     font-size: 18px;
     line-height: 33px;
     text-align: center;
-    color: white;
+    color: black;
 }
 
 #signupdiv table tbody tr td:first-child {
