@@ -231,28 +231,28 @@ function makeSmartfilterJson () {
 		let sfName = fullName.split('.')[1];
 		let sfDef = smartFilters[sfSource].definitions[sfName];
 		let val = pullSfValue(sfDiv);
-		let sfTemplate = JSON.parse(JSON.stringify(sfDef.filter));
-		let sfResult = addSfValue(sfTemplate, val);
+		let sfResult = addSfValue(sfDef.filter, val);
 		fullSf.rules.push(sfResult);
 	}
 	filterJson = {'variant': fullSf};
 }
 
-function addSfValue(filterGroup, value) {
-	for (let i=0; i<filterGroup.rules.length; i++) {
-		let rule = filterGroup.rules[i];
-		if (rule.operator !== undefined) {
-			rule = addSfValue(rule, value);
-		} else {
-			for (let k in rule) {
-				let v = rule[k];
-				if (v === '${value}') {
-					rule[k] = value;
-				}
+function addSfValue(topRule, value) {
+	topRule = JSON.parse(JSON.stringify(topRule));
+	if (topRule.hasOwnProperty('operator')) {
+		for (let i=0; i<topRule.rules.length; i++) {
+			let subRule = topRule.rules[i];
+			topRule.rules[i] = addSfValue(subRule, value);
+		}
+	} else {
+		for (let k in topRule) {
+			let v = topRule[k];
+			if (v === '${value}') {
+				topRule[k] = value;
 			}
 		}
 	}
-	return filterGroup;
+	return topRule;
 }
 
 function pullSfValue(selectorDiv) {

@@ -560,7 +560,8 @@ async def load_smartfilters (request):
                     #     'rules': [
                     #         {
                     #             'column': 'thousandgenomes__af', 
-                    #             'test': 'lessThanEq'
+                    #             'test': 'lessThanEq',
+                    #             'value': '${value}'
                     #         },
                     #         {
                     #             'column': 'thousandgenomes__af',
@@ -582,15 +583,10 @@ async def load_smartfilters (request):
                 'defaultValue':['MIS'],
             },
             'filter': {
-                'operator': 'and',
-                'rules': [
-                            {
-                                'column': 'base__so', 
-                                'test': 'in',
-                                'value': '${value}'
-                            },
-                ]
-            }
+                'column': 'base__so', 
+                'test': 'in',
+                'value': '${value}'
+            },
         },
         {
             'name': 'chrom',
@@ -602,15 +598,10 @@ async def load_smartfilters (request):
                 'optionsColumn': 'base__chrom',
             },
             'filter': {
-                'operator': 'and',
-                'rules': [
-                            {
-                                'column': 'base__chrom', 
-                                'test': 'in',
-                                'value': '${value}'
-                            },
-                ]
-            }
+                'column': 'base__chrom', 
+                'test': 'in',
+                'value': '${value}'
+            },
         },
         {
             'name': 'clinvardata',
@@ -622,15 +613,10 @@ async def load_smartfilters (request):
                 'defaultValue': False,
             },            
             'filter': {
-                'operator': 'and',
-                'rules': [
-                            {
-                                'column': 'clinvar__id', 
-                                'test': 'hasData',
-                                'negate': '${value}'
-                            },
-                ]
-            }
+                'column': 'clinvar__id', 
+                'test': 'hasData',
+                'negate': '${value}'
+            },
         }
     ]
     }
