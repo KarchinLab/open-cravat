@@ -668,10 +668,10 @@ function loadFilterSetting (name, callback, doNotCount) {
 	$.get('/result/service/smartfilters').done(function (response) {
 		smartFilters = {};
 		for (var source in response) {
-			refac = {order:[],definitions:{}}
-			sfs = response[source];
+			var refac = {order:[],definitions:{}}
+			var sfs = response[source];
 			for (var i=0; i<sfs.length; i++) {
-				sf = sfs[i];
+				var sf = sfs[i];
 				refac.order.push(sf.name);
 				refac.definitions[sf.name] = sf;
 			}

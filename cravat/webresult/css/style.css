@@ -715,3 +715,23 @@ div.pq-select-menu>.pq-select-option-label {
 .widgetspinner {
     width: 20px;
 }
+
+.smartfilter {
+	margin: 2px;
+	width: 25%;
+	position: relative;
+}
+
+.smartfilter-overlay {
+	width:  100%;
+	height: 100%;
+	background-color: gray;
+	top: 0px;
+	left: 0px;
+	opacity: 0.5;
+	position: absolute;
+}
+
+.smartfilter-active .smartfilter-overlay {
+	display: none;
+}

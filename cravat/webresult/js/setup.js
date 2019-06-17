@@ -76,23 +76,17 @@ function makeFilterTab (rightDiv) {
 		return;
 	}
 	rightDiv = $(rightDiv);
-	activeSfDiv = $(getEl('div'))
-		.attr('id','active-sf-div');
-	rightDiv.append(activeSfDiv);
-	let sfSelector = $(getEl('select'))
-		.on('change', onSmartFilterSelectChange);
-	sfSelector.append($(getEl('option')).append('Select a filter'))
-	rightDiv.append(sfSelector);
+	let sfContainer = $(getEl('div'))
+		.attr('id','sf-container');
+	rightDiv.append(sfContainer);
 	for (let sfSource in smartFilters) {
-		sfGroup = smartFilters[sfSource];
+		let sfGroup = smartFilters[sfSource];
 		for (let i=0; i<sfGroup.order.length; i++) {
-			sfName = sfGroup.order[i];
-			sfDef = sfGroup.definitions[sfName];
-			sfFullName = sfSource + '.' + sfName;
-			sfOpt = $(getEl('option'))
-				.val(sfFullName)
-				.append(sfDef.title);
-			sfSelector.append(sfOpt);
+			let sfName = sfGroup.order[i];
+			let sfDef = sfGroup.definitions[sfName];
+			let sfDiv = getSmartFilterDiv(sfDef);
+			sfDiv.attr('full-name',sfSource+'.'+sfName);
+			sfContainer.append(sfDiv);
 		}
 	}
 	rightDiv.append($(getEl('br')));
@@ -108,33 +102,25 @@ function makeFilterTab (rightDiv) {
 	rightDiv.append(filterApply);
 }
 
-function onSmartFilterSelectChange(event) {
-	let sfSel = $(event.target);
-	let sfFullName = sfSel.val();
-	if (!sfFullName) {
-		return;
-	}
-	activateSmartFilter(sfFullName)
-}
-
-function activateSmartFilter (sfFullName) {
-	let sfSource = sfFullName.split('.')[0];
-	let sfName = sfFullName.split('.')[1];
-	let sfDef = smartFilters[sfSource].definitions[sfName];
-	let activeSfDiv = $('#active-sf-div');
-	activeSfDiv.empty();
-	sfDiv = getSmartFilterDiv(sfDef);
-	sfDiv.attr('full-name',sfFullName);
-	activeSfDiv.append(sfDiv);
+function sfCheckboxClickHandler (event) {
+	let cb = $(event.target);
+	let sfDiv = cb.closest('.smartfilter');
+	sfDiv.removeClass('smartfilter-active');
 }
 
 function getSmartFilterDiv (sfDef) {
-	let outerDiv = $(getEl('div'));
+	let outerDiv = $(getEl('div'))
+		.addClass('smartfilter');
+	let activeCb = $(getEl('input'))
+		.attr('type','checkbox')
+		.addClass('smartfilter-checkbox')
+		.click(sfCheckboxClickHandler);
+	outerDiv.append(activeCb);
 	let titleSpan = $(getEl('span'))
 		.append(sfDef.title)
 		.attr('title', sfDef.description);
 	outerDiv.append(titleSpan);
-	let defaultValue = sf.defaultValue;
+	let defaultValue = sfDef.defaultValue;
 	if (defaultValue === undefined || defaultValue === null) {
 		defaultValue = '';
 	}
@@ -160,7 +146,7 @@ function getSmartFilterDiv (sfDef) {
             valToKeys = {};
             for (var i = 0; i < optionValues.length; i++) {
                 var val = optionValues[i];
-                valToKeys[val] = [val];
+                valToKeys[val] = val;
             }
         } else {
             valToKeys = swapJson(valSubDic);
@@ -171,7 +157,7 @@ function getSmartFilterDiv (sfDef) {
 			let opt = $(getEl('option'))
 				.val(optVal)
 				.append(optText);
-			if (Array.isArray(defaultValue) && defaultValue.indexOf(optVal) > 0) {
+			if (Array.isArray(defaultValue) && defaultValue.indexOf(optVal) >= 0) {
 				opt[0].selected = true;
 			}
 			select.append(opt)
@@ -187,15 +173,30 @@ function getSmartFilterDiv (sfDef) {
 			selectallText: 'Select all',
 		});
 	}
+	let overlay = $(getEl('div'))
+		.addClass('smartfilter-overlay')
+		.click(sfOverlayClickHandler);
+	outerDiv.append(overlay);
 	return outerDiv;
 }
 
+function sfOverlayClickHandler (event) {
+	let overlay = $(event.target);
+	let sfDiv = overlay.closest('.smartfilter');
+	sfDiv.addClass('smartfilter-active');
+	let cb = sfDiv.children('.smartfilter-checkbox')
+	cb.prop('checked',true);
+}
+
 function makeSmartfilterJson () {
-	let sfWrapDiv = $('#active-sf-div');
+	let sfWrapDiv = $('#sf-container');
 	let sfDivs = sfWrapDiv.children('div');
-	let fullSf = {operator: 'or', rules:[]}
+	let fullSf = {operator: 'and', rules:[]}
 	for (let i=0; i<sfDivs.length; i++) {
 		sfDiv = $(sfDivs[i]);
+		if (!sfDiv.hasClass('smartfilter-active')) {
+			continue;
+		}
 		let fullName = sfDiv.attr('full-name');
 		let sfSource = fullName.split('.')[0];
 		let sfName = fullName.split('.')[1];
@@ -206,7 +207,6 @@ function makeSmartfilterJson () {
 		fullSf.rules.push(sfResult);
 	}
 	filterJson = {'variant': fullSf};
-    
 }
 
 function addSfValue(filterGroup, value) {

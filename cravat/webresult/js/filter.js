@@ -196,11 +196,7 @@ const filterTestChangeHandler = (event) => {
 function swapJson (d) {
     var newd = {};
     for (var k in d) {
-        var v = d[k];
-        if (newd[v] == undefined) {
-            newd[v] = [];
-        }
-        newd[v].push(k);
+        newd[d[k]] = k;
     }
     return newd;
 }

@@ -552,19 +552,19 @@ async def load_smartfilters (request):
                             }
                         ]
                     },
-                    {
-                        'operator': 'or',
-                        'rules': [
-                            {
-                                'column': 'thousandgenomes__af', 
-                                'test': 'lessThanEq'
-                            },
-                            {
-                                'column': 'thousandgenomes__af',
-                                'test': 'noData'
-                            }
-                        ]
-                    },
+                    # {
+                    #     'operator': 'or',
+                    #     'rules': [
+                    #         {
+                    #             'column': 'thousandgenomes__af', 
+                    #             'test': 'lessThanEq'
+                    #         },
+                    #         {
+                    #             'column': 'thousandgenomes__af',
+                    #             'test': 'noData'
+                    #         }
+                    #     ]
+                    # },
                 ]
             }
         },
@@ -580,6 +580,22 @@ async def load_smartfilters (request):
                 'rules': [
                             {
                                 'column': 'base__so', 
+                                'test': 'in'
+                            },
+                ]
+            }
+        },
+        {
+            'name': 'chrom',
+            'title': 'Chromosome',
+            'description': 'Select chromosome(s).',
+            'selector': 'select',
+            'optionsColumn': 'base__chrom',
+            'filter': {
+                'operator': 'and',
+                'rules': [
+                            {
+                                'column': 'base__chrom', 
                                 'test': 'in'
                             },
                 ]
