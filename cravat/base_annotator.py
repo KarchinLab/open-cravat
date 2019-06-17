@@ -42,19 +42,14 @@ class BaseAnnotator(object):
                 self.annotator_name = main_basename
             self.annotator_dir = os.path.dirname(main_fpath)
             self.data_dir = os.path.join(self.annotator_dir, 'data')
-
-            # Load command line opts
             self.primary_input_path = None
             self.secondary_paths = None
             self.output_dir = None
             self.output_basename = None
             self.plain_output = None
             self.job_conf_path = None
+            # Load command line opts
             self.parse_cmd_args(cmd_args)
-            # Make output dir if it doesn't exist
-            if not(os.path.exists(self.output_dir)):
-                os.makedirs(self.output_dir)
-
             self._setup_logger()
             config_loader = ConfigLoader(self.job_conf_path)
             self.conf = config_loader.get_module_conf(self.annotator_name)
