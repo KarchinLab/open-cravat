@@ -571,10 +571,10 @@ async def load_smartfilters (request):
         {
             'name': 'so',
             'title': 'Sequence Ontology',
-            'defaultValue': [],
             'description': 'Select sequence ontologies.',
             'selector': 'select',
             'optionsColumn': 'base__so',
+            'defaultValue':['MIS'],
             'filter': {
                 'operator': 'and',
                 'rules': [

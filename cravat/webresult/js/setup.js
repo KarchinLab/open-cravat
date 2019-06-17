@@ -175,6 +175,9 @@ function getSmartFilterDiv (sfDef) {
 			let opt = $(getEl('option'))
 				.val(optVal)
 				.append(optText);
+			if (Array.isArray(defaultValue) && defaultValue.indexOf(optVal) > 0) {
+				opt[0].selected = true;
+			}
 			// opt.val = valToKeys[optionValues[i]];
 			// opt.innerHTML = optionValues[i];
 			select.append(opt)
