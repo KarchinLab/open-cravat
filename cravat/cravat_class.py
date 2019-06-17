@@ -24,11 +24,12 @@ import collections
 import asyncio
 
 cravat_cmd_parser = argparse.ArgumentParser(
-    prog='cravat input_file_path',
-    description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.',
+    prog='cravat input_file_path_1 input_file_path_2 ...',
+    description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path arguments before any option or define them in a conf file (option -c).',
     epilog='* input_file_path should precede any option.')
 cravat_cmd_parser.add_argument('inputs',
-                    nargs='+',
+                    nargs='*',
+                    default=None,
                     help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument('-a',
                     nargs="+",
@@ -65,14 +66,16 @@ cravat_cmd_parser.add_argument('--skip',
                     help='skips given stage(s).')
 cravat_cmd_parser.add_argument('-c',
                     dest='conf',
+                    default=None,
                     help='path to a conf file')
 cravat_cmd_parser.add_argument('--cs',
                     dest='confs',
+                    default=None,
                     help='configuration string')
 cravat_cmd_parser.add_argument('-v', 
                     dest='verbose',
                     action='store_true',
-                    default=False,
+                    default=None,
                     help='verbose')
 cravat_cmd_parser.add_argument('-t',
                     nargs='+',
@@ -81,7 +84,7 @@ cravat_cmd_parser.add_argument('-t',
 cravat_cmd_parser.add_argument('-l',
                     dest='liftover',
                     choices=['hg38', 'hg19', 'hg18'],
-                    default='hg38',
+                    default=None,
                     help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
 cravat_cmd_parser.add_argument('-x',
                     dest='cleandb',
@@ -91,12 +94,12 @@ cravat_cmd_parser.add_argument('-x',
 cravat_cmd_parser.add_argument('--newlog',
                     dest='newlog',
                     action='store_true',
-                    default=False,
+                    default=None,
                     help='deletes the existing log file and ' +
                             'creates a new one.')
 cravat_cmd_parser.add_argument('--note',
                     dest='note',
-                    default='',
+                    default=None,
                     help='note will be written to the run status file (.status.json)')
 cravat_cmd_parser.add_argument('--mp',
                     dest='mp',
@@ -134,7 +137,6 @@ class Cravat (object):
         self.pythonpath = sys.executable
         self.annotators = {}        
         self.make_args_namespace(kwargs)
-        self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
         if self.args.confs != None:
             self.conf.override_cravat_conf(
                 self.args.confs.replace("'", '"'))
@@ -317,7 +319,26 @@ class Cravat (object):
     def make_args_namespace(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
         full_args.update(supplied_args)
+        self.run_conf_path = ''
+        if 'conf' in full_args: 
+            self.run_conf_path = full_args['conf']
+        self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
+        self.run_conf = self.conf.get_run_conf()
         self.args = SimpleNamespace(**full_args)
+        if len(self.args.inputs) == 0 and \
+                'inputs' in self.run_conf:
+            if type(self.run_conf['inputs']) == list:
+                self.args.inputs = self.run_conf['inputs']
+            else:
+                print('inputs in conf file is invalid')
+        if len(self.args.inputs) == 0:
+            cravat_cmd_parser.print_help()
+            print('\nNo input file was given.')
+            exit()
+        args_keys = self.args.__dict__.keys()
+        for arg_key in args_keys:
+            if self.args.__dict__[arg_key] is None and arg_key in self.run_conf:
+                self.args.__dict__[arg_key] = self.run_conf[arg_key]
         self.annotator_names = self.args.annotators
         if self.annotator_names == None:
             self.annotators = au.get_local_module_infos_of_type('annotator')
@@ -344,12 +365,15 @@ class Cravat (object):
             self.output_dir = os.path.abspath(self.output_dir)
         if os.path.exists(self.output_dir) == False:
             os.mkdir(self.output_dir)
-        self.run_conf_path = ''
-        if self.args.conf: 
-            self.run_conf_path = self.args.conf
-        self.verbose = self.args.verbose
+        if self.args.verbose == True:
+            self.verbose = True
+        else:
+            self.verbose = False
         self.reports = self.args.reports
-        self.input_assembly = self.args.liftover
+        if self.args.liftover is None:
+            self.input_assembly = 'hg38'
+        else:
+            self.input_assembly = self.args.liftover
         if self.args.repeat is None:
             self.args.repeat = []
         if self.args.skip is None:
@@ -371,6 +395,8 @@ class Cravat (object):
             self.logmode = 'w'
         else:
             self.logmode = 'a'
+        if self.args.note == None:
+            self.args.note = ''
 
     def set_and_check_input_files (self):
         self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')

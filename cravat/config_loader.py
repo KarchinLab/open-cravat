@@ -47,6 +47,8 @@ class ConfigLoader():
         if self._main:
             self._all['cravat'] = copy.deepcopy(self._main)
         self._all = au.recursive_update(self._all, self._job)
+        if 'run' not in self._all:
+            self._all['run'] = {}
         
     def save(self, path, modules=[]):
         """
@@ -108,3 +110,6 @@ class ConfigLoader():
     
     def get_local_module_confs (self):
         return self._all['modules']
+
+    def get_run_conf (self):
+        return self._all['run']
