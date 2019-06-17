@@ -533,9 +533,11 @@ async def load_smartfilters (request):
         {
             'name': 'popstats',
             'title': 'Population AF',
-            'defaultValue': '0.1',
             'description': 'Set a maximum allele frequency.',
-            'selector': 'inputFloat',
+            'selector': {
+                'type': 'inputFloat',
+                'defaultValue': '0.1',
+            },
             'filter': {
                 'operator': 'and',
                 'rules': [
@@ -544,7 +546,8 @@ async def load_smartfilters (request):
                         'rules': [
                             {
                                 'column': 'gnomad__af', 
-                                'test': 'lessThanEq'
+                                'test': 'lessThanEq',
+                                'value': '${value}'
                             },
                             {
                                 'column': 'gnomad__af',
@@ -572,15 +575,19 @@ async def load_smartfilters (request):
             'name': 'so',
             'title': 'Sequence Ontology',
             'description': 'Select sequence ontologies.',
-            'selector': 'select',
-            'optionsColumn': 'base__so',
-            'defaultValue':['MIS'],
+            'selector': {
+                'type': 'select',
+                'optionsColumn': 'base__so',
+                'multiple': True,
+                'defaultValue':['MIS'],
+            },
             'filter': {
                 'operator': 'and',
                 'rules': [
                             {
                                 'column': 'base__so', 
-                                'test': 'in'
+                                'test': 'in',
+                                'value': '${value}'
                             },
                 ]
             }
@@ -589,14 +596,37 @@ async def load_smartfilters (request):
             'name': 'chrom',
             'title': 'Chromosome',
             'description': 'Select chromosome(s).',
-            'selector': 'select',
-            'optionsColumn': 'base__chrom',
+            'selector': {
+                'type': 'select',
+                'multiple': True,
+                'optionsColumn': 'base__chrom',
+            },
             'filter': {
                 'operator': 'and',
                 'rules': [
                             {
                                 'column': 'base__chrom', 
-                                'test': 'in'
+                                'test': 'in',
+                                'value': '${value}'
+                            },
+                ]
+            }
+        },
+        {
+            'name': 'clinvardata',
+            'title': 'Clinvar',
+            'description': 'Include rows with annotation from clinvar.',
+            'selector': {
+                'type': 'select',
+                'options': {'No':'noData', 'Yes':'hasData'},
+                'defaultValue': 'hasData',
+            },            
+            'filter': {
+                'operator': 'and',
+                'rules': [
+                            {
+                                'column': 'clinvar__id', 
+                                'test': '${value}'
                             },
                 ]
             }

@@ -127,37 +127,65 @@ function getSmartFilterDiv (sfDef) {
 	let selectorSpan = $(getEl('span'))
 		.addClass('sf-selector');
 	outerDiv.append(selectorSpan);
-	if (sfDef.selector === 'inputFloat') {
+	let selectorType = sfDef.selector.type;
+	if (selectorType === 'inputFloat') {
+		let defaultValue = sfDef.selector.defaultValue;
+		if (defaultValue === undefined || defaultValue === null) {
+			defaultValue = 0.0;
+		}
 		let valueInput = $(getEl('input'))
 			.val(defaultValue);
 		selectorSpan.append(valueInput);
-	} else if (sfDef.selector === 'select') {
+	} else if (selectorType === 'select') {
 		let select = $(getEl('select'))
-			.addClass('filter-value-input')
-			.attr('multiple','multiple');
+		.addClass('filter-value-input')
+		let allowMult = sfDef.selector.multiple;
+		allowMult = allowMult === undefined ? false : allowMult;
+		if (allowMult === true) {
+			select.prop('multiple','multiple');
+		}
 		selectorSpan.append(select);
-		let optsColName = sfDef.optionsColumn;
-		let optsCol = getFilterColByName(optsColName);
-		var optionValues = optsCol.filter.options;
-		var valSubDic = optsCol.reportsub;
-		var valSubDicKeys = Object.keys(valSubDic);
-		var valToKeys = null;
-        if (valSubDicKeys.length == 0) {
-            valToKeys = {};
-            for (var i = 0; i < optionValues.length; i++) {
-                var val = optionValues[i];
-                valToKeys[val] = val;
-            }
-        } else {
-            valToKeys = swapJson(valSubDic);
-        }
-		for (let i=0; i<optionValues.length; i++) {
-			let optText = optionValues[i];
-			let optVal = valToKeys[optText];
+		let options = sfDef.selector.options;
+		if (options !== undefined) {
+			if (Array.isArray(options)) {
+				var optionTexts = options;
+				var text2Val = {};
+			} else {
+				var text2Val = options;
+				var optionTexts = Object.keys(text2Val);
+			}
+		} else {
+			let optsColName = sfDef.selector.optionsColumn;
+			let optsCol = getFilterColByName(optsColName);
+			var optionTexts = optsCol.filter.options;
+			var text2Val = {};
+			let reportSubs = optsCol.reportsub;
+			if (reportSubs !== undefined && Object.keys(reportSubs).length > 0) {
+				text2Val = swapJson(reportSubs);
+			}
+		}
+		if (Object.keys(text2Val).length === 0) {
+			for (let i=0; i<optionTexts.length; i++) {
+				text2Val[optionTexts[i]] = optionTexts[i];
+			}
+		}
+		let defaultValue = sfDef.selector.defaultValue;
+		let defaultSelections = [];
+		if (defaultValue === undefined || defaultValue === null) {
+			defaultSelections = [];
+		} else if (Array.isArray(defaultValue)) {
+			defaultSelections = defaultValue;
+		} else {
+			defaultSelections = [defaultValue];
+
+		}
+		for (let i=0; i<optionTexts.length; i++) {
+			let optText = optionTexts[i];
+			let optVal = text2Val[optText];
 			let opt = $(getEl('option'))
-				.val(optVal)
-				.append(optText);
-			if (Array.isArray(defaultValue) && defaultValue.indexOf(optVal) >= 0) {
+			.val(optVal)
+			.append(optText);
+			if (defaultSelections.indexOf(optVal) >= 0) {
 				opt[0].selected = true;
 			}
 			select.append(opt)
@@ -215,7 +243,12 @@ function addSfValue(filterGroup, value) {
 		if (rule.operator !== undefined) {
 			rule = addSfValue(rule, value);
 		} else {
-			rule.value = value;
+			for (let k in rule) {
+				let v = rule[k];
+				if (v === '${value}') {
+					rule[k] = value;
+				}
+			}
 		}
 	}
 	return filterGroup;
@@ -226,18 +259,22 @@ function pullSfValue(selectorDiv) {
 	let sfSource = fullName.split('.')[0];
 	let sfName = fullName.split('.')[1];
 	let sfDef = smartFilters[sfSource].definitions[sfName];
-	let selectorType = sfDef.selector;
+	let selectorType = sfDef.selector.type;
 	let selectorWrapper = selectorDiv.children('.sf-selector');
 	if (selectorType === 'inputFloat') {
 		return parseFloat(selectorWrapper.children('input').val());
 	} else if (selectorType === 'select') {
 		let selector = selectorWrapper.children('.filter-value-input').first();
 		let selOpts = selector[0].selectedOptions;
-		let vals = [];
-		for (let i=0; i<selOpts.length; i++) {
-			vals.push($(selOpts[i]).val());
+		if (selector.prop('multiple')) {
+			let vals = [];
+			for (let i=0; i<selOpts.length; i++) {
+				vals.push($(selOpts[i]).val());
+			}
+			return vals;
+		} else {
+			return $(selOpts[0]).val()
 		}
-		return vals;
 	}
 }
 
