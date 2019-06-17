@@ -149,10 +149,7 @@ function getSmartFilterDiv (sfDef) {
 		let select = $(getEl('select'))
 			.addClass('filter-value-input')
 			.attr('multiple','multiple');
-        // select.className = 'filter-value-input';
-		// select.multiple = 'multiple';
 		selectorSpan.append(select);
-		// addEl(selectorSpan[0], select);
 		let optsColName = sfDef.optionsColumn;
 		let optsCol = getFilterColByName(optsColName);
 		var optionValues = optsCol.filter.options;
@@ -168,7 +165,6 @@ function getSmartFilterDiv (sfDef) {
         } else {
             valToKeys = swapJson(valSubDic);
         }
-		// optionValues = ['a','b','c']; //debug
 		for (let i=0; i<optionValues.length; i++) {
 			let optText = optionValues[i];
 			let optVal = valToKeys[optText];
@@ -178,8 +174,6 @@ function getSmartFilterDiv (sfDef) {
 			if (Array.isArray(defaultValue) && defaultValue.indexOf(optVal) > 0) {
 				opt[0].selected = true;
 			}
-			// opt.val = valToKeys[optionValues[i]];
-			// opt.innerHTML = optionValues[i];
 			select.append(opt)
 		}
 		select.pqSelect({
