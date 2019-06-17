@@ -184,6 +184,7 @@ function getSmartFilterDiv (sfDef) {
 			let optVal = text2Val[optText];
 			let opt = $(getEl('option'))
 			.val(optVal)
+			.prop('typedValue', optVal)
 			.append(optText);
 			if (defaultSelections.indexOf(optVal) >= 0) {
 				opt[0].selected = true;
@@ -269,11 +270,11 @@ function pullSfValue(selectorDiv) {
 		if (selector.prop('multiple')) {
 			let vals = [];
 			for (let i=0; i<selOpts.length; i++) {
-				vals.push($(selOpts[i]).val());
+				vals.push($(selOpts[i]).prop('typedValue'));
 			}
 			return vals;
 		} else {
-			return $(selOpts[0]).val()
+			return $(selOpts[0]).prop('typedValue');
 		}
 	}
 }

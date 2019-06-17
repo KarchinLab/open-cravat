@@ -618,15 +618,16 @@ async def load_smartfilters (request):
             'description': 'Include rows with annotation from clinvar.',
             'selector': {
                 'type': 'select',
-                'options': {'No':'noData', 'Yes':'hasData'},
-                'defaultValue': 'hasData',
+                'options': {'No':True, 'Yes':False},
+                'defaultValue': False,
             },            
             'filter': {
                 'operator': 'and',
                 'rules': [
                             {
                                 'column': 'clinvar__id', 
-                                'test': '${value}'
+                                'test': 'hasData',
+                                'negate': '${value}'
                             },
                 ]
             }
