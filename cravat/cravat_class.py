@@ -167,7 +167,6 @@ class Cravat (object):
             self.status_json['run_name'] = self.run_name
             self.status_json['assembly'] = self.input_assembly
             self.status_json['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
-            #todo adapt to multiple inputs
             self.status_json['orig_input_fname'] = ', '.join([os.path.basename(x) for x in self.inputs])
             self.status_json['orig_input_path'] = ', '.join(self.inputs)
             self.status_json['submission_time'] = datetime.datetime.now().isoformat()
@@ -207,6 +206,7 @@ class Cravat (object):
         no_problem_in_run = True
         try:
             self.update_status('Started cravat')
+            print('Input file(s):', ', '.join(self.inputs))
             self.set_and_check_input_files()
             converter_ran = False
             if self.endlevel >= self.runlevels['converter'] and \
