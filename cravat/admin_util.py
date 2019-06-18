@@ -126,6 +126,7 @@ class LocalModuleInfo (object):
             self.datasource = self.conf['datasource']
         else:
             self.datasource = ''
+        self.smartfilters = self.conf.get('smartfilters')
 
     def is_valid_module(self):
         r = self.exists

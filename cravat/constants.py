@@ -115,3 +115,77 @@ GENE = 1
 LEVELS = {'variant': VARIANT, 'gene': GENE}
 
 viewer_effective_digits = 3
+
+base_smartfilters = [
+    {
+        'name': 'popstats',
+        'title': 'Population AF',
+        'description': 'Set a maximum allele frequency.',
+        'allowPartial': True,
+        'selector': {
+            'type': 'inputFloat',
+            'defaultValue': '0.1',
+        },
+        'filter': {
+            'operator': 'or',
+            'rules': [
+                {
+                    'column': 'gnomad__af', 
+                    'test': 'lessThanEq',
+                    'value': '${value}'
+                },
+                {
+                    'column': 'thousandgenomes__af', 
+                    'test': 'lessThanEq',
+                    'value': '${value}'
+                },
+            ]
+        },
+    },
+    {
+        'name': 'so',
+        'title': 'Sequence Ontology',
+        'description': 'Select sequence ontologies.',
+        'selector': {
+            'type': 'select',
+            'optionsColumn': 'base__so',
+            'multiple': True,
+            'defaultValue':['MIS'],
+        },
+        'filter': {
+            'column': 'base__so', 
+            'test': 'in',
+            'value': '${value}'
+        },
+    },
+    {
+        'name': 'chrom',
+        'title': 'Chromosome',
+        'description': 'Select chromosome(s).',
+        'selector': {
+            'type': 'select',
+            'multiple': True,
+            'optionsColumn': 'base__chrom',
+        },
+        'filter': {
+            'column': 'base__chrom', 
+            'test': 'in',
+            'value': '${value}'
+        },
+    },
+    {
+        'name': 'coding',
+        'title': 'Coding',
+        'description': 'Include only coding/noncoding variants',
+        'selector': {
+            'type': 'select',
+            'options': {'No':True, 'Yes':False},
+            'defaultValue': False,
+        },            
+        'filter': {
+            'column': 'base__coding', 
+            'test': 'hasData',
+            'negate': '${value}'
+        },
+    }
+]

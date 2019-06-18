@@ -12,6 +12,7 @@ import re
 from cravat import ConfigLoader
 from cravat import admin_util as au
 from cravat import CravatFilter
+from cravat.constants import base_smartfilters
 from aiohttp import web
 import time
 
@@ -528,99 +529,18 @@ async def serve_runwidget (request):
     return web.json_response(content)
 
 async def load_smartfilters (request):
-    sfs = {
-        'base':[
-        {
-            'name': 'popstats',
-            'title': 'Population AF',
-            'description': 'Set a maximum allele frequency.',
-            'allowPartial': True,
-            'selector': {
-                'type': 'inputFloat',
-                'defaultValue': '0.1',
-            },
-            'filter': {
-                'operator': 'and',
-                'rules': [
-                    {
-                        'operator': 'or',
-                        'rules': [
-                            {
-                                'column': 'gnomad__af', 
-                                'test': 'lessThanEq',
-                                'value': '${value}'
-                            },
-                            {
-                                'column': 'gnomad__af',
-                                'test': 'noData'
-                            }
-                        ]
-                    },
-                    {
-                        'operator': 'or',
-                        'rules': [
-                            {
-                                'column': 'thousandgenomes__af', 
-                                'test': 'lessThanEq',
-                                'value': '${value}'
-                            },
-                            {
-                                'column': 'thousandgenomes__af',
-                                'test': 'noData'
-                            }
-                        ]
-                    },
-                ]
-            }
-        },
-        {
-            'name': 'so',
-            'title': 'Sequence Ontology',
-            'description': 'Select sequence ontologies.',
-            'selector': {
-                'type': 'select',
-                'optionsColumn': 'base__so',
-                'multiple': True,
-                'defaultValue':['MIS'],
-            },
-            'filter': {
-                'column': 'base__so', 
-                'test': 'in',
-                'value': '${value}'
-            },
-        },
-        {
-            'name': 'chrom',
-            'title': 'Chromosome',
-            'description': 'Select chromosome(s).',
-            'selector': {
-                'type': 'select',
-                'multiple': True,
-                'optionsColumn': 'base__chrom',
-            },
-            'filter': {
-                'column': 'base__chrom', 
-                'test': 'in',
-                'value': '${value}'
-            },
-        },
-        {
-            'name': 'clinvardata',
-            'title': 'Clinvar',
-            'description': 'Include rows with annotation from clinvar.',
-            'selector': {
-                'type': 'select',
-                'options': {'No':True, 'Yes':False},
-                'defaultValue': False,
-            },            
-            'filter': {
-                'column': 'clinvar__id', 
-                'test': 'hasData',
-                'negate': '${value}'
-            },
-        }
-    ]
-    }
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    sfs = {}
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
+    sf_table = 'smartfilters'
+    if await table_exists(cursor, sf_table):
+        q = 'select name, definition from {};'.format(sf_table)
+        await cursor.execute(q)
+        r = await cursor.fetchall()
+        for mname, definitions in r:
+            sfs[mname] = definitions
     return web.json_response(sfs)
 
 routes = []

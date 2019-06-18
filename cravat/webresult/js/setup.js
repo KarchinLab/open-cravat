@@ -79,10 +79,15 @@ function makeFilterTab (rightDiv) {
 	let sfContainer = $(getEl('div'))
 		.attr('id','sf-container');
 	rightDiv.append(sfContainer);
-	for (let sfSource in smartFilters) {
+	let orderedSources = Object.keys(smartFilters);
+	orderedSources.splice(orderedSources.indexOf('base'), 1);
+	orderedSources.sort();
+	orderedSources = ['base'].concat(orderedSources)
+	for (let i=0; i<orderedSources.length; i++){
+		let sfSource = orderedSources[i];
 		let sfGroup = smartFilters[sfSource];
-		for (let i=0; i<sfGroup.order.length; i++) {
-			let sfName = sfGroup.order[i];
+		for (let j=0; j<sfGroup.order.length; j++) {
+			let sfName = sfGroup.order[j];
 			let sfDef = sfGroup.definitions[sfName];
 			let sfDiv = getSmartFilterDiv(sfDef);
 			sfDiv.attr('full-name',sfSource+'.'+sfName);
