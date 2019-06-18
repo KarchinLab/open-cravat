@@ -485,12 +485,8 @@ async def generate_report(request):
         job_input = await filerouter.job_run_path(request, job_id)
         cmd_args = ['cravat', job_input]
         cmd_args.extend(['--startat', 'reporter'])
-<<<<<<< HEAD
-=======
         cmd_args.extend(['--repeat', 'reporter'])
->>>>>>> 1.5.0
         cmd_args.extend(['-t', report_type])
-        print('@', cmd_args)
         p = subprocess.Popen(cmd_args)
         p.wait()
     return web.Response()
