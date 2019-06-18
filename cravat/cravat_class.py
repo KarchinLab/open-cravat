@@ -256,6 +256,7 @@ class Cravat (object):
                     self.startlevel <= self.runlevels['aggregator'] and \
                     not 'aggregator' in self.args.skip and \
                     (
+                        self.mapper_ran or \
                         self.annotator_ran or \
                         'aggregator' in self.args.repeat
                     ):

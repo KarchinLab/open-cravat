@@ -509,7 +509,7 @@ def main ():
     output_dir = os.path.dirname(dbpath)
     avail_reporters = au.get_local_module_infos_of_type('reporter')
     avail_reporter_names = [re.sub('reporter$', '', v) for v in avail_reporters.keys()]
-    cmd = ['cravat', 'dummyinput', '-n', run_name, '-d', output_dir, '--sc', '--sm', '--sa', '--sg', '--sp', '--str', '-t']
+    cmd = ['cravat', 'dummyinput', '-n', run_name, '-d', output_dir, '--skip', 'converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', '--startat', 'reporter', '--repeat', 'reporter', '-t']
     if report_types is not None:
         cmd.extend(report_types)
     else:
