@@ -20,10 +20,6 @@ from cravat.websubmit import websubmit as wu
 import websockets
 from aiohttp import web, web_runner
 import socket
-import base64
-from cryptography import fernet
-from aiohttp_session import setup
-from aiohttp_session.cookie_storage import EncryptedCookieStorage
 import hashlib
 import platform
 import asyncio
@@ -31,6 +27,16 @@ import datetime as dt
 import requests
 import traceback
 import ssl
+import importlib
+if importlib.util.find_spec('cravatserveraddon') is not None:
+    print('@@@ cravat_server_addon is installed')
+    import cravatserveraddon
+    print('@@', dir(cravatserveraddon))
+    server_addon_ready = True
+else:
+    print('@@@ cravat_server_addon is not installed')
+    import types
+    server_addon_ready = False
 
 donotopenbrowser = False
 ssl_enabled = False
@@ -66,6 +72,9 @@ def check_donotopenbrowser ():
     global servermode
     servermode = args.servermode
     wu.servermode = args.servermode
+    if servermode and server_addon_ready == False:
+        print('open-cravat-server-addon is required to run wcravat in server mode.\nRun "pip install open-cravat-server-addon" to get the package.')
+        exit()
 
 def result ():
     parser = argparse.ArgumentParser()
@@ -169,9 +178,8 @@ class WebServer (object):
 
     async def start (self):
         self.app = web.Application(loop=self.loop)
-        fernet_key = fernet.Fernet.generate_key()
-        secret_key = base64.urlsafe_b64decode(fernet_key)
-        setup(self.app, EncryptedCookieStorage(secret_key))
+        if server_addon_ready:
+            cravatserveraddon.setup(self.app)
         self.setup_routes()
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
@@ -205,18 +213,18 @@ async def heartbeat(request):
 
 def main ():
     if servermode:
-        jobs_dir = au.get_jobs_dir()
+        jobs_dir = au.get_conf_dir()
         admin_sqlite_path = os.path.join(jobs_dir, 'admin.sqlite')
         if os.path.exists(admin_sqlite_path) == False:
             db = sqlite3.connect(admin_sqlite_path)
             cursor = db.cursor()
-            cursor.execute('create table users (email text, passwordhash text, question text, answerhash text)')
+            cursor.execute('create table users (email text, passwordhash text, sessionkey text, question text, answerhash text)')
             cursor.execute('create table jobs (jobname text, username text, submit date, runtime integer, numinput integer, annotators text, genome text)')
             m = hashlib.sha256()
             adminpassword = 'admin'
             m.update(adminpassword.encode('utf-16be'))
             adminpasswordhash = m.hexdigest()
-            cursor.execute('insert into users values ("admin", "{}", "", "")'.format(adminpasswordhash))
+            cursor.execute('insert into users values ("admin", "", "", "", "")'.format(adminpasswordhash))
             cursor.close()
             db.commit()
             db.close()

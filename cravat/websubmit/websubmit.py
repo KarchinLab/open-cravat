@@ -10,8 +10,6 @@ import sys
 import traceback
 import shutil
 from aiohttp import web
-#from cryptography import fernet
-from aiohttp_session import get_session, new_session
 import aiosqlite3
 import hashlib
 from distutils.version import LooseVersion
@@ -20,6 +18,16 @@ import platform
 import signal
 import multiprocessing as mp
 import asyncio
+import importlib
+if importlib.util.find_spec('cravatserveraddon') is not None:
+    print('@@@ cravat_server_addon is installed')
+    import cravatserveraddon
+    print('@@', dir(cravatserveraddon))
+    server_addon_ready = True
+else:
+    print('@@@ cravat_server_addon is not installed')
+    import types
+    server_addon_ready = False
 
 cfl = ConfigLoader()
 
@@ -37,9 +45,9 @@ class FileRouter(object):
 
     async def get_jobs_dir (self, request):
         root_jobs_dir = au.get_jobs_dir()
-        session = await get_session(request)
         global servermode
         if servermode:
+            session = await cravatserveraddon.get_session(request)
             if 'logged' in session:
                 if session['logged'] != True:
                     session['username'] = ''
@@ -53,7 +61,6 @@ class FileRouter(object):
                 return None
         else:
             username = 'default'
-        session['username'] = username
         jobs_dir = os.path.join(root_jobs_dir, username)
         return jobs_dir
 
@@ -255,7 +262,7 @@ async def submit (request):
         run_args.append('-t')
         run_args.extend(job_options['reports'])
     else:
-        run_args.append('--sr')
+        run_args.extend(['--skip', 'report'])
     # Note
     if 'note' in job_options:
         run_args.append('--note')
@@ -264,6 +271,7 @@ async def submit (request):
     if 'forcedinputformat' in job_options:
         run_args.append('--forcedinputformat')
         run_args.append(job_options['forcedinputformat'])
+    print('@', run_args)
     p = subprocess.Popen(run_args)
     job_tracker.add_job(job_id, p)
     status = {'status': 'Submitted'}
@@ -275,7 +283,7 @@ async def submit (request):
         admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
         db = await aiosqlite3.connect(admin_db_path)
         cursor = await db.cursor()
-        session = await get_session(request)
+        session = await cravatserveraddon.get_session(request)
         username = session['username']
         await cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, username, job.get_info_dict()['submission_time'], -1, -1, '', job_options['assembly']))
         await db.commit()
@@ -476,8 +484,9 @@ async def generate_report(request):
     if report_type in get_valid_report_types():
         job_input = await filerouter.job_run_path(request, job_id)
         cmd_args = ['cravat', job_input]
-        cmd_args.append('--str')
+        cmd_args.extend(['--startat', 'reporter'])
         cmd_args.extend(['-t', report_type])
+        print('@', cmd_args)
         p = subprocess.Popen(cmd_args)
         p.wait()
     return web.Response()
@@ -593,7 +602,7 @@ async def login (request):
     return web.json_response(response)
 
 async def get_password_question (request):
-    session = await get_session(request)
+    session = await cravatserveraddon.get_session(request)
     queries = request.rel_url.query
     email = queries['email']
     root_jobs_dir = au.get_jobs_dir()
@@ -610,7 +619,7 @@ async def get_password_question (request):
     return web.json_response({'status':'success', 'msg':answer})
 
 async def check_password_answer (request):
-    session = await get_session(request)
+    session = await cravatserveraddon.get_session(request)
     queries = request.rel_url.query
     email = queries['email']
     answer = queries['answer']
@@ -639,7 +648,7 @@ async def check_password_answer (request):
         return web.json_response({'success': False, 'msg': 'Wrong answer'})
 
 async def change_password (request):
-    session = await get_session(request)
+    session = await cravatserveraddon.get_session(request)
     email = session['username']
     root_jobs_dir = au.get_jobs_dir()
     admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
@@ -668,7 +677,7 @@ async def change_password (request):
         return web.json_response('success')
 
 async def check_logged (request):
-    session = await get_session(request)
+    session = await cravatserveraddon.get_session(request)
     if not 'username' in session:
         return web.json_response({'logged': False, 'email': ''})
     username = session['username']

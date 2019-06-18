@@ -16,50 +16,11 @@ class InstallCommand(install):
     
     def initialize_options (self):
         install.initialize_options(self)
-        #self.modules_dir = None
-        #self.install_defaults = 'True'
     
     def finalize_options (self):
         install.finalize_options(self)
     
     def run(self):
-        """
-        Using method found at https://stackoverflow.com/a/43078078
-        Needed because pip runs install commands 
-        """
-        '''
-        def _post_install():
-            wf = open('open-cravat-install-log.txt', 'w')
-            try:
-                from cravat import constants as c
-                def find_cravat_path():
-                    for p in sys.path:
-                        if os.path.isdir(p) and 'site-packages' in p and 'cravat' in os.listdir(p):
-                            return os.path.join(p, 'cravat')
-                install_path = find_cravat_path()
-                system_conf_path = os.path.join(install_path,
-                                                c.system_conf_fname)
-                system_template_conf_path = c.system_conf_template_path
-                if self.modules_dir == None:
-                    default_modules_dir = os.path.join(
-                        install_path, c.default_modules_dir_relative)
-                else:
-                    default_modules_dir = self.modules_dir
-                if not(os.path.exists(c.system_conf_path)):
-                    shutil.copy(system_template_conf_path,
-                                system_conf_path)
-                else:
-                    shutil.copy(c.system_conf_path, system_conf_path)
-                from cravat import admin_util as au
-                au.set_modules_dir(default_modules_dir)
-            except:
-                import traceback
-                wf.write(traceback.format_exc() + '\n')
-            wf.write('done\n')
-            wf.close()
-        '''
-            
-        #atexit.register(_post_install)
         install.run(self)
 
 def readme ():
@@ -101,7 +62,7 @@ setup(
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
     author_email='rkim@insilico.us.com',
-    url='http://www.cravat.us',
+    url='http://www.opencravat.org',
     license='',
     package_data={
         'cravat': data_files
@@ -125,7 +86,6 @@ setup(
     cmdclass={
               'install':InstallCommand,
               },
-    #install_requires=['pyyaml', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'aiohttp_session', 'cryptography'],
-    install_requires=['pyyaml<5.1', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'chardet', 'aiosqlite3', 'oyaml', 'infi.systray', 'intervaltree', 'aiohttp_session', 'cryptography'],
+    install_requires=['pyyaml<5.1', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'chardet', 'aiosqlite3', 'oyaml', 'infi.systray', 'intervaltree'],
     python_requires='>=3.6',
 )
