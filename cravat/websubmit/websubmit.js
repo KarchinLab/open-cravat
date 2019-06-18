@@ -1356,12 +1356,15 @@ function getServermode () {
 
 function setupNoServerMode () {
     document.getElementById('accountdiv').style.display = 'none';
+    document.getElementById('headerdiv').style.display = 'block';
+    document.getElementById('submitdiv').style.display = 'block';
 }
 
 function setupServerMode () {
     document.getElementById('accountdiv').style.display = 'block';
     document.getElementById('settingsdiv').style.display = 'none';
     document.getElementById('threedotsdiv').style.display = 'none';
+    //document.getElementById('submitdiv').style.display = 'block';
     //document.getElementById('settingspageselect').style.display = 'none';
     checkLogged(username);
 }
@@ -1380,6 +1383,8 @@ function showLoggedControl (username) {
     userDiv.style.display = 'inline-block';
     document.getElementById('logoutdiv').style.display = 'inline-block';
     document.getElementById('loginsignupbutton').style.display = 'none';
+    document.getElementById('headerdiv').style.display = 'block';
+    document.getElementById('submitdiv').style.display = 'block';
 }
 
 function showUnloggedControl () {
@@ -1822,6 +1827,11 @@ function updateRunningJobTrs (job) {
 
 function websubmit_run () {
     getServermode();
+    console.log(servermode);
+    if (servermode) {
+        document.getElementById('headerdiv').style.display = 'none';
+        document.getElementById('submitdiv').style.display = 'none';
+    }
     var storediv = document.getElementById('storediv');
     storediv.style.display = 'none';
     connectWebSocket();

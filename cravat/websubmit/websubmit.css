@@ -190,7 +190,7 @@ button {
     top: 39px;
 }
 
-.headerdiv {
+#headerdiv {
     position: fixed; 
     top: 0px; 
     width: 100%; 
@@ -201,6 +201,7 @@ button {
     left: 0px; 
     right: 0px;
     border-bottom: 1px solid #a7a7a7;
+    display: none;
 }
 
 #settingsdiv {
@@ -220,6 +221,10 @@ button {
     position: relative;
     border-bottom: 1px dotted #cbcbcb;
     padding-bottom: 20px;
+}
+
+#submitdiv {
+    display: none;
 }
 
 #submitcontentdiv {
