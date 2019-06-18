@@ -531,7 +531,7 @@ async def serve_runwidget (request):
 async def load_smartfilters (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
-    sfs = {}
+    sfs = {'base':base_smartfilters}
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
     sf_table = 'smartfilters'
@@ -540,7 +540,7 @@ async def load_smartfilters (request):
         await cursor.execute(q)
         r = await cursor.fetchall()
         for mname, definitions in r:
-            sfs[mname] = definitions
+            sfs[mname] = json.loads(definitions)
     return web.json_response(sfs)
 
 routes = []

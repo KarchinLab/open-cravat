@@ -666,8 +666,8 @@ function loadFilterSettingAs () {
 
 function loadFilterSetting (name, callback, doNotCount) {
 	$.get('/result/service/smartfilters', {'dbpath': dbPath}).done(function (response) {
-		smartFilters = response;
-		for (let source in smartFilters.sources) {
+		smartFilters = {};
+		for (let source in response) {
 			let sfs = response[source];
 			let refac = {order:[],definitions:{}}
 			for (let i=0; i<sfs.length; i++) {
