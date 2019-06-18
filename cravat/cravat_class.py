@@ -251,7 +251,7 @@ class Cravat (object):
                 self.run_annotators_mp()
                 rtime = time.time() - stime
                 print('\tannotator(s) finished in {0:.3f}s'.format(rtime))
-            aggregator_ran = False
+            self.aggregator_ran = False
             if self.endlevel >= self.runlevels['aggregator'] and \
                     self.startlevel <= self.runlevels['aggregator'] and \
                     not 'aggregator' in self.args.skip and \
@@ -263,12 +263,12 @@ class Cravat (object):
                 print('Running aggregator...')
                 self.result_path = self.run_aggregator()
                 self.write_job_info()
-                aggregator_ran = True
+                self.aggregator_ran = True
             if self.endlevel >= self.runlevels['postaggregator'] and \
                     self.startlevel <= self.runlevels['postaggregator'] and \
                     not 'postaggregator' in self.args.skip and \
                     (
-                        aggregator_ran or \
+                        self.aggregator_ran or \
                         'postaggregator' in self.args.repeat
                     ):
                 print('Running postaggregators...')
@@ -277,8 +277,8 @@ class Cravat (object):
                     self.startlevel <= self.runlevels['reporter'] and \
                     not 'reporter' in self.args.skip and \
                     (
-                        aggregator_ran or \
-                        'reporter' in self.args.repeat
+                        self.aggregator_ran or \
+                        len(self.reports) > 0
                     ):
                 print('Running reporter...')
                 no_problem_in_run = await self.run_reporter()
