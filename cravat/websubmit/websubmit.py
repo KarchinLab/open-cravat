@@ -262,7 +262,7 @@ async def submit (request):
         run_args.append('-t')
         run_args.extend(job_options['reports'])
     else:
-        run_args.extend(['--skip', 'report'])
+        run_args.extend(['--skip', 'reporter'])
     # Note
     if 'note' in job_options:
         run_args.append('--note')
@@ -485,6 +485,10 @@ async def generate_report(request):
         job_input = await filerouter.job_run_path(request, job_id)
         cmd_args = ['cravat', job_input]
         cmd_args.extend(['--startat', 'reporter'])
+<<<<<<< HEAD
+=======
+        cmd_args.extend(['--repeat', 'reporter'])
+>>>>>>> 1.5.0
         cmd_args.extend(['-t', report_type])
         print('@', cmd_args)
         p = subprocess.Popen(cmd_args)

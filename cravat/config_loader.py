@@ -29,7 +29,11 @@ class ConfigLoader():
     def _load_job_conf(self, build_all=True):
         self._job = {}
         if self.job_conf_path:
-            self._job = au.load_yml_conf(self.job_conf_path)
+            if os.path.exists(self.job_conf_path):
+                self._job = au.load_yml_conf(self.job_conf_path)
+            else:
+                print('Job conf file', self.job_conf_path, 'does not exist.')
+                exit()
         if build_all:
             self._build_all()
     
