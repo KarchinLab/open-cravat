@@ -29,13 +29,9 @@ import traceback
 import ssl
 import importlib
 if importlib.util.find_spec('cravatserveraddon') is not None:
-    print('@@@ cravat_server_addon is installed')
     import cravatserveraddon
-    print('@@', dir(cravatserveraddon))
     server_addon_ready = True
 else:
-    print('@@@ cravat_server_addon is not installed')
-    import types
     server_addon_ready = False
 
 donotopenbrowser = False
@@ -72,6 +68,7 @@ def check_donotopenbrowser ():
     global servermode
     servermode = args.servermode
     wu.servermode = args.servermode
+    ws.servermode = args.servermode
     if servermode and server_addon_ready == False:
         print('open-cravat-server-addon is required to run wcravat in server mode.\nRun "pip install open-cravat-server-addon" to get the package.')
         exit()
@@ -212,22 +209,6 @@ async def heartbeat(request):
     return ws
 
 def main ():
-    if servermode:
-        jobs_dir = au.get_conf_dir()
-        admin_sqlite_path = os.path.join(jobs_dir, 'admin.sqlite')
-        if os.path.exists(admin_sqlite_path) == False:
-            db = sqlite3.connect(admin_sqlite_path)
-            cursor = db.cursor()
-            cursor.execute('create table users (email text, passwordhash text, sessionkey text, question text, answerhash text)')
-            cursor.execute('create table jobs (jobname text, username text, submit date, runtime integer, numinput integer, annotators text, genome text)')
-            m = hashlib.sha256()
-            adminpassword = 'admin'
-            m.update(adminpassword.encode('utf-16be'))
-            adminpasswordhash = m.hexdigest()
-            cursor.execute('insert into users values ("admin", "", "", "", "")'.format(adminpasswordhash))
-            cursor.close()
-            db.commit()
-            db.close()
 
     def wakeup ():
         loop.call_later(0.1, wakeup)

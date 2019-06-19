@@ -1596,6 +1596,7 @@ function signupSubmit () {
                 toggleloginsignupdiv();
                 document.getElementById('loginsignupbutton').style.display = 'none';
                 document.getElementById('signupdiv').style.display = 'none';
+                document.getElementById('headerdiv').style.display = 'block';
             } else if (response == 'fail') {
                 msgAccountDiv('Signup failed');
             }

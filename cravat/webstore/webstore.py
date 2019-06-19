@@ -17,6 +17,10 @@ import cravat.admin_util as au
 import markdown
 import shutil
 import copy
+import aiosqlite3
+import importlib
+if importlib.util.find_spec('cravatserveraddon') is not None:
+    import cravatserveraddon
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
@@ -217,35 +221,6 @@ class LinkOutEditor(HTMLParser):
     def get_parsed(self):
         return self.parsed
 
-async def check_admin_priv (request):
-    '''
-    session = await get_session(request)
-    if 'logged' in session and 'username' in session and session['username'] == 'admin' and session['logged'] == True:
-        response = True
-    else:
-        response = False
-    '''
-    response = True
-    return response
-
-'''
-async def install_module (request):
-    isadmin = await check_admin_priv(request)
-    if isadmin:
-        queries = request.rel_url.query
-        module_name = queries['name']
-        if 'version' in queries:
-            module_version = queries['version']
-        else:
-            module_version = None
-        #au.install_module(module_name, version=module_version)
-        queue_install(module_name, module_version)
-        response = 'success'
-    else:
-        response = 'failure'
-    return web.json_response(content)
-'''
-
 async def install_widgets_for_module (request):
     queries = request.rel_url.query
     module_name = queries['name']
@@ -254,14 +229,16 @@ async def install_widgets_for_module (request):
     return web.json_response(content)
 
 async def uninstall_module (request):
-    isadmin = await check_admin_priv(request)
-    if isadmin:
+    global servermode
+    r = await cravatserveraddon.is_admin_loggedin(request)
+    if servermode and r == False:
+        response = 'failure'
+    else:
         queries = request.rel_url.query
         module_name = queries['name']
         au.uninstall_module(module_name)
-        return web.json_response('uninstalled ' + module_name)
-    else:
-        return web.json_response('failure')
+        response = 'uninstalled ' + module_name
+    return web.json_response(response)
 
 def start_worker ():
     global install_worker
@@ -309,6 +286,10 @@ async def connect_websocket (request):
 
 async def queue_install (request):
     global install_queue
+    global servermode
+    r =  await cravatserveraddon.is_admin_loggedin(request)
+    if servermode and r == False:
+        return web.Response(text='notadmin')
     queries = request.rel_url.query
     if 'version' in queries:
         module_version = queries['version']
@@ -328,14 +309,15 @@ async def get_base_modules (request):
     return web.json_response(base_modules)
 
 async def install_base_modules (request):
-    isadmin = await check_admin_priv(request)
-    if isadmin:
+    global servermode
+    r = await cravatserveraddon.is_admin_loggedin(request)
+    if servermode and r == False:
+        response = 'failed'
+    else:
         base_modules = system_conf.get(constants.base_modules_key,[])
         for module in base_modules:
             install_queue.put({'module': module, 'version': None})
         response = 'queued'
-    else:
-        response = 'failed'
     return web.json_response(response)
 
 async def get_md (request):
@@ -403,7 +385,6 @@ async def unqueue_install (request):
 
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
-#routes.append(['GET', '/store/install', install_module])
 routes.append(['GET', '/store/installwidgetsformodule', install_widgets_for_module])
 routes.append(['GET', '/store/getstoreurl', get_storeurl])
 routes.append(['GET', '/store/local', get_local_manifest])

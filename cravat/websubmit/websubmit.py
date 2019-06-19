@@ -20,14 +20,7 @@ import multiprocessing as mp
 import asyncio
 import importlib
 if importlib.util.find_spec('cravatserveraddon') is not None:
-    print('@@@ cravat_server_addon is installed')
     import cravatserveraddon
-    print('@@', dir(cravatserveraddon))
-    server_addon_ready = True
-else:
-    print('@@@ cravat_server_addon is not installed')
-    import types
-    server_addon_ready = False
 
 cfl = ConfigLoader()
 
@@ -47,17 +40,10 @@ class FileRouter(object):
         root_jobs_dir = au.get_jobs_dir()
         global servermode
         if servermode:
-            session = await cravatserveraddon.get_session(request)
-            if 'logged' in session:
-                if session['logged'] != True:
-                    session['username'] = ''
-                    session['logged'] = False
-                    return None
-                else:
-                    username = session['username']
+            r = await cravatserveraddon.is_loggedin(request)
+            if r == True:
+                username = await cravatserveraddon.get_username(request)
             else:
-                session['logged'] = False
-                session['username'] = ''
                 return None
         else:
             username = 'default'
@@ -200,7 +186,10 @@ def get_next_job_id():
 async def submit (request):
     global filerouter
     global job_tracker
-    job_id = get_next_job_id()
+    global servermode
+    r = await cravatserveraddon.check_logged(request)
+    if servermode and r == False:
+        return web.json_response({'status': 'notloggedin'})
     jobs_dir = await filerouter.get_jobs_dir(request)
     job_id = get_next_job_id()
     job_dir = os.path.join(jobs_dir, job_id)
@@ -271,24 +260,13 @@ async def submit (request):
     if 'forcedinputformat' in job_options:
         run_args.append('--forcedinputformat')
         run_args.append(job_options['forcedinputformat'])
-    print('@', run_args)
     p = subprocess.Popen(run_args)
     job_tracker.add_job(job_id, p)
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
     # admin.sqlite
-    global servermode
     if servermode:
-        root_jobs_dir = au.get_jobs_dir()
-        admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-        db = await aiosqlite3.connect(admin_db_path)
-        cursor = await db.cursor()
-        session = await cravatserveraddon.get_session(request)
-        username = session['username']
-        await cursor.execute('insert into jobs values ("{}", "{}", "{}", {}, {}, "{}", "{}")'.format(job_id, username, job.get_info_dict()['submission_time'], -1, -1, '', job_options['assembly']))
-        await db.commit()
-        cursor.close()
-        db.close()
+        await cravatserveraddon.add_job_info(request, job, job_options)
     return web.json_response(job.get_info_dict())
 
 def count_lines(f):
@@ -540,177 +518,63 @@ def reset_system_conf (request):
     au.write_system_conf_file(d)
     return web.json_response({'status':'success', 'dict':yaml.dump(d)})
 
-async def create_user_dir (request, username):
-    global filerouter
-    jobs_dir = await filerouter.get_jobs_dir(request)
-    if os.path.exists(jobs_dir) == False:
-        os.mkdir(jobs_dir)
-
 async def signup (request):
-    session = await new_session(request)
-    queries = request.rel_url.query
-    username = queries['username']
-    password = queries['password']
-    m = hashlib.sha256()
-    m.update(password.encode('utf-16be'))
-    passwordhash = m.hexdigest()
-    question = queries['question']
-    answer = queries['answer']
-    m = hashlib.sha256()
-    m.update(answer.encode('utf-16be'))
-    answerhash = m.hexdigest()
-    root_jobs_dir = au.get_jobs_dir()
-    admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = await aiosqlite3.connect(admin_db_path)
-    cursor = await db.cursor()
-    await cursor.execute('select * from users where email="{}"'.format(username))
-    r = await cursor.fetchone()
-    if r is not None:
-        return web.json_response('already registered')
-    await cursor.execute('insert into users values ("{}", "{}", "{}", "{}")'.format(username, passwordhash, question, answerhash))
-    await db.commit()
-    await cursor.close()
-    await db.close()
-    session['username'] = username
-    session['logged'] = True
-    await create_user_dir(request, username)
-    return web.json_response('success')
-
-async def login (request):
-    session = await new_session(request)
-    queries = request.rel_url.query
-    username = queries['username']
-    password = queries['password']
-    m = hashlib.sha256()
-    m.update(password.encode('utf-16be'))
-    passwordhash = m.hexdigest()
-    root_jobs_dir = au.get_jobs_dir()
-    admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = await aiosqlite3.connect(admin_db_path)
-    cursor = await db.cursor()
-    await cursor.execute('select * from users where email="{}" and passwordhash="{}"'.format(username, passwordhash))
-    r = await cursor.fetchone()
-    if r is not None:
-        response = 'success'
-        session['username'] = username
-        session['logged'] = True
-        await create_user_dir(request, username)
+    if servermode:
+        response = await cravatserveraddon.signup(request)
     else:
         response = 'fail'
-    await cursor.close()
-    await db.close()
+    return web.json_response(response)
+
+async def login (request):
+    if servermode:
+        response = await cravatserveraddon.login(request)
+    else:
+        response = 'fail'
     return web.json_response(response)
 
 async def get_password_question (request):
-    session = await cravatserveraddon.get_session(request)
-    queries = request.rel_url.query
-    email = queries['email']
-    root_jobs_dir = au.get_jobs_dir()
-    admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = await aiosqlite3.connect(admin_db_path)
-    cursor = await db.cursor()
-    await cursor.execute('select question from users where email="{}"'.format(email))
-    r = await cursor.fetchone()
-    if r is None:
-        return web.json_response({'status':'fail', 'msg':'No such email'})
-    answer = r[0]
-    await cursor.close()
-    await db.close()
-    return web.json_response({'status':'success', 'msg':answer})
+    if servermode:
+        question = await cravatserveraddon.get_password_question(request)
+        if question is None:
+            response = {'status':'fail', 'msg':'No such email'}
+        else:
+            response = {'status':'success', 'msg': question}
+    else:
+        response = {'status':'fail', 'msg':'no server mode'}
+    return web.json_response(response)
 
 async def check_password_answer (request):
-    session = await cravatserveraddon.get_session(request)
-    queries = request.rel_url.query
-    email = queries['email']
-    answer = queries['answer']
-    m = hashlib.sha256()
-    m.update(answer.encode('utf-16be'))
-    answerhash = m.hexdigest()
-    root_jobs_dir = au.get_jobs_dir()
-    admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = await aiosqlite3.connect(admin_db_path)
-    cursor = await db.cursor()
-    await cursor.execute('select * from users where email="{}" and answerhash="{}"'.format(email, answerhash))
-    r = await cursor.fetchone()
-    if r is not None:
-        temppassword = 'open_cravat_temp_password'
-        m = hashlib.sha256()
-        m.update(temppassword.encode('utf-16be'))
-        temppasswordhash = m.hexdigest()
-        await cursor.execute('update users set passwordhash="{}" where email="{}"'.format(temppasswordhash, email))
-        await db.commit()
-        await cursor.close()
-        await db.close()
-        return web.json_response({'success': True, 'msg': temppassword})
+    if servermode:
+        correct = await cravatserveraddon.check_password_answer(request)
+        if correct:
+            temppassword = await cravatserveraddon.set_temp_password(request)
+            response = {'success': True, 'msg': temppassword}
+        else:
+            response = {'success': False, 'msg': 'Wrong answer'}
     else:
-        await cursor.close()
-        await db.close()
-        return web.json_response({'success': False, 'msg': 'Wrong answer'})
+        response = {'success': False, 'msg': 'no server mode'}
+    return web.json_response(response)
 
 async def change_password (request):
-    session = await cravatserveraddon.get_session(request)
-    email = session['username']
-    root_jobs_dir = au.get_jobs_dir()
-    admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = await aiosqlite3.connect(admin_db_path)
-    cursor = await db.cursor()
-    queries = request.rel_url.query
-    oldpassword = queries['oldpassword']
-    newpassword = queries['newpassword']
-    m = hashlib.sha256()
-    m.update(oldpassword.encode('utf-16be'))
-    oldpasswordhash = m.hexdigest()
-    await cursor.execute('select * from users where email="{}" and passwordhash="{}"'.format(email, oldpasswordhash))
-    r = await cursor.fetchone()
-    if r is None:
-        await cursor.close()
-        await db.close()
-        return web.json_response('User authentication failed.')
+    if servermode:
+        response = await cravatserveraddon.change_password(request)
     else:
-        m = hashlib.sha256()
-        m.update(newpassword.encode('utf-16be'))
-        newpasswordhash = m.hexdigest()
-        await cursor.execute('update users set passwordhash="{}" where email="{}"'.format(newpasswordhash, email))
-        await db.commit()
-        await cursor.close()
-        await db.close()
-        return web.json_response('success')
+        response = 'no server mode'
+    return web.json_response(response)
 
 async def check_logged (request):
-    session = await cravatserveraddon.get_session(request)
-    if not 'username' in session:
-        return web.json_response({'logged': False, 'email': ''})
-    username = session['username']
-    logged = session['logged']
-    logged = False
-    if logged:
-        return web.json_response({'logged': True, 'email': username})
+    if servermode:
+        response = await cravatserveraddon.check_logged(request)
     else:
-        return web.json_response({'logged': False, 'email': ''})
+        response = 'no server mode'
+    return web.json_response(response)
 
 async def logout (request):
-    session = await new_session(request)
-    session['username'] = None
-    return web.json_response('success')
-    '''
-    username = session['username']
-    root_jobs_dir = au.get_jobs_dir()
-    admin_db_path = os.path.join(root_jobs_dir, 'admin.sqlite')
-    db = await aiosqlite3.connect(admin_db_path)
-    cursor = await db.cursor()
-    await cursor.execute('select * from users where email="{}" and passwordhash="{}"'.format(username, passwordhash))
-    r = await cursor.fetchone()
-    if r is not None:
-        response = 'success'
-        session['username'] = username
-        session['logged'] = True
-        await create_user_dir(request, username)
+    if servermode:
+        response = await cravatserveraddon.logout(request)
     else:
-        response = 'fail'
-    await cursor.close()
-    await db.close()
+        response = 'no server mode'
     return web.json_response(response)
-    '''
 
 def get_servermode (request):
     global servermode
