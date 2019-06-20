@@ -883,7 +883,14 @@ function checkConnection(failures) {
     if (failures>=3) {
         setServerStatus(false);
     }
-    var ws = new WebSocket(`ws://${host}/heartbeat`);
+    var wsprotocol = null;
+    var protocol = window.location.protocol;
+    if (protocol == 'http:') {
+        wsprotocol = 'ws:'
+    } else if (protocol == 'https:') {
+        wsprotocol = 'wss:'
+    }
+    ws = new WebSocket(wsprotocol + '//' + host + '/heartbeat');
     ws.onopen = function (evt) {
         setServerStatus(true);
         failures=0;

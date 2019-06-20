@@ -161,7 +161,6 @@ async def load_layout_setting (request):
             content = {"widgetSettings": {}}
     await cursor.close()
     await conn.close()
-    print('@@ widgetSettings=', content)
     return web.json_response(content)
 
 async def load_filter_setting (request):
