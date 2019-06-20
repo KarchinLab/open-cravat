@@ -187,7 +187,7 @@ async def submit (request):
     global filerouter
     global job_tracker
     global servermode
-    r = await cravatserveraddon.check_logged(request)
+    r = await cravatserveraddon.is_loggedin(request)
     if servermode and r == False:
         return web.json_response({'status': 'notloggedin'})
     jobs_dir = await filerouter.get_jobs_dir(request)
@@ -378,6 +378,11 @@ async def get_jobs (request):
     return web.json_response([job.get_info_dict() for job in jobs])
 
 async def get_all_jobs (request):
+    global servermode
+    if servermode:
+        r = await cravatserveraddon.is_loggedin(request)
+        if r == False:
+            return web.json_response({'status': 'notloggedin'})
     global filerouter
     jobs_dir = await filerouter.get_jobs_dir(request)
     if jobs_dir is None:

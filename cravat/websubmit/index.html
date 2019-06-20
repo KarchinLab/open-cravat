@@ -82,7 +82,6 @@
     </div>
     <br />
     <div id='accountmsgdiv'></div>
-    <div style='position: absolute; top: 6px; right: 6px; cursor: default;' onclick='closeLoginSignupDialog();'>X</div>
 </div>
  
 <div id='headerdiv' />
@@ -181,6 +180,7 @@
                 <span class='divtitle'>Annotators</span>
                 <br />
                 <br />
+                <div id="annotator-group-select-div"></div>
                 <div id="annotator-select-div"></div>
                 <div class='divbanner'></div>
             </div>
@@ -235,7 +235,7 @@
                 <br />
                 <span class='store-switch-text'>and</span>
                 <label class='store-switch'>
-                    <input type='checkbox' id='store-tag-andor-checkbox' onchange='onStoreTagCheckboxChange();'/>
+                    <input type='checkbox' id='store-tag-andor-checkbox' onchange='onStoreTagCheckboxChange();' />
                     <span class='store-switch-slider'></span>
                 </label>
                 <span class='store-switch-text'>or</span>
