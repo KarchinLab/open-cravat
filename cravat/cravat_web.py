@@ -69,6 +69,9 @@ def check_donotopenbrowser ():
     servermode = args.servermode
     wu.servermode = args.servermode
     ws.servermode = args.servermode
+    global server_addon_ready
+    if server_addon_ready:
+        cravatserveraddon.servermode = servermode
     if servermode and server_addon_ready == False:
         print('open-cravat-server-addon is required to run wcravat in server mode.\nRun "pip install open-cravat-server-addon" to get the package.')
         exit()
@@ -188,6 +191,9 @@ class WebServer (object):
         routes.extend(ws.routes)
         routes.extend(wr.routes)
         routes.extend(wu.routes)
+        global server_addon_ready
+        if server_addon_ready:
+            cravatserveraddon.add_routes(routes)
         for route in routes:
             method, path, func_name = route
             self.app.router.add_route(method, path, func_name)

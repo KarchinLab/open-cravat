@@ -523,64 +523,6 @@ def reset_system_conf (request):
     au.write_system_conf_file(d)
     return web.json_response({'status':'success', 'dict':yaml.dump(d)})
 
-async def signup (request):
-    if servermode:
-        response = await cravatserveraddon.signup(request)
-    else:
-        response = 'fail'
-    return web.json_response(response)
-
-async def login (request):
-    if servermode:
-        response = await cravatserveraddon.login(request)
-    else:
-        response = 'fail'
-    return web.json_response(response)
-
-async def get_password_question (request):
-    if servermode:
-        question = await cravatserveraddon.get_password_question(request)
-        if question is None:
-            response = {'status':'fail', 'msg':'No such email'}
-        else:
-            response = {'status':'success', 'msg': question}
-    else:
-        response = {'status':'fail', 'msg':'no server mode'}
-    return web.json_response(response)
-
-async def check_password_answer (request):
-    if servermode:
-        correct = await cravatserveraddon.check_password_answer(request)
-        if correct:
-            temppassword = await cravatserveraddon.set_temp_password(request)
-            response = {'success': True, 'msg': temppassword}
-        else:
-            response = {'success': False, 'msg': 'Wrong answer'}
-    else:
-        response = {'success': False, 'msg': 'no server mode'}
-    return web.json_response(response)
-
-async def change_password (request):
-    if servermode:
-        response = await cravatserveraddon.change_password(request)
-    else:
-        response = 'no server mode'
-    return web.json_response(response)
-
-async def check_logged (request):
-    if servermode:
-        response = await cravatserveraddon.check_logged(request)
-    else:
-        response = 'no server mode'
-    return web.json_response(response)
-
-async def logout (request):
-    if servermode:
-        response = await cravatserveraddon.logout(request)
-    else:
-        response = 'no server mode'
-    return web.json_response(response)
-
 def get_servermode (request):
     global servermode
     return web.json_response({'servermode': servermode})
@@ -685,14 +627,7 @@ routes.append(['GET', '/submit/setjobsdir', set_jobs_dir])
 routes.append(['GET', '/submit/getsystemconfinfo', get_system_conf_info])
 routes.append(['GET', '/submit/updatesystemconf', update_system_conf])
 routes.append(['GET', '/submit/resetsystemconf', reset_system_conf])
-routes.append(['GET', '/submit/login', login])
 routes.append(['GET', '/submit/servermode', get_servermode])
-routes.append(['GET', '/submit/signup', signup])
-routes.append(['GET', '/submit/logout', logout])
-routes.append(['GET', '/submit/passwordquestion', get_password_question])
-routes.append(['GET', '/submit/passwordanswer', check_password_answer])
-routes.append(['GET', '/submit/changepassword', change_password])
-routes.append(['GET', '/submit/checklogged', check_logged])
 routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
