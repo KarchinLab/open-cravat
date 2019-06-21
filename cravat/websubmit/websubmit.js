@@ -826,6 +826,10 @@ function buildAnnotatorGroupSelector () {
     var annotCheckDiv = document.getElementById('annotator-group-select-div');
     $(annotCheckDiv).empty();
     var div = getEl('div');
+    div.className = 'div-header';
+    div.textContent = 'Tags';
+    addEl(annotCheckDiv, div);
+    var div = getEl('div');
     div.className = 'annotator-group-select';
     addEl(annotCheckDiv, div);
     var tagToAnnots = {};
@@ -842,6 +846,10 @@ function buildAnnotatorGroupSelector () {
     }
     buildCheckBoxGroup(checkDatas, div);
     addEl(annotCheckDiv, getEl('hr'));
+    var div = getEl('div');
+    div.className = 'div-header';
+    div.textContent = 'Groups';
+    addEl(annotCheckDiv, div);
     var checkDatas = [];
     var div = getEl('div');
     div.className = 'annotator-group-select';
@@ -891,6 +899,7 @@ function buildAnnotatorsSelector () {
             value: annotInfo.name,
             label: annotInfo.title,
             checked: false,
+            kind: 'module',
         })
     }
     buildCheckBoxGroup(checkDatas, annotCheckDiv);
@@ -1189,6 +1198,8 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         var checkData = checkDatas[i];
         var checkDiv = getEl('div');
         checkDiv.classList.add('checkbox-group-element');
+        checkDiv.setAttribute('name', checkData.name);
+        checkDiv.setAttribute('kind', checkData.kind);
         addEl(flexbox, checkDiv);
         var check = getEl('input');
         check.className = 'checkbox-group-check';
@@ -1233,27 +1244,37 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
 }
 
 function onChangeAnnotatorGroupCheckbox (evt) {
-    var checkbox = evt.target;
-    var name = checkbox.name;
-    var checked = checkbox.checked;
-    var kind = checkbox.getAttribute('kind');
-    var modules = Object.keys(localModuleInfo);
-    if (kind == 'tag') {
-        for (var i = 0; i < modules.length; i++) {
-            var module = localModuleInfo[modules[i]];
-            if (module.tags.indexOf(name) >= 0) {
-                var c = document.getElementById('annotator-select-div-input-' + module.name);
-                if (c != null) {
-                    c.checked = checked;
+    var $groupCheckboxes = $('div.checkbox-group-element[kind=tag] input:checked,div.checkbox-group-element[kind=group] input:checked');
+    var $moduleCheckboxes = $('div.checkbox-group-element[kind=module]');
+    if ($groupCheckboxes.length == 0) {
+        $moduleCheckboxes.addClass('show').removeClass('hide');
+    } else {
+        $moduleCheckboxes.addClass('hide').removeClass('show');
+        for (var j = 0; j < $groupCheckboxes.length; j++) {
+            var checkbox = $groupCheckboxes[j];
+            var name = checkbox.name;
+            var kind = checkbox.getAttribute('kind');
+            var modules = Object.keys(localModuleInfo);
+            if (kind == 'tag') {
+                for (var i = 0; i < modules.length; i++) {
+                    var module = localModuleInfo[modules[i]];
+                    var c = $('div.checkbox-group-element[kind=module][name=' + module.name + ']')[0];
+                    if (c != undefined) {
+                        if (module.tags.indexOf(name) >= 0) {
+                            c.classList.add('show');
+                            c.classList.remove('hide');
+                        }
+                    }
                 }
-            }
-        }
-    } else if (kind == 'group') {
-        var members = installedGroups[name + '_group'];
-        for (var i = 0; i < members.length; i++) {
-            var c = document.getElementById('annotator-select-div-input-' + members[i]);
-            if (c != null) {
-                c.checked = checked;
+            } else if (kind == 'group') {
+                var members = installedGroups[name + '_group'];
+                for (var i = 0; i < members.length; i++) {
+                    var c = $('div.checkbox-group-element[kind=module][name=' + members[i] + ']')[0];
+                    if (c != null) {
+                        c.classList.add('show');
+                        c.classList.remove('hide');
+                    }
+                }
             }
         }
     }

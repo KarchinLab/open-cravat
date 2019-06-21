@@ -473,6 +473,11 @@ input:checked + .slider:before {
     overflow: hidden;
 }
 
+#annotator-group-select-div .div-header {
+    font-size: 12px;
+    color: #899989;
+}
+
 .checkbox-group-none-button {
     border-radius: 5px;
     font-size: 10px;
@@ -494,6 +499,14 @@ input:checked + .slider:before {
 #annotator-select-div button.checkbox-group-none-button {
     position: relative;
     top: -8px;
+}
+
+.show {
+    display: block;
+}
+
+.hide {
+    display: none;
 }
 
 @font-face {
