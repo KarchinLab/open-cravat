@@ -115,7 +115,11 @@ def submit ():
     if not donotopenbrowser:
         server = get_server()
         global protocol
-        webbrowser.open(protocol + '{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port')))
+        global server_addon_ready
+        if server_addon_ready:
+            webbrowser.open(protocol + '{host}:{port}/server/login.html'.format(host=server.get('host'), port=server.get('port')))
+        else:
+            webbrowser.open(protocol + '{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port')))
     main()
 
 def get_server():
@@ -193,7 +197,7 @@ class WebServer (object):
         routes.extend(wu.routes)
         global server_addon_ready
         if server_addon_ready:
-            cravatserveraddon.add_routes(routes)
+            cravatserveraddon.add_routes(self.app.router)
         for route in routes:
             method, path, func_name = route
             self.app.router.add_route(method, path, func_name)

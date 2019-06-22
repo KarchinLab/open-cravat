@@ -37,59 +37,12 @@
     <button id='store-systemmoduleupdate-button' onclick='onClickSystemModuleUpdateButton();'>Update</button>
 </div>
 
-<div id='loginsignupdialog' style='display: none;'>
-    <img src='logo_new.png' />
-    <div id='logindiv' style='display: block;'>
-        <div style='font-size: 16px;'>Log in to use OpenCRAVAT Server</div>
-        <table><tbody><tr>
-        <td>Email</td><td><input type='text' id='login_username' /></td></tr>
-        <tr><td>Password</td><td><input type='password' id='login_password' /></td></tr>
-        </tbody></table>
-        <button onclick='login();'>Login</button>
-        <br />
-        <span style='text-decoration: underline; color: #4d4d4d; cursor: default;' onclick='forgotPassword();'>Forgot password?</span>
-        <br />
-        <span style='text-decoration: underline; color: #4d4d4d; cursor: default;' onclick='showSignupDiv();'>Sign up</span>
-    </div>
-    <div id='forgotpassworddiv' style='display: none;'>
-        <div id='forgotpasswordgetquestiondiv'>
-            <table><tbody>
-            <tr><td>Email</td><td><input type='text' id='forgotpasswordemail' /></td></tr>
-            </tbody></table>
-            <button id='forgotpasswordgetquestionbutton' onclick='getPasswordQuestion();'>Get password question</button>
-            <br />
-            <span style='text-decoration: underline; color: #4d4d4d; cursor: default;' onclick='showLoginDiv();'>Back to Login</span>
-        </div>
-        <div id='forgotpasswordquestionanswerdiv'>
-            Question: <span id='forgotpasswordquestion'></span>
-            <br />
-            Answer: <input type='text' id='forgotpasswordanswer' />
-            <br />
-            <button id='forgotpasswordsubmitbutton' onclick='submitForgotPasswordAnswer();'>Submit</button>
-        </div>
-    </div>
-    <div id='signupdiv' style='display: none;'>
-        <table><tbody>
-        <tr><td>Email</td><td><input type='text' id='signupemail' /></td></tr>
-        <tr><td>Password</td><td><input type='password' id='signuppassword' /></td></tr>
-        <tr><td>Re-type password</td><td><input type='password' id='signupretypepassword' /></td></tr>
-        <tr><td>Question</td><td><input type='text' id='signupquestion' /></td></tr>
-        <tr><td>Answer</td><td><input type='text' id='signupanswer' /></td></tr>
-        </tbody></table>
-        <button id='signupbutton' onclick='signupSubmit();'>Create account</button>
-        <br />
-        <span style='text-decoration: underline; color: #4d4d4d; cursor: default;' onclick='showLoginDiv();'>Back to Login</span>
-    </div>
-    <br />
-    <div id='accountmsgdiv'></div>
-</div>
- 
 <div id='headerdiv' />
     <div id='verdiv' >
         Version: <span class="curverspan" style="font-family: monospace;"></span>
     </div>
     <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
-        <img src='logo.png' class='logo' />
+        <img src='logo_new.png' class='logo' />
     </div>
     <a href='http://github.com/KarchinLab/open-cravat/wiki' target='_blank'><img src='question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
     <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='email.png' class='email-icon' onclick='mailto:support@cravat.us' /></a>

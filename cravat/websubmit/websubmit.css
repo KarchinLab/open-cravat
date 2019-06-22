@@ -186,9 +186,11 @@ button {
 }
 
 .logo {
-    width: 260px;
-    position: relative;
-    top: 39px;
+    width: 103px;
+    position: fixed;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 #headerdiv {
@@ -202,7 +204,6 @@ button {
     left: 0px; 
     right: 0px;
     border-bottom: 1px solid #a7a7a7;
-    display: none;
 }
 
 #settingsdiv {
@@ -317,77 +318,6 @@ button {
     position: absolute;
     right: 99px;
     top: 3px;
-}
-
-#loginsignupdialog {
-    position: absolute;
-    background-color: #ffffff;
-    left: 0px;
-    top: 0px;
-    width: calc(100% - 0px);
-    height: calc(100% - 0px);
-    font-size: 13px;
-    display: none;
-    margin: 0px;
-    padding: 0px;
-    /*opacity: 0.9;*/
-    z-index: 201;
-}
-
-#loginsignupdialog button {
-    font-size: 16px;
-}
-
-#loginsignupdialog img {
-    width: 130px;
-    position: fixed;
-    top: 50px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-#logindiv {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    font-size: 18px;
-    line-height: 33px;
-    text-align: center;
-    transform: translate(-50%, -50%);
-    color: black;
-}
-
-#logindiv table tbody tr td:first-child {
-    text-align: right;
-}
-
-#forgotpassworddiv {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    font-size: 18px;
-    line-height: 33px;
-    text-align: center;
-    transform: translate(-50%, -50%);
-    color: black;
-}
-
-#signupdiv {
-    position: absolute;
-    left: calc(50% - 150px);
-    top: calc(50% - 125px);
-    font-size: 18px;
-    line-height: 33px;
-    text-align: center;
-    color: black;
-}
-
-#signupdiv table tbody tr td:first-child {
-    text-align: right;
-}
-
-#forgotpasswordgetquestiondiv {
-    text-align: center;
 }
 
 #accountmsgdiv {
