@@ -735,3 +735,34 @@ div.pq-select-menu>.pq-select-option-label {
 .smartfilter-active .smartfilter-overlay {
 	display: none;
 }
+
+#sample-container {
+	max-height: 200px;
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	width: fit-content;
+}
+
+.sample-selector {
+	border: 1px solid gray;
+	overflow-x: hidden;
+	text-overflow: ellipsis;
+	padding: 2px;
+	margin: 2px;
+	width: fit-content;
+	cursor: pointer;
+	min-width: 10ch;
+}
+
+.sample-selector.sample-require {
+	background-color: green;
+}
+
+.sample-selector.sample-reject {
+	background-color: red;
+}
+
+.sample-selector.sample-neutral {
+	background-color: inherit;
+}

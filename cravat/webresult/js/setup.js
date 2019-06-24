@@ -76,6 +76,26 @@ function makeFilterTab (rightDiv) {
 		return;
 	}
 	rightDiv = $(rightDiv);
+	// Sample selector
+	let sampleContainer = $(getEl('div'))
+		.attr('id','sample-container');
+	rightDiv.append(sampleContainer);
+	let sampleIds = getFilterCol('tagsampler__samples').categories;
+	let maxLen = sampleIds.reduce((a,b) => {return a.length>b.length ? a : b}).length;
+	maxLen = maxLen > 25 ? 25 : maxLen;
+	let sboxMaxWidth = `${maxLen}ch`;
+	for (let i=0; i<sampleIds.length; i++) {
+		let sid = sampleIds[i];
+		let sampleBox = $(getEl('div'))
+			.addClass('sample-selector')
+			.click(onSampleSelectorClick)
+			.text(sid)
+			.addClass('sample-neutral')
+			.css('max-width', sboxMaxWidth)
+			.attr('title',sid);
+		sampleContainer.append(sampleBox);
+	}
+	// Smartfilters
 	let sfContainer = $(getEl('div'))
 		.attr('id','sf-container');
 	rightDiv.append(sfContainer);
@@ -105,6 +125,24 @@ function makeFilterTab (rightDiv) {
         loadData(false, null);
     });
 	rightDiv.append(filterApply);
+}
+
+function onSampleSelectorClick(event) {
+	let sbox = $(event.target);
+	let sid = sbox.text();
+	if (sbox.hasClass('sample-neutral')) { // Set to require
+		sbox.removeClass('sample-neutral');
+		sbox.addClass('sample-require');
+		sbox.attr('title',`${sid}\nVariants MUST be in this sample`);
+	} else if (sbox.hasClass('sample-require')) { // Set to reject
+		sbox.removeClass('sample-require');
+		sbox.addClass('sample-reject');
+		sbox.attr('title',`${sid}\nVariants MUST NOT be in this sample`);
+	} else if (sbox.hasClass('sample-reject')) { // Set to neutral
+		sbox.removeClass('sample-reject');
+		sbox.addClass('sample-neutral');
+		sbox.attr('title',sid);
+	}
 }
 
 function sfCheckboxClickHandler (event) {
