@@ -402,8 +402,11 @@ class CravatFilter ():
         return it
 
     async def make_filtered_sample_table (self):
-        q = 'drop table if exists fsample'
-        print(q)
+        q = 'create table if not exists fsample (base__uid primary key)'
+        print(q) #debug
+        await self.cursor.execute(q)
+        q = 'delete from fsample'
+        print(q) #debug
         await self.cursor.execute(q)
         try: #TODO: always have these fields
             req = self.filter['sample']['require']
@@ -411,16 +414,12 @@ class CravatFilter ():
         except:
             req = []
             rej = []
-        q = 'create table fsample as select base__uid from sample'
-        if req:
-            q += ' where base__sample_id in ({})'.format(
-                ', '.join(['"'+s+'"' for s in req])
-            )
-        if rej:
-            q += ' except select base__uid from sample where base__sample_id in ({})'.format(
-                ', '.join(['"'+s+'"' for s in rej])
-            )
-        print(q)
+        q = 'insert into fsample select distinct base__uid from sample'
+        for s in req:
+            q += ' intersect select base__uid from sample where base__sample_id="{}"'.format(s)
+        for s in rej:
+           q += ' except select base__uid from sample where base__sample_id="{}"'.format(s)
+        print(q) #debug
         await self.cursor.execute(q)
 
     async def make_filtered_uid_table (self):
@@ -435,7 +434,7 @@ class CravatFilter ():
         q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
         q += ' join fsample as s on t.base__uid=s.base__uid'
         q += ' '+where
-        print(q)
+        print(q) #debug
         await self.cursor.execute(q)
         t = time.time() - t
 
