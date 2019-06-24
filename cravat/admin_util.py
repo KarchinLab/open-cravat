@@ -127,14 +127,11 @@ class LocalModuleInfo (object):
             self.datasource = self.conf['datasource']
         else:
             self.datasource = ''
-<<<<<<< HEAD
         self.smartfilters = self.conf.get('smartfilters')
-=======
         if 'groups' in self.conf:
             self.groups = self.conf['groups']
         else:
             self.groups = None
->>>>>>> 1.5.0
 
     def is_valid_module(self):
         r = self.exists
