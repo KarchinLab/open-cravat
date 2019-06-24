@@ -18,16 +18,18 @@ import multiprocessing.managers
 from logging.handlers import QueueListener
 from .aggregator import Aggregator
 from .exceptions import *
-import yaml
+import oyaml as yaml
 import cravat.cravat_util as cu
 import collections
+import asyncio
 
 cravat_cmd_parser = argparse.ArgumentParser(
-    prog='cravat input_file_path',
-    description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path argument before any option.',
+    prog='cravat input_file_path_1 input_file_path_2 ...',
+    description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path arguments before any option or define them in a conf file (option -c).',
     epilog='* input_file_path should precede any option.')
 cravat_cmd_parser.add_argument('inputs',
-                    nargs='+',
+                    nargs='*',
+                    default=None,
                     help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument('-a',
                     nargs="+",
@@ -44,116 +46,36 @@ cravat_cmd_parser.add_argument('-d',
                     dest='output_dir',
                     default=None,
                     help='directory for output files')
-cravat_cmd_parser.add_argument('--stc',
-                    dest='stc',
-                    action='store_true',
-                    default=False,
-                    help='starts with converter')
-cravat_cmd_parser.add_argument('--stm',
-                    dest='stm',
-                    action='store_true',
-                    default=False,
-                    help='starts with gene mapper')
-cravat_cmd_parser.add_argument('--sta',
-                    dest='sta',
-                    action='store_true',
-                    default=False,
-                    help='starts with annotator(s)')
-cravat_cmd_parser.add_argument('--stg',
-                    dest='stg',
-                    action='store_true',
-                    default=False,
-                    help='starts with aggregator')
-cravat_cmd_parser.add_argument('--stp',
-                    dest='stp',
-                    action='store_true',
-                    default=False,
-                    help='starts with post-aggregator')
-cravat_cmd_parser.add_argument('--str',
-                    dest='str',
-                    action='store_true',
-                    default=False,
-                    help='starts with reporter')
-cravat_cmd_parser.add_argument('--rc',
-                    dest='rc',
-                    action='store_true',
-                    default=False,
-                    help='forces re-running of converter if it is in the run chain.')
-cravat_cmd_parser.add_argument('--rm',
-                    dest='rm',
-                    action='store_true',
-                    default=False,
-                    help='forces re-running of gene mapper if it is in the run chain.')
-cravat_cmd_parser.add_argument('--ra',
-                    dest='ra',
-                    action='store_true',
-                    default=False,
-                    help='forces re-running of annotator if it is in the run chain.')
-cravat_cmd_parser.add_argument('--rg',
-                    dest='rg',
-                    action='store_true',
-                    default=False,
-                    help='forces re-running of aggregator if it is in the run chain.')
-cravat_cmd_parser.add_argument('--rp',
-                    dest='rp',
-                    action='store_true',
-                    default=False,
-                    help='forces re-running of post-aggregator if it is in the run chain.')
-cravat_cmd_parser.add_argument('--ec',
-                    dest='ec',
-                    action='store_true',
-                    default=False,
-                    help='ends after converter.')
-cravat_cmd_parser.add_argument('--em',
-                    dest='em',
-                    action='store_true',
-                    default=False,
-                    help='ends after gene mapper.')
-cravat_cmd_parser.add_argument('--ea',
-                    dest='ea',
-                    action='store_true',
-                    default=False,
-                    help='ends after annotator(s).')
-cravat_cmd_parser.add_argument('--sc',
-                    dest='sc',
-                    action='store_true',
-                    default=False,
-                    help='skips converter.')
-cravat_cmd_parser.add_argument('--sm',
-                    dest='sm',
-                    action='store_true',
-                    default=False,
-                    help='skips gene mapper.')
-cravat_cmd_parser.add_argument('--sa',
-                    dest='sa',
-                    action='store_true',
-                    default=False,
-                    help='skips annotators.')
-cravat_cmd_parser.add_argument('--sg',
-                    dest='sg',
-                    action='store_true',
-                    default=False,
-                    help='skips aggregator.')
-cravat_cmd_parser.add_argument('--sp',
-                    dest='sp',
-                    action='store_true',
-                    default=False,
-                    help='skips post-aggregator.')
-cravat_cmd_parser.add_argument('--sr',
-                    dest='sr',
-                    action='store_true',
-                    default=False,
-                    help='skips reporter.')
+cravat_cmd_parser.add_argument('--startat',
+                    dest='startat',
+                    default=None,
+                    help='starts at given stage')
+cravat_cmd_parser.add_argument('--repeat',
+                    dest='repeat',
+                    nargs='+',
+                    default=None,
+                    help='forces re-running of given stage if it is in the run chain.')
+cravat_cmd_parser.add_argument('--endat',
+                    dest='endat',
+                    default=None,
+                    help='ends after given stage.')
+cravat_cmd_parser.add_argument('--skip',
+                    dest='skip',
+                    nargs='+',
+                    default=None,
+                    help='skips given stage(s).')
 cravat_cmd_parser.add_argument('-c',
                     dest='conf',
+                    default=None,
                     help='path to a conf file')
 cravat_cmd_parser.add_argument('--cs',
                     dest='confs',
+                    default=None,
                     help='configuration string')
 cravat_cmd_parser.add_argument('-v', 
                     dest='verbose',
                     action='store_true',
-                    default=False,
+                    default=None,
                     help='verbose')
 cravat_cmd_parser.add_argument('-t',
                     nargs='+',
@@ -162,7 +84,7 @@ cravat_cmd_parser.add_argument('-t',
 cravat_cmd_parser.add_argument('-l',
                     dest='liftover',
                     choices=['hg38', 'hg19', 'hg18'],
-                    default='hg38',
+                    default=None,
                     help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
 cravat_cmd_parser.add_argument('-x',
                     dest='cleandb',
@@ -172,12 +94,12 @@ cravat_cmd_parser.add_argument('-x',
 cravat_cmd_parser.add_argument('--newlog',
                     dest='newlog',
                     action='store_true',
-                    default=False,
+                    default=None,
                     help='deletes the existing log file and ' +
                             'creates a new one.')
 cravat_cmd_parser.add_argument('--note',
                     dest='note',
-                    default='',
+                    default=None,
                     help='note will be written to the run status file (.status.json)')
 cravat_cmd_parser.add_argument('--mp',
                     dest='mp',
@@ -187,6 +109,11 @@ cravat_cmd_parser.add_argument('--forcedinputformat',
                     dest='forcedinputformat',
                     default=None,
                     help='Force input format')
+cravat_cmd_parser.add_argument('--cleanup',
+    dest='cleanup',
+    action='store_true',
+    default=False,
+    help='At the end of the run, cravat will erase all intermediary files for the job created by cravat, except the log (.log and .err) and the result (.sqlite) files.')
 
 class MyManager (multiprocessing.managers.SyncManager):
     pass
@@ -210,7 +137,6 @@ class Cravat (object):
         self.pythonpath = sys.executable
         self.annotators = {}        
         self.make_args_namespace(kwargs)
-        self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
         if self.args.confs != None:
             self.conf.override_cravat_conf(
                 self.args.confs.replace("'", '"'))
@@ -241,7 +167,6 @@ class Cravat (object):
             self.status_json['run_name'] = self.run_name
             self.status_json['assembly'] = self.input_assembly
             self.status_json['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
-            #todo adapt to multiple inputs
             self.status_json['orig_input_fname'] = ', '.join([os.path.basename(x) for x in self.inputs])
             self.status_json['orig_input_path'] = ', '.join(self.inputs)
             self.status_json['submission_time'] = datetime.datetime.now().isoformat()
@@ -281,67 +206,81 @@ class Cravat (object):
         no_problem_in_run = True
         try:
             self.update_status('Started cravat')
+            print('Input file(s):', ', '.join(self.inputs))
             self.set_and_check_input_files()
-            self.make_module_run_list()
-            if self.args.sc == False and \
-                (
-                    self.runlevel <= self.runlevels['converter'] or
-                    self.crv_present == False or
-                    self.args.rc
-                ):
+            converter_ran = False
+            if self.endlevel >= self.runlevels['converter'] and \
+                    self.startlevel <= self.runlevels['converter'] and \
+                    not 'converter' in self.args.skip and \
+                    (
+                        self.crv_present == False or
+                        'converter' in self.args.repeat
+                    ):
                 print('Running converter...')
                 stime = time.time()
                 self.run_converter()
                 rtime = time.time() - stime
                 print('finished in {0:.3f}s'.format(rtime))
-            if self.args.ec:
-                return
-            if self.args.sm == False and \
-                (
-                    self.runlevel <= self.runlevels['mapper'] or
-                    self.crx_present == False or
-                    self.args.rm
-                ):
+                converter_ran = True
+            self.mapper_ran = False
+            if self.endlevel >= self.runlevels['mapper'] and \
+                    self.startlevel <= self.runlevels['mapper'] and \
+                    not 'mapper' in self.args.skip and \
+                    (
+                        self.crx_present == False or
+                        'mapper' in self.args.repeat or
+                        converter_ran
+                    ):
                 print('Running gene mapper...')
                 stime = time.time()
                 self.run_genemapper()
                 rtime = time.time() - stime
                 print('finished in {0:.3f}s'.format(rtime))
-            if self.args.em:
-                return
-            if self.args.sa == False and \
-                (
-                    self.runlevel <= self.runlevels['annotator'] or
-                    self.args.ra
-                ):
+                self.mapper_ran = True
+            self.make_module_run_list()
+            self.annotator_ran = False
+            if self.endlevel >= self.runlevels['annotator'] and \
+                    self.startlevel <= self.runlevels['annotator'] and \
+                    not 'annotator' in self.args.skip and \
+                    (
+                        self.mapper_ran or \
+                        len(self.ordered_annotators) > 0
+                    ):
                 print('Running annotators...')
                 stime = time.time()
                 self.run_annotators_mp()
                 rtime = time.time() - stime
                 print('\tannotator(s) finished in {0:.3f}s'.format(rtime))
-            if self.args.ea:
-                return
-            if self.args.sg == False and \
-                (
-                    self.runlevel <= self.runlevels['aggregator'] or
-                    self.args.rg
-                ):
+            self.aggregator_ran = False
+            if self.endlevel >= self.runlevels['aggregator'] and \
+                    self.startlevel <= self.runlevels['aggregator'] and \
+                    not 'aggregator' in self.args.skip and \
+                    (
+                        self.mapper_ran or \
+                        self.annotator_ran or \
+                        'aggregator' in self.args.repeat
+                    ):
                 print('Running aggregator...')
                 self.result_path = self.run_aggregator()
                 self.write_job_info()
                 self.write_smartfilters()
-            if self.args.sp == False and \
-                (
-                    self.runlevel <= self.runlevels['postaggregator'] or
-                    self.args.rp
-                ):
-                print('Running post-aggregators...')
+                self.aggregator_ran = True
+            if self.endlevel >= self.runlevels['postaggregator'] and \
+                    self.startlevel <= self.runlevels['postaggregator'] and \
+                    not 'postaggregator' in self.args.skip and \
+                    (
+                        self.aggregator_ran or \
+                        'postaggregator' in self.args.repeat
+                    ):
+                print('Running postaggregators...')
                 self.run_postaggregators()
-            if self.args.sr == False and \
-                (
-                    self.runlevel <= self.runlevels['reporter'] or
-                    self.args.rr
-                ):
+            if self.endlevel >= self.runlevels['reporter'] and \
+                    self.startlevel <= self.runlevels['reporter'] and \
+                    not 'reporter' in self.args.skip and \
+                    (
+                        self.aggregator_ran or \
+                        len(self.reports) > 0
+                    ):
                 print('Running reporter...')
                 no_problem_in_run = await self.run_reporter()
             self.update_status('Finished')
@@ -364,6 +303,8 @@ class Cravat (object):
                 self.update_status('Error')
             self.close_logger()
             self.status_writer.flush()
+            if no_problem_in_run and self.args.cleanup:
+                self.clean_up_at_end()
 
     def write_smartfilters (self):
         dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
@@ -384,7 +325,7 @@ class Cravat (object):
     def handle_exception (self, e):
         exc_str = traceback.format_exc()
         exc_class = e.__class__
-        if exc_class == LiftoverFailure or exc_class == InvalidData:
+        if exc_class == InvalidData:
             pass
         elif exc_class == ExpectedException:
             self.logger.exception('An expected exception occurred.')
@@ -396,7 +337,26 @@ class Cravat (object):
     def make_args_namespace(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
         full_args.update(supplied_args)
+        self.run_conf_path = ''
+        if 'conf' in full_args: 
+            self.run_conf_path = full_args['conf']
+        self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
+        self.run_conf = self.conf.get_run_conf()
         self.args = SimpleNamespace(**full_args)
+        if len(self.args.inputs) == 0 and \
+                'inputs' in self.run_conf:
+            if type(self.run_conf['inputs']) == list:
+                self.args.inputs = self.run_conf['inputs']
+            else:
+                print('inputs in conf file is invalid')
+        if len(self.args.inputs) == 0:
+            cravat_cmd_parser.print_help()
+            print('\nNo input file was given.')
+            exit()
+        args_keys = self.args.__dict__.keys()
+        for arg_key in args_keys:
+            if self.args.__dict__[arg_key] is None and arg_key in self.run_conf:
+                self.args.__dict__[arg_key] = self.run_conf[arg_key]
         self.annotator_names = self.args.annotators
         if self.annotator_names == None:
             self.annotators = au.get_local_module_infos_of_type('annotator')
@@ -412,8 +372,10 @@ class Cravat (object):
                     del self.annotators[m]
         self.inputs = [os.path.abspath(x) for x in self.args.inputs]
         self.run_name = self.args.run_name
-        if self.run_name == None: #todo set run name different if multiple inputs
+        if self.run_name == None:
             self.run_name = os.path.basename(self.inputs[0])
+            if len(self.inputs) > 1:
+                self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
         self.output_dir = self.args.output_dir
         if self.output_dir == None:
             self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
@@ -421,30 +383,38 @@ class Cravat (object):
             self.output_dir = os.path.abspath(self.output_dir)
         if os.path.exists(self.output_dir) == False:
             os.mkdir(self.output_dir)
-        self.run_conf_path = ''
-        if self.args.conf: 
-            self.run_conf_path = self.args.conf
-        self.verbose = self.args.verbose
+        if self.args.verbose == True:
+            self.verbose = True
+        else:
+            self.verbose = False
         self.reports = self.args.reports
-        self.input_assembly = self.args.liftover
-        self.runlevel = self.runlevels['annotator']
-        if self.args.stc:
-            self.runlevel = self.runlevels['converter']
-        if self.args.stm:
-            self.runlevel = self.runlevels['mapper']
-        if self.args.sta:
-            self.runlevel = self.runlevels['annotator']
-        if self.args.stg:
-            self.runlevel = self.runlevels['aggregator']
-        if self.args.stp:
-            self.runlevel = self.runlevels['postaggregator']
-        if self.args.str:
-            self.runlevel = self.runlevels['reporter']
+        if self.args.liftover is None:
+            self.input_assembly = 'hg38'
+        else:
+            self.input_assembly = self.args.liftover
+        if self.args.repeat is None:
+            self.args.repeat = []
+        if self.args.skip is None:
+            self.args.skip = []
+        if self.args.startat == 'postaggregator':
+            self.args.startat = 'aggregator'
+        if 'postaggregator' in self.args.repeat and not 'aggregator' in self.args.repeat:
+            self.args.repeat.append('aggregator')
+        try:
+            self.startlevel = self.runlevels[self.args.startat]
+        except KeyError:
+            self.startlevel = 0
+        try:
+            self.endlevel = self.runlevels[self.args.endat]
+        except KeyError:
+            self.endlevel = max(self.runlevels.values())
         self.cleandb = self.args.cleandb
         if self.args.newlog == True:
             self.logmode = 'w'
         else:
             self.logmode = 'a'
+        if self.args.note == None:
+            self.args.note = ''
 
     def set_and_check_input_files (self):
         self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
@@ -494,8 +464,9 @@ class Cravat (object):
                     if annot_name not in annot_names:
                         annot_names.append(annot_name)
         annot_names.sort()
-        if self.runlevel <= self.runlevels['annotator']:
+        if self.startlevel <= self.runlevels['annotator']:
             self.status_writer.queue_status_update('annotators', annot_names, force=True)
+        self.annot_names = annot_names
 
     def add_annotator_to_queue (self, module):
         if module.directory == None:
@@ -506,13 +477,14 @@ class Cravat (object):
         if len(secondary_modules) > 0:
             self.has_secondary_input = True
         for secondary_module in secondary_modules:
-            if self.args.ra == True or \
+            if 'annotator' in self.args.repeat or \
                     self.check_module_output(secondary_module) == None:
                 self.add_annotator_to_queue(secondary_module)
         ordered_module_names = [m.name for m in self.ordered_annotators]
         if module.name not in ordered_module_names:
-            if self.args.ra == True or \
-                    self.check_module_output(module) == None:
+            if 'annotator' in self.args.repeat or \
+                    self.check_module_output(module) == None or \
+                    self.mapper_ran:
                 self.ordered_annotators.append(module)
 
     def get_module_output_path (self, module):
@@ -756,6 +728,8 @@ class Cravat (object):
         formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
         self.log_handler.setFormatter(formatter)
         self.logger.addHandler(self.log_handler)
+        if len(self.ordered_annotators) > 0:
+            self.annotator_ran = True
 
     def table_exists (self, cursor, table):
         sql = 'select name from sqlite_master where type="table" and ' +\
@@ -801,15 +775,26 @@ class Cravat (object):
         q = 'update gene_annotator set version="{}" where name="{}"'.format(version, modulename)
         cursor.execute(q)
         '''
+        q = 'select name, displayname, version from variant_annotator'
+        cursor.execute(q)
+        rows = list(cursor.fetchall())
+        q = 'select name, displayname, version from gene_annotator'
+        cursor.execute(q)
+        tmp_rows = list(cursor.fetchall())
+        if tmp_rows is not None:
+            rows.extend(tmp_rows)
         annotators_str = ''
-        for modulename in self.annotators.keys():
-            annot = self.annotators[modulename]
-            version = annot.conf['version']
-            title = annot.conf['title']
-            level = annot.conf['level']
-            q = 'update {}_annotator set version="{}" where name="{}"'.format(level, version, modulename)
-            cursor.execute(q)
-            annotators_str += '{} ({}), '.format(title, version)
+        annotator_version = {}
+        for row in rows:
+            (name, displayname, version) = row
+            if name in ['base', 'tagsampler', 'hg19', 'hg18']:
+                continue
+            if version is not None and version != '':
+                annotators_str += '{} ({}), '.format(displayname, version)
+            else:
+                annotators_str += '{}, '.format(displayname)
+            annotator_version[name] = version
+        self.status_writer.queue_status_update('annotator_version', annotator_version)
         annotators = annotators_str.rstrip(', ')
         q = 'insert into info values ("Annotators", "' + annotators_str + '")'
         cursor.execute(q)
@@ -838,6 +823,22 @@ class Cravat (object):
         print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
         self.update_status('Running {title} ({name})'.format(title=module.title, name=module.name))
 
+    def clean_up_at_end (self):
+        fns = os.listdir(self.output_dir)
+        for fn in fns:
+            fn_path = os.path.join(self.output_dir, fn)
+            if os.path.isfile(fn_path) == False:
+                continue
+            if fn.startswith(self.run_name):
+                fn_end = fn.split('.')[-1]
+                if fn_end in ['var', 'gen', 'crv', 'crx', 'crg', 'crs', 'crm', 'crt', 'json']:
+                    os.remove(os.path.join(self.output_dir, fn))
+
+def run_cravat_job(**kwargs):
+    module = Cravat(**kwargs)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(module.main())
+
 class StatusWriter:
     def __init__ (self, status_json_path):
         self.status_json_path = status_json_path
@@ -852,11 +853,13 @@ class StatusWriter:
         self.status_json = json.loads(lines)
         f.close()
 
+    '''
     def add_annotator_version_to_status_json (self, annotator_name, version):
         if 'annotator_version' not in self.status_json:
             self.status_json['annotator_version'] = {}
         self.status_json['annotator_version'][annotator_name] = version
         self.queue_status_update('annotator_version', self.status_json['annotator_version'])
+    '''
 
     def queue_status_update (self, k, v, force=False):
         self.status_json[k] = v

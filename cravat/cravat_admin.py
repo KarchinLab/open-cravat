@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import yaml
+import oyaml as yaml
 import sys
 import traceback
 from cravat import admin_util as au
@@ -106,11 +106,11 @@ def main ():
             for i, stok in enumerate(stoks):
                 jline += stok + ' ' * (max_lens[i] + col_spacing - len(stok))
             yield jline
-    
+
     def print_tabular_lines(l, *kwargs):
         for line in yield_tabular_lines(l, *kwargs):
             print(line)
-        
+
     def list_local_modules(pattern=r'.*', types=[], include_hidden=False):
         header = ['Name','Type','Version','Data source ver','Size']
         all_toks = [header]
@@ -183,11 +183,22 @@ def main ():
         # Remote
         try:
             remote_info = au.get_remote_module_info(module_name)
+            print(remote_info)
             if remote_info != None:
                 available = True
         except LookupError:
             available = False
         if available:
+            versions = remote_info.versions
+            data_sources = remote_info.data_sources
+            new_versions = []
+            for version in versions:
+                data_source = data_sources.get(version, None)
+                if data_source:
+                    version = version + ' (data source ' + data_source + ')'
+                new_versions.append(version)
+            remote_info.versions = new_versions
+            del remote_info.data_sources
             dump = yaml_string(remote_info)
             print(dump)
         # Local
@@ -328,7 +339,7 @@ def main ():
             print('No modules found')
             
     def publish_module (args):
-        au.publish_module(args.module, args.user, args.password, args.overwrite_same_version, include_data=args.data)
+        au.publish_module(args.module, args.user, args.password, overwrite=args.overwrite, include_data=args.data)
         
     def install_base (args):
         sys_conf = au.get_system_conf()
@@ -372,6 +383,9 @@ def main ():
     
     def show_system_conf (args):
         au.show_system_conf()
+    
+    def show_cravat_conf (args):
+        au.show_cravat_conf()
     
     ###########################################################################
     # PARSERS START HERE
@@ -534,10 +548,10 @@ def main ():
                                 default=False,
                                 action='store_true',
                                 help='overrides yes to overwrite question')
-    parser_publish.add_argument('--overwrite-same-version',
+    parser_publish.add_argument('--overwrite',
                                 default=False,
                                 action='store_true',
-                                help='overwrites the same version already published.')
+                                help='overwrites a published module/version')
     parser_publish.set_defaults(func=publish_module)
     
     # create-account
@@ -606,6 +620,11 @@ def main ():
     parser_new_annotator = subparsers.add_parser('show-system-conf',
                                                help='shows system configuration.')
     parser_new_annotator.set_defaults(func=show_system_conf)
+    
+    # shows cravat conf content.
+    parser_new_annotator = subparsers.add_parser('show-cravat-conf',
+                                               help='shows cravat configuration.')
+    parser_new_annotator.set_defaults(func=show_cravat_conf)
     
     ###########################################################################
     

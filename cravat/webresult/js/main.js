@@ -606,6 +606,31 @@ function drawingRetrievingDataDiv (currentTab) {
 	return loadingDiv;
 }
 
+function drawingWidgetCaptureSpinnerDiv () {
+	var currentTabDiv = document.getElementById('tab_'+currentTab);
+	var loadingDiv = getEl('div');
+    loadingDiv.className = 'data-retrieving-msg-div';
+	var loadingTxtDiv = getEl('div');
+    loadingTxtDiv.className = 'data-retrieving-msg-div-content';
+    var span = getEl('span');
+    span.textContent = 'Capturing widget content...';
+	addEl(loadingTxtDiv, span);
+    addEl(loadingTxtDiv, getEl('br'));
+	var loadingSpinCircleDiv = getEl('div');
+	var loadingSpinCircleImg = getEl('img');
+	loadingSpinCircleImg.src = "images/bigSpinner.gif";
+	addEl(loadingTxtDiv, loadingSpinCircleImg);
+	addEl(loadingDiv, loadingTxtDiv);
+    var dW = document.body.offsetWidth;
+    var dH = document.body.offsetHeight;
+	loadingDiv.style.top = 0;
+	loadingDiv.style.left = 0;
+	jobDataLoadingDiv = loadingDiv;
+    var parentDiv = document.body;
+    addEl(parentDiv, loadingDiv);
+	return loadingDiv;
+}
+
 function getCheckNoRowsMessage (tabName, noRows) {
 	var msg = '';
 	var maxNoRows = infomgr.getStat(tabName)['maxnorows'];

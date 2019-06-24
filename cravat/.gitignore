@@ -3,3 +3,7 @@
 /cravat_view_test.py
 *.bak
 .vscode
+liftover/canFam*
+pyliftover.tar
+conf
+req.cnf

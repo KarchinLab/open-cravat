@@ -3,7 +3,7 @@
 import argparse
 import os
 import sys
-import yaml
+import oyaml as yaml
 import aiosqlite3
 import json
 import re

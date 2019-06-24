@@ -115,7 +115,7 @@ body {
 */
 
 .draggableDiv {
-	background-color: #bed4dc;
+	background-color: #d1dee3;
 	width: 100%;
 	height:	8px;
 	text-align: center;
@@ -259,6 +259,9 @@ div.tabContent.hide {
 	border: 1px solid #d0d0d0;
 	padding: 5px;
 	margin: 4px;
+    padding-top: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
 }
 
 .detailwidgetheader {
@@ -273,17 +276,26 @@ div.tabContent.hide {
 
 .detailwidgettitle {
 	display: inline-block;
-	width: calc(100% - 37px);
+	width: calc(100% - 4px);
 	background: #d1dae0;
 	font-size: 13px;
 	font-weight: bold;
+    height: 18px;
+    margin-bottom: 6px;
+}
+
+.detailwidget-hr {
+    margin-top: 0px;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
 }
 
 .detailcontentdiv {
 	overflow: auto;
 	height: calc(100% - 32px);
 	padding: 0px;
-    /*width: 100%;*/
+    padding-left: 7px;
+    padding-right: 7px;
 }
 
 .tablecolumnselectorpanel {
@@ -325,16 +337,16 @@ div.tabContent.hide {
 
 .detailwidgeticondiv {
 	display: inline-block;
-	width: 55px;
+	width: 70px;
 	position: absolute;
 	right: 0px;
 	top: 0px;
     text-align: right;
 }
 
-.detailwidgetclosebutton {
-	cursor: default;
-	margin-left: 4px;
+.detailwidget-closebutton {
+	width: 16px;
+	height: 16px;
 }
 
 .detailwidgetpinbutton {
@@ -355,6 +367,10 @@ div.tabContent.hide {
 .detailwidgetpinbutton.pinned {
 	color: white;
 	background-color: #848484;
+}
+
+.detailwidget-camerabutton {
+    height: 16px;
 }
 
 .detailwidgetselect {
@@ -386,11 +402,6 @@ div.tabContent.hide {
 	minHeight: 50px;
 	padding: 4px;
 	fontSize: 13px;
-}
-
-.closebutton {
-	width: 16px;
-	height: 16px;
 }
 
 p {
@@ -550,7 +561,7 @@ div.pq-select-menu>.pq-select-option-label {
     font-size: 14px;
     width: 100%;
     height: 100%;
-    background-color: rgba(100, 100, 100, 0.3);
+    background-color: rgba(100, 100, 100, 0.77);
     vertical-align: middle;
     text-align: center;
 }
@@ -560,7 +571,9 @@ div.pq-select-menu>.pq-select-option-label {
     transform: translateX(-50%) translateY(-50%);
     top: 50%;
     left: 50%;
-    background-color: white;
+    color: #cddc39;
+    font-family: 'Gothic A1';
+    font-size: 16px;
 }
 
 .data-retrieving-msg-div img {

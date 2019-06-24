@@ -1,5 +1,5 @@
 import os
-import yaml
+import oyaml as yaml
 import copy
 from cravat import admin_util as au
 import shutil
@@ -29,7 +29,11 @@ class ConfigLoader():
     def _load_job_conf(self, build_all=True):
         self._job = {}
         if self.job_conf_path:
-            self._job = au.load_yml_conf(self.job_conf_path)
+            if os.path.exists(self.job_conf_path):
+                self._job = au.load_yml_conf(self.job_conf_path)
+            else:
+                print('Job conf file', self.job_conf_path, 'does not exist.')
+                exit()
         if build_all:
             self._build_all()
     
@@ -47,6 +51,8 @@ class ConfigLoader():
         if self._main:
             self._all['cravat'] = copy.deepcopy(self._main)
         self._all = au.recursive_update(self._all, self._job)
+        if 'run' not in self._all:
+            self._all['run'] = {}
         
     def save(self, path, modules=[]):
         """
@@ -108,3 +114,6 @@ class ConfigLoader():
     
     def get_local_module_confs (self):
         return self._all['modules']
+
+    def get_run_conf (self):
+        return self._all['run']

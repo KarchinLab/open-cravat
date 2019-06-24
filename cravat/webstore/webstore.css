@@ -91,6 +91,22 @@
     background-color: #ffffff;
 }
 
+.modulepanel-stopinstall-button {
+    position: absolute;
+    bottom: 3px;
+    right: 9px;
+    font-size: 13px;
+    background-color: #ffaaaa;
+}
+
+.modulepanel-unqueueinstall-button {
+    position: absolute;
+    bottom: 3px;
+    right: 9px;
+    font-size: 13px;
+    background-color: #ffaaaa;
+}
+
 .moduletile {
     display: inline-block;
     width: 250px;
@@ -113,6 +129,7 @@
     max-height: 100%;
     text-align: center;
     font-size: 42px;
+    word-break: break-word;
 }
 
 .moduletile-logodiv {
@@ -140,6 +157,55 @@
     background-image: url('/store/genericmodulelogo.png');
 }
 
+.moduletile-typediv {
+    position: absolute;
+    top: 233px;
+    left: 117px;
+    color: green;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.moduletile[moduletype=webviewerwidget] {
+    background-color: #f0f6fc;
+}
+
+.moduletile-group-updateavailable-span {
+    position: absolute;
+    right: 10px;
+    bottom: 5px;
+    font-size: 10px;
+}
+
+.modulegroup {
+    border: 0px;
+    background-image: url('/store/folder.png');
+    background-size: 270px 250px;
+    background-repeat: no-repeat;
+}
+
+div.modulegroup div.moduletile-nologo {
+    height: 150px;
+    width: 221px;
+    top: 24px;
+    left: 25px;
+    position: absolute;
+}
+
+div.modulegroup div.moduletile-logodiv {
+    position: absolute;
+    top: 27px;
+}
+
+div.modulegroup div.modulepanel-title-span {
+    position: absolute;
+    top: 202px;
+}
+
+div.modulegroup span.modulepanel-datasource-span {
+    top: 207px;
+}
+
 .panelinstallstatusspan {
     background-color: white;
     font-size: 12px;
@@ -155,13 +221,15 @@
 #storebodydiv {
     position: absolute;
     top: 92px;
-    width: 100%;
+    width: calc(100% - 10px);
 }
 
 #storemenudiv {
     position: fixed;
     top: 108px;
-    width: 200px;
+    width: 201px;
+    height: calc(100% - 110px);
+    overflow: auto;
 }
 
 .store-switch {
@@ -239,6 +307,32 @@ input:checked + .store-switch-slider:before {
     top: 0px;
     left: 200px;
     width: calc(100% - 210px);
+}
+
+#store-modulegroup-div {
+    position: absolute;
+    top: 0px;
+    left: 200px;
+    width: calc(100% - 210px);
+}
+
+#store-modulegroup-content-div {
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: center; 
+    position: absolute; 
+    top: 76px; 
+    background-color: white;
+    left: 0px;
+    width: 100%;
+}
+
+#store-modulegroup-title-span {
+    font-size: 27px;
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 #store-home-div {
@@ -434,6 +528,7 @@ input:checked + .store-switch-slider:before {
     top: 13px;
     display: none;
     color: #f7684b;
+    width: calc(100% - 240px);
 }
 
 #verdiv {

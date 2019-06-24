@@ -2,7 +2,7 @@ import zipfile
 import shutil
 import os
 import sys
-import yaml
+import oyaml as yaml
 import copy
 import json
 from . import constants
@@ -15,6 +15,7 @@ from distutils.version import StrictVersion, LooseVersion
 import pkg_resources
 from collections import defaultdict
 from types import SimpleNamespace
+from . import exceptions
 
 def load_yml_conf(yml_conf_path):
     """
@@ -126,7 +127,14 @@ class LocalModuleInfo (object):
             self.datasource = self.conf['datasource']
         else:
             self.datasource = ''
+<<<<<<< HEAD
         self.smartfilters = self.conf.get('smartfilters')
+=======
+        if 'groups' in self.conf:
+            self.groups = self.conf['groups']
+        else:
+            self.groups = None
+>>>>>>> 1.5.0
 
     def is_valid_module(self):
         r = self.exists
@@ -166,6 +174,8 @@ class RemoteModuleInfo(object):
         if not(type(dev_dict)==dict):
             dev_dict = {}
         self.developer = get_developer_dict(**dev_dict)
+        self.data_versions = kwargs.get('data_versions', {})
+        self.data_sources = kwargs.get('data_sources', {})
 
     def has_version(self, version):
         return version in self.versions    
@@ -326,16 +336,6 @@ def get_local_module_infos(types=[], names=[]):
 
 def set_jobs_dir (d):
     update_system_conf_file({'jobs_dir': d})
-
-def get_jobs_dir():
-    jobs_dir = get_system_conf().get('jobs_dir')
-    if jobs_dir is None or jobs_dir == '':
-        home_dir = os.path.expanduser('~')
-        jobs_dir = os.path.join(home_dir,'open-cravat','jobs')
-        set_jobs_dir(jobs_dir)
-    if not(os.path.isdir(jobs_dir)):
-        os.makedirs(jobs_dir)
-    return jobs_dir
 
 def search_remote(*patterns):
     """
@@ -515,6 +515,10 @@ class InstallProgressHandler(object):
             return 'Verifying %s data integrity' %self.display_name
         elif stage=='finish':
             return 'Finished installation of %s' %self.display_name
+        elif stage == 'killed':
+            return 'Aborted {} installation'.format(self.display_name)
+        elif stage == 'Unqueued':
+            return 'Unqueued {} from installation'.format(self.display_name)
         else:
             raise ValueError(stage)
 
@@ -534,6 +538,10 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         if version is None:
             version = get_remote_latest_version(module_name)
             stage_handler.set_module_version(version)
+        if hasattr(stage_handler, 'install_state') == True:
+            install_state = stage_handler.install_state
+        else:
+            install_state = None
         stage_handler.stage_start('start')
         modules_dir = get_modules_dir()
         sys_conf = get_system_conf()
@@ -562,29 +570,44 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             os.makedirs(module_dir)
         else:
             uninstall_module_code(module_name)
+        if install_state:
+            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                raise exceptions.KillInstallException
         wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
         wf.close()
         zipfile_path = os.path.join(module_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
-        r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, **kwargs)
+        r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
         if r.status_code != 200:
             raise(requests.HTTPError(r))
+        if install_state:
+            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                raise exceptions.KillInstallException
         stage_handler.stage_start('extract_code')
         zf = zipfile.ZipFile(zipfile_path)
         zf.extractall(module_dir)
         zf.close()
+        if install_state:
+            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                raise exceptions.KillInstallException
         stage_handler.stage_start('verify_code')
         code_manifest_url = store_path_builder.module_code_manifest(module_name, version)
         code_manifest = yaml.load(su.get_file_to_string(code_manifest_url))
         su.verify_against_manifest(module_dir, code_manifest)
         os.remove(zipfile_path)
         local_info = LocalModuleInfo(module_dir)
+        if install_state:
+            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                raise exceptions.KillInstallException
         if (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
             data_url = store_path_builder.module_data(module_name, remote_data_version)
             data_fname = '.'.join([module_name,'data','zip'])
             data_path = os.path.join(module_dir, data_fname)
             stage_handler.stage_start('download_data')
-            r = su.stream_to_file(data_url, data_path, stage_handler=stage_handler.stage_progress, **kwargs)
+            r = su.stream_to_file(data_url, data_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
+            if install_state:
+                if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                    raise exceptions.KillInstallException
             if r.status_code == 200:
                 if local_info.data_dir_exists:
                     uninstall_module_data(module_name)
@@ -592,11 +615,17 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                 zf = zipfile.ZipFile(data_path)
                 zf.extractall(module_dir)
                 zf.close()
+                if install_state:
+                    if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                        raise exceptions.KillInstallException
                 stage_handler.stage_start('verify_data')
                 data_manifest_url = store_path_builder.module_data_manifest(module_name, remote_data_version)
                 data_manifest = yaml.load(su.get_file_to_string(data_manifest_url))
                 su.verify_against_manifest(module_dir, data_manifest)
                 os.remove(data_path)
+                if install_state:
+                    if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                        raise exceptions.KillInstallException
             elif r.status_code == 404:
                 # Probably a private module that does not have data
                 pass
@@ -606,21 +635,37 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         stage_handler.stage_start('finish')
         wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
         wf.close()
+        '''
         if module_name.startswith('wg') == False:
             wgmodule_name = 'wg' + module_name
             if module_exists_remote(wgmodule_name):
                 try:
-                    install_module('wg' + module_name)
+                    stage_handler.module_name = module_name
+                    stage_handler.module_version = None
+                    install_module(
+                        'wg' + module_name, 
+                        stage_handler=stage_handler, 
+                        version=None, 
+                        force_data=False)
+                    stage_handler.module_name = module_name
+                    stage_handler.module_version = version
+                    stage_handler.stage_start('finish')
                 except:
                     traceback.print_exc()
-    except:
+        '''
+    except Exception as e:
+        if type(e) == exceptions.KillInstallException:
+            stage_handler.stage_start('killed')
         try:
             shutil.rmtree(module_dir)
         except (NameError, FileNotFoundError):
             pass
         except:
             raise
-        raise
+        if type(e) == exceptions.KillInstallException:
+            return
+        else:
+            raise
 
 def get_remote_data_version(module_name, version):
     """
@@ -735,16 +780,29 @@ def get_local_module_infos_by_names (module_names):
             modules[module_name] = module
     return modules
 
-def get_system_conf():
+def get_system_conf ():
     """
     Get the system config. Fill in the default modules dir if not set.
     """
+    conf = load_yml_conf(constants.system_conf_path)
+    '''
     if os.path.exists(constants.system_conf_path):
         conf = load_yml_conf(constants.system_conf_path)
     else:
         conf = load_yml_conf(constants.system_conf_template_path)
+    '''
+    conf_modified = False
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
+        conf_modified = True
+    if constants.conf_dir_key not in conf:
+        conf[constants.conf_dir_key] = constants.default_conf_dir
+        conf_modified = True
+    if constants.jobs_dir_key not in conf:
+        conf[constants.jobs_dir_key] = constants.default_jobs_dir
+        conf_modified = True
+    if conf_modified:
+        write_system_conf_file(conf)
     return conf
 
 def get_modules_dir():
@@ -754,6 +812,16 @@ def get_modules_dir():
     conf = get_system_conf()
     modules_dir = conf[constants.modules_dir_key]
     return modules_dir
+
+def get_conf_dir ():
+    conf = get_system_conf()
+    conf_dir = conf[constants.conf_dir_key]
+    return conf_dir
+
+def get_jobs_dir():
+    conf = get_system_conf()
+    jobs_dir = conf[constants.jobs_dir_key]
+    return jobs_dir
 
 def write_system_conf_file(d):
     """
@@ -785,7 +853,7 @@ def get_main_conf_path():
     """
     Get the path to where the main cravat config (cravat.yml) should be.
     """
-    return os.path.join(get_modules_dir(), constants.main_conf_fname)
+    return os.path.join(get_conf_dir(), constants.main_conf_fname)
 
 def get_main_default_path():
     """
@@ -793,7 +861,7 @@ def get_main_default_path():
     """
     return os.path.join(constants.packagedir, constants.main_conf_fname)
 
-def publish_module(module_name, user, password, overwrite_version=False, include_data=True):
+def publish_module(module_name, user, password, overwrite=False, include_data=True):
     sys_conf = get_system_conf()
     publish_url = sys_conf['publish_url']
     mic.update_local()
@@ -812,11 +880,11 @@ def publish_module(module_name, user, password, overwrite_version=False, include
             err = json.loads(r.text)
             if err['code'] == su.VersionExists.code:
                 while True:
-                    if overwrite_version:
+                    if overwrite:
                         break
                     resp = input('Version exists. Do you wish to overwrite (y/n)? ')
                     if resp == 'y':
-                        overwrite_version = True
+                        overwrite = True
                         break
                     if resp == 'n':
                         exit()
@@ -845,7 +913,7 @@ def publish_module(module_name, user, password, overwrite_version=False, include
     manifest = zip_builder.get_manifest()
     zip_builder.close()
     post_url = '/'.join([publish_url, module_name, local_info.version])
-    if overwrite_version:
+    if overwrite:
         post_url += '?overwrite=1'
     fields={
             'manifest': (
@@ -949,8 +1017,8 @@ def report_issue ():
     import webbrowser
     webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
 
-def get_system_conf_info ():
-    set_jobs_dir(get_jobs_dir())
+def get_system_conf_info (json=False):
+    #set_jobs_dir(get_jobs_dir())
     confpath = constants.system_conf_path
     if os.path.exists(confpath):
         conf = load_yml_conf(confpath)
@@ -958,29 +1026,46 @@ def get_system_conf_info ():
     else:
         conf = {}
         confexists = False
+    '''
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
-    system_conf_info = {'path': confpath, 'exists': confexists, 'content': yaml.dump(conf, default_flow_style=False)}
+    '''
+    if json:
+        content = conf
+    else:
+        content = yaml.dump(conf, default_flow_style=False)
+    system_conf_info = {'path': confpath, 'exists': confexists, 'content': content}
     return system_conf_info
 
-def get_system_conf_info_json ():
-    set_jobs_dir(get_jobs_dir())
-    confpath = constants.system_conf_path
+def get_cravat_conf ():
+    confpath = get_main_conf_path()
     if os.path.exists(confpath):
-        conf = load_yml_conf(confpath)
-        confexists = True
+        cravat_conf = load_yml_conf(confpath)
     else:
-        conf = {}
-        confexists = False
-    if constants.modules_dir_key not in conf:
-        conf[constants.modules_dir_key] = constants.default_modules_dir
-    system_conf_info = {'path': confpath, 'exists': confexists, 'content': conf}
-    return system_conf_info
+        cravat_conf = {}
+    return cravat_conf
+
+def get_cravat_conf_info ():
+    cravat_conf = get_cravat_conf()
+    cravat_conf_info = {'path': get_main_conf_path(), 'content': yaml.dump(cravat_conf, default_flow_style=False)}
+    return cravat_conf_info
 
 def show_system_conf ():
     system_conf_info = get_system_conf_info()
     print('Configuration file path:', system_conf_info['path'])
     print(system_conf_info['content'])
+
+def show_cravat_conf ():
+    cravat_conf_info = get_cravat_conf_info()
+    print('Configuration file path:', cravat_conf_info['path'])
+    print(cravat_conf_info['content'])
+
+def set_cravat_conf_prop (key, val):
+    conf = get_cravat_conf()
+    conf[key] = val
+    wf = open(get_main_conf_path(), 'w')
+    yaml.dump(conf, wf, default_flow_style=False)
+    wf.close()
 
 def get_package_versions():
     """
@@ -1116,6 +1201,11 @@ def get_updatable(modules=[], strategy='consensus'):
         else:
             resolution_failed[mname] = reqs
     return update_vers, resolution_applied, resolution_failed
+
+def get_last_assembly ():
+    conf = get_cravat_conf()
+    last_assembly = conf.get('last_assembly', 'hg38')
+    return last_assembly
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

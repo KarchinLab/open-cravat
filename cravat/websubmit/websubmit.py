@@ -5,7 +5,7 @@ import subprocess
 import yaml
 import json
 from cravat import admin_util as au
-from cravat import ConfigLoader
+from cravat import ConfigLoader, run_cravat_job
 import sys
 import traceback
 import shutil
@@ -17,6 +17,11 @@ import hashlib
 from distutils.version import LooseVersion
 import glob
 import platform
+import signal
+import multiprocessing as mp
+import asyncio
+
+cfl = ConfigLoader()
 
 class FileRouter(object):
 
@@ -62,7 +67,7 @@ class FileRouter(object):
             return os.path.join(jobs_dir, job_id)
 
     async def job_input(self, request, job_id):
-        job_dir, statusjson = await filerouter.job_status(request, job_id)
+        job_dir, statusjson = await self.job_status(request, job_id)
         orig_input_fname = None
         if 'orig_input_fname' in statusjson:
             orig_input_fname = statusjson['orig_input_fname']
@@ -77,16 +82,38 @@ class FileRouter(object):
         else:
             orig_input_path = None
         return orig_input_path
+    
+    async def job_run_name(self, request, job_id):
+        job_dir, statusjson = await self.job_status(request, job_id)
+        run_name = statusjson.get('run_name')
+        if run_name is None:
+            fns = os.listdir(job_dir)
+            for fn in fns:
+                if fn.endswith('.crv'):
+                    run_name = fn[:-4]
+                    break
+        return run_name
+
+    async def job_run_path(self, request, job_id):
+        job_dir, _ = await self.job_status(request, job_id)
+        run_name = await self.job_run_name(request, job_id)
+        if run_name is not None:
+            run_path = os.path.join(job_dir, run_name)
+        else:
+            run_path = None
+        return run_path
 
     async def job_db(self, request, job_id):
-        orig_input_path = await self.job_input(request, job_id)
-        output_fname = orig_input_path + self.db_extension
+        run_path = await self.job_run_path(request, job_id)
+        output_fname = run_path + self.db_extension
         return output_fname
 
     async def job_report(self, request, job_id, report_type):
         ext = self.report_extensions.get(report_type, '.'+report_type)
-        orig_input_path = await self.job_input(request, job_id)
-        report_path = orig_input_path + ext
+        run_path = await self.job_run_path(request, job_id)
+        if run_path is None:
+            return None
+        report_path = run_path + ext
         return report_path
 
     async def job_status (self, request, job_id):
@@ -128,17 +155,14 @@ class FileRouter(object):
     '''
 
     async def job_log (self, request, job_id):
-        orig_input_path = await self.job_input(request, job_id)
-        if orig_input_path is not None:
-            log_path = orig_input_path + '.log'
+        run_path = await self.job_run_path(request, job_id)
+        if run_path is not None:
+            log_path = run_path + '.log'
             if os.path.exists(log_path) == False:
                 log_path = None
         else:
             log_path = None
-        if log_path != None:
-            return log_path
-        else:
-            return None
+        return log_path
 
 class WebJob(object):
     def __init__(self, job_dir, job_status_fpath):
@@ -170,12 +194,13 @@ def get_next_job_id():
 
 async def submit (request):
     global filerouter
+    global job_tracker
     job_id = get_next_job_id()
     jobs_dir = await filerouter.get_jobs_dir(request)
+    job_id = get_next_job_id()
     job_dir = os.path.join(jobs_dir, job_id)
     os.makedirs(job_dir, exist_ok=True)
     reader = await request.multipart()
-    input_file = None
     job_options = None
     input_files = []
     while True:
@@ -212,8 +237,7 @@ async def submit (request):
     for fpath in input_fpaths:
         with open(fpath) as f:
             tot_lines += count_lines(f)
-    expected_runtime = get_expected_runtime(tot_lines, job_options['annotators'])
-    job.set_info_values(expected_runtime=expected_runtime)
+    #expected_runtime = get_expected_runtime(tot_lines, job_options['annotators'])
     run_args = ['cravat']
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))
@@ -222,18 +246,18 @@ async def submit (request):
         run_args.append('-a')
         run_args.extend(job_options['annotators'])
     else:
-        run_args.append('--sa')
         run_args.append('-e')
         run_args.append('*')
     # Liftover assembly
     run_args.append('-l')
     run_args.append(job_options['assembly'])
+    au.set_cravat_conf_prop('last_assembly', job_options['assembly'])
     # Reports
     if len(job_options['reports']) > 0:
         run_args.append('-t')
         run_args.extend(job_options['reports'])
     else:
-        run_args.append('--sr')
+        run_args.extend(['--skip', 'reporter'])
     # Note
     if 'note' in job_options:
         run_args.append('--note')
@@ -243,6 +267,7 @@ async def submit (request):
         run_args.append('--forcedinputformat')
         run_args.append(job_options['forcedinputformat'])
     p = subprocess.Popen(run_args)
+    job_tracker.add_job(job_id, p)
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
     # admin.sqlite
@@ -297,10 +322,83 @@ def find_files_by_ending (d, ending):
             files.append(fn)
     return files
 
+async def get_job (job_id, request):
+    global filerouter
+    jobs_dir = await filerouter.get_jobs_dir(request)
+    if jobs_dir is None:
+        return None
+    if os.path.exists(jobs_dir) == False:
+        os.mkdir(jobs_dir)
+    job_dir = os.path.join(jobs_dir, job_id)
+    if os.path.exists(job_dir) == False:
+        return None
+    if os.path.isdir(job_dir) == False:
+        return None
+    fns = find_files_by_ending(job_dir, '.status.json')
+    if len(fns) < 1:
+        return None
+    status_fname = fns[0]
+    status_fpath = os.path.join(job_dir, status_fname)
+    job = WebJob(job_dir, status_fpath)
+    job.read_info_file()
+    fns = find_files_by_ending(job_dir, '.info.yaml')
+    if len(fns) > 0:
+        info_fpath = os.path.join(job_dir, fns[0])
+        with open (info_fpath) as f:
+            info_json = yaml.load('\n'.join(f.readlines()))
+            for k, v in info_json.items():
+                if k == 'status' and 'status' in job.info:
+                    continue
+                job.info[k] = v
+    fns = find_files_by_ending(job_dir, '.sqlite')
+    if len(fns) > 0:
+        db_path = os.path.join(job_dir, fns[0])
+    else:
+        db_path = ''
+    job_viewable = os.path.exists(db_path)
+    job.set_info_values(
+        viewable=job_viewable,
+        db_path=db_path,
+        status=job.info['status'],
+    )
+    existing_reports = []
+    for report_type in get_valid_report_types():
+        # ext = filerouter.report_extensions.get(report_type, '.'+report_type)
+        # job_input = await filerouter.job_input(request, job_id)
+        # if job_input is None:
+        #     continue
+        # report_fname = job_input + ext
+        # report_file = os.path.join(job_dir, report_fname)
+        report_path = await filerouter.job_report(request, job_id, report_type)
+        if report_path is not None and os.path.exists(report_path):
+            existing_reports.append(report_type)
+    job.set_info_values(reports=existing_reports)
+    return job
+
+async def get_jobs (request):
+    global filerouter
+    jobs_dir = await filerouter.get_jobs_dir(request)
+    if jobs_dir is None:
+        return web.json_response([])
+    if os.path.exists(jobs_dir) == False:
+        os.mkdir(jobs_dir)
+    queries = request.rel_url.query
+    ids = json.loads(queries['ids'])
+    jobs = []
+    for job_id in ids:
+        try:
+            job = await get_job(job_id, request)
+            if job is not None:
+                jobs.append(job)
+        except:
+            traceback.print_exc()
+            continue
+    return web.json_response([job.get_info_dict() for job in jobs])
+
 async def get_all_jobs (request):
     global filerouter
     jobs_dir = await filerouter.get_jobs_dir(request)
-    if jobs_dir == None:
+    if jobs_dir is None:
         return web.json_response([])
     if os.path.exists(jobs_dir) == False:
         os.mkdir(jobs_dir)
@@ -309,47 +407,9 @@ async def get_all_jobs (request):
     all_jobs = []
     for job_id in ids:
         try:
-            job_dir = os.path.join(jobs_dir, job_id)
-            if os.path.isdir(job_dir) == False:
+            job = await get_job(job_id, request)
+            if job is None:
                 continue
-            fns = find_files_by_ending(job_dir, '.status.json')
-            if len(fns) < 1:
-                continue
-            status_fname = fns[0]
-            status_fpath = os.path.join(job_dir, status_fname)
-            job = WebJob(job_dir, status_fpath)
-            job.read_info_file()
-            fns = find_files_by_ending(job_dir, '.info.yaml')
-            if len(fns) > 0:
-                info_fpath = os.path.join(job_dir, fns[0])
-                with open (info_fpath) as f:
-                    info_json = yaml.load('\n'.join(f.readlines()))
-                    for k, v in info_json.items():
-                        if k == 'status' and 'status' in job.info:
-                            continue
-                        job.info[k] = v
-            fns = find_files_by_ending(job_dir, '.sqlite')
-            if len(fns) > 0:
-                db_path = os.path.join(job_dir, fns[0])
-            else:
-                db_path = ''
-            job_viewable = os.path.exists(db_path)
-            job.set_info_values(
-                viewable=job_viewable,
-                db_path=db_path,
-                status=job.info['status'],
-            )
-            existing_reports = []
-            for report_type in get_valid_report_types():
-                ext = filerouter.report_extensions.get(report_type, '.'+report_type)
-                job_input = await filerouter.job_input(request, job_id)
-                if job_input is None:
-                    continue
-                report_fname = job_input + ext
-                report_file = os.path.join(job_dir, report_fname)
-                if os.path.exists(report_file):
-                    existing_reports.append(report_type)
-            job.set_info_values(reports=existing_reports)
             all_jobs.append(job)
         except:
             traceback.print_exc()
@@ -371,7 +431,11 @@ async def view_job(request):
 
 async def delete_job(request):
     global filerouter
+    global job_tracker
     job_id = request.match_info['job_id']
+    if job_tracker.get_process(job_id) is not None:
+        print('\nKilling job {}'.format(job_id))
+        await job_tracker.cancel_job(job_id)
     job_dir = await filerouter.job_dir(request, job_id)
     if os.path.exists(job_dir):
         shutil.rmtree(job_dir)
@@ -395,7 +459,7 @@ async def get_job_log (request):
         with open(log_path) as f:
             return web.Response(text=f.read())
     else:
-        return web.Response(text='loo file does not exist.')
+        return web.Response(text='log file does not exist.')
 
 def get_valid_report_types():
     reporter_infos = au.get_local_module_infos(types=['reporter'])
@@ -403,7 +467,7 @@ def get_valid_report_types():
     return report_types
 
 def get_report_types(request):
-    cfl = ConfigLoader()
+    global cfl
     default_reporter = cfl.get_cravat_conf_value('reporter')
     default_type = default_reporter.split('reporter')[0]
     valid_types = get_valid_report_types()
@@ -414,9 +478,10 @@ async def generate_report(request):
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
     if report_type in get_valid_report_types():
-        job_input = await filerouter.job_input(request, job_id)
+        job_input = await filerouter.job_run_path(request, job_id)
         cmd_args = ['cravat', job_input]
-        cmd_args.append('--str')
+        cmd_args.extend(['--startat', 'reporter'])
+        cmd_args.extend(['--repeat', 'reporter'])
         cmd_args.extend(['-t', report_type])
         p = subprocess.Popen(cmd_args)
         p.wait()
@@ -442,7 +507,7 @@ def set_jobs_dir (request):
     return web.json_response(d)
 
 async def get_system_conf_info (request):
-    info = au.get_system_conf_info_json()
+    info = au.get_system_conf_info(json=True)
     global filerouter
     return web.json_response(info)
 
@@ -451,6 +516,11 @@ async def update_system_conf (request):
     sysconf = json.loads(queries['sysconf'])
     try:
         success = au.update_system_conf_file(sysconf)
+        if 'modules_dir' in sysconf:
+            modules_dir = sysconf['modules_dir']
+            cravat_yml_path = os.path.join(modules_dir, 'cravat.yml')
+            if os.path.exists(cravat_yml_path) == False:
+                au.set_modules_dir(modules_dir)
     except:
         raise
         sysconf = {}
@@ -688,6 +758,51 @@ end tell'
     response = 'done'
     return web.json_response(response)
 
+class JobTracker (object):
+
+    def __init__(self):
+        self._jobs = {}
+
+    def add_job(self, id, proc):
+        # Add a job to tracking
+        self._jobs[id] = proc
+
+    def get_process(self, id):
+        # Return the process for a job
+        return self._jobs.get(id)
+
+    async def cancel_job(self, id):
+        p = self._jobs.get(id)
+        if p:
+            if platform.platform().lower().startswith('windows'):
+                # proc.kill() doesn't work well on windows
+                subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=p.pid),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                while True:
+                    await asyncio.sleep(0.25)
+                    if p.poll() is not None:
+                        break
+            else:
+                p.kill()
+
+    def clean_jobs(self, id):
+        # Clean up completed jobs
+        to_del = []
+        for id, p in self._jobs.items():
+            if p.poll() is not None:
+                to_del.append(id)
+        for id in to_del:
+            del self._jobs[id]
+    
+    def list_jobs(self):
+        # List currently tracked jobs
+        return list(self._jobs.keys())
+
+job_tracker = JobTracker()
+
+def get_last_assembly (request):
+    last_assembly = au.get_last_assembly()
+    return web.json_response(last_assembly)
+
 filerouter = FileRouter()
 VIEW_PROCESS = None
 
@@ -717,6 +832,8 @@ routes.append(['GET', '/submit/changepassword', change_password])
 routes.append(['GET', '/submit/checklogged', check_logged])
 routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
+routes.append(['GET', '/submit/lastassembly', get_last_assembly])
+routes.append(['GET', '/submit/getjobs', get_jobs])
 
 if __name__ == '__main__':
     app = web.Application()

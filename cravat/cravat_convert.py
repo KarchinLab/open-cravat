@@ -251,13 +251,14 @@ class MasterCravatConverter(object):
             self.crl_path = '.'.join([self.wpath,self.input_assembly,'var'])
             self.crl_writer = CravatWriter(self.crl_path)
             assm_crl_def = copy.deepcopy(constants.crl_def)
-            assm_crl_def[1]['title'] = '{0} Chrom'.format(self.input_assembly.title())
-            assm_crl_def[2]['title'] = '{0} Position'.format(self.input_assembly.title())
+            assm_crl_def[1]['title'] = 'Chrom'.format(self.input_assembly.title())
+            assm_crl_def[2]['title'] = 'Position'.format(self.input_assembly.title())
             assm_crl_def[2]['desc'] = 'Position in {0}'.format(self.input_assembly.title())
             self.crl_writer.add_columns(assm_crl_def)
             self.crl_writer.write_definition()
             self.crl_writer.write_names(self.input_assembly,
-                                        self.input_assembly.title())
+                                        self.input_assembly.title(),
+                                        '')
 
     def run(self):
         """ Convert input file to a .crv file using the primary converter."""
@@ -339,7 +340,7 @@ class MasterCravatConverter(object):
             new_pos = new_coords[0][1]
             return new_chrom, new_pos
         else:
-            raise LiftoverFailure(old_chrom, old_pos)
+            raise LiftoverFailure('Liftover failure')
 
     def _log_conversion_error(self, ln, line, e):
         """ Log exceptions thrown by primary converter.

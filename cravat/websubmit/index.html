@@ -14,10 +14,12 @@
             websubmit_run();
         });
     </script> 
-    <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Gothic+A1" rel="stylesheet">
+    <!--
+    <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Hind" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Arimo" rel="stylesheet">
+    -->
 </head>
 
 <body>
@@ -111,7 +113,7 @@
         </div>
         <a href='http://github.com/KarchinLab/open-cravat/wiki' target='_blank'><img src='question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
         <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='email.png' class='email-icon' onclick='mailto:support@cravat.us' /></a>
-        <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' onclick='onClickThreeDots();'>
+        <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' class='threedotsdiv'>
             <img src='threedots.png' class='threedots' />
         </div>
     </div>
@@ -122,15 +124,19 @@
         <div id="submit-form" style='overflow-y: auto;'>
             <div class='container'>
                 <span class='divtitle'>Variants</span>
-                <div id='assembly-select-div'>
-                    Genome:
-                    <select id="assembly-select">
-                        <option value="hg38">hg38</option>
-                        <option value="hg19" selected=true>hg19</option>
-                        <option value="hg18">hg18</option>
-                    </select>
-                </div>
                 <table>
+                    <tr>
+                        <td>
+                            <div id='assembly-select-div'>
+                                Genome:
+                                <select id="assembly-select">
+                                    <option value="hg38">hg38</option>
+                                    <option value="hg19" selected=true>hg19</option>
+                                    <option value="hg18">hg18</option>
+                                </select>
+                            </div>
+                        </td>
+                    </tr>
                     <tr>
                         <td valign='top' class='variant-input-border-bottom' title="Upload file(s). Select multiple files using ctrl and shift keys">
                                 <br />
@@ -224,7 +230,7 @@
         </div>
         <a href='http://github.com/KarchinLab/open-cravat/wiki' target='_blank'><img src='question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
         <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='email.png' class='email-icon' onclick='mailto:support@cravat.us' /></a>
-        <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' onclick='onClickThreeDots();'>
+        <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' class='threedotsdiv'>
             <img src='threedots.png' class='threedots' />
         </div>
     </div>
@@ -289,6 +295,13 @@
                 </div>
                 <div id='remotemodulepanels' ></div>
             </div>
+            <div id='store-modulegroup-div'>
+                <div>
+                    <span style='position: absolute; left: 37px; top: 27px; font-size: 42px; cursor: pointer;' onclick='onClickModuleGroupDivBackArrow();'>&#x1f844;</span>
+                    <span id='store-modulegroup-title-span'></span>
+                </div>
+                <div id='store-modulegroup-content-div'></div>
+            </div>
         </div>
     </div>
 </div> <!-- storediv -->
@@ -309,18 +322,20 @@
 </div> <!-- systemmodule-div -->
 
 <div id='settingsdiv' >
-    <span>System configuration file:</span>
+    <span class="settingsdiv-elem">System configuration file:</span>
     <br />
-    <input id='sysconfpathspan' type='text' size='60' disabled />
+    <input id='sysconfpathspan' class="settingsdiv-elem" type='text' size='60' disabled />
     <br />
-    <span>Jobs dir: </span><input id='settings_jobs_dir_input' type='text' size='30' /><span id='server_user_span'></span>
+    <span class="settingsdiv-elem">Jobs dir: </span><input id='settings_jobs_dir_input' class="settingsdiv-elem" type='text' size='30' /><span id='server_user_span'></span>
     <br />
-    <span>Modules dir: </span><input id='settings_modules_dir_input' type='text' size='60' />
+    <span class="settingsdiv-elem">Modules dir: </span><input id='settings_modules_dir_input' class="settingsdiv-elem" type='text' size='60' />
     <br />
-    <button onclick='onClickSaveSystemConf();'>Save</button>
-    <button onclick='resetSystemConf();'>Reset</button>
+    <span class="settingsdiv-elem">Warn if number of input lines is more than: </span><input id='settings_num_input_line_warning_cutoff' class="settingsdiv-elem" type='text' size='10' />
     <br />
-    <button onclick='openTerminal();'>Open open-cravat terminal</button>
+    <button class="settingsdiv-elem" onclick='onClickSaveSystemConf();'>Save</button>
+    <button class="settingsdiv-elem" onclick='resetSystemConf();'>Reset</button>
+    <br />
+    <button class="settingsdiv-elem" onclick='openTerminal();'>Open open-cravat terminal</button>
 </div> <!-- settingsdiv -->
 
 <div id='store-noconnect-div'>

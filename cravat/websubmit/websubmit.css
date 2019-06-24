@@ -26,6 +26,7 @@ body * {
     height: 20px;
     border-radius: 8px 8px 0px 0px;
     border: 1px solid #939393
+    border-bottom: 0px;
 }
 
 #pageselect div:hover {
@@ -81,7 +82,6 @@ body * {
 }
 
 .divtitle {
-    font-weight: bold;
     font-size: 22px;
     color: #000000;
     top: -15px;
@@ -184,16 +184,6 @@ button {
 #annotator-select-div span {
 }
 
-#assembly-select-div {
-    position: absolute;
-    top: 12px;
-    right: 7px;
-    height: 21px;
-}
-
-#assembly-select {
-}
-
 .logo {
     width: 260px;
     position: relative;
@@ -208,9 +198,9 @@ button {
     padding-bottom: 20px; 
     height: 74px; 
     background-color: white; 
-    box-shadow: 0px 0px 20px gray; 
     left: 0px; 
     right: 0px;
+    border-bottom: 1px solid #a7a7a7;
 }
 
 #settingsdiv {
@@ -315,4 +305,14 @@ button {
     margin-top: 1px;
     margin-bottom: 1px;
     margin-left: 40px;
+}
+
+@font-face {
+    font-family: SegoeUI;
+    src:
+        local("Segoe UI"),
+        url(//c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.woff2) format("woff2"),
+        url(//c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.woff) format("woff"),
+        url(//c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.ttf) format("truetype");
+    font-weight: 400;
 }

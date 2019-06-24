@@ -46,16 +46,15 @@ class Tester():
         self.start_time = time.time()
         python_exc = sys.executable
         cmd_list = [python_exc, self.cravat_run, self.input_path, '-d', self.out_dir, '-t', 'text']
+        cmd_list.extend(['--repeat', 'reporter'])
         if (self.module.type == 'annotator'):
-            cmd_list.append('-a')
-            cmd_list.append(self.module.name)
+            cmd_list.extend(['-a', self.module.name])
         else:
-            cmd_list.append('--sa')
+            cmd_list.extend(['--skip', 'annotator'])
         print(' '.join(cmd_list))
         exit_code = subprocess.call(' '.join(cmd_list), shell=True, stdout=self.log, stderr=subprocess.STDOUT)
         if exit_code != 0:
             self._report('    CRAVAT non-zero exit code: ' + str(exit_code))
-        
         return exit_code
     
     # Read the two report header columns that define the module/column
@@ -148,12 +147,12 @@ class Tester():
         if (self.module.type == 'annotator'):
             self.verify_level(self.module.level, self.module.title)
         elif (self.module.type == 'mapper'):
-            self.verify_level('variant', 'Base Information')
-            self.verify_level('gene', 'Base Information')  
+            self.verify_level('variant', 'Variant Annotation')
+            self.verify_level('gene', 'Variant Annotation')  
         elif (self.module.type == 'converter'):
-            self.verify_level('variant', 'Base Information')
-            self.verify_level('sample', 'Base Information')
-            self.verify_level('mapping', 'Base Information')
+            self.verify_level('variant', 'Variant Annotation')
+            self.verify_level('sample', 'Variant Annotation')
+            self.verify_level('mapping', 'Variant Annotation')
                  
     
     #See if key and result are floating point numbers.  If so, allow tiny 

@@ -9,7 +9,7 @@ import json
 import sys
 import argparse
 import imp
-import yaml
+import oyaml as yaml
 import re
 from cravat import ConfigLoader
 from cravat import admin_util as au
@@ -233,11 +233,12 @@ def main ():
     try:
         r = requests.get(hello_url, timeout=0.01)
         # print('{}:{} already in use'.format(serv['host'], serv['port']))
-        print('OpenCRAVAT is already running.')
+        print('OpenCRAVAT is already running at port {}:{}.'.format(serv.get('host'), serv.get('port')))
         return
     except requests.exceptions.ConnectionError:
         pass
-    print('(******** Press Ctrl-C or Ctrl-Break to quit ********)')
+    print('OpenCRAVAT is served at {}:{}'.format(serv.get('host'), serv.get('port')))
+    print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')
     loop = asyncio.get_event_loop()
     loop.call_later(0.1, wakeup)
     server = WebServer(loop=loop)
