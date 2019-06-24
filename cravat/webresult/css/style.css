@@ -753,6 +753,7 @@ div.pq-select-menu>.pq-select-option-label {
 	width: fit-content;
 	cursor: pointer;
 	min-width: 10ch;
+	border-radius: 5px;
 }
 
 .sample-selector.sample-require {

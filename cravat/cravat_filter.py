@@ -460,9 +460,30 @@ class CravatFilter ():
         it = await self.cursor.fetchall()
         return it
 
+    async def make_filtered_sample_table (self):
+        q = 'drop table if exists sfilter'
+        await self.cursor.execute(q)
+        try: #TODO: always have these fields
+            req = self.filter['sample']['require']
+            rej = self.filter['sample']['reject']
+        except:
+            req = []
+            rej = []
+        q = 'create table sfilter as select base__uid from sample'
+        if req:
+            q += ' where base__sample_id in ({})'.format(
+                ', '.join(['"'+s+'"' for s in req])
+            )
+        if rej:
+            q += ' except select base__uid from sample where base__sample_id in ({})'.format(
+                ', '.join(['"'+s+'"' for s in rej])
+            )
+        await self.cursor.execute(q)
+
     async def make_filtered_uid_table (self):
         t = time.time()
         await self.cursor.execute('pragma synchronous=0')
+        await self.make_filtered_sample_table()
         level = 'variant'
         vtable = level
         vftable = level + '_filtered'
