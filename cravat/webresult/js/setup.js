@@ -121,7 +121,7 @@ function makeFilterTab (rightDiv) {
         var infoReset = resetTab['info'];
         resetTab = {'info': infoReset};
         showSpinner('filter', document.body);
-        makeSmartfilterJson();
+        makeSmartfilterJson(); //TODO: this, better
         loadData(false, null);
     });
 	rightDiv.append(filterApply);
@@ -261,6 +261,19 @@ function sfOverlayClickHandler (event) {
 }
 
 function makeSmartfilterJson () {
+	let fjs = {}
+	// Samples
+	let sampleSelectors = $('#sample-container').children();
+	fjs.sample = {'require':[],'reject':[]}
+	for (let i=0; i<sampleSelectors.length; i++) {
+		let sel = $(sampleSelectors[i]);
+		if (sel.hasClass('sample-require')) {
+			fjs.sample.require.push(sel.text());
+		} else if (sel.hasClass('sample-reject')) {
+			fjs.sample.reject.push(sel.text());
+		}
+	}
+	// Smartfilters
 	let sfWrapDiv = $('#sf-container');
 	let sfDivs = sfWrapDiv.children('div');
 	let fullSf = {operator: 'and', rules:[]}
@@ -277,7 +290,8 @@ function makeSmartfilterJson () {
 		let sfResult = addSfValue(sfDef.filter, val);
 		fullSf.rules.push(sfResult);
 	}
-	filterJson = {'variant': fullSf};
+	fjs.variant = fullSf;
+	filterJson = fjs;
 }
 
 function addSfValue(topRule, value) {
