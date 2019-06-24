@@ -116,7 +116,8 @@ def submit ():
         server = get_server()
         global protocol
         global server_ready
-        if server_ready:
+        global servermode
+        if server_ready and servermode:
             webbrowser.open(protocol + '{host}:{port}/server/login.html'.format(host=server.get('host'), port=server.get('port')))
         else:
             webbrowser.open(protocol + '{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port')))

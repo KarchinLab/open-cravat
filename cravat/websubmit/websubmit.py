@@ -36,27 +36,44 @@ class FileRouter(object):
         self.db_extension = '.sqlite'
         self.log_extension = '.log'
 
-    async def get_jobs_dir (self, request):
+    async def get_jobs_dirs (self, request):
         root_jobs_dir = au.get_jobs_dir()
         global servermode
         if servermode:
-            #r = await cravatserver.is_loggedin(request)
-            r = True
-            if r == True:
-                username = await cravatserver.get_username(request)
-            else:
-                return None
+            username = await cravatserver.get_username(request)
         else:
             username = 'default'
-        jobs_dir = os.path.join(root_jobs_dir, username)
-        return jobs_dir
+        if username == 'admin':
+            jobs_dirs = []
+            fns = os.listdir(root_jobs_dir)
+            for fn in fns:
+                path = os.path.join(root_jobs_dir, fn)
+                if os.path.isdir(path):
+                    jobs_dirs.append(path)
+        else:
+            jobs_dir = os.path.join(root_jobs_dir, username)
+            if os.path.exists(jobs_dir) == False:
+                os.mkdir(jobs_dir)
+            jobs_dirs = [jobs_dir]
+        return jobs_dirs
 
     async def job_dir(self, request, job_id):
-        jobs_dir = await self.get_jobs_dir(request)
-        if jobs_dir == None:
+        jobs_dirs = await self.get_jobs_dirs(request)
+        if jobs_dirs == None:
             return None
         else:
-            return os.path.join(jobs_dir, job_id)
+            if servermode:
+                username = await cravatserver.get_username(request)
+                if username != 'admin':
+                    return os.path.join(jobs_dirs[0], job_id)
+                else:
+                    for jobs_dir in jobs_dirs:
+                        job_dir = os.path.join(jobs_dir, job_id)
+                        if os.path.exists(job_dir):
+                            return job_dir
+                    return None
+            else:
+                return os.path.join(jobs_dirs[0], job_id)
 
     async def job_input(self, request, job_id):
         job_dir, statusjson = await self.job_status(request, job_id)
@@ -121,31 +138,6 @@ class FileRouter(object):
                     statusjson = yaml.load(f)
         return job_dir, statusjson
 
-    '''
-    def get_orig_input_path (self, request, job_id):
-        job_dir = await self.job_dir(request, job_id)
-        fns = os.listdir(job_dir)
-        orig_input_fname = None
-        for fn in fns:
-            if fn.endswith('.status.json'):
-                with open(os.path.join(job_dir, fn)) as f:
-                    statusjson = json.loads(f.readline())
-                    if 'orig_input_fname' in statusjson:
-                        orig_input_fname = statusjson['orig_input_fname']
-            elif fn.endswith('.info.yaml'):
-                with open(os.path.join(job_dir, fn)) as f:
-                    infojson = yaml.load(f)
-                    if 'orig_input_fname' in infojson:
-                        orig_input_fname = infojson['orig_input_fname']
-        if orig_input_fname is not None:
-            orig_input_path = os.path.join(job_dir, orig_input_fname + '.log')
-            if os.path.exists(orig_input_path) == False:
-                orig_input_path = None
-        else:
-            orig_input_path = None
-        return orig_input_path
-    '''
-
     async def job_log (self, request, job_id):
         run_path = await self.job_run_path(request, job_id)
         if run_path is not None:
@@ -188,10 +180,12 @@ async def submit (request):
     global filerouter
     global job_tracker
     global servermode
-    r = await cravatserver.is_loggedin(request)
-    if servermode and r == False:
-        return web.json_response({'status': 'notloggedin'})
-    jobs_dir = await filerouter.get_jobs_dir(request)
+    if servermode:
+        r = await cravatserver.is_loggedin(request)
+        if r == False:
+            return web.json_response({'status': 'notloggedin'})
+    jobs_dirs = await filerouter.get_jobs_dirs(request)
+    jobs_dir = jobs_dirs[0]
     job_id = get_next_job_id()
     job_dir = os.path.join(jobs_dir, job_id)
     os.makedirs(job_dir, exist_ok=True)
@@ -305,14 +299,17 @@ def find_files_by_ending (d, ending):
             files.append(fn)
     return files
 
-async def get_job (job_id, request):
+async def get_job (request, job_id):
     global filerouter
-    jobs_dir = await filerouter.get_jobs_dir(request)
+    '''
+    jobs_dirs = await filerouter.get_jobs_dirs(request)
     if jobs_dir is None:
         return None
     if os.path.exists(jobs_dir) == False:
         os.mkdir(jobs_dir)
     job_dir = os.path.join(jobs_dir, job_id)
+    '''
+    job_dir = await filerouter.job_dir(request, job_id)
     if os.path.exists(job_dir) == False:
         return None
     if os.path.isdir(job_dir) == False:
@@ -346,37 +343,11 @@ async def get_job (job_id, request):
     )
     existing_reports = []
     for report_type in get_valid_report_types():
-        # ext = filerouter.report_extensions.get(report_type, '.'+report_type)
-        # job_input = await filerouter.job_input(request, job_id)
-        # if job_input is None:
-        #     continue
-        # report_fname = job_input + ext
-        # report_file = os.path.join(job_dir, report_fname)
         report_path = await filerouter.job_report(request, job_id, report_type)
         if report_path is not None and os.path.exists(report_path):
             existing_reports.append(report_type)
     job.set_info_values(reports=existing_reports)
     return job
-
-async def get_jobs (request):
-    global filerouter
-    jobs_dir = await filerouter.get_jobs_dir(request)
-    if jobs_dir is None:
-        return web.json_response([])
-    if os.path.exists(jobs_dir) == False:
-        os.mkdir(jobs_dir)
-    queries = request.rel_url.query
-    ids = json.loads(queries['ids'])
-    jobs = []
-    for job_id in ids:
-        try:
-            job = await get_job(job_id, request)
-            if job is not None:
-                jobs.append(job)
-        except:
-            traceback.print_exc()
-            continue
-    return web.json_response([job.get_info_dict() for job in jobs])
 
 async def get_all_jobs (request):
     global servermode
@@ -385,23 +356,24 @@ async def get_all_jobs (request):
         if r == False:
             return web.json_response({'status': 'notloggedin'})
     global filerouter
-    jobs_dir = await filerouter.get_jobs_dir(request)
-    if jobs_dir is None:
+    jobs_dirs = await filerouter.get_jobs_dirs(request)
+    if jobs_dirs is None:
         return web.json_response([])
-    if os.path.exists(jobs_dir) == False:
-        os.mkdir(jobs_dir)
-    ids = os.listdir(jobs_dir)
-    ids.sort(reverse=True)
     all_jobs = []
-    for job_id in ids:
-        try:
-            job = await get_job(job_id, request)
-            if job is None:
+    for jobs_dir in jobs_dirs:
+        if os.path.exists(jobs_dir) == False:
+            os.mkdir(jobs_dir)
+        ids = os.listdir(jobs_dir)
+        ids.sort(reverse=True)
+        for job_id in ids:
+            try:
+                job = await get_job(request, job_id)
+                if job is None:
+                    continue
+                all_jobs.append(job)
+            except:
+                traceback.print_exc()
                 continue
-            all_jobs.append(job)
-        except:
-            traceback.print_exc()
-            continue
     return web.json_response([job.get_info_dict() for job in all_jobs])
 
 async def view_job(request):
@@ -632,7 +604,6 @@ routes.append(['GET', '/submit/servermode', get_servermode])
 routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
-routes.append(['GET', '/submit/getjobs', get_jobs])
 
 if __name__ == '__main__':
     app = web.Application()

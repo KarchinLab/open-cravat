@@ -1507,7 +1507,6 @@ function getServermode () {
 }
 
 function setupNoServerMode () {
-    document.getElementById('accountdiv').style.display = 'none';
     document.getElementById('headerdiv').style.display = 'block';
     document.getElementById('submitdiv').style.display = 'block';
     populateJobs();
@@ -1518,16 +1517,8 @@ function setupServerMode () {
     $.getScript('/server/cravatserver.js', function () {
         checkLogged()
     });
-    //document.getElementById('accountdiv').style.display = 'block';
     document.getElementById('settingsdiv').style.display = 'none';
     document.getElementById('threedotsdiv').style.display = 'none';
-}
-
-function setupAdminMode () {
-    //document.getElementById('accountdiv').style.display = 'block';
-    document.getElementById('settingsdiv').style.display = 'none';
-    document.getElementById('threedotsdiv').style.display = 'block';
-    $('#storediv_tabhead[value=storediv]')[0].style.display = 'inline-block';
 }
 
 function clearJobTable () {
@@ -1781,7 +1772,7 @@ function websubmit_run () {
             return;
         }
         $.ajax({
-            url: '/submit/getjobs',
+            url: '/submit/jobs',
             data: {'ids': JSON.stringify(runningJobIds)},
             ajax: true,
             success: function (response) {

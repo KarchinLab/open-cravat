@@ -19,8 +19,8 @@ import shutil
 import copy
 import aiosqlite3
 import importlib
-if importlib.util.find_spec('cravatserveraddon') is not None:
-    import cravatserveraddon
+if importlib.util.find_spec('cravatserver') is not None:
+    import cravatserver
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
@@ -230,7 +230,7 @@ async def install_widgets_for_module (request):
 
 async def uninstall_module (request):
     global servermode
-    r = await cravatserveraddon.is_admin_loggedin(request)
+    r = await cravatserver.is_admin_loggedin(request)
     if servermode and r == False:
         response = 'failure'
     else:
@@ -287,7 +287,7 @@ async def connect_websocket (request):
 async def queue_install (request):
     global install_queue
     global servermode
-    r =  await cravatserveraddon.is_admin_loggedin(request)
+    r =  await cravatserver.is_admin_loggedin(request)
     if servermode and r == False:
         return web.Response(text='notadmin')
     queries = request.rel_url.query
@@ -310,7 +310,7 @@ async def get_base_modules (request):
 
 async def install_base_modules (request):
     global servermode
-    r = await cravatserveraddon.is_admin_loggedin(request)
+    r = await cravatserver.is_admin_loggedin(request)
     if servermode and r == False:
         response = 'failed'
     else:
