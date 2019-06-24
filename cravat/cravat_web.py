@@ -28,11 +28,11 @@ import requests
 import traceback
 import ssl
 import importlib
-if importlib.util.find_spec('cravatserveraddon') is not None:
-    import cravatserveraddon
-    server_addon_ready = True
+if importlib.util.find_spec('cravatserver') is not None:
+    import cravatserver
+    server_ready = True
 else:
-    server_addon_ready = False
+    server_ready = False
 
 donotopenbrowser = False
 ssl_enabled = False
@@ -69,11 +69,11 @@ def check_donotopenbrowser ():
     servermode = args.servermode
     wu.servermode = args.servermode
     ws.servermode = args.servermode
-    global server_addon_ready
-    if server_addon_ready:
-        cravatserveraddon.servermode = servermode
-    if servermode and server_addon_ready == False:
-        print('open-cravat-server-addon is required to run wcravat in server mode.\nRun "pip install open-cravat-server-addon" to get the package.')
+    global server_ready
+    if server_ready:
+        cravatserver.servermode = servermode
+    if servermode and server_ready == False:
+        print('open-cravat-server package is required to run OpenCRAVAT Server.\nRun "pip install open-cravat-server" to get the package.')
         exit()
 
 def result ():
@@ -115,8 +115,8 @@ def submit ():
     if not donotopenbrowser:
         server = get_server()
         global protocol
-        global server_addon_ready
-        if server_addon_ready:
+        global server_ready
+        if server_ready:
             webbrowser.open(protocol + '{host}:{port}/server/login.html'.format(host=server.get('host'), port=server.get('port')))
         else:
             webbrowser.open(protocol + '{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port')))
@@ -182,8 +182,8 @@ class WebServer (object):
 
     async def start (self):
         self.app = web.Application(loop=self.loop)
-        if server_addon_ready:
-            cravatserveraddon.setup(self.app)
+        if server_ready:
+            cravatserver.setup(self.app)
         self.setup_routes()
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
@@ -195,9 +195,9 @@ class WebServer (object):
         routes.extend(ws.routes)
         routes.extend(wr.routes)
         routes.extend(wu.routes)
-        global server_addon_ready
-        if server_addon_ready:
-            cravatserveraddon.add_routes(self.app.router)
+        global server_ready
+        if server_ready:
+            cravatserver.add_routes(self.app.router)
         for route in routes:
             method, path, func_name = route
             self.app.router.add_route(method, path, func_name)

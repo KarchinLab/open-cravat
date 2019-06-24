@@ -19,8 +19,8 @@ import signal
 import multiprocessing as mp
 import asyncio
 import importlib
-if importlib.util.find_spec('cravatserveraddon') is not None:
-    import cravatserveraddon
+if importlib.util.find_spec('cravatserver') is not None:
+    import cravatserver
 
 cfl = ConfigLoader()
 
@@ -40,9 +40,10 @@ class FileRouter(object):
         root_jobs_dir = au.get_jobs_dir()
         global servermode
         if servermode:
-            r = await cravatserveraddon.is_loggedin(request)
+            #r = await cravatserver.is_loggedin(request)
+            r = True
             if r == True:
-                username = await cravatserveraddon.get_username(request)
+                username = await cravatserver.get_username(request)
             else:
                 return None
         else:
@@ -187,7 +188,7 @@ async def submit (request):
     global filerouter
     global job_tracker
     global servermode
-    r = await cravatserveraddon.is_loggedin(request)
+    r = await cravatserver.is_loggedin(request)
     if servermode and r == False:
         return web.json_response({'status': 'notloggedin'})
     jobs_dir = await filerouter.get_jobs_dir(request)
@@ -266,7 +267,7 @@ async def submit (request):
     job.set_info_values(status=status)
     # admin.sqlite
     if servermode:
-        await cravatserveraddon.add_job_info(request, job, job_options)
+        await cravatserver.add_job_info(request, job, job_options)
     return web.json_response(job.get_info_dict())
 
 def count_lines(f):
@@ -380,7 +381,7 @@ async def get_jobs (request):
 async def get_all_jobs (request):
     global servermode
     if servermode:
-        r = await cravatserveraddon.is_loggedin(request)
+        r = await cravatserver.is_loggedin(request)
         if r == False:
             return web.json_response({'status': 'notloggedin'})
     global filerouter

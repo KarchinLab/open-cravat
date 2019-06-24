@@ -25,7 +25,7 @@ body * {
     transition: all 0.3s ease;
     vertical-align: bottom;
     cursor: pointer;
-    background-color: #f0f0f0;
+    background-color: #e0e0e0;
     color: #000000;
     height: 20px;
     border-radius: 8px 8px 0px 0px;
@@ -34,7 +34,7 @@ body * {
 }
 
 #pageselect div:hover {
-    background-color: #dddddd;
+    background-color: #cccccc;
     color: #000000;
 }
 
@@ -223,10 +223,6 @@ button {
     position: relative;
     border-bottom: 1px dotted #cbcbcb;
     padding-bottom: 20px;
-}
-
-#submitdiv {
-    display: none;
 }
 
 #submitcontentdiv {

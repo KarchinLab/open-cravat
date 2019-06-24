@@ -1510,19 +1510,21 @@ function setupNoServerMode () {
     document.getElementById('accountdiv').style.display = 'none';
     document.getElementById('headerdiv').style.display = 'block';
     document.getElementById('submitdiv').style.display = 'block';
+    populateJobs();
 }
 
 function setupServerMode () {
-    $.getScript('/server/server.js', function () {
+    $('head').append('<link rel="stylesheet" type="text/css" href="/server/cravatserver.css">');
+    $.getScript('/server/cravatserver.js', function () {
         checkLogged()
     });
-    document.getElementById('accountdiv').style.display = 'block';
+    //document.getElementById('accountdiv').style.display = 'block';
     document.getElementById('settingsdiv').style.display = 'none';
     document.getElementById('threedotsdiv').style.display = 'none';
 }
 
 function setupAdminMode () {
-    document.getElementById('accountdiv').style.display = 'block';
+    //document.getElementById('accountdiv').style.display = 'block';
     document.getElementById('settingsdiv').style.display = 'none';
     document.getElementById('threedotsdiv').style.display = 'block';
     $('#storediv_tabhead[value=storediv]')[0].style.display = 'inline-block';
@@ -1759,9 +1761,6 @@ function websubmit_run () {
     getBaseModuleNames();
     getRemote();
     addListeners();
-    if (servermode == false) {
-        populateJobs();
-    }
     populateAnnotators();
     /*
     if (servermode == false) {
