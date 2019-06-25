@@ -95,6 +95,20 @@ function makeFilterTab (rightDiv) {
 			.attr('title',sid);
 		sampleContainer.append(sampleBox);
 	}
+	// Gene selector
+	let geneContainer = $(getEl('div'))
+		.attr('id','gene-list-container');
+	rightDiv.append(geneContainer);
+	let geneTextArea = $(getEl('textarea'))
+		.attr('id','gene-list-text')
+		.change(onGeneListSelectorChange);
+	geneContainer.append(geneTextArea);
+	let geneFileInput = $(getEl('input'))
+		.attr('type','file')
+		.attr('id','gene-list-file')
+		.change(onGeneListSelectorChange);
+	geneContainer.append(geneFileInput);
+
 	// Smartfilters
 	let sfContainer = $(getEl('div'))
 		.attr('id','sf-container');
@@ -125,6 +139,24 @@ function makeFilterTab (rightDiv) {
         loadData(false, null);
     });
 	rightDiv.append(filterApply);
+}
+
+function onGeneListSelectorChange(event) {
+	let target = $(event.target);
+	let id = target.attr('id');
+	if (id === 'gene-list-text') {
+		let textArea = target;
+		let fileInput = $('#gene-list-file');
+		fileInput.val('');
+	} else if (id === 'gene-list-file') {
+		let fileInput = target;
+		let textArea = $('#gene-list-text');
+		let fr = new FileReader();
+		fr.onloadend = (event) => {
+			textArea.val(event.target.result)
+		}
+		fr.readAsText(fileInput.prop('files')[0])
+	}
 }
 
 function onSampleSelectorClick(event) {
