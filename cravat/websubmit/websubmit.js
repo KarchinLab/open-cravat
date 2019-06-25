@@ -822,6 +822,59 @@ function populateAnnotators () {
     });
 }
 
+function buildAnnotatorGroupSelector () {
+    var annotCheckDiv = document.getElementById('annotator-group-select-div');
+    $(annotCheckDiv).empty();
+    var div = getEl('div');
+    div.className = 'div-header';
+    div.textContent = 'Tags';
+    addEl(annotCheckDiv, div);
+    var div = getEl('div');
+    div.className = 'annotator-group-select';
+    addEl(annotCheckDiv, div);
+    var tagToAnnots = {};
+    var checkDatas = [];
+    for (var i = 0; i < tagsCollected.length; i++) {
+        var tag = tagsCollected[i];
+        checkDatas.push({
+            name: tag,
+            value: tag,
+            label: tag,
+            checked: false,
+            kind: 'tag',
+        });
+    }
+    buildCheckBoxGroup(checkDatas, div);
+    addEl(annotCheckDiv, getEl('hr'));
+    var checkDatas = [];
+    var div = getEl('div');
+    div.className = 'annotator-group-select';
+    addEl(annotCheckDiv, div);
+    var groupNames = Object.keys(installedGroups);
+    groupNames.sort();
+    for (var i = 0; i < groupNames.length; i++) {
+        var name = groupNames[i].replace(/_group$/, '');
+        checkDatas.push({
+            name: name,
+            value: name,
+            label: name,
+            checked: false,
+            kind: 'group',
+        });
+    }
+    buildCheckBoxGroup(checkDatas, div);
+    addEl(annotCheckDiv, getEl('hr'));
+    var height = annotCheckDiv.offsetHeight;
+    var stylesheets = window.document.styleSheets;
+    for (var i = 0; i <= stylesheets.length; i++) {
+        var stylesheet = stylesheets[i];
+        if (stylesheet.href.indexOf('websubmit.css') >= 0) {
+            stylesheet.insertRule('#annotator-group-select-div {max-height: ' + height + 'px;}');
+            break;
+        }
+    }
+}
+
 function buildAnnotatorsSelector () {
     var annotCheckDiv = document.getElementById('annotator-select-div');
     let annotators = GLOBALS.annotators;
@@ -841,7 +894,8 @@ function buildAnnotatorsSelector () {
             name: annotInfo.name,
             value: annotInfo.name,
             label: annotInfo.title,
-            checked: true
+            checked: false,
+            kind: 'module',
         })
     }
     buildCheckBoxGroup(checkDatas, annotCheckDiv);
@@ -1077,25 +1131,58 @@ function getModuleDetailDiv (moduleName) {
 function buildCheckBoxGroup (checkDatas, parentDiv) {
     parentDiv = (parentDiv === undefined) ? getEl('div') : parentDiv;
     emptyElement(parentDiv);
-    parentDiv.className = 'checkbox-group';
+    parentDiv.classList.add('checkbox-group');
     // all-none buttons
     var allNoneDiv = getEl('div');
     addEl(parentDiv, allNoneDiv);
     allNoneDiv.className = 'checkbox-group-all-none-div';
     var parentId = parentDiv.id;
-    if (parentId != 'report-select-div') {
-        // all button
-        allButton = getEl('button');
-        addEl(allNoneDiv, allButton);
-        allButton.className = 'checkbox-group-all-button';
-        allButton.textContent = 'All';
-        allButton.addEventListener('click', function (evt) {checkBoxGroupAllNoneHandler (evt);});
-        // none button
-        noneButton = getEl('button');
-        addEl(allNoneDiv, noneButton);
-        noneButton.className = 'checkbox-group-none-button';
-        noneButton.textContent = 'None';
-        noneButton.addEventListener('click', function (evt) {checkBoxGroupAllNoneHandler (evt);});
+    if (parentId == 'annotator-select-div') {
+        if (servermode == false) {
+            var btn = getEl('button');
+            btn.className = 'checkbox-group-all-button';
+            btn.textContent = 'All';
+            btn.addEventListener('click', function (evt) {
+                checkBoxGroupAllNoneHandler (evt);
+            });
+            addEl(allNoneDiv, btn);
+        }
+        var btn = getEl('button');
+        btn.className = 'checkbox-group-none-button';
+        btn.textContent = 'Clear';
+        btn.addEventListener('click', function (evt) {
+            checkBoxGroupAllNoneHandler (evt);
+        });
+        addEl(allNoneDiv, btn);
+        var div = getEl('div');
+        div.id = 'submit-annotator-set-switch';
+        var table = getEl('table');
+        var tr = getEl('tr');
+        var td = getEl('td');
+        var span = getEl('span');
+        span.textContent = 'Annotator sets';
+        addEl(td, span);
+        addEl(tr, td);
+        addEl(table, tr);
+        tr = getEl('tr');
+        td = getEl('td');
+        var label = getEl('label');
+        label.className = 'slider-switch';
+        var input = getEl('input');
+        input.type = 'checkbox';
+        input.checked = true;
+        input.addEventListener('change', function (evt) {
+            onSubmitClickTagBoxCheck(evt);
+        });
+        var span = getEl('span');
+        span.className = 'slider';
+        addEl(label, input);
+        addEl(label, span);
+        addEl(td, label);
+        addEl(tr, td);
+        addEl(table, tr);
+        addEl(div, table);
+        addEl(allNoneDiv, div);
     }
     // flexbox
     var flexbox = getEl('div');
@@ -1107,24 +1194,38 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         var checkData = checkDatas[i];
         var checkDiv = getEl('div');
         checkDiv.classList.add('checkbox-group-element');
+        checkDiv.setAttribute('name', checkData.name);
+        checkDiv.setAttribute('kind', checkData.kind);
         addEl(flexbox, checkDiv);
         var check = getEl('input');
         check.className = 'checkbox-group-check';
         check.setAttribute('type', 'checkbox');
         check.setAttribute('name', checkData.name);
         check.setAttribute('value', checkData.value);
-        check.setAttribute('checked', checkData.check);
+        check.checked = checkData.checked;
+        if (check.kind == 'group') {
+            check.setAttribute('members', checkData.members);
+        }
+        check.setAttribute('kind', checkData.kind);
+        if (parentId == 'annotator-select-div') {
+            check.id = 'annotator-select-div-input-' + checkData.name;
+        }
+        if (parentDiv.classList.contains('annotator-group-select')) {
+            check.addEventListener('change', function (evt) {
+                onChangeAnnotatorGroupCheckbox(evt);
+            });
+        }
         addEl(checkDiv, check);
         var label = getEl('span');
-        label.style.cursor = 'pointer';
-        label.style.textDecorationLine = 'underline';
-        label.style.textDecorationStyle = 'dotted';
-        label.style.textDecorationColor = '#aaaaaa';
+        //label.style.cursor = 'pointer';
+        //label.style.textDecorationLine = 'underline';
+        //label.style.textDecorationStyle = 'dotted';
+        //label.style.textDecorationColor = '#aaaaaa';
         label.setAttribute('module', checkData.value);
         label.textContent = checkData.label + ' ';
-        label.className = 'moduledetailbutton';
+        //label.className = 'moduledetailbutton';
         addEl(checkDiv, label);
-        label.addEventListener('click', function (evt) {
+        /*label.addEventListener('click', function (evt) {
             var annotchoosediv = document.getElementById('annotchoosediv');
             var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
             if (moduledetaildiv != null) {
@@ -1132,10 +1233,47 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
             }
             var detaildiv = makeModuleDetailDialog(evt.target.getAttribute('module'));
             addEl(annotchoosediv, detaildiv);
-        });
+        });*/
         checkDivs.push(checkDiv);
     }
     return parentDiv;
+}
+
+function onChangeAnnotatorGroupCheckbox (evt) {
+    var $groupCheckboxes = $('div.checkbox-group-element[kind=tag] input:checked,div.checkbox-group-element[kind=group] input:checked');
+    var $moduleCheckboxes = $('div.checkbox-group-element[kind=module]');
+    if ($groupCheckboxes.length == 0) {
+        $moduleCheckboxes.addClass('show').removeClass('hide');
+    } else {
+        $moduleCheckboxes.addClass('hide').removeClass('show');
+        for (var j = 0; j < $groupCheckboxes.length; j++) {
+            var checkbox = $groupCheckboxes[j];
+            var name = checkbox.name;
+            var kind = checkbox.getAttribute('kind');
+            var modules = Object.keys(localModuleInfo);
+            if (kind == 'tag') {
+                for (var i = 0; i < modules.length; i++) {
+                    var module = localModuleInfo[modules[i]];
+                    var c = $('div.checkbox-group-element[kind=module][name=' + module.name + ']')[0];
+                    if (c != undefined) {
+                        if (module.tags.indexOf(name) >= 0) {
+                            c.classList.add('show');
+                            c.classList.remove('hide');
+                        }
+                    }
+                }
+            } else if (kind == 'group') {
+                var members = installedGroups[name + '_group'];
+                for (var i = 0; i < members.length; i++) {
+                    var c = $('div.checkbox-group-element[kind=module][name=' + members[i] + ']')[0];
+                    if (c != null) {
+                        c.classList.add('show');
+                        c.classList.remove('hide');
+                    }
+                }
+            }
+        }
+    }
 }
 
 function checkBoxGroupAllNoneHandler (event) {
@@ -1151,6 +1289,16 @@ function checkBoxGroupAllNoneHandler (event) {
     for (var i = 0; i<checkElems.length; i++){
         var checkElem = checkElems[i];
         checkElem.checked = checked;
+    }
+    if (elem[0].parentElement.parentElement.id == 'annotator-select-div') {
+        var chk = null;
+        var cls = elem[0].className
+        if (cls == 'checkbox-group-all-button') {
+            chk = true;
+        } else if (cls == 'checkbox-group-none-button') {
+            chk = false;
+        }
+        $('#annotator-group-select-div input[type=checkbox]').prop('checked', chk);
     }
 }
 
@@ -1340,53 +1488,11 @@ function resetSystemConf () {
 }
 
 function getServermode () {
-    $.ajax({
-        url: '/submit/servermode',
-        type: 'get',
-        success: function (response) {
-            servermode = response['servermode'];
-            if (servermode == false) {
-                setupNoServerMode();
-            } else {
-                setupServerMode();
-            }
-        }
-    });
+	setupNoServerMode();
 }
 
 function setupNoServerMode () {
     document.getElementById('accountdiv').style.display = 'none';
-}
-
-function setupServerMode () {
-    document.getElementById('accountdiv').style.display = 'block';
-    document.getElementById('settingsdiv').style.display = 'none';
-    document.getElementById('settingspageselect').style.display = 'none';
-    checkLogged();
-}
-
-function setupAdminMode () {
-    document.getElementById('accountdiv').style.display = 'block';
-    document.getElementById('settingsdiv').style.display = 'block';
-    document.getElementById('settingspageselect').style.display = 'inline-block';
-}
-
-function showLoggedControl (username) {
-    var userDiv = document.getElementById('userdiv');
-    userDiv.textContent = username;
-    userDiv.style.display = 'inline-block';
-    document.getElementById('logoutdiv').style.display = 'inline-block';
-    document.getElementById('loginsignupbutton').style.display = 'none';
-    document.getElementById('settingspageselect').style.display = 'none';
-}
-
-function doAfterLogin () {
-    showLoggedControl(username);
-    hideloginsignupdiv();
-    if (username == 'admin') {
-        setupAdminMode();
-    }
-    populateJobs();
 }
 
 function msgAccountDiv (msg) {
@@ -1394,202 +1500,6 @@ function msgAccountDiv (msg) {
     setTimeout(function () {
         document.getElementById('accountmsgdiv').textContent = '';
     }, 3000);
-}
-
-function login () {
-    var usernameSubmit = document.getElementById('login_username').value;
-    var passwordSubmit = document.getElementById('login_password').value;
-    $.ajax({
-        url: '/submit/login',
-        data: {'username':usernameSubmit, 'password':passwordSubmit},
-        success: function (response) {
-            if (response == 'success') {
-                username = usernameSubmit;
-                logged = true;
-                doAfterLogin();
-            } else if (response == 'fail') {
-                msgAccountDiv('Login failed');
-            }
-        }
-    });
-}
-
-function logout () {
-    $.ajax({
-        url: '/submit/logout',
-        success: function (response) {
-            if (response == 'success') {
-                username = '';
-                logged = false;
-                populateJobs();
-                var userDiv = document.getElementById('userdiv');
-                userDiv.textContent = '';
-                userDiv.style.display = 'none';
-                document.getElementById('loginsignupbutton').style.display = 'inline-block';
-                document.getElementById('logoutdiv').style.display = 'none';
-            }
-        }
-    });
-}
-
-function getPasswordQuestion () {
-    var email = document.getElementById('forgotpasswordemail').value;
-    $.ajax({
-        url: '/submit/passwordquestion',
-        data: {'email': email},
-        success: function (response) {
-            var status = response['status'];
-            var msg = response['msg'];
-            if (status == 'fail') {
-                msgAccountDiv(msg);
-            } else {
-                document.getElementById('forgotpasswordgetquestiondiv').style.display = 'none';
-                document.getElementById('forgotpasswordquestion').textContent = msg;
-                document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'inline-block';
-            }
-        }
-    });
-}
-
-function showSignupDiv () {
-    document.getElementById('logindiv').style.display = 'none';
-    document.getElementById('signupdiv').style.display = 'block';
-}
-
-function submitForgotPasswordAnswer () {
-    var email = document.getElementById('forgotpasswordemail').value;
-    var answer = document.getElementById('forgotpasswordanswer').value;
-    $.ajax({
-        url: '/submit/passwordanswer',
-        data: {'email': email, 'answer': answer},
-        success: function (response) {
-            var success = response['success'];
-            var msg = response['msg'];
-            if (success == true) {
-                document.getElementById('forgotpassworddiv').style.display = 'none';
-                document.getElementById('forgotpasswordemail').textContent = '';
-                document.getElementById('forgotpasswordquestion').textContent = '';
-                document.getElementById('forgotpasswordanswer').textContent = '';
-                alert('Password has been reset to ' + msg);
-            } else {
-                msgAccountDiv(msg);
-            }
-        }
-    });
-}
-
-function forgotPassword () {
-    document.getElementById('forgotpasswordquestion').textContent = '';
-    document.getElementById('forgotpasswordgetquestiondiv').style.display = 'block';
-    document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'none';
-    document.getElementById('forgotpassworddiv').style.display = 'block';
-}
-
-function changePassword () {
-    var div = document.getElementById('changepassworddiv');
-    var display = div.style.display;
-    if (display == 'block') {
-        display = 'none';
-    } else {
-        display = 'block';
-    }
-    div.style.display = display;
-}
-
-function submitNewPassword () {
-    var oldpassword = document.getElementById('changepasswordoldpassword').value;
-    var newpassword = document.getElementById('changepasswordnewpassword').value;
-    var retypenewpassword = document.getElementById('changepasswordretypenewpassword').value;
-    if (newpassword != retypenewpassword) {
-        msgAccountDiv('New password mismatch');
-        return;
-    }
-    $.ajax({
-        url: '/submit/changepassword',
-        data: {'oldpassword': oldpassword,
-               'newpassword': newpassword},
-        success: function (response) {
-            if (response == 'success') {
-                msgAccountDiv('Password changed successfully.');
-                document.getElementById('changepassworddiv').style.display = 'none';
-            } else {
-                msgAccountDiv(response);
-            }
-        }
-    });
-}
-
-function hideloginsignupdiv () {
-    document.getElementById('loginsignupdialog').style.display = 'none';
-}
-
-function toggleloginsignupdiv () {
-    document.getElementById('logindiv').style.display = 'block';
-    document.getElementById('signupdiv').style.display = 'none';
-    var dialog = document.getElementById('loginsignupdialog');
-    var display = dialog.style.display;
-    if (display == 'none') {
-        display = 'block';
-    } else {
-        display = 'none';
-    }
-    dialog.style.display = display;
-}
-
-function closeLoginSignupDialog (evt) {
-    document.getElementById("loginsignupdialog").style.display="none";
-}
-
-function signupSubmit () {
-    var username = document.getElementById('signupemail').value.trim();
-    var password = document.getElementById('signuppassword').value.trim();
-    var retypepassword = document.getElementById('signupretypepassword').value.trim();
-    var question = document.getElementById('signupquestion').value.trim();
-    var answer = document.getElementById('signupanswer').value.trim();
-    if (username == '' || password == '' || retypepassword == '' || question == '' || answer == '') {
-        msgAccountDiv('Fill all the blanks.');
-        return;
-    }
-    if (password != retypepassword) {
-        msgAccountDiv('Password mismatch');
-        return;
-    }
-    $.ajax({
-        url: '/submit/signup',
-        data: {'username': username, 'password': password, 'question': question, 'answer': answer},
-        success: function (response) {
-            if (response == 'already registered') {
-                msgAccountDiv('Already registered');
-            } else if (response == 'success') {
-                populateJobs();
-                msgAccountDiv('Account created');
-                document.getElementById('loginsignupbutton').style.display = 'none';
-                var userDiv = document.getElementById('userdiv');
-                userDiv.textContent = username;
-                userDiv.style.display = 'inline-block';
-                document.getElementById('logoutdiv').style.display = 'inline-block';
-                toggleloginsignupdiv();
-                document.getElementById('loginsignupbutton').style.display = 'none';
-                document.getElementById('signupdiv').style.display = 'none';
-            } else if (response == 'fail') {
-                msgAccountDiv('Signup failed');
-            }
-        }
-    });
-}
-
-function checkLogged () {
-    $.ajax({
-        url: '/submit/checklogged',
-        success: function (response) {
-            logged = response['logged'];
-            if (logged == true) {
-                username = response['email'];
-                logged = true;
-                doAfterLogin();
-            }
-        }
-    });
 }
 
 function populatePackageVersions () {
@@ -1795,6 +1705,15 @@ function getJobById (jobId) {
 function updateRunningJobTrs (job) {
     populateJobTr(job);
     populateJobDetailTr(job);
+}
+
+function onSubmitClickTagBoxCheck (evt) {
+    var div = document.getElementById('annotator-group-select-div');
+    if (evt.target.checked) {
+        div.className = 'on';
+    } else {
+        div.className = 'off';
+    }
 }
 
 function websubmit_run () {

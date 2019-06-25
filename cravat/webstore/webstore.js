@@ -27,6 +27,7 @@ var defaultWidgetNames = [];
 var uninstalledModules = [];
 var moduleGroupMembers = {};
 var currentPage = null;
+var installedGroups = {};
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -246,10 +247,31 @@ function getLocal () {
             showOrHideUpdateAllButton();
             showOrHideSystemModuleUpdateButton();
             enableStoreTabHead();
+            makeInstalledGroup();
+            buildAnnotatorGroupSelector();
         });
     });
 }
-    
+
+function makeInstalledGroup () {
+    var localModules = Object.keys(localModuleInfo);
+    var groupNames = Object.keys(moduleGroupMembers);
+    installedGroups = {};
+    for (var i = 0; i < groupNames.length; i++) {
+        var groupName = groupNames[i];
+        var members = moduleGroupMembers[groupName];
+        for (var j = 0; j < members.length; j++) {
+            var member = members[j];
+            if (localModuleInfo[member] != undefined) {
+                if (installedGroups[groupName] == undefined) {
+                    installedGroups[groupName] = [];
+                }
+                installedGroups[groupName].push(member);
+            }
+        }
+    }
+}
+
 function enableStoreTabHead () {
     document.getElementById('storediv_tabhead').setAttribute('disabled', 'f');
 }
