@@ -78,7 +78,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'webviewer')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
 for root, dirs, files in os.walk(os.path.join('cravat', 'liftover')):
-    root_files = [os.path.join('..', root, f) for f in files]
+    root_files = [os.path.join('..', root, f) for f in files if f.startswith('hg')]
     data_files.extend(root_files)
 for root, dirs, files in os.walk(os.path.join('cravat', 'annotator_template')):
     root_files = [os.path.join('..', root, f) for f in files]
@@ -92,11 +92,14 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'webstore')):
 for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
+for root, dirs, files in os.walk(os.path.join('cravat', 'pyliftover')):
+    root_files = [os.path.join('..', root, f) for f in files]
+    data_files.extend(root_files)
 
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='1.4.4',
+    version='1.4.4.d',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',

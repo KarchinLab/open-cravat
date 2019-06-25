@@ -92,7 +92,7 @@ class LiftOver:
                 result_position = target_start + (position - source_start)
                 #result_position = chain.target_start + (position - chain.source_start)
                 if chain.target_strand == '-':
-                    result_position = target_size - 1 - result_position
+                    result_position = chain.target_size - 1 - result_position
                 result_strand = chain.target_strand if strand == '+' else ('+' if chain.target_strand == '-' else '-')
                 results.append((chain.target_name, result_position, result_strand, chain.score))
             #if len(results) > 1:
