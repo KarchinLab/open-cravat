@@ -4,3 +4,5 @@
 *.bak
 .vscode
 liftover/canFam*
+pyliftover.tar
+conf

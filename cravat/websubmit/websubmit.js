@@ -122,7 +122,7 @@ function submit () {
                 addEl(alertDiv,getEl('br'));
                 var span = getEl('span');
                 span.style.fontSize = '12px';
-                span.textContent = '(Assuming one variant per line, in our benchmark with a typical system with a solid state drive, such a job as this usually took ' + hours + minutes + seconds + '. ';
+                span.textContent = 'Runtime estimate is ' + hours + minutes + seconds + ' on a system with a solid state drive. Systems with a hard disk will take longer. ';
                 addEl(alertDiv, span);
                 var span = getEl('span');
                 span.style.fontSize = '12px';
@@ -1750,9 +1750,6 @@ function addListeners () {
                         moduleListPos = 0;
                     }
                     moduleName = moduleList[moduleListPos];
-                    if (moduleName.startsWith('chasmplus_') == false) {
-                        break;
-                    }
                 }
                 makeModuleDetailDialog(moduleName, moduleListName, moduleListPos);
                 evt.stopPropagation();
@@ -1764,9 +1761,6 @@ function addListeners () {
                         moduleListPos = moduleList.length - 1;
                     }
                     moduleName = moduleList[moduleListPos];
-                    if (moduleName.startsWith('chasmplus_') == false) {
-                        break;
-                    }
                 }
                 makeModuleDetailDialog(moduleName, moduleListName, moduleListPos);
                 evt.stopPropagation();
@@ -1822,7 +1816,7 @@ function websubmit_run () {
         populateReports();
     }
     */
-    getJobsDir();
+    //getJobsDir();
     resizePage();
     window.onresize = function (evt) {
         resizePage();
