@@ -827,13 +827,47 @@ function buildAnnotatorGroupSelector () {
     $(annotCheckDiv).empty();
     var div = getEl('div');
     div.className = 'div-header';
-    div.textContent = 'Tags';
+    var span = getEl('span');
+    span.textContent = 'Sets';
+    addEl(div, span);
+    var btn = getEl('span');
+    btn.textContent = '\u229e';
+    btn.style.cursor = 'default';
+    btn.setAttribute('state', 'expanded');
+    btn.addEventListener('click', function (evt) {
+        var btn = evt.target;
+        var state = btn.getAttribute('state');
+        var text = null;
+        var grpDiv = document.querySelector('#annotator-group-select-div div.annotator-group-select');
+        if (state == 'collapsed') {
+            state = 'expanded';
+            text = '\u229f';
+            grpDiv.classList.add('on');
+            grpDiv.classList.remove('off');
+        } else {
+            state = 'collapsed';
+            text = '\u229e';
+            grpDiv.classList.add('off');
+            grpDiv.classList.remove('on');
+        }
+        btn.setAttribute('state', state);
+        btn.textContent = text;
+    });
+    addEl(div, btn);
     addEl(annotCheckDiv, div);
     var div = getEl('div');
+    div.id = 'annotator-group-select-tag-div';
     div.className = 'annotator-group-select';
     addEl(annotCheckDiv, div);
     var tagToAnnots = {};
     var checkDatas = [];
+    checkDatas.push({
+        name: 'selected',
+        value: 'selected',
+        label: 'selected',
+        checked: false,
+        kind: 'collect',
+    });
     for (var i = 0; i < tagsCollected.length; i++) {
         var tag = tagsCollected[i];
         checkDatas.push({
@@ -869,7 +903,7 @@ function buildAnnotatorGroupSelector () {
     for (var i = 0; i <= stylesheets.length; i++) {
         var stylesheet = stylesheets[i];
         if (stylesheet.href.indexOf('websubmit.css') >= 0) {
-            stylesheet.insertRule('#annotator-group-select-div {max-height: ' + height + 'px;}');
+            stylesheet.insertRule('#annotator-group-select-tag-div {max-height: ' + height + 'px;}');
             break;
         }
     }
@@ -1154,6 +1188,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
             checkBoxGroupAllNoneHandler (evt);
         });
         addEl(allNoneDiv, btn);
+        /*
         var div = getEl('div');
         div.id = 'submit-annotator-set-switch';
         var table = getEl('table');
@@ -1183,6 +1218,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         addEl(table, tr);
         addEl(div, table);
         addEl(allNoneDiv, div);
+        */
     }
     // flexbox
     var flexbox = getEl('div');
@@ -1240,8 +1276,18 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
 }
 
 function onChangeAnnotatorGroupCheckbox (evt) {
-    var $groupCheckboxes = $('div.checkbox-group-element[kind=tag] input:checked,div.checkbox-group-element[kind=group] input:checked');
     var $moduleCheckboxes = $('div.checkbox-group-element[kind=module]');
+    var $selectCheckbox = $('div.checkbox-group-element[kind=collect] input:checked');
+    if ($selectCheckbox.length > 0) {
+        $moduleCheckboxes.addClass('hide').removeClass('show');
+        $moduleCheckboxes.children('input:checked').each(function () {
+            var el = this.parentElement;
+            el.classList.add('show');
+            el.classList.remove('hide');
+        });
+        return;
+    }
+    var $groupCheckboxes = $('div.checkbox-group-element[kind=tag] input:checked,div.checkbox-group-element[kind=group] input:checked');
     if ($groupCheckboxes.length == 0) {
         $moduleCheckboxes.addClass('show').removeClass('hide');
     } else {

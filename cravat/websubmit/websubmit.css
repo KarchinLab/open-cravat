@@ -356,17 +356,17 @@ input:checked + .slider:before {
     transform: translateX(14px);
 }
 
-#annotator-group-select-div {
+#annotator-group-select-tag-div {
     overflow: hidden;
     transition: max-height .4s;
 }
 
-#annotator-group-select-div.off {
+#annotator-group-select-tag-div.off {
     overflow: hidden;
     max-height: 0px;
 }
 
-#annotator-group-select-div.on {
+#annotator-group-select-tag-div.on {
     overflow: hidden;
 }
 
@@ -390,14 +390,12 @@ input:checked + .slider:before {
 
 #annotator-select-div button.checkbox-group-all-button {
     position: relative;
-    top: -8px;
     border-radius: 5px;
     font-size: 10px;
 }
 
 #annotator-select-div button.checkbox-group-none-button {
     position: relative;
-    top: -8px;
     border-radius: 5px;
     font-size: 10px;
 }
