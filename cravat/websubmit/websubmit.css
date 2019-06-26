@@ -370,6 +370,35 @@ input:checked + .slider:before {
     overflow: hidden;
 }
 
+/*
+.checkbox-group-element-sdiv {
+    overflow: hidden;
+    width: 99%;
+    transition: max-height .4s;
+}
+
+.checkbox-group-element-sdiv.off {
+    overflow: hidden;
+    max-height: 0px;
+    border: 0px;
+}
+
+.checkbox-group-element-sdiv.on {
+    overflow: hidden;
+    border: 1px solid gray;
+}
+*/
+
+div.checkbox-group-element[kind=group] span.icon {
+    position: relative;
+    left: 4px;
+}
+
+div.checkbox-group-element[kind=group] span.label {
+    position: relative;
+    left: 7px;
+}
+
 #annotator-group-select-div .div-header {
     font-size: 12px;
     color: #899989;
@@ -417,3 +446,4 @@ input:checked + .slider:before {
         url(//c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.ttf) format("truetype");
     font-weight: 400;
 }
+

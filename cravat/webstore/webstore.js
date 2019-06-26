@@ -249,6 +249,7 @@ function getLocal () {
             enableStoreTabHead();
             makeInstalledGroup();
             buildAnnotatorGroupSelector();
+            populateAnnotators();
         });
     });
 }

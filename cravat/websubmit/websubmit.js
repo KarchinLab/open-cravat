@@ -816,7 +816,6 @@ function populateAnnotators () {
             success: function (data) {
                 GLOBALS.annotators = data
                 buildAnnotatorsSelector();
-                //resolve();
             }
         })
     });
@@ -831,7 +830,7 @@ function buildAnnotatorGroupSelector () {
     span.textContent = 'Sets';
     addEl(div, span);
     var btn = getEl('span');
-    btn.textContent = '\u229e';
+    btn.textContent = '\u23F7';
     btn.style.cursor = 'default';
     btn.setAttribute('state', 'expanded');
     btn.addEventListener('click', function (evt) {
@@ -841,12 +840,12 @@ function buildAnnotatorGroupSelector () {
         var grpDiv = document.querySelector('#annotator-group-select-div div.annotator-group-select');
         if (state == 'collapsed') {
             state = 'expanded';
-            text = '\u229f';
+            text = '\u23F7';
             grpDiv.classList.add('on');
             grpDiv.classList.remove('off');
         } else {
             state = 'collapsed';
-            text = '\u229e';
+            text = '\u23F6';
             grpDiv.classList.add('off');
             grpDiv.classList.remove('on');
         }
@@ -880,24 +879,14 @@ function buildAnnotatorGroupSelector () {
     }
     buildCheckBoxGroup(checkDatas, div);
     addEl(annotCheckDiv, getEl('hr'));
+    /*
     var checkDatas = [];
     var div = getEl('div');
     div.className = 'annotator-group-select';
     addEl(annotCheckDiv, div);
-    var groupNames = Object.keys(installedGroups);
-    groupNames.sort();
-    for (var i = 0; i < groupNames.length; i++) {
-        var name = groupNames[i].replace(/_group$/, '');
-        checkDatas.push({
-            name: name,
-            value: name,
-            label: name,
-            checked: false,
-            kind: 'group',
-        });
-    }
     buildCheckBoxGroup(checkDatas, div);
     addEl(annotCheckDiv, getEl('hr'));
+    */
     var height = annotCheckDiv.offsetHeight;
     var stylesheets = window.document.styleSheets;
     for (var i = 0; i <= stylesheets.length; i++) {
@@ -911,8 +900,20 @@ function buildAnnotatorGroupSelector () {
 
 function buildAnnotatorsSelector () {
     var annotCheckDiv = document.getElementById('annotator-select-div');
-    let annotators = GLOBALS.annotators;
-    let annotInfos = Object.values(annotators);
+    var annotators = GLOBALS.annotators;
+    var annotInfos = Object.values(annotators);
+    var groupNames = Object.keys(installedGroups);
+    for (var i = 0; i < groupNames.length; i++) {
+        var name = groupNames[i];
+        var module = localModuleInfo[name];
+        var title = module.title;
+        annotInfos.push({
+            'name': name, 
+            'title': title, 
+            'type': module.type, 
+            'groups': module['groups']
+        });
+    }
     // Sort by title
     annotInfos.sort((a,b) => {
         var x = a.title.toLowerCase();
@@ -924,12 +925,21 @@ function buildAnnotatorsSelector () {
     let checkDatas = [];
     for (let i=0; i<annotInfos.length; i++) {
         var annotInfo = annotInfos[i];
+        var module = localModuleInfo[annotInfo.name];
+        var kind = null;
+        if (module.type == 'annotator') {
+            kind = 'module';
+        } else if (module.type == 'group') {
+            kind = 'group';
+        }
         checkDatas.push({
             name: annotInfo.name,
             value: annotInfo.name,
             label: annotInfo.title,
+            type: annotInfo.type,
             checked: false,
-            kind: 'module',
+            kind: kind,
+            groups: module['groups'],
         })
     }
     buildCheckBoxGroup(checkDatas, annotCheckDiv);
@@ -1188,37 +1198,6 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
             checkBoxGroupAllNoneHandler (evt);
         });
         addEl(allNoneDiv, btn);
-        /*
-        var div = getEl('div');
-        div.id = 'submit-annotator-set-switch';
-        var table = getEl('table');
-        var tr = getEl('tr');
-        var td = getEl('td');
-        var span = getEl('span');
-        span.textContent = 'Annotator sets';
-        addEl(td, span);
-        addEl(tr, td);
-        addEl(table, tr);
-        tr = getEl('tr');
-        td = getEl('td');
-        var label = getEl('label');
-        label.className = 'slider-switch';
-        var input = getEl('input');
-        input.type = 'checkbox';
-        input.checked = true;
-        input.addEventListener('change', function (evt) {
-            onSubmitClickTagBoxCheck(evt);
-        });
-        var span = getEl('span');
-        span.className = 'slider';
-        addEl(label, input);
-        addEl(label, span);
-        addEl(td, label);
-        addEl(tr, td);
-        addEl(table, tr);
-        addEl(div, table);
-        addEl(allNoneDiv, div);
-        */
     }
     // flexbox
     var flexbox = getEl('div');
@@ -1226,13 +1205,23 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
     flexbox.classList.add('checkbox-group-flexbox');
     var checkDivs = [];
     // checks
+    var checkDivsForGroup = {};
     for (let i=0; i<checkDatas.length; i++) {
         var checkData = checkDatas[i];
         var checkDiv = getEl('div');
         checkDiv.classList.add('checkbox-group-element');
         checkDiv.setAttribute('name', checkData.name);
         checkDiv.setAttribute('kind', checkData.kind);
-        addEl(flexbox, checkDiv);
+        if (checkData.groups != null) {
+            var groups = checkData.groups;
+            var group = groups[0];
+            if (checkDivsForGroup[group] == undefined) {
+                checkDivsForGroup[group] = [];
+            }
+            checkDivsForGroup[group].push(checkDiv);
+        } else {
+            addEl(flexbox, checkDiv);
+        }
         var check = getEl('input');
         check.className = 'checkbox-group-check';
         check.setAttribute('type', 'checkbox');
@@ -1251,32 +1240,83 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
                 onChangeAnnotatorGroupCheckbox(evt);
             });
         }
-        addEl(checkDiv, check);
         var label = getEl('span');
-        //label.style.cursor = 'pointer';
-        //label.style.textDecorationLine = 'underline';
-        //label.style.textDecorationStyle = 'dotted';
-        //label.style.textDecorationColor = '#aaaaaa';
+        label.className = 'label';
         label.setAttribute('module', checkData.value);
         label.textContent = checkData.label + ' ';
-        //label.className = 'moduledetailbutton';
-        addEl(checkDiv, label);
-        /*label.addEventListener('click', function (evt) {
-            var annotchoosediv = document.getElementById('annotchoosediv');
-            var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
-            if (moduledetaildiv != null) {
-                annotchoosediv.removeChild(moduledetaildiv);
-            }
-            var detaildiv = makeModuleDetailDialog(evt.target.getAttribute('module'));
-            addEl(annotchoosediv, detaildiv);
-        });*/
+        if (checkData.type == 'group') {
+            var btn = getEl('span');
+            btn.className = 'icon';
+            btn.textContent = '\u23F6';
+            btn.style.cursor = 'default';
+            btn.setAttribute('state', 'collapsed');
+            btn.setAttribute('name', checkData.name);
+            btn.addEventListener('click', function (evt) {
+                var btn = evt.target;
+                var state = btn.getAttribute('state');
+                var name = btn.getAttribute('name');
+                var text = null;
+                var grpDiv = document.querySelector('div.checkbox-group-element-sdiv[name=' + name + ']');
+                if (state == 'collapsed') {
+                    state = 'expanded';
+                    text = '\u23F7';
+                    grpDiv.classList.add('on');
+                    grpDiv.classList.remove('off');
+                } else {
+                    state = 'collapsed';
+                    text = '\u23F6';
+                    grpDiv.classList.add('off');
+                    grpDiv.classList.remove('on');
+                }
+                btn.setAttribute('state', state);
+                btn.textContent = text;
+            });
+            addEl(checkDiv, btn);
+            addEl(checkDiv, label);
+            var sdiv = getEl('div');
+            sdiv.id = 'submit-annotator-group-sdiv-' + checkData.name;
+            sdiv.classList.add('checkbox-group-element-sdiv');
+            sdiv.setAttribute('kind', 'annotator-group-div');
+            sdiv.setAttribute('name', checkData.name);
+            addEl(checkDiv, sdiv);
+        } else {
+            addEl(checkDiv, check);
+            addEl(checkDiv, label);
+        }
         checkDivs.push(checkDiv);
     }
+    var groups = Object.keys(checkDivsForGroup);
+    for (var i = 0; i < groups.length; i++) {
+        var group = groups[i];
+        var sdiv = $('div[kind=annotator-group-div][name=' + group + ']')[0];
+        var checkDivs = checkDivsForGroup[group];
+        for (var j = 0; j < checkDivs.length; j++) {
+            var checkDiv = checkDivs[j];
+            checkDiv.style.width = '100%';
+            addEl(sdiv, checkDiv);
+        }
+    }
+    $('div[kind=annotator-group-div]').each(function () {
+        var name = this.getAttribute('name');
+        var height = this.clientHeight;
+        var divid = '#submit-annotator-group-sdiv-' + name;
+        var stylesheets = window.document.styleSheets;
+        for (var i = 0; i <= stylesheets.length; i++) {
+            var stylesheet = stylesheets[i];
+            if (stylesheet.href.indexOf('websubmit.css') >= 0) {
+                stylesheet.insertRule(divid + ' {overflow: hidden; width: 99%; transition: max-height .4s; max-height: ' + height + 'px;}');
+                stylesheet.insertRule(divid + '.off {overflow: hidden; max-height: 0px;}');
+                stylesheet.insertRule(divid + '.on {overflow: hidden; border: 1px dotted #aaaaaa;}');
+                break;
+            }
+        }
+        this.classList.add('off');
+    });
     return parentDiv;
 }
 
 function onChangeAnnotatorGroupCheckbox (evt) {
-    var $moduleCheckboxes = $('div.checkbox-group-element[kind=module]');
+    var $moduleCheckboxes = $('div.checkbox-group-element[kind=module],div.checkbox-group-element[kind=group]');
     var $selectCheckbox = $('div.checkbox-group-element[kind=collect] input:checked');
     if ($selectCheckbox.length > 0) {
         $moduleCheckboxes.addClass('hide').removeClass('show');
@@ -1300,21 +1340,12 @@ function onChangeAnnotatorGroupCheckbox (evt) {
             if (kind == 'tag') {
                 for (var i = 0; i < modules.length; i++) {
                     var module = localModuleInfo[modules[i]];
-                    var c = $('div.checkbox-group-element[kind=module][name=' + module.name + ']')[0];
+                    var c = $('div.checkbox-group-element[kind=module][name=' + module.name + '],div.checkbox-group-element[kind=group][name=' + module.name + ']')[0];
                     if (c != undefined) {
                         if (module.tags.indexOf(name) >= 0) {
                             c.classList.add('show');
                             c.classList.remove('hide');
                         }
-                    }
-                }
-            } else if (kind == 'group') {
-                var members = installedGroups[name + '_group'];
-                for (var i = 0; i < members.length; i++) {
-                    var c = $('div.checkbox-group-element[kind=module][name=' + members[i] + ']')[0];
-                    if (c != null) {
-                        c.classList.add('show');
-                        c.classList.remove('hide');
                     }
                 }
             }
@@ -1775,7 +1806,6 @@ function websubmit_run () {
     if (servermode == false) {
         populateJobs();
     }
-    populateAnnotators();
     /*
     if (servermode == false) {
         populateReports();
