@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import argparse
 import os
 import sys
@@ -189,6 +188,7 @@ class CravatFilter ():
             elif filterpath != None:
                 self.filterpath = filterpath
         self.filtertable = 'filter'
+        self.generows = {}
 
     async def second_init (self):
         if self.mode == 'sub':
@@ -415,10 +415,21 @@ class CravatFilter ():
                 print('\t'.join([str(v) for v in row]))
         return ret
 
+    async def make_generows (self):
+        q = 'select * from gene'
+        await self.cursor.execute(q)
+        rows = await self.cursor.fetchall()
+        self.generows = {}
+        for row in rows:
+            hugo = row[0]
+            self.generows[hugo] = row
+
     async def get_gene_row (self, hugo):
-        q = 'select * from gene where base__hugo=?'
-        await self.cursor.execute(q, [hugo])
-        row = await self.cursor.fetchone()
+        if hugo is None:
+            return None
+        if bool(self.generows) == False:
+            await self.make_generows()
+        row = self.generows[hugo]
         return row
 
     def getvariantiterator (self):

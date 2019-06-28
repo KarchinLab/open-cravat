@@ -73,65 +73,67 @@ class CravatReport:
         return row
 
     async def run_level (self, level):
-        if await self.table_exists(level):
+        ret = await self.table_exists(level)
+        if ret == False:
+            return
+        if level == 'variant':
+            await self.cf.make_filtered_uid_table()
+        elif level == 'gene':
+            await self.cf.make_filtered_hugo_table()
+            gene_summary_datas = {}
+            for mi, o, cols in self.summarizing_modules:
+                gene_summary_data = await o.get_gene_summary_data(self.cf)
+                gene_summary_datas[mi.name] = [gene_summary_data, cols]
+        self.write_preface(level)
+        self.write_header(level)
+        if level == 'variant':
+            hugo_present = 'base__hugo' in self.colnos['variant']
+        for row in await self.cf.get_filtered_iterator(level):
+            row = list(row)
             if level == 'variant':
-                await self.cf.make_filtered_uid_table()
-            elif level == 'gene':
-                await self.cf.make_filtered_hugo_table()
-                gene_summary_datas = {}
-                for mi, o, cols in self.summarizing_modules:
-                    gene_summary_data = await o.get_gene_summary_data(self.cf)
-                    gene_summary_datas[mi.name] = [gene_summary_data, cols]
-            self.write_preface(level)
-            self.write_header(level)
-            if level == 'variant':
-                hugo_present = 'base__hugo' in self.colnos['variant']
-            for row in await self.cf.get_filtered_iterator(level):
-                row = list(row)
-                if level == 'variant':
-                    if hugo_present:
-                        hugo = row[self.colnos['variant']['base__hugo']]
-                        generow = await self.cf.get_gene_row(hugo)
-                        for colname in self.var_added_cols:
-                            if generow == None:
-                                colval = None
-                            else:
-                                colval = generow[self.colnos['gene'][colname]]
-                            row.append(colval)
-                elif level == 'gene':
-                    hugo = row[0]
-                    for mi, _, _ in self.summarizing_modules:
-                        module_name = mi.name
-                        [gene_summary_data, cols] = gene_summary_datas[module_name]
-                        if hugo in gene_summary_data:
-                            row.extend([gene_summary_data[hugo][col['name']] for col in cols])
+                if hugo_present:
+                    hugo = row[self.colnos['variant']['base__hugo']]
+                    generow = await self.cf.get_gene_row(hugo)
+                    for colname in self.var_added_cols:
+                        if generow == None:
+                            colval = None
                         else:
-                            row.extend([None for v in cols])
-                row = self.substitute_val(level, row)
-                if hasattr(self, 'keep_json_all_mapping') == False and level == 'variant':
-                    colno = self.colnos['variant']['base__all_mappings']
-                    all_map = json.loads(row[colno])
-                    newvals = []
-                    for hugo in all_map:
-                        for maprow in all_map[hugo]:
-                            [protid, protchange, so, transcript, rnachange] = maprow
-                            if protid == None:
-                                protid = '(na)'
-                            if protchange == None:
-                                protchange = '(na)'
-                            if rnachange == None:
-                                rnachange = '(na)'
-                            newval = transcript + ':' + hugo + ':' + protid + ':' + so + ':' + protchange + ':' + rnachange
-                            newvals.append(newval)
-                    newvals.sort()
-                    newcell = '; '.join(newvals)
-                    row[colno] = newcell
-                newrow = []
-                for colname in self.ord_cols[level]:
-                    colno = self.colnos[level][colname]
-                    value = row[colno]
-                    newrow.append(value)
-                self.write_table_row(newrow)
+                            colval = generow[self.colnos['gene'][colname]]
+                        row.append(colval)
+            elif level == 'gene':
+                hugo = row[0]
+                for mi, _, _ in self.summarizing_modules:
+                    module_name = mi.name
+                    [gene_summary_data, cols] = gene_summary_datas[module_name]
+                    if hugo in gene_summary_data:
+                        row.extend([gene_summary_data[hugo][col['name']] for col in cols])
+                    else:
+                        row.extend([None for v in cols])
+            row = self.substitute_val(level, row)
+            if hasattr(self, 'keep_json_all_mapping') == False and level == 'variant':
+                colno = self.colnos['variant']['base__all_mappings']
+                all_map = json.loads(row[colno])
+                newvals = []
+                for hugo in all_map:
+                    for maprow in all_map[hugo]:
+                        [protid, protchange, so, transcript, rnachange] = maprow
+                        if protid == None:
+                            protid = '(na)'
+                        if protchange == None:
+                            protchange = '(na)'
+                        if rnachange == None:
+                            rnachange = '(na)'
+                        newval = transcript + ':' + hugo + ':' + protid + ':' + so + ':' + protchange + ':' + rnachange
+                        newvals.append(newval)
+                newvals.sort()
+                newcell = '; '.join(newvals)
+                row[colno] = newcell
+            newrow = []
+            for colname in self.ord_cols[level]:
+                colno = self.colnos[level][colname]
+                value = row[colno]
+                newrow.append(value)
+            self.write_table_row(newrow)
 
     async def run (self, tab='all'):
         start_time = time.time()
@@ -276,22 +278,13 @@ class CravatReport:
             for columngroup in self.columngroups[level]:
                 if columngroup['name'] == groupname:
                     columngroup['count'] += 1
+        # adds gene level columns to variant level.
         if level == 'variant' and await self.table_exists('gene'):
             modules_to_add = []
             q = 'select name from gene_annotator'
             await self.cursor.execute(q)
             gene_annotators = [v[0] for v in await self.cursor.fetchall()]
-            k = 'add_gene_module_to_variant'
-            if self.conf.has_key(k):
-                modules_to_add = self.conf.get_val(k)
-            for module in gene_annotators:
-                module_info = au.get_local_module_info(module)
-                if module_info == None:
-                    continue
-                module_conf = module_info.conf
-                if 'add_to_variant_level' in module_conf:
-                    if module_conf['add_to_variant_level'] == True:
-                        modules_to_add.append(module)
+            modules_to_add = [m for m in gene_annotators if m != 'base']
             for module in modules_to_add:
                 if not module in gene_annotators:
                     continue
