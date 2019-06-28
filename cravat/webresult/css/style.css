@@ -731,8 +731,8 @@ div.pq-select-menu>.pq-select-option-label {
 
 .smartfilter {
 	margin: 2px;
-	width: 25%;
 	position: relative;
+	display: flex;
 }
 
 .smartfilter-overlay {
@@ -755,6 +755,7 @@ div.pq-select-menu>.pq-select-option-label {
 	flex-direction: column;
 	flex-wrap: wrap;
 	width: fit-content;
+	border: 1px solid gray;
 }
 
 .sample-selector {
@@ -779,4 +780,23 @@ div.pq-select-menu>.pq-select-option-label {
 
 .sample-selector.sample-neutral {
 	background-color: inherit;
+}
+
+#gene-list-container {
+	border: 1px solid gray;
+	width: fit-content;
+}
+
+#gene-list-text {
+	height: 8em;
+	display: block;
+}
+
+#gene-list-file {
+	display: block;
+}
+
+#rightdiv_filter {
+	display: flex;
+	font-size: 13px;
 }
