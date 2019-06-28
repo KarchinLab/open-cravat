@@ -305,6 +305,10 @@ function makeSmartfilterJson () {
 			fjs.sample.reject.push(sel.text());
 		}
 	}
+	// Gene list
+	let geneListString = $('#gene-list-text').val();
+	let geneList = geneListString.split('\n');
+	fjs.genes = geneList;
 	// Smartfilters
 	let sfWrapDiv = $('#sf-container');
 	let sfDivs = sfWrapDiv.children('div');

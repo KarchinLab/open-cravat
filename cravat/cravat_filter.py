@@ -421,10 +421,12 @@ class CravatFilter ():
            q += ' except select base__uid from sample where base__sample_id="{}"'.format(s)
         print(q) #debug
         await self.cursor.execute(q)
+        self.conn.commit()
 
     async def make_filtered_uid_table (self):
         t = time.time()
         await self.make_filtered_sample_table()
+        await self.make_gene_list_table()
         level = 'variant'
         vtable = level
         vftable = level + '_filtered'
@@ -433,11 +435,35 @@ class CravatFilter ():
         where = self.getwhere(level)
         q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
         q += ' join fsample as s on t.base__uid=s.base__uid'
+        q += ' join gene_list as g on t.base__hugo=g.base__hugo'
         q += ' '+where
         print(q) #debug
         await self.cursor.execute(q)
+        self.conn.commit()
         t = time.time() - t
-
+    
+    async def make_gene_list_table (self):
+        tname = 'gene_list'
+        q = 'drop table if exists {}'.format(tname)
+        print(q) #debug
+        await self.cursor.execute(q)
+        q = 'create table {} (base__hugo text)'.format(tname)
+        print(q) #debug
+        await self.cursor.execute(q)
+        if 'genes' in self.filter:
+            tdata = [(hugo,) for hugo in self.filter['genes']]
+        else:
+            tdata = []
+        if tdata:
+            q = 'insert into {} (base__hugo) values (?)'.format(tname)
+            print(q) #debug
+            await self.cursor.executemany(q, tdata)
+        else:
+            q = 'insert into {} select base__hugo from gene'.format(tname)
+            print(q) #debug
+            await self.cursor.execute(q)
+        self.conn.commit()
+    
     async def make_filtered_hugo_table (self):
         await self.cursor.execute('pragma synchronous=0')
         level = 'gene'
