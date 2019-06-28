@@ -1572,7 +1572,7 @@ function populateWidgetSelectorPanel () {
 		var a = getEl('a');
 		a.textContent = 'Hide all columns under ' + colgrouptitle;
 		li.addEventListener('click', function (evt) {
-			var checkboxId = 'columngroup__' + currentTab + '_' + colgrouptitle + '__checkbox';
+			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgrouptitle + '__checkbox';
 			var checkbox = document.getElementById(checkboxId);
 			checkbox.click();
 			div.style.display = 'none';
@@ -1601,8 +1601,10 @@ function populateWidgetSelectorPanel () {
 		var a = getEl('a');
 		a.textContent = 'Hide column';
 		li.addEventListener('click', function (evt) {
-			var checkboxId = 'columngroup__' + currentTab + '_' + colgroup + '_' + col + '__checkbox';
+			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgroup + '_' + col + '__checkbox';
 			var checkbox = document.getElementById(checkboxId);
+            console.log(checkboxId);
+            console.log(checkbox);
 			checkbox.click();
 			div.style.display = 'none';
 		});

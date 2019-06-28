@@ -327,6 +327,7 @@ async def get_result (request):
         args.extend(['-c', confpath])
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
+    args.append('--nogenelevelonvariantlevel')
     reporter = m.Reporter(args, None)
     await reporter.prep()
     dbbasename = os.path.basename(dbpath)

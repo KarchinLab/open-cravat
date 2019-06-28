@@ -91,7 +91,7 @@ class CravatReport:
         for row in await self.cf.get_filtered_iterator(level):
             row = list(row)
             if level == 'variant':
-                if hugo_present:
+                if self.nogenelevelonvariantlevel == False and hugo_present:
                     hugo = row[self.colnos['variant']['base__hugo']]
                     generow = await self.cf.get_gene_row(hugo)
                     for colname in self.var_added_cols:
@@ -279,7 +279,7 @@ class CravatReport:
                 if columngroup['name'] == groupname:
                     columngroup['count'] += 1
         # adds gene level columns to variant level.
-        if level == 'variant' and await self.table_exists('gene'):
+        if self.nogenelevelonvariantlevel == False and level == 'variant' and await self.table_exists('gene'):
             modules_to_add = []
             q = 'select name from gene_annotator'
             await self.cursor.execute(q)
@@ -436,6 +436,11 @@ class CravatReport:
             dest='module_name',
             default=None,
             help='report module name')
+        parser.add_argument('--nogenelevelonvariantlevel',
+            dest='nogenelevelonvariantlevel',
+            action='store_true',
+            default=False,
+            help='Use this option to prevent gene level result from being added to variant level result.')
         parsed_args = parser.parse_args(cmd_args[1:])
         self.parsed_args = parsed_args
         self.dbpath = parsed_args.dbpath
@@ -455,6 +460,7 @@ class CravatReport:
         self.output_dir = os.path.dirname(self.dbpath)
         status_fname = '{}.status.json'.format(self.output_basename)
         self.status_fpath = os.path.join(self.output_dir, status_fname)
+        self.nogenelevelonvariantlevel = parsed_args.nogenelevelonvariantlevel
 
     async def connect_db (self, dbpath=None):
         if dbpath != None:

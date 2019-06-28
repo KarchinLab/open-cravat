@@ -391,7 +391,6 @@ function showVariantDetail (row, tabName) {
                         generator['function'](widgetContentDiv, row, tabName);
                     }
                     var setting = getViewerWidgetSettingByWidgetkey(tabName, colGroupKey);
-                    console.log(colGroupKey, setting);
                     if (setting != null) {
                         var display = setting['display'];
                         if (display != undefined) {

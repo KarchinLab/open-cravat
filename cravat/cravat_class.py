@@ -371,6 +371,8 @@ class Cravat (object):
         else:
             self.verbose = False
         self.reports = self.args.reports
+        if self.reports is None:
+            self.reports = ['excel']
         if self.args.liftover is None:
             self.input_assembly = 'hg38'
         else:

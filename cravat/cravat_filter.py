@@ -416,6 +416,7 @@ class CravatFilter ():
         return ret
 
     async def make_generows (self):
+        t = time.time()
         q = 'select * from gene'
         await self.cursor.execute(q)
         rows = await self.cursor.fetchall()
@@ -423,6 +424,7 @@ class CravatFilter ():
         for row in rows:
             hugo = row[0]
             self.generows[hugo] = row
+        print('finished making generows in {}s'.format(time.time() - t))
 
     async def get_gene_row (self, hugo):
         if hugo is None:
