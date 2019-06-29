@@ -552,8 +552,14 @@ function firstLoadData () {
                         for (var k = 0; k < widgetNames.length; k++) {
                             var widgetName = widgetNames[k];
                             var widgetTabs = Object.keys(widgetGenerators[widgetName]);
+                            if (widgetTabs.length == 1 && widgetTabs[0] == 'gene') {
+                                widgetTabs.unshift('variant');
+                            }
                             var req = infomgr.widgetReq[widgetName];
                             var generator = widgetGenerators[widgetName];
+                            if (generator['gene'] != undefined && generator['variant'] == undefined) {
+                                generator['variant'] = generator['gene'];
+                            }
                             for (var j = 0; j < widgetTabs.length; j++) {
                                 var widgetTab = widgetTabs[j];
                                 if (generator[widgetTab]['variables'] == undefined) {
