@@ -48,20 +48,24 @@ cravat_cmd_parser.add_argument('-d',
                     help='directory for output files')
 cravat_cmd_parser.add_argument('--startat',
                     dest='startat',
+                    choices=['converter', 'mapper', 'aggregator', 'postaggregator', 'reporter'],
                     default=None,
                     help='starts at given stage')
 cravat_cmd_parser.add_argument('--repeat',
                     dest='repeat',
                     nargs='+',
+                    choices=['converter', 'mapper', 'aggregator', 'postaggregator', 'reporter'],
                     default=None,
                     help='forces re-running of given stage if it is in the run chain.')
 cravat_cmd_parser.add_argument('--endat',
                     dest='endat',
+                    choices=['converter', 'mapper', 'aggregator', 'postaggregator', 'reporter'],
                     default=None,
                     help='ends after given stage.')
 cravat_cmd_parser.add_argument('--skip',
                     dest='skip',
                     nargs='+',
+                    choices=['converter', 'mapper', 'aggregator', 'postaggregator', 'reporter'],
                     default=None,
                     help='skips given stage(s).')
 cravat_cmd_parser.add_argument('-c',
