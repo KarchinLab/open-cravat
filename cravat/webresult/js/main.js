@@ -233,6 +233,39 @@ function iterationCopy (src) {
     return target;
 }
 
+function copyColModel (colModelGroup) {
+    var newColModelGroup = {};
+    newColModelGroup.title = colModelGroup.title;
+    var newColModel = [];
+    var colModel = colModelGroup.colModel;
+    for (var i = 0; i < colModel.length; i++) {
+        var col = colModel[i];
+        var newcol = {};
+        newcol.col = col.col;
+        newcol.colgroup = col.colgroup;
+        newcol.colgroupkey = col.colgroupkey;
+        newcol.title = col.title;
+        newcol.align = col.align;
+        newcol.dataIndx = null;
+        newcol.retfilt = col.retfilt;
+        newcol.retfilttype = col.retfilttype;
+        newcol.multiseloptions = col.multiseloptions;
+        newcol.reportsub = col.reportsub;
+        newcol.categories = col.categories;
+        newcol.width = col.width;
+        newcol.desc = col.desc;
+        newcol.type = col.type;
+        newcol.hidden = col.hidden;
+        newcol.ctg = col.ctg;
+        newcol.filterable = col.filterable;
+        newcol.link_format = col.link_format;
+        newcol.filter = col.filter;
+        newColModel.push(newcol);
+    }
+    newColModelGroup.colModel = newColModel;
+    return newColModelGroup;
+}
+
 function addGeneLevelToVariantLevel () {
     var oriNoColVar = infomgr.columnss.variant.length;
     var noColToPass = 5;
@@ -240,8 +273,7 @@ function addGeneLevelToVariantLevel () {
     var geneColModels = infomgr.colModels['gene'];
     var colNo = oriNoColVar;
     for (var i = 1; i < geneColModels.length; i++) {
-        var colModel = JSON.parse(JSON.stringify(geneColModels[i]));
-        //var colModel = geneColModels[i];
+        var colModel = copyColModel(geneColModels[i]);
         var cols = colModel.colModel;
         for (var j = 0; j < cols.length; j++) {
             cols[j].dataIndx = colNo;
