@@ -209,19 +209,38 @@ function onSampleSelectorClick(event) {
 	}
 }
 
-function sfCheckboxClickHandler (event) {
+function sfCheckboxChangeHandler (event) {
 	let cb = $(event.target);
 	let sfDiv = cb.closest('.smartfilter');
-	sfDiv.removeClass('smartfilter-active');
+	let sfActive = cb.prop('checked');
+	setSfState(sfDiv, sfActive);
+}
+
+function setSfState (sfDiv, active) {
+	if (active) {
+		sfDiv.removeClass('smartfilter-inactive');
+		sfDiv.addClass('smartfilter-active');
+		sfDiv.find('.smartfilter-checkbox').prop('checked', true);
+	} else {
+		sfDiv.addClass('smartfilter-inactive');
+		sfDiv.removeClass('smartfilter-active');
+		sfDiv.find('.smartfilter-checkbox').prop('checked', false);
+	}
 }
 
 function getSmartFilterDiv (sfDef) {
 	let outerDiv = $(getEl('div'))
 		.addClass('smartfilter');
+	outerDiv[0].addEventListener('click', e => {
+		let sfDiv = $(e.currentTarget);
+		if (sfDiv.hasClass('smartfilter-inactive')) {
+			setSfState(sfDiv, true);
+		}
+	}, true)
 	let activeCb = $(getEl('input'))
 		.attr('type','checkbox')
 		.addClass('smartfilter-checkbox')
-		.click(sfCheckboxClickHandler);
+		.change(sfCheckboxChangeHandler);
 	outerDiv.append(activeCb);
 	let titleSpan = $(getEl('span'))
 		.append(sfDef.title)
@@ -308,11 +327,9 @@ function getSmartFilterDiv (sfDef) {
 			search: false,
 			selectallText: 'Select all',
 		});
+		activeCb.change();
 	}
-	let overlay = $(getEl('div'))
-		.addClass('smartfilter-overlay')
-		.click(sfOverlayClickHandler);
-	outerDiv.append(overlay);
+	setSfState(outerDiv, false);
 	return outerDiv;
 }
 
