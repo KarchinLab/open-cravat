@@ -89,6 +89,9 @@ function makeFilterTab (rightDiv) {
 		.addClass('sf-header')
 		.append('Samples');
 	sampleContainer.append(sampleTopBar);
+	sampleContainer.append($(getEl('p'))
+		.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
+	)
 	let sampleSelDiv = $(getEl('div'))
 		.attr('id','sample-select-cont');
 	sampleContainer.append(sampleSelDiv);
@@ -116,6 +119,9 @@ function makeFilterTab (rightDiv) {
 		.addClass('sf-header')
 		.append('Gene List');
 	geneContainer.append(geneTopBar);
+	geneContainer.append($(getEl('p'))
+		.text('Type a list of gene names to include. One per line. Or, load a gene list from a file.')
+	)
 	let geneTextArea = $(getEl('textarea'))
 		.attr('id','gene-list-text')
 		.change(onGeneListSelectorChange);
@@ -135,6 +141,9 @@ function makeFilterTab (rightDiv) {
 		.addClass('sf-header')
 		.append('Smart Filters');
 	sfContainer.append(sfTopBar);
+	sfContainer.append($(getEl('p'))
+		.text('Click a filter to apply it.')
+	)
 	let orderedSources = Object.keys(smartFilters);
 	orderedSources.splice(orderedSources.indexOf('base'), 1);
 	orderedSources.sort();

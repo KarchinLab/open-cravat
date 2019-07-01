@@ -804,9 +804,14 @@ div.pq-select-menu>.pq-select-option-label {
 	margin: 10px;
 	padding: 10px;
 	border: 1px solid gray;
+	max-width: 500px;
 }
 
 #sf-apply-btn {
 	float: right;
 	font-size: 18px;
+}
+
+.sf-selector {
+	margin-left: 10px;
 }
