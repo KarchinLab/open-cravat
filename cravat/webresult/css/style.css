@@ -730,7 +730,7 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .smartfilter {
-	margin: 2px;
+	margin: 5px;
 	position: relative;
 	display: flex;
 }
@@ -749,13 +749,12 @@ div.pq-select-menu>.pq-select-option-label {
 	display: none;
 }
 
-#sample-container {
-	max-height: 200px;
+#sample-select-cont {
+	max-height: 300px;
 	display: flex;
 	flex-direction: column;
 	flex-wrap: wrap;
 	width: fit-content;
-	border: 1px solid gray;
 }
 
 .sample-selector {
@@ -782,11 +781,6 @@ div.pq-select-menu>.pq-select-option-label {
 	background-color: inherit;
 }
 
-#gene-list-container {
-	border: 1px solid gray;
-	width: fit-content;
-}
-
 #gene-list-text {
 	height: 8em;
 	display: block;
@@ -799,4 +793,20 @@ div.pq-select-menu>.pq-select-option-label {
 #rightdiv_filter {
 	display: flex;
 	font-size: 13px;
+}
+
+.sf-header {
+	background-color: #d1dae0;
+	font-size: 18px;
+}
+
+.filter-container {
+	margin: 10px;
+	padding: 10px;
+	border: 1px solid gray;
+}
+
+#sf-apply-btn {
+	float: right;
+	font-size: 18px;
 }

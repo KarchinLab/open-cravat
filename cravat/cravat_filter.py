@@ -402,10 +402,7 @@ class CravatFilter ():
         return it
 
     async def make_filtered_sample_table (self):
-        q = 'create table if not exists fsample (base__uid primary key)'
-        print(q) #debug
-        await self.cursor.execute(q)
-        q = 'delete from fsample'
+        q = 'drop table if exists fsample'
         print(q) #debug
         await self.cursor.execute(q)
         try: #TODO: always have these fields
@@ -414,19 +411,20 @@ class CravatFilter ():
         except:
             req = []
             rej = []
-        q = 'insert into fsample select distinct base__uid from sample'
+        q = 'create table fsample as select distinct base__uid from sample'
         for s in req:
             q += ' intersect select base__uid from sample where base__sample_id="{}"'.format(s)
         for s in rej:
            q += ' except select base__uid from sample where base__sample_id="{}"'.format(s)
         print(q) #debug
         await self.cursor.execute(q)
-        self.conn.commit()
+        await self.conn.commit()
 
     async def make_filtered_uid_table (self):
         t = time.time()
         await self.make_filtered_sample_table()
         await self.make_gene_list_table()
+        await self.conn.commit()
         level = 'variant'
         vtable = level
         vftable = level + '_filtered'
@@ -435,7 +433,8 @@ class CravatFilter ():
         where = self.getwhere(level)
         q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
         q += ' join fsample as s on t.base__uid=s.base__uid'
-        q += ' join gene_list as g on t.base__hugo=g.base__hugo'
+        if 'genes' in self.filter and len(self.filter['genes']) > 0:
+            q += ' join gene_list as g on t.base__hugo=g.base__hugo'
         q += ' '+where
         print(q) #debug
         await self.cursor.execute(q)
@@ -462,7 +461,7 @@ class CravatFilter ():
             q = 'insert into {} select base__hugo from gene'.format(tname)
             print(q) #debug
             await self.cursor.execute(q)
-        self.conn.commit()
+        await self.conn.commit()
     
     async def make_filtered_hugo_table (self):
         await self.cursor.execute('pragma synchronous=0')

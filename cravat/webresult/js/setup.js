@@ -76,10 +76,22 @@ function makeFilterTab (rightDiv) {
 		return;
 	}
 	rightDiv = $(rightDiv);
+	let leftFloat = $(getEl('div'));
+	rightDiv.append(leftFloat);
+	let rightFloat = $(getEl('div'));
+	rightDiv.append(rightFloat);
 	// Sample selector
 	let sampleContainer = $(getEl('div'))
+		.addClass('filter-container')	
 		.attr('id','sample-container');
-	rightDiv.append(sampleContainer);
+	leftFloat.append(sampleContainer);
+	let sampleTopBar = $(getEl('div'))
+		.addClass('sf-header')
+		.append('Samples');
+	sampleContainer.append(sampleTopBar);
+	let sampleSelDiv = $(getEl('div'))
+		.attr('id','sample-select-cont');
+	sampleContainer.append(sampleSelDiv);
 	let sampleIds = getFilterCol('tagsampler__samples').categories;
 	let maxLen = sampleIds.reduce((a,b) => {return a.length>b.length ? a : b}).length;
 	maxLen = maxLen > 25 ? 25 : maxLen;
@@ -93,12 +105,17 @@ function makeFilterTab (rightDiv) {
 			.addClass('sample-neutral')
 			.css('max-width', sboxMaxWidth)
 			.attr('title',sid);
-		sampleContainer.append(sampleBox);
+		sampleSelDiv.append(sampleBox);
 	}
 	// Gene selector
 	let geneContainer = $(getEl('div'))
+		.addClass('filter-container')
 		.attr('id','gene-list-container');
-	rightDiv.append(geneContainer);
+	leftFloat.append(geneContainer);
+	let geneTopBar = $(getEl('div'))
+		.addClass('sf-header')
+		.append('Gene List');
+	geneContainer.append(geneTopBar);
 	let geneTextArea = $(getEl('textarea'))
 		.attr('id','gene-list-text')
 		.change(onGeneListSelectorChange);
@@ -111,8 +128,13 @@ function makeFilterTab (rightDiv) {
 
 	// Smartfilters
 	let sfContainer = $(getEl('div'))
+		.addClass('filter-container')
 		.attr('id','sf-container');
-	rightDiv.append(sfContainer);
+	rightFloat.append(sfContainer);
+	let sfTopBar = $(getEl('div'))
+		.addClass('sf-header')
+		.append('Smart Filters');
+	sfContainer.append(sfTopBar);
 	let orderedSources = Object.keys(smartFilters);
 	orderedSources.splice(orderedSources.indexOf('base'), 1);
 	orderedSources.sort();
@@ -128,8 +150,9 @@ function makeFilterTab (rightDiv) {
 			sfContainer.append(sfDiv);
 		}
 	}
-	rightDiv.append($(getEl('br')));
+	// rightFloat.append($(getEl('br')));
 	let filterApply = $(getEl('button'))
+		.attr('id', 'sf-apply-btn')
 		.append('Apply filter');
 	filterApply.click(function(evt) {
         var infoReset = resetTab['info'];
@@ -138,7 +161,7 @@ function makeFilterTab (rightDiv) {
         makeSmartfilterJson(); //TODO: this, better
         loadData(false, null);
     });
-	rightDiv.append(filterApply);
+	rightFloat.append(filterApply);
 }
 
 function onGeneListSelectorChange(event) {
@@ -295,7 +318,7 @@ function sfOverlayClickHandler (event) {
 function makeSmartfilterJson () {
 	let fjs = {}
 	// Samples
-	let sampleSelectors = $('#sample-container').children();
+	let sampleSelectors = $('#sample-select-cont').children();
 	fjs.sample = {'require':[],'reject':[]}
 	for (let i=0; i<sampleSelectors.length; i++) {
 		let sel = $(sampleSelectors[i]);
@@ -307,7 +330,10 @@ function makeSmartfilterJson () {
 	}
 	// Gene list
 	let geneListString = $('#gene-list-text').val();
-	let geneList = geneListString.split('\n');
+	let geneList = []
+	if (geneListString.length > 0) {
+		geneList = geneListString.split('\n');
+	}
 	fjs.genes = geneList;
 	// Smartfilters
 	let sfWrapDiv = $('#sf-container');

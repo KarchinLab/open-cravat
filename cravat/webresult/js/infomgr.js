@@ -42,6 +42,9 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 		if (jobDataLoadingDiv == null) {
 			drawingRetrievingDataDiv(tabName);
 		}
+		if (filterJson === []){ //TODO find and fix the cause of this
+			filterJson = {};
+		}
 		$.ajax({
 			url: '/result/service/result', 
 			type: 'get',
