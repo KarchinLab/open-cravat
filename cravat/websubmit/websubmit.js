@@ -1743,9 +1743,9 @@ function onSubmitTagCheckboxChange () {
 }
 
 function websubmit_run () {
+    var urlParams = new URLSearchParams(window.location.search);
+    username = urlParams.get('username');
     getServermode();
-    //var storediv = document.getElementById('storediv');
-    //storediv.style.display = 'none';
     connectWebSocket();
     checkConnection();
     setLastAssembly();
@@ -1753,12 +1753,6 @@ function websubmit_run () {
     getRemote();
     addListeners();
     populateAnnotators();
-    /*
-    if (servermode == false) {
-        populateReports();
-    }
-    */
-    //getJobsDir();
     resizePage();
     window.onresize = function (evt) {
         resizePage();
@@ -1779,14 +1773,6 @@ function websubmit_run () {
                 for (var i=0; i < response.length; i++) {
                     var job = response[i];
                     GLOBALS.idToJob[job.id] = job;
-                    /*
-                    for (var j = 0; j < GLOBALS.jobs; j++) {
-                        if (job.id == GLOBALS.jobs[j].id) {
-                            GLOBALS.jobs[j] = job;
-                            break;
-                        }
-                    }
-                    */
                     updateRunningJobTrs(job);
                     if (job.status == 'Finished') {
                         delete jobRunning[job.id];

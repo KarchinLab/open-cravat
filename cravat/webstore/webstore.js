@@ -235,7 +235,7 @@ function getLocal () {
                 showSystemModulePage();
             }
             var d = document.getElementById('store-update-all-div');
-            if (newModuleAvailable) {
+            if (newModuleAvailable && (servermode == false || (logged == true && username == 'admin'))) {
                 var modulesInInstallQueue = Object.keys(installInfo);
                 d.style.display = 'block';
                 announceStoreUpdateAllAvailable();
@@ -277,44 +277,50 @@ function enableStoreTabHead () {
 }
 
 function showOrHideSystemModuleUpdateButton () {
-    baseModuleUpdateAvailable = false;
-    var moduleNames = Object.keys(updates);
-    for (var i = 0; i < moduleNames.length; i++) {
-        if (baseModuleNames.includes(moduleNames[i])) {
-            baseModuleUpdateAvailable = true;
-            break;
+    if (servermode == false || (logged == true && username == 'admin')) {
+        baseModuleUpdateAvailable = false;
+        var moduleNames = Object.keys(updates);
+        for (var i = 0; i < moduleNames.length; i++) {
+            if (baseModuleNames.includes(moduleNames[i])) {
+                baseModuleUpdateAvailable = true;
+                break;
+            }
         }
-    }
-    var btn = document.getElementById('store-systemmoduleupdate-announce-div');
-    if (baseModuleUpdateAvailable) {
-        btn.style.display = 'inline-block';
-    } else {
-        btn.style.display = 'none';
+        var btn = document.getElementById('store-systemmoduleupdate-announce-div');
+        if (baseModuleUpdateAvailable) {
+            btn.style.display = 'inline-block';
+        } else {
+            btn.style.display = 'none';
+        }
     }
 }
 
 function showOrHideInstallAllButton () {
-    var notInstalledModuleNames = getNotInstalledModuleNames();
-    var div = document.getElementById('store-install-all-button');
-    var display = null;
-    if (notInstalledModuleNames.length == 0) {
-        display = 'none';
-    } else {
-        display = 'inline-block';
+    if (servermode == false || (logged == true && username == 'admin')) {
+        var notInstalledModuleNames = getNotInstalledModuleNames();
+        var div = document.getElementById('store-install-all-button');
+        var display = null;
+        if (notInstalledModuleNames.length == 0) {
+            display = 'none';
+        } else {
+            display = 'inline-block';
+        }
+        div.style.display = display;
     }
-    div.style.display = display;
 }
 
 function showOrHideUpdateAllButton () {
-    var modulesToUpdate = getModulesToUpdate();
-    var div = document.getElementById('store-update-all-button');
-    var display = null;
-    if (modulesToUpdate.length == 0) {
-        display = 'none';
-    } else {
-        display = 'inline-block';
+    if (servermode == false || (logged == true && username == 'admin')) {
+        var modulesToUpdate = getModulesToUpdate();
+        var div = document.getElementById('store-update-all-button');
+        var display = null;
+        if (modulesToUpdate.length == 0) {
+            display = 'none';
+        } else {
+            display = 'inline-block';
+        }
+        div.style.display = display;
     }
-    div.style.display = display;
 }
 
 function showStoreHome () {
@@ -567,6 +573,9 @@ function getNotInstalledModuleNames () {
                 installedTagFound = true;
                 break;
             }
+        }
+        if (installedTagFound == false) {
+            notInstalledModuleNames.push(module);
         }
     }
     return notInstalledModuleNames;
@@ -912,17 +921,10 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
             break;
         }
     }
-    if (updateAvail) {
+    if (updateAvail && (servermode == false || (logged == true && username == 'admin'))) {
         var span = getEl('span');
         span.className = 'moduletile-group-updateavailable-span';
         span.textContent = 'Update available';
-        /*
-        span.addEventListener('click', function (evt) {
-            saveCurrentPage();
-            populateModuleGroupDiv(evt.target.parentElement.getAttribute('module'));
-            evt.stopPropagation();
-        });
-        */
         addEl(div, span);
     }
     return div
@@ -1471,11 +1473,12 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     td.style.verticalAlign = 'top';
     td.style.textAlign = 'right';
     var sdiv = getEl('div');
+    var buttonDiv = getEl('div');
     if (currentTab == 'store' && (servermode == false || (logged == true && username == 'admin'))) {
         var button = getModuleDetailInstallButton(moduleName, td, buttonDiv);
         addEl(sdiv, button);
         addEl(td, sdiv);
-        var buttonDiv = sdiv;
+        buttonDiv = sdiv;
         var sdiv = getEl('div');
         sdiv.id = 'installstatdiv_' + moduleName;
         sdiv.style.marginTop = '10px';
