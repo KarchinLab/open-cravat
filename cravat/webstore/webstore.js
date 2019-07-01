@@ -1027,29 +1027,31 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
     var span = getEl('div');
     span.id = 'panelinstallstatus_' + moduleName;
     addEl(div, span);
-    if (installStatus == 'Queued') {
-        var button = getModuleTileUnqueueButton(moduleName);
-        addEl(div, button);
-    } else if (installStatus == 'Installing...') {
-        var button = getModuleTileAbortButton(moduleName);
-        addEl(div, button);
-    } else if (installStatus == 'Installed') {
-        if (remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
-            var button = getModuleTileUpdateButton(moduleName);
+    if (servermode == false || (logged == true && username == 'admin')) {
+        if (installStatus == 'Queued') {
+            var button = getModuleTileUnqueueButton(moduleName);
             addEl(div, button);
+        } else if (installStatus == 'Installing...') {
+            var button = getModuleTileAbortButton(moduleName);
+            addEl(div, button);
+        } else if (installStatus == 'Installed') {
+            if (remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
+                var button = getModuleTileUpdateButton(moduleName);
+                addEl(div, button);
+            } else {
+                var button = getModuleTileUninstallButton(moduleName);
+                addEl(div, button);
+            }
         } else {
-            var button = getModuleTileUninstallButton(moduleName);
-            addEl(div, button);
-        }
-    } else {
-        var tags = remoteModuleInfo[moduleName].tags;
-        if (tags.indexOf('installed') >= 0) {
-            var button = getModuleTileUninstallButton(moduleName);
-            addEl(div, button);
-        } else {
-            var button = getModuleTileInstallButton(moduleName);
-            addEl(div, button);
-            uninstalledModules.push(moduleName);
+            var tags = remoteModuleInfo[moduleName].tags;
+            if (tags.indexOf('installed') >= 0) {
+                var button = getModuleTileUninstallButton(moduleName);
+                addEl(div, button);
+            } else {
+                var button = getModuleTileInstallButton(moduleName);
+                addEl(div, button);
+                uninstalledModules.push(moduleName);
+            }
         }
     }
     if (moduleInfo.type != 'annotator') {
