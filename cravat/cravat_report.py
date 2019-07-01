@@ -90,6 +90,8 @@ class CravatReport:
             hugo_present = 'base__hugo' in self.colnos['variant']
         for row in await self.cf.get_filtered_iterator(level):
             row = list(row)
+            if row is None:
+                continue
             if level == 'variant':
                 if self.nogenelevelonvariantlevel == False and hugo_present:
                     hugo = row[self.colnos['variant']['base__hugo']]
