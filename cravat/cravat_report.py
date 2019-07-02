@@ -443,6 +443,10 @@ class CravatReport:
             action='store_true',
             default=False,
             help='Use this option to prevent gene level result from being added to variant level result.')
+        parser.add_argument('--confs',
+            dest='confs',
+            default='{}',
+            help='Configuration string')
         parsed_args = parser.parse_args(cmd_args[1:])
         self.parsed_args = parsed_args
         self.dbpath = parsed_args.dbpath
@@ -463,6 +467,10 @@ class CravatReport:
         status_fname = '{}.status.json'.format(self.output_basename)
         self.status_fpath = os.path.join(self.output_dir, status_fname)
         self.nogenelevelonvariantlevel = parsed_args.nogenelevelonvariantlevel
+        self.confs = None
+        if parsed_args.confs is not None:
+            confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+            self.confs = json.loads(confs)
 
     async def connect_db (self, dbpath=None):
         if dbpath != None:

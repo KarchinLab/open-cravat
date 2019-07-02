@@ -79,7 +79,7 @@ cravat_cmd_parser.add_argument('--cs',
 cravat_cmd_parser.add_argument('-v', 
                     dest='verbose',
                     action='store_true',
-                    default=None,
+                    default=False,
                     help='verbose')
 cravat_cmd_parser.add_argument('-t',
                     nargs='+',
@@ -142,8 +142,9 @@ class Cravat (object):
         self.annotators = {}        
         self.make_args_namespace(kwargs)
         if self.args.confs != None:
-            self.conf.override_cravat_conf(
-                self.args.confs.replace("'", '"'))
+            confs_conf = json.loads(self.args.confs.replace("'", '"'))
+            self.conf.override_cravat_conf(confs_conf)
+            self.cravat_conf = self.conf.get_cravat_conf()
         self.get_logger()
         self.start_time = time.time()
         self.logger.info('started: {0}'.format(time.asctime(time.localtime(self.start_time))))
@@ -511,6 +512,10 @@ class Cravat (object):
                '-n', self.run_name,
                '-d', self.output_dir,
                '-l', self.input_assembly]
+        if module.name in self.cravat_conf:
+            confs = json.dumps(self.cravat_conf[module.name])
+            confs = "'" + confs.replace("'", '"') + "'"
+            cmd.extend(['--confs', confs])
         if self.args.forcedinputformat is not None:
             cmd.extend(['-f', self.args.forcedinputformat])
         self.announce_module(module)
@@ -522,12 +527,16 @@ class Cravat (object):
 
     def run_genemapper (self):
         module = au.get_local_module_info(
-            self.conf.get_cravat_conf()['genemapper'])
+            self.cravat_conf['genemapper'])
         self.genemapper = module
         cmd = [module.script_path, 
                self.crvinput,
                '-n', self.run_name,
                '-d', self.output_dir]
+        if module.name in self.cravat_conf:
+            confs = json.dumps(self.cravat_conf[module.name])
+            confs = "'" + confs.replace("'", '"') + "'"
+            cmd.extend(['--confs', confs])
         self.announce_module(module)
         if self.verbose:
             print(' '.join(cmd))
@@ -607,6 +616,10 @@ class Cravat (object):
             cmd = [module.script_path, 
                    '-d', self.output_dir, 
                    '-n', self.run_name]
+            if module.name in self.cravat_conf:
+                confs = json.dumps(self.cravat_conf[module.name])
+                confs = "'" + confs.replace("'", '"') + "'"
+                cmd.extend(['--confs', confs])
             if self.verbose:
                 print(' '.join(cmd))
             post_agg_cls = util.load_class('CravatPostAggregator', module.script_path)
@@ -620,7 +633,7 @@ class Cravat (object):
         if self.reports != None:
             module_names = [v + 'reporter' for v in self.reports]
         else:
-            module_names = [self.conf.get_cravat_conf()['reporter']]
+            module_names = [self.cravat_conf['reporter']]
         all_reporters_ran_well = True
         for module_name in module_names:
             try:
@@ -629,8 +642,13 @@ class Cravat (object):
                 cmd = [module.script_path, 
                        '-s', os.path.join(self.output_dir, self.run_name),
                        os.path.join(self.output_dir, self.run_name + '.sqlite'),
-                       '-c', self.run_conf_path,
                        '--module-name', module_name]
+                if self.run_conf_path is not None:
+                    cmd.extend(['-c', self.run_conf_path])
+                if module_name in self.cravat_conf:
+                    confs = json.dumps(self.cravat_conf[module_name])
+                    confs = "'" + confs.replace("'", '"') + "'"
+                    cmd.extend(['--confs', confs])
                 if self.verbose:
                     print(' '.join(cmd))
                 Reporter = util.load_class('Reporter', module.script_path)
@@ -650,7 +668,7 @@ class Cravat (object):
         default_workers = mp.cpu_count() - 1
         if default_workers < 1: 
             default_workers = 1
-        num_workers = self.conf.get_cravat_conf().get('num_workers', default_workers)
+        num_workers = self.cravat_conf.get('num_workers', default_workers)
         if self.args.mp is not None:
             try:
                 self.args.mp = int(self.args.mp)
@@ -695,6 +713,10 @@ class Cravat (object):
                 cmd.extend(['-n', self.run_name])
             if self.output_dir != None:
                 cmd.extend(['-d', self.output_dir])
+            if module.name in self.cravat_conf:
+                confs = json.dumps(self.cravat_conf[module.name])
+                confs = "'" + confs.replace("'", '"') + "'"
+                cmd.extend(['--confs', confs])
             all_cmds.append(cmd)
         ds = [self.status_writer for i in range(len(self.ordered_annotators))]
         pool_args = zip(

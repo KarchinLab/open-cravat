@@ -13,6 +13,7 @@ from pyliftover import LiftOver
 import copy
 import cravat.cravat_util as cu
 from cravat.util import detect_encoding
+import json
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
@@ -101,6 +102,10 @@ class MasterCravatConverter(object):
                             choices=['hg38']+list(constants.liftover_chain_paths.keys()),
                             default='hg38',
                             help='Input gene assembly. Will be lifted over to hg38')
+        parser.add_argument('--confs',
+            dest='confs',
+            default='{}',
+            help='Configuration string')
         parsed_args = parser.parse_args(args)
         self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs]
         if parsed_args.format:
@@ -123,6 +128,10 @@ class MasterCravatConverter(object):
         else:
             self.lifter = None
         self.status_fpath = os.path.join(self.output_dir, self.output_base_fname + '.status.json')
+        self.confs = None
+        if parsed_args.confs is not None:
+            confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+            self.confs = json.loads(confs)
 
     def setup (self):
         """ Do necesarry pre-run tasks """

@@ -9,6 +9,7 @@ from cravat.util import get_caller_name
 from cravat.config_loader import ConfigLoader
 from cravat.constants import VARIANT, GENE, LEVELS
 from cravat.exceptions import InvalidData
+import json
 
 class BasePostAggregator (object):
 
@@ -62,6 +63,10 @@ class BasePostAggregator (object):
                             default='variant',
                             help='Summarize level. '\
                                  +'Default is variant.')
+        parser.add_argument('--confs',
+            dest='confs',
+            default='{}',
+            help='Configuration string')
         self.cmd_arg_parser = parser
 
     def parse_cmd_args(self, cmd_args):
@@ -75,6 +80,10 @@ class BasePostAggregator (object):
             self.level = parsed_args.level
         self.levelno = LEVELS[self.level]
         self.dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
+        self.confs = None
+        if parsed_args.confs is not None:
+            confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+            self.confs = json.loads(confs)
 
     def run(self):
         if not self.should_run_annotate:

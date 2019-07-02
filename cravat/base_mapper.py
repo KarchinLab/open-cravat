@@ -69,6 +69,10 @@ class BaseMapper(object):
                                      dest='output_dir',
                                      help='Output directory. '\
                                           +'Default is input file directory.')
+        self.cmd_parser.add_argument('--confs',
+            dest='confs',
+            default='{}',
+            help='Configuration string')
 
     def _define_additional_cmd_args(self):
         """This method allows sub-classes to override and provide addittional command line args"""
@@ -88,6 +92,10 @@ class BaseMapper(object):
             self.output_base_fname = self.cmd_args.name
         else:
             self.output_base_fname = self.input_fname
+        self.confs = None
+        if self.cmd_args.confs is not None:
+            confs = self.cmd_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+            self.confs = json.loads(confs)
 
     def base_setup(self):
         self._setup_io()
