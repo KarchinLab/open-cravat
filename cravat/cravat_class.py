@@ -144,7 +144,7 @@ class Cravat (object):
         if self.args.confs != None:
             confs_conf = json.loads(self.args.confs.replace("'", '"'))
             self.conf.override_cravat_conf(confs_conf)
-            self.cravat_conf = self.conf.get_cravat_conf()
+        self.cravat_conf = self.conf.get_cravat_conf()
         self.get_logger()
         self.start_time = time.time()
         self.logger.info('started: {0}'.format(time.asctime(time.localtime(self.start_time))))
@@ -649,6 +649,9 @@ class Cravat (object):
                     confs = json.dumps(self.cravat_conf[module_name])
                     confs = "'" + confs.replace("'", '"') + "'"
                     cmd.extend(['--confs', confs])
+                cmd.append('--inputfiles')
+                for input_file in self.inputs:
+                    cmd.append(input_file)
                 if self.verbose:
                     print(' '.join(cmd))
                 Reporter = util.load_class('Reporter', module.script_path)
@@ -780,12 +783,12 @@ class Cravat (object):
             genemapper_str = '{} ({})'.format(title, version)
             q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
             cursor.execute(q)
-        '''
-        q = 'update variant_annotator set version="{}" where name="{}"'.format(version, modulename)
-        cursor.execute(q)
-        q = 'update gene_annotator set version="{}" where name="{}"'.format(version, modulename)
-        cursor.execute(q)
-        '''
+        f = open(os.path.join(self.output_dir, self.run_name + '.crm'))
+        for line in f:
+            if line.startswith('#input_paths='):
+                input_path_dict_str = '='.join(line.strip().split('=')[1:]).replace('"', "'")
+                q = 'insert into info values ("Input path dictionary", "{}")'.format(input_path_dict_str)
+                cursor.execute(q)
         q = 'select name, displayname, version from variant_annotator'
         cursor.execute(q)
         rows = list(cursor.fetchall())

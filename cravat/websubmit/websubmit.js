@@ -830,7 +830,7 @@ function buildAnnotatorGroupSelector () {
     span.textContent = 'Sets';
     addEl(div, span);
     var btn = getEl('span');
-    btn.textContent = '\u23F7';
+    btn.textContent = '\u25BE';
     btn.style.cursor = 'default';
     btn.setAttribute('state', 'expanded');
     btn.addEventListener('click', function (evt) {
@@ -840,12 +840,12 @@ function buildAnnotatorGroupSelector () {
         var grpDiv = document.querySelector('#annotator-group-select-div div.annotator-group-select');
         if (state == 'collapsed') {
             state = 'expanded';
-            text = '\u23F7';
+            text = '\u25BE';
             grpDiv.classList.add('on');
             grpDiv.classList.remove('off');
         } else {
             state = 'collapsed';
-            text = '\u23F6';
+            text = '\u25B8';
             grpDiv.classList.add('off');
             grpDiv.classList.remove('on');
         }
@@ -1247,7 +1247,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         if (checkData.type == 'group') {
             var btn = getEl('span');
             btn.className = 'icon';
-            btn.textContent = '\u23F6';
+            btn.textContent = '\u25B8';
             btn.style.cursor = 'default';
             btn.setAttribute('state', 'collapsed');
             btn.setAttribute('name', checkData.name);
@@ -1259,12 +1259,12 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
                 var grpDiv = document.querySelector('div.checkbox-group-element-sdiv[name=' + name + ']');
                 if (state == 'collapsed') {
                     state = 'expanded';
-                    text = '\u23F7';
+                    text = '\u25BE';
                     grpDiv.classList.add('on');
                     grpDiv.classList.remove('off');
                 } else {
                     state = 'collapsed';
-                    text = '\u23F6';
+                    text = '\u25B8';
                     grpDiv.classList.add('off');
                     grpDiv.classList.remove('on');
                 }

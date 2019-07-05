@@ -135,7 +135,7 @@ class CravatReport:
                 colno = self.colnos[level][colname]
                 value = row[colno]
                 newrow.append(value)
-            self.write_table_row(newrow)
+            await self.write_table_row(newrow)
 
     async def run (self, tab='all'):
         start_time = time.time()
@@ -143,7 +143,8 @@ class CravatReport:
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
         if self.module_conf is not None:
             self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
-        self.setup()
+        if self.setup() == False:
+            return
         if tab == 'all':
             for level in await self.cf.get_result_levels():
                 if await self.table_exists(level):
@@ -447,6 +448,11 @@ class CravatReport:
             dest='confs',
             default='{}',
             help='Configuration string')
+        parser.add_argument('--inputfiles',
+            nargs='+',
+            dest='inputfiles',
+            default=None,
+            help='Original input file path')
         parsed_args = parser.parse_args(cmd_args[1:])
         self.parsed_args = parsed_args
         self.dbpath = parsed_args.dbpath
@@ -471,6 +477,7 @@ class CravatReport:
         if parsed_args.confs is not None:
             confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
             self.confs = json.loads(confs)
+        self.args = parsed_args
 
     async def connect_db (self, dbpath=None):
         if dbpath != None:
