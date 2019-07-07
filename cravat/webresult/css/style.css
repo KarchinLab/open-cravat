@@ -805,5 +805,9 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .sf-selector {
-	margin-left: 10px;
+	flex: 0 1 50%;
+}
+.sf-title {
+	flex: 0 1 50%;
+	padding-right: 10px;
 }

@@ -243,8 +243,9 @@ function getSmartFilterDiv (sfDef) {
 		.change(sfCheckboxChangeHandler);
 	outerDiv.append(activeCb);
 	let titleSpan = $(getEl('span'))
-		.append(sfDef.title)
-		.attr('title', sfDef.description);
+		.attr('title', sfDef.description)
+		.addClass('sf-title')
+		.append(sfDef.title);
 	outerDiv.append(titleSpan);
 	let defaultValue = sfDef.defaultValue;
 	if (defaultValue === undefined || defaultValue === null) {
