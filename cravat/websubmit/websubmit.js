@@ -1515,7 +1515,7 @@ function setupNoServerMode () {
 function setupServerMode () {
     $('head').append('<link rel="stylesheet" type="text/css" href="/server/cravatserver.css">');
     $.getScript('/server/cravatserver.js', function () {
-        checkLogged()
+        checkLogged(username)
     });
     document.getElementById('settingsdiv').style.display = 'none';
     document.getElementById('threedotsdiv').style.display = 'none';

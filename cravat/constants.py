@@ -23,6 +23,7 @@ conf_dir_key = 'conf_dir'
 default_conf_dir = os.path.join(oc_root_dir, conf_dir_name)
 if os.path.exists(default_conf_dir) == False:
     os.mkdir(default_conf_dir)
+admindb_path = os.path.join(default_conf_dir, 'admin.sqlite')
 system_conf_fname = 'cravat-system.yml'
 system_conf_path = os.path.join(default_conf_dir, system_conf_fname)
 system_conf_template_fname = 'cravat-system.template.yml'

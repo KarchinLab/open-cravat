@@ -265,6 +265,7 @@ class MasterCravatConverter(object):
         self.setup()
         start_time = time.time()
         multiple_files = len(self.input_files) > 1
+        total_num_input = 0
         for f in self.input_files:
             self.primary_converter.setup(f)
             f.seek(0)
@@ -275,6 +276,7 @@ class MasterCravatConverter(object):
                 cur_fname = os.path.basename(f.name)
                 samp_prefix = '.'.join(cur_fname.split('.')[:-1])
                 read_lnum += 1
+                total_num_input += 1
                 try:
                     # all_wdicts is a list, since one input line can become
                     # multiple output lines
@@ -332,6 +334,7 @@ class MasterCravatConverter(object):
         runtime = round(end_time - start_time, 3)
         self.logger.info('num input lines: {}'.format(read_lnum))
         self.logger.info('runtime: %s'%runtime)
+        return total_num_input
 
     def liftover(self, old_chrom, old_pos):
         new_coords = self.lifter.convert_coordinate(old_chrom, int(old_pos))

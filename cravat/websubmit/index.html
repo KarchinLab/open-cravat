@@ -7,29 +7,23 @@
     <link rel="stylesheet" href="websubmit.css">
     <link rel="stylesheet" href="/store/webstore.css">
     <script src="/submit/jquery-3.3.1.min.js"></script>
-    <script src="websubmit.js?ver=1.4.4"></script>
-    <script src='../store/webstore.js?ver=1.4.4'></script>
+    <script src="websubmit.js?ver=1.6.0"></script>
+    <script src='../store/webstore.js?ver=1.6.0'></script>
+    <script src='Chart.bundle.min.js?var=1.6.0'></script>
     <script>
         $(document).ready(function() {
             websubmit_run();
         });
     </script> 
     <link href="https://fonts.googleapis.com/css?family=Gothic+A1" rel="stylesheet">
-    <!--
-    <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Hind" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Arimo" rel="stylesheet">
-    -->
 </head>
 
 <body>
 
 <div id='pageselect'>
-    <div selval='t' value='submitdiv' onclick='changePage("submitdiv");'>
-        Jobs 
-    </div><div id='storediv_tabhead' class='tabhead' value='storediv' onclick='changePage("storediv");' disabled='t'>
-        Store
-    </div>
+    <div selval='t' value='submitdiv' onclick='changePage("submitdiv");'>Jobs</div>
+    <div id='storediv_tabhead' class='tabhead' value='storediv' onclick='changePage("storediv");' disabled='t'>Store</div>
+    <div id='admindiv_tabhead' class='tabhead' value='admindiv' onclick='changePage("admindiv");' disabled='t' style='display: none;'>Admin</div>
 </div>
 
 <div id='store-systemmoduleupdate-announce-div'>
@@ -49,25 +43,6 @@
     <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' id='threedotsdiv' >
         <img src='threedots.png' class='threedots' />
     </div>
-    <!--
-    <div id='accountdiv'>
-        <div id='userdiv' style='display: none;'></div>
-        <div id='logoutdiv' style='display: none;'>
-            <button onclick='changePassword();'>Change password</button>
-            <button onclick='logout();'>Logout</button>
-            <div id='changepassworddiv' style='display: none; position: absolute; padding: 10px; background-color: white; border: 1px solid black;'>
-                Old password: <input type='password' id='changepasswordoldpassword' />
-                <br />
-                New password: <input type='password' id='changepasswordnewpassword' />
-                <br />
-                Retype new password: <input type='password' id='changepasswordretypenewpassword' />
-                <br />
-                <button onclick='submitNewPassword();'>Submit</button>
-            </div>
-        </div>
-        <button id='loginsignupbutton' onclick='toggleloginsignupdiv();' style='display: none;'>Log in</button>
-    </div>
-    -->
 </div>
 
 <div id='submitdiv' class='appdiv'>
@@ -248,6 +223,9 @@
         </div>
     </div>
 </div> <!-- storediv -->
+
+<div id='admindiv' class='appdiv' style='display: none;'>
+</div> <!-- admindiv -->
 
 <div id='store-systemmodule-div'>
     <div id='store-systemmodule-missing-div' style='display: none;'>

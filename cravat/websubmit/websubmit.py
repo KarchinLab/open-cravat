@@ -255,13 +255,16 @@ async def submit (request):
     if 'forcedinputformat' in job_options:
         run_args.append('--forcedinputformat')
         run_args.append(job_options['forcedinputformat'])
+    if servermode:
+        run_args.append('--writeadmindb')
+        run_args.extend(['--jobid', job_id])
     p = subprocess.Popen(run_args)
     job_tracker.add_job(job_id, p)
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
     # admin.sqlite
     if servermode:
-        await cravatserver.add_job_info(request, job, job_options)
+        await cravatserver.add_job_info(request, job)
     return web.json_response(job.get_info_dict())
 
 def count_lines(f):
