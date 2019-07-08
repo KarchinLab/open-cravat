@@ -1478,10 +1478,12 @@ function populateWidgetSelectorPanel () {
 			}
 			var $groupHeaderTr = null;
 			var groupHeaderTitleToKey = {};
+            prevHeaderCellMissing = false;
 			for (let i=0; i < colModel.length; i++) {
 				var col = colModel[i];
 				var $headerCell = this.getCellHeader({colIndx: col.leftPos});
 				if ($headerCell.length == 0) {
+                    prevHeaderCellMissing = true;
 					continue;
 				}
 				if (col.desc !== null) {
@@ -1501,6 +1503,16 @@ function populateWidgetSelectorPanel () {
 					makeTableHeaderRightClickMenu(evt, col, colgroup);
 					return false;
 				});
+                if (prevHeaderCellMissing == true) {
+                    $prev = $headerCell.prev();
+                    if ($prev.length > 0) {
+                        $headerCell.css('border-left-width', '3px');
+                        $prev.css('border-right-width', '3px');
+                    } else {
+                        $headerCell.css('border-left', '3px solid #cfcfcf');
+                    }
+                    prevHeaderCellMissing = false;
+                }
 			}
 			var $groupHeaderTds = $groupHeaderTr.children();
 			for (var i = 0; i < $groupHeaderTds.length; i++) {
