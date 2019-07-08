@@ -412,8 +412,12 @@ class CravatFilter ():
             req = []
             rej = []
         q = 'create table fsample as select distinct base__uid from sample'
-        for s in req:
-            q += ' intersect select base__uid from sample where base__sample_id="{}"'.format(s)
+        if req:
+            q += ' where base__sample_id in ({})'.format(
+                ', '.join(['"{}"'.format(sid) for sid in req])
+            )
+        # for s in req:
+        #     q += ' union select base__uid from sample where base__sample_id="{}"'.format(s)
         for s in rej:
            q += ' except select base__uid from sample where base__sample_id="{}"'.format(s)
         print(q) #debug
