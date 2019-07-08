@@ -558,7 +558,7 @@ const makeGroupFilter = (groupDiv) => {
     filter.operator = elemsDiv.attr('join-operator');
     // Columns
     const colDivs = elemsDiv.children('.filter-column-div');
-    filter.columns = [];
+    filter.rules = [];
     for (let i=0; i<colDivs.length; i++) {
         const colFilter = {}
         const colDiv = $(colDivs[i]);
@@ -622,15 +622,14 @@ const makeGroupFilter = (groupDiv) => {
         }
         // Negate
         colFilter.negate = colDiv.children('.filter-not-toggle').attr('active') === 'true';
-        filter.columns.push(colFilter)
+        filter.rules.push(colFilter)
     }
     // Groups
     const groupDivs = elemsDiv.children('.filter-group-wrapper-div');
-    filter.groups = [];
     for (let i=0; i<groupDivs.length; i++) {
         subGroupDiv = $(groupDivs[i]);
         subGroupFilter = makeGroupFilter(subGroupDiv);
-        filter.groups.push(subGroupFilter);
+        filter.rules.push(subGroupFilter);
     }
     
     // Negate

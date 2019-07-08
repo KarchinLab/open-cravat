@@ -122,7 +122,7 @@ function makeFilterTab (rightDiv) {
 	rightDiv.append(geneContainer);
 	let geneHeader = $(getEl('div'))
 		.addClass('sf-header')
-		.append('Gene List')
+		.append('Genes')
 		.click(sfHeaderClick)
 		.addClass('sf-header-inactive');
 	geneContainer.append(geneHeader);
@@ -143,18 +143,46 @@ function makeFilterTab (rightDiv) {
 	geneContent.append(geneFileInput);
 
 	// Smartfilters
-	let sfContainer = $(getEl('div'))
+	let vPropContainer = $(getEl('div'))
 		.addClass('filter-container')
-		rightDiv.append(sfContainer);
-		let sfHeader = $(getEl('div'))
+		rightDiv.append(vPropContainer);
+	let vPropHeader = $(getEl('div'))
 		.addClass('sf-header')
-		.append('Smart Filters')
+		.append('Variant Properties')
 		.click(sfHeaderClick);
-		sfContainer.append(sfHeader);
-		let sfContent = $(getEl('div'))
+	vPropContainer.append(vPropHeader);
+	let vPropContent = $(getEl('div'))
 		.addClass('sf-content')
 		.attr('id','sf-container');
-	sfContainer.append(sfContent);
+	vPropContainer.append(vPropContent);
+	fTypeDiv = $(getEl('div'));
+	vPropContent.append(fTypeDiv);
+	let vPropSel = $(getEl('select'))
+		.attr('id','vprop-sel')
+		.append($(getEl('option')).val('sf').text('sf'))
+		.append($(getEl('option')).val('qb').text('qb'))
+		.css('display','none')
+		.change(vPropSelectChange);
+	fTypeDiv.append(vPropSel);
+	fTypeDiv.append(
+		$(getEl('span'))
+		.addClass('vprop-option')
+		.text('Smart Filters')
+		.click(vPropOptionClick)
+		.attr('value','sf')
+		.addClass('clicked')
+	);
+	fTypeDiv.append(
+		$(getEl('span'))
+		.addClass('vprop-option')
+		.text('Query Builder')
+		.click(vPropOptionClick)
+		.attr('value','qb')
+	);
+	sfContent = $(getEl('div'))
+		.attr('id','vprop-sf');
+	vPropContent.append(sfContent);
+	
 	sfContent.append($(getEl('p'))
 		.text('Click a filter to apply it.')
 	)
@@ -173,6 +201,16 @@ function makeFilterTab (rightDiv) {
 			sfContent.append(sfDiv);
 		}
 	}
+	qbContent = $(getEl('div'))
+		.attr('id','vprop-qb');
+	vPropContent.append(qbContent);
+	qbContent.append($(getEl('p')).text('Use the query builder to create a set of filter rules'));
+	let qbDiv = makeFilterGroupDiv({}, 'advanced');
+	qbDiv.attr('id','qb-root');
+	qbContent.append(qbDiv);
+	vPropSel.val('sf');
+	vPropSel.change();
+	// Load controls
 	let filterLoad = $(getEl('div'));
 	rightDiv.append(filterLoad);
 	let filterApply = $(getEl('button'))
@@ -186,6 +224,32 @@ function makeFilterTab (rightDiv) {
 			loadData(false, null);
 		});
 	filterLoad.append(filterApply);
+}
+
+function vPropOptionClick(event) {
+	let target = $(event.target);
+	let val = target.attr('value');
+	let vPropSel = $('#vprop-sel');
+	if (val !== vPropSel.val()) {
+		vPropSel.val(val);
+		vPropSel.change()
+	}
+	$('.vprop-option').removeClass('clicked');
+	target.addClass('clicked');
+}
+
+function vPropSelectChange(event) {
+	let sel = $(event.target);
+	let val = sel.val();
+	if (val === 'qb') {
+		var toShow = $('#vprop-qb');
+		var toHide = $('#vprop-sf');
+	} else if (val === 'sf') {
+		var toShow = $('#vprop-sf');
+		var toHide = $('#vprop-qb');
+	}
+	toShow.css('display','');
+	toHide.css('display','none');
 }
 
 function onGeneListSelectorChange(event) {
@@ -377,24 +441,31 @@ function makeSmartfilterJson () {
 		geneList = geneListString.split('\n');
 	}
 	fjs.genes = geneList;
-	// Smartfilters
-	let sfWrapDiv = $('#sf-container');
-	let sfDivs = sfWrapDiv.children('div');
-	let fullSf = {operator: 'and', rules:[]}
-	for (let i=0; i<sfDivs.length; i++) {
-		sfDiv = $(sfDivs[i]);
-		if (!sfDiv.hasClass('smartfilter-active')) {
-			continue;
+	// Variant Properties
+	let activeVprop = $('#vprop-sel').val();
+	if (activeVprop === 'sf') {
+		let sfWrapDiv = $('#vprop-sf');
+		let sfDivs = sfWrapDiv.children('div');
+		let fullSf = {operator: 'and', rules:[]}
+		for (let i=0; i<sfDivs.length; i++) {
+			sfDiv = $(sfDivs[i]);
+			if (!sfDiv.hasClass('smartfilter-active')) {
+				continue;
+			}
+			let fullName = sfDiv.attr('full-name');
+			let sfSource = fullName.split('.')[0];
+			let sfName = fullName.split('.')[1];
+			let sfDef = smartFilters[sfSource].definitions[sfName];
+			let val = pullSfValue(sfDiv);
+			let sfResult = addSfValue(sfDef.filter, val);
+			fullSf.rules.push(sfResult);
+			fjs.variant = fullSf;
 		}
-		let fullName = sfDiv.attr('full-name');
-		let sfSource = fullName.split('.')[0];
-		let sfName = fullName.split('.')[1];
-		let sfDef = smartFilters[sfSource].definitions[sfName];
-		let val = pullSfValue(sfDiv);
-		let sfResult = addSfValue(sfDef.filter, val);
-		fullSf.rules.push(sfResult);
+	} else if (activeVprop === 'qb') {
+		let qbRoot = $('#qb-root');
+		fjs.variant = makeGroupFilter(qbRoot);
 	}
-	fjs.variant = fullSf;
+	
 	filterJson = fjs;
 	console.log(filterJson);
 }
