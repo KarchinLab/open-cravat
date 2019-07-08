@@ -783,13 +783,16 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 #rightdiv_filter {
-	display: flex;
 	font-size: 13px;
 }
 
 .sf-header {
 	background-color: #d1dae0;
 	font-size: 18px;
+	cursor: pointer;
+}
+.sf-header.sf-header-inactive + .sf-content {
+	display: none;
 }
 
 .filter-container {
@@ -800,7 +803,6 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 #sf-apply-btn {
-	float: right;
 	font-size: 18px;
 }
 

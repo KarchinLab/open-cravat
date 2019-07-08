@@ -71,30 +71,35 @@ function setupTab (tabName) {
 	changeMenu();
 }
 
+function sfHeaderClick (event) {
+	$(event.target).toggleClass('sf-header-inactive');
+}
+
 function makeFilterTab (rightDiv) {
 	if (smartFilters === undefined) { 
 		return;
 	}
 	rightDiv = $(rightDiv);
-	let leftFloat = $(getEl('div'));
-	rightDiv.append(leftFloat);
-	let rightFloat = $(getEl('div'));
-	rightDiv.append(rightFloat);
 	// Sample selector
 	let sampleContainer = $(getEl('div'))
 		.addClass('filter-container')	
 		.attr('id','sample-container');
-	leftFloat.append(sampleContainer);
-	let sampleTopBar = $(getEl('div'))
+	rightDiv.append(sampleContainer);
+	let sampleHeader = $(getEl('div'))
 		.addClass('sf-header')
-		.append('Samples');
-	sampleContainer.append(sampleTopBar);
-	sampleContainer.append($(getEl('p'))
+		.append('Samples')
+		.click(sfHeaderClick)
+		.addClass('sf-header-inactive');
+	sampleContainer.append(sampleHeader);
+	let sampleContent = $(getEl('div'))
+		.addClass('sf-content');
+	sampleContainer.append(sampleContent);
+	sampleContent.append($(getEl('p'))
 		.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
 	)
 	let sampleSelDiv = $(getEl('div'))
 		.attr('id','sample-select-cont');
-	sampleContainer.append(sampleSelDiv);
+	sampleContent.append(sampleSelDiv);
 	let sampleIds = getFilterCol('tagsampler__samples').categories;
 	let maxLen = sampleIds.reduce((a,b) => {return a.length>b.length ? a : b}).length;
 	maxLen = maxLen > 25 ? 25 : maxLen;
@@ -114,34 +119,43 @@ function makeFilterTab (rightDiv) {
 	let geneContainer = $(getEl('div'))
 		.addClass('filter-container')
 		.attr('id','gene-list-container');
-	leftFloat.append(geneContainer);
-	let geneTopBar = $(getEl('div'))
+	rightDiv.append(geneContainer);
+	let geneHeader = $(getEl('div'))
 		.addClass('sf-header')
-		.append('Gene List');
-	geneContainer.append(geneTopBar);
-	geneContainer.append($(getEl('p'))
+		.append('Gene List')
+		.click(sfHeaderClick)
+		.addClass('sf-header-inactive');
+	geneContainer.append(geneHeader);
+	let geneContent = $(getEl('div'))
+		.addClass('sf-content');
+	geneContainer.append(geneContent);
+	geneContent.append($(getEl('p'))
 		.text('Type a list of gene names to include. One per line. Or, load a gene list from a file.')
 	)
 	let geneTextArea = $(getEl('textarea'))
 		.attr('id','gene-list-text')
 		.change(onGeneListSelectorChange);
-	geneContainer.append(geneTextArea);
+	geneContent.append(geneTextArea);
 	let geneFileInput = $(getEl('input'))
 		.attr('type','file')
 		.attr('id','gene-list-file')
 		.change(onGeneListSelectorChange);
-	geneContainer.append(geneFileInput);
+	geneContent.append(geneFileInput);
 
 	// Smartfilters
 	let sfContainer = $(getEl('div'))
 		.addClass('filter-container')
 		.attr('id','sf-container');
-	rightFloat.append(sfContainer);
-	let sfTopBar = $(getEl('div'))
+	rightDiv.append(sfContainer);
+	let sfHeader = $(getEl('div'))
 		.addClass('sf-header')
-		.append('Smart Filters');
-	sfContainer.append(sfTopBar);
-	sfContainer.append($(getEl('p'))
+		.append('Smart Filters')
+		.click(sfHeaderClick);
+	sfContainer.append(sfHeader);
+	let sfContent = $(getEl('div'))
+		.addClass('sf-content');
+	sfContainer.append(sfContent);
+	sfContent.append($(getEl('p'))
 		.text('Click a filter to apply it.')
 	)
 	let orderedSources = Object.keys(smartFilters);
@@ -156,21 +170,22 @@ function makeFilterTab (rightDiv) {
 			let sfDef = sfGroup.definitions[sfName];
 			let sfDiv = getSmartFilterDiv(sfDef);
 			sfDiv.attr('full-name',sfSource+'.'+sfName);
-			sfContainer.append(sfDiv);
+			sfContent.append(sfDiv);
 		}
 	}
-	// rightFloat.append($(getEl('br')));
+	let filterLoad = $(getEl('div'));
+	rightDiv.append(filterLoad);
 	let filterApply = $(getEl('button'))
 		.attr('id', 'sf-apply-btn')
-		.append('Apply filter');
-	filterApply.click(function(evt) {
-        var infoReset = resetTab['info'];
-        resetTab = {'info': infoReset};
-        showSpinner('filter', document.body);
-        makeSmartfilterJson(); //TODO: this, better
-        loadData(false, null);
-    });
-	rightFloat.append(filterApply);
+		.append('Apply filter')
+		.click(function(evt) {
+			var infoReset = resetTab['info'];
+			resetTab = {'info': infoReset};
+			showSpinner('filter', document.body);
+			makeSmartfilterJson(); //TODO: this, better
+			loadData(false, null);
+		});
+	filterLoad.append(filterApply);
 }
 
 function onGeneListSelectorChange(event) {
