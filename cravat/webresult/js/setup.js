@@ -145,15 +145,15 @@ function makeFilterTab (rightDiv) {
 	// Smartfilters
 	let sfContainer = $(getEl('div'))
 		.addClass('filter-container')
-		.attr('id','sf-container');
-	rightDiv.append(sfContainer);
-	let sfHeader = $(getEl('div'))
+		rightDiv.append(sfContainer);
+		let sfHeader = $(getEl('div'))
 		.addClass('sf-header')
 		.append('Smart Filters')
 		.click(sfHeaderClick);
-	sfContainer.append(sfHeader);
-	let sfContent = $(getEl('div'))
-		.addClass('sf-content');
+		sfContainer.append(sfHeader);
+		let sfContent = $(getEl('div'))
+		.addClass('sf-content')
+		.attr('id','sf-container');
 	sfContainer.append(sfContent);
 	sfContent.append($(getEl('p'))
 		.text('Click a filter to apply it.')
@@ -396,6 +396,7 @@ function makeSmartfilterJson () {
 	}
 	fjs.variant = fullSf;
 	filterJson = fjs;
+	console.log(filterJson);
 }
 
 function addSfValue(topRule, value) {
