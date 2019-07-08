@@ -1570,10 +1570,21 @@ function populateWidgetSelectorPanel () {
 		var ul = getEl('ul');
 		var li = getEl('li');
 		var a = getEl('a');
-		a.textContent = 'Hide all columns under ' + colgrouptitle;
+		a.textContent = 'Hide all columns of ' + colgrouptitle;
 		li.addEventListener('click', function (evt) {
 			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgrouptitle + '__checkbox';
 			var checkbox = document.getElementById(checkboxId);
+			checkbox.click();
+			div.style.display = 'none';
+		});
+		addEl(ul, addEl(li, a));
+		var li = getEl('li');
+		var a = getEl('a');
+		a.textContent = 'Show all columns of ' + colgrouptitle;
+		li.addEventListener('click', function (evt) {
+			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgrouptitle + '__checkbox';
+			var checkbox = document.getElementById(checkboxId);
+			checkbox.click();
 			checkbox.click();
 			div.style.display = 'none';
 		});
