@@ -783,7 +783,7 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 #rightdiv_filter {
-	font-size: 13px;
+	font-size: 14px;
 }
 
 .sf-header {
@@ -807,10 +807,10 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .sf-selector {
-	flex: 0 1 50%;
+	flex: 0 1 70%;
 }
 .sf-title {
-	flex: 0 1 50%;
+	flex: 0 1 30%;
 	padding-right: 10px;
 }
 
@@ -820,6 +820,7 @@ div.pq-select-menu>.pq-select-option-label {
 	width: 50%;
 	text-align: center;
 	float: left;
+	cursor: pointer;
 }
 
 .vprop-option.clicked {
@@ -831,4 +832,8 @@ div.pq-select-menu>.pq-select-option-label {
 }
 .sf-header-inactive > .sf-header-arrow::after {
 	content: "\2b9e";
+}
+.smartfilter-checkbox {
+	width: 15px;
+	height: 15px;
 }
