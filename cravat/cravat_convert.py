@@ -240,6 +240,7 @@ class MasterCravatConverter(object):
         self.crv_writer.write_definition()
         for index_columns in constants.crv_idx:
             self.crv_writer.add_index(index_columns)
+        self.crv_writer.wf.write('#input_format={}\n'.format(self.primary_converter.format_name))
         # Setup err file
         self.err_path = os.path.join(self.output_dir,
                                      self.output_base_fname + '.converter.err')
@@ -290,7 +291,8 @@ class MasterCravatConverter(object):
             num_errors = 0
             for l in f:
                 cur_fname = os.path.basename(f.name)
-                samp_prefix = '.'.join(cur_fname.split('.')[:-1])
+                cur_fname = cur_fname.replace('.', '_')
+                samp_prefix = cur_fname
                 read_lnum += 1
                 try:
                     # all_wdicts is a list, since one input line can become
