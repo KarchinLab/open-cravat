@@ -825,3 +825,10 @@ div.pq-select-menu>.pq-select-option-label {
 .vprop-option.clicked {
 	background-color: #96b5c7;
 }
+
+.sf-header-arrow::after {
+	content: "\2b9f";
+}
+.sf-header-inactive > .sf-header-arrow::after {
+	content: "\2b9e";
+}

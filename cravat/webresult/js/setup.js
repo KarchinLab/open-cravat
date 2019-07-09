@@ -72,7 +72,7 @@ function setupTab (tabName) {
 }
 
 function sfHeaderClick (event) {
-	$(event.target).toggleClass('sf-header-inactive');
+	$(this).toggleClass('sf-header-inactive');
 }
 
 function makeFilterTab (rightDiv) {
@@ -87,10 +87,16 @@ function makeFilterTab (rightDiv) {
 	rightDiv.append(sampleContainer);
 	let sampleHeader = $(getEl('div'))
 		.addClass('sf-header')
-		.append('Samples')
 		.click(sfHeaderClick)
 		.addClass('sf-header-inactive');
 	sampleContainer.append(sampleHeader);
+	sampleHeader.append($(getEl('span'))
+		.addClass('sf-header-arrow')
+	)
+	sampleHeader.append($(getEl('span'))
+		.addClass('sf-header-text')
+		.text('Samples')
+	)
 	let sampleContent = $(getEl('div'))
 		.addClass('sf-content');
 	sampleContainer.append(sampleContent);
@@ -117,15 +123,20 @@ function makeFilterTab (rightDiv) {
 	}
 	// Gene selector
 	let geneContainer = $(getEl('div'))
-		.addClass('filter-container')
-		.attr('id','gene-list-container');
+		.addClass('filter-container');
 	rightDiv.append(geneContainer);
 	let geneHeader = $(getEl('div'))
 		.addClass('sf-header')
-		.append('Genes')
 		.click(sfHeaderClick)
 		.addClass('sf-header-inactive');
 	geneContainer.append(geneHeader);
+	geneHeader.append($(getEl('span'))
+		.addClass('sf-header-arrow')
+	)
+	geneHeader.append($(getEl('span'))
+		.addClass('sf-header-text')
+		.text('Genes')
+	)
 	let geneContent = $(getEl('div'))
 		.addClass('sf-content');
 	geneContainer.append(geneContent);
@@ -148,9 +159,15 @@ function makeFilterTab (rightDiv) {
 		rightDiv.append(vPropContainer);
 	let vPropHeader = $(getEl('div'))
 		.addClass('sf-header')
-		.append('Variant Properties')
 		.click(sfHeaderClick);
 	vPropContainer.append(vPropHeader);
+	vPropHeader.append($(getEl('span'))
+		.addClass('sf-header-arrow')
+	)
+	vPropHeader.append($(getEl('span'))
+		.addClass('sf-header-text')
+		.text('Variant Properties')
+	)
 	let vPropContent = $(getEl('div'))
 		.addClass('sf-content')
 		.attr('id','sf-container');
