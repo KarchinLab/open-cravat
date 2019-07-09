@@ -435,6 +435,7 @@ def get_colmodel (tab, colinfo):
                 'desc': d['col_desc'],
                 'type': d['col_type'],
                 'hidden': d['col_hidden'],
+                'default_hidden': d['col_hidden'],
                 'ctg': d['col_ctg'],
                 'filterable': d['col_filterable'],
                 'link_format': d.get('link_format'),

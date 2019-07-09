@@ -256,6 +256,7 @@ function copyColModel (colModelGroup) {
         newcol.desc = col.desc;
         newcol.type = col.type;
         newcol.hidden = col.hidden;
+        newcol.default_hidden = col.default_hidden;
         newcol.ctg = col.ctg;
         newcol.filterable = col.filterable;
         newcol.link_format = col.link_format;

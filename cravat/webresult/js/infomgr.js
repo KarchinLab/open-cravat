@@ -10,6 +10,7 @@ function InfoMgr () {
 	this.statuss = {};
 	this.jobinfo = {};
 	this.widgetReq = {};
+    this.colgroupdefaulthiddenexist = {};
 }
 
 InfoMgr.prototype.getStatus = function (jobId) {
@@ -105,10 +106,15 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 	var columnnos = {};
 	var columngroups = {};
 	var columns = [];
+    self.colgroupdefaulthiddenexist[tabName] = {};
 	for (var i = 0; i < colModel.length; i++) {
 		var colsInGroup = colModel[i]['colModel'];
+        var defaultHiddenInGroup = false;
 		for (var j = 0; j < colsInGroup.length; j++) {
 			var column = colsInGroup[j];
+            if (column.default_hidden == true) {
+                defaultHiddenInGroup = true;
+            }
 			columns.push(column);
 			column['sortType'] =
 				function (row1, row2, dataIndx) {
@@ -177,7 +183,6 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 					title = linkUrl;
 				} else if (content.startsWith('http')) {
 					content = `<a href="${content}" target="_blank">Link</a>`;
-
 				}
 				return `<span title="${title}">${content}</span>`;
 			};
@@ -242,7 +247,6 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                         this[0].nextSibling.classList.add('ui-state-hover');
                     };
                 }
-
             }
 			var columnKey = column['col'];
 			var columnNo = column['dataIndx'];
@@ -256,6 +260,8 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 			self.columngroupkeys[columnGroup] = columnGroupKey;
 			self.colgroupkeytotitle[columnGroupKey] = columnGroup;
 		}
+        colModel[i].default_hidden_exist = defaultHiddenInGroup;
+        self.colgroupdefaulthiddenexist[tabName][colModel[i].title] = defaultHiddenInGroup;
 	}
 	self.columnss[tabName] = columns;
 	self.columnnoss[tabName] = columnnos;

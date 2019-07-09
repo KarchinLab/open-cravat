@@ -1476,33 +1476,23 @@ function populateWidgetSelectorPanel () {
 			} else {
 				colModel = $grids[currentTab].pqGrid('getColModel');
 			}
-			var $groupHeaderTr = null;
+			var $groupHeaderTr = $($('tr.pq-grid-title-row')[0]);
 			var groupHeaderTitleToKey = {};
-            prevHeaderCellMissing = null;
-            plusedColgroups = [];
+            var colgrouptitlesWithMissingCols = [];
 			for (let i=0; i < colModel.length; i++) {
 				var col = colModel[i];
 				var $headerCell = this.getCellHeader({colIndx: col.leftPos});
 				if ($headerCell.length == 0) {
-                    prevHeaderCellMissing = col.colgroup;
+                    if (colgrouptitlesWithMissingCols.indexOf(col.colgroup) == -1) {
+                        colgrouptitlesWithMissingCols.push(col.colgroup);
+                    }
 					continue;
 				}
 				if (col.desc !== null) {
 					$headerCell.attr('title', col.desc).tooltip();
 				}
-				$groupHeaderTr = $headerCell.parent().prev();
 				$headerCell.attr('col', col.col);
 				$headerCell.attr('colgroup', col.colgroup);
-                if (col.colgroup == prevHeaderCellMissing && plusedColgroups.indexOf(col.colgroup) == -1) {
-                    /*
-                    console.log(prevHeaderCellMissing, $groupHeaderTr[0], $groupHeaderTr.children('th'));
-                    var sel = 'th[colgrouptitle="ClinVar"]';
-                    var th = $groupHeaderTr.children('th[colgrouptitle="ClinVar"]');
-                    console.log(th[0]);
-                    plusedColgroups.push(prevHeaderCellMissing);
-                    prevHeaderCellMissing = null;
-                    */
-                }
 				groupHeaderTitleToKey[col.colgroup] = col.colgroupkey;
 				$headerCell.contextmenu(function (evt) {
 					var headerCell = evt.target;
@@ -1532,6 +1522,7 @@ function populateWidgetSelectorPanel () {
 				var th = $groupHeaderTds[i];
 				var title = $(th).children('div').text();
 				th.setAttribute('colgrouptitle', title);
+                th.style.position = 'relative';
 				$(th).contextmenu(function (evt) {
 					var th = evt.target;
 					if (th.tagName == 'DIV') {
@@ -1541,6 +1532,49 @@ function populateWidgetSelectorPanel () {
 					makeTableGroupHeaderRightClickMenu(evt, th, title);
 					return false;
 				});
+                var span = getEl('span');
+                span.className = 'module-header-plus-sign';
+                span.style.fontSize = '12px';
+                if (colgrouptitlesWithMissingCols.indexOf(title) >= 0) {
+                    span.textContent = '\u1429';
+                    span.addEventListener('click', function (evt) {
+                        var th = evt.target.parentElement;
+                        var title = th.getAttribute('colgrouptitle');
+                        var checkboxId = 'columngroup__' + currentTab + '_' + title + '__checkbox';
+                        var checkbox = document.getElementById(checkboxId);
+                        checkbox.click();
+                        checkbox.click();
+                    });
+                } else {
+                    if (infomgr.colgroupdefaulthiddenexist[currentTab][title] == true) {
+                        span.textContent = '\u2b6f';
+                        span.addEventListener('click', function (evt) {
+                            var th = evt.target.parentElement;
+                            var title = th.getAttribute('colgrouptitle');
+                            var checkboxId = 'columngroup__' + currentTab + '_' + title + '__checkbox';
+                            var checkbox = document.getElementById(checkboxId);
+                            checkbox.click();
+                            checkbox.click();
+                            var colModel = $grids[currentTab].pqGrid('option', 'colModel');
+                            for (var i = 0; i < colModel.length; i++) {
+                                if (colModel[i].title == title) {
+                                    var colDefs = colModel[i].colModel;
+                                    for (var j = 0; j < colDefs.length; j++) {
+                                        document.getElementById('columngroup__' + currentTab + '_' + title + '_' + colDefs[j].col + '__checkbox').checked = (colDefs[j].default_hidden == false);
+                                    }
+                                }
+                            }
+                            updateTableColumns(currentTab);
+                            /*
+                            var checkboxId = 'columngroup__' + currentTab + '_' + title + '__checkbox';
+                            var checkbox = document.getElementById(checkboxId);
+                            checkbox.click();
+                            checkbox.click();
+                            */
+                        });
+                    }
+                }
+                addEl(th, span);
 			}
 		}
 		gridObject.columnDrag = function (evt, ui) {
@@ -1593,16 +1627,7 @@ function populateWidgetSelectorPanel () {
 		div.style.top = evt.pageY;
 		div.style.left = evt.pageX;
 		var ul = getEl('ul');
-		var li = getEl('li');
-		var a = getEl('a');
-		a.textContent = 'Hide all columns of ' + colgrouptitle;
-		li.addEventListener('click', function (evt) {
-			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgrouptitle + '__checkbox';
-			var checkbox = document.getElementById(checkboxId);
-			checkbox.click();
-			div.style.display = 'none';
-		});
-		addEl(ul, addEl(li, a));
+        //
 		var li = getEl('li');
 		var a = getEl('a');
 		a.textContent = 'Show all columns of ' + colgrouptitle;
@@ -1614,6 +1639,40 @@ function populateWidgetSelectorPanel () {
 			div.style.display = 'none';
 		});
 		addEl(ul, addEl(li, a));
+        //
+		var li = getEl('li');
+		var a = getEl('a');
+		a.textContent = 'Show default columns of ' + colgrouptitle;
+		li.addEventListener('click', function (evt) {
+			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgrouptitle + '__checkbox';
+			var checkbox = document.getElementById(checkboxId);
+			checkbox.click();
+			checkbox.click();
+            var colModel = $grids[currentTab].pqGrid('option', 'colModel');
+            for (var i = 0; i < colModel.length; i++) {
+                if (colModel[i].title == colgrouptitle) {
+                    var colDefs = colModel[i].colModel;
+                    for (var j = 0; j < colDefs.length; j++) {
+                        document.getElementById('columngroup__' + currentTab + '_' + colgrouptitle + '_' + colDefs[j].col + '__checkbox').checked = (colDefs[j].default_hidden == false);
+                    }
+                }
+            }
+            updateTableColumns(currentTab);
+			div.style.display = 'none';
+		});
+		addEl(ul, addEl(li, a));
+        //
+		var li = getEl('li');
+		var a = getEl('a');
+		a.textContent = 'Hide all columns of ' + colgrouptitle;
+		li.addEventListener('click', function (evt) {
+			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgrouptitle + '__checkbox';
+			var checkbox = document.getElementById(checkboxId);
+			checkbox.click();
+			div.style.display = 'none';
+		});
+		addEl(ul, addEl(li, a));
+        //
 		addEl(div, ul);
 		div.style.display = 'block';
 		addEl(rightDiv, div);
@@ -1639,8 +1698,6 @@ function populateWidgetSelectorPanel () {
 		li.addEventListener('click', function (evt) {
 			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgroup + '_' + col + '__checkbox';
 			var checkbox = document.getElementById(checkboxId);
-            console.log(checkboxId);
-            console.log(checkbox);
 			checkbox.click();
 			div.style.display = 'none';
 		});

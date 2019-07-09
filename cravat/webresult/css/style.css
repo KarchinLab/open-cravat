@@ -728,3 +728,11 @@ div.pq-select-menu>.pq-select-option-label {
 .widgetspinner {
     width: 20px;
 }
+
+.module-header-plus-sign {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    cursor: pointer;
+}
+
