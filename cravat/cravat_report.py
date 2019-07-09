@@ -135,7 +135,7 @@ class CravatReport:
                 colno = self.colnos[level][colname]
                 value = row[colno]
                 newrow.append(value)
-            await self.write_table_row(newrow)
+            self.write_table_row(newrow)
 
     async def run (self, tab='all'):
         start_time = time.time()
