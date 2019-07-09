@@ -1478,12 +1478,13 @@ function populateWidgetSelectorPanel () {
 			}
 			var $groupHeaderTr = null;
 			var groupHeaderTitleToKey = {};
-            prevHeaderCellMissing = false;
+            prevHeaderCellMissing = null;
+            plusedColgroups = [];
 			for (let i=0; i < colModel.length; i++) {
 				var col = colModel[i];
 				var $headerCell = this.getCellHeader({colIndx: col.leftPos});
 				if ($headerCell.length == 0) {
-                    prevHeaderCellMissing = true;
+                    prevHeaderCellMissing = col.colgroup;
 					continue;
 				}
 				if (col.desc !== null) {
@@ -1492,6 +1493,16 @@ function populateWidgetSelectorPanel () {
 				$groupHeaderTr = $headerCell.parent().prev();
 				$headerCell.attr('col', col.col);
 				$headerCell.attr('colgroup', col.colgroup);
+                if (col.colgroup == prevHeaderCellMissing && plusedColgroups.indexOf(col.colgroup) == -1) {
+                    /*
+                    console.log(prevHeaderCellMissing, $groupHeaderTr[0], $groupHeaderTr.children('th'));
+                    var sel = 'th[colgrouptitle="ClinVar"]';
+                    var th = $groupHeaderTr.children('th[colgrouptitle="ClinVar"]');
+                    console.log(th[0]);
+                    plusedColgroups.push(prevHeaderCellMissing);
+                    prevHeaderCellMissing = null;
+                    */
+                }
 				groupHeaderTitleToKey[col.colgroup] = col.colgroupkey;
 				$headerCell.contextmenu(function (evt) {
 					var headerCell = evt.target;
@@ -1503,6 +1514,7 @@ function populateWidgetSelectorPanel () {
 					makeTableHeaderRightClickMenu(evt, col, colgroup);
 					return false;
 				});
+                /*
                 if (prevHeaderCellMissing == true) {
                     $prev = $headerCell.prev();
                     if ($prev.length > 0) {
@@ -1513,6 +1525,7 @@ function populateWidgetSelectorPanel () {
                     }
                     prevHeaderCellMissing = false;
                 }
+                */
 			}
 			var $groupHeaderTds = $groupHeaderTr.children();
 			for (var i = 0; i < $groupHeaderTds.length; i++) {
