@@ -801,13 +801,15 @@ div.pq-select-menu>.pq-select-option-label {
 	font-size: 18px;
 	cursor: pointer;
 }
+.sf-content {
+	margin: 10px;
+}
 .sf-header.sf-header-inactive + .sf-content {
 	display: none;
 }
 
 .filter-container {
 	margin: 10px;
-	padding: 10px;
 	border: 1px solid gray;
 	max-width: 800px;
 }

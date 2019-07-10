@@ -234,8 +234,22 @@ function makeFilterTab (rightDiv) {
 	vPropSel.val('sf');
 	vPropSel.change();
 	// Load controls
-	let filterLoad = $(getEl('div'));
-	rightDiv.append(filterLoad);
+	let loadControls = $(getEl('div'));
+	rightDiv.append(loadControls);
+	let filterCount = $(getEl('button'))
+		.attr('id', 'sf-apply-btn')
+		.append('Count')
+		.click(function(e) {
+			makeSmartfilterJson();
+			infomgr.count(dbPath, 'variant', (msg, data) => {
+				console.log(data.n);
+				refreshFilterCounts(data.n);
+			})
+		});
+	loadControls.append(filterCount);
+	let countDisplay = $(getEl('div'))
+		.attr('id','filter-count-display');
+	loadControls.append(countDisplay);
 	let filterApply = $(getEl('button'))
 		.attr('id', 'sf-apply-btn')
 		.append('Apply filter')
@@ -246,7 +260,13 @@ function makeFilterTab (rightDiv) {
 			makeSmartfilterJson(); //TODO: this, better
 			loadData(false, null);
 		});
-	filterLoad.append(filterApply);
+	loadControls.append(filterApply);
+}
+
+function refreshFilterCounts(n) {
+	let t = infomgr.jobinfo['Number of unique input variants']; //TODO is this really the best way to do this?
+	let countDisplay = $('#filter-count-display');
+	countDisplay.text(`${n} of ${t} variants`);
 }
 
 function vPropOptionClick(event) {
