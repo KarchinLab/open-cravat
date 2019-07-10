@@ -225,7 +225,7 @@ function makeFilterTab (rightDiv) {
 		.attr('id','vprop-qb');
 	vPropContent.append(qbContent);
 	qbContent.append($(getEl('p')).text('Use the query builder to create a set of filter rules'));
-	let qbDiv = makeFilterGroupDiv({}, 'advanced');
+	let qbDiv = makeFilterGroupDiv({});
 	qbDiv.attr('id','qb-root');
 	qbContent.append(qbDiv);
 	vPropSel.val('sf');
