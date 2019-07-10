@@ -746,7 +746,8 @@ div.pq-select-menu>.pq-select-option-label {
 	display: flex;
 	flex-direction: column;
 	flex-wrap: wrap;
-	width: fit-content;
+	width: 100%;
+	overflow-x: auto;
 }
 
 .sample-selector {
