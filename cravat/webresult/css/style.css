@@ -796,19 +796,19 @@ div.pq-select-menu>.pq-select-option-label {
 	font-size: 14px;
 }
 
-.sf-header {
+.filter-header {
 	background-color: #d1dae0;
 	font-size: 18px;
 	cursor: pointer;
 }
-.sf-content {
+.filter-content {
 	margin: 10px;
 }
-.sf-header.sf-header-inactive + .sf-content {
+.filter-header.inactive + .filter-content {
 	display: none;
 }
 
-.filter-container {
+.filter-section {
 	margin: 10px;
 	border: 1px solid gray;
 	max-width: 800px;
@@ -835,14 +835,14 @@ div.pq-select-menu>.pq-select-option-label {
 	cursor: pointer;
 }
 
-.vprop-option.clicked {
+.vprop-option.active {
 	background-color: #96b5c7;
 }
 
-.sf-header-arrow::after {
+.filter-header-arrow::after {
 	content: "\2b9f";
 }
-.sf-header-inactive > .sf-header-arrow::after {
+.inactive > .filter-header-arrow::after {
 	content: "\2b9e";
 }
 .smartfilter-checkbox {

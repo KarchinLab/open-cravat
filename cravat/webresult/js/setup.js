@@ -71,8 +71,8 @@ function setupTab (tabName) {
 	changeMenu();
 }
 
-function sfHeaderClick (event) {
-	$(this).toggleClass('sf-header-inactive');
+function filterHeaderClick (event) {
+	$(this).toggleClass('inactive');
 }
 
 function makeFilterTab (rightDiv) {
@@ -82,23 +82,22 @@ function makeFilterTab (rightDiv) {
 	rightDiv = $(rightDiv);
 	// Sample selector
 	let sampleContainer = $(getEl('div'))
-		.addClass('filter-container')	
-		.attr('id','sample-container');
+		.addClass('filter-section');
 	rightDiv.append(sampleContainer);
 	let sampleHeader = $(getEl('div'))
-		.addClass('sf-header')
-		.click(sfHeaderClick)
-		.addClass('sf-header-inactive');
+		.addClass('filter-header')
+		.click(filterHeaderClick)
+		.addClass('inactive');
 	sampleContainer.append(sampleHeader);
 	sampleHeader.append($(getEl('span'))
-		.addClass('sf-header-arrow')
+		.addClass('filter-header-arrow')
 	)
 	sampleHeader.append($(getEl('span'))
-		.addClass('sf-header-text')
+		.addClass('filter-header-text')
 		.text('Samples')
 	)
 	let sampleContent = $(getEl('div'))
-		.addClass('sf-content');
+		.addClass('filter-content');
 	sampleContainer.append(sampleContent);
 	sampleContent.append($(getEl('p'))
 		.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
@@ -129,22 +128,22 @@ function makeFilterTab (rightDiv) {
 	}
 	// Gene selector
 	let geneContainer = $(getEl('div'))
-		.addClass('filter-container');
+		.addClass('filter-section');
 	rightDiv.append(geneContainer);
 	let geneHeader = $(getEl('div'))
-		.addClass('sf-header')
-		.click(sfHeaderClick)
-		.addClass('sf-header-inactive');
+		.addClass('filter-header')
+		.click(filterHeaderClick)
+		.addClass('inactive');
 	geneContainer.append(geneHeader);
 	geneHeader.append($(getEl('span'))
-		.addClass('sf-header-arrow')
+		.addClass('filter-header-arrow')
 	)
 	geneHeader.append($(getEl('span'))
-		.addClass('sf-header-text')
+		.addClass('filter-header-text')
 		.text('Genes')
 	)
 	let geneContent = $(getEl('div'))
-		.addClass('sf-content');
+		.addClass('filter-content');
 	geneContainer.append(geneContent);
 	geneContent.append($(getEl('p'))
 		.text('Type a list of gene names to include. One per line. Or, load a gene list from a file.')
@@ -161,22 +160,20 @@ function makeFilterTab (rightDiv) {
 
 	// Smartfilters
 	let vPropContainer = $(getEl('div'))
-		.addClass('filter-container')
+		.addClass('filter-section')
 		rightDiv.append(vPropContainer);
 	let vPropHeader = $(getEl('div'))
-		.addClass('sf-header')
-		.click(sfHeaderClick);
+		.addClass('filter-header')
+		.click(filterHeaderClick);
 	vPropContainer.append(vPropHeader);
 	vPropHeader.append($(getEl('span'))
-		.addClass('sf-header-arrow')
+		.addClass('filter-header-arrow')
 	)
 	vPropHeader.append($(getEl('span'))
-		.addClass('sf-header-text')
 		.text('Variant Properties')
 	)
 	let vPropContent = $(getEl('div'))
-		.addClass('sf-content')
-		.attr('id','sf-container');
+		.addClass('filter-content');
 	vPropContainer.append(vPropContent);
 	fTypeDiv = $(getEl('div'));
 	vPropContent.append(fTypeDiv);
@@ -193,7 +190,7 @@ function makeFilterTab (rightDiv) {
 		.text('Smart Filters')
 		.click(vPropOptionClick)
 		.attr('value','sf')
-		.addClass('clicked')
+		.addClass('active')
 	);
 	fTypeDiv.append(
 		$(getEl('span'))
@@ -242,7 +239,6 @@ function makeFilterTab (rightDiv) {
 		.click(function(e) {
 			makeSmartfilterJson();
 			infomgr.count(dbPath, 'variant', (msg, data) => {
-				console.log(data.n);
 				refreshFilterCounts(data.n);
 			})
 		});
@@ -277,8 +273,8 @@ function vPropOptionClick(event) {
 		vPropSel.val(val);
 		vPropSel.change()
 	}
-	$('.vprop-option').removeClass('clicked');
-	target.addClass('clicked');
+	$('.vprop-option').removeClass('active');
+	target.addClass('active');
 }
 
 function vPropSelectChange(event) {
