@@ -115,11 +115,17 @@ function makeFilterTab (rightDiv) {
 		let sampleBox = $(getEl('div'))
 			.addClass('sample-selector')
 			.click(onSampleSelectorClick)
-			.text(sid)
 			.addClass('sample-neutral')
 			.css('max-width', sboxMaxWidth)
-			.attr('title',sid);
+			.attr('title', sid);
 		sampleSelDiv.append(sampleBox);
+		sampleBox.append($(getEl('span'))
+			.addClass('sample-state-span')
+		)
+		sampleBox.append($(getEl('span'))
+			.text(sid)
+			.addClass('sample-selector-label')
+		)
 	}
 	// Gene selector
 	let geneContainer = $(getEl('div'))
@@ -288,7 +294,7 @@ function onGeneListSelectorChange(event) {
 }
 
 function onSampleSelectorClick(event) {
-	let sbox = $(event.target);
+	let sbox = $(this);
 	let sid = sbox.text();
 	if (sbox.hasClass('sample-neutral')) { // Set to require
 		sbox.removeClass('sample-neutral');

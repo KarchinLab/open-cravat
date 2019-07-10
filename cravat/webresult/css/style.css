@@ -750,27 +750,36 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .sample-selector {
-	border: 1px solid gray;
 	overflow-x: hidden;
 	text-overflow: ellipsis;
-	padding: 2px;
 	margin: 2px;
+	padding: 2px;
 	width: fit-content;
 	cursor: pointer;
 	min-width: 10ch;
-	border-radius: 5px;
+	vertical-align: middle;
 }
 
-.sample-selector.sample-require {
-	background-color: green;
+.sample-state-span {
+	border: 1px solid black;
+	display: inline-block;
+	font-size: 16px;
+}
+.sample-selector.sample-neutral > .sample-state-span::before {
+	content: "\2714";
+	visibility: hidden;
+}
+.sample-selector.sample-require > .sample-state-span::before {
+	content: "\2714";
+	color: green;
 }
 
-.sample-selector.sample-reject {
-	background-color: red;
+.sample-selector.sample-reject > .sample-state-span::before {
+	content: "\2716";
+    color: red;
 }
-
-.sample-selector.sample-neutral {
-	background-color: inherit;
+.sample-selector-label {
+	margin-left: 5px;
 }
 
 #gene-list-text {
