@@ -231,23 +231,34 @@ function makeFilterTab (rightDiv) {
 	vPropSel.val('sf');
 	vPropSel.change();
 	// Load controls
-	let loadControls = $(getEl('div'));
+	let loadControls = $(getEl('div'))
+		.attr('id','filter-load-controls');
 	rightDiv.append(loadControls);
+	let countControls = $(getEl('div'));
+	loadControls.append(countControls);
 	let filterCount = $(getEl('button'))
-		.attr('id', 'sf-apply-btn')
-		.append('Count')
+	.append('Update count')
+	.attr('id','filter-count-btn')
 		.click(function(e) {
 			makeSmartfilterJson();
 			infomgr.count(dbPath, 'variant', (msg, data) => {
-				refreshFilterCounts(data.n);
+				let count = data.n;
+				refreshFilterCounts(count);
+				if (count <= NUMVAR_LIMIT && count > 0) {
+					enableUpdateButton();
+				} else {
+					disableUpdateButton();
+				}
 			})
-		});
-	loadControls.append(filterCount);
-	let countDisplay = $(getEl('div'))
-		.attr('id','filter-count-display');
-	loadControls.append(countDisplay);
+		}
+		);
+	countControls.append(filterCount);
+	let countDisplay = $(getEl('span'))
+		.attr('id','filter-count-display')
+		.text('Count not up to date');
+	countControls.append(countDisplay);
 	let filterApply = $(getEl('button'))
-		.attr('id', 'sf-apply-btn')
+		.attr('id', 'load_button')
 		.append('Apply filter')
 		.click(function(evt) {
 			var infoReset = resetTab['info'];
@@ -255,7 +266,8 @@ function makeFilterTab (rightDiv) {
 			showSpinner('filter', document.body);
 			makeSmartfilterJson(); //TODO: this, better
 			loadData(false, null);
-		});
+		}
+	);
 	loadControls.append(filterApply);
 }
 
@@ -642,8 +654,8 @@ function makeInfoTab (rightDiv) {
 	addEl(rightContentDiv, infoDiv);
 
 	// Filter
-	var filterDiv = document.getElementById('filterdiv');
-	populateLoadDiv('info', filterDiv);
+	// var filterDiv = document.getElementById('filterdiv');
+	// populateLoadDiv('info', filterDiv); //TOOD delete all this
 
 	// Widget Notice
 	var wgNoticeDiv = getEl('fieldset');

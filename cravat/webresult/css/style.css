@@ -814,8 +814,9 @@ div.pq-select-menu>.pq-select-option-label {
 	max-width: 800px;
 }
 
-#sf-apply-btn {
+#load_button {
 	font-size: 18px;
+	margin-top: 10px;
 }
 
 .sf-selector {
@@ -848,4 +849,20 @@ div.pq-select-menu>.pq-select-option-label {
 .smartfilter-checkbox {
 	width: 15px;
 	height: 15px;
+}
+#loaded-variants-count-display {
+	height: 14px;
+	padding: 6px;
+	font-size: 13px;
+	margin-left: 10px;
+	display: inline-block;
+	border: 1px solid #5b8588;
+	vertical-align: bottom;
+	border-bottom: none;
+}
+#filter-count-display {
+	margin-left: 5px;
+}
+#filter-load-controls {
+	margin: 10px;
 }

@@ -270,9 +270,9 @@ function loadData (alertFlag, finalcallback) {
 			setupTab(currentTab);
             resizesTheWindow();
 		}
-        setFilterButtonText();
+        // setFilterButtonText(); //TODO delete this
         makeVariantByGene();
-        document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.';
+        // document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.'; //TODO delete this
         enableUpdateButton();
 	}
 	var loadGeneResult = function () {
@@ -371,12 +371,12 @@ function loadData (alertFlag, finalcallback) {
     disableUpdateButton();
 	loadVariantResult();
     filterArmed = filterJson;
-    var filterButton = document.getElementById('filterbutton');
-    if (filterArmed.variant != undefined && filterArmed.variant.rules.length > 0) {
-        filterButton.style.backgroundColor = 'red';
-    } else {
-        filterButton.style.backgroundColor = '#c5dbdb';
-    }
+    // var filterButton = document.getElementById('filterbutton'); //TODO delete this
+    // if (filterArmed.variant != undefined && filterArmed.variant.rules.length > 0) {
+    //     filterButton.style.backgroundColor = 'red';
+    // } else {
+    //     filterButton.style.backgroundColor = '#c5dbdb';
+    // }
 }
 
 function setFilterButtonText () {

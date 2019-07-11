@@ -53,15 +53,16 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 			success: function (jsonResponseData) {
 				self.store(self, tabName, jsonResponseData, callback, callbackArgs);
 				writeLogDiv(tabName + ' data loaded');
-                var span = document.getElementById('numberofuniqueinputvariants_span');
-                if (tabName == 'variant' && span != undefined) {
-                    var retrievedVarNum = jsonResponseData.data.length;
-                    var totalVarNum = infomgr.jobinfo['Number of unique input variants'];
-                    if (retrievedVarNum < totalVarNum) {
-                        span.textContent = retrievedVarNum + ' (out of ' + totalVarNum + ')';
-                    } else {
-                        span.textContent = retrievedVarNum;
-                    }
+                var vCountDisplay = document.getElementById('loaded-variants-count-display');
+                if (tabName == 'variant') {
+                    var loaded = jsonResponseData.data.length;
+					var total = infomgr.jobinfo['Number of unique input variants'];
+					vCountDisplay.innerText = `${loaded}/${total} variants`
+                    // if (retrievedVarNum < totalVarNum) {
+                    //     span.textContent = retrievedVarNum + ' (out of ' + totalVarNum + ')';
+                    // } else {
+                    //     span.textContent = retrievedVarNum;
+                    // }
                 }
 			}
 	    });

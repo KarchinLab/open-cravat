@@ -700,7 +700,7 @@ function loadFilterSetting (name, callback, doNotCount) {
 			filterJson = data['filterSet'];
 			var filterWrapDiv = document.getElementById('filterwrapdiv');
 			$(filterWrapDiv).empty();
-			populateFilterWrapDiv(filterWrapDiv);
+			// populateFilterWrapDiv(filterWrapDiv); //TODO delete this
 			if (! doNotCount) {
 				infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
 			}
