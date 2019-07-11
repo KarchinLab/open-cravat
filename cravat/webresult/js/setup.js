@@ -171,6 +171,7 @@ function makeFilterTab (rightDiv) {
 	)
 	vPropHeader.append($(getEl('span'))
 		.text('Variant Properties')
+		.addClass('filter-header-text')
 	)
 	let vPropContent = $(getEl('div'))
 		.addClass('filter-content');
