@@ -53,11 +53,14 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 			success: function (jsonResponseData) {
 				self.store(self, tabName, jsonResponseData, callback, callbackArgs);
 				writeLogDiv(tabName + ' data loaded');
-                var vCountDisplay = document.getElementById('loaded-variants-count-display');
                 if (tabName == 'variant') {
-                    var loaded = jsonResponseData.data.length;
+					var loaded = jsonResponseData.data.length;
 					var total = infomgr.jobinfo['Number of unique input variants'];
-					vCountDisplay.innerText = `${loaded}/${total} variants`
+					var vCountText = `${loaded}/${total} variants`;
+					var vCountDisplay = document.getElementById('loaded-variants-count-display');
+					vCountDisplay.innerText = vCountText;
+					var vCountLoad = document.getElementById('filter-count-display');
+					vCountLoad.innerText = vCountText;
                     // if (retrievedVarNum < totalVarNum) {
                     //     span.textContent = retrievedVarNum + ' (out of ' + totalVarNum + ')';
                     // } else {

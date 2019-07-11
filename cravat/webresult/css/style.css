@@ -814,10 +814,6 @@ div.pq-select-menu>.pq-select-option-label {
 	max-width: 800px;
 }
 
-#load_button {
-	font-size: 18px;
-	margin-top: 10px;
-}
 
 .sf-selector {
 	flex: 0 1 70%;
@@ -863,9 +859,20 @@ div.pq-select-menu>.pq-select-option-label {
 	vertical-align: bottom;
 	border-bottom: none;
 }
+#filter-load-controls {
+	display: flex;
+	border: none;
+	align-items: center;
+	font-size: 18px;
+}
+#filter-count-btn {
+	font-size: 18px;
+}
 #filter-count-display {
 	margin-left: 5px;
 }
-#filter-load-controls {
-	margin: 10px;
+#load_button {
+	margin-left: auto;
+	width: 50%;
+	font-size: 18px;
 }

@@ -236,10 +236,9 @@ function makeFilterTab (rightDiv) {
 
 	// Load controls
 	let loadControls = $(getEl('div'))
-		.attr('id','filter-load-controls');
+		.attr('id','filter-load-controls')
+		.addClass('filter-section');
 	rightDiv.append(loadControls);
-	let countControls = $(getEl('div'));
-	loadControls.append(countControls);
 	let filterCount = $(getEl('button'))
 	.append('Update count')
 	.attr('id','filter-count-btn')
@@ -256,11 +255,11 @@ function makeFilterTab (rightDiv) {
 			})
 		}
 		);
-	countControls.append(filterCount);
+	loadControls.append(filterCount);
 	let countDisplay = $(getEl('span'))
 		.attr('id','filter-count-display')
 		.text('Count not up to date');
-	countControls.append(countDisplay);
+	loadControls.append(countDisplay);
 	let filterApply = $(getEl('button'))
 		.attr('id', 'load_button')
 		.append('Apply filter')
@@ -278,7 +277,7 @@ function makeFilterTab (rightDiv) {
 function refreshFilterCounts(n) {
 	let t = infomgr.jobinfo['Number of unique input variants']; //TODO is this really the best way to do this?
 	let countDisplay = $('#filter-count-display');
-	countDisplay.text(`${n} of ${t} variants`);
+	countDisplay.text(`${n}/${t} variants`);
 }
 
 function vPropOptionClick(event) {
