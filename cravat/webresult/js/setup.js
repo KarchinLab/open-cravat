@@ -99,7 +99,7 @@ function makeFilterTab (rightDiv) {
 	let sampleContent = $(getEl('div'))
 		.addClass('filter-content');
 	sampleContainer.append(sampleContent);
-	sampleContent.append($(getEl('p'))
+	sampleContent.append($(getEl('div'))
 		.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
 	)
 	let sampleSelDiv = $(getEl('div'))
@@ -145,7 +145,7 @@ function makeFilterTab (rightDiv) {
 	let geneContent = $(getEl('div'))
 		.addClass('filter-content');
 	geneContainer.append(geneContent);
-	geneContent.append($(getEl('p'))
+	geneContent.append($(getEl('div'))
 		.text('Type a list of gene names to include. One per line. Or, load a gene list from a file.')
 	)
 	let geneTextArea = $(getEl('textarea'))
@@ -176,6 +176,8 @@ function makeFilterTab (rightDiv) {
 	let vPropContent = $(getEl('div'))
 		.addClass('filter-content');
 	vPropContainer.append(vPropContent);
+	vPropContent.append($(getEl('div'))
+		.text('Select variants by applying filters or building a query'))
 	fTypeDiv = $(getEl('div'));
 	vPropContent.append(fTypeDiv);
 	let vPropSel = $(getEl('select'))
@@ -204,7 +206,7 @@ function makeFilterTab (rightDiv) {
 		.attr('id','vprop-sf');
 	vPropContent.append(sfContent);
 	
-	sfContent.append($(getEl('p'))
+	sfContent.append($(getEl('div'))
 		.text('Click a filter to apply it.')
 	)
 	let orderedSources = Object.keys(smartFilters);
@@ -225,12 +227,13 @@ function makeFilterTab (rightDiv) {
 	qbContent = $(getEl('div'))
 		.attr('id','vprop-qb');
 	vPropContent.append(qbContent);
-	qbContent.append($(getEl('p')).text('Use the query builder to create a set of filter rules'));
+	qbContent.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
 	let qbDiv = makeFilterGroupDiv({});
 	qbDiv.attr('id','qb-root');
 	qbContent.append(qbDiv);
 	vPropSel.val('sf');
 	vPropSel.change();
+
 	// Load controls
 	let loadControls = $(getEl('div'))
 		.attr('id','filter-load-controls');
