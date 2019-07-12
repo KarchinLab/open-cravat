@@ -816,16 +816,104 @@ function populateAnnotators () {
             success: function (data) {
                 GLOBALS.annotators = data
                 buildAnnotatorsSelector();
-                //resolve();
             }
         })
     });
 }
 
+function buildAnnotatorGroupSelector () {
+    var annotCheckDiv = document.getElementById('annotator-group-select-div');
+    $(annotCheckDiv).empty();
+    var div = getEl('div');
+    div.className = 'div-header';
+    var span = getEl('span');
+    span.textContent = 'Sets';
+    addEl(div, span);
+    var btn = getEl('span');
+    btn.textContent = '\u25BE';
+    btn.style.cursor = 'default';
+    btn.setAttribute('state', 'expanded');
+    btn.addEventListener('click', function (evt) {
+        var btn = evt.target;
+        var state = btn.getAttribute('state');
+        var text = null;
+        var grpDiv = document.querySelector('#annotator-group-select-div div.annotator-group-select');
+        if (state == 'collapsed') {
+            state = 'expanded';
+            text = '\u25BE';
+            grpDiv.classList.add('on');
+            grpDiv.classList.remove('off');
+        } else {
+            state = 'collapsed';
+            text = '\u25B8';
+            grpDiv.classList.add('off');
+            grpDiv.classList.remove('on');
+        }
+        btn.setAttribute('state', state);
+        btn.textContent = text;
+    });
+    addEl(div, btn);
+    addEl(annotCheckDiv, div);
+    var div = getEl('div');
+    div.id = 'annotator-group-select-tag-div';
+    div.className = 'annotator-group-select';
+    addEl(annotCheckDiv, div);
+    var tagToAnnots = {};
+    var checkDatas = [];
+    checkDatas.push({
+        name: 'selected',
+        value: 'selected',
+        label: 'selected',
+        checked: false,
+        kind: 'collect',
+    });
+    for (var i = 0; i < tagsCollected.length; i++) {
+        var tag = tagsCollected[i];
+        checkDatas.push({
+            name: tag,
+            value: tag,
+            label: tag,
+            checked: false,
+            kind: 'tag',
+        });
+    }
+    buildCheckBoxGroup(checkDatas, div);
+    addEl(annotCheckDiv, getEl('hr'));
+    /*
+    var checkDatas = [];
+    var div = getEl('div');
+    div.className = 'annotator-group-select';
+    addEl(annotCheckDiv, div);
+    buildCheckBoxGroup(checkDatas, div);
+    addEl(annotCheckDiv, getEl('hr'));
+    */
+    var height = annotCheckDiv.offsetHeight;
+    var stylesheets = window.document.styleSheets;
+    for (var i = 0; i <= stylesheets.length; i++) {
+        var stylesheet = stylesheets[i];
+        if (stylesheet.href.indexOf('websubmit.css') >= 0) {
+            stylesheet.insertRule('#annotator-group-select-tag-div {max-height: ' + height + 'px;}');
+            break;
+        }
+    }
+}
+
 function buildAnnotatorsSelector () {
     var annotCheckDiv = document.getElementById('annotator-select-div');
-    let annotators = GLOBALS.annotators;
-    let annotInfos = Object.values(annotators);
+    var annotators = GLOBALS.annotators;
+    var annotInfos = Object.values(annotators);
+    var groupNames = Object.keys(installedGroups);
+    for (var i = 0; i < groupNames.length; i++) {
+        var name = groupNames[i];
+        var module = localModuleInfo[name];
+        var title = module.title;
+        annotInfos.push({
+            'name': name, 
+            'title': title, 
+            'type': module.type, 
+            'groups': module['groups']
+        });
+    }
     // Sort by title
     annotInfos.sort((a,b) => {
         var x = a.title.toLowerCase();
@@ -837,11 +925,21 @@ function buildAnnotatorsSelector () {
     let checkDatas = [];
     for (let i=0; i<annotInfos.length; i++) {
         var annotInfo = annotInfos[i];
+        var module = localModuleInfo[annotInfo.name];
+        var kind = null;
+        if (module.type == 'annotator') {
+            kind = 'module';
+        } else if (module.type == 'group') {
+            kind = 'group';
+        }
         checkDatas.push({
             name: annotInfo.name,
             value: annotInfo.name,
             label: annotInfo.title,
-            checked: true
+            type: annotInfo.type,
+            checked: false,
+            kind: kind,
+            groups: module['groups'],
         })
     }
     buildCheckBoxGroup(checkDatas, annotCheckDiv);
@@ -1077,25 +1175,29 @@ function getModuleDetailDiv (moduleName) {
 function buildCheckBoxGroup (checkDatas, parentDiv) {
     parentDiv = (parentDiv === undefined) ? getEl('div') : parentDiv;
     emptyElement(parentDiv);
-    parentDiv.className = 'checkbox-group';
+    parentDiv.classList.add('checkbox-group');
     // all-none buttons
     var allNoneDiv = getEl('div');
     addEl(parentDiv, allNoneDiv);
     allNoneDiv.className = 'checkbox-group-all-none-div';
     var parentId = parentDiv.id;
-    if (parentId != 'report-select-div') {
-        // all button
-        allButton = getEl('button');
-        addEl(allNoneDiv, allButton);
-        allButton.className = 'checkbox-group-all-button';
-        allButton.textContent = 'All';
-        allButton.addEventListener('click', function (evt) {checkBoxGroupAllNoneHandler (evt);});
-        // none button
-        noneButton = getEl('button');
-        addEl(allNoneDiv, noneButton);
-        noneButton.className = 'checkbox-group-none-button';
-        noneButton.textContent = 'None';
-        noneButton.addEventListener('click', function (evt) {checkBoxGroupAllNoneHandler (evt);});
+    if (parentId == 'annotator-select-div') {
+        if (servermode == false) {
+            var btn = getEl('button');
+            btn.className = 'checkbox-group-all-button';
+            btn.textContent = 'All';
+            btn.addEventListener('click', function (evt) {
+                checkBoxGroupAllNoneHandler (evt);
+            });
+            addEl(allNoneDiv, btn);
+        }
+        var btn = getEl('button');
+        btn.className = 'checkbox-group-none-button';
+        btn.textContent = 'Clear';
+        btn.addEventListener('click', function (evt) {
+            checkBoxGroupAllNoneHandler (evt);
+        });
+        addEl(allNoneDiv, btn);
     }
     // flexbox
     var flexbox = getEl('div');
@@ -1103,39 +1205,152 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
     flexbox.classList.add('checkbox-group-flexbox');
     var checkDivs = [];
     // checks
+    var checkDivsForGroup = {};
     for (let i=0; i<checkDatas.length; i++) {
         var checkData = checkDatas[i];
         var checkDiv = getEl('div');
         checkDiv.classList.add('checkbox-group-element');
-        addEl(flexbox, checkDiv);
+        checkDiv.setAttribute('name', checkData.name);
+        checkDiv.setAttribute('kind', checkData.kind);
+        if (checkData.groups != null) {
+            var groups = checkData.groups;
+            var group = groups[0];
+            if (checkDivsForGroup[group] == undefined) {
+                checkDivsForGroup[group] = [];
+            }
+            checkDivsForGroup[group].push(checkDiv);
+        } else {
+            addEl(flexbox, checkDiv);
+        }
         var check = getEl('input');
         check.className = 'checkbox-group-check';
         check.setAttribute('type', 'checkbox');
         check.setAttribute('name', checkData.name);
         check.setAttribute('value', checkData.value);
-        check.setAttribute('checked', checkData.check);
-        addEl(checkDiv, check);
+        check.checked = checkData.checked;
+        if (check.kind == 'group') {
+            check.setAttribute('members', checkData.members);
+        }
+        check.setAttribute('kind', checkData.kind);
+        if (parentId == 'annotator-select-div') {
+            check.id = 'annotator-select-div-input-' + checkData.name;
+        }
+        if (parentDiv.classList.contains('annotator-group-select')) {
+            check.addEventListener('change', function (evt) {
+                onChangeAnnotatorGroupCheckbox(evt);
+            });
+        }
         var label = getEl('span');
-        label.style.cursor = 'pointer';
-        label.style.textDecorationLine = 'underline';
-        label.style.textDecorationStyle = 'dotted';
-        label.style.textDecorationColor = '#aaaaaa';
+        label.className = 'label';
         label.setAttribute('module', checkData.value);
         label.textContent = checkData.label + ' ';
-        label.className = 'moduledetailbutton';
-        addEl(checkDiv, label);
-        label.addEventListener('click', function (evt) {
-            var annotchoosediv = document.getElementById('annotchoosediv');
-            var moduledetaildiv = document.getElementById('moduledetaildiv_submit');
-            if (moduledetaildiv != null) {
-                annotchoosediv.removeChild(moduledetaildiv);
-            }
-            var detaildiv = makeModuleDetailDialog(evt.target.getAttribute('module'));
-            addEl(annotchoosediv, detaildiv);
-        });
+        if (checkData.type == 'group') {
+            var btn = getEl('span');
+            btn.className = 'icon';
+            btn.textContent = '\u25B8';
+            btn.style.cursor = 'default';
+            btn.setAttribute('state', 'collapsed');
+            btn.setAttribute('name', checkData.name);
+            btn.addEventListener('click', function (evt) {
+                var btn = evt.target;
+                var state = btn.getAttribute('state');
+                var name = btn.getAttribute('name');
+                var text = null;
+                var grpDiv = document.querySelector('div.checkbox-group-element-sdiv[name=' + name + ']');
+                if (state == 'collapsed') {
+                    state = 'expanded';
+                    text = '\u25BE';
+                    grpDiv.classList.add('on');
+                    grpDiv.classList.remove('off');
+                } else {
+                    state = 'collapsed';
+                    text = '\u25B8';
+                    grpDiv.classList.add('off');
+                    grpDiv.classList.remove('on');
+                }
+                btn.setAttribute('state', state);
+                btn.textContent = text;
+            });
+            addEl(checkDiv, btn);
+            addEl(checkDiv, label);
+            var sdiv = getEl('div');
+            sdiv.id = 'submit-annotator-group-sdiv-' + checkData.name;
+            sdiv.classList.add('checkbox-group-element-sdiv');
+            sdiv.setAttribute('kind', 'annotator-group-div');
+            sdiv.setAttribute('name', checkData.name);
+            addEl(checkDiv, sdiv);
+        } else {
+            addEl(checkDiv, check);
+            addEl(checkDiv, label);
+        }
         checkDivs.push(checkDiv);
     }
+    var groups = Object.keys(checkDivsForGroup);
+    for (var i = 0; i < groups.length; i++) {
+        var group = groups[i];
+        var sdiv = $('div[kind=annotator-group-div][name=' + group + ']')[0];
+        var checkDivs = checkDivsForGroup[group];
+        for (var j = 0; j < checkDivs.length; j++) {
+            var checkDiv = checkDivs[j];
+            checkDiv.style.width = '100%';
+            addEl(sdiv, checkDiv);
+        }
+    }
+    $('div[kind=annotator-group-div]').each(function () {
+        var name = this.getAttribute('name');
+        var height = this.clientHeight;
+        var divid = '#submit-annotator-group-sdiv-' + name;
+        var stylesheets = window.document.styleSheets;
+        for (var i = 0; i <= stylesheets.length; i++) {
+            var stylesheet = stylesheets[i];
+            if (stylesheet.href.indexOf('websubmit.css') >= 0) {
+                stylesheet.insertRule(divid + ' {overflow: hidden; width: 99%; transition: max-height .4s; max-height: ' + height + 'px;}');
+                stylesheet.insertRule(divid + '.off {overflow: hidden; max-height: 0px;}');
+                stylesheet.insertRule(divid + '.on {overflow: hidden; border: 1px dotted #aaaaaa;}');
+                break;
+            }
+        }
+        this.classList.add('off');
+    });
     return parentDiv;
+}
+
+function onChangeAnnotatorGroupCheckbox (evt) {
+    var $moduleCheckboxes = $('div.checkbox-group-element[kind=module],div.checkbox-group-element[kind=group]');
+    var $selectCheckbox = $('div.checkbox-group-element[kind=collect] input:checked');
+    if ($selectCheckbox.length > 0) {
+        $moduleCheckboxes.addClass('hide').removeClass('show');
+        $moduleCheckboxes.children('input:checked').each(function () {
+            var el = this.parentElement;
+            el.classList.add('show');
+            el.classList.remove('hide');
+        });
+        return;
+    }
+    var $groupCheckboxes = $('div.checkbox-group-element[kind=tag] input:checked,div.checkbox-group-element[kind=group] input:checked');
+    if ($groupCheckboxes.length == 0) {
+        $moduleCheckboxes.addClass('show').removeClass('hide');
+    } else {
+        $moduleCheckboxes.addClass('hide').removeClass('show');
+        for (var j = 0; j < $groupCheckboxes.length; j++) {
+            var checkbox = $groupCheckboxes[j];
+            var name = checkbox.name;
+            var kind = checkbox.getAttribute('kind');
+            var modules = Object.keys(localModuleInfo);
+            if (kind == 'tag') {
+                for (var i = 0; i < modules.length; i++) {
+                    var module = localModuleInfo[modules[i]];
+                    var c = $('div.checkbox-group-element[kind=module][name=' + module.name + '],div.checkbox-group-element[kind=group][name=' + module.name + ']')[0];
+                    if (c != undefined) {
+                        if (module.tags.indexOf(name) >= 0) {
+                            c.classList.add('show');
+                            c.classList.remove('hide');
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 function checkBoxGroupAllNoneHandler (event) {
@@ -1151,6 +1366,16 @@ function checkBoxGroupAllNoneHandler (event) {
     for (var i = 0; i<checkElems.length; i++){
         var checkElem = checkElems[i];
         checkElem.checked = checked;
+    }
+    if (elem[0].parentElement.parentElement.id == 'annotator-select-div') {
+        var chk = null;
+        var cls = elem[0].className
+        if (cls == 'checkbox-group-all-button') {
+            chk = true;
+        } else if (cls == 'checkbox-group-none-button') {
+            chk = false;
+        }
+        $('#annotator-group-select-div input[type=checkbox]').prop('checked', chk);
     }
 }
 
@@ -1340,53 +1565,11 @@ function resetSystemConf () {
 }
 
 function getServermode () {
-    $.ajax({
-        url: '/submit/servermode',
-        type: 'get',
-        success: function (response) {
-            servermode = response['servermode'];
-            if (servermode == false) {
-                setupNoServerMode();
-            } else {
-                setupServerMode();
-            }
-        }
-    });
+	setupNoServerMode();
 }
 
 function setupNoServerMode () {
     document.getElementById('accountdiv').style.display = 'none';
-}
-
-function setupServerMode () {
-    document.getElementById('accountdiv').style.display = 'block';
-    document.getElementById('settingsdiv').style.display = 'none';
-    document.getElementById('settingspageselect').style.display = 'none';
-    checkLogged();
-}
-
-function setupAdminMode () {
-    document.getElementById('accountdiv').style.display = 'block';
-    document.getElementById('settingsdiv').style.display = 'block';
-    document.getElementById('settingspageselect').style.display = 'inline-block';
-}
-
-function showLoggedControl (username) {
-    var userDiv = document.getElementById('userdiv');
-    userDiv.textContent = username;
-    userDiv.style.display = 'inline-block';
-    document.getElementById('logoutdiv').style.display = 'inline-block';
-    document.getElementById('loginsignupbutton').style.display = 'none';
-    document.getElementById('settingspageselect').style.display = 'none';
-}
-
-function doAfterLogin () {
-    showLoggedControl(username);
-    hideloginsignupdiv();
-    if (username == 'admin') {
-        setupAdminMode();
-    }
-    populateJobs();
 }
 
 function msgAccountDiv (msg) {
@@ -1394,202 +1577,6 @@ function msgAccountDiv (msg) {
     setTimeout(function () {
         document.getElementById('accountmsgdiv').textContent = '';
     }, 3000);
-}
-
-function login () {
-    var usernameSubmit = document.getElementById('login_username').value;
-    var passwordSubmit = document.getElementById('login_password').value;
-    $.ajax({
-        url: '/submit/login',
-        data: {'username':usernameSubmit, 'password':passwordSubmit},
-        success: function (response) {
-            if (response == 'success') {
-                username = usernameSubmit;
-                logged = true;
-                doAfterLogin();
-            } else if (response == 'fail') {
-                msgAccountDiv('Login failed');
-            }
-        }
-    });
-}
-
-function logout () {
-    $.ajax({
-        url: '/submit/logout',
-        success: function (response) {
-            if (response == 'success') {
-                username = '';
-                logged = false;
-                populateJobs();
-                var userDiv = document.getElementById('userdiv');
-                userDiv.textContent = '';
-                userDiv.style.display = 'none';
-                document.getElementById('loginsignupbutton').style.display = 'inline-block';
-                document.getElementById('logoutdiv').style.display = 'none';
-            }
-        }
-    });
-}
-
-function getPasswordQuestion () {
-    var email = document.getElementById('forgotpasswordemail').value;
-    $.ajax({
-        url: '/submit/passwordquestion',
-        data: {'email': email},
-        success: function (response) {
-            var status = response['status'];
-            var msg = response['msg'];
-            if (status == 'fail') {
-                msgAccountDiv(msg);
-            } else {
-                document.getElementById('forgotpasswordgetquestiondiv').style.display = 'none';
-                document.getElementById('forgotpasswordquestion').textContent = msg;
-                document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'inline-block';
-            }
-        }
-    });
-}
-
-function showSignupDiv () {
-    document.getElementById('logindiv').style.display = 'none';
-    document.getElementById('signupdiv').style.display = 'block';
-}
-
-function submitForgotPasswordAnswer () {
-    var email = document.getElementById('forgotpasswordemail').value;
-    var answer = document.getElementById('forgotpasswordanswer').value;
-    $.ajax({
-        url: '/submit/passwordanswer',
-        data: {'email': email, 'answer': answer},
-        success: function (response) {
-            var success = response['success'];
-            var msg = response['msg'];
-            if (success == true) {
-                document.getElementById('forgotpassworddiv').style.display = 'none';
-                document.getElementById('forgotpasswordemail').textContent = '';
-                document.getElementById('forgotpasswordquestion').textContent = '';
-                document.getElementById('forgotpasswordanswer').textContent = '';
-                alert('Password has been reset to ' + msg);
-            } else {
-                msgAccountDiv(msg);
-            }
-        }
-    });
-}
-
-function forgotPassword () {
-    document.getElementById('forgotpasswordquestion').textContent = '';
-    document.getElementById('forgotpasswordgetquestiondiv').style.display = 'block';
-    document.getElementById('forgotpasswordquestionanswerdiv').style.display = 'none';
-    document.getElementById('forgotpassworddiv').style.display = 'block';
-}
-
-function changePassword () {
-    var div = document.getElementById('changepassworddiv');
-    var display = div.style.display;
-    if (display == 'block') {
-        display = 'none';
-    } else {
-        display = 'block';
-    }
-    div.style.display = display;
-}
-
-function submitNewPassword () {
-    var oldpassword = document.getElementById('changepasswordoldpassword').value;
-    var newpassword = document.getElementById('changepasswordnewpassword').value;
-    var retypenewpassword = document.getElementById('changepasswordretypenewpassword').value;
-    if (newpassword != retypenewpassword) {
-        msgAccountDiv('New password mismatch');
-        return;
-    }
-    $.ajax({
-        url: '/submit/changepassword',
-        data: {'oldpassword': oldpassword,
-               'newpassword': newpassword},
-        success: function (response) {
-            if (response == 'success') {
-                msgAccountDiv('Password changed successfully.');
-                document.getElementById('changepassworddiv').style.display = 'none';
-            } else {
-                msgAccountDiv(response);
-            }
-        }
-    });
-}
-
-function hideloginsignupdiv () {
-    document.getElementById('loginsignupdialog').style.display = 'none';
-}
-
-function toggleloginsignupdiv () {
-    document.getElementById('logindiv').style.display = 'block';
-    document.getElementById('signupdiv').style.display = 'none';
-    var dialog = document.getElementById('loginsignupdialog');
-    var display = dialog.style.display;
-    if (display == 'none') {
-        display = 'block';
-    } else {
-        display = 'none';
-    }
-    dialog.style.display = display;
-}
-
-function closeLoginSignupDialog (evt) {
-    document.getElementById("loginsignupdialog").style.display="none";
-}
-
-function signupSubmit () {
-    var username = document.getElementById('signupemail').value.trim();
-    var password = document.getElementById('signuppassword').value.trim();
-    var retypepassword = document.getElementById('signupretypepassword').value.trim();
-    var question = document.getElementById('signupquestion').value.trim();
-    var answer = document.getElementById('signupanswer').value.trim();
-    if (username == '' || password == '' || retypepassword == '' || question == '' || answer == '') {
-        msgAccountDiv('Fill all the blanks.');
-        return;
-    }
-    if (password != retypepassword) {
-        msgAccountDiv('Password mismatch');
-        return;
-    }
-    $.ajax({
-        url: '/submit/signup',
-        data: {'username': username, 'password': password, 'question': question, 'answer': answer},
-        success: function (response) {
-            if (response == 'already registered') {
-                msgAccountDiv('Already registered');
-            } else if (response == 'success') {
-                populateJobs();
-                msgAccountDiv('Account created');
-                document.getElementById('loginsignupbutton').style.display = 'none';
-                var userDiv = document.getElementById('userdiv');
-                userDiv.textContent = username;
-                userDiv.style.display = 'inline-block';
-                document.getElementById('logoutdiv').style.display = 'inline-block';
-                toggleloginsignupdiv();
-                document.getElementById('loginsignupbutton').style.display = 'none';
-                document.getElementById('signupdiv').style.display = 'none';
-            } else if (response == 'fail') {
-                msgAccountDiv('Signup failed');
-            }
-        }
-    });
-}
-
-function checkLogged () {
-    $.ajax({
-        url: '/submit/checklogged',
-        success: function (response) {
-            logged = response['logged'];
-            if (logged == true) {
-                username = response['email'];
-                logged = true;
-                doAfterLogin();
-            }
-        }
-    });
 }
 
 function populatePackageVersions () {
@@ -1797,6 +1784,15 @@ function updateRunningJobTrs (job) {
     populateJobDetailTr(job);
 }
 
+function onSubmitClickTagBoxCheck (evt) {
+    var div = document.getElementById('annotator-group-select-div');
+    if (evt.target.checked) {
+        div.className = 'on';
+    } else {
+        div.className = 'off';
+    }
+}
+
 function websubmit_run () {
     getServermode();
     var storediv = document.getElementById('storediv');
@@ -1810,7 +1806,6 @@ function websubmit_run () {
     if (servermode == false) {
         populateJobs();
     }
-    populateAnnotators();
     /*
     if (servermode == false) {
         populateReports();

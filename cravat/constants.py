@@ -76,7 +76,9 @@ liftover_chain_paths = {
 # built-in file column definitions
 crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'width': 90},
            {'name':'tags', 'title':'User Tags', 'type':'string', 'width': 90},
-           {'name':'uid', 'title':'UID', 'type':'int', 'width': 70}]
+           {'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
+           {'name':'fileno', 'title':'Input File Number', 'type':'int', 'width':90, 'filterable':False, 'hidden':True},
+    ]
 crm_idx = [['uid'],['tags']]
 crs_def = [{'name':'uid', 'title':'UID', 'type':'string', 'width': 70},
            {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90, 'category': 'multi'}]

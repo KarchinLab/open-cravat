@@ -286,6 +286,11 @@ class CravatWriter(CravatFile):
         self._definition_written = True
         self.wf.flush()
 
+    def write_input_paths (self, input_path_dict):
+        s = '#input_paths={}\n'.format(json.dumps(input_path_dict))
+        self.wf.write(s)
+        self.wf.flush()
+
     def write_titles(self):
         self._prep_for_write()
         title_line = self.titles_prefix+'\t'.join(self.title_toks) + '\n'

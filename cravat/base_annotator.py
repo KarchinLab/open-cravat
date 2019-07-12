@@ -131,6 +131,10 @@ class BaseAnnotator(object):
                                 action='store_true',
                                 dest='plainoutput',
                                 help='Skip column definition writing')
+            parser.add_argument('--confs',
+                dest='confs',
+                default='{}',
+                help='Configuration string')
             self.cmd_arg_parser = parser
         except Exception as e:
             self._log_exception(e)
@@ -160,6 +164,10 @@ class BaseAnnotator(object):
                 self.update_status_json_flag = False
             if parsed_args.conf:
                 self.job_conf_path = parsed_args.conf
+            self.confs = None
+            if parsed_args.confs is not None:
+                confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+                self.confs = json.loads(confs)
         except Exception as e:
             self._log_exception(e)
 

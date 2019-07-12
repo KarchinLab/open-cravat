@@ -223,6 +223,137 @@ function clearVariantGeneTab () {
     }
 }
 
+function iterationCopy (src) {
+    var target = {};
+    for (var prop in src) {
+        if (src.hasOwnProperty(prop)) {
+            target[prop] = src[prop];
+        }
+    }
+    return target;
+}
+
+function copyColModel (colModelGroup) {
+    var newColModelGroup = {};
+    newColModelGroup.title = colModelGroup.title;
+    var newColModel = [];
+    var colModel = colModelGroup.colModel;
+    for (var i = 0; i < colModel.length; i++) {
+        var col = colModel[i];
+        var newcol = {};
+        newcol.col = col.col;
+        newcol.colgroup = col.colgroup;
+        newcol.colgroupkey = col.colgroupkey;
+        newcol.title = col.title;
+        newcol.align = col.align;
+        newcol.dataIndx = null;
+        newcol.retfilt = col.retfilt;
+        newcol.retfilttype = col.retfilttype;
+        newcol.multiseloptions = col.multiseloptions;
+        newcol.reportsub = col.reportsub;
+        newcol.categories = col.categories;
+        newcol.width = col.width;
+        newcol.desc = col.desc;
+        newcol.type = col.type;
+        newcol.hidden = col.hidden;
+        newcol.ctg = col.ctg;
+        newcol.filterable = col.filterable;
+        newcol.link_format = col.link_format;
+        newcol.filter = col.filter;
+        newColModel.push(newcol);
+    }
+    newColModelGroup.colModel = newColModel;
+    return newColModelGroup;
+}
+
+function addGeneLevelToVariantLevel () {
+    var oriNoColVar = infomgr.columnss.variant.length;
+    var noColToPass = 5;
+    // colModel
+    var geneColModels = infomgr.colModels['gene'];
+    var colNo = oriNoColVar;
+    for (var i = 1; i < geneColModels.length; i++) {
+        var colModel = copyColModel(geneColModels[i]);
+        var cols = colModel.colModel;
+        for (var j = 0; j < cols.length; j++) {
+            cols[j].dataIndx = colNo;
+            colNo++;
+        }
+        infomgr.colModels['variant'].push(colModel);
+    }
+    // columngroupss
+    var geneColumnGroups = infomgr.columngroupss.gene;
+    var geneColumnGroupNames = Object.keys(geneColumnGroups);
+    for (var i = 0; i < geneColumnGroupNames.length; i++) {
+        var geneColumnGroupName = geneColumnGroupNames[i];
+        if (geneColumnGroupName == 'Variant Annotation') {
+            continue;
+        }
+        //infomgr.columngroupss.variant[geneColumnGroupName] = iterationCopy(geneColumnGroups[geneColumnGroupName]);
+        infomgr.columngroupss.variant[geneColumnGroupName] = geneColumnGroups[geneColumnGroupName];
+    }
+    // columnnoss
+    var geneColumnnos = infomgr.columnnoss.gene;
+    var maxColNo = Math.max(...Object.values(infomgr.columnnoss.variant));
+    var geneColumnNames = Object.keys(geneColumnnos);
+    for (var i = 0; i < geneColumnNames.length; i++) {
+        var geneColumnName = geneColumnNames[i];
+        var geneColNo = geneColumnnos[geneColumnName];
+        if (geneColNo < noColToPass) {
+            continue;
+        }
+        infomgr.columnnoss.variant[geneColumnName] = maxColNo + i - noColToPass + 1;
+    }
+    var maxColNo = Math.max(...Object.values(infomgr.columnnoss.variant));
+    // columnss
+    var geneColumns = infomgr.columnss.gene;
+    for (var i = noColToPass; i < geneColumns.length; i++) {
+        //var col = iterationCopy(geneColumns[i]);
+        var col = JSON.parse(JSON.stringify(geneColumns[i]));
+        col.dataIndx = oriNoColVar + i - noColToPass;
+        infomgr.columnss.variant.push(col);
+    }
+    // dataModel
+    var geneDataModels = infomgr.datas.gene;
+    geneRows = {};
+    for (var i = 0; i < geneDataModels.length; i++) {
+        var row = geneDataModels[i];
+        var hugo = row[0];
+        geneRows[hugo] = row;
+    }
+    var hugoColNo = infomgr.getColumnNo('variant', 'base__hugo');
+    for (var i = 0; i < infomgr.datas.variant.length; i++) {
+        var row = infomgr.datas.variant[i];
+        var hugo = row[hugoColNo];
+        for (var j = noColToPass; j < infomgr.columnss.gene.length; j++) {
+            row.push(null);
+        }
+        var geneRow = geneRows[hugo];
+        if (geneRow == undefined) {
+            continue;
+        }
+        for (var j = noColToPass; j < geneRow.length; j++) {
+            row[oriNoColVar + j - noColToPass] = JSON.parse(JSON.stringify(geneRow[j]));
+        }
+    }
+}
+
+var makeVariantByGene = function () {
+    if (infomgr.datas.variant != undefined) {
+        varByGene = {};
+        var variantRows = infomgr.datas.variant;
+        var hugoColNo = infomgr.getColumnNo('variant', 'base__hugo');
+        for (var i = 0; i < variantRows.length; i++) {
+            var row = variantRows[i];
+            var hugo = row[hugoColNo];
+            if (varByGene[hugo] == undefined) {
+                varByGene[hugo] = [];
+            }
+            varByGene[hugo].push(i);
+        }
+    }
+};
+
 function loadData (alertFlag, finalcallback) {
     disableUpdateButton();
 	var infoReset = resetTab['info'];
@@ -231,22 +362,9 @@ function loadData (alertFlag, finalcallback) {
     resetTab['variant'] = true;
     resetTab['gene'] = true;
 	infomgr.datas = {};
-    var makeVariantByGene = function () {
-        if (infomgr.datas.variant != undefined) {
-            varByGene = {};
-            var variantRows = infomgr.datas.variant;
-            var hugoColNo = infomgr.getColumnNo('variant', 'base__hugo');
-            for (var i = 0; i < variantRows.length; i++) {
-                var row = variantRows[i];
-                var hugo = row[hugoColNo];
-                if (varByGene[hugo] == undefined) {
-                    varByGene[hugo] = [];
-                }
-                varByGene[hugo].push(i);
-            }
-        }
-    };
 	var removeSpinner = function () {
+        addGeneLevelToVariantLevel();
+        makeVariantByGene();
 		if (spinner != null) {
 			spinner.remove();
 		}
@@ -271,7 +389,6 @@ function loadData (alertFlag, finalcallback) {
             resizesTheWindow();
 		}
         // setFilterButtonText(); //TODO delete this
-        makeVariantByGene();
         // document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.'; //TODO delete this
         enableUpdateButton();
 	}
@@ -467,8 +584,14 @@ function firstLoadData () {
                         for (var k = 0; k < widgetNames.length; k++) {
                             var widgetName = widgetNames[k];
                             var widgetTabs = Object.keys(widgetGenerators[widgetName]);
+                            if (widgetTabs.length == 1 && widgetTabs[0] == 'gene') {
+                                widgetTabs.unshift('variant');
+                            }
                             var req = infomgr.widgetReq[widgetName];
                             var generator = widgetGenerators[widgetName];
+                            if (generator['gene'] != undefined && generator['variant'] == undefined) {
+                                generator['variant'] = generator['gene'];
+                            }
                             for (var j = 0; j < widgetTabs.length; j++) {
                                 var widgetTab = widgetTabs[j];
                                 if (generator[widgetTab]['variables'] == undefined) {

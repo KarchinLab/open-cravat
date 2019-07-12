@@ -162,7 +162,6 @@ async def load_layout_setting (request):
             content = {"widgetSettings": {}}
     await cursor.close()
     await conn.close()
-    print('@@ widgetSettings=', content)
     return web.json_response(content)
 
 async def load_filter_setting (request):
@@ -329,6 +328,7 @@ async def get_result (request):
         args.extend(['-c', confpath])
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
+    args.append('--nogenelevelonvariantlevel')
     reporter = m.Reporter(args, None)
     await reporter.prep()
     dbbasename = os.path.basename(dbpath)
