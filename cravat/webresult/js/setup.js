@@ -239,10 +239,15 @@ function makeFilterTab (rightDiv) {
 		.attr('id','filter-load-controls')
 		.addClass('filter-section');
 	rightDiv.append(loadControls);
-	let filterCount = $(getEl('button'))
-	.append('Update count')
+	let countDisplay = $(getEl('span'))
+		.attr('id','filter-count-display')
+		.text('Count not up to date');
+	loadControls.append(countDisplay);
+	let filterCount = $(getEl('img'))
+	.attr('src','images/arrow-spinner-static.gif')
 	.attr('id','filter-count-btn')
 		.click(function(e) {
+			$(e.target).attr('src','images/arrow-spinner.gif')
 			makeSmartfilterJson();
 			infomgr.count(dbPath, 'variant', (msg, data) => {
 				let count = data.n;
@@ -254,12 +259,8 @@ function makeFilterTab (rightDiv) {
 				}
 			})
 		}
-		);
+	);
 	loadControls.append(filterCount);
-	let countDisplay = $(getEl('span'))
-		.attr('id','filter-count-display')
-		.text('Count not up to date');
-	loadControls.append(countDisplay);
 	let filterApply = $(getEl('button'))
 		.attr('id', 'load_button')
 		.append('Apply filter')
@@ -278,6 +279,8 @@ function refreshFilterCounts(n) {
 	let t = infomgr.jobinfo['Number of unique input variants']; //TODO is this really the best way to do this?
 	let countDisplay = $('#filter-count-display');
 	countDisplay.text(`${n}/${t} variants`);
+	$('#filter-count-btn').attr('src','images/arrow-spinner-static.gif');
+
 }
 
 function vPropOptionClick(event) {
