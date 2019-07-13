@@ -523,7 +523,7 @@ class Cravat (object):
             print(' '.join(cmd))
         converter_class = util.load_class('MasterCravatConverter', module.script_path)
         converter = converter_class(cmd, self.status_writer)
-        converter.run()
+        self.converter_format = converter.run()
 
     def run_genemapper (self):
         module = au.get_local_module_info(
@@ -776,6 +776,8 @@ class Cravat (object):
         cursor.execute(q)
         q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
         cursor.execute(q)
+        q = 'insert into info values ("_converter_format", "{}")'.format(self.converter_format)
+        cursor.execute(q)
         if hasattr(self, 'genemapper'):
             version = self.genemapper.conf['version']
             title = self.genemapper.conf['title']
@@ -783,11 +785,13 @@ class Cravat (object):
             genemapper_str = '{} ({})'.format(title, version)
             q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
             cursor.execute(q)
+            q = 'insert into info values ("_mapper", "{}:{}")'.format(modulename, version)
+            cursor.execute(q)
         f = open(os.path.join(self.output_dir, self.run_name + '.crm'))
         for line in f:
             if line.startswith('#input_paths='):
                 input_path_dict_str = '='.join(line.strip().split('=')[1:]).replace('"', "'")
-                q = 'insert into info values ("Input path dictionary", "{}")'.format(input_path_dict_str)
+                q = 'insert into info values ("_input_paths", "{}")'.format(input_path_dict_str)
                 cursor.execute(q)
         q = 'select name, displayname, version from variant_annotator'
         cursor.execute(q)
@@ -799,18 +803,22 @@ class Cravat (object):
             rows.extend(tmp_rows)
         annotators_str = ''
         annotator_version = {}
+        annotators = []
         for row in rows:
             (name, displayname, version) = row
             if name in ['base', 'tagsampler', 'hg19', 'hg18']:
                 continue
             if version is not None and version != '':
                 annotators_str += '{} ({}), '.format(displayname, version)
+                annotators.append('{}:{}'.format(name, version))
             else:
                 annotators_str += '{}, '.format(displayname)
+                annotators.append('{}:'.format(name))
             annotator_version[name] = version
         self.status_writer.queue_status_update('annotator_version', annotator_version)
-        annotators = annotators_str.rstrip(', ')
         q = 'insert into info values ("Annotators", "' + annotators_str + '")'
+        cursor.execute(q)
+        q = 'insert into info values ("_annotators", "{}")'.format(','.join(annotators))
         cursor.execute(q)
         conn.commit()
         cursor.close()

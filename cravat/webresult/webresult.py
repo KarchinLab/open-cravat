@@ -258,7 +258,7 @@ async def get_status (request):
     dbpath = queries['dbpath']
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
-    q = 'select * from info'
+    q = 'select * from info where colkey not like "\_%" escape "\\"'
     await cursor.execute(q)
     content = {}
     for row in await cursor.fetchall():
@@ -414,9 +414,10 @@ def get_colmodel (tab, colinfo):
     dataindx = 0
     for groupkey in groupkeys_ordered:
         [grouptitle, col_count] = groupnames[groupkey]
-        columngroupdef = {'title': grouptitle, 'colModel': []}
+        columngroupdef = {'name': groupkey, 'title': grouptitle, 'colModel': []}
         startidx = dataindx
         endidx = startidx + col_count
+        genesummary_present = False
         for d in colinfo[tab]['columns'][startidx:endidx]:
             cats = d['col_cats']
             column = {
@@ -477,8 +478,12 @@ def get_colmodel (tab, colinfo):
                 column['retfilt'] = True
                 column['retfilttype'] = 'between'
                 column['multiseloptions'] = []
+            if 'col_genesummary' in d and d['col_genesummary'] == True:
+                genesummary_present = True
             columngroupdef['colModel'].append(column)
             dataindx += 1
+        if genesummary_present:
+            columngroupdef['genesummary'] = True
         colModel.append(columngroupdef)
     return colModel
 

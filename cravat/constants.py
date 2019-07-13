@@ -118,26 +118,6 @@ crx_def = crv_def + \
            ]
 crx_idx = [['uid']]
 crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70, 'filterable': True},
-           {'name':'num_variants', 'title':'Variants in Gene', 'type':'int', 'width': 60, 'filterable': False},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 120, 'category': 'single',
-               'categories': [
-                   '2KD',
-                   '2KU', 
-                   'UT3', 
-                   'UT5', 
-                   'INT', 
-                   'UNK', 
-                   'SYN', 
-                   'MIS', 
-                   'CSS', 
-                   'IND', 
-                   'INI', 
-                   'STL', 
-                   'SPL', 
-                   'STG', 
-                   'FSD', 
-                   'FSI'], 'filterable': True},
-           {'name':'all_so', 'title':'All Sequence Ontologies', 'type':'string', 'width': 90, 'filterable': False},
            {'name': 'note', 'title': 'Note', 'type': 'string', 'width': 50},
           ]
 crg_idx = [['hugo']]

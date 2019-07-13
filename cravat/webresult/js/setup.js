@@ -1267,7 +1267,7 @@ function populateWidgetSelectorPanel () {
 				updateTableColumns(tabName);
 			});
 			addEl(legend, checkbox);
-			addEl(legend, getTn(columnGroupName));
+			addEl(legend, getTn(infomgr.colgroupkeytotitle[columnGroupName]));
 			addEl(groupDiv, legend);
 
 			// Columns
@@ -1276,11 +1276,14 @@ function populateWidgetSelectorPanel () {
 					columnKeyNo++) {
 				var columnKey = columnGroupColumnKeys[columnKeyNo];
 				var column = columns[infomgr.getColumnNo(tabName, columnKey)];
+                if (column == undefined) {
+                    continue;
+                }
 				var span = getEl('span');
 				span.textContent = '\xA0';
 				addEl(columnsDiv, span);
 				var checkbox = getEl('input');
-				checkbox.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_' + column.col + '_' + '_checkbox';
+				checkbox.id = columnGroupPrefix + '_' + tabName + '_' + column.col + '_' + '_checkbox';
 				checkbox.className = 'colcheckbox';
 				checkbox.type = 'checkbox';
 				checkbox.checked = !column.hidden;
@@ -1316,7 +1319,7 @@ function populateWidgetSelectorPanel () {
 				var cols = colModel[j].colModel;
 				for (var k = 0; k < cols.length; k++) {
 					var col = cols[k];
-					if (col.colgroup == colgroupname && col.col == colkey) {
+					if (col.colgroupkey == colgroupname && col.col == colkey) {
 						cols[k].hidden = checked;
 						break;
 					}
@@ -1476,15 +1479,14 @@ function populateWidgetSelectorPanel () {
 			} else {
 				colModel = $grids[currentTab].pqGrid('getColModel');
 			}
-			var $groupHeaderTr = $($('tr.pq-grid-title-row')[0]);
-			var groupHeaderTitleToKey = {};
-            var colgrouptitlesWithMissingCols = [];
+			var $groupHeaderTr = $($('#tab_' + currentTab + ' tr.pq-grid-title-row')[0]);
+            var colgroupkeysWithMissingCols = [];
 			for (let i=0; i < colModel.length; i++) {
 				var col = colModel[i];
 				var $headerCell = this.getCellHeader({colIndx: col.leftPos});
 				if ($headerCell.length == 0) {
-                    if (colgrouptitlesWithMissingCols.indexOf(col.colgroup) == -1) {
-                        colgrouptitlesWithMissingCols.push(col.colgroup);
+                    if (colgroupkeysWithMissingCols.indexOf(col.colgroupkey) == -1) {
+                        colgroupkeysWithMissingCols.push(col.colgroupkey);
                     }
 					continue;
 				}
@@ -1493,84 +1495,74 @@ function populateWidgetSelectorPanel () {
 				}
 				$headerCell.attr('col', col.col);
 				$headerCell.attr('colgroup', col.colgroup);
-				groupHeaderTitleToKey[col.colgroup] = col.colgroupkey;
+				$headerCell.attr('colgroupkey', col.colgroupkey);
 				$headerCell.contextmenu(function (evt) {
 					var headerCell = evt.target;
 					if (headerCell.classList.contains('pq-td-div')) {
 						headerCell = headerCell.parentElement;
 					}
 					var col = headerCell.getAttribute('col');
-					var colgroup = headerCell.getAttribute('colgroup');
-					makeTableHeaderRightClickMenu(evt, col, colgroup);
+					var colgroupkey = headerCell.getAttribute('colgroupkey');
+					makeTableHeaderRightClickMenu(evt, col, colgroupkey);
 					return false;
 				});
-                /*
-                if (prevHeaderCellMissing == true) {
-                    $prev = $headerCell.prev();
-                    if ($prev.length > 0) {
-                        $headerCell.css('border-left-width', '3px');
-                        $prev.css('border-right-width', '3px');
-                    } else {
-                        $headerCell.css('border-left', '3px solid #cfcfcf');
-                    }
-                    prevHeaderCellMissing = false;
-                }
-                */
 			}
 			var $groupHeaderTds = $groupHeaderTr.children();
 			for (var i = 0; i < $groupHeaderTds.length; i++) {
 				var th = $groupHeaderTds[i];
 				var title = $(th).children('div').text();
+                var colgroupkey = infomgr.colgrouptitletokey[title];
 				th.setAttribute('colgrouptitle', title);
+				th.setAttribute('colgroupkey', colgroupkey);
                 th.style.position = 'relative';
+                th.style.cursor = 'default';
+                $(th).children('div.pq-td-div').css('cursor', 'default');
 				$(th).contextmenu(function (evt) {
 					var th = evt.target;
 					if (th.tagName == 'DIV') {
 						th = th.parentElement;
 					}
 					var title = th.getAttribute('colgrouptitle');
-					makeTableGroupHeaderRightClickMenu(evt, th, title);
+                    var colgroupkey = th.getAttribute('colgroupkey');
+					makeTableGroupHeaderRightClickMenu(evt, th, title, colgroupkey);
 					return false;
 				});
+                var signClassName = 'module-header-plus-sign';
+                $(th).children(signClassName).remove();
                 var span = getEl('span');
-                span.className = 'module-header-plus-sign';
-                span.style.fontSize = '12px';
-                if (colgrouptitlesWithMissingCols.indexOf(title) >= 0) {
-                    span.textContent = '\u1429';
+                span.className = signClassName;
+                span.style.fontSize = '7px';
+                if (colgroupkeysWithMissingCols.indexOf(colgroupkey) >= 0) {
+                    span.textContent = '\u2795';
                     span.addEventListener('click', function (evt) {
                         var th = evt.target.parentElement;
-                        var title = th.getAttribute('colgrouptitle');
-                        var checkboxId = 'columngroup__' + currentTab + '_' + title + '__checkbox';
+                        var colgroupkey = th.getAttribute('colgroupkey');
+                        var checkboxId = 'columngroup__' + currentTab + '_' + colgroupkey + '__checkbox';
                         var checkbox = document.getElementById(checkboxId);
                         checkbox.click();
                         checkbox.click();
                     });
                 } else {
-                    if (infomgr.colgroupdefaulthiddenexist[currentTab][title] == true) {
-                        span.textContent = '\u2b6f';
+                    if (infomgr.colgroupdefaulthiddenexist[currentTab][colgroupkey] == true) {
+                        span.textContent = '\u2796';
                         span.addEventListener('click', function (evt) {
                             var th = evt.target.parentElement;
-                            var title = th.getAttribute('colgrouptitle');
-                            var checkboxId = 'columngroup__' + currentTab + '_' + title + '__checkbox';
+                            var colgroupkey = th.getAttribute('colgroupkey');
+                            var checkboxId = 'columngroup__' + currentTab + '_' + colgroupkey + '__checkbox';
                             var checkbox = document.getElementById(checkboxId);
                             checkbox.click();
                             checkbox.click();
                             var colModel = $grids[currentTab].pqGrid('option', 'colModel');
                             for (var i = 0; i < colModel.length; i++) {
-                                if (colModel[i].title == title) {
+                                if (colModel[i].name == colgroupkey) {
                                     var colDefs = colModel[i].colModel;
                                     for (var j = 0; j < colDefs.length; j++) {
-                                        document.getElementById('columngroup__' + currentTab + '_' + title + '_' + colDefs[j].col + '__checkbox').checked = (colDefs[j].default_hidden == false);
+                                        var checkboxid = 'columngroup__' + currentTab + '_' + colDefs[j].col + '__checkbox';
+                                        document.getElementById(checkboxid).checked = (colDefs[j].default_hidden == false);
                                     }
                                 }
                             }
                             updateTableColumns(currentTab);
-                            /*
-                            var checkboxId = 'columngroup__' + currentTab + '_' + title + '__checkbox';
-                            var checkbox = document.getElementById(checkboxId);
-                            checkbox.click();
-                            checkbox.click();
-                            */
                         });
                     }
                 }
@@ -1613,7 +1605,7 @@ function populateWidgetSelectorPanel () {
 		return gridObject;
 	}
 
-	function makeTableGroupHeaderRightClickMenu (evt, td, colgrouptitle) {
+	function makeTableGroupHeaderRightClickMenu (evt, td, colgrouptitle, colgroupkey) {
 		var rightDiv = document.getElementById('tablediv_' + currentTab);
 		var divId = 'table-header-contextmenu-' + currentTab;
 		var div = document.getElementById(divId);
@@ -1629,10 +1621,13 @@ function populateWidgetSelectorPanel () {
 		var ul = getEl('ul');
         //
 		var li = getEl('li');
+        li.setAttribute('colgroupkey', colgroupkey);
 		var a = getEl('a');
+        a.setAttribute('colgroupkey', colgroupkey);
 		a.textContent = 'Show all columns of ' + colgrouptitle;
 		li.addEventListener('click', function (evt) {
-			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgrouptitle + '__checkbox';
+            var colgroupkey = evt.target.getAttribute('colgroupkey');
+			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgroupkey + '__checkbox';
 			var checkbox = document.getElementById(checkboxId);
 			checkbox.click();
 			checkbox.click();
@@ -1641,19 +1636,22 @@ function populateWidgetSelectorPanel () {
 		addEl(ul, addEl(li, a));
         //
 		var li = getEl('li');
+        li.setAttribute('colgroupkey', colgroupkey);
 		var a = getEl('a');
+        a.setAttribute('colgroupkey', colgroupkey);
 		a.textContent = 'Show default columns of ' + colgrouptitle;
 		li.addEventListener('click', function (evt) {
-			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgrouptitle + '__checkbox';
+            var colgroupkey = evt.target.getAttribute('colgroupkey');
+			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgroupkey + '__checkbox';
 			var checkbox = document.getElementById(checkboxId);
 			checkbox.click();
 			checkbox.click();
             var colModel = $grids[currentTab].pqGrid('option', 'colModel');
             for (var i = 0; i < colModel.length; i++) {
-                if (colModel[i].title == colgrouptitle) {
+                if (colModel[i].name == colgroupkey) {
                     var colDefs = colModel[i].colModel;
                     for (var j = 0; j < colDefs.length; j++) {
-                        document.getElementById('columngroup__' + currentTab + '_' + colgrouptitle + '_' + colDefs[j].col + '__checkbox').checked = (colDefs[j].default_hidden == false);
+                        document.getElementById('columngroup__' + currentTab + '_' + colDefs[j].col + '__checkbox').checked = (colDefs[j].default_hidden == false);
                     }
                 }
             }
@@ -1663,10 +1661,13 @@ function populateWidgetSelectorPanel () {
 		addEl(ul, addEl(li, a));
         //
 		var li = getEl('li');
+        li.setAttribute('colgroupkey', colgroupkey);
 		var a = getEl('a');
+        a.setAttribute('colgroupkey', colgroupkey);
 		a.textContent = 'Hide all columns of ' + colgrouptitle;
 		li.addEventListener('click', function (evt) {
-			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgrouptitle + '__checkbox';
+            var colgroupkey = evt.target.getAttribute('colgroupkey');
+			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgroupkey + '__checkbox';
 			var checkbox = document.getElementById(checkboxId);
 			checkbox.click();
 			div.style.display = 'none';
@@ -1678,7 +1679,7 @@ function populateWidgetSelectorPanel () {
 		addEl(rightDiv, div);
 	}
 
-	function makeTableHeaderRightClickMenu (evt, col, colgroup) {
+	function makeTableHeaderRightClickMenu (evt, col) {
 		var rightDiv = document.getElementById('tablediv_' + currentTab);
 		var divId = 'table-header-contextmenu-' + currentTab;
 		var div = document.getElementById(divId);
@@ -1696,7 +1697,7 @@ function populateWidgetSelectorPanel () {
 		var a = getEl('a');
 		a.textContent = 'Hide column';
 		li.addEventListener('click', function (evt) {
-			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + colgroup + '_' + col + '__checkbox';
+			var checkboxId = columnGroupPrefix + '_' + currentTab + '_' + col + '__checkbox';
 			var checkbox = document.getElementById(checkboxId);
 			checkbox.click();
 			div.style.display = 'none';

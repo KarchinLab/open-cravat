@@ -258,3 +258,18 @@ class BaseMapper(object):
         self.error_logger.error('\nLINE:{:d}\nINPUT:{}\nERROR:{}\n#'.format(ln, line[:-1], str(e)))
         if not(isinstance(e, InvalidData)):
             raise e
+
+    async def get_gene_summary_data (self, cf):
+        hugos = await cf.get_filtered_hugo_list()
+        cols = ['base__' + coldef['name'] \
+                for coldef in crx_def]
+        data = {}
+        for hugo in hugos:
+            rows = await cf.get_variant_data_for_hugo(hugo, cols)
+            input_data = {}
+            for i in range(len(cols)):
+                input_data[cols[i].split('__')[1]] = [row[i] for row in rows]
+            out = self.summarize_by_gene(hugo, input_data)
+            data[hugo] = out
+        return data
+

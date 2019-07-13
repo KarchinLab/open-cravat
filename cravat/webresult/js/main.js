@@ -235,6 +235,7 @@ function iterationCopy (src) {
 
 function copyColModel (colModelGroup) {
     var newColModelGroup = {};
+    newColModelGroup.name = colModelGroup.name;
     newColModelGroup.title = colModelGroup.title;
     var newColModel = [];
     var colModel = colModelGroup.colModel;
@@ -246,7 +247,7 @@ function copyColModel (colModelGroup) {
         newcol.colgroupkey = col.colgroupkey;
         newcol.title = col.title;
         newcol.align = col.align;
-        newcol.dataIndx = null;
+        newcol.dataIndx = col.dataIndx;
         newcol.retfilt = col.retfilt;
         newcol.retfilttype = col.retfilttype;
         newcol.multiseloptions = col.multiseloptions;
@@ -261,6 +262,7 @@ function copyColModel (colModelGroup) {
         newcol.filterable = col.filterable;
         newcol.link_format = col.link_format;
         newcol.filter = col.filter;
+        newcol.fromgenelevel = true;
         newColModel.push(newcol);
     }
     newColModelGroup.colModel = newColModel;
@@ -269,50 +271,142 @@ function copyColModel (colModelGroup) {
 
 function addGeneLevelToVariantLevel () {
     var oriNoColVar = infomgr.columnss.variant.length;
-    var noColToPass = 5;
     // colModel
     var geneColModels = infomgr.colModels['gene'];
     var colNo = oriNoColVar;
-    for (var i = 1; i < geneColModels.length; i++) {
+    var colgroupsToSkip = [];
+    var colsToSkip = [];
+    for (var i = 0; i < geneColModels.length; i++) {
+        var colModel = geneColModels[i];
+        if (colModel.name == 'base' || colModel['genesummary'] == true) {
+            colgroupsToSkip.push(colModel.name);
+            for (var j = 0; j < colModel.colModel.length; j++) {
+                colsToSkip.push(colModel.colModel[j].col);
+            }
+            continue;
+        }
         var colModel = copyColModel(geneColModels[i]);
+        /*
         var cols = colModel.colModel;
         for (var j = 0; j < cols.length; j++) {
             cols[j].dataIndx = colNo;
             colNo++;
         }
+        */
         infomgr.colModels['variant'].push(colModel);
     }
+    // Sorts colModel.
+    var vcm = infomgr.colModels['variant'];
+    for (var i = 0; i < vcm.length - 1; i++) {
+        for (var j = i + 1; j < vcm.length; j++) {
+            var cmi = vcm[i];
+            var cmj = vcm[j];
+            if (cmi.name == 'base' || cmi.name == 'tagsampler' || cmi.name.startsWith('hg')) {
+                continue;
+            }
+            if (cmi.title.toLowerCase() > cmj.title.toLowerCase()) {
+                var tmp = cmi;
+                vcm[i] = cmj;
+                vcm[j] = tmp;
+            }
+        }
+    }
+    // assigns dataIndx to variant colModels.
+    var vcm = infomgr.colModels['variant'];
+    var varDataIndx = 0;
+    var colNoDict = {};
+    var varColumnss = [];
+    var varColumngroupss = {};
+    var varColumnnoss = {};
+    for (var i = 0; i < vcm.length; i++) {
+        var varColModel = vcm[i].colModel;
+        var varColNames = [];
+        for (var j = 0; j < varColModel.length; j++) {
+            var varCol = varColModel[j];
+            var level = 'variant';
+            if (varCol.fromgenelevel == true) {
+                level = 'gene';
+            }
+            colNoDict[varDataIndx] = {'level': level, 'colno': varCol.dataIndx};
+            varCol.dataIndx = varDataIndx;
+            varColumnnoss[varCol.col] = varDataIndx;
+            varDataIndx++;
+            varColumnss.push(varCol);
+            varColNames.push(varCol.col);
+        }
+        varColumngroupss[vcm[i].name] = varColNames;
+    }
+    infomgr.columnss.variant = varColumnss;
+    infomgr.columngroupss.variant = varColumngroupss;
+    infomgr.columnnoss.variant = varColumnnoss;
     // columngroupss
+    /*
     var geneColumnGroups = infomgr.columngroupss.gene;
     var geneColumnGroupNames = Object.keys(geneColumnGroups);
     for (var i = 0; i < geneColumnGroupNames.length; i++) {
         var geneColumnGroupName = geneColumnGroupNames[i];
-        if (geneColumnGroupName == 'Variant Annotation') {
+        if (geneColumnGroupName == 'base' || colgroupsToSkip.indexOf(geneColumnGroupName) >= 0) {
             continue;
         }
-        //infomgr.columngroupss.variant[geneColumnGroupName] = iterationCopy(geneColumnGroups[geneColumnGroupName]);
         infomgr.columngroupss.variant[geneColumnGroupName] = geneColumnGroups[geneColumnGroupName];
     }
+    */
     // columnnoss
+    /*
     var geneColumnnos = infomgr.columnnoss.gene;
     var maxColNo = Math.max(...Object.values(infomgr.columnnoss.variant));
     var geneColumnNames = Object.keys(geneColumnnos);
-    for (var i = 0; i < geneColumnNames.length; i++) {
-        var geneColumnName = geneColumnNames[i];
-        var geneColNo = geneColumnnos[geneColumnName];
-        if (geneColNo < noColToPass) {
+    var colNoDict = {};
+    var varColNo = 0;
+    var varColumnnoss = {};
+    var varColumnss = [];
+    var initVarColumnnossKeys = Object.keys(infomgr.columnnoss.variant);
+    var initGeneColumnnossKeys = Object.keys(infomgr.columnnoss.gene);
+        // infomgr.colModels.variant already has gene level colModels.
+    for (var j = 0; j < infomgr.colModels.variant.length; j++) {
+        var varColModel = infomgr.colModels.variant[j];
+        var varColModelName = varColModel.name;
+        var colAdded = false;
+        for (var k = 0; k < initVarColumnnossKeys.length; k++) {
+            var colkey = initVarColumnnossKeys[k];
+            var colgrp = colkey.split('__')[0];
+            if (colgrp == varColModelName) {
+                varColumnnoss[colgrp] = varColNo;
+                varColumnss.push(infomgr.columnss.variant[k]);
+                colNoDict[varColNo] = {'level': 'variant', 'colno': k};
+                varColNo++;
+                colAdded = true;
+            }
+        }
+        // does not add gene column group if variant level already has it.
+        if (colAdded) {
             continue;
         }
-        infomgr.columnnoss.variant[geneColumnName] = maxColNo + i - noColToPass + 1;
+        for (var k = 0; k < initGeneColumnnossKeys.length; k++) {
+            var colkey = initGeneColumnnossKeys[k];
+            if (colsToSkip.indexOf(colkey) >= 0) {
+                continue;
+            }
+            var colgrp = colkey.split('__')[0];
+            if (colgrp == varColModelName) {
+                varColumnnoss[colgrp] = varColNo;
+                varColumnss.push(JSON.parse(JSON.stringify(infomgr.columnss.gene[k])));
+                colNoDict[varColNo] = {'level': 'gene', 'colno': k};
+                varColNo++;
+            }
+        }
     }
-    var maxColNo = Math.max(...Object.values(infomgr.columnnoss.variant));
-    // columnss
-    var geneColumns = infomgr.columnss.gene;
-    for (var i = noColToPass; i < geneColumns.length; i++) {
-        //var col = iterationCopy(geneColumns[i]);
-        var col = JSON.parse(JSON.stringify(geneColumns[i]));
-        col.dataIndx = oriNoColVar + i - noColToPass;
-        infomgr.columnss.variant.push(col);
+    infomgr.columnnoss.variant = varColumnnoss;
+    infomgr.columnss.variant = varColumnss;
+    */
+    // column default hidden exist
+    var vcs = Object.keys(infomgr.colgroupdefaulthiddenexist.variant);
+    var gcs = Object.keys(infomgr.colgroupdefaulthiddenexist.gene);
+    for (var i = 0; i < gcs.length; i++) {
+        var colgrpname = gcs[i];
+        if (vcs.indexOf(colgrpname) == -1) {
+            infomgr.colgroupdefaulthiddenexist['variant'][colgrpname] = JSON.parse(JSON.stringify(infomgr.colgroupdefaulthiddenexist['gene'][colgrpname]));
+        }
     }
     // dataModel
     var geneDataModels = infomgr.datas.gene;
@@ -323,19 +417,32 @@ function addGeneLevelToVariantLevel () {
         geneRows[hugo] = row;
     }
     var hugoColNo = infomgr.getColumnNo('variant', 'base__hugo');
-    for (var i = 0; i < infomgr.datas.variant.length; i++) {
-        var row = infomgr.datas.variant[i];
-        var hugo = row[hugoColNo];
-        for (var j = noColToPass; j < infomgr.columnss.gene.length; j++) {
-            row.push(null);
-        }
+    function convertToInt (v) {
+        return parseInt(v);
+    }
+    var numCols = Math.max(...Object.keys(colNoDict).map(convertToInt)) + 1;
+    for (var varRowNo = 0; varRowNo < infomgr.datas.variant.length; varRowNo++) {
+        var varRow = infomgr.datas.variant[varRowNo];
+        var hugo = varRow[hugoColNo];
         var geneRow = geneRows[hugo];
-        if (geneRow == undefined) {
-            continue;
+        var newRow = [];
+        for (var colNo = 0; colNo < numCols; colNo++) {
+            var colTo = colNoDict[colNo];
+            var level = colTo['level'];
+            var colno = colTo['colno'];
+            var cell = null;
+            if (level == 'variant') {
+                cell = infomgr.datas[level][varRowNo][colno];
+            } else if (level == 'gene') {
+                if (geneRow == undefined) {
+                    cell = null;
+                } else {
+                    cell = geneRow[colno];
+                }
+            }
+            newRow.push(cell);
         }
-        for (var j = noColToPass; j < geneRow.length; j++) {
-            row[oriNoColVar + j - noColToPass] = JSON.parse(JSON.stringify(geneRow[j]));
-        }
+        infomgr.datas.variant[varRowNo] = newRow;
     }
 }
 

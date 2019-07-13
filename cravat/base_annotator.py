@@ -231,31 +231,15 @@ class BaseAnnotator(object):
         pass
 
     async def get_gene_summary_data (self, cf):
-        cols = [self.annotator_name + '__' + coldef['name'] \
-                for coldef in self.conf['output_columns']]
-        cols[0] = 'base__hugo'
-        gene_collection = {}
-        async for d in cf.get_variant_iterator_filtered_uids_cols(cols):
-            hugo = d['hugo']
-            if hugo == None:
-                continue
-            if hugo not in gene_collection:
-                gene_collection[hugo] = {}
-                for col in cols[1:]:
-                    gene_collection[hugo][col.split('__')[1]] = []
-            self.build_gene_collection(hugo, d, gene_collection)
+        hugos = await cf.get_filtered_hugo_list()
+        cols = [self.annotator_name + '__' + coldef['name'] for coldef in self.conf['output_columns'] if coldef['name'] != 'uid']
         data = {}
-        for hugo in gene_collection:
-            out = self.summarize_by_gene(hugo, gene_collection)
-            if out == None:
-                continue
-            row = []
-            for col in cols[1:]:
-                if col in out:
-                    val = out[col]
-                else:
-                    val = None
-                row.append(val)
+        for hugo in hugos:
+            rows = await cf.get_variant_data_for_hugo(hugo, cols)
+            input_data = {}
+            for i in range(len(cols)):
+                input_data[cols[i].split('__')[1]] = [row[i] for row in rows]
+            out = self.summarize_by_gene(hugo, input_data)
             data[hugo] = out
         return data
 

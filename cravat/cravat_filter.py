@@ -325,16 +325,18 @@ class CravatFilter ():
             self.filterstring = filterstring
         if filter != None:
             self.filter = filter
-        if self.filterstring != None:
+        if self.filter is not None:
+            pass
+        elif self.filterstring is not None:
             self.filterstring = self.filterstring.replace("'", '"')
             self.filter = json.loads(self.filterstring)
-        elif self.filtername != None and self.filtertable_exists():
+        elif self.filtername is not None and self.filtertable_exists():
             await self.cursor.execute('select criteria from ' + self.filtertable +
                 ' where name="' + self.filtername + '"')
             criteria = await self.cursor.fetchone()
             if criteria != None:
                 self.filter = json.loads(criteria[0])
-        elif self.filterpath != None and os.path.exists(self.filterpath):
+        elif self.filterpath is not None and os.path.exists(self.filterpath):
             with open(self.filterpath) as f:
                 ftype = self.filterpath.split('.')[-1]
                 if ftype in ['yml','yaml']:
@@ -464,8 +466,9 @@ class CravatFilter ():
             sql = 'select t.* from ' + table + ' as t inner join ' + ftable +\
                 ' as f on t.' + kcol + '=f.' + kcol
         await self.cursor.execute(sql)
-        it = await self.cursor.fetchall()
-        return it
+        cols = [v[0] for v in self.cursor.description]
+        rows = await self.cursor.fetchall()
+        return cols, rows
 
     async def make_filtered_uid_table (self):
         t = time.time()
@@ -609,6 +612,8 @@ class CravatFilter ():
                 return True
 
     async def get_variant_iterator_filtered_uids_cols (self, cols):
+        if cols[0] == 'base__uid':
+            cols[0] = 'v.' + cols[0]
         q = 'select ' + ','.join(cols) + ' from variant as v ' +\
             'inner join variant_filtered as f on v.base__uid=f.base__uid'
         await self.cursor.execute(q)
@@ -618,6 +623,23 @@ class CravatFilter ():
             for i in range(len(row)):
                 d[cols[i].split('__')[1]] = row[i]
             yield d
+
+    async def get_filtered_hugo_list (self):
+        q = 'select base__hugo from gene_filtered'
+        await self.cursor.execute(q)
+        rows = await self.cursor.fetchall()
+        hugos = [row[0] for row in rows]
+        return hugos
+
+    async def get_variant_data_for_hugo (self, hugo, cols):
+        if cols[0] == 'base__uid':
+            cols[0] = 'v.base__uid'
+        q = 'select {} from variant as v inner join variant_filtered as f on v.base__uid=f.base__uid and v.base__hugo="{}"'.format(','.join(cols), hugo)
+        if cols[0] == 'v.base__uid':
+            cols[0] = 'base__uid'
+        await self.cursor.execute(q)
+        rows = await self.cursor.fetchall()
+        return rows
 
     async def get_result_levels (self):
         q = 'select name from sqlite_master where type="table" and ' +\

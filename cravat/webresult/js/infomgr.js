@@ -6,6 +6,7 @@ function InfoMgr () {
 	this.columngroupss = {};
 	this.columngroupkeys = {};
 	this.colgroupkeytotitle = {};
+	this.colgrouptitletokey = {};
 	this.stats = {};
 	this.statuss = {};
 	this.jobinfo = {};
@@ -253,15 +254,16 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 			columnnos[columnKey] = columnNo;
 			var columnGroup = column['colgroup'];
 			var columnGroupKey = column['colgroupkey'];
-			if (columngroups[columnGroup] == undefined) {
-				columngroups[columnGroup] = [];
+			if (columngroups[columnGroupKey] == undefined) {
+				columngroups[columnGroupKey] = [];
 			}
-			columngroups[columnGroup].push(columnKey);
-			self.columngroupkeys[columnGroup] = columnGroupKey;
+			columngroups[columnGroupKey].push(columnKey);
+			self.columngroupkeys[columnGroupKey] = columnGroupKey;
 			self.colgroupkeytotitle[columnGroupKey] = columnGroup;
+			self.colgrouptitletokey[columnGroup] = columnGroupKey;
 		}
         colModel[i].default_hidden_exist = defaultHiddenInGroup;
-        self.colgroupdefaulthiddenexist[tabName][colModel[i].title] = defaultHiddenInGroup;
+        self.colgroupdefaulthiddenexist[tabName][colModel[i].name] = defaultHiddenInGroup;
 	}
 	self.columnss[tabName] = columns;
 	self.columnnoss[tabName] = columnnos;

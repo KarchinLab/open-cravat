@@ -864,8 +864,6 @@ function setServerStatus (connected) {
 			addEl(loadingDiv, loadingTxtDiv);
 			var dW = document.body.offsetWidth;
 			var dH = document.body.offsetHeight;
-			loadingDiv.style.top = 0;
-			loadingDiv.style.left = 0;
 			jobDataLoadingDiv = loadingDiv;
 			var parentDiv = document.body;
 			addEl(parentDiv, loadingDiv);

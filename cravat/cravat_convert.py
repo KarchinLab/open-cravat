@@ -351,6 +351,7 @@ class MasterCravatConverter(object):
         runtime = round(end_time - start_time, 3)
         self.logger.info('num input lines: {}'.format(read_lnum))
         self.logger.info('runtime: %s'%runtime)
+        return self.primary_converter.format_name
 
     def liftover(self, old_chrom, old_pos):
         new_coords = self.lifter.convert_coordinate(old_chrom, int(old_pos))
