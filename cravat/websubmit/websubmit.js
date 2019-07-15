@@ -1336,18 +1336,20 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
 function onChangeAnnotatorGroupCheckbox (evt) {
     var $moduleCheckboxes = $('div.checkbox-group-element[kind=module],div.checkbox-group-element[kind=group]');
     var $selectCheckbox = $('div.checkbox-group-element[kind=collect] input:checked');
-    if ($selectCheckbox.length > 0) {
-        $moduleCheckboxes.addClass('hide').removeClass('show');
-        $moduleCheckboxes.children('input:checked').each(function () {
-            var el = this.parentElement;
-            el.classList.add('show');
-            el.classList.remove('hide');
-        });
-        return;
-    }
+    var selectChecked = $selectCheckbox.length > 0;
     var $groupCheckboxes = $('div.checkbox-group-element[kind=tag] input:checked,div.checkbox-group-element[kind=group] input:checked');
     if ($groupCheckboxes.length == 0) {
-        $moduleCheckboxes.addClass('show').removeClass('hide');
+        if (selectChecked) {
+            $moduleCheckboxes.addClass('hide').removeClass('show');
+            $moduleCheckboxes.each(function () {
+                if (this.querySelector('input').checked == true) {
+                    this.classList.add('show');
+                    this.classList.remove('hide');
+                }
+            });
+        } else {
+            $moduleCheckboxes.addClass('show').removeClass('hide');
+        }
     } else {
         $moduleCheckboxes.addClass('hide').removeClass('show');
         for (var j = 0; j < $groupCheckboxes.length; j++) {
@@ -1361,8 +1363,15 @@ function onChangeAnnotatorGroupCheckbox (evt) {
                     var c = $('div.checkbox-group-element[kind=module][name=' + module.name + '],div.checkbox-group-element[kind=group][name=' + module.name + ']')[0];
                     if (c != undefined) {
                         if (module.tags.indexOf(name) >= 0) {
-                            c.classList.add('show');
-                            c.classList.remove('hide');
+                            if (selectChecked) {
+                                if (c.querySelector('input').checked == true) {
+                                    c.classList.add('show');
+                                    c.classList.remove('hide');
+                                }
+                            } else {
+                                c.classList.add('show');
+                                c.classList.remove('hide');
+                            }
                         }
                     }
                 }
