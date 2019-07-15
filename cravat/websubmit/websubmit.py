@@ -402,8 +402,9 @@ async def get_all_jobs (request):
         return web.json_response([])
     if os.path.exists(jobs_dir) == False:
         os.mkdir(jobs_dir)
-    ids = os.listdir(jobs_dir)
-    ids.sort(reverse=True)
+    direntries = [de for de in os.scandir(jobs_dir)]
+    direntries.sort(key=lambda x:x.stat().st_ctime, reverse=True)
+    ids = [de.name for de in direntries]
     all_jobs = []
     for job_id in ids:
         try:

@@ -15,6 +15,9 @@ var currentTab = 'submit';
 var websubmitReportBeingGenerated = {};
 var jobRunning = {};
 var tagsCollectedForSubmit = [];
+var jobsPerPageInList = 10;
+var jobsListCurStart = 0;
+var jobsListCurEnd = jobsPerPageInList;
 
 function submit () {
     if (servermode && logged == false) {
@@ -589,7 +592,11 @@ function buildJobsTable () {
     }
     var jobsTable = document.querySelector('#jobs-table tbody');
     $(jobsTable).empty();
-    for (let i = 0; i < allJobs.length; i++) {
+    fillJobTable(allJobs, jobsListCurStart, jobsListCurEnd, jobsTable);
+}
+
+function fillJobTable (allJobs, start, end, jobsTable) {
+    for (let i = start; i < end; i++) {
         job = GLOBALS.idToJob[allJobs[i]];
         ji = job.id;
         if (ji == undefined) {
@@ -616,6 +623,28 @@ function buildJobsTable () {
         addEl(jobsTable, detailTr);
         populateJobDetailTr(job);
     }
+}
+
+function onClickJobsListPrevPage () {
+    jobsListCurEnd -= jobsPerPageInList;
+    if (jobsListCurEnd < jobsPerPageInList) {
+        jobsListCurEnd = jobsPerPageInList;
+    }
+    jobsListCurStart = jobsListCurEnd - jobsPerPageInList;
+    jobsListCurStart = Math.min(Math.max(0, jobsListCurStart), GLOBALS.jobs.length);
+    jobsListCurEnd = Math.max(0, Math.min(jobsListCurEnd, GLOBALS.jobs.length));
+    buildJobsTable();
+}
+
+function onClickJobsListNextPage () {
+    jobsListCurStart += jobsPerPageInList;
+    if (jobsListCurStart >= GLOBALS.jobs.length) {
+        jobsListCurStart = GLOBALS.jobs.length - jobsPerPageInList;
+    }
+    jobsListCurEnd = jobsListCurStart + jobsPerPageInList;
+    jobsListCurStart = Math.min(Math.max(0, jobsListCurStart), GLOBALS.jobs.length);
+    jobsListCurEnd = Math.max(0, Math.min(jobsListCurEnd, GLOBALS.jobs.length));
+    buildJobsTable();
 }
 
 function reportSelectorChangeHandler (event) {
