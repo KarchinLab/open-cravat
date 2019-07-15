@@ -160,7 +160,10 @@ class CravatReport:
         q = 'select colval from info where colkey="_mapper"'
         await self.cursor.execute(q)
         r = await self.cursor.fetchone()
-        self.mapper_name = r[0].split(':')[0]
+        if r is None:
+            self.mapper_name = 'hg38'
+        else:
+            self.mapper_name = r[0].split(':')[0]
 
     async def run (self, tab='all'):
         start_time = time.time()
