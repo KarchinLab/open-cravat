@@ -28,6 +28,7 @@ var uninstalledModules = [];
 var moduleGroupMembers = {};
 var currentPage = null;
 var installedGroups = {};
+var tagsCollected = [];
 
 function getEl(tag){
 	var new_node = document.createElement(tag);

@@ -14,6 +14,7 @@ var GLOBALS = {
 var currentTab = 'submit';
 var websubmitReportBeingGenerated = {};
 var jobRunning = {};
+var tagsCollectedForSubmit = [];
 
 function submit () {
     if (servermode && logged == false) {
@@ -822,6 +823,23 @@ function populateAnnotators () {
 }
 
 function buildAnnotatorGroupSelector () {
+    tagsCollectedForSubmit = [];
+    for (var module in localModuleInfo) {
+        if (localModuleInfo[module].type != 'annotator') {
+            continue;
+        }
+        var tags = localModuleInfo[module].tags;
+        for (var i = 0; i < tags.length; i++) {
+            var tag = tags[i];
+            /*
+            if (tag == 'gene-level' || tag == 'variant-level') {
+            }
+            */
+            if (tagsCollectedForSubmit.indexOf(tag) == -1) {
+                tagsCollectedForSubmit.push(tag);
+            }
+        }
+    }
     var annotCheckDiv = document.getElementById('annotator-group-select-div');
     $(annotCheckDiv).empty();
     var div = getEl('div');
@@ -867,8 +885,8 @@ function buildAnnotatorGroupSelector () {
         checked: false,
         kind: 'collect',
     });
-    for (var i = 0; i < tagsCollected.length; i++) {
-        var tag = tagsCollected[i];
+    for (var i = 0; i < tagsCollectedForSubmit.length; i++) {
+        var tag = tagsCollectedForSubmit[i];
         checkDatas.push({
             name: tag,
             value: tag,
