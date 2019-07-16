@@ -849,16 +849,6 @@ div.pq-select-menu>.pq-select-option-label {
 .filter-header-text {
 	margin-left: 3px;
 }
-#loaded-variants-count-display {
-	height: 14px;
-	padding: 6px;
-	font-size: 13px;
-	margin-left: 10px;
-	display: inline-block;
-	border: 1px solid #5b8588;
-	vertical-align: bottom;
-	border-bottom: none;
-}
 #filter-load-controls {
 	display: flex;
 	border: none;
@@ -877,4 +867,7 @@ div.pq-select-menu>.pq-select-option-label {
 	margin-left: auto;
 	width: 50%;
 	font-size: 18px;
+}
+#tabhead_filter.active {
+	background-color: #d1dae0;
 }

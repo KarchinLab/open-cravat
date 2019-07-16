@@ -56,11 +56,17 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
                 if (tabName == 'variant') {
 					var loaded = jsonResponseData.data.length;
 					var total = infomgr.jobinfo['Number of unique input variants'];
-					var vCountText = `${loaded}/${total} variants`;
-					var vCountDisplay = document.getElementById('loaded-variants-count-display');
-					vCountDisplay.innerText = vCountText;
+					var filterTab = document.getElementById('tabhead_filter');
+					var filterTitle = 'Filter';
+					if (loaded != total) {
+						filterTitle += ` ${loaded}/${total}`;
+						filterTab.classList.add('active');
+					} else {
+						filterTab.classList.remove('active');
+					}
+					filterTab.innerText = filterTitle;
 					var vCountLoad = document.getElementById('filter-count-display');
-					vCountLoad.innerText = vCountText;
+					vCountLoad.innerText = `${loaded}/${total} variants`
                     // if (retrievedVarNum < totalVarNum) {
                     //     span.textContent = retrievedVarNum + ' (out of ' + totalVarNum + ')';
                     // } else {
