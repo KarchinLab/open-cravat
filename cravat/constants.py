@@ -168,7 +168,7 @@ viewer_effective_digits = 3
 base_smartfilters = [
     {
         'name': 'popstats',
-        'title': 'Population AF',
+        'title': 'Population AF <=',
         'description': 'Set a maximum allele frequency.',
         'allowPartial': True,
         'selector': {
