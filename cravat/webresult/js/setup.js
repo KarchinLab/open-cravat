@@ -250,7 +250,7 @@ function makeFilterTab (rightDiv) {
 	.attr('id','filter-count-btn')
 		.click(function(e) {
 			$(e.target).attr('src','images/arrow-spinner.gif')
-			makeSmartfilterJson();
+			makeFilterJson();
 			infomgr.count(dbPath, 'variant', (msg, data) => {
 				let count = data.n;
 				refreshFilterCounts(count);
@@ -270,11 +270,27 @@ function makeFilterTab (rightDiv) {
 			var infoReset = resetTab['info'];
 			resetTab = {'info': infoReset};
 			showSpinner('filter', document.body);
-			makeSmartfilterJson(); //TODO: this, better
+			makeFilterJson(); //TODO: this, better
 			loadData(false, null);
 		}
 	);
 	loadControls.append(filterApply);
+
+	// Save controls
+	let saveControls = $(getEl('div'));
+	rightDiv.append(saveControls);
+	let saveBtn = $(getEl('button'))
+		.text('Save Filter')
+		.click(e => {
+			saveFilterSettingAs();
+		});
+	saveControls.append(saveBtn);
+	let loadBtn = $(getEl('button'))
+		.text('Load Filter')
+		.click(e => {
+			loadFilterSettingAs();
+		});
+	saveControls.append(loadBtn);
 }
 
 function refreshFilterCounts(n) {
@@ -480,7 +496,7 @@ function sfOverlayClickHandler (event) {
 	cb.prop('checked',true);
 }
 
-function makeSmartfilterJson () {
+function makeFilterJson () {
 	let fjs = {}
 	// Samples
 	let sampleSelectors = $('#sample-select-cont').children();
