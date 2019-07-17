@@ -75,6 +75,153 @@ function filterHeaderClick (event) {
 	$(this).toggleClass('inactive');
 }
 
+class FilterManager {
+
+	constructor() {
+		this.sampleSelectId = 'sample-select-cont';
+		this.geneTextId = 'gene-list-text';
+		this.geneFileId = 'gene-list-file';
+	}
+
+	getFilterSection (headerTitle, active) {
+		active = active===undefined ? false : active;
+
+		let rootDiv = $(getEl('div'))
+		.addClass('filter-section');
+		let header = $(getEl('div'))
+			.addClass('filter-header')
+			.click(this.sectionHeaderClick);
+		if (!active) {
+			header.addClass('inactive')
+		}
+		rootDiv.append(header);
+		header.append($(getEl('span'))
+			.addClass('filter-header-arrow')
+		)
+		header.append($(getEl('span'))
+			.addClass('filter-header-text')
+			.text(headerTitle)
+		)
+		let sampleContent = $(getEl('div'))
+			.addClass('filter-content');
+		rootDiv.append(sampleContent);
+		return rootDiv;
+	}
+
+	sectionHeaderClick (event) {
+		$(this).toggleClass('inactive')
+	}
+
+	addSampleSelect (outerDiv, filter) {
+		filter = filter===undefined ? {require:[],reject:[]} : filter;
+		outerDiv.append($(getEl('div'))
+		.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
+		)
+		let sampleSelDiv = $(getEl('div'))
+			.attr('id', this.sampleSelectId);
+		outerDiv.append(sampleSelDiv);
+		let sampleIds = getFilterCol('tagsampler__samples').categories;
+		let maxLen = sampleIds.reduce((a,b) => {return a.length>b.length ? a : b}).length;
+		maxLen = maxLen > 25 ? 25 : maxLen;
+		let sboxMaxWidth = `${maxLen}ch`;
+		for (let i=0; i<sampleIds.length; i++) {
+			let sid = sampleIds[i];
+			let sampleBox = $(getEl('div'))
+				.addClass('sample-selector')
+				.click(this.onSampleSelectorClick)
+				.addClass('sample-neutral')
+				.css('max-width', sboxMaxWidth)
+				.attr('title', sid);
+			sampleSelDiv.append(sampleBox);
+			sampleBox.append($(getEl('span'))
+				.addClass('sample-state-span')
+			)
+			sampleBox.append($(getEl('span'))
+				.text(sid)
+				.addClass('sample-selector-label')
+			)
+			if (filter.require.indexOf(sid) >= 0) {
+				sampleBox.removeClass('sample-neutral');
+				sampleBox.addClass('sample-require');
+			} else if (filter.reject.indexOf(sid) >= 0) {
+				sampleBox.removeClass('sample-neutral');
+				sampleBox.addClass('sample-reject');
+			}
+		}
+		return outerDiv;
+	}
+
+	updateSampleSelect (filter) {
+		let sampleContent = $('#'+this.sampleSelectId).parent();
+		sampleContent.empty();
+		this.addSampleSelect(sampleContent,filter);
+	}
+
+	onSampleSelectorClick(event) {
+		let sbox = $(this);
+		let sid = sbox.text();
+		if (sbox.hasClass('sample-neutral')) { // Set to require
+			sbox.removeClass('sample-neutral');
+			sbox.addClass('sample-require');
+			sbox.attr('title',`${sid}\nVariants MUST be in this sample`);
+		} else if (sbox.hasClass('sample-require')) { // Set to reject
+			sbox.removeClass('sample-require');
+			sbox.addClass('sample-reject');
+			sbox.attr('title',`${sid}\nVariants MUST NOT be in this sample`);
+		} else if (sbox.hasClass('sample-reject')) { // Set to neutral
+			sbox.removeClass('sample-reject');
+			sbox.addClass('sample-neutral');
+			sbox.attr('title',sid);
+		}
+	}
+
+	addGeneSelect (outerDiv, filter) {
+		filter = filter===undefined ? [] : filter;
+		outerDiv.append($(getEl('div'))
+			.text('Type a list of gene names to include. One per line. Or, load a gene list from a file.')
+		)
+		let geneTextArea = $(getEl('textarea'))
+			.attr('id','gene-list-text')
+			.change(this.onGeneListSelectorChange);
+		outerDiv.append(geneTextArea);
+		let geneFileInput = $(getEl('input'))
+			.attr('type','file')
+			.attr('id','gene-list-file')
+			.change(this.onGeneListSelectorChange);
+		outerDiv.append(geneFileInput);
+		if (filter.length > 0) {
+			geneTextArea.val(filter.join('\n'));
+		}
+		return outerDiv;
+	}
+
+	onGeneListSelectorChange = (e) => { //Arrow function to maintain this=FilterManager
+		let target = $(e.target);
+		let id = target.attr('id');
+		if (id === this.geneTextId) {
+			let fileInput = $('#gene-list-file');
+			fileInput.val('');
+		} else if (id === this.geneFileId) {
+			let fileInput = target;
+			let textArea = $('#'+this.geneTextId);
+			let fr = new FileReader();
+			fr.onloadend = function(e) { //Not an arrow function so that this=FileReader
+				textArea.val(this.result)
+			}
+			fr.readAsText(fileInput.prop('files')[0])
+		}
+	}
+
+	updateGeneSelect (filter) {
+		let geneSelect = $('#'+this.geneTextId).parent();
+		geneSelect.empty();
+		this.addGeneSelect(geneSelect, filter);
+	}
+}
+
+// Global FilterMgr
+filterMgr = new FilterManager();
+
 function makeFilterTab (rightDiv) {
 	if (smartFilters === undefined) { 
 		return;
@@ -82,83 +229,16 @@ function makeFilterTab (rightDiv) {
 	rightDiv = $(rightDiv);
 	
 	// Sample selector
-	let sampleContainer = $(getEl('div'))
-		.addClass('filter-section');
+	let sampleContainer = filterMgr.getFilterSection('Samples',false);
 	rightDiv.append(sampleContainer);
-	let sampleHeader = $(getEl('div'))
-		.addClass('filter-header')
-		.click(filterHeaderClick)
-		.addClass('inactive');
-	sampleContainer.append(sampleHeader);
-	sampleHeader.append($(getEl('span'))
-		.addClass('filter-header-arrow')
-	)
-	sampleHeader.append($(getEl('span'))
-		.addClass('filter-header-text')
-		.text('Samples')
-	)
-	let sampleContent = $(getEl('div'))
-		.addClass('filter-content');
-	sampleContainer.append(sampleContent);
-	sampleContent.append($(getEl('div'))
-		.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
-	)
-	let sampleSelDiv = $(getEl('div'))
-		.attr('id','sample-select-cont');
-	sampleContent.append(sampleSelDiv);
-	let sampleIds = getFilterCol('tagsampler__samples').categories;
-	let maxLen = sampleIds.reduce((a,b) => {return a.length>b.length ? a : b}).length;
-	maxLen = maxLen > 25 ? 25 : maxLen;
-	let sboxMaxWidth = `${maxLen}ch`;
-	for (let i=0; i<sampleIds.length; i++) {
-		let sid = sampleIds[i];
-		let sampleBox = $(getEl('div'))
-			.addClass('sample-selector')
-			.click(onSampleSelectorClick)
-			.addClass('sample-neutral')
-			.css('max-width', sboxMaxWidth)
-			.attr('title', sid);
-		sampleSelDiv.append(sampleBox);
-		sampleBox.append($(getEl('span'))
-			.addClass('sample-state-span')
-		)
-		sampleBox.append($(getEl('span'))
-			.text(sid)
-			.addClass('sample-selector-label')
-		)
-	}
+	let sampleContent = sampleContainer.find('.filter-content');
+	filterMgr.addSampleSelect(sampleContent);
 
 	// Gene selector
-	let geneContainer = $(getEl('div'))
-		.addClass('filter-section');
+	let geneContainer = filterMgr.getFilterSection('Genes',false);
 	rightDiv.append(geneContainer);
-	let geneHeader = $(getEl('div'))
-		.addClass('filter-header')
-		.click(filterHeaderClick)
-		.addClass('inactive');
-	geneContainer.append(geneHeader);
-	geneHeader.append($(getEl('span'))
-		.addClass('filter-header-arrow')
-	)
-	geneHeader.append($(getEl('span'))
-		.addClass('filter-header-text')
-		.text('Genes')
-	)
-	let geneContent = $(getEl('div'))
-		.addClass('filter-content');
-	geneContainer.append(geneContent);
-	geneContent.append($(getEl('div'))
-		.text('Type a list of gene names to include. One per line. Or, load a gene list from a file.')
-	)
-	let geneTextArea = $(getEl('textarea'))
-		.attr('id','gene-list-text')
-		.change(onGeneListSelectorChange);
-	geneContent.append(geneTextArea);
-	let geneFileInput = $(getEl('input'))
-		.attr('type','file')
-		.attr('id','gene-list-file')
-		.change(onGeneListSelectorChange);
-	geneContent.append(geneFileInput);
+	let geneContent = geneContainer.find('.filter-content');
+	filterMgr.addGeneSelect(geneContent);
 
 	// Smartfilters
 	let vPropContainer = $(getEl('div'))
