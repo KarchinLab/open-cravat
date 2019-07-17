@@ -31,6 +31,7 @@ class CravatReport:
         self.columngroups = {}
         self.column_subs = {}
         self.column_sub_allow_partial_match = {}
+        self.colname_conversion = {}
         self._setup_logger()
 
     async def prep (self):
@@ -143,8 +144,10 @@ class CravatReport:
             new_datarow = []
             colnos = self.colnos[level]
             for colname in [col['col_name'] for col in self.colinfo[level]['columns']]:
-                if colname not in colnos:
-                    newcolname = self.mapper_name + '__' + colname.split('__')[1]
+                #if colname not in colnos:
+                if colname in self.colname_conversion[level]:
+                    newcolname = self.colname_conversion[level][colname]
+                    #newcolname = self.mapper_name + '__' + colname.split('__')[1]
                     if newcolname in colnos:
                         colno = colnos[newcolname]
                     else:
@@ -267,6 +270,7 @@ class CravatReport:
                     col_cats.append(r[0])
             col_filterable = bool(column_header[8]) if len(column_header) > 8 else True
             link_format = column_header[9] if len(column_header) > 9 else None
+            [colgrpname, colonlyname] = colname.split('__')
             column = {'col_name': colname,
                       'col_title': coltitle,
                       'col_type': col_type,
@@ -279,9 +283,9 @@ class CravatReport:
                       'link_format': link_format,
                       }
             columns.append(column)
-            groupname = colname.split('__')[0]
+            colgrpname = colname.split('__')[0]
             for columngroup in self.columngroups[level]:
-                if columngroup['name'] == groupname:
+                if columngroup['name'] == colgrpname:
                     columngroup['count'] += 1
         # adds gene level columns to variant level.
         if self.nogenelevelonvariantlevel == False and level == 'variant' and await self.table_exists('gene'):
@@ -408,7 +412,7 @@ class CravatReport:
                 for i in range(len(columns)):
                     column = columns[i]
                     [module, col] = column['col_name'].split('__')
-                    if module == self.mapper_name:
+                    if module in [self.mapper_name]:
                         module = 'base'
                     if module in self.report_substitution:
                         sub = self.report_substitution[module]
@@ -426,7 +430,7 @@ class CravatReport:
         for priority_colgrpname in priority_colgroupnames:
             for colgrp in colgrps:
                 if colgrp['name'] == priority_colgrpname:
-                    if colgrp['name'] == self.mapper_name:
+                    if colgrp['name'] in [self.mapper_name, 'tagsampler']:
                         newcolgrps[0]['count'] += colgrp['count']
                     else:
                         newcolgrps.append(colgrp)
@@ -445,13 +449,18 @@ class CravatReport:
                     colpos += colgrp['count']
                     break
         # re-orders columns.
+        self.colname_conversion[level] = {}
         new_columns = []
         for colgrp in newcolgrps:
             colgrpname = colgrp['name']
             for col in columns:
-                if col['col_name'].startswith(self.mapper_name):
-                    col['col_name'] = 'base__' + col['col_name'].split('__')[1]
-                if col['col_name'].startswith(colgrpname + '__'):
+                [grpname, oricolname] = col['col_name'].split('__')
+                if grpname in [self.mapper_name, 'tagsampler']:
+                    newcolname = 'base__' + col['col_name'].split('__')[1]
+                    self.colname_conversion[level][newcolname] = col['col_name']
+                    col['col_name'] = newcolname
+                    new_columns.append(col)
+                elif grpname == colgrpname:
                     new_columns.append(col)
         self.colinfo[level] = {'colgroups': newcolgrps, 'columns': new_columns}
 
