@@ -112,7 +112,7 @@ def main ():
             print(line)
 
     def list_local_modules(pattern=r'.*', types=[], include_hidden=False):
-        header = ['Name','Type','Version','Data source ver','Size']
+        header = ['Name', 'Title', 'Type','Version','Data source ver','Size']
         all_toks = [header]
         for module_name in au.search_local(pattern):
             module_info = au.get_local_module_info(module_name)
@@ -121,12 +121,12 @@ def main ():
             if module_info.hidden and not include_hidden:
                 continue
             size = module_info.get_size()
-            toks = [module_name, module_info.type, module_info.version, module_info.datasource, humanize_bytes(size)]
+            toks = [module_name, module_info.title, module_info.type, module_info.version, module_info.datasource, humanize_bytes(size)]
             all_toks.append(toks)
         print_tabular_lines(all_toks)
                 
     def list_available_modules(pattern=r'.*', types=[], include_hidden=False):
-        header = ['Name','Type','Installed','Up to date', 'Store latest ver','Store data source ver', 'Local ver', 'Local data source ver', 'Size']
+        header = ['Name', 'Title', 'Type','Installed','Up to date', 'Store latest ver','Store data source ver', 'Local ver', 'Local data source ver', 'Size']
         all_toks = [header]
         for module_name in au.search_remote(pattern):
             remote_info = au.get_remote_module_info(module_name)
@@ -150,6 +150,7 @@ def main ():
                 up_to_date = ''
                 local_datasource = ''
             toks = [module_name,
+                    remote_info.title,
                     remote_info.type,
                     installed,
                     up_to_date,
@@ -620,11 +621,6 @@ def main ():
     parser_new_annotator = subparsers.add_parser('show-system-conf',
                                                help='shows system configuration.')
     parser_new_annotator.set_defaults(func=show_system_conf)
-    
-    # shows cravat conf content.
-    parser_new_annotator = subparsers.add_parser('show-cravat-conf',
-                                               help='shows cravat configuration.')
-    parser_new_annotator.set_defaults(func=show_cravat_conf)
     
     ###########################################################################
     
