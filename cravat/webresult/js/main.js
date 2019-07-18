@@ -6,17 +6,30 @@ function getExportContent (tabName) {
 	content += '# Result database: ' + dbPath + '\n';
 	content += '# Report section (tab): ' + tabName + '\n';
 	// Writes filters.
-	content += '# Filters: ';
+	content += '# Load filters: ';
     content += JSON.stringify(filterJson) + '\n';
-
+    content += '# Table filters:\n';
 	var colTitles = [];
 	var colGroups = $grids[tabName].pqGrid('option', 'colModel');
+    var colNos = [];
+    var colNo = -1;
+    var colGroupTitles = [];
+    var colGroupNumCols = {};
 	for (var colGroupNo = 0; colGroupNo < colGroups.length; colGroupNo++) {
 		var colGroup = colGroups[colGroupNo];
 		var cols = colGroup.colModel;
+        var colExist = false;
+        var numCols = 0;
 		for (var j = 0; j < cols.length; j++) {
+            colNo++;
 			var col = cols[j];
-			colTitles.push(col.title);
+            if (col.hidden) {
+                continue;
+            }
+            colExist = true;
+            colNos.push(colNo);
+            numCols++;
+			colTitles.push(col.title.replace(' ', '_'));
 			var filter = col.filter;
 			if (filter != undefined) {
 				if (filter.on == true) {
@@ -29,6 +42,8 @@ function getExportContent (tabName) {
 							content += '#     ' + col.title + ': ' + condition + ' ' + value + '\n';
 						} else if (condition == 'between') {
 							content += '#     ' + col.title + ': ' + condition + ' ' + value + ' and ' + value2 + '\n';
+                        } else if (col.filter.type == 'select') {
+                            content += '#     ' + col.title + ': ' + value + '\n';
 						} else {
 							content += '#     ' + col.title + ': ' + condition + ' ' + value + '\n';
 						}
@@ -36,12 +51,32 @@ function getExportContent (tabName) {
 				}
 			}
 		}
+        if (colExist) {
+            var colGroupTitle = colGroup.title.replace(' ', '_');
+            colGroupTitles.push(colGroupTitle);
+            colGroupNumCols[colGroupTitle] = numCols;
+        }
 	}
-	content += '\n';
 	// Writes data headers.
+    if (colGroupTitles.length == 0) {
+        return '';
+    }
+    content += colGroupTitles[0];
+    for (var j = 0; j < colGroupNumCols[colGroupTitles[0]]; j++) {
+        content += '\t';
+    }
+    for (var i = 1; i < colGroupTitles.length; i++) {
+        var colGroupTitle = colGroupTitles[i];
+        content += colGroupTitle;
+        var numCols = colGroupNumCols[colGroupTitle];
+        for (var j = 0; j < numCols; j++) {
+            content += '\t';
+        }
+    }
+    content += '\n';
 	content += colTitles[0];
-	for (var colNo = 1; colNo < colTitles.length; colNo++) {
-		content += '\t' + colTitles[colNo];
+	for (var i = 1; i < colTitles.length; i++) {
+		content += '\t' + colTitles[i];
 	}
 	content += '\n';
 	// Writes data rows.
@@ -49,8 +84,8 @@ function getExportContent (tabName) {
 	for (var rowNo = 0; rowNo < rows.length; rowNo++) {
 		var row = rows[rowNo];
 		content += row[0];
-		for (var colNo = 1; colNo < row.length; colNo++) {
-			var value = row[colNo];
+		for (var i = 1; i < colNos.length; i++) {
+			var value = row[colNos[i]];
 			if (value == null) {
 				value = '';
 			}
