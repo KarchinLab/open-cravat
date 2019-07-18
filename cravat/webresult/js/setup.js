@@ -238,7 +238,7 @@ class FilterManager {
 			$(getEl('span'))
 			.addClass('vprop-option')
 			.text('Smart Filters')
-			.click(vPropOptionClick)
+			.click(this.vPropOptionClick)
 			.attr('value','sf')
 			.addClass('active')
 		);
@@ -246,7 +246,7 @@ class FilterManager {
 			$(getEl('span'))
 			.addClass('vprop-option')
 			.text('Query Builder')
-			.click(vPropOptionClick)
+			.click(this.vPropOptionClick)
 			.attr('value','qb')
 		);
 		let sfContent = $(getEl('div'))
@@ -276,8 +276,9 @@ class FilterManager {
 			for (let j=0; j<sfGroup.order.length; j++) {
 				let sfName = sfGroup.order[j];
 				let sfDef = sfGroup.definitions[sfName];
-				let sfDiv = getSmartFilterDiv(sfDef);
-				sfDiv.attr('full-name',sfSource+'.'+sfName);
+				let sf = new SmartFilter(sfDef);
+				let sfDiv = sf.getDiv();
+				sfDiv.attr('full-name', sfSource+'.'+sfName);
 				outerDiv.append(sfDiv);
 			}
 		}
@@ -290,7 +291,7 @@ class FilterManager {
 		outerDiv.append(qbDiv);
 	}
 
-	vPropSelectChange = (event) => {
+	vPropSelectChange = (event) => { //Arrow function to maintain this=FilterManager
 		let sel = $(event.target);
 		let val = sel.val();
 		if (val === 'qb') {
@@ -302,6 +303,150 @@ class FilterManager {
 		}
 		toShow.css('display','');
 		toHide.css('display','none');
+	}
+
+	vPropOptionClick (event) {
+		let target = $(event.target);
+		let val = target.attr('value');
+		let vPropSel = $('#vprop-sel');
+		if (val !== vPropSel.val()) {
+			vPropSel.val(val);
+			vPropSel.change()
+		}
+		$('.vprop-option').removeClass('active');
+		target.addClass('active');
+	}
+}
+
+class SmartFilter {
+	constructor (sfDef, value) {
+		this.sfDef = sfDef;
+		this.value = value===undefined ? sfDef.selector.defaultValue : value;
+		this.selectorType = this.sfDef.selector.type;
+		if (this.value === undefined || this.value === null) {
+			if (this.selectorType === 'inputFloat') {
+				this.value = 0.0;
+			} else if (this.selectorType === 'select') {
+				this.value = [];
+			} else {
+				this.value = '';
+			}
+		}
+	}
+
+	getDiv () {
+		let outerDiv = $(getEl('div'))
+			.addClass('smartfilter');
+		outerDiv[0].addEventListener('click', e => {
+			let sfDiv = $(e.currentTarget);
+			if (sfDiv.hasClass('smartfilter-inactive')) {
+				this.setSfState(sfDiv, true);
+			}
+		}, true) // Not using jquery so that event fires on capture phase
+		let activeCb = $(getEl('input'))
+			.attr('type','checkbox')
+			.addClass('smartfilter-checkbox')
+			.change(this.sfCheckboxChangeHandler);
+		outerDiv.append(activeCb);
+		let titleSpan = $(getEl('span'))
+			.attr('title', this.sfDef.description)
+			.addClass('sf-title')
+			.append(this.sfDef.title);
+		outerDiv.append(titleSpan);
+		let selectorSpan = $(getEl('span'))
+			.addClass('sf-selector');
+		outerDiv.append(selectorSpan);
+		if (this.selectorType === 'inputFloat') {
+			let valueInput = $(getEl('input'))
+				.val(this.value);
+			selectorSpan.append(valueInput);
+		} else if (this.selectorType === 'select') {
+			let select = $(getEl('select'))
+				.addClass('filter-value-input')
+			let allowMult = this.sfDef.selector.multiple;
+			allowMult = allowMult === undefined ? false : allowMult;
+			if (allowMult === true) {
+				select.prop('multiple','multiple');
+			}
+			selectorSpan.append(select);
+			let options = this.sfDef.selector.options;
+			if (options !== undefined) {
+				if (Array.isArray(options)) {
+					var optionTexts = options;
+					var text2Val = {};
+				} else {
+					var text2Val = options;
+					var optionTexts = Object.keys(text2Val);
+				}
+			} else {
+				let optsColName = this.sfDef.selector.optionsColumn;
+				let optsCol = getFilterColByName(optsColName);
+				var optionTexts = optsCol.filter.options;
+				var text2Val = {};
+				let reportSubs = optsCol.reportsub;
+				if (reportSubs !== undefined && Object.keys(reportSubs).length > 0) {
+					text2Val = swapJson(reportSubs);
+				}
+			}
+			if (Object.keys(text2Val).length === 0) {
+				for (let i=0; i<optionTexts.length; i++) {
+					text2Val[optionTexts[i]] = optionTexts[i];
+				}
+			}
+			let defaultSelections = []; //TODO improve. Probably need each sf type to be subclass
+			if (this.value === undefined || this.value === null) {
+				defaultSelections = [];
+			} else if (Array.isArray(this.value)) {
+				defaultSelections = this.value;
+			} else {
+				defaultSelections = [this.value];
+			}
+			for (let i=0; i<optionTexts.length; i++) {
+				let optText = optionTexts[i];
+				let optVal = text2Val[optText];
+				let opt = $(getEl('option'))
+					.val(optVal)
+					.prop('typedValue', optVal)
+					.append(optText);
+				if (defaultSelections.indexOf(optVal) >= 0) {
+					opt[0].selected = true;
+				}
+				select.append(opt)
+			}
+			select.pqSelect({
+				checkbox: true, 
+				displayText: '{0} selected',
+				singlePlaceholder: '&#x25BD;',
+				multiplePlaceholder: '&#x25BD;',
+				maxDisplay: 0,
+				width: 200,
+				search: false,
+				selectallText: 'Select all',
+			});
+			activeCb.change();
+		}
+		this.setSfState(outerDiv, false);
+		
+		return outerDiv;
+	}
+
+	setSfState (sfDiv, active) {
+		if (active) {
+			sfDiv.removeClass('smartfilter-inactive');
+			sfDiv.addClass('smartfilter-active');
+			sfDiv.find('.smartfilter-checkbox').prop('checked', true);
+		} else {
+			sfDiv.addClass('smartfilter-inactive');
+			sfDiv.removeClass('smartfilter-active');
+			sfDiv.find('.smartfilter-checkbox').prop('checked', false);
+		}
+	}
+
+	sfCheckboxChangeHandler = (event) => {
+		let cb = $(event.target);
+		let sfDiv = cb.closest('.smartfilter');
+		let sfActive = cb.prop('checked');
+		this.setSfState(sfDiv, sfActive);
 	}
 }
 
@@ -397,201 +542,6 @@ function refreshFilterCounts(n) {
 
 }
 
-function vPropOptionClick(event) {
-	let target = $(event.target);
-	let val = target.attr('value');
-	let vPropSel = $('#vprop-sel');
-	if (val !== vPropSel.val()) {
-		vPropSel.val(val);
-		vPropSel.change()
-	}
-	$('.vprop-option').removeClass('active');
-	target.addClass('active');
-}
-
-function vPropSelectChange(event) {
-	let sel = $(event.target);
-	let val = sel.val();
-	if (val === 'qb') {
-		var toShow = $('#vprop-qb');
-		var toHide = $('#vprop-sf');
-	} else if (val === 'sf') {
-		var toShow = $('#vprop-sf');
-		var toHide = $('#vprop-qb');
-	}
-	toShow.css('display','');
-	toHide.css('display','none');
-}
-
-function onGeneListSelectorChange(event) {
-	let target = $(event.target);
-	let id = target.attr('id');
-	if (id === 'gene-list-text') {
-		let textArea = target;
-		let fileInput = $('#gene-list-file');
-		fileInput.val('');
-	} else if (id === 'gene-list-file') {
-		let fileInput = target;
-		let textArea = $('#gene-list-text');
-		let fr = new FileReader();
-		fr.onloadend = (event) => {
-			textArea.val(event.target.result)
-		}
-		fr.readAsText(fileInput.prop('files')[0])
-	}
-}
-
-function onSampleSelectorClick(event) {
-	let sbox = $(this);
-	let sid = sbox.text();
-	if (sbox.hasClass('sample-neutral')) { // Set to require
-		sbox.removeClass('sample-neutral');
-		sbox.addClass('sample-require');
-		sbox.attr('title',`${sid}\nVariants MUST be in this sample`);
-	} else if (sbox.hasClass('sample-require')) { // Set to reject
-		sbox.removeClass('sample-require');
-		sbox.addClass('sample-reject');
-		sbox.attr('title',`${sid}\nVariants MUST NOT be in this sample`);
-	} else if (sbox.hasClass('sample-reject')) { // Set to neutral
-		sbox.removeClass('sample-reject');
-		sbox.addClass('sample-neutral');
-		sbox.attr('title',sid);
-	}
-}
-
-function sfCheckboxChangeHandler (event) {
-	let cb = $(event.target);
-	let sfDiv = cb.closest('.smartfilter');
-	let sfActive = cb.prop('checked');
-	setSfState(sfDiv, sfActive);
-}
-
-function setSfState (sfDiv, active) {
-	if (active) {
-		sfDiv.removeClass('smartfilter-inactive');
-		sfDiv.addClass('smartfilter-active');
-		sfDiv.find('.smartfilter-checkbox').prop('checked', true);
-	} else {
-		sfDiv.addClass('smartfilter-inactive');
-		sfDiv.removeClass('smartfilter-active');
-		sfDiv.find('.smartfilter-checkbox').prop('checked', false);
-	}
-}
-
-function getSmartFilterDiv (sfDef) {
-	let outerDiv = $(getEl('div'))
-		.addClass('smartfilter');
-	outerDiv[0].addEventListener('click', e => {
-		let sfDiv = $(e.currentTarget);
-		if (sfDiv.hasClass('smartfilter-inactive')) {
-			setSfState(sfDiv, true);
-		}
-	}, true)
-	let activeCb = $(getEl('input'))
-		.attr('type','checkbox')
-		.addClass('smartfilter-checkbox')
-		.change(sfCheckboxChangeHandler);
-	outerDiv.append(activeCb);
-	let titleSpan = $(getEl('span'))
-		.attr('title', sfDef.description)
-		.addClass('sf-title')
-		.append(sfDef.title);
-	outerDiv.append(titleSpan);
-	let defaultValue = sfDef.defaultValue;
-	if (defaultValue === undefined || defaultValue === null) {
-		defaultValue = '';
-	}
-	let selectorSpan = $(getEl('span'))
-		.addClass('sf-selector');
-	outerDiv.append(selectorSpan);
-	let selectorType = sfDef.selector.type;
-	if (selectorType === 'inputFloat') {
-		let defaultValue = sfDef.selector.defaultValue;
-		if (defaultValue === undefined || defaultValue === null) {
-			defaultValue = 0.0;
-		}
-		let valueInput = $(getEl('input'))
-			.val(defaultValue);
-		selectorSpan.append(valueInput);
-	} else if (selectorType === 'select') {
-		let select = $(getEl('select'))
-		.addClass('filter-value-input')
-		let allowMult = sfDef.selector.multiple;
-		allowMult = allowMult === undefined ? false : allowMult;
-		if (allowMult === true) {
-			select.prop('multiple','multiple');
-		}
-		selectorSpan.append(select);
-		let options = sfDef.selector.options;
-		if (options !== undefined) {
-			if (Array.isArray(options)) {
-				var optionTexts = options;
-				var text2Val = {};
-			} else {
-				var text2Val = options;
-				var optionTexts = Object.keys(text2Val);
-			}
-		} else {
-			let optsColName = sfDef.selector.optionsColumn;
-			let optsCol = getFilterColByName(optsColName);
-			var optionTexts = optsCol.filter.options;
-			var text2Val = {};
-			let reportSubs = optsCol.reportsub;
-			if (reportSubs !== undefined && Object.keys(reportSubs).length > 0) {
-				text2Val = swapJson(reportSubs);
-			}
-		}
-		if (Object.keys(text2Val).length === 0) {
-			for (let i=0; i<optionTexts.length; i++) {
-				text2Val[optionTexts[i]] = optionTexts[i];
-			}
-		}
-		let defaultValue = sfDef.selector.defaultValue;
-		let defaultSelections = [];
-		if (defaultValue === undefined || defaultValue === null) {
-			defaultSelections = [];
-		} else if (Array.isArray(defaultValue)) {
-			defaultSelections = defaultValue;
-		} else {
-			defaultSelections = [defaultValue];
-
-		}
-		for (let i=0; i<optionTexts.length; i++) {
-			let optText = optionTexts[i];
-			let optVal = text2Val[optText];
-			let opt = $(getEl('option'))
-			.val(optVal)
-			.prop('typedValue', optVal)
-			.append(optText);
-			if (defaultSelections.indexOf(optVal) >= 0) {
-				opt[0].selected = true;
-			}
-			select.append(opt)
-		}
-		select.pqSelect({
-			checkbox: true, 
-			displayText: '{0} selected',
-			singlePlaceholder: '&#x25BD;',
-			multiplePlaceholder: '&#x25BD;',
-			maxDisplay: 0,
-			width: 200,
-			search: false,
-			selectallText: 'Select all',
-		});
-		activeCb.change();
-	}
-	setSfState(outerDiv, false);
-	return outerDiv;
-}
-
-function sfOverlayClickHandler (event) {
-	let overlay = $(event.target);
-	let sfDiv = overlay.closest('.smartfilter');
-	sfDiv.addClass('smartfilter-active');
-	let cb = sfDiv.children('.smartfilter-checkbox')
-	cb.prop('checked',true);
-}
-
 function makeFilterJson () {
 	let fjs = {}
 	// Samples
@@ -618,6 +568,7 @@ function makeFilterJson () {
 		let sfWrapDiv = $('#vprop-sf');
 		let sfDivs = sfWrapDiv.children('div');
 		let fullSf = {operator: 'and', rules:[]}
+		let sfState = {};
 		for (let i=0; i<sfDivs.length; i++) {
 			sfDiv = $(sfDivs[i]);
 			if (!sfDiv.hasClass('smartfilter-active')) {
@@ -630,11 +581,17 @@ function makeFilterJson () {
 			let val = pullSfValue(sfDiv);
 			let sfResult = addSfValue(sfDef.filter, val);
 			fullSf.rules.push(sfResult);
-			fjs.variant = fullSf;
+			if (! sfState.hasOwnProperty(sfSource)) {
+				sfState[sfSource] = {};
+			}
+			sfState[sfSource][sfName] = val;
 		}
+		fjs.variant = fullSf;
+		fjs.smartfilter = sfState;
 	} else if (activeVprop === 'qb') {
 		let qbRoot = $('#qb-root');
 		fjs.variant = makeGroupFilter(qbRoot);
+		fjs.smartfilter = {};
 	}
 	
 	filterJson = fjs;
