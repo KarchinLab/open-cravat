@@ -353,20 +353,6 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
     colSel[0].dispatchEvent(event);
 }
 
-// function makeFilterJson () {
-//     var filterRootGroupDiv = $('#filter-root-group-div-simple');
-//     if (filterRootGroupDiv[0].style.display != 'none') {
-//         var filter = makeGroupFilter(filterRootGroupDiv);
-//         filterJson = {'variant': filter};
-//     } else {
-//         var filterRootGroupDiv = $('#filter-root-group-div-advanced');
-//         if (filterRootGroupDiv[0].style.display != 'none') {
-//             var filter = makeGroupFilter(filterRootGroupDiv);
-//             filterJson = {'variant': filter};
-//         }
-//     }
-// }
-
 function makeFilterRootGroupDiv (filter, name, filterLevel) {
     var filterToShow = filter;
     if (filter != undefined && filter.variant != undefined) {
@@ -446,13 +432,14 @@ const makeFilterGroupDiv = (filter) => {
             if (joinOperators.length > 0) {
                 $(joinOperators[0]).click();
             }
-            // Add groups
-            for (let i=0; i<filter.groups.length; i++) {
-                addFilterElement(elemsDiv,'group',filter.groups[i], undefined);
-            }
             // Add rules
-            for (let i=0; i<filter.columns.length; i++) {
-                addFilterElement(elemsDiv,'rule',filter.columns[i], undefined);
+            for (let i=0; i<filter.rules.length; i++) {
+                let rule = filter.rules[i];
+                if (rule.hasOwnProperty('operator')) {
+                    addFilterElement(elemsDiv,'group', rule, undefined);
+                } else {
+                    addFilterElement(elemsDiv,'rule', rule, undefined);
+                }
             }
             // Check negate
             if (filter.negate) {

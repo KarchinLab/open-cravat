@@ -81,6 +81,7 @@ class FilterManager {
 		this.sampleSelectId = 'sample-select-cont';
 		this.geneTextId = 'gene-list-text';
 		this.geneFileId = 'gene-list-file';
+		this.vPropContentId = 'vprop-cont';
 		this.vpropSelectId = 'vprop-sel';
 		this.vpropSfId = 'vprop-sf';
 		this.vpropQbId = 'vprop-qb';
@@ -222,11 +223,13 @@ class FilterManager {
 		this.addGeneSelect(geneSelect, filter);
 	}
 
-	addVpropUI (outerDiv, filter) {
-		outerDiv.append($(getEl('div'))
-		.text('Select variants by applying filters or building a query'))
+	addVpropUI (vPropCont, filter) {
+		filter = filter===undefined ? {'smartfilter':{},'variant':{}} : filter;
+		vPropCont.attr('id', this.vPropContentId);
+		vPropCont.append($(getEl('div'))
+			.text('Select variants by applying filters or building a query'))
 		let fTypeDiv = $(getEl('div'));
-		outerDiv.append(fTypeDiv);
+		vPropCont.append(fTypeDiv);
 		let vPropSel = $(getEl('select'))
 			.attr('id', this.vpropSelectId)
 			.append($(getEl('option')).val('sf').text('sf'))
@@ -234,35 +237,42 @@ class FilterManager {
 			.css('display','none')
 			.change(this.vPropSelectChange);
 		fTypeDiv.append(vPropSel);
-		fTypeDiv.append(
-			$(getEl('span'))
+		let sfHeader = $(getEl('span'))
 			.addClass('vprop-option')
 			.text('Smart Filters')
 			.click(this.vPropOptionClick)
-			.attr('value','sf')
-			.addClass('active')
-		);
-		fTypeDiv.append(
-			$(getEl('span'))
+			.attr('value','sf');
+		fTypeDiv.append(sfHeader);
+		let qbHeader = $(getEl('span'))
 			.addClass('vprop-option')
 			.text('Query Builder')
 			.click(this.vPropOptionClick)
-			.attr('value','qb')
-		);
+			.attr('value','qb');
+		fTypeDiv.append(qbHeader);
 		let sfContent = $(getEl('div'))
 			.attr('id', this.vpropSfId);
-		outerDiv.append(sfContent);
-		this.addSfUI(sfContent, filter);
+		vPropCont.append(sfContent);
+		this.addSfUI(sfContent, filter.smartfilter);
 		let qbContent = $(getEl('div'))
 			.attr('id', this.vpropQbId);
-		outerDiv.append(qbContent);
-		this.addQbUI(qbContent, filter);
-		// Activate the sf by default
-		vPropSel.val('sf');
+		vPropCont.append(qbContent);
+		this.addQbUI(qbContent, filter.variant);
+
+		// Activate the correct vProp type
+		let sfValued = Object.keys(filter.smartfilter).length !== 0;
+		let qbValued = Object.keys(filter.variant).length !== 0;
+		if (sfValued || !qbValued) {
+			vPropSel.val('sf');
+			sfHeader.addClass('active');
+		} else {
+			vPropSel.val('qb');
+			qbHeader.addClass('active');
+		}
 		vPropSel.change();
 	}
 
 	addSfUI (outerDiv, filter) {
+		filter = filter===undefined ? {} : filter;
 		outerDiv.append($(getEl('div'))
 			.text('Click a filter to apply it.')
 		)
@@ -276,7 +286,11 @@ class FilterManager {
 			for (let j=0; j<sfGroup.order.length; j++) {
 				let sfName = sfGroup.order[j];
 				let sfDef = sfGroup.definitions[sfName];
-				let sf = new SmartFilter(sfDef);
+				let sfVal = undefined;
+				if (filter.hasOwnProperty(sfSource)) {
+					sfVal = filter[sfSource][sfName];
+				}
+				let sf = new SmartFilter(sfDef, sfVal);
 				let sfDiv = sf.getDiv();
 				sfDiv.attr('full-name', sfSource+'.'+sfName);
 				outerDiv.append(sfDiv);
@@ -285,10 +299,17 @@ class FilterManager {
 	}
 
 	addQbUI (outerDiv, filter) {
+		filter = filter===undefined ? {} : filter;
 		outerDiv.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
-		let qbDiv = makeFilterGroupDiv({});
+		let qbDiv = makeFilterGroupDiv(filter);
 		qbDiv.attr('id', this.qbRootId);
 		outerDiv.append(qbDiv);
+	}
+
+	updateVpropUI (filter) {
+		let vPropCont = $('#'+this.vPropContentId);
+		vPropCont.empty()
+		this.addVpropUI(vPropCont, filter);
 	}
 
 	vPropSelectChange = (event) => { //Arrow function to maintain this=FilterManager
@@ -321,7 +342,8 @@ class FilterManager {
 class SmartFilter {
 	constructor (sfDef, value) {
 		this.sfDef = sfDef;
-		this.value = value===undefined ? sfDef.selector.defaultValue : value;
+		this.valProvided = value !== undefined;
+		this.value = this.valProvided ? value : sfDef.selector.defaultValue;
 		this.selectorType = this.sfDef.selector.type;
 		if (this.value === undefined || this.value === null) {
 			if (this.selectorType === 'inputFloat') {
@@ -425,7 +447,7 @@ class SmartFilter {
 			});
 			activeCb.change();
 		}
-		this.setSfState(outerDiv, false);
+		this.setSfState(outerDiv, this.valProvided);
 		
 		return outerDiv;
 	}
