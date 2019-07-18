@@ -698,8 +698,8 @@ function loadFilterSetting (name, callback, doNotCount) {
 			writeLogDiv('Filter setting loaded');
 			var data = response;
 			filterJson = data['filterSet'];
-			var filterWrapDiv = document.getElementById('filterwrapdiv');
-			$(filterWrapDiv).empty();
+			// var filterWrapDiv = document.getElementById('filterwrapdiv');
+			// $(filterWrapDiv).empty();
 			// populateFilterWrapDiv(filterWrapDiv); //TODO delete this
 			if (! doNotCount) {
 				infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
@@ -707,6 +707,14 @@ function loadFilterSetting (name, callback, doNotCount) {
 			if (callback != null) {
 				callback();
 			}
+		});
+	})
+}
+
+function getSavedFilter (name) {
+	return new Promise((resolve, reject) => {
+		$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+			resolve(response['filterSet'])
 		});
 	})
 }

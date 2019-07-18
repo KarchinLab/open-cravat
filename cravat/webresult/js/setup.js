@@ -337,6 +337,12 @@ class FilterManager {
 		$('.vprop-option').removeClass('active');
 		target.addClass('active');
 	}
+
+	updateAll(filter) {
+		this.updateSampleSelect(filter.sample);
+		this.updateGeneSelect(filter.genes);
+		this.updateVpropUI(filter);
+	}
 }
 
 class SmartFilter {
@@ -480,22 +486,61 @@ function makeFilterTab (rightDiv) {
 		return;
 	}
 	rightDiv = $(rightDiv);
+	let leftPanel =$(getEl('div'))
+	.addClass('filter-left');
+	rightDiv.append(leftPanel);
+	leftPanel.append($(getEl('h3'))
+		.text('Saved Filters')
+	)
+	let savedSelect = $(getEl('select'))
+		.append($(getEl('option')).val('').text('Select a filter'))
+		.attr('id','saved-filter-select')
+		.change(function(e) {
+			if ($(this).val() === '') {
+				$('#load-filter-btn').prop('disabled',true);
+			} else {
+				$('#load-filter-btn').prop('disabled',false);
+			}
+		});
+	leftPanel.append(savedSelect);
+	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+		for (let i=0; i<response.length; i++) {
+			let opt = $(getEl('option')).val(response[i]).text(response[i])
+			savedSelect.append(opt);
+		}
+	});
+	leftPanel.append($(getEl('br')));
+	let loadBtn = $(getEl('button'))
+		.text('Load Filter')
+		.attr('id','load-filter-btn')
+		.attr('disabled','true')
+		.click(e => {
+			let fname = $('#saved-filter-select').val()
+			getSavedFilter(fname).then((msg) => {
+				filterMgr.updateAll(msg);	
+			});
+		});
+	leftPanel.append(loadBtn);
+	
+	let rightPanel = $(getEl('div'))
+		.addClass('filter-right');
+	rightDiv.append(rightPanel);
 	
 	// Sample selector
 	let sampleSection = filterMgr.getFilterSection('Samples',false);
-	rightDiv.append(sampleSection);
+	rightPanel.append(sampleSection);
 	let sampleContent = sampleSection.find('.filter-content');
 	filterMgr.addSampleSelect(sampleContent);
 
 	// Gene selector
 	let geneSection = filterMgr.getFilterSection('Genes',false);
-	rightDiv.append(geneSection);
+	rightPanel.append(geneSection);
 	let geneContent = geneSection.find('.filter-content');
 	filterMgr.addGeneSelect(geneContent);
 
 	// Smartfilters
 	let vPropSection = filterMgr.getFilterSection('Variant Properties', true);
-	rightDiv.append(vPropSection);
+	rightPanel.append(vPropSection);
 	let vPropContent = vPropSection.find('.filter-content');
 	filterMgr.addVpropUI(vPropContent);
 
@@ -503,7 +548,7 @@ function makeFilterTab (rightDiv) {
 	let loadControls = $(getEl('div'))
 		.attr('id','filter-load-controls')
 		.addClass('filter-section');
-	rightDiv.append(loadControls);
+	rightPanel.append(loadControls);
 	let countDisplay = $(getEl('span'))
 		.attr('id','filter-count-display')
 		.text('Count not up to date');
@@ -541,19 +586,13 @@ function makeFilterTab (rightDiv) {
 
 	// Save controls
 	let saveControls = $(getEl('div'));
-	rightDiv.append(saveControls);
+	rightPanel.append(saveControls);
 	let saveBtn = $(getEl('button'))
 		.text('Save Filter')
 		.click(e => {
 			saveFilterSettingAs();
 		});
 	saveControls.append(saveBtn);
-	let loadBtn = $(getEl('button'))
-		.text('Load Filter')
-		.click(e => {
-			loadFilterSettingAs();
-		});
-	saveControls.append(loadBtn);
 }
 
 function refreshFilterCounts(n) {

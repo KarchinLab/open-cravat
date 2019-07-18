@@ -871,3 +871,14 @@ div.pq-select-menu>.pq-select-option-label {
 #tabhead_filter.active {
 	background-color: #d1dae0;
 }
+.filter-left {
+	float: left;
+	height: 100%;
+	border-right: 1px solid gray;
+	padding: 5px;
+}
+.filter-right {
+	float: left;
+	height: 100%;
+	width: 75%;
+}
