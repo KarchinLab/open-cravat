@@ -1708,6 +1708,20 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     span.textContent = mInfo['type'];
     addEl(d, span);
     addEl(infodiv, d);
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Required modules: ';
+    addEl(d, span);
+    span = getEl('span');
+    if (mInfo['requires'] != null) {
+        span.textContent = mInfo['requires'];
+    } else {
+        span.textContent = 'None';
+    }
+    span.style.wordBreak = 'break-all';
+    addEl(d, span);
+    addEl(infodiv, d);
     if (currentTab == 'store') {
         d = getEl('div');
         span = getEl('span');
