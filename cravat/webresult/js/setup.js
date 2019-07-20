@@ -481,13 +481,27 @@ class SmartFilter {
 // Global FilterMgr
 filterMgr = new FilterManager();
 
+function populateFilterSaveNames() {
+	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+		let savedSelect = $('#saved-filter-select');
+		savedSelect.empty();
+		for (let i=0; i<response.length; i++) {
+			let opt = $(getEl('option')).val(response[i]).text(response[i])
+			savedSelect.append(opt);
+		}
+	});
+}
+
+
 function makeFilterTab (rightDiv) {
 	if (smartFilters === undefined) { 
 		return;
 	}
 	rightDiv = $(rightDiv);
+
+	// Left panel
 	let leftPanel =$(getEl('div'))
-	.addClass('filter-left');
+		.addClass('filter-left');
 	rightDiv.append(leftPanel);
 	leftPanel.append($(getEl('h3'))
 		.text('Saved Filters')
@@ -503,12 +517,7 @@ function makeFilterTab (rightDiv) {
 			}
 		});
 	leftPanel.append(savedSelect);
-	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
-		for (let i=0; i<response.length; i++) {
-			let opt = $(getEl('option')).val(response[i]).text(response[i])
-			savedSelect.append(opt);
-		}
-	});
+	populateFilterSaveNames();
 	leftPanel.append($(getEl('br')));
 	let loadBtn = $(getEl('button'))
 		.text('Load Filter')
@@ -522,6 +531,7 @@ function makeFilterTab (rightDiv) {
 		});
 	leftPanel.append(loadBtn);
 	
+	// Right panel
 	let rightPanel = $(getEl('div'))
 		.addClass('filter-right');
 	rightDiv.append(rightPanel);
@@ -590,7 +600,9 @@ function makeFilterTab (rightDiv) {
 	let saveBtn = $(getEl('button'))
 		.text('Save Filter')
 		.click(e => {
-			saveFilterSettingAs();
+			saveFilterSettingAs().then((msg) => {
+				populateFilterSaveNames();
+			})
 		});
 	saveControls.append(saveBtn);
 }

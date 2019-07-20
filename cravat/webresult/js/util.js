@@ -211,21 +211,24 @@ function addSpinnerById(parentDivId, scaleFactor, minDim, spinnerDivId){
 }
 
 function saveFilterSetting (name, useFilterJson) {
-	var saveData = {};
-    if (useFilterJson == undefined) {
-        makeFilterJson();
-    }
-	saveData['filterSet'] = filterJson;
-	var saveDataStr = JSON.stringify(saveData);
-	$.ajax({
-        type: 'GET',
-        async: true,
-        url: '/result/service/savefiltersetting', 
-        data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
-        success: function (response) {
-            writeLogDiv('Filter setting has been saved.');
-        }
-    });
+	return new Promise((resolve, reject) => {
+		var saveData = {};
+		if (useFilterJson == undefined) {
+			makeFilterJson();
+		}
+		saveData['filterSet'] = filterJson;
+		var saveDataStr = JSON.stringify(saveData);
+		$.ajax({
+			type: 'GET',
+			async: true,
+			url: '/result/service/savefiltersetting', 
+			data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
+			success: function (response) {
+				writeLogDiv('Filter setting has been saved.');
+				resolve();
+			}
+		});
+	})
 }
 
 function deleteFilterSetting (name) {
@@ -239,23 +242,25 @@ function deleteFilterSetting (name) {
 }
 
 function saveFilterSettingAs () {
-	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
-        var quickSaveNameIdx = response.indexOf(quickSaveName);
-        if (quickSaveNameIdx >= 0) {
-            response.splice(quickSaveNameIdx, 1);
-        }
-		var names = response.join(', ');
-		var msg = 'Please enter layout name to save.';
-		if (names != '') {
-			msg = msg + ' Saved layout names are: ' + names;
-		}
-        if (lastUsedLayoutName == quickSaveName) {
-            lastUsedLayoutName = '';
-        }
-		var name = prompt(msg, lastUsedLayoutName);
-		if (name != null) {
-			saveFilterSetting(name);
-		}
+	return new Promise((resolve, reject) => {
+		$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+			var quickSaveNameIdx = response.indexOf(quickSaveName);
+			if (quickSaveNameIdx >= 0) {
+				response.splice(quickSaveNameIdx, 1);
+			}
+			var names = response.join(', ');
+			var msg = 'Please enter layout name to save.';
+			if (names != '') {
+				msg = msg + ' Saved layout names are: ' + names;
+			}
+			if (lastUsedLayoutName == quickSaveName) {
+				lastUsedLayoutName = '';
+			}
+			var name = prompt(msg, lastUsedLayoutName);
+			if (name != null) {
+				saveFilterSetting(name).then((msg) => {resolve()});
+			}
+		});
 	});
 }
 
