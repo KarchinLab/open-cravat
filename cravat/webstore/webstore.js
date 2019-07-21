@@ -1554,9 +1554,11 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
                 var descs = [];
                 for (var i1 = 0; i1 < outputs.length; i1++) {
                     var o = outputs[i1];
+                    var desc = '';
                     if (o['desc'] != undefined) {
-                        descs.push([o['title'], o['desc']]);
+                        desc = o['desc'];
                     }
+                    descs.push([o['title'], desc]);
                 }
                 if (descs.length > 0) {
                     outputColumnDiv.style.display = 'block';
