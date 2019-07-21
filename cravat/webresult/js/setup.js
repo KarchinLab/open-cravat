@@ -1512,6 +1512,10 @@ function populateWidgetSelectorPanel () {
 				var th = $groupHeaderTds[i];
 				var title = $(th).children('div').text();
                 var colgroupkey = infomgr.colgrouptitletokey[title];
+                var desc = infomgr.modulesInfo[currentTab][colgroupkey];
+                if (desc != undefined) {
+                    th.title = desc;
+                }
 				th.setAttribute('colgrouptitle', title);
 				th.setAttribute('colgroupkey', colgroupkey);
                 th.style.position = 'relative';

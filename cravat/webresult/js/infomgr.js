@@ -12,6 +12,7 @@ function InfoMgr () {
 	this.jobinfo = {};
 	this.widgetReq = {};
     this.colgroupdefaulthiddenexist = {};
+    this.modulesInfo = {};
 }
 
 InfoMgr.prototype.getStatus = function (jobId) {
@@ -96,6 +97,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 	self.colModels[tabName] = jsonResponseData['columns'];
 	self.stats[tabName] = jsonResponseData['stat'];
 	self.statuss[tabName] = jsonResponseData['status'];
+    self.modulesInfo[tabName] = jsonResponseData['modules_info'];
 	if (tabName == 'gene') {
 		self.geneRows = {};
 		for (var i = 0; i < self.datas[tabName].length; i++) {

@@ -776,8 +776,9 @@ class Cravat (object):
         cursor.execute(q)
         q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
         cursor.execute(q)
-        q = 'insert into info values ("_converter_format", "{}")'.format(self.converter_format)
-        cursor.execute(q)
+        if hasattr(self, 'converter_format'):
+            q = 'insert into info values ("_converter_format", "{}")'.format(self.converter_format)
+            cursor.execute(q)
         if hasattr(self, 'genemapper'):
             version = self.genemapper.conf['version']
             title = self.genemapper.conf['title']
@@ -793,6 +794,13 @@ class Cravat (object):
                 input_path_dict_str = '='.join(line.strip().split('=')[1:]).replace('"', "'")
                 q = 'insert into info values ("_input_paths", "{}")'.format(input_path_dict_str)
                 cursor.execute(q)
+        q = 'select colval from info where colkey="annotators_desc"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is None:
+            annotator_desc_dict = {}
+        else:
+            annotator_desc_dict = json.loads(r[0])
         q = 'select name, displayname, version from variant_annotator'
         cursor.execute(q)
         rows = list(cursor.fetchall())
@@ -815,6 +823,11 @@ class Cravat (object):
                 annotators_str += '{}, '.format(displayname)
                 annotators.append('{}:'.format(name))
             annotator_version[name] = version
+            module_info = au.get_local_module_info(name)
+            if module_info is not None and module_info.conf is not None:
+                annotator_desc_dict[name] = module_info.conf['description']
+        q = 'insert into info values ("_annotator_desc", "{}")'.format(json.dumps(annotator_desc_dict).replace('"', "'"))
+        cursor.execute(q)
         self.status_writer.queue_status_update('annotator_version', annotator_version)
         q = 'insert into info values ("Annotators", "' + annotators_str + '")'
         cursor.execute(q)

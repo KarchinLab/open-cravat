@@ -334,6 +334,7 @@ async def get_result (request):
     print('getting result [{}] from {} for viewer...'.format(tab, dbbasename))
     t = time.time()
     data = await reporter.run(tab=tab)
+    data['modules_info'] = await get_modules_info(request)
     t = round(time.time() - t, 3)
     print('result [{}] obtained from {} in {}s. packing...'.format(tab, dbbasename, t))
     t = time.time()
@@ -347,6 +348,7 @@ async def get_result (request):
     content['columns'] = get_colmodel(tab, data['colinfo'])
     content["data"] = get_datamodel(data[tab])
     content["status"] = "normal"
+    content['modules_info'] = data['modules_info']
     t = round(time.time() - t, 3)
     print('done in {}s. sending result of {}...'.format(t, dbbasename))
     return web.json_response(content)
@@ -532,6 +534,20 @@ async def serve_runwidget (request):
     m = imp.load_module(path, f, fn, d)
     content = await m.get_data(queries)
     return web.json_response(content)
+
+async def get_modules_info (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
+    q = 'select colval from info where colkey="_annotator_desc"'
+    await cursor.execute(q)
+    r = await cursor.fetchone()
+    if r is None:
+        content = {}
+    else:
+        content = json.loads(r[0].replace("'", '"'))
+    return content
 
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
