@@ -245,8 +245,9 @@ async def delete_filter_setting (request):
     r = await table_exists(cursor, table)
     if r:
         q = 'delete from ' + table + ' where name="' + name + '" and datatype="filter"'
+        print(q)
         await cursor.execute(q)
-        conn.commit()
+        await conn.commit()
         content = 'deleted'
     else:
         content = 'no such table'

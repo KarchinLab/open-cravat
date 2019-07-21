@@ -232,13 +232,17 @@ function saveFilterSetting (name, useFilterJson) {
 }
 
 function deleteFilterSetting (name) {
-	$.get('/result/service/deletefiltersetting', {'dbpath': dbPath, name: name}).done(function (response) {
-        if (response == 'deleted') {
-            writeLogDiv('Filter setting has been deleted.');
-        } else {
-            alert(response);
-        }
-    });
+	return new Promise((resolve, reject) => {
+		$.get('/result/service/deletefiltersetting', {'dbpath': dbPath, name: name}).done(function (response) {
+			if (response == 'deleted') {
+				writeLogDiv('Filter setting has been deleted.');
+			} else {
+				alert(response);
+			}
+			resolve();
+		});
+
+	})
 }
 
 function saveFilterSettingAs () {

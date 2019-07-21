@@ -483,13 +483,50 @@ filterMgr = new FilterManager();
 
 function populateFilterSaveNames() {
 	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
-		let savedSelect = $('#saved-filter-select');
-		savedSelect.empty();
+		let savedList = $('#saved-filter-list');
+		savedList.empty();
 		for (let i=0; i<response.length; i++) {
-			let opt = $(getEl('option')).val(response[i]).text(response[i])
-			savedSelect.append(opt);
+			let filterName = response[i];
+			let li = $(getEl('li'))
+				.addClass('filter-list-item');
+			savedList.append(li);
+			li.append($(getEl('img'))
+				.attr('src','images/pencil.png')
+				.addClass('filter-list-item-load')
+				.attr('title','load filter')
+				.click(filterLoadIconClick)
+				.prop('filterName',filterName)
+			);
+			li.append($(getEl('span'))
+				.text(filterName)
+				.addClass('filter-list-item-title')	
+			)
+			li.append($(getEl('img'))
+				.attr('src','images/close.png')
+				.addClass('filter-list-item-delete')
+				.attr('title','delete filter')
+				.click(filterDeleteIconClick)
+				.prop('filterName',filterName)
+			);
 		}
 	});
+}
+
+function filterLoadIconClick(event) {
+	let target = $(this);
+	let filterName = target.prop('filterName');
+	getSavedFilter(filterName).then((msg) => {
+		filterMgr.updateAll(msg);	
+	});
+}
+
+function filterDeleteIconClick(event) {
+	let target = $(this);
+	let filterName = target.prop('filterName');
+	deleteFilterSetting(filterName)
+	.then((msg) => {
+		populateFilterSaveNames();
+	})
 }
 
 
@@ -501,39 +538,19 @@ function makeFilterTab (rightDiv) {
 
 	// Left panel
 	let leftPanel =$(getEl('div'))
-		.addClass('filter-left');
+		.attr('id','filter-left-panel');
 	rightDiv.append(leftPanel);
 	leftPanel.append($(getEl('h3'))
 		.text('Saved Filters')
 	)
-	let savedSelect = $(getEl('select'))
-		.append($(getEl('option')).val('').text('Select a filter'))
-		.attr('id','saved-filter-select')
-		.change(function(e) {
-			if ($(this).val() === '') {
-				$('#load-filter-btn').prop('disabled',true);
-			} else {
-				$('#load-filter-btn').prop('disabled',false);
-			}
-		});
-	leftPanel.append(savedSelect);
+	let savedList = $(getEl('ul'))
+		.attr('id','saved-filter-list');
+	leftPanel.append(savedList);
 	populateFilterSaveNames();
-	leftPanel.append($(getEl('br')));
-	let loadBtn = $(getEl('button'))
-		.text('Load Filter')
-		.attr('id','load-filter-btn')
-		.attr('disabled','true')
-		.click(e => {
-			let fname = $('#saved-filter-select').val()
-			getSavedFilter(fname).then((msg) => {
-				filterMgr.updateAll(msg);	
-			});
-		});
-	leftPanel.append(loadBtn);
 	
 	// Right panel
 	let rightPanel = $(getEl('div'))
-		.addClass('filter-right');
+		.attr('id','filter-right-panel');
 	rightDiv.append(rightPanel);
 	
 	// Sample selector

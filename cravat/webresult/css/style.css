@@ -871,14 +871,36 @@ div.pq-select-menu>.pq-select-option-label {
 #tabhead_filter.active {
 	background-color: #d1dae0;
 }
-.filter-left {
+#filter-left-panel {
 	float: left;
 	height: 100%;
 	border-right: 1px solid gray;
 	padding: 5px;
+	width: 12%;
 }
-.filter-right {
+#filter-right-panel {
 	float: left;
 	height: 100%;
 	width: 75%;
+}
+#saved-filter-list {
+	padding-inline-start: 0px;
+}
+.filter-list-item {
+	display: flex;
+}
+.filter-list-item:hover {
+	background-color: #d1dae0;
+}
+.filter-list-item-title {
+	margin: 2px;
+}
+.filter-list-item-load {
+	height: 1em;
+	cursor: pointer;
+}
+.filter-list-item-delete {
+	margin-left: auto;
+	height: 1em;
+	cursor: pointer;
 }
