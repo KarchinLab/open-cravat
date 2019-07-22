@@ -272,7 +272,7 @@ class FilterManager {
 
 		// Activate the correct vProp type
 		let sfValued = Object.keys(filter.smartfilter).length !== 0;
-		let qbValued = Object.keys(filter.variant).length !== 0;
+		let qbValued = filter.variant.rules!==undefined && filter.variant.rules.length>0;
 		if (sfValued || !qbValued) {
 			vPropSel.val('sf');
 			sfHeader.addClass('active');
@@ -511,17 +511,11 @@ function populateFilterSaveNames() {
 			let li = $(getEl('li'))
 				.addClass('filter-list-item');
 			savedList.append(li);
-			li.append($(getEl('img'))
-				.attr('src','images/pencil.png')
-				.addClass('filter-list-item-load')
-				.attr('title','load filter')
-				.click(filterLoadIconClick)
-				.prop('filterName',filterName)
-			);
 			li.append($(getEl('span'))
 				.text(filterName)
 				.addClass('filter-list-item-title')
 				.attr('title',filterName)
+				.click(savedFilterClick)
 			)
 			li.append($(getEl('img'))
 				.attr('src','images/close.png')
@@ -534,11 +528,12 @@ function populateFilterSaveNames() {
 	});
 }
 
-function filterLoadIconClick(event) {
+function savedFilterClick(event) {
 	let target = $(this);
-	let filterName = target.prop('filterName');
+	let filterName = target.text();
 	getSavedFilter(filterName).then((msg) => {
-		filterMgr.updateAll(msg);	
+		filterMgr.updateAll(msg);
+		$('#load_button').click();	
 	});
 }
 

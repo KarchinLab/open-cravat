@@ -894,20 +894,15 @@ div.pq-select-menu>.pq-select-option-label {
 .filter-list-item {
 	display: flex;
 }
-.filter-list-item:hover {
-	background-color: #d1dae0;
-}
 .filter-list-item-title {
-	margin-left: 1ch;
-	display: inline-block;
 	overflow: hidden;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 	width: 100rem;
-}
-.filter-list-item-load {
-	height: 1em;
 	cursor: pointer;
+}
+.filter-list-item-title:hover {
+	background-color: #d1dae0;
 }
 .filter-list-item-delete {
 	margin-left: auto;
