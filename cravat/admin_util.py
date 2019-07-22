@@ -16,6 +16,7 @@ import pkg_resources
 from collections import defaultdict
 from types import SimpleNamespace
 from . import exceptions
+from collections import MutableMapping
 
 def load_yml_conf(yml_conf_path):
     """
@@ -185,11 +186,36 @@ def get_developer_dict (**kwargs):
     d['website'] = kwargs.get('website', '')
     return d
 
+class LocalInfoCache(MutableMapping):
+
+    def __init__(self, *args, **kwargs):
+        self.store = dict()
+        self.update(dict(*args, **kwargs))  # use the free update to set keys
+
+    def __getitem__(self, key):
+        if not isinstance(self.store[key], LocalModuleInfo):
+            self.store[key] = LocalModuleInfo(self.store[key])
+        return self.store[key]
+
+    def __setitem__(self, key, value):
+        if not(isinstance(value, LocalModuleInfo) or os.path.isdir(value)):
+            raise ValueError(value)
+        self.store[key] = value
+
+    def __delitem__(self, key):
+        del self.store[key]
+
+    def __iter__(self):
+        return iter(self.store)
+
+    def __len__(self):
+        return len(self.store)
+
 class ModuleInfoCache(object):
     def __init__(self):
         self._sys_conf = get_system_conf()
         self._modules_dir = get_modules_dir()
-        self.local = {}
+        self.local = LocalInfoCache()
         self._remote_url = None
         self.remote = {}
         self._remote_fetched = False
@@ -209,7 +235,7 @@ class ModuleInfoCache(object):
             self._counts_fetched = True
 
     def update_local(self):
-        self.local = {}
+        self.local = LocalInfoCache()
         if not(os.path.exists(self._modules_dir)):
             return
         for mg in os.listdir(self._modules_dir):
@@ -219,9 +245,10 @@ class ModuleInfoCache(object):
             for module_name in os.listdir(mg_path):
                 module_dir = os.path.join(mg_path, module_name)
                 if os.path.isdir(module_dir):
-                    local_info = LocalModuleInfo(module_dir)
-                    if local_info.is_valid_module():
-                        self.local[module_name] = local_info
+                    # local_info = LocalModuleInfo(module_dir)
+                    # if local_info.is_valid_module():
+                    #     self.local[module_name] = local_info
+                    self.local[module_name] = module_dir
 
     def update_remote(self, force=False):
         if force or not(self._remote_fetched):
