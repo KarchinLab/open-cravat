@@ -252,10 +252,10 @@ function saveFilterSettingAs () {
 			if (quickSaveNameIdx >= 0) {
 				response.splice(quickSaveNameIdx, 1);
 			}
-			var names = response.join(', ');
-			var msg = 'Please enter layout name to save.';
+			var names = response.join('\n');
+			var msg = 'Enter filter name.';
 			if (names != '') {
-				msg = msg + ' Saved layout names are: ' + names;
+				msg = msg + '\nSaved names are:\n' + names;
 			}
 			if (lastUsedLayoutName == quickSaveName) {
 				lastUsedLayoutName = '';
