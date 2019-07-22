@@ -120,7 +120,7 @@ class FilterManager {
 	addSampleSelect (outerDiv, filter) {
 		filter = filter===undefined ? {require:[],reject:[]} : filter;
 		outerDiv.append($(getEl('div'))
-		.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
+			.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
 		)
 		let sampleSelDiv = $(getEl('div'))
 			.attr('id', this.sampleSelectId);
@@ -160,6 +160,12 @@ class FilterManager {
 		let sampleContent = $('#'+this.sampleSelectId).parent();
 		sampleContent.empty();
 		this.addSampleSelect(sampleContent,filter);
+		let sampleHeader = sampleContent.siblings('.filter-header');
+		if (filter.require.length>0 || filter.reject.length>0) {
+			sampleHeader.removeClass('inactive');
+		} else {
+			sampleHeader.addClass('inactive');
+		}
 	}
 
 	onSampleSelectorClick(event) {
@@ -221,6 +227,12 @@ class FilterManager {
 		let geneSelect = $('#'+this.geneTextId).parent();
 		geneSelect.empty();
 		this.addGeneSelect(geneSelect, filter);
+		let geneHeader = geneSelect.closest('.filter-content').siblings('.filter-header');
+		if (filter.length > 0) {
+			geneHeader.removeClass('inactive');
+		} else {
+			geneHeader.addClass('inactive');
+		}
 	}
 
 	addVpropUI (vPropCont, filter) {
