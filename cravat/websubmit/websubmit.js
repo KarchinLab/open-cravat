@@ -15,7 +15,7 @@ var currentTab = 'submit';
 var websubmitReportBeingGenerated = {};
 var jobRunning = {};
 var tagsCollectedForSubmit = [];
-var jobsPerPageInList = 10;
+var jobsPerPageInList = 15;
 var jobsListCurStart = 0;
 var jobsListCurEnd = jobsPerPageInList;
 
@@ -163,7 +163,6 @@ function submit () {
                 if (data.expected_runtime > 0) {
                 }
                 jobRunning[data['id']] = true;
-                console.log('@ runnig jobs', jobRunning);
             }
         })
         $('#submit-job-button').attr('disabled','disabled');
@@ -646,19 +645,17 @@ function onClickJobsListPrevPage () {
     jobsListCurStart = jobsListCurEnd - jobsPerPageInList;
     jobsListCurStart = Math.min(Math.max(0, jobsListCurStart), GLOBALS.jobs.length);
     jobsListCurEnd = Math.max(0, Math.min(jobsListCurEnd, GLOBALS.jobs.length));
-    console.log('@', jobsListCurStart, jobsListCurEnd);
     showJobListPage();
 }
 
 function onClickJobsListNextPage () {
     jobsListCurStart += jobsPerPageInList;
     if (jobsListCurStart >= GLOBALS.jobs.length) {
-        jobsListCurStart = GLOBALS.jobs.length - jobsPerPageInList;
+        jobsListCurStart = GLOBALS.jobs.length - (GLOBALS.jobs.length % jobsPerPageInList);
     }
     jobsListCurEnd = jobsListCurStart + jobsPerPageInList;
     jobsListCurStart = Math.min(Math.max(0, jobsListCurStart), GLOBALS.jobs.length);
     jobsListCurEnd = Math.max(0, Math.min(jobsListCurEnd, GLOBALS.jobs.length));
-    console.log('@', jobsListCurStart, jobsListCurEnd);
     showJobListPage();
 }
 

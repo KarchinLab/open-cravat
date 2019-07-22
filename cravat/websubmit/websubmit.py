@@ -375,6 +375,7 @@ async def get_job (job_id, request):
     job.set_info_values(reports=existing_reports)
     return job
 
+'''
 async def get_jobs_details (request):
     queries = request.rel_url.query
     ids = int(queries['jobids'])
@@ -389,6 +390,7 @@ async def get_jobs_details (request):
             traceback.print_exc()
             continue
     return web.json_response([job.get_info_dict() for job in all_jobs])
+'''
 
 async def get_jobs (request):
     global filerouter
@@ -447,7 +449,6 @@ async def delete_job(request):
     global filerouter
     global job_tracker
     job_id = request.match_info['job_id']
-    print('@', job_tracker)
     if job_tracker.get_process(job_id) is not None:
         print('\nKilling job {}'.format(job_id))
         await job_tracker.cancel_job(job_id)
@@ -788,6 +789,7 @@ class JobTracker (object):
 
     async def cancel_job(self, id):
         p = self._jobs.get(id)
+        p.poll()
         if p:
             if platform.platform().lower().startswith('windows'):
                 # proc.kill() doesn't work well on windows
@@ -825,7 +827,7 @@ routes = []
 routes.append(['POST','/submit/submit',submit])
 routes.append(['GET','/submit/annotators',get_annotators])
 routes.append(['GET','/submit/jobs',get_all_jobs])
-routes.append(['GET','/submit/jobsdetails',get_jobs_details])
+#routes.append(['GET','/submit/jobsdetails',get_jobs_details])
 routes.append(['GET','/submit/jobs/{job_id}',view_job])
 routes.append(['DELETE','/submit/jobs/{job_id}',delete_job])
 routes.append(['GET','/submit/jobs/{job_id}/db', download_db])
