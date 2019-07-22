@@ -893,7 +893,12 @@ div.pq-select-menu>.pq-select-option-label {
 	background-color: #d1dae0;
 }
 .filter-list-item-title {
-	margin: 2px;
+	margin-left: 1ch;
+	display: inline-block;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	width: 100rem;
 }
 .filter-list-item-load {
 	height: 1em;

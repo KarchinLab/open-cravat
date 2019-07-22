@@ -485,6 +485,11 @@ function populateFilterSaveNames() {
 	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
 		let savedList = $('#saved-filter-list');
 		savedList.empty();
+		if (response.length === 0) {
+			$('#filter-left-panel').css('display','none');
+		} else {
+			$('#filter-left-panel').css('display','');
+		}
 		for (let i=0; i<response.length; i++) {
 			let filterName = response[i];
 			let li = $(getEl('li'))
@@ -499,7 +504,8 @@ function populateFilterSaveNames() {
 			);
 			li.append($(getEl('span'))
 				.text(filterName)
-				.addClass('filter-list-item-title')	
+				.addClass('filter-list-item-title')
+				.attr('title',filterName)
 			)
 			li.append($(getEl('img'))
 				.attr('src','images/close.png')
@@ -540,7 +546,7 @@ function makeFilterTab (rightDiv) {
 	let leftPanel =$(getEl('div'))
 		.attr('id','filter-left-panel');
 	rightDiv.append(leftPanel);
-	leftPanel.append($(getEl('h3'))
+	leftPanel.append($(getEl('h2'))
 		.text('Saved Filters')
 	)
 	let savedList = $(getEl('ul'))
