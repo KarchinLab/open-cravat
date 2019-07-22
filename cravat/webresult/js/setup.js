@@ -495,6 +495,10 @@ filterMgr = new FilterManager();
 
 function populateFilterSaveNames() {
 	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+		let quicksaveIndex = response.indexOf('quicksave-name-internal-use');
+		if (quicksaveIndex > -1) {
+			response.splice(quicksaveIndex,1);
+		}
 		let savedList = $('#saved-filter-list');
 		savedList.empty();
 		if (response.length === 0) {
