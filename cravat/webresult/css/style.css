@@ -868,6 +868,11 @@ div.pq-select-menu>.pq-select-option-label {
 	width: 50%;
 	font-size: 18px;
 }
+#filter-save {
+	margin-left: 0.5ch;
+	height: 1.25em;
+	cursor: pointer;
+}
 #tabhead_filter.active {
 	background-color: #d1dae0;
 }

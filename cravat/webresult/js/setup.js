@@ -628,18 +628,16 @@ function makeFilterTab (rightDiv) {
 		}
 	);
 	loadControls.append(filterApply);
-
-	// Save controls
-	let saveControls = $(getEl('div'));
-	rightPanel.append(saveControls);
-	let saveBtn = $(getEl('button'))
-		.text('Save Filter')
+	let saveIcon = $(getEl('img'))
+		.attr('id','filter-save')
+		.attr('src','images/save.png')
+		.attr('title','Save filter')
 		.click(e => {
 			saveFilterSettingAs().then((msg) => {
 				populateFilterSaveNames();
 			})
 		});
-	saveControls.append(saveBtn);
+	loadControls.append(saveIcon)
 }
 
 function refreshFilterCounts(n) {
