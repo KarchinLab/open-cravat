@@ -375,6 +375,21 @@ async def get_job (job_id, request):
     job.set_info_values(reports=existing_reports)
     return job
 
+async def get_jobs_details (request):
+    queries = request.rel_url.query
+    ids = int(queries['jobids'])
+    all_jobs = []
+    for job_id in ids:
+        try:
+            job = await get_job(job_id, request)
+            if job is None:
+                continue
+            all_jobs.append(job)
+        except:
+            traceback.print_exc()
+            continue
+    return web.json_response([job.get_info_dict() for job in all_jobs])
+
 async def get_jobs (request):
     global filerouter
     jobs_dir = await filerouter.get_jobs_dir(request)
@@ -397,25 +412,23 @@ async def get_jobs (request):
 
 async def get_all_jobs (request):
     global filerouter
+    queries = request.rel_url.query
     jobs_dir = await filerouter.get_jobs_dir(request)
     if jobs_dir is None:
         return web.json_response([])
     if os.path.exists(jobs_dir) == False:
         os.mkdir(jobs_dir)
-    direntries = [de for de in os.scandir(jobs_dir)]
-    direntries.sort(key=lambda x:x.stat().st_ctime, reverse=True)
-    ids = [de.name for de in direntries]
-    all_jobs = []
-    for job_id in ids:
-        try:
-            job = await get_job(job_id, request)
-            if job is None:
-                continue
-            all_jobs.append(job)
-        except:
-            traceback.print_exc()
-            continue
-    return web.json_response([job.get_info_dict() for job in all_jobs])
+    dir_it = os.scandir(jobs_dir)
+    direntries = [de for de in dir_it]
+    '''
+    print('@ direntries=', direntries)
+    print('@ time:', '\n'.join([de.name + ':' + str(datetime.datetime.fromtimestamp(de.stat().st_ctime)) for de in direntries]))
+    direntries.sort(key=lambda de:de.stat().st_ctime)
+    print('@', [(de.name, ':', de.stat().st_ctime) for de in direntries])
+    '''
+    de_names = [de.name for de in direntries]
+    de_names.sort(reverse=True)
+    return web.json_response(de_names)
 
 async def view_job(request):
     global VIEW_PROCESS
@@ -434,6 +447,7 @@ async def delete_job(request):
     global filerouter
     global job_tracker
     job_id = request.match_info['job_id']
+    print('@', job_tracker)
     if job_tracker.get_process(job_id) is not None:
         print('\nKilling job {}'.format(job_id))
         await job_tracker.cancel_job(job_id)
@@ -811,6 +825,7 @@ routes = []
 routes.append(['POST','/submit/submit',submit])
 routes.append(['GET','/submit/annotators',get_annotators])
 routes.append(['GET','/submit/jobs',get_all_jobs])
+routes.append(['GET','/submit/jobsdetails',get_jobs_details])
 routes.append(['GET','/submit/jobs/{job_id}',view_job])
 routes.append(['DELETE','/submit/jobs/{job_id}',delete_job])
 routes.append(['GET','/submit/jobs/{job_id}/db', download_db])

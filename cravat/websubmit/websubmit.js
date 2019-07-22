@@ -156,13 +156,14 @@ function submit () {
             success: function (data) {
                 if (data['status']['status'] == 'Submitted') {
                     submittedJobs.push(data);
-                    addJob(data);
-                    sortJobs();
+                    addJob(data, true);
+                    //sortJobs();
                     buildJobsTable();
                 }
                 if (data.expected_runtime > 0) {
                 }
                 jobRunning[data['id']] = true;
+                console.log('@ runnig jobs', jobRunning);
             }
         })
         $('#submit-job-button').attr('disabled','disabled');
@@ -192,11 +193,23 @@ function sortJobs () {
     }
 }
 
-function addJob (jsonObj) {
-    var trueDate = new Date(jsonObj.submission_time);
-    jsonObj.submission_time = trueDate;
-    GLOBALS.jobs.push(jsonObj.id);
-    GLOBALS.idToJob[jsonObj.id] = jsonObj;
+function addJob (job, prepend) {
+    var trueDate = new Date(job.submission_time);
+    job.submission_time = trueDate;
+    if (GLOBALS.jobs.indexOf(job.id) == -1) {
+        if (prepend == true) {
+            GLOBALS.jobs.unshift(job.id);
+        } else {
+            GLOBALS.jobs.push(job.id);
+        }
+    }
+    GLOBALS.idToJob[job.id] = job;
+    var status = job.status;
+    if (status != 'Finished' && status != 'Error') {
+        jobRunning[job.id] = true;
+    } else if (jobRunning[job.id] != undefined) {
+        delete jobRunning[job.id];
+    }
 }
 
 function createJobExcelReport (evt) {
@@ -633,7 +646,8 @@ function onClickJobsListPrevPage () {
     jobsListCurStart = jobsListCurEnd - jobsPerPageInList;
     jobsListCurStart = Math.min(Math.max(0, jobsListCurStart), GLOBALS.jobs.length);
     jobsListCurEnd = Math.max(0, Math.min(jobsListCurEnd, GLOBALS.jobs.length));
-    buildJobsTable();
+    console.log('@', jobsListCurStart, jobsListCurEnd);
+    showJobListPage();
 }
 
 function onClickJobsListNextPage () {
@@ -644,7 +658,8 @@ function onClickJobsListNextPage () {
     jobsListCurEnd = jobsListCurStart + jobsPerPageInList;
     jobsListCurStart = Math.min(Math.max(0, jobsListCurStart), GLOBALS.jobs.length);
     jobsListCurEnd = Math.max(0, Math.min(jobsListCurEnd, GLOBALS.jobs.length));
-    buildJobsTable();
+    console.log('@', jobsListCurStart, jobsListCurEnd);
+    showJobListPage();
 }
 
 function reportSelectorChangeHandler (event) {
@@ -729,7 +744,8 @@ function deleteJob (jobId) {
         contentType: 'application/json',
         success: function (data) {
             populateJobs().then(() => {
-                buildJobsTable();
+                //buildJobsTable();
+                showJobListPage();
             });
         }
     })
@@ -805,15 +821,67 @@ function inputChangeHandler (event) {
 
 var JOB_IDS = []
 
+    setInterval(function () {
+    }, 1000);
+
+function showJobListPage () {
+    var jis = GLOBALS.jobs.slice(jobsListCurStart, jobsListCurEnd);
+    $.ajax({
+        url: '/submit/getjobs',
+        data: {'ids': JSON.stringify(jis)},
+        success: function (response) {
+            for (var i=0; i < response.length; i++) {
+                var job = response[i];
+                addJob(job);
+                //updateRunningJobTrs(job);
+            }
+            buildJobsTable();
+			setInterval(function () {
+				var runningJobIds = Object.keys(jobRunning);
+				if (runningJobIds.length == 0) {
+					return;
+				}
+				$.ajax({
+					url: '/submit/getjobs',
+					data: {'ids': JSON.stringify(runningJobIds)},
+					ajax: true,
+					success: function (response) {
+						for (var i=0; i < response.length; i++) {
+							var job = response[i];
+							GLOBALS.idToJob[job.id] = job;
+							/*
+							for (var j = 0; j < GLOBALS.jobs; j++) {
+								if (job.id == GLOBALS.jobs[j].id) {
+									GLOBALS.jobs[j] = job;
+									break;
+								}
+							}
+							*/
+							updateRunningJobTrs(job);
+							if (job.status == 'Finished') {
+								delete jobRunning[job.id];
+							}
+						}
+					},
+				});
+			}, 1000);
+        }
+    });
+}
+
 function populateJobs () {
     return new Promise((resolve, reject) => {
         $.ajax({
             url:'jobs',
             type: 'GET',
             async: true,
-            success: function (allJobs) {
-                GLOBALS.jobs = [];
-                for (var i=0; i<allJobs.length; i++) {
+            success: function (response) {
+                GLOBALS.jobs = response;
+                jobsListCurStart = 0;
+                jobsListCurEnd = jobsListCurStart + jobsPerPageInList;
+                showJobListPage();
+/*
+                for (var i=0; i<GLOBALS.jobs.length; i++) {
                     var job = allJobs[i];
                     var status = job.status;
                     if (status == 'Finished' || status == 'Error') {
@@ -823,9 +891,35 @@ function populateJobs () {
                     }
                     addJob(job);
                 }
-                sortJobs();
+                //sortJobs();
                 buildJobsTable();
-                //resolve();
+                var runningJobIds = Object.keys(jobRunning);
+                if (runningJobIds.length == 0) {
+                    return;
+                }
+                $.ajax({
+                    url: '/submit/getjobs',
+                    data: {'ids': JSON.stringify(runningJobIds)},
+                    ajax: true,
+                    success: function (response) {
+                        for (var i=0; i < response.length; i++) {
+                            var job = response[i];
+                            GLOBALS.idToJob[job.id] = job;
+                            /*
+                            for (var j = 0; j < GLOBALS.jobs; j++) {
+                                if (job.id == GLOBALS.jobs[j].id) {
+                                    GLOBALS.jobs[j] = job;
+                                    break;
+                                }
+                            }
+                            updateRunningJobTrs(job);
+                            if (job.status == 'Finished') {
+                                delete jobRunning[job.id];
+                            }
+                        }
+                    },
+                });
+                */
             },
             fail: function (response) {
                 alert('fail at populate jobs');
@@ -1836,6 +1930,10 @@ function getJobById (jobId) {
 }
 
 function updateRunningJobTrs (job) {
+    var idx = GLOBALS.jobs.indexOf(job.id);
+    if (idx < jobsListCurStart || idx >= jobsListCurEnd) {
+        return;
+    }
     populateJobTr(job);
     populateJobDetailTr(job);
 }
@@ -1875,34 +1973,5 @@ function websubmit_run () {
     loadSystemConf();
     populatePackageVersions();
     populateMultInputsMessage();
-    setInterval(function () {
-        var runningJobIds = Object.keys(jobRunning);
-        if (runningJobIds.length == 0) {
-            return;
-        }
-        $.ajax({
-            url: '/submit/getjobs',
-            data: {'ids': JSON.stringify(runningJobIds)},
-            ajax: true,
-            success: function (response) {
-                for (var i=0; i < response.length; i++) {
-                    var job = response[i];
-                    GLOBALS.idToJob[job.id] = job;
-                    /*
-                    for (var j = 0; j < GLOBALS.jobs; j++) {
-                        if (job.id == GLOBALS.jobs[j].id) {
-                            GLOBALS.jobs[j] = job;
-                            break;
-                        }
-                    }
-                    */
-                    updateRunningJobTrs(job);
-                    if (job.status == 'Finished') {
-                        delete jobRunning[job.id];
-                    }
-                }
-            },
-        });
-    }, 1000);
 };
 
