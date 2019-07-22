@@ -800,6 +800,7 @@ class JobTracker (object):
                         break
             else:
                 p.kill()
+        self.clean_jobs(id)
 
     def clean_jobs(self, id):
         # Clean up completed jobs
@@ -809,7 +810,7 @@ class JobTracker (object):
                 to_del.append(id)
         for id in to_del:
             del self._jobs[id]
-    
+
     def list_jobs(self):
         # List currently tracked jobs
         return list(self._jobs.keys())
