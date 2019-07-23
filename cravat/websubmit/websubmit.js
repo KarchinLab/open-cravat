@@ -1044,6 +1044,9 @@ function buildAnnotatorsSelector () {
     for (var i = 0; i < groupNames.length; i++) {
         var name = groupNames[i];
         var module = localModuleInfo[name];
+        if (module == undefined) {
+            continue;
+        }
         var title = module.title;
         annotInfos.push({
             'name': name, 
@@ -1353,10 +1356,14 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         if (checkData.groups != null) {
             var groups = checkData.groups;
             var group = groups[0];
-            if (checkDivsForGroup[group] == undefined) {
-                checkDivsForGroup[group] = [];
+            if (localModuleInfo[group] != undefined) {
+                if (checkDivsForGroup[group] == undefined) {
+                    checkDivsForGroup[group] = [];
+                }
+                checkDivsForGroup[group].push(checkDiv);
+            } else {
+                addEl(flexbox, checkDiv);
             }
-            checkDivsForGroup[group].push(checkDiv);
         } else {
             addEl(flexbox, checkDiv);
         }
@@ -1427,6 +1434,9 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
     for (var i = 0; i < groups.length; i++) {
         var group = groups[i];
         var sdiv = $('div[kind=annotator-group-div][name=' + group + ']')[0];
+        if (sdiv == undefined) {
+            continue;
+        }
         var checkDivs = checkDivsForGroup[group];
         for (var j = 0; j < checkDivs.length; j++) {
             var checkDiv = checkDivs[j];
