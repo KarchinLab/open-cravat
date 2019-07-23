@@ -203,7 +203,7 @@ base_smartfilters = [
         },
         'filter': {
             'column': 'base__so', 
-            'test': 'in',
+            'test': 'select',
             'value': '${value}'
         },
     },
@@ -218,7 +218,7 @@ base_smartfilters = [
         },
         'filter': {
             'column': 'base__chrom', 
-            'test': 'in',
+            'test': 'select',
             'value': '${value}'
         },
     },
