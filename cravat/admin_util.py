@@ -1230,6 +1230,10 @@ def get_last_assembly ():
     last_assembly = conf.get('last_assembly', 'hg38')
     return last_assembly
 
+def show_cravat_version ():
+    version = get_current_package_version()
+    print(version)
+
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info

@@ -118,6 +118,11 @@ cravat_cmd_parser.add_argument('--cleanup',
     action='store_true',
     default=False,
     help='At the end of the run, cravat will erase all intermediary files for the job created by cravat, except the log (.log and .err) and the result (.sqlite) files.')
+cravat_cmd_parser.add_argument('--version',
+    dest='show_version',
+    action='store_true',
+    default=False,
+    help='Shows open-cravat version.')
 
 class MyManager (multiprocessing.managers.SyncManager):
     pass
@@ -331,6 +336,9 @@ class Cravat (object):
         self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
         self.run_conf = self.conf.get_run_conf()
         self.args = SimpleNamespace(**full_args)
+        if self.args.show_version:
+            au.show_cravat_version()
+            exit()
         if len(self.args.inputs) == 0 and \
                 'inputs' in self.run_conf:
             if type(self.run_conf['inputs']) == list:
