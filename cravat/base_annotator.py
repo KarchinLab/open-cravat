@@ -202,10 +202,8 @@ class BaseAnnotator(object):
                     self.output_writer.write_data(output_dict)
                 except Exception as e:
                     self._log_runtime_exception(lnum, line, input_data, e)
-
             # This does summarizing.
             self.postprocess()
-
             self.base_cleanup()
             end_time = time.time()
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
@@ -215,14 +213,15 @@ class BaseAnnotator(object):
             print('        {}: runtime {:0.3f}s'.format(self.annotator_name, run_time))
             if self.update_status_json_flag:
                 version = self.conf.get('version', 'unknown')
-                #self.status_writer.add_annotator_version_to_status_json(self.annotator_name, version)
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
         except Exception as e:
             self._log_exception(e)
         if hasattr(self, 'log_handler'):
             self.log_handler.close()
+        '''
         if self.output_basename == '__dummy__':
             os.remove(self.log_path)
+        '''
 
     def postprocess (self):
         pass
@@ -434,14 +433,20 @@ class BaseAnnotator(object):
     def _setup_logger(self):
         try:
             self.logger = logging.getLogger('cravat.' + self.annotator_name)
-            self.log_path = os.path.join(self.output_dir, self.output_basename + '.log')
-            log_handler = logging.FileHandler(self.log_path, 'a')
+            if self.output_basename != '__dummy__':
+                self.log_path = os.path.join(self.output_dir, self.output_basename + '.log')
+                log_handler = logging.FileHandler(self.log_path, 'a')
+            else:
+                log_handler = logging.StreamHandler()
             formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
             log_handler.setFormatter(formatter)
             self.logger.addHandler(log_handler)
             self.error_logger = logging.getLogger('error.' + self.annotator_name)
-            error_log_path = os.path.join(self.output_dir, self.output_basename + '.err')
-            error_log_handler = logging.FileHandler(error_log_path, 'a')
+            if self.output_basename != '__dummy__':
+                error_log_path = os.path.join(self.output_dir, self.output_basename + '.err')
+                error_log_handler = logging.FileHandler(error_log_path, 'a')
+            else:
+                error_log_handler = logging.StreamHandler()
             formatter = logging.Formatter('SOURCE:%(name)-20s %(message)s')
             error_log_handler.setFormatter(formatter)
             self.error_logger.addHandler(error_log_handler)

@@ -345,7 +345,7 @@ class CravatReport:
                 if 'can_summarize_by_gene' in conf and module_name in done_var_annotators:
                     sys.path = sys.path + [os.path.dirname(mi.script_path)]
                     annot_cls = util.load_class('CravatAnnotator', mi.script_path)
-                    annot = annot_cls([mi.script_path, '__dummy__'], {})
+                    annot = annot_cls([mi.script_path, '__dummy__', '-d', self.output_dir], {})
                     cols = conf['gene_summary_output_columns']
                     for col in cols:
                         col['name'] = col['name'] 
