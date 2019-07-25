@@ -19,7 +19,7 @@ const filterNotToggleClick = (event) => {
     target.attr('active',newActive);
 }
 
-const makeFilterColDiv = (filter, filterLevel) => {
+const makeFilterColDiv = (filter) => {
     const colDiv = $(getEl('div'))
         .addClass('filter-column-div')
         .addClass('filter-element-div');
@@ -196,11 +196,7 @@ const filterTestChangeHandler = (event) => {
 function swapJson (d) {
     var newd = {};
     for (var k in d) {
-        var v = d[k];
-        if (newd[v] == undefined) {
-            newd[v] = [];
-        }
-        newd[v].push(k);
+        newd[d[k]] = k;
     }
     return newd;
 }
@@ -345,33 +341,16 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
     if (allCols === undefined) {
         return;
     }
-    const useAllCols = $('.filter-level-button').hasClass('filter-level-advanced');
     for (let i=0; i<allCols.length; i++) {
         const col = allCols[i];
-        if (useAllCols || col.filterable ) {
-            const colOpt = $(getEl('option'))
-                .val(col.col)
-                .append(col.title);
-            colSel.append(colOpt);
-        }
+        const colOpt = $(getEl('option'))
+            .val(col.col)
+            .append(col.title);
+        colSel.append(colOpt);
     }
     colSel[0].selectedIndex = 0;
     var event = new Event('change');
     colSel[0].dispatchEvent(event);
-}
-
-function makeFilterJson () {
-    var filterRootGroupDiv = $('#filter-root-group-div-simple');
-    if (filterRootGroupDiv[0].style.display != 'none') {
-        var filter = makeGroupFilter(filterRootGroupDiv);
-        filterJson = {'variant': filter};
-    } else {
-        var filterRootGroupDiv = $('#filter-root-group-div-advanced');
-        if (filterRootGroupDiv[0].style.display != 'none') {
-            var filter = makeGroupFilter(filterRootGroupDiv);
-            filterJson = {'variant': filter};
-        }
-    }
 }
 
 function makeFilterRootGroupDiv (filter, name, filterLevel) {
@@ -379,7 +358,7 @@ function makeFilterRootGroupDiv (filter, name, filterLevel) {
     if (filter != undefined && filter.variant != undefined) {
         filterToShow = filter.variant;
     }
-    var filterRootGroupDiv = makeFilterGroupDiv(filterToShow, filterLevel);
+    var filterRootGroupDiv = makeFilterGroupDiv(filterToShow);
     filterRootGroupDiv[0].id = name;
     filterRootGroupDiv.css('margin-left', '0px');
 	filterRootGroupDiv.children('.filter-element-remove').attr('hidden', 'true');
@@ -387,23 +366,20 @@ function makeFilterRootGroupDiv (filter, name, filterLevel) {
     return filterRootGroupDiv;
 }
 
-const makeFilterGroupDiv = (filter, filterLevel) => {
+const makeFilterGroupDiv = (filter) => {
     const wrapperDiv = $(getEl('div'))
         .addClass('filter-group-wrapper-div')
         .addClass('filter-element-div');
     // Not toggle
-    if (filterLevel == 'advanced') {
-        const notToggle = $(getEl('div'))
-            .addClass('filter-not-toggle')
-            .attr('active','false')
-            .click(filterNotToggleClick)
-            .text('not');
-        wrapperDiv.append(notToggle);
-    }
+    const notToggle = $(getEl('div'))
+        .addClass('filter-not-toggle')
+        .attr('active','false')
+        .click(filterNotToggleClick)
+        .text('not');
+    wrapperDiv.append(notToggle);
     // Group div
     const groupDiv = $(getEl('div'))
         .addClass('filter-group-div')
-        .addClass('filter-level-' + filterLevel)
         .addClass('filter-element-div');
         wrapperDiv.append(groupDiv);
     // Remove
@@ -431,24 +407,22 @@ const makeFilterGroupDiv = (filter, filterLevel) => {
         .text('+')
         .addClass('filter-control-button')
         .click(function (evt) {
-            addFilterRuleHandler(evt, filterLevel);
+            addFilterRuleHandler(evt);
         })
         .attr('title','Add rule');
     addRuleDiv.append(addRuleBtn);
     /// Add group
-    if (filterLevel == 'advanced') {
-        const addGroupDiv = $(getEl('div'))
-            .addClass('filter-add-elem-div')
-        controlsDiv.append(addGroupDiv);
-        const addGroupBtn = $(getEl('button'))
-            .text('( )')
-            .addClass('filter-control-button')
-            .click(function (evt) {
-                addFilterGroupHandler(evt, filterLevel);
-            })
-            .attr('title','Add group');
-        addGroupDiv.append(addGroupBtn);
-    }
+    const addGroupDiv = $(getEl('div'))
+        .addClass('filter-add-elem-div')
+    controlsDiv.append(addGroupDiv);
+    const addGroupBtn = $(getEl('button'))
+        .text('( )')
+        .addClass('filter-control-button')
+        .click(function (evt) {
+            addFilterGroupHandler(evt);
+        })
+        .attr('title','Add group');
+    addGroupDiv.append(addGroupBtn);
     // Populate from filter
     if (filter !== undefined && !$.isEmptyObject(filter)) {
         if (filter.operator != undefined) {
@@ -458,13 +432,14 @@ const makeFilterGroupDiv = (filter, filterLevel) => {
             if (joinOperators.length > 0) {
                 $(joinOperators[0]).click();
             }
-            // Add groups
-            for (let i=0; i<filter.groups.length; i++) {
-                addFilterElement(elemsDiv,'group',filter.groups[i], undefined, filterLevel);
-            }
             // Add rules
-            for (let i=0; i<filter.columns.length; i++) {
-                addFilterElement(elemsDiv,'rule',filter.columns[i], undefined, filterLevel);
+            for (let i=0; i<filter.rules.length; i++) {
+                let rule = filter.rules[i];
+                if (rule.hasOwnProperty('operator')) {
+                    addFilterElement(elemsDiv,'group', rule, undefined);
+                } else {
+                    addFilterElement(elemsDiv,'rule', rule, undefined);
+                }
             }
             // Check negate
             if (filter.negate) {
@@ -472,7 +447,7 @@ const makeFilterGroupDiv = (filter, filterLevel) => {
             }
         }
     } else {
-        addFilterElement(elemsDiv,'rule', undefined, filterLevel);
+        addFilterElement(elemsDiv,'rule', undefined);
     }
     return wrapperDiv;
 }
@@ -501,24 +476,24 @@ const removeFilterElem = (elemDiv) => {
     elemDiv.remove();
 }
 
-const addFilterRuleHandler = (event, filterLevel) => {
+const addFilterRuleHandler = (event) => {
     const button = $(event.target);
     const elemsDiv = button.parent().parent().siblings('.filter-group-elements-div');
-    addFilterElement(elemsDiv, 'rule', undefined, filterLevel);
+    addFilterElement(elemsDiv, 'rule', undefined);
 }
 
-const addFilterGroupHandler = (event, filterLevel) => {
+const addFilterGroupHandler = (event) => {
     const button = $(event.target);
     const elemsDiv = button.parent().parent().siblings('.filter-group-elements-div');
-    addFilterElement(elemsDiv, 'group', undefined, filterLevel);
+    addFilterElement(elemsDiv, 'group', undefined);
 }
 
-const addFilterElement = (allElemsDiv, elementType, filter, filterLevel) => {
+const addFilterElement = (allElemsDiv, elementType, filter) => {
     let elemDiv;
     if (elementType === 'group') {
-        elemDiv = makeFilterGroupDiv(filter, filterLevel);
+        elemDiv = makeFilterGroupDiv(filter);
     } else if (elementType === 'rule') {
-        elemDiv = makeFilterColDiv(filter, filterLevel);
+        elemDiv = makeFilterColDiv(filter);
     }
     if (allElemsDiv.children().length > 0) {
         const operator = allElemsDiv.attr('join-operator');
@@ -562,7 +537,7 @@ const makeGroupFilter = (groupDiv) => {
     filter.operator = elemsDiv.attr('join-operator');
     // Columns
     const colDivs = elemsDiv.children('.filter-column-div');
-    filter.columns = [];
+    filter.rules = [];
     for (let i=0; i<colDivs.length; i++) {
         const colFilter = {}
         const colDiv = $(colDivs[i]);
@@ -626,15 +601,14 @@ const makeGroupFilter = (groupDiv) => {
         }
         // Negate
         colFilter.negate = colDiv.children('.filter-not-toggle').attr('active') === 'true';
-        filter.columns.push(colFilter)
+        filter.rules.push(colFilter)
     }
     // Groups
     const groupDivs = elemsDiv.children('.filter-group-wrapper-div');
-    filter.groups = [];
     for (let i=0; i<groupDivs.length; i++) {
         subGroupDiv = $(groupDivs[i]);
         subGroupFilter = makeGroupFilter(subGroupDiv);
-        filter.groups.push(subGroupFilter);
+        filter.rules.push(subGroupFilter);
     }
     
     // Negate
@@ -651,7 +625,7 @@ const importFilter = () => {
 const loadFilter = (filter) => {
     const mainDiv = $('#main-div');
     mainDiv.empty();
-    rootGroupDiv = makeFilterGroupDiv(filter, filterLevel);
+    rootGroupDiv = makeFilterGroupDiv(filter);
     mainDiv.append(rootGroupDiv);
 }
 

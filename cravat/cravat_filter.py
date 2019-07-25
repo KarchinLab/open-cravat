@@ -34,27 +34,9 @@ class FilterColumn(object):
         self.parent_operator = parent_operator
 
     def get_sql(self):
-        incexc = 'include'
         s = ''
-        if self.column == 'tagsampler__samples':
-            if type(self.value) == list:
-                s = 's.base__sample_id="' + self.value[0] + '"'
-                for v in self.value[1:]:
-                    s += ' or s.base__sample_id="' + v + '"'
-            elif type(self.value) == str:
-                s = 's.base__sample_id="' + self.value + '"'
-            if self.negate and self.parent_operator == 'AND':
-                incexc = 'exclude'
-        elif self.column == 'tagsampler__tags':
-            if type(self.value) == list:
-                s = 'm.base__tags="' + self.value[0] + '"'
-                for v in self.value[1:]:
-                    s += ' or m.base__tags="' + v + '"'
-            elif type(self.value) == str:
-                s = 'm.base__tags="' + self.value + '"'
-            if self.negate and self.parent_operator == 'AND':
-                incexc = 'exclude'
-        elif self.test == 'multicategory':
+        #TODO unify this to a single if/else on self.test
+        if self.test == 'multicategory':
             s = 't.{} like "%{}%"'.format(self.column, self.value[0])
             for v in self.value[1:]:
                 s += ' or t.{} like "%{}%"'.format(self.column, v)
@@ -99,57 +81,39 @@ class FilterColumn(object):
                 sql_val = str(self.value)
             if sql_val:
                 s += ' '+sql_val
-        if self.negate and incexc != 'exclude':
+        if self.negate:
             s = 'not('+s+')'
-        return s, incexc
+        return s
 
 class FilterGroup(object):
     def __init__(self, d):
         self.operator = d.get('operator', 'and')
         self.negate = d.get('negate',False)
-        self.groups = [FilterGroup(x) for x in d.get('groups',[])]
-        self.columns = [FilterColumn(x, self.operator) for x in d.get('columns', [])]
+        self.rules = []
+        for rule in d.get('rules',[]):
+            if 'operator' in rule:
+                self.rules.append(FilterGroup(rule))
+            else:
+                self.rules.append(FilterColumn(rule,self.operator))
+        # Backwards compatability, may remove later
+        self.rules += [FilterGroup(x) for x in d.get('groups',[])]
+        self.rules += [FilterColumn(x, self.operator) for x in d.get('columns', [])]
 
     def get_sql(self):
-        all_operands = self.groups + self.columns
-        if len(all_operands) == 0:
-            return '', ''
-        include_sqls = []
-        exclude_sqls = []
-        for operand in all_operands:
-            if type(operand) == FilterColumn:
-                sql, incexc = operand.get_sql()
-                if sql == '':
-                    continue
-                if incexc == 'include':
-                    include_sqls.append(sql)
-                elif incexc == 'exclude':
-                    exclude_sqls.append(sql)
-            elif type(operand) == FilterGroup:
-                g_inc_sqls, g_exc_sqls = operand.get_sql()
-                if g_inc_sqls != '':
-                    include_sqls.append(g_inc_sqls)
-                if g_exc_sqls != '':
-                    exclude_sqls.append(g_exc_sqls)
-        s = '('
-        sql_operator = ' ' + self.operator + ' '
-        s += sql_operator.join([sql for sql in include_sqls])
-        s += ')'
-        if self.negate:
-            s = 'not'+s
-        if s == '()' or s == 'not()':
-            s = ''
-        include_sql = s
-        s = '('
-        sql_operator = ' ' + self.operator + ' '
-        s += sql_operator.join([sql for sql in exclude_sqls])
-        s += ')'
-        if self.negate:
-            s = 'not'+s
-        if s == '()' or s == 'not()':
-            s = ''
-        exclude_sql = s
-        return include_sql, exclude_sql
+        clauses = []
+        for operand in self.rules:
+            clause = operand.get_sql()
+            if clause:
+                clauses.append(clause)
+        s = ''
+        if clauses:
+            s += '('
+            sql_operator = ' ' + self.operator + ' '
+            s += sql_operator.join(clauses)
+            s += ')'
+            if self.negate:
+                s = 'not'+s
+        return s
 
 class CravatFilter ():
     
@@ -354,32 +318,14 @@ class CravatFilter ():
         await self.cursor.execute('pragma synchronous=2')
 
     def getwhere (self, level):
-        if self.filter == None:
-            sample_needed = False
-            tag_needed = False
-            include_where = ''
-            exclude_where = ''
-        else:
-            if level not in self.filter:
-                sample_needed = False
-                tag_needed = False
-                include_where = ''
-                exclude_where = ''
-            else:
-                criteria = self.filter[level]
-                main_group = FilterGroup(criteria)
-                include_sql, exclude_sql = main_group.get_sql()
-                if include_sql == '':
-                    include_where = ''
-                else:
-                    include_where = ' where ' + include_sql
-                if exclude_sql == '':
-                    exclude_where = ''
-                else:
-                    exclude_where = ' where ' + exclude_sql
-                sample_needed = 's.base__sample_id' in include_where or 's.base__sample_id' in exclude_where
-                tag_needed = 'm.base__tags' in include_where or 'm.base__tags' in exclude_where
-        return (sample_needed, tag_needed, include_where, exclude_where)
+        where = ''
+        if self.filter is not None and level in self.filter:
+            criteria = self.filter[level]
+            main_group = FilterGroup(criteria)
+            sql = main_group.get_sql()
+            if sql:
+                where = 'where '+sql
+        return where
 
     def getvariantcount (self):
         return self.getcount('variant')
@@ -470,40 +416,72 @@ class CravatFilter ():
         rows = await self.cursor.fetchall()
         return cols, rows
 
+    async def make_filtered_sample_table (self):
+        q = 'drop table if exists fsample'
+        print(q) #debug
+        await self.cursor.execute(q)
+        try: #TODO: always have these fields
+            req = self.filter['sample']['require']
+            rej = self.filter['sample']['reject']
+        except:
+            req = []
+            rej = []
+        q = 'create table fsample as select distinct base__uid from sample'
+        if req:
+            q += ' where base__sample_id in ({})'.format(
+                ', '.join(['"{}"'.format(sid) for sid in req])
+            )
+        # for s in req:
+        #     q += ' union select base__uid from sample where base__sample_id="{}"'.format(s)
+        for s in rej:
+           q += ' except select base__uid from sample where base__sample_id="{}"'.format(s)
+        print(q) #debug
+        await self.cursor.execute(q)
+        await self.conn.commit()
+
     async def make_filtered_uid_table (self):
         t = time.time()
-        await self.cursor.execute('pragma synchronous=0')
+        await self.make_filtered_sample_table()
+        await self.make_gene_list_table()
+        await self.conn.commit()
         level = 'variant'
         vtable = level
         vftable = level + '_filtered'
         q = 'drop table if exists ' + vftable
         await self.cursor.execute(q)
-        (sample_needed, tag_needed, include_where, exclude_where) = self.getwhere(level)
-        q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level) 
-        if sample_needed:
-            q += ', sample as s '
-        if tag_needed:
-            q += ', mapping as m '
-        q += include_where
-        if sample_needed:
-            q += ' and s.base__uid=t.base__uid'
-        if tag_needed:
-            q += ' and m.base__uid=t.base__uid'
-        if exclude_where != '':
-            q += ' except select t.base__uid from {} as t'.format(level)
-            if sample_needed:
-                q += ', sample as s '
-            if tag_needed:
-                q += ', mapping as m '
-            q += exclude_where
-            if sample_needed:
-                q += ' and s.base__uid=t.base__uid'
-            if tag_needed:
-                q += ' and m.base__uid=t.base__uid'
+        where = self.getwhere(level)
+        q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
+        q += ' join fsample as s on t.base__uid=s.base__uid'
+        if 'genes' in self.filter and len(self.filter['genes']) > 0:
+            q += ' join gene_list as g on t.base__hugo=g.base__hugo'
+        q += ' '+where
+        print(q) #debug
         await self.cursor.execute(q)
+        self.conn.commit()
         t = time.time() - t
-        await self.cursor.execute('pragma synchronous=2')
-
+    
+    async def make_gene_list_table (self):
+        tname = 'gene_list'
+        q = 'drop table if exists {}'.format(tname)
+        print(q) #debug
+        await self.cursor.execute(q)
+        q = 'create table {} (base__hugo text)'.format(tname)
+        print(q) #debug
+        await self.cursor.execute(q)
+        if 'genes' in self.filter:
+            tdata = [(hugo,) for hugo in self.filter['genes']]
+        else:
+            tdata = []
+        if tdata:
+            q = 'insert into {} (base__hugo) values (?)'.format(tname)
+            print(q) #debug
+            await self.cursor.executemany(q, tdata)
+        else:
+            q = 'insert into {} select base__hugo from gene'.format(tname)
+            print(q) #debug
+            await self.cursor.execute(q)
+        await self.conn.commit()
+    
     async def make_filtered_hugo_table (self):
         await self.cursor.execute('pragma synchronous=0')
         level = 'gene'

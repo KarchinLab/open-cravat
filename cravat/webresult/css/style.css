@@ -24,7 +24,7 @@ body {
 	top: 0px;
 	height: 20px;
 	padding: 3px;
-	font-size: 13px;
+	font-size: 14px;
     z-index: 100;
 }
 
@@ -726,7 +726,58 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .widgetspinner {
-    width: 20px;
+	width: 20px;
+}
+
+.smartfilter {
+	margin: 5px;
+	position: relative;
+	display: flex;
+}
+.smartfilter.smartfilter-inactive {
+	color: gray;
+}
+.smartfilter.smartfilter-active {
+	font-weight: bold;
+}
+
+#sample-select-cont {
+	max-height: 300px;
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	width: 100%;
+	overflow-x: auto;
+}
+
+.sample-selector {
+	overflow-x: hidden;
+	text-overflow: ellipsis;
+	margin: 2px;
+	padding: 2px;
+	width: fit-content;
+	cursor: pointer;
+	min-width: 10ch;
+	vertical-align: middle;
+}
+
+.sample-state-span {
+	border: 1px solid black;
+	display: inline-block;
+	font-size: 16px;
+}
+.sample-selector.sample-neutral > .sample-state-span::before {
+	content: "\2714";
+	visibility: hidden;
+}
+.sample-selector.sample-require > .sample-state-span::before {
+	content: "\2714";
+	color: green;
+}
+
+.sample-selector.sample-reject > .sample-state-span::before {
+	content: "\2716";
+    color: red;
 }
 
 .module-header-plus-sign {
@@ -740,6 +791,136 @@ div.pq-select-menu>.pq-select-option-label {
     position: absolute;
     top: 0px;
     left: 0px;
-    z-index 200;
+    z-index: 200;
 }
 
+.sample-selector-label {
+	margin-left: 5px;
+}
+
+#gene-list-text {
+	height: 8em;
+	display: block;
+}
+
+#gene-list-file {
+	display: block;
+}
+
+#rightdiv_filter {
+	font-size: 14px;
+}
+
+.filter-header {
+	background-color: #d1dae0;
+	font-size: 18px;
+	cursor: pointer;
+}
+.filter-content {
+	margin: 10px;
+}
+.filter-header.inactive + .filter-content {
+	display: none;
+}
+
+.filter-section {
+	margin: 10px;
+	border: 1px solid gray;
+	max-width: 800px;
+}
+
+
+.sf-selector {
+	flex: 0 1 70%;
+}
+.sf-title {
+	flex: 0 1 30%;
+	padding-right: 10px;
+}
+
+.vprop-option {
+	font-size: 18px;
+	background-color: #d1dae0;
+	width: 50%;
+	text-align: center;
+	float: left;
+	cursor: pointer;
+}
+
+.vprop-option.active {
+	background-color: #96b5c7;
+}
+
+.filter-header-arrow::after {
+	content: "\2b9f";
+}
+.inactive > .filter-header-arrow::after {
+	content: "\2b9e";
+}
+.smartfilter-checkbox {
+	width: 15px;
+	height: 15px;
+}
+.filter-header-text {
+	margin-left: 3px;
+}
+#filter-load-controls {
+	display: flex;
+	border: none;
+	align-items: center;
+	font-size: 18px;
+}
+#filter-count-btn {
+	width: 20px;
+	height: 20px;
+	cursor: pointer;
+}
+#filter-count-display {
+	margin-left: 5px;
+}
+#load_button {
+	margin-left: auto;
+	width: 50%;
+	font-size: 18px;
+}
+#filter-save {
+	margin-left: 0.5ch;
+	height: 1.25em;
+	cursor: pointer;
+}
+#tabhead_filter.active {
+	background-color: #d1dae0;
+}
+#filter-left-panel {
+	float: left;
+	height: 100%;
+	border-right: 1px solid gray;
+	padding: 5px;
+	width: 12%;
+}
+#filter-right-panel {
+	float: left;
+	height: 100%;
+	width: 75%;
+}
+#saved-filter-list {
+	padding-inline-start: 0px;
+}
+.filter-list-item {
+	display: flex;
+}
+.filter-list-item-title {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	width: 100rem;
+	cursor: pointer;
+}
+.filter-list-item-title:hover {
+	background-color: #d1dae0;
+}
+.filter-list-item-delete {
+	margin-left: auto;
+	height: 1em;
+	cursor: pointer;
+}

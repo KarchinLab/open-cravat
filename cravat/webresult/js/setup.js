@@ -9,9 +9,9 @@ function setupTab (tabName) {
 	if (resetTab[tabName] == false) {
 		return;
 	}
-
+	
 	var tabDiv = document.getElementById("tab_" + tabName);
-
+	
 	var rightDivId = 'rightdiv_' + tabName;
 	var rightDiv = document.getElementById(rightDivId);
 	if (rightDiv == null) {
@@ -20,7 +20,7 @@ function setupTab (tabName) {
 		rightDiv.className = 'rightdiv';
 		addEl(tabDiv, rightDiv);
 	}
-
+	
 	// Populates the right panel.
 	if (tabName == 'info') {
 		makeInfoTab(rightDiv);
@@ -28,20 +28,22 @@ function setupTab (tabName) {
 		makeVariantGeneTab(tabName, rightDiv);
 	} else if (tabName == 'sample' || tabName == 'mapping') {
 		makeSampleMappingTab(tabName, rightDiv);
+	} else if (tabName == 'filter') {
+		makeFilterTab(rightDiv);
 	}
 	addEl(tabDiv, rightDiv);
-
+	
 	setupEvents(tabName);
-
-	if (tabName != 'info') {
+	
+	if (tabName != 'info' && tabName != 'filter') {
 		var stat = infomgr.getStat(tabName);
 		var columns = infomgr.getColumns(tabName);
 		var data = infomgr.getData(tabName);
 		dataLengths[tabName] = data.length;
-
+		
 		makeGrid(columns, data, tabName);
 		$grids[tabName].pqGrid('refreshDataAndView');
-
+		
 		// Selects the first row.
 		if (tabName == currentTab) {
 			if (stat['rowsreturned'] && stat['norows'] > 0) {
@@ -51,12 +53,12 @@ function setupTab (tabName) {
 			}
 		}
 	}
-
+	
 	resetTab[tabName] = false;
-
+	
 	placeDragNSBar(tabName);
 	placeCellValueDiv(tabName);
-
+	
 	if (loadedTableSettings != undefined && loadedTableSettings[currentTab] != undefined) {
 		applyTableSetting(currentTab);
 	}
@@ -64,9 +66,711 @@ function setupTab (tabName) {
 		applyWidgetSetting(currentTab);
 	}
     if ((currentTab == 'variant' || currentTab == 'gene') && tableDetailDivSizes[currentTab] != undefined) {
-        applyTableDetailDivSizes();
+		applyTableDetailDivSizes();
     }
 	changeMenu();
+}
+
+function filterHeaderClick (event) {
+	$(this).toggleClass('inactive');
+}
+
+class FilterManager {
+
+	constructor() {
+		this.sampleSelectId = 'sample-select-cont';
+		this.geneTextId = 'gene-list-text';
+		this.geneFileId = 'gene-list-file';
+		this.vPropContentId = 'vprop-cont';
+		this.vpropSelectId = 'vprop-sel';
+		this.vpropSfId = 'vprop-sf';
+		this.vpropQbId = 'vprop-qb';
+		this.qbRootId = 'qb-root';
+	}
+
+	getFilterSection (headerTitle, active) {
+		active = active===undefined ? false : active;
+
+		let rootDiv = $(getEl('div'))
+		.addClass('filter-section');
+		let header = $(getEl('div'))
+			.addClass('filter-header')
+			.click(this.sectionHeaderClick);
+		if (!active) {
+			header.addClass('inactive')
+		}
+		rootDiv.append(header);
+		header.append($(getEl('span'))
+			.addClass('filter-header-arrow')
+		)
+		header.append($(getEl('span'))
+			.addClass('filter-header-text')
+			.text(headerTitle)
+		)
+		let sampleContent = $(getEl('div'))
+			.addClass('filter-content');
+		rootDiv.append(sampleContent);
+		return rootDiv;
+	}
+
+	sectionHeaderClick (event) {
+		$(this).toggleClass('inactive')
+	}
+
+	addSampleSelect (outerDiv, filter) {
+		filter = filter===undefined ? {require:[],reject:[]} : filter;
+		outerDiv.append($(getEl('div'))
+			.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
+		)
+		let sampleSelDiv = $(getEl('div'))
+			.attr('id', this.sampleSelectId);
+		outerDiv.append(sampleSelDiv);
+		let sampleIds = getFilterCol('tagsampler__samples').categories;
+		let maxLen = sampleIds.reduce((a,b) => {return a.length>b.length ? a : b}).length;
+		maxLen = maxLen > 25 ? 25 : maxLen;
+		let sboxMaxWidth = `${maxLen}ch`;
+		for (let i=0; i<sampleIds.length; i++) {
+			let sid = sampleIds[i];
+			let sampleBox = $(getEl('div'))
+				.addClass('sample-selector')
+				.click(this.onSampleSelectorClick)
+				.addClass('sample-neutral')
+				.css('max-width', sboxMaxWidth)
+				.attr('title', sid);
+			sampleSelDiv.append(sampleBox);
+			sampleBox.append($(getEl('span'))
+				.addClass('sample-state-span')
+			)
+			sampleBox.append($(getEl('span'))
+				.text(sid)
+				.addClass('sample-selector-label')
+			)
+			if (filter.require.indexOf(sid) >= 0) {
+				sampleBox.removeClass('sample-neutral');
+				sampleBox.addClass('sample-require');
+			} else if (filter.reject.indexOf(sid) >= 0) {
+				sampleBox.removeClass('sample-neutral');
+				sampleBox.addClass('sample-reject');
+			}
+		}
+		return outerDiv;
+	}
+
+	updateSampleSelect (filter) {
+		let sampleContent = $('#'+this.sampleSelectId).parent();
+		sampleContent.empty();
+		this.addSampleSelect(sampleContent,filter);
+		let sampleHeader = sampleContent.siblings('.filter-header');
+		if (filter.require.length>0 || filter.reject.length>0) {
+			sampleHeader.removeClass('inactive');
+		} else {
+			sampleHeader.addClass('inactive');
+		}
+	}
+
+	onSampleSelectorClick(event) {
+		let sbox = $(this);
+		let sid = sbox.text();
+		if (sbox.hasClass('sample-neutral')) { // Set to require
+			sbox.removeClass('sample-neutral');
+			sbox.addClass('sample-require');
+			sbox.attr('title',`${sid}\nVariants MUST be in this sample`);
+		} else if (sbox.hasClass('sample-require')) { // Set to reject
+			sbox.removeClass('sample-require');
+			sbox.addClass('sample-reject');
+			sbox.attr('title',`${sid}\nVariants MUST NOT be in this sample`);
+		} else if (sbox.hasClass('sample-reject')) { // Set to neutral
+			sbox.removeClass('sample-reject');
+			sbox.addClass('sample-neutral');
+			sbox.attr('title',sid);
+		}
+	}
+
+	addGeneSelect (outerDiv, filter) {
+		filter = filter===undefined ? [] : filter;
+		outerDiv.append($(getEl('div'))
+			.text('Type a list of gene names to include. One per line. Or, load a gene list from a file.')
+		)
+		let geneTextArea = $(getEl('textarea'))
+			.attr('id', this.geneTextId)
+			.change(this.onGeneListSelectorChange);
+		outerDiv.append(geneTextArea);
+		let geneFileInput = $(getEl('input'))
+			.attr('type','file')
+			.attr('id', this.geneFileId)
+			.change(this.onGeneListSelectorChange);
+		outerDiv.append(geneFileInput);
+		if (filter.length > 0) {
+			geneTextArea.val(filter.join('\n'));
+		}
+		return outerDiv;
+	}
+
+	onGeneListSelectorChange = (e) => { //Arrow function to maintain this=FilterManager
+		let target = $(e.target);
+		let id = target.attr('id');
+		if (id === this.geneTextId) {
+			let fileInput = $('#gene-list-file');
+			fileInput.val('');
+		} else if (id === this.geneFileId) {
+			let fileInput = target;
+			let textArea = $('#'+this.geneTextId);
+			let fr = new FileReader();
+			fr.onloadend = function(e) { //Not an arrow function so that this=FileReader
+				textArea.val(this.result)
+			}
+			fr.readAsText(fileInput.prop('files')[0])
+		}
+	}
+
+	updateGeneSelect (filter) {
+		let geneSelect = $('#'+this.geneTextId).parent();
+		geneSelect.empty();
+		this.addGeneSelect(geneSelect, filter);
+		let geneHeader = geneSelect.closest('.filter-content').siblings('.filter-header');
+		if (filter.length > 0) {
+			geneHeader.removeClass('inactive');
+		} else {
+			geneHeader.addClass('inactive');
+		}
+	}
+
+	addVpropUI (vPropCont, filter) {
+		filter = filter===undefined ? {'smartfilter':{},'variant':{}} : filter;
+		vPropCont.attr('id', this.vPropContentId);
+		vPropCont.append($(getEl('div'))
+			.text('Select variants by applying filters or building a query'))
+		let fTypeDiv = $(getEl('div'));
+		vPropCont.append(fTypeDiv);
+		let vPropSel = $(getEl('select'))
+			.attr('id', this.vpropSelectId)
+			.append($(getEl('option')).val('sf').text('sf'))
+			.append($(getEl('option')).val('qb').text('qb'))
+			.css('display','none')
+			.change(this.vPropSelectChange);
+		fTypeDiv.append(vPropSel);
+		let sfHeader = $(getEl('span'))
+			.addClass('vprop-option')
+			.text('Smart Filters')
+			.click(this.vPropOptionClick)
+			.attr('value','sf');
+		fTypeDiv.append(sfHeader);
+		let qbHeader = $(getEl('span'))
+			.addClass('vprop-option')
+			.text('Query Builder')
+			.click(this.vPropOptionClick)
+			.attr('value','qb');
+		fTypeDiv.append(qbHeader);
+		let sfContent = $(getEl('div'))
+			.attr('id', this.vpropSfId);
+		vPropCont.append(sfContent);
+		this.addSfUI(sfContent, filter.smartfilter);
+		let qbContent = $(getEl('div'))
+			.attr('id', this.vpropQbId);
+		vPropCont.append(qbContent);
+		this.addQbUI(qbContent, filter.variant);
+
+		// Activate the correct vProp type
+		let sfValued = Object.keys(filter.smartfilter).length !== 0;
+		let qbValued = filter.variant.rules!==undefined && filter.variant.rules.length>0;
+		if (sfValued || !qbValued) {
+			vPropSel.val('sf');
+			sfHeader.addClass('active');
+		} else {
+			vPropSel.val('qb');
+			qbHeader.addClass('active');
+		}
+		vPropSel.change();
+	}
+
+	addSfUI (outerDiv, filter) {
+		filter = filter===undefined ? {} : filter;
+		outerDiv.append($(getEl('div'))
+			.text('Click a filter to apply it.')
+		)
+		let orderedSources = Object.keys(smartFilters);
+		orderedSources.splice(orderedSources.indexOf('base'), 1);
+		orderedSources.sort();
+		orderedSources = ['base'].concat(orderedSources)
+		for (let i=0; i<orderedSources.length; i++){
+			let sfSource = orderedSources[i];
+			let sfGroup = smartFilters[sfSource];
+			for (let j=0; j<sfGroup.order.length; j++) {
+				let sfName = sfGroup.order[j];
+				let sfDef = sfGroup.definitions[sfName];
+				let sfVal = undefined;
+				if (filter.hasOwnProperty(sfSource)) {
+					sfVal = filter[sfSource][sfName];
+				}
+				let sf = new SmartFilter(sfDef, sfVal);
+				let sfDiv = sf.getDiv();
+				sfDiv.attr('full-name', sfSource+'.'+sfName);
+				outerDiv.append(sfDiv);
+			}
+		}
+	}
+
+	addQbUI (outerDiv, filter) {
+		filter = filter===undefined ? {} : filter;
+		outerDiv.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
+		let qbDiv = makeFilterGroupDiv(filter);
+		qbDiv.attr('id', this.qbRootId);
+		outerDiv.append(qbDiv);
+	}
+
+	updateVpropUI (filter) {
+		let vPropCont = $('#'+this.vPropContentId);
+		vPropCont.empty()
+		this.addVpropUI(vPropCont, filter);
+	}
+
+	vPropSelectChange = (event) => { //Arrow function to maintain this=FilterManager
+		let sel = $(event.target);
+		let val = sel.val();
+		if (val === 'qb') {
+			var toShow = $('#'+this.vpropQbId);
+			var toHide = $('#'+this.vpropSfId);
+		} else if (val === 'sf') {
+			var toShow = $('#'+this.vpropSfId);
+			var toHide = $('#'+this.vpropQbId);
+		}
+		toShow.css('display','');
+		toHide.css('display','none');
+	}
+
+	vPropOptionClick (event) {
+		let target = $(event.target);
+		let val = target.attr('value');
+		let vPropSel = $('#vprop-sel');
+		if (val !== vPropSel.val()) {
+			vPropSel.val(val);
+			vPropSel.change()
+		}
+		$('.vprop-option').removeClass('active');
+		target.addClass('active');
+	}
+
+	updateAll(filter) {
+		this.updateSampleSelect(filter.sample);
+		this.updateGeneSelect(filter.genes);
+		this.updateVpropUI(filter);
+	}
+}
+
+class SmartFilter {
+	constructor (sfDef, value) {
+		this.sfDef = sfDef;
+		this.valProvided = value !== undefined;
+		this.value = this.valProvided ? value : sfDef.selector.defaultValue;
+		this.selectorType = this.sfDef.selector.type;
+		if (this.value === undefined || this.value === null) {
+			if (this.selectorType === 'inputFloat') {
+				this.value = 0.0;
+			} else if (this.selectorType === 'select') {
+				this.value = [];
+			} else {
+				this.value = '';
+			}
+		}
+	}
+
+	getDiv () {
+		let outerDiv = $(getEl('div'))
+			.addClass('smartfilter');
+		outerDiv[0].addEventListener('click', e => {
+			let sfDiv = $(e.currentTarget);
+			if (sfDiv.hasClass('smartfilter-inactive')) {
+				this.setSfState(sfDiv, true);
+			}
+		}, true) // Not using jquery so that event fires on capture phase
+		let activeCb = $(getEl('input'))
+			.attr('type','checkbox')
+			.addClass('smartfilter-checkbox')
+			.change(this.sfCheckboxChangeHandler);
+		outerDiv.append(activeCb);
+		let titleSpan = $(getEl('span'))
+			.attr('title', this.sfDef.description)
+			.addClass('sf-title')
+			.append(this.sfDef.title);
+		outerDiv.append(titleSpan);
+		let selectorSpan = $(getEl('span'))
+			.addClass('sf-selector');
+		outerDiv.append(selectorSpan);
+		if (this.selectorType === 'inputFloat') {
+			let valueInput = $(getEl('input'))
+				.val(this.value);
+			selectorSpan.append(valueInput);
+		} else if (this.selectorType === 'select') {
+			let select = $(getEl('select'))
+				.addClass('filter-value-input')
+			let allowMult = this.sfDef.selector.multiple;
+			allowMult = allowMult === undefined ? false : allowMult;
+			if (allowMult === true) {
+				select.prop('multiple','multiple');
+			}
+			selectorSpan.append(select);
+			let options = this.sfDef.selector.options;
+			if (options !== undefined) {
+				if (Array.isArray(options)) {
+					var optionTexts = options;
+					var text2Val = {};
+				} else {
+					var text2Val = options;
+					var optionTexts = Object.keys(text2Val);
+				}
+			} else {
+				let optsColName = this.sfDef.selector.optionsColumn;
+				let optsCol = getFilterColByName(optsColName);
+				var optionTexts = optsCol.filter.options;
+				var text2Val = {};
+				let reportSubs = optsCol.reportsub;
+				if (reportSubs !== undefined && Object.keys(reportSubs).length > 0) {
+					text2Val = swapJson(reportSubs);
+				}
+			}
+			if (Object.keys(text2Val).length === 0) {
+				for (let i=0; i<optionTexts.length; i++) {
+					text2Val[optionTexts[i]] = optionTexts[i];
+				}
+			}
+			let defaultSelections = []; //TODO improve. Probably need each sf type to be subclass
+			if (this.value === undefined || this.value === null) {
+				defaultSelections = [];
+			} else if (Array.isArray(this.value)) {
+				defaultSelections = this.value;
+			} else {
+				defaultSelections = [this.value];
+			}
+			for (let i=0; i<optionTexts.length; i++) {
+				let optText = optionTexts[i];
+				let optVal = text2Val[optText];
+				let opt = $(getEl('option'))
+					.val(optVal)
+					.prop('typedValue', optVal)
+					.append(optText);
+				if (defaultSelections.indexOf(optVal) >= 0) {
+					opt[0].selected = true;
+				}
+				select.append(opt)
+			}
+			select.pqSelect({
+				checkbox: true, 
+				displayText: '{0} selected',
+				singlePlaceholder: '&#x25BD;',
+				multiplePlaceholder: '&#x25BD;',
+				maxDisplay: 0,
+				width: 200,
+				search: false,
+				selectallText: 'Select all',
+			});
+			activeCb.change();
+		}
+		this.setSfState(outerDiv, this.valProvided);
+		
+		return outerDiv;
+	}
+
+	setSfState (sfDiv, active) {
+		if (active) {
+			sfDiv.removeClass('smartfilter-inactive');
+			sfDiv.addClass('smartfilter-active');
+			sfDiv.find('.smartfilter-checkbox').prop('checked', true);
+		} else {
+			sfDiv.addClass('smartfilter-inactive');
+			sfDiv.removeClass('smartfilter-active');
+			sfDiv.find('.smartfilter-checkbox').prop('checked', false);
+		}
+	}
+
+	sfCheckboxChangeHandler = (event) => {
+		let cb = $(event.target);
+		let sfDiv = cb.closest('.smartfilter');
+		let sfActive = cb.prop('checked');
+		this.setSfState(sfDiv, sfActive);
+	}
+}
+
+// Global FilterMgr
+filterMgr = new FilterManager();
+
+function populateFilterSaveNames() {
+	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+		let quicksaveIndex = response.indexOf('quicksave-name-internal-use');
+		if (quicksaveIndex > -1) {
+			response.splice(quicksaveIndex,1);
+		}
+		let savedList = $('#saved-filter-list');
+		savedList.empty();
+		if (response.length === 0) {
+			$('#filter-left-panel').css('display','none');
+		} else {
+			$('#filter-left-panel').css('display','');
+		}
+		for (let i=0; i<response.length; i++) {
+			let filterName = response[i];
+			let li = $(getEl('li'))
+				.addClass('filter-list-item');
+			savedList.append(li);
+			li.append($(getEl('span'))
+				.text(filterName)
+				.addClass('filter-list-item-title')
+				.attr('title',filterName)
+				.click(savedFilterClick)
+			)
+			li.append($(getEl('img'))
+				.attr('src','images/close.png')
+				.addClass('filter-list-item-delete')
+				.attr('title','delete filter')
+				.click(filterDeleteIconClick)
+				.prop('filterName',filterName)
+			);
+		}
+	});
+}
+
+function savedFilterClick(event) {
+	let target = $(this);
+	let filterName = target.text();
+	getSavedFilter(filterName).then((msg) => {
+		filterMgr.updateAll(msg);
+		$('#load_button').click();	
+	});
+}
+
+function filterDeleteIconClick(event) {
+	let target = $(this);
+	let filterName = target.prop('filterName');
+	deleteFilterSetting(filterName)
+	.then((msg) => {
+		populateFilterSaveNames();
+	})
+}
+
+
+function makeFilterTab (rightDiv) {
+	if (smartFilters === undefined) { 
+		return;
+	}
+	rightDiv = $(rightDiv);
+
+	// Left panel
+	let leftPanel =$(getEl('div'))
+		.attr('id','filter-left-panel');
+	rightDiv.append(leftPanel);
+	leftPanel.append($(getEl('h2'))
+		.text('Saved Filters')
+	)
+	let savedList = $(getEl('ul'))
+		.attr('id','saved-filter-list');
+	leftPanel.append(savedList);
+	populateFilterSaveNames();
+	
+	// Right panel
+	let rightPanel = $(getEl('div'))
+		.attr('id','filter-right-panel');
+	rightDiv.append(rightPanel);
+	
+	// Sample selector
+	let sampleSection = filterMgr.getFilterSection('Samples',false);
+	rightPanel.append(sampleSection);
+	let sampleContent = sampleSection.find('.filter-content');
+	filterMgr.addSampleSelect(sampleContent);
+
+	// Gene selector
+	let geneSection = filterMgr.getFilterSection('Genes',false);
+	rightPanel.append(geneSection);
+	let geneContent = geneSection.find('.filter-content');
+	filterMgr.addGeneSelect(geneContent);
+
+	// Smartfilters
+	let vPropSection = filterMgr.getFilterSection('Variant Properties', true);
+	rightPanel.append(vPropSection);
+	let vPropContent = vPropSection.find('.filter-content');
+	filterMgr.addVpropUI(vPropContent);
+
+	// Load controls
+	let loadControls = $(getEl('div'))
+		.attr('id','filter-load-controls')
+		.addClass('filter-section');
+	rightPanel.append(loadControls);
+	let countDisplay = $(getEl('span'))
+		.attr('id','filter-count-display')
+		.text('Count not up to date');
+	loadControls.append(countDisplay);
+	let filterCount = $(getEl('img'))
+	.attr('src','images/arrow-spinner-static.gif')
+	.attr('id','filter-count-btn')
+		.click(function(e) {
+			$(e.target).attr('src','images/arrow-spinner.gif')
+			makeFilterJson();
+			infomgr.count(dbPath, 'variant', (msg, data) => {
+				let count = data.n;
+				refreshFilterCounts(count);
+				if (count <= NUMVAR_LIMIT && count > 0) {
+					enableUpdateButton();
+				} else {
+					disableUpdateButton();
+				}
+			})
+		}
+	);
+	loadControls.append(filterCount);
+	let filterApply = $(getEl('button'))
+		.attr('id', 'load_button')
+		.append('Apply filter')
+		.click(function(evt) {
+			var infoReset = resetTab['info'];
+			resetTab = {'info': infoReset};
+			showSpinner('filter', document.body);
+			makeFilterJson(); //TODO: this, better
+			loadData(false, null);
+		}
+	);
+	loadControls.append(filterApply);
+	let saveIcon = $(getEl('img'))
+		.attr('id','filter-save')
+		.attr('src','images/save.png')
+		.attr('title','Save filter')
+		.click(e => {
+			saveFilterSettingAs().then((msg) => {
+				populateFilterSaveNames();
+			})
+		});
+	loadControls.append(saveIcon)
+}
+
+function refreshFilterCounts(n) {
+	let t = infomgr.jobinfo['Number of unique input variants']; //TODO is this really the best way to do this?
+	let countDisplay = $('#filter-count-display');
+	countDisplay.text(`${n}/${t} variants`);
+	$('#filter-count-btn').attr('src','images/arrow-spinner-static.gif');
+
+}
+
+function makeFilterJson () {
+	let fjs = {}
+	// Samples
+	let sampleSelectors = $('#sample-select-cont').children();
+	fjs.sample = {'require':[],'reject':[]}
+	for (let i=0; i<sampleSelectors.length; i++) {
+		let sel = $(sampleSelectors[i]);
+		if (sel.hasClass('sample-require')) {
+			fjs.sample.require.push(sel.text());
+		} else if (sel.hasClass('sample-reject')) {
+			fjs.sample.reject.push(sel.text());
+		}
+	}
+	// Gene list
+	let geneListString = $('#gene-list-text').val();
+	let geneList = []
+	if (geneListString.length > 0) {
+		geneList = geneListString.split('\n');
+	}
+	fjs.genes = geneList;
+	// Variant Properties
+	let activeVprop = $('#vprop-sel').val();
+	if (activeVprop === 'sf') {
+		let sfWrapDiv = $('#vprop-sf');
+		let sfDivs = sfWrapDiv.children('div');
+		let fullSf = {operator: 'and', rules:[]}
+		let sfState = {};
+		for (let i=0; i<sfDivs.length; i++) {
+			sfDiv = $(sfDivs[i]);
+			if (!sfDiv.hasClass('smartfilter-active')) {
+				continue;
+			}
+			let fullName = sfDiv.attr('full-name');
+			let sfSource = fullName.split('.')[0];
+			let sfName = fullName.split('.')[1];
+			let sfDef = smartFilters[sfSource].definitions[sfName];
+			let val = pullSfValue(sfDiv);
+			let sfResult = addSfValue(sfDef.filter, val);
+			fullSf.rules.push(sfResult);
+			if (! sfState.hasOwnProperty(sfSource)) {
+				sfState[sfSource] = {};
+			}
+			sfState[sfSource][sfName] = val;
+		}
+		fjs.variant = fullSf;
+		fjs.smartfilter = sfState;
+	} else if (activeVprop === 'qb') {
+		let qbRoot = $('#qb-root');
+		fjs.variant = makeGroupFilter(qbRoot);
+		fjs.smartfilter = {};
+	}
+	
+	filterJson = fjs;
+	console.log(filterJson);
+}
+
+function addSfValue(topRule, value) {
+	topRule = JSON.parse(JSON.stringify(topRule));
+	if (topRule.hasOwnProperty('rules')) {
+		for (let i=0; i<topRule.rules.length; i++) {
+			let subRule = topRule.rules[i];
+			topRule.rules[i] = addSfValue(subRule, value);
+		}
+	} else {
+		for (let k in topRule) {
+			let v = topRule[k];
+			if (v === '${value}') {
+				topRule[k] = value;
+			}
+		}
+	}
+	return topRule;
+}
+
+function reduceSf (topRule, allowPartial) {
+	topRule = JSON.parse(JSON.stringify(topRule));
+	if (topRule.hasOwnProperty('rules')) {
+		let newSubRules = [];
+		for (let i=0; i<topRule.rules.length; i++) {
+			let subRule = topRule.rules[i];
+			let newSubRule = reduceSf(subRule, allowPartial);
+			if (newSubRule !== null) {
+				if (allowPartial) {
+					newSubRules.push(newSubRule);
+				} else {
+					return null;
+				}
+			}
+		}
+		topRule.rules = newSubRules;
+		if (topRule.rules.length > 1) {
+			return topRule;
+		} else if (topRule.rules.length === 1) {
+			return topRule.rules[0];
+		} else {
+			return null;
+		}
+	} else {
+		return getFilterColByName(topRule.column) !== null ? topRule : null;
+	}
+}
+
+function pullSfValue(selectorDiv) {
+	let fullName = selectorDiv.attr('full-name');
+	let sfSource = fullName.split('.')[0];
+	let sfName = fullName.split('.')[1];
+	let sfDef = smartFilters[sfSource].definitions[sfName];
+	let selectorType = sfDef.selector.type;
+	let selectorWrapper = selectorDiv.children('.sf-selector');
+	if (selectorType === 'inputFloat') {
+		return parseFloat(selectorWrapper.children('input').val());
+	} else if (selectorType === 'select') {
+		let selector = selectorWrapper.children('.filter-value-input').first();
+		let selOpts = selector[0].selectedOptions;
+		if (selector.prop('multiple')) {
+			let vals = [];
+			for (let i=0; i<selOpts.length; i++) {
+				vals.push($(selOpts[i]).prop('typedValue'));
+			}
+			return vals;
+		} else {
+			return $(selOpts[0]).prop('typedValue');
+		}
+	}
 }
 
 function changeTableDetailMaxButtonText () {
@@ -132,8 +836,8 @@ function makeInfoTab (rightDiv) {
 	addEl(rightContentDiv, infoDiv);
 
 	// Filter
-	var filterDiv = document.getElementById('filterdiv');
-	populateLoadDiv('info', filterDiv);
+	// var filterDiv = document.getElementById('filterdiv');
+	// populateLoadDiv('info', filterDiv); //TOOD delete all this
 
 	// Widget Notice
 	var wgNoticeDiv = getEl('fieldset');

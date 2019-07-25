@@ -45,6 +45,9 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 		if (jobDataLoadingDiv == null) {
 			drawingRetrievingDataDiv(tabName);
 		}
+		if (filterJson === []){ //TODO find and fix the cause of this
+			filterJson = {};
+		}
 		$.ajax({
 			url: '/result/service/result', 
 			type: 'get',
@@ -53,15 +56,25 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 			success: function (jsonResponseData) {
 				self.store(self, tabName, jsonResponseData, callback, callbackArgs);
 				writeLogDiv(tabName + ' data loaded');
-                var span = document.getElementById('numberofuniqueinputvariants_span');
-                if (tabName == 'variant' && span != undefined) {
-                    var retrievedVarNum = jsonResponseData.data.length;
-                    var totalVarNum = infomgr.jobinfo['Number of unique input variants'];
-                    if (retrievedVarNum < totalVarNum) {
-                        span.textContent = retrievedVarNum + ' (out of ' + totalVarNum + ')';
-                    } else {
-                        span.textContent = retrievedVarNum;
-                    }
+                if (tabName == 'variant') {
+					var loaded = jsonResponseData.data.length;
+					var total = infomgr.jobinfo['Number of unique input variants'];
+					var filterTab = document.getElementById('tabhead_filter');
+					var filterTitle = 'Filter';
+					if (loaded != total) {
+						filterTitle += ` ${loaded}/${total}`;
+						filterTab.classList.add('active');
+					} else {
+						filterTab.classList.remove('active');
+					}
+					filterTab.innerText = filterTitle;
+					var vCountLoad = document.getElementById('filter-count-display');
+					vCountLoad.innerText = `${loaded}/${total} variants`
+                    // if (retrievedVarNum < totalVarNum) {
+                    //     span.textContent = retrievedVarNum + ' (out of ' + totalVarNum + ')';
+                    // } else {
+                    //     span.textContent = retrievedVarNum;
+                    // }
                 }
 			}
 	    });

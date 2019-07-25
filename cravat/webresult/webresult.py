@@ -12,6 +12,7 @@ import re
 from cravat import ConfigLoader
 from cravat import admin_util as au
 from cravat import CravatFilter
+from cravat.constants import base_smartfilters
 from aiohttp import web
 import time
 
@@ -244,8 +245,9 @@ async def delete_filter_setting (request):
     r = await table_exists(cursor, table)
     if r:
         q = 'delete from ' + table + ' where name="' + name + '" and datatype="filter"'
+        print(q)
         await cursor.execute(q)
-        conn.commit()
+        await conn.commit()
         content = 'deleted'
     else:
         content = 'no such table'
@@ -364,6 +366,7 @@ async def get_result_levels (request):
     if len(ret) > 0:
         content = [v[0].split('_')[0] for v in ret]
         content.insert(0, 'info')
+        content.insert(1,'filter')
     else:
         content = []
     content.remove('sample')
@@ -556,6 +559,21 @@ async def get_modules_info (request):
             d[k] = v
         content = d
     return content
+    
+async def load_smartfilters (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    sfs = {'base':base_smartfilters}
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
+    sf_table = 'smartfilters'
+    if await table_exists(cursor, sf_table):
+        q = 'select name, definition from {};'.format(sf_table)
+        await cursor.execute(q)
+        r = await cursor.fetchall()
+        for mname, definitions in r:
+            sfs[mname] = json.loads(definitions)
+    return web.json_response(sfs)
 
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
@@ -577,4 +595,4 @@ routes.append(['GET', '/result/service/getnowgannotmodules', get_nowg_annot_modu
 routes.append(['GET', '/result/widgetfile/{module_dir}/{filename}', serve_widgetfile])
 routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])
 routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
-
+routes.append(['GET', '/result/service/smartfilters', load_smartfilters])

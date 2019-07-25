@@ -211,51 +211,60 @@ function addSpinnerById(parentDivId, scaleFactor, minDim, spinnerDivId){
 }
 
 function saveFilterSetting (name, useFilterJson) {
-	var saveData = {};
-    if (useFilterJson == undefined) {
-        makeFilterJson();
-    }
-	saveData['filterSet'] = filterJson;
-	var saveDataStr = JSON.stringify(saveData);
-	$.ajax({
-        type: 'GET',
-        async: true,
-        url: '/result/service/savefiltersetting', 
-        data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
-        success: function (response) {
-            writeLogDiv('Filter setting has been saved.');
-        }
-    });
+	return new Promise((resolve, reject) => {
+		var saveData = {};
+		if (useFilterJson == undefined) {
+			makeFilterJson();
+		}
+		saveData['filterSet'] = filterJson;
+		var saveDataStr = JSON.stringify(saveData);
+		$.ajax({
+			type: 'GET',
+			async: true,
+			url: '/result/service/savefiltersetting', 
+			data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
+			success: function (response) {
+				writeLogDiv('Filter setting has been saved.');
+				resolve();
+			}
+		});
+	})
 }
 
 function deleteFilterSetting (name) {
-	$.get('/result/service/deletefiltersetting', {'dbpath': dbPath, name: name}).done(function (response) {
-        if (response == 'deleted') {
-            writeLogDiv('Filter setting has been deleted.');
-        } else {
-            alert(response);
-        }
-    });
+	return new Promise((resolve, reject) => {
+		$.get('/result/service/deletefiltersetting', {'dbpath': dbPath, name: name}).done(function (response) {
+			if (response == 'deleted') {
+				writeLogDiv('Filter setting has been deleted.');
+			} else {
+				alert(response);
+			}
+			resolve();
+		});
+
+	})
 }
 
 function saveFilterSettingAs () {
-	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
-        var quickSaveNameIdx = response.indexOf(quickSaveName);
-        if (quickSaveNameIdx >= 0) {
-            response.splice(quickSaveNameIdx, 1);
-        }
-		var names = response.join(', ');
-		var msg = 'Please enter layout name to save.';
-		if (names != '') {
-			msg = msg + ' Saved layout names are: ' + names;
-		}
-        if (lastUsedLayoutName == quickSaveName) {
-            lastUsedLayoutName = '';
-        }
-		var name = prompt(msg, lastUsedLayoutName);
-		if (name != null) {
-			saveFilterSetting(name);
-		}
+	return new Promise((resolve, reject) => {
+		$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+			var quickSaveNameIdx = response.indexOf(quickSaveName);
+			if (quickSaveNameIdx >= 0) {
+				response.splice(quickSaveNameIdx, 1);
+			}
+			var names = response.join('\n');
+			var msg = 'Enter filter name.';
+			if (names != '') {
+				msg = msg + '\nSaved names are:\n' + names;
+			}
+			if (lastUsedLayoutName == quickSaveName) {
+				lastUsedLayoutName = '';
+			}
+			var name = prompt(msg, lastUsedLayoutName);
+			if (name != null) {
+				saveFilterSetting(name).then((msg) => {resolve()});
+			}
+		});
 	});
 }
 
@@ -674,20 +683,49 @@ function loadFilterSettingAs () {
 }
 
 function loadFilterSetting (name, callback, doNotCount) {
-	$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
-		writeLogDiv('Filter setting loaded');
-		var data = response;
-		filterJson = data['filterSet'];
-		var filterWrapDiv = document.getElementById('filterwrapdiv');
-		$(filterWrapDiv).empty();
-        populateFilterWrapDiv(filterWrapDiv);
-        if (! doNotCount) {
-            infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
-        }
-		if (callback != null) {
-			callback();
+	$.get('/result/service/smartfilters', {'dbpath': dbPath}).done(function (response) {
+		smartFilters = {};
+		for (let source in response) {
+			let sfs = response[source];
+			let refac = {order:[],definitions:{}}
+			for (let i=0; i<sfs.length; i++) {
+				let sf = sfs[i];
+				sf.allowPartial = sf.allowPartial !== undefined ? sf.allowPartial : false;
+				let reducedFilter = reduceSf(sf.filter, sf.allowPartial);
+				if (reducedFilter !== null) {
+					sf.filter = reducedFilter;
+					refac.order.push(sf.name);
+					refac.definitions[sf.name] = sf;
+				}
+			}
+			if (refac.order.length > 0) {
+				smartFilters[source] = refac;
+			}
 		}
-    });
+		setupTab('filter');
+		$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+			writeLogDiv('Filter setting loaded');
+			var data = response;
+			filterJson = data['filterSet'];
+			// var filterWrapDiv = document.getElementById('filterwrapdiv');
+			// $(filterWrapDiv).empty();
+			// populateFilterWrapDiv(filterWrapDiv); //TODO delete this
+			if (! doNotCount) {
+				infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
+			}
+			if (callback != null) {
+				callback();
+			}
+		});
+	})
+}
+
+function getSavedFilter (name) {
+	return new Promise((resolve, reject) => {
+		$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+			resolve(response['filterSet'])
+		});
+	})
 }
 
 function hideAllMenu3 () {

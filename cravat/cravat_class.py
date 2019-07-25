@@ -273,6 +273,7 @@ class Cravat (object):
                 print('Running aggregator...')
                 self.result_path = self.run_aggregator()
                 self.write_job_info()
+                self.write_smartfilters()
                 self.aggregator_ran = True
             if self.endlevel >= self.runlevels['postaggregator'] and \
                     self.startlevel <= self.runlevels['postaggregator'] and \
@@ -314,6 +315,22 @@ class Cravat (object):
             self.status_writer.flush()
             if no_problem_in_run and self.args.cleanup:
                 self.clean_up_at_end()
+
+    def write_smartfilters (self):
+        dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        q = 'create table if not exists smartfilters (name text, definition text)'
+        cursor.execute(q)
+        ins_template = 'insert into smartfilters (name, definition) values (?, ?);'
+        for linfo in self.ordered_annotators:
+            if linfo.smartfilters is not None:
+                mname = linfo.name
+                json_info = json.dumps(linfo.smartfilters)
+                cursor.execute(ins_template, (mname, json_info))
+        conn.commit()
+        cursor.close()
+        conn.close()
     
     def handle_exception (self, e):
         exc_str = traceback.format_exc()
