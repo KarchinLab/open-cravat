@@ -342,30 +342,15 @@ class CravatReport:
                 self.columngroups[level].append(columngroup)
                 for col in cols:
                     coldef = ColumnDefinition(col)
-                    col['genesummary'] = True
-                    col_type = col['type']
-                    col_cats = col.get('categories', [])
-                    col_ctg = col.get('category', None)
-                    if col_type in ['category', 'multicategory'] and len(col_cats) == 0:
+                    coldef.name = conf['name']+'__'+coldef.name
+                    coldef.genesummary = True
+                    if coldef.type in ['category', 'multicategory'] and len(coldef.categories) == 0:
                         sql = 'select distinct {} from {}'.format(colname, level)
                         await self.cursor.execute(sql)
                         rs = await self.cursor.fetchall()
                         for r in rs:
-                            col_cats.append(r[0])
-                    col_filterable = col.get('filterable', True)
-                    col_link_format = col.get('link_format')
-                    column = {'col_name': conf['name'] + '__' + col['name'],
-                              'col_title': col['title'],
-                              'col_type': col_type,
-                              'col_cats': col_cats,
-                              'col_width':col.get('width'),
-                              'col_desc':col.get('desc'),
-                              'col_hidden':col.get('hidden',False),
-                              'col_ctg': col_ctg,
-                              'col_filterable': col_filterable,
-                              'col_link_format': col_link_format,
-                              'col_genesummary': True,
-                              }
+                            coldef.categories.append(r[0])
+                    column = coldef.get_colinfo()
                     columns.append(column)
                 self.summarizing_modules.append([mi, annot, cols])
                 for col in cols:
