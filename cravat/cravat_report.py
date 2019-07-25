@@ -7,6 +7,7 @@ from cravat.cravat_filter import CravatFilter
 from cravat import admin_util as au
 from cravat.config_loader import ConfigLoader
 from cravat import util
+from cravat.inout import ColumnDefinition
 import subprocess
 import re
 import logging
@@ -244,7 +245,16 @@ class CravatReport:
                 {'name': name, 'displayname': displayname, 'count': 0}
             )
         # level-specific column names
-        sql = 'select * from ' + level + '_header'
+        header_table = level+'_header'
+        sql = 'pragma table_info("{}")'.format(header_table)
+        await self.cursor.execute(sql)
+        header_cols = [row[1] for row in await self.cursor.fetchall()]
+        select_order = [cname for cname in ColumnDefinition.column_order if cname in header_cols]
+        sql = 'select {} from {}'.format(
+            ', '.join(select_order),
+            header_table
+        )
+        # sql = 'select * from ' + level + '_header'
         await self.cursor.execute(sql)
         columns = []
         column_headers = await self.cursor.fetchall()
@@ -256,34 +266,17 @@ class CravatReport:
             colcount += 1
         # level-specific column details
         for column_header in column_headers:
-            (colname, coltitle, col_type) = column_header[:3]
-            col_cats = json.loads(column_header[3]) if len(column_header) > 3 and column_header[3] else []
-            col_width = column_header[4] if len(column_header) > 4 else None
-            col_desc = column_header[5] if len(column_header) > 5 else None
-            col_hidden = bool(column_header[6]) if len(column_header) > 6 else False
-            col_ctg = column_header[7] if len(column_header) > 7 else None
-            if col_ctg in ['single', 'multi'] and len(col_cats) == 0:
-                sql = 'select distinct {} from {}'.format(colname, level)
+            coldef = ColumnDefinition({})
+            coldef.from_row(column_header, order=select_order)
+            if coldef.category in ['single', 'multi'] and len(coldef.categories) == 0:
+                sql = 'select distinct {} from {}'.format(coldef.name, level)
                 await self.cursor.execute(sql)
                 rs = await self.cursor.fetchall()
                 for r in rs:
-                    col_cats.append(r[0])
-            col_filterable = bool(column_header[8]) if len(column_header) > 8 else True
-            link_format = column_header[9] if len(column_header) > 9 else None
-            [colgrpname, colonlyname] = colname.split('__')
-            column = {'col_name': colname,
-                      'col_title': coltitle,
-                      'col_type': col_type,
-                      'col_cats': col_cats,
-                      'col_width':col_width,
-                      'col_desc':col_desc,
-                      'col_hidden':col_hidden,
-                      'col_ctg': col_ctg,
-                      'col_filterable': col_filterable,
-                      'link_format': link_format,
-                      }
+                    coldef.categories.append(r[0])
+            [colgrpname, colonlyname] = coldef.name.split('__')
+            column = coldef.get_colinfo()
             columns.append(column)
-            colgrpname = colname.split('__')[0]
             for columngroup in self.columngroups[level]:
                 if columngroup['name'] == colgrpname:
                     columngroup['count'] += 1
@@ -303,36 +296,19 @@ class CravatReport:
                                      'displayname': mi.title,
                                      'count': len(cols)})
                 for col in cols:
-                    colname = mi.name + '__' + col['name']
-                    self.colnos[level][colname] = colcount
+                    coldef = ColumnDefinition(col)
+                    coldef.name = mi.name + '__' + coldef.name
+                    self.colnos[level][coldef.name] = colcount
                     colcount += 1
-                    col_type = col['type']
-                    col_cats = col.get('categories',[])
-                    col_width = col.get('width')
-                    col_desc = col.get('desc')
-                    col_hidden = col.get('hidden',False)
-                    col_ctg = col.get('category', None)
-                    if col_ctg in ['category', 'multicategory'] and len(col_cats) == 0:
-                        sql = 'select distinct {} from {}'.format(colname, level)
+                    if coldef.category in ['category', 'multicategory'] and len(coldef.categories) == 0:
+                        sql = 'select distinct {} from {}'.format(coldef.name, level)
                         await self.cursor.execute(sql)
                         rs = await self.cursor.fetchall()
                         for r in rs:
-                            col_cats.append(r[0])
-                    col_filterable = col.get('filterable',True)
-                    col_link_format = col.get('link_format')
-                    column = {'col_name': colname,
-                              'col_title': col['title'],
-                              'col_type': col_type,
-                              'col_cats': col_cats,
-                              'col_width':col_width,
-                              'col_desc':col_desc,
-                              'col_hidden':col_hidden,
-                              'col_ctg': col_ctg,
-                              'col_filterable': col_filterable,
-                              'col_link_format': col_link_format,
-                              }
+                            coldef.categories.append(r[0])
+                    column = coldef.get_colinfo()
                     columns.append(column)
-                    self.var_added_cols.append(colname)
+                    self.var_added_cols.append(coldef.name)
         # Gene level summary columns
         if level == 'gene':
             q = 'select name from variant_annotator'
@@ -340,7 +316,6 @@ class CravatReport:
             done_var_annotators = [v[0] for v in await self.cursor.fetchall()]
             self.summarizing_modules = []
             local_modules = au.get_local_module_infos_of_type('annotator')
-            local_modules_keys = list(local_modules.keys()).sort()
             summarizer_module_names = []
             for module_name in done_var_annotators:
                 if module_name == 'base' or module_name not in local_modules:
@@ -366,6 +341,7 @@ class CravatReport:
                 columngroup['count'] = len(cols)
                 self.columngroups[level].append(columngroup)
                 for col in cols:
+                    coldef = ColumnDefinition(col)
                     col['genesummary'] = True
                     col_type = col['type']
                     col_cats = col.get('categories', [])

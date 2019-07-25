@@ -433,3 +433,68 @@ class AllMappingsParser (object):
         s = protein + ':' + achange + ':' + tr + ':' + tchange + ':' + \
             so + ':' + gene
         return s
+
+class ColumnDefinition (object):
+
+    column_order = [
+        'col_name',
+        'col_title',
+        'col_type',
+        'col_cats',
+        'col_width',
+        'col_desc',
+        'col_hidden',
+        'col_ctg',
+        'col_filterable',
+        'col_link_format'
+    ]
+    sql_map = {
+        'col_name':'name',
+        'col_title':'title',
+        'col_type':'type',
+        'col_cats':'categories',
+        'col_width':'width',
+        'col_desc':'desc',
+        'col_hidden':'hidden',
+        'col_ctg':'category',
+        'col_filterable':'filterable',
+        'col_link_format':'link_format'
+    }
+
+    def __init__(self, d):
+        self._load_dict(d)
+    
+    def _load_dict(self, d):
+        self.index = d.get('index')
+        self.name = d.get('name')
+        self.title = d.get('title')
+        self.type = d.get('type')
+        self.categories = d.get('categories')
+        self.width = d.get('width')
+        self.desc = d.get('desc')
+        self.hidden = d.get('hidden',False)
+        self.category = d.get('category')
+        self.filterable = d.get('filterable',True)
+        self.link_format = d.get('link_format')
+        self.genesummary = d.get('genesummary',False)
+
+    def from_row(self, row, order=None):
+        if order is None:
+            order = self.column_order
+        d = {self.sql_map[column] : value for column, value in zip(order,row)}
+        self._load_dict(d)
+
+    def get_colinfo(self):
+        return {
+            'col_name': self.name,
+            'col_title': self.title,
+            'col_type': self.type,
+            'col_cats': self.categories,
+            'col_width': self.width,
+            'col_desc': self.desc,
+            'col_hidden': self.hidden,
+            'col_ctg': self.category,
+            'col_filterable': self.filterable,
+            'link_format': self.link_format,
+            'col_genesummary': self.genesummary,
+        }
