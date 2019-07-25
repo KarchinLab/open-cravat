@@ -120,26 +120,6 @@ class CravatReport:
                         datarow.extend([gene_summary_data[hugo][col['name']] for col in cols])
                     else:
                         datarow.extend([None for v in cols])
-            # does report substitution.
-            datarow = self.substitute_val(level, datarow)
-            if hasattr(self, 'keep_json_all_mapping') == False and level == 'variant':
-                colno = self.colnos['variant']['base__all_mappings']
-                all_map = json.loads(datarow[colno])
-                newvals = []
-                for hugo in all_map:
-                    for maprow in all_map[hugo]:
-                        [protid, protchange, so, transcript, rnachange] = maprow
-                        if protid == None:
-                            protid = '(na)'
-                        if protchange == None:
-                            protchange = '(na)'
-                        if rnachange == None:
-                            rnachange = '(na)'
-                        newval = transcript + ':' + hugo + ':' + protid + ':' + so + ':' + protchange + ':' + rnachange
-                        newvals.append(newval)
-                newvals.sort()
-                newcell = '; '.join(newvals)
-                datarow[colno] = newcell
             # re-orders data row.
             new_datarow = []
             colnos = self.colnos[level]
@@ -157,6 +137,26 @@ class CravatReport:
                     colno = colnos[colname]
                 value = datarow[colno]
                 new_datarow.append(value)
+            # does report substitution.
+            new_datarow = self.substitute_val(level, new_datarow)
+            if hasattr(self, 'keep_json_all_mapping') == False and level == 'variant':
+                colno = self.colnos['variant']['base__all_mappings']
+                all_map = json.loads(new_datarow[colno])
+                newvals = []
+                for hugo in all_map:
+                    for maprow in all_map[hugo]:
+                        [protid, protchange, so, transcript, rnachange] = maprow
+                        if protid == None:
+                            protid = '(na)'
+                        if protchange == None:
+                            protchange = '(na)'
+                        if rnachange == None:
+                            rnachange = '(na)'
+                        newval = transcript + ':' + hugo + ':' + protid + ':' + so + ':' + protchange + ':' + rnachange
+                        newvals.append(newval)
+                newvals.sort()
+                newcell = '; '.join(newvals)
+                new_datarow[colno] = newcell
             self.write_table_row(new_datarow)
 
     async def store_mapper (self):
@@ -395,35 +395,6 @@ class CravatReport:
                 for col in cols:
                     fullname = module_name+'__'+col['name']
                     self.colnos[level][fullname] = len(self.colnos[level])
-        # report substitution
-        if level in ['variant', 'gene']:
-            reportsubtable = level + '_reportsub'
-            if await self.table_exists(reportsubtable):
-                q = 'select * from {}'.format(reportsubtable)
-                await self.cursor.execute(q)
-                rs = await self.cursor.fetchall()
-                self.report_substitution = {}
-                for r in rs:
-                    module = r[0]
-                    sub = json.loads(r[1])
-                    self.report_substitution[module] = sub
-                self.column_subs[level] = {}
-                self.column_sub_allow_partial_match[level] = {}
-                for i in range(len(columns)):
-                    column = columns[i]
-                    [module, col] = column['col_name'].split('__')
-                    if module in [self.mapper_name]:
-                        module = 'base'
-                    if module in self.report_substitution:
-                        sub = self.report_substitution[module]
-                        if col in sub:
-                            self.column_subs[level][i] = sub[col]
-                            if module in ['base', self.mapper_name] and col in ['all_mappings', 'all_so']:
-                                allow_partial_match = True
-                            else:
-                                allow_partial_match = False
-                            self.column_sub_allow_partial_match[level][i] = allow_partial_match
-                            columns[i]['reportsub'] = sub[col]
         # re-orders columns groups.
         colgrps = self.columngroups[level]
         newcolgrps = []
@@ -463,6 +434,35 @@ class CravatReport:
                 elif grpname == colgrpname:
                     new_columns.append(col)
         self.colinfo[level] = {'colgroups': newcolgrps, 'columns': new_columns}
+        # report substitution
+        if level in ['variant', 'gene']:
+            reportsubtable = level + '_reportsub'
+            if await self.table_exists(reportsubtable):
+                q = 'select * from {}'.format(reportsubtable)
+                await self.cursor.execute(q)
+                rs = await self.cursor.fetchall()
+                self.report_substitution = {}
+                for r in rs:
+                    module = r[0]
+                    sub = json.loads(r[1])
+                    self.report_substitution[module] = sub
+                self.column_subs[level] = {}
+                self.column_sub_allow_partial_match[level] = {}
+                for i in range(len(new_columns)):
+                    column = new_columns[i]
+                    [module, col] = column['col_name'].split('__')
+                    if module in [self.mapper_name]:
+                        module = 'base'
+                    if module in self.report_substitution:
+                        sub = self.report_substitution[module]
+                        if col in sub:
+                            self.column_subs[level][i] = sub[col]
+                            if module in ['base', self.mapper_name] and col in ['all_mappings', 'all_so']:
+                                allow_partial_match = True
+                            else:
+                                allow_partial_match = False
+                            self.column_sub_allow_partial_match[level][i] = allow_partial_match
+                            new_columns[i]['reportsub'] = sub[col]
 
     def parse_cmd_args (self, cmd_args):
         parser = argparse.ArgumentParser()

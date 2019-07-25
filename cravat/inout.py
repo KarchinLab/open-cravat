@@ -408,6 +408,10 @@ class AllMappingsParser (object):
         mapping.protein = self.none_to_empty(t[self._protein_index])
         return mapping
 
+    def delete_gene (self, gene):
+        if gene in self._d:
+            del self._d[gene]
+
     def get_all_mappings (self):
         mappings = []
         for gene, ts in self._d.items():

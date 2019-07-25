@@ -4,7 +4,7 @@ import argparse
 import logging
 import time
 from .inout import CravatReader, CravatWriter, AllMappingsParser
-from .constants import crx_def, crx_idx, crg_def, crg_idx, crt_def, crt_idx
+from .constants import crx_def, crx_idx, crg_def, crg_idx, crt_def, crt_idx, gene_level_so_exclude
 from .util import most_severe_so, so_severity
 from .exceptions import InvalidData
 from cravat.config_loader import ConfigLoader
@@ -212,6 +212,13 @@ class BaseMapper(object):
             return
         tmap_parser = AllMappingsParser(tmap_json)
         for hugo in tmap_parser.get_genes():
+            sos = tmap_parser.get_uniq_sos_for_gene(genes=[hugo])
+            for so in gene_level_so_exclude:
+                if so in sos:
+                    sos.remove(so)
+            if len(sos) == 0:
+                tmap_parser.delete_gene(hugo)
+                continue
             so = most_severe_so(tmap_parser.get_uniq_sos_for_gene(genes=[hugo]))
             try:
                 self.gene_info[hugo]['variant_count'] += 1

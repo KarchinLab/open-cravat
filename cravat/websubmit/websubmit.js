@@ -818,9 +818,6 @@ function inputChangeHandler (event) {
 
 var JOB_IDS = []
 
-    setInterval(function () {
-    }, 1000);
-
 function showJobListPage () {
     var jis = GLOBALS.jobs.slice(jobsListCurStart, jobsListCurEnd);
     $.ajax({

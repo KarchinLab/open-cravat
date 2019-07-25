@@ -546,7 +546,15 @@ async def get_modules_info (request):
     if r is None:
         content = {}
     else:
-        content = json.loads(r[0].replace("'", '"'))
+        s = r[0].strip('{').strip('}')
+        toks = s.split("', '")
+        d = {}
+        for tok in toks:
+            t2 = tok.split(':')
+            k = t2[0].strip().strip("'").replace("'", "\'")
+            v = t2[1].strip().strip("'").replace("'", "\'")
+            d[k] = v
+        content = d
     return content
 
 routes = []
