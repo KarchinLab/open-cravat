@@ -54,33 +54,11 @@ class CravatReader (CravatFile):
                 cols = l.split('=')[1].split(',')
                 self.index_columns.append(cols)
             elif l.startswith('#column='):
+                coldef = ColumnDefinition({})
                 csv_row = '='.join(l.split('=')[1:])
-                col_info = list(csv.reader([csv_row], dialect='cravat'))[0]
-                col_index = int(col_info[0])
-                col_title = col_info[1]
-                col_name = col_info[2]
-                col_type = col_info[3]
-                self._validate_col_type(col_type)
-                col_cats = json.loads(col_info[4]) if col_info[4] else {}
-                col_width = col_info[5] if col_info[5] else None
-                col_desc = col_info[6] if col_info[6] else None
-                # Using json properly converts "False" to False, bool("False") evalueates to True
-                col_hidden = json.loads(col_info[7].lower()) if col_info[7] else True
-                col_ctg = col_info[8] if col_info[8] else None
-                col_filterable = json.loads(col_info[9].lower()) if col_info[9] else True
-                link_format = col_info[10] if col_info[10] else None
-                if link_format == '': link_format = None
-                self.columns[col_index] = {'title':col_title,
-                                           'name':col_name,
-                                           'type':col_type,
-                                           'categories':col_cats,
-                                           'width':col_width,
-                                           'desc':col_desc,
-                                           'hidden':col_hidden,
-                                           'category': col_ctg,
-                                           'filterable': col_filterable,
-                                           'link_format': link_format,
-                                           }
+                coldef.from_var_csv(csv_row)
+                self._validate_col_type(coldef.type)
+                self.columns[coldef.index] = dict(coldef)
             elif l.startswith('#report_substitution='):
                 self.report_substitution = json.loads(l.split('=')[1])
             else:
@@ -440,6 +418,21 @@ class AllMappingsParser (object):
 
 class ColumnDefinition (object):
 
+    csv_order = [
+        'index',
+        'title',
+        'name',
+        'type',
+        'categories',
+        'width',
+        'desc',
+        'hidden',
+        'category',
+        'filterable',
+        'link_format',
+        'genesummary',
+    ]
+
     column_order = [
         'col_name',
         'col_title',
@@ -462,7 +455,8 @@ class ColumnDefinition (object):
         'col_hidden':'hidden',
         'col_ctg':'category',
         'col_filterable':'filterable',
-        'col_link_format':'link_format'
+        'col_link_format':'link_format',
+        'col_genesummary':'genesummary',
     }
 
     def __init__(self, d):
@@ -473,7 +467,7 @@ class ColumnDefinition (object):
         self.name = d.get('name')
         self.title = d.get('title')
         self.type = d.get('type')
-        self.categories = d.get('categories')
+        self.categories = d.get('categories',{})
         self.width = d.get('width')
         self.desc = d.get('desc')
         self.hidden = d.get('hidden',False)
@@ -487,6 +481,22 @@ class ColumnDefinition (object):
             order = self.column_order
         d = {self.sql_map[column] : value for column, value in zip(order,row)}
         self._load_dict(d)
+
+    def from_var_csv(self, row):
+        l = list(csv.reader([row], dialect='cravat'))[0]
+        self._load_dict(dict(zip(self.csv_order[:len(l)], l)))
+        self.index = int(self.index)
+        if isinstance(self.categories, str):
+            self.categories = json.loads(self.categories)
+        if isinstance(self.hidden, str):
+            self.hidden = json.loads(self.hidden.lower())
+        if isinstance(self.filterable, str):
+            self.filterable = json.loads(self.filterable.lower())
+        if self.link_format=='':
+            self.link_format = None
+    
+    def from_json(self, sjson):
+        self._load_dict(json.loads(sjson))
 
     def get_colinfo(self):
         return {
@@ -502,3 +512,7 @@ class ColumnDefinition (object):
             'link_format': self.link_format,
             'col_genesummary': self.genesummary,
         }
+    
+    def __iter__(self): # Allows casting to dict
+        for k,v in self.__dict__.items():
+            yield k,v
