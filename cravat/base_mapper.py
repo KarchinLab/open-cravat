@@ -244,9 +244,10 @@ class BaseMapper(object):
 
     def _log_runtime_error(self, ln, line, e):
         err_str = traceback.format_exc().rstrip()
-        if err_str not in self.unique_excs:
-            self.unique_excs.append(err_str)
-            self.logger.error(err_str)
-        self.error_logger.error('\nLINE:{:d}\nINPUT:{}\nERROR:{}\n#'.format(ln, line[:-1], str(e)))
-        if not(isinstance(e, InvalidData)):
-            raise e
+        lines = err_str.split('\n')
+        last_line = lines[-1]
+        err_str_log = '\n'.join(lines[:-1]) + '\n' + ':'.join(last_line.split(':')[:1])
+        if err_str_log not in self.unique_excs:
+            self.unique_excs.append(err_str_log)
+            self.logger.error(err_str_log)
+        self.error_logger.error('\n[{:d}]{}\n({})\n#'.format(ln, line[:-1], str(e)))
