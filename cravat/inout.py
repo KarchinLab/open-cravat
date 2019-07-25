@@ -481,6 +481,8 @@ class ColumnDefinition (object):
             order = self.column_order
         d = {self.sql_map[column] : value for column, value in zip(order,row)}
         self._load_dict(d)
+        if isinstance(self.categories, str):
+            self.categories = json.loads(self.categories)
 
     def from_var_csv(self, row):
         l = list(csv.reader([row], dialect='cravat'))[0]
