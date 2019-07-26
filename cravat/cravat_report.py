@@ -345,7 +345,7 @@ class CravatReport:
                     coldef.name = conf['name']+'__'+coldef.name
                     coldef.genesummary = True
                     if coldef.type in ['category', 'multicategory'] and len(coldef.categories) == 0:
-                        sql = 'select distinct {} from {}'.format(colname, level)
+                        sql = 'select distinct {} from {}'.format(coldef.name, level)
                         await self.cursor.execute(sql)
                         rs = await self.cursor.fetchall()
                         for r in rs:
