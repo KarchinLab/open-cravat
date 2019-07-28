@@ -9,6 +9,7 @@ import csv
 from io import StringIO
 from cravat.util import detect_encoding
 import sys
+from json.decoder import JSONDecodeError
 
 csv.register_dialect('cravat', delimiter=',', quotechar='@')
 
@@ -55,8 +56,11 @@ class CravatReader (CravatFile):
                 self.index_columns.append(cols)
             elif l.startswith('#column='):
                 coldef = ColumnDefinition({})
-                csv_row = '='.join(l.split('=')[1:])
-                coldef.from_var_csv(csv_row)
+                col_s = '='.join(l.split('=')[1:])
+                try:
+                    coldef.from_json(col_s)
+                except JSONDecodeError:
+                    coldef.from_var_csv(col_s)
                 self._validate_col_type(coldef.type)
                 self.columns[coldef.index] = coldef
             elif l.startswith('#report_substitution='):
@@ -154,7 +158,6 @@ class CravatWriter(CravatFile):
                  titles_prefix='#'):
         super().__init__(path)
         self.wf = open(self.path,'w', encoding='utf-8')
-        #sys.stderr.write('writing [' + self.path + ']. encoding=' + self.wf.encoding + '\n')
         self._ready_to_write = False
         self.ordered_columns = []
         self.name_to_col_index = {}
@@ -165,22 +168,13 @@ class CravatWriter(CravatFile):
         self._titles_written = False
         self.titles_prefix = titles_prefix
 
-    def add_column(self, col_index, col_def, override=False):
+    def add_column(self, col_index, col_d, override=False):
         if col_index == 'append':
             col_index = len(self.columns)
         else:
             col_index = int(col_index)
-        title = str(col_def['title'])
-        col_type = col_def['type']
-        self._validate_col_type(col_type)
-        col_name = col_def['name']
-        col_cats = json.dumps(col_def.get('categories'))
-        col_width = col_def.get('width')
-        col_desc = col_def.get('desc')
-        col_hidden = col_def.get('hidden',False)
-        col_ctg = col_def.get('category', None)
-        col_filterable = col_def.get('filterable',True)
-        link_format = col_def.get('link_format',None)
+        col_d['index'] = col_index
+        col_def = ColumnDefinition(col_d)
         if not(override):
             try:
                 self.columns[col_index]
@@ -190,19 +184,9 @@ class CravatWriter(CravatFile):
             except KeyError:
                 pass
         for i in self.columns:
-            if self.columns[i]['name'] == col_name:
-                raise Exception('A column with name %s already exists.' %col_name)
-        self.columns[col_index] = {'name':col_name,
-                                   'type':col_type,
-                                   'title':title,
-                                   'categories': col_cats,
-                                   'width': col_width,
-                                   'desc': col_desc,
-                                   'hidden': col_hidden,
-                                   'category': col_ctg,
-                                   'filterable': col_filterable,
-                                   'link_format': link_format,
-                                   }
+            if self.columns[i].name == col_def.name:
+                raise Exception('A column with name %s already exists.' %col_def.name)
+        self.columns[col_index] = col_def
 
     def add_columns(self, col_list, append=False):
         """
@@ -224,8 +208,8 @@ class CravatWriter(CravatFile):
                 raise Exception('Column %d must be defined' %correct_index)
             col_def = self.columns[col_index]
             self.ordered_columns.append(col_def)
-            self.title_toks.append(col_def['title'])
-            self.name_to_col_index[col_def['name']] = col_index
+            self.title_toks.append(col_def.title)
+            self.name_to_col_index[col_def.name] = col_index
         self._ready_to_write = True
 
     def write_names (self, annotator_name, annotator_display_name, annotator_version):
@@ -250,17 +234,10 @@ class CravatWriter(CravatFile):
 
     def write_definition(self, conf=None):
         self._prep_for_write()
-        val_order = ['title','name','type','categories','width','desc','hidden','category','filterable','link_format']
-        for col_index, col_def in enumerate(self.ordered_columns):
-            ordered_vals = [col_index]+[col_def[k] for k in val_order]
-            s_buffer = StringIO()
-            csv.writer(s_buffer,dialect='cravat').writerow(ordered_vals)
-            s_buffer.seek(0)
-            col_def_line = '#column='+s_buffer.read().rstrip('\r\n')+'\n'
-            self.wf.write(col_def_line)
+        for col_def in self.ordered_columns:
+            self.write_meta_line('column',col_def.get_json())
         if conf and 'report_substitution' in conf:
-            self.wf.write('#report_substitution={}\n'.format(
-                json.dumps(conf['report_substitution'])))
+            self.write_meta_line('report_substitution', json.dumps(conf['report_substitution']))
         self._definition_written = True
         self.wf.flush()
 
