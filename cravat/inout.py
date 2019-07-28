@@ -58,7 +58,7 @@ class CravatReader (CravatFile):
                 csv_row = '='.join(l.split('=')[1:])
                 coldef.from_var_csv(csv_row)
                 self._validate_col_type(coldef.type)
-                self.columns[coldef.index] = dict(coldef)
+                self.columns[coldef.index] = coldef
             elif l.startswith('#report_substitution='):
                 self.report_substitution = json.loads(l.split('=')[1])
             else:
@@ -70,15 +70,15 @@ class CravatReader (CravatFile):
     def override_column(self, index, name, title=None, data_type='string', cats=[], category=None):
         if title == None:
             title = ' '.join(x.title() for x in name.split('_'))
-        self.columns[index]['title'] = title
-        self.columns[index]['name'] = name
-        self.columns[index]['type'] = data_type
-        self.columns[index]['categories'] = cats
-        self.columns[index]['category'] = category
+        self.columns[index].title= title
+        self.columns[index].name = name
+        self.columns[index].type = data_type
+        self.columns[index].categories = cats
+        self.columns[index].category = category
 
     def get_column_names(self):
         sorted_order = sorted(list(self.columns.keys()))
-        return [self.columns[x]['name'] for x in sorted_order]
+        return [self.columns[x].name for x in sorted_order]
 
     def get_annotator_name (self):
         return self.annotator_name
@@ -102,8 +102,8 @@ class CravatReader (CravatFile):
                 yield None, BadFormatError(err_msg)
                 continue
             for col_index, col_def in self.columns.items():
-                col_name = col_def['name']
-                col_type = col_def['type']
+                col_name = col_def.name
+                col_type = col_def.type
                 tok = toks[col_index]
                 if tok == '':
                     out[col_name] = None
@@ -433,7 +433,7 @@ class ColumnDefinition (object):
         'genesummary',
     ]
 
-    column_order = [
+    db_order = [
         'col_name',
         'col_title',
         'col_type',
@@ -445,6 +445,7 @@ class ColumnDefinition (object):
         'col_filterable',
         'col_link_format'
     ]
+    
     sql_map = {
         'col_name':'name',
         'col_title':'title',
@@ -478,7 +479,7 @@ class ColumnDefinition (object):
 
     def from_row(self, row, order=None):
         if order is None:
-            order = self.column_order
+            order = self.db_order
         d = {self.sql_map[column] : value for column, value in zip(order,row)}
         self._load_dict(d)
         if isinstance(self.categories, str):
@@ -490,6 +491,8 @@ class ColumnDefinition (object):
         self.index = int(self.index)
         if isinstance(self.categories, str):
             self.categories = json.loads(self.categories)
+        if self.categories is None:
+            self.categories = []
         if isinstance(self.hidden, str):
             self.hidden = json.loads(self.hidden.lower())
         if isinstance(self.filterable, str):
@@ -499,6 +502,9 @@ class ColumnDefinition (object):
     
     def from_json(self, sjson):
         self._load_dict(json.loads(sjson))
+
+    def get_json(self):
+        return json.dumps(self.__dict__)
 
     def get_colinfo(self):
         return {

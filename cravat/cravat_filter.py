@@ -378,7 +378,7 @@ class CravatFilter ():
             return None
         if bool(self.generows) == False:
             await self.make_generows()
-        row = self.generows[hugo]
+        row = self.generows.get(hugo)
         return row
 
     def getvariantiterator (self):

@@ -8,9 +8,12 @@ import logging
 import oyaml as yaml
 from cravat import CravatReader
 from cravat import CravatWriter
+from cravat import ColumnDefinition
+import cravat.admin_util as au
 import json
 from .exceptions import BadFormatError
 import traceback
+from distutils.version import LooseVersion
 
 class Aggregator (object):
 
@@ -99,7 +102,7 @@ class Aggregator (object):
         col_names = self.base_reader.get_column_names()
         q = 'insert into {table} ({columns}) values ({placeholders});'.format(
             table = self.table_name,
-            columns = ', '.join([self.base_prefix+'__'+c for c in col_names]),
+            columns = ', '.join(col_names),
             placeholders = ', '.join(['?']*len(col_names))
         )
         # Insert rows
@@ -122,16 +125,15 @@ class Aggregator (object):
                     key_val = rd[self.key_name]
                     reader_col_names = [x for x in rd if x != self.key_name]
                     update_toks = []
-                    for reader_col_name in reader_col_names:
-                        db_col_name = '%s__%s' %(annot_name, reader_col_name)
-                        val = rd[reader_col_name]
+                    for col_name in reader_col_names:
+                        val = rd[col_name]
                         set_val = 'null'
                         if val is not None:
                             if type(val) is str:
                                 set_val = '"%s"' %val
                             else:
                                 set_val = str(val)
-                        update_toks.append('%s=%s' %(db_col_name, set_val))
+                        update_toks.append('%s=%s' %(col_name, set_val))
                     q = 'update %s set %s where %s="%s";' %(
                         self.table_name,
                         ', '.join(update_toks),
@@ -163,57 +165,63 @@ class Aggregator (object):
         else:
             self.reportsub = {}
 
-    def do_reportsub_col_cats_str (self, col_name, col_cats):
+    def do_reportsub_col_cats (self, col_name, col_cats):
         (module_name, col) = col_name.split('__')
         if module_name in self.reportsub and col in self.reportsub[module_name]:
             sub = self.reportsub[module_name][col]
-            for k in sub:
-                col_cats = col_cats.replace(k, sub[k])
+            for k,v in sub.items():
+                for i,_ in enumerate(col_cats):
+                    col_cats[i] = col_cats[i].replace(k, v)
         return col_cats
 
     def fill_categories (self):
-        q = 'select * from {}_header'.format(self.level)
-        self.cursor.execute(q)
-        rs = self.cursor.fetchall()
-        cols_to_fill = []
-        for r in rs:
-            col_name = r[0]
-            col_type = r[2]
-            col_cats_str = r[3]
-            if len(r) > 7:
-                col_ctg = r[7]
-            else:
-                col_ctg = None
-            if col_ctg in ['single', 'multi']:
-                if col_cats_str == None or len(col_cats_str) == 0 or col_cats_str == '[]':
-                    cols_to_fill.append(col_name)
+        header_table = self.level+'_header'
+        coldefs = []
+        if LooseVersion(au.get_current_package_version()) >= LooseVersion('1.5.0'):
+            sql = 'select col_def from '+header_table
+            self.cursor.execute(sql)
+            for row in self.cursor:
+                coljson = row[0]
+                coldef = ColumnDefinition({})
+                coldef.from_json(coljson)
+                coldefs.append(coldef)
+        else:
+            sql = 'pragma table_info("{}")'.format(header_table)
+            self.cursor.execute(sql)
+            header_cols = [row[1] for row in self.cursor.fetchall()]
+            select_order = [cname for cname in ColumnDefinition.db_order if cname in header_cols]
+            sql = 'select {} from {}'.format(
+                ', '.join(select_order),
+                header_table
+            )
+            self.cursor.execute(sql)
+            column_headers = self.cursor.fetchall()
+            for column_header in column_headers:
+                coldef = ColumnDefinition({})
+                coldef.from_row(column_header, order=select_order)
+                coldefs.append(coldef)
+        for coldef in coldefs:
+            col_cats = coldef.categories
+            if coldef.category in ['single', 'multi']:
+                if col_cats is not None and len(col_cats) == 0:
+                    q = 'select distinct {} from {}'.format(coldef.name, self.level)
+                    self.cursor.execute(q)
+                    col_set = set([])
+                    for r in self.cursor:
+                        if r[0] == None:
+                            continue
+                        col_set.update(r[0].split(';'))
+                    col_cats = list(col_set)
+                    col_cats.sort()
                 else:
-                    col_cats_str = self.do_reportsub_col_cats_str(col_name, col_cats_str)
-                    self.write_col_cats_str(col_name, col_cats_str)
-        for col_name in cols_to_fill:
-            q = 'select distinct {} from {}'.format(col_name, self.level)
-            self.cursor.execute(q)
-            rs = self.cursor.fetchall()
-            col_cats = []
-            for r in rs:
-                if r[0] == None:
-                    continue
-                vals = r[0].split(';')
-                for col_cat in vals:
-                    if col_cat not in col_cats:
-                        col_cats.append(col_cat)
-            col_cats.sort()
-            col_cats_str = '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']'
-            col_cats_str = self.do_reportsub_col_cats_str(col_name, col_cats_str)
-            self.write_col_cats_str(col_name, col_cats_str)
+                    col_cats = self.do_reportsub_col_cats(coldef.name, col_cats)
+                coldef.categories = col_cats
+                self.update_col_def(coldef)
         self.dbconn.commit()
 
-    def write_col_cats_str (self, col_name, col_cats_str):
-        q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
-            self.level,
-            col_cats_str,
-            col_name)
-        self.cursor.execute(q)
+    def update_col_def (self, col_def):
+        q = 'update {}_header set col_def=? where col_name=?'.format(self.level)
+        self.cursor.execute(q, [col_def.get_json(), col_def.name])
 
     def _cleanup(self):
         self.cursor.close()
@@ -287,8 +295,9 @@ class Aggregator (object):
             annotator_table, 'base', 'Variant Annotation', "")
         self.cursor.execute(q)
         for _, col_def in self.base_reader.get_all_col_defs().items():
-            col_name = self.base_prefix + '__' + col_def['name']
-            columns.append([col_name, col_def['title'], col_def['type'], col_def['categories'], col_def['width'], col_def['desc'], col_def['hidden'], col_def['category'], col_def['filterable'], col_def['link_format']])
+            col_name = self.base_prefix + '__' + col_def.name
+            col_def.name = col_name
+            columns.append(col_def)
             unique_names.add(col_name)
         for annot_name in self.annotators:
             reader = self.readers[annot_name]
@@ -305,23 +314,20 @@ class Aggregator (object):
             orded_col_index = sorted(list(reader.get_all_col_defs().keys()))
             for col_index in orded_col_index:
                 col_def = reader.get_col_def(col_index)
-                reader_col_name = col_def['name']
+                reader_col_name = col_def.name
                 if reader_col_name == self.key_name: continue
-                db_col_name = '%s__%s' %(annot_name, reader_col_name)
-                db_type = col_def['type']
-                db_col_title = col_def['title']
-                db_col_cats = col_def['categories']
-                if db_col_name in unique_names:
+                col_def.name = '%s__%s' %(annot_name, reader_col_name)
+                if col_def.name in unique_names:
                     err_msg = 'Duplicate column name %s found in %s. ' \
-                        %(db_col_name, reader.path)
+                        %(col_def.name, reader.path)
                     sys.exit(err_msg)
                 else:
-                    columns.append([db_col_name, db_col_title, db_type, db_col_cats, col_def['width'], col_def['desc'], col_def['hidden'], col_def['category'], col_def['filterable'], col_def['link_format']])
-                    unique_names.add(db_col_name)
+                    columns.append(col_def)
+                    unique_names.add(col_def.name)
         col_def_strings = []
-        for col in columns:
-            name = col[0]
-            sql_type = self.cr_type_to_sql[col[2]]
+        for col_def in columns:
+            name = col_def.name
+            sql_type = self.cr_type_to_sql[col_def.type]
             s = name + ' ' + sql_type
             col_def_strings.append(s)
         # data table
@@ -345,14 +351,13 @@ class Aggregator (object):
         # header table
         q = 'drop table if exists %s' %self.header_table_name
         self.cursor.execute(q)
-        q = 'create table %s (col_name text, col_title text, col_type text, col_cats text, col_width int, col_desc text, col_hidden boolean, col_ctg text, col_filterable boolean, col_link_format text);' \
+        q = 'create table %s (col_name text, col_def text);' \
             %(self.header_table_name)
         self.cursor.execute(q)
-        for col_row in columns:
-            if col_row[3]:
-                col_row[3] = json.dumps(col_row[3])
+        for col_def in columns:
+            col_row = [col_def.name, col_def.get_json()]
             # use prepared statement to allow " characters in categories and desc
-            insert_template = 'insert into {} values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'.format(self.header_table_name)
+            insert_template = 'insert into {} values (?, ?)'.format(self.header_table_name)
             self.cursor.execute(insert_template, col_row)
         # report substitution table
         if self.level in ['variant', 'gene']:
