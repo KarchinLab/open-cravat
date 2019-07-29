@@ -380,7 +380,7 @@ class CravatFilter ():
             return None
         if bool(self.generows) == False:
             await self.make_generows()
-        row = self.generows[hugo]
+        row = self.generows.get(hugo)
         return row
 
     def getvariantiterator (self):
@@ -420,7 +420,6 @@ class CravatFilter ():
 
     async def make_filtered_sample_table (self):
         q = 'drop table if exists fsample'
-        print(q) #debug
         await self.cursor.execute(q)
         try: #TODO: always have these fields
             req = self.filter['sample']['require']
@@ -437,7 +436,6 @@ class CravatFilter ():
         #     q += ' union select base__uid from sample where base__sample_id="{}"'.format(s)
         for s in rej:
            q += ' except select base__uid from sample where base__sample_id="{}"'.format(s)
-        print(q) #debug
         await self.cursor.execute(q)
         await self.conn.commit()
 
@@ -454,10 +452,9 @@ class CravatFilter ():
         where = self.getwhere(level)
         q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
         q += ' join fsample as s on t.base__uid=s.base__uid'
-        if 'genes' in self.filter and len(self.filter['genes']) > 0:
+        if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
             q += ' join gene_list as g on t.base__hugo=g.base__hugo'
         q += ' '+where
-        print(q) #debug
         await self.cursor.execute(q)
         self.conn.commit()
         t = time.time() - t
@@ -465,22 +462,18 @@ class CravatFilter ():
     async def make_gene_list_table (self):
         tname = 'gene_list'
         q = 'drop table if exists {}'.format(tname)
-        print(q) #debug
         await self.cursor.execute(q)
         q = 'create table {} (base__hugo text)'.format(tname)
-        print(q) #debug
         await self.cursor.execute(q)
-        if 'genes' in self.filter:
+        if isinstance(self.filter,dict) and 'genes' in self.filter:
             tdata = [(hugo,) for hugo in self.filter['genes']]
         else:
             tdata = []
         if tdata:
             q = 'insert into {} (base__hugo) values (?)'.format(tname)
-            print(q) #debug
             await self.cursor.executemany(q, tdata)
         else:
             q = 'insert into {} select base__hugo from gene'.format(tname)
-            print(q) #debug
             await self.cursor.execute(q)
         await self.conn.commit()
     

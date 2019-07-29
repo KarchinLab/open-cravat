@@ -16,6 +16,7 @@ import cravat.cravat_util as cu
 import re
 import aiosqlite3
 import types
+from distutils.version import LooseVersion
 
 class CravatReport:
 
@@ -246,28 +247,37 @@ class CravatReport:
             )
         # level-specific column names
         header_table = level+'_header'
-        sql = 'pragma table_info("{}")'.format(header_table)
-        await self.cursor.execute(sql)
-        header_cols = [row[1] for row in await self.cursor.fetchall()]
-        select_order = [cname for cname in ColumnDefinition.column_order if cname in header_cols]
-        sql = 'select {} from {}'.format(
-            ', '.join(select_order),
-            header_table
-        )
-        # sql = 'select * from ' + level + '_header'
-        await self.cursor.execute(sql)
+        coldefs = []
+        if self.db_version >= LooseVersion('1.5.0'):
+            sql = 'select col_def from '+header_table
+            await self.cursor.execute(sql)
+            for row in await self.cursor.fetchall():
+                coljson = row[0]
+                coldef = ColumnDefinition({})
+                coldef.from_json(coljson)
+                coldefs.append(coldef)
+        else:
+            sql = 'pragma table_info("{}")'.format(header_table)
+            await self.cursor.execute(sql)
+            header_cols = [row[1] for row in await self.cursor.fetchall()]
+            select_order = [cname for cname in ColumnDefinition.db_order if cname in header_cols]
+            sql = 'select {} from {}'.format(
+                ', '.join(select_order),
+                header_table
+            )
+            await self.cursor.execute(sql)
+            column_headers = await self.cursor.fetchall()
+            for column_header in column_headers:
+                coldef = ColumnDefinition({})
+                coldef.from_row(column_header, order=select_order)
+                coldefs.append(coldef)
         columns = []
-        column_headers = await self.cursor.fetchall()
-        # level-specific column numbers
         self.colnos[level] = {}
         colcount = 0
-        for column_header in column_headers:
-            self.colnos[level][column_header[0]] = colcount
-            colcount += 1
         # level-specific column details
-        for column_header in column_headers:
-            coldef = ColumnDefinition({})
-            coldef.from_row(column_header, order=select_order)
+        for coldef in coldefs:
+            self.colnos[level][coldef.name] = colcount
+            colcount += 1
             if coldef.category in ['single', 'multi'] and len(coldef.categories) == 0:
                 sql = 'select distinct {} from {}'.format(coldef.name, level)
                 await self.cursor.execute(sql)
@@ -345,7 +355,7 @@ class CravatReport:
                     coldef.name = conf['name']+'__'+coldef.name
                     coldef.genesummary = True
                     if coldef.type in ['category', 'multicategory'] and len(coldef.categories) == 0:
-                        sql = 'select distinct {} from {}'.format(colname, level)
+                        sql = 'select distinct {} from {}'.format(coldef.name, level)
                         await self.cursor.execute(sql)
                         rs = await self.cursor.fetchall()
                         for r in rs:
@@ -512,6 +522,14 @@ class CravatReport:
             exit()
         self.conn = await aiosqlite3.connect(self.dbpath)
         self.cursor = await self.conn.cursor()
+        # Pull the database version
+        sql = 'select colval from info where colkey="open-cravat"'
+        await self.cursor.execute(sql)
+        r = await self.cursor.fetchone()
+        if r:
+            self.db_version = LooseVersion(r[0])
+        else:
+            self.db_version = None #TODO figure out highest version that lacks this info
 
     async def load_filter (self):
         self.cf = await CravatFilter.create(dbpath=self.dbpath)
