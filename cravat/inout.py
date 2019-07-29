@@ -410,7 +410,7 @@ class ColumnDefinition (object):
         'genesummary',
     ]
 
-    db_order = [
+    db_order = [ #TODO change name to denote legacy
         'col_name',
         'col_title',
         'col_type',
