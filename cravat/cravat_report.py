@@ -343,7 +343,7 @@ class CravatReport:
                     annot_cls = util.load_class('CravatAnnotator', mi.script_path)
                 elif module_name == self.mapper_name:
                     annot_cls = util.load_class('Mapper', mi.script_path)
-                annot = annot_cls([mi.script_path, '__dummy__'], {})
+                annot = annot_cls([mi.script_path, '__dummy__', '-d', self.output_dir], {})
                 cols = conf['gene_summary_output_columns']
                 columngroup = {}
                 columngroup['name'] = conf['name']
