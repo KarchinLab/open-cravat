@@ -29,6 +29,7 @@ var moduleGroupMembers = {};
 var currentPage = null;
 var installedGroups = {};
 var tagsCollected = [];
+var tagDesc = {};
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -531,7 +532,8 @@ function getRemote () {
         url: '/store/remote',
         async: true,
         success: function(data){
-            remoteModuleInfo = data;
+            remoteModuleInfo = data['data'];
+            tagDesc = data['tagdesc'];
             for (var moduleName in remoteModuleInfo) {
                 var moduleInfo = remoteModuleInfo[moduleName];
                 if (! ('tags' in moduleInfo) || moduleInfo['tags'] == null) {

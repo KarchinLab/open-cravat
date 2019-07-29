@@ -357,6 +357,8 @@ input:checked + .slider:before {
 }
 
 #annotator-group-select-tag-div {
+    display: inline-block;
+    vertical-align: middle;
     overflow: hidden;
     transition: max-height .4s;
 }
@@ -398,6 +400,8 @@ div.checkbox-group-element[kind=group] span.label {
 }
 
 #annotator-group-select-div .div-header {
+    display: inline-block;
+    vertical-align: middle;
     font-size: 12px;
     color: #899989;
 }

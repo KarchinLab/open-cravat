@@ -98,28 +98,30 @@ def fetch_install_queue (install_queue, install_state):
 ###################### start from store_handler #####################
 
 async def get_remote_manifest(request):
+    content = {'data': {}, 'tagdesc': {}}
     try:
         if au.mic.remote == {}:
             au.mic.update_remote()
-        content = au.mic.remote
+        content['data'] = au.mic.remote
     except:
         traceback.print_exc()
-        content = {}
+        content = {'data': {}, 'tagdesc': {}}
     global install_queue
     temp_q = []
     while install_queue.empty() == False:
         q = install_queue.get()
         temp_q.append([q['module'], q['version']])
     for module, version in temp_q:
-        content[module]['queued'] = True
+        content['data'][module]['queued'] = True
         install_queue.put({'module': module, 'version': version})
     try:
         counts = au.get_download_counts()
     except:
         traceback.print_exc()
         counts = {}
-    for mname in content:
-        content[mname]['downloads'] = counts.get(mname,0)
+    for mname in content['data']:
+        content['data'][mname]['downloads'] = counts.get(mname,0)
+    content['tagdesc'] = await get_tag_desc(request)
     return web.json_response(content)
 
 async def get_remote_module_config (request):
@@ -395,8 +397,10 @@ async def unqueue_install (request):
     await send_socket_msg()
     install_state['module_name'] = module_name_bak
     install_state['message'] = msg_bak
-
     return web.json_response('done')
+
+async def get_tag_desc (request):
+    return constants.module_tag_desc
 
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
@@ -416,3 +420,4 @@ routes.append(['GET', '/store/updates', get_module_updates])
 routes.append(['GET', '/store/freemodulesspace', get_free_modules_space])
 routes.append(['GET', '/store/killinstall', kill_install])
 routes.append(['GET', '/store/unqueue', unqueue_install])
+routes.append(['GET', '/store/tagdesc', get_tag_desc])
