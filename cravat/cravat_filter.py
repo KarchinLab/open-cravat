@@ -37,11 +37,11 @@ class FilterColumn(object):
         s = ''
         #TODO unify this to a single if/else on self.test
         if self.test == 'multicategory':
-            s = 't.{} like "%{}%"'.format(self.column, self.value[0])
+            s = '{} like "%{}%"'.format(self.column, self.value[0])
             for v in self.value[1:]:
-                s += ' or t.{} like "%{}%"'.format(self.column, v)
+                s += ' or {} like "%{}%"'.format(self.column, v)
         else:
-            s = 't.{col} {opr}'.format(col=self.column, opr=self.test2sql[self.test])
+            s = '{col} {opr}'.format(col=self.column, opr=self.test2sql[self.test])
             sql_val = None
             if self.test == 'equals':
                 if type(self.value) is list:
@@ -98,6 +98,17 @@ class FilterGroup(object):
         # Backwards compatability, may remove later
         self.rules += [FilterGroup(x) for x in d.get('groups',[])]
         self.rules += [FilterColumn(x, self.operator) for x in d.get('columns', [])]
+        self.column_prefixes = {}
+
+    def add_prefixes(self, prefixes):
+        self.column_prefixes.update(prefixes)
+        for rule in self.rules:
+            if isinstance(rule, FilterGroup):
+                rule.add_prefixes(prefixes)
+            elif isinstance(rule, FilterColumn):
+                prefix = self.column_prefixes.get(rule.column)
+                if prefix is not None:
+                    rule.column = prefix+'.'+rule.column
 
     def get_sql(self):
         clauses = []
@@ -256,6 +267,17 @@ class CravatFilter ():
         self.conn = await aiosqlite3.connect(self.dbpath)
         self.cursor = await self.conn.cursor()
         self.conn.create_function('regexp', 2, regexp)
+        await self.set_aliases()
+
+    async def set_aliases (self):
+        self.table_aliases = {'variant':'t','gene':'g'}
+        self.column_prefixes = {}
+        q = 'pragma table_info(variant)'
+        await self.cursor.execute(q)
+        self.column_prefixes.update({row[1]:self.table_aliases['variant'] for row in await self.cursor.fetchall()})
+        q = 'pragma table_info(gene)'
+        await self.cursor.execute(q)
+        self.column_prefixes.update({row[1]:self.table_aliases['gene'] for row in await self.cursor.fetchall()})
 
     async def close_db (self):
         await self.cursor.close()
@@ -324,6 +346,7 @@ class CravatFilter ():
         if self.filter is not None and level in self.filter:
             criteria = self.filter[level]
             main_group = FilterGroup(criteria)
+            main_group.add_prefixes(self.column_prefixes)
             sql = main_group.get_sql()
             if sql:
                 where = 'where '+sql
@@ -453,7 +476,9 @@ class CravatFilter ():
         q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
         q += ' join fsample as s on t.base__uid=s.base__uid'
         if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
-            q += ' join gene_list as g on t.base__hugo=g.base__hugo'
+            q += ' join gene_list as gl on t.base__hugo=gl.base__hugo'
+        if 'g.' in where:
+            q += ' join gene as g on t.base__hugo=g.base__hugo'
         q += ' '+where
         await self.cursor.execute(q)
         self.conn.commit()
