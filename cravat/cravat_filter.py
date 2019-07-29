@@ -307,6 +307,8 @@ class CravatFilter ():
                     self.filter = yaml.load(f)
                 elif ftype in ['json']:
                     self.filter = json.load(f)
+        if self.filter is None:
+            self.filter = {}
 
     async def delete_filtered_uid_table (self):
         await self.cursor.execute('pragma synchronous=0')
