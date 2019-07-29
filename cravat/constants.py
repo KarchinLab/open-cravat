@@ -80,7 +80,7 @@ crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'widt
            {'name':'fileno', 'title':'Input File Number', 'type':'int', 'width':90, 'filterable':False, 'hidden':True},
     ]
 crm_idx = [['uid'],['tags']]
-crs_def = [{'name':'uid', 'title':'UID', 'type':'string', 'width': 70},
+crs_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
            {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90, 'category': 'multi'}]
 crs_idx = [['uid'], ['sample_id']]
 crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 60, 'hidden':True, 'filterable': False},
@@ -220,3 +220,24 @@ base_smartfilters = [
         },
     }
 ]
+
+module_tag_desc = {
+    'cancer': 'tools for cancer research',
+    'clinical relevance': 'tools for assessing clinical relevance of variants',
+    'converters': 'modules for using the result of other tools as open-cravat input',
+    'dbnsfp': 'modules ported from dbNSFP',
+    'denovo': 'modules related to denovo variants',
+    'evolution': 'modules for studying variants in evolutionary context',
+    'genes': 'modules for studying variants at the gene level',
+    'genomic features': 'modules for studying genomic features',
+    'germline': 'modules for studying germline variants',
+    'interaction': 'modules for studying molecular interactions',
+    'literature': 'modules for variant-related literature',
+    'multiple assays': 'modules for multiplex assays',
+    'noncoding': 'modules for studying noncoding variants',
+    'populations': 'modules for studying population statistics of variants',
+    'protein visualization': 'modules to visualize variants on protein structures',
+    'variant effect prediction': 'modules to predict variant effects',
+    'variants': 'modules to study variants at the variant level',
+    'visualization widgets': 'modules for visualizing variants',
+}
