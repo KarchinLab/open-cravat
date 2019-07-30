@@ -94,6 +94,25 @@ class CravatReport:
             for mi, o, cols in self.summarizing_modules:
                 gene_summary_data = await o.get_gene_summary_data(self.cf)
                 gene_summary_datas[mi.name] = [gene_summary_data, cols]
+                for col in cols:
+                    if 'category' in col and col['category'] in ['single', 'multi']:
+                        for i in range(len(self.colinfo[level]['columns'])):
+                            colinfo_col = self.colinfo[level]['columns'][i]
+                            if mi.name in ['hg38', 'tagsampler']:
+                                grp_name = 'base'
+                            else:
+                                grp_name = mi.name
+                            if colinfo_col['col_name'] == grp_name + '__' + col['name']:
+                                break
+                        cats = []
+                        for hugo in gene_summary_data:
+                            val = gene_summary_data[hugo][col['name']]
+                            if len(colinfo_col['reportsub']) > 0:
+                                if val in colinfo_col['reportsub']:
+                                    val = colinfo_col['reportsub'][val]
+                            if val not in cats:
+                                cats.append(val)
+                        self.colinfo[level]['columns'][i]['col_cats'] = cats
         self.write_preface(level)
         self.write_header(level)
         if level == 'variant':
@@ -352,14 +371,8 @@ class CravatReport:
                 self.columngroups[level].append(columngroup)
                 for col in cols:
                     coldef = ColumnDefinition(col)
-                    coldef.name = conf['name']+'__'+coldef.name
+                    coldef.name = conf['name'] + '__' + coldef.name
                     coldef.genesummary = True
-                    if coldef.type in ['category', 'multicategory'] and len(coldef.categories) == 0:
-                        sql = 'select distinct {} from {}'.format(coldef.name, level)
-                        await self.cursor.execute(sql)
-                        rs = await self.cursor.fetchall()
-                        for r in rs:
-                            coldef.categories.append(r[0])
                     column = coldef.get_colinfo()
                     columns.append(column)
                 self.summarizing_modules.append([mi, annot, cols])
