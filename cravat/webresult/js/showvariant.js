@@ -58,7 +58,7 @@ function getWidgetTableTr (values,linkNames) {
 				linkNameItr += 1;
 			}
 			else{
-				addEl(td, addEl(spanText, getTn('Link')));
+				addEl(td, addEl(spanText, getTn('View')));
 			}
 		}
 		else{

@@ -198,7 +198,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 					content = `<a href="${linkUrl}" target="_blank">${linkText}</a>`;
 					title = linkUrl;
 				} else if (content.startsWith('http')) {
-					content = `<a href="${content}" target="_blank">Link</a>`;
+					content = `<a href="${content}" target="_blank">View</a>`;
 				}
 				return `<span title="${title}">${content}</span>`;
 			};
