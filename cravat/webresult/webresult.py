@@ -546,7 +546,7 @@ async def get_modules_info (request):
     q = 'select colval from info where colkey="_annotator_desc"'
     await cursor.execute(q)
     r = await cursor.fetchone()
-    if r is None:
+    if r is None or r[0] == '{}':
         content = {}
     else:
         s = r[0].strip('{').strip('}')

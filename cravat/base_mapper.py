@@ -270,6 +270,7 @@ class BaseMapper(object):
         hugos = await cf.get_filtered_hugo_list()
         cols = ['base__' + coldef['name'] \
                 for coldef in crx_def]
+        cols.extend(['tagsampler__numsample'])
         data = {}
         for hugo in hugos:
             rows = await cf.get_variant_data_for_hugo(hugo, cols)
