@@ -126,7 +126,7 @@ class FilterManager {
 			.attr('id', this.sampleSelectId);
 		outerDiv.append(sampleSelDiv);
 		let sampleIds = getFilterCol('base__samples').categories;
-		let maxLen = sampleIds.reduce((a,b) => {return a.length>b.length ? a : b}).length;
+		let maxLen = sampleIds.reduce((a,b) => {return a.length>b.length ? a : b}, '').length;
 		maxLen = maxLen > 25 ? 25 : maxLen;
 		let sboxMaxWidth = `${maxLen}ch`;
 		for (let i=0; i<sampleIds.length; i++) {
