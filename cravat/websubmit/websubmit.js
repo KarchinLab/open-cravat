@@ -610,6 +610,9 @@ function buildJobsTable () {
 function fillJobTable (allJobs, start, end, jobsTable) {
     for (let i = start; i < end; i++) {
         job = GLOBALS.idToJob[allJobs[i]];
+        if (job == undefined) {
+            continue;
+        }
         ji = job.id;
         if (ji == undefined) {
             continue;
