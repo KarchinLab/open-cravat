@@ -311,7 +311,7 @@ class CravatFilter ():
             self.filterstring = filterstring
         if filter != None:
             self.filter = filter
-        if self.filter is not None:
+        if self.filter:
             pass
         elif self.filterstring is not None:
             self.filterstring = self.filterstring.replace("'", '"')
