@@ -965,7 +965,7 @@ function buildAnnotatorGroupSelector () {
     var div = getEl('div');
     div.className = 'div-header';
     var span = getEl('span');
-    span.textContent = 'Sets\xa0\xa0';
+    span.textContent = 'Module Category\xa0\xa0';
     addEl(div, span);
     /*
     var btn = getEl('span');
