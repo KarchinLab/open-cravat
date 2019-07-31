@@ -193,12 +193,12 @@ class FilterManager {
 		)
 		let geneTextArea = $(getEl('textarea'))
 			.attr('id', this.geneTextId)
-			.change(this.onGeneListSelectorChange);
+			.change(this.onGeneListSelectorChange.bind(this));
 		outerDiv.append(geneTextArea);
 		let geneFileInput = $(getEl('input'))
 			.attr('type','file')
 			.attr('id', this.geneFileId)
-			.change(this.onGeneListSelectorChange);
+			.change(this.onGeneListSelectorChange.bind(this));
 		outerDiv.append(geneFileInput);
 		if (filter.length > 0) {
 			geneTextArea.val(filter.join('\n'));
@@ -206,7 +206,7 @@ class FilterManager {
 		return outerDiv;
 	}
 
-	onGeneListSelectorChange = (e) => { //Arrow function to maintain this=FilterManager
+	onGeneListSelectorChange (e) { //Arrow function to maintain this=FilterManager
 		let target = $(e.target);
 		let id = target.attr('id');
 		if (id === this.geneTextId) {
@@ -247,7 +247,7 @@ class FilterManager {
 			.append($(getEl('option')).val('sf').text('sf'))
 			.append($(getEl('option')).val('qb').text('qb'))
 			.css('display','none')
-			.change(this.vPropSelectChange);
+			.change(this.vPropSelectChange.bind(this));
 		fTypeDiv.append(vPropSel);
 		let sfHeader = $(getEl('span'))
 			.addClass('vprop-option')
@@ -324,7 +324,7 @@ class FilterManager {
 		this.addVpropUI(vPropCont, filter);
 	}
 
-	vPropSelectChange = (event) => { //Arrow function to maintain this=FilterManager
+	vPropSelectChange (event) {
 		let sel = $(event.target);
 		let val = sel.val();
 		if (val === 'qb') {
@@ -386,7 +386,7 @@ class SmartFilter {
 		let activeCb = $(getEl('input'))
 			.attr('type','checkbox')
 			.addClass('smartfilter-checkbox')
-			.change(this.sfCheckboxChangeHandler);
+			.change(this.sfCheckboxChangeHandler.bind(this));
 		outerDiv.append(activeCb);
 		let titleSpan = $(getEl('span'))
 			.attr('title', this.sfDef.description)
@@ -482,7 +482,7 @@ class SmartFilter {
 		}
 	}
 
-	sfCheckboxChangeHandler = (event) => {
+	sfCheckboxChangeHandler (event) {
 		let cb = $(event.target);
 		let sfDiv = cb.closest('.smartfilter');
 		let sfActive = cb.prop('checked');
