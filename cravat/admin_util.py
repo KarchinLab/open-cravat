@@ -174,6 +174,7 @@ class RemoteModuleInfo(object):
         self.developer = get_developer_dict(**dev_dict)
         self.data_versions = kwargs.get('data_versions', {})
         self.data_sources = kwargs.get('data_sources', {})
+        self.tags = kwargs.get('tags', [])
 
     def has_version(self, version):
         return version in self.versions    
