@@ -445,7 +445,7 @@ class ColumnDefinition (object):
         self.name = d.get('name')
         self.title = d.get('title')
         self.type = d.get('type')
-        self.categories = d.get('categories',{})
+        self.categories = d.get('categories',[])
         self.width = d.get('width')
         self.desc = d.get('desc')
         self.hidden = d.get('hidden',False)
