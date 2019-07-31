@@ -328,7 +328,7 @@ async def get_job (job_id, request):
     if jobs_dir is None:
         return None
     if os.path.exists(jobs_dir) == False:
-        os.mkdir(jobs_dir)
+        os.makedirs(jobs_dir)
     job_dir = os.path.join(jobs_dir, job_id)
     if os.path.exists(job_dir) == False:
         return None
@@ -398,7 +398,7 @@ async def get_jobs (request):
     if jobs_dir is None:
         return web.json_response([])
     if os.path.exists(jobs_dir) == False:
-        os.mkdir(jobs_dir)
+        os.makedirs(jobs_dir)
     queries = request.rel_url.query
     ids = json.loads(queries['ids'])
     jobs = []
@@ -419,7 +419,7 @@ async def get_all_jobs (request):
     if jobs_dir is None:
         return web.json_response([])
     if os.path.exists(jobs_dir) == False:
-        os.mkdir(jobs_dir)
+        os.makedirs(jobs_dir)
     dir_it = os.scandir(jobs_dir)
     direntries = [de for de in dir_it]
     '''
@@ -556,7 +556,7 @@ async def create_user_dir (request, username):
     global filerouter
     jobs_dir = await filerouter.get_jobs_dir(request)
     if os.path.exists(jobs_dir) == False:
-        os.mkdir(jobs_dir)
+        os.makedirs(jobs_dir)
 
 async def signup (request):
     #session = await new_session(request)
