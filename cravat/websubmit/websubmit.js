@@ -608,7 +608,7 @@ function buildJobsTable () {
 }
 
 function fillJobTable (allJobs, start, end, jobsTable) {
-    for (let i = start; i < end; i++) {
+    for (let i = start; i < Math.min(end, allJobs.length); i++) {
         job = GLOBALS.idToJob[allJobs[i]];
         if (job == undefined) {
             continue;
@@ -1919,25 +1919,19 @@ function addListeners () {
             var moduleListPos = moduleDiv.getAttribute('modulelistpos');
             var moduleList = moduleLists[moduleListName];
             if (k == 'ArrowRight') {
-                var moduleName = null;
-                while (true) {
-                    moduleListPos++;
-                    if (moduleListPos >= moduleList.length) {
-                        moduleListPos = 0;
-                    }
-                    moduleName = moduleList[moduleListPos];
+                moduleListPos++;
+                if (moduleListPos >= moduleList.length) {
+                    moduleListPos = 0;
                 }
+                var moduleName = moduleList[moduleListPos];
                 makeModuleDetailDialog(moduleName, moduleListName, moduleListPos);
                 evt.stopPropagation();
             } else if (k == 'ArrowLeft') {
-                var moduleName = null;
-                while (true) {
-                    moduleListPos--;
-                    if (moduleListPos < 0) {
-                        moduleListPos = moduleList.length - 1;
-                    }
-                    moduleName = moduleList[moduleListPos];
+                moduleListPos--;
+                if (moduleListPos < 0) {
+                    moduleListPos = moduleList.length - 1;
                 }
+                var moduleName = moduleList[moduleListPos];
                 makeModuleDetailDialog(moduleName, moduleListName, moduleListPos);
                 evt.stopPropagation();
             }
