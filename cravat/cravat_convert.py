@@ -291,7 +291,6 @@ class MasterCravatConverter(object):
             num_errors = 0
             for l in f:
                 cur_fname = os.path.basename(f.name)
-                cur_fname = cur_fname.replace('.', '_')
                 samp_prefix = cur_fname
                 read_lnum += 1
                 try:
