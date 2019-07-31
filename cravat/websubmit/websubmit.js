@@ -1032,7 +1032,7 @@ function buildAnnotatorGroupSelector () {
         multiplePlaceholder: '&#x25BD;',
         width: 200,
         search: false,
-        selectallText: 'Select all',
+        selectallText: '',
     }).on('change', function (evt) {
         var tags = $(this).val();
         onChangeAnnotatorGroupCheckbox(tags);
