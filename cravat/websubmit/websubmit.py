@@ -419,7 +419,7 @@ async def get_all_jobs (request):
     if jobs_dir is None:
         return web.json_response([])
     if os.path.exists(jobs_dir) == False:
-        os.mkdir(jobs_dir)
+        os.mkdirs(jobs_dir)
     dir_it = os.scandir(jobs_dir)
     direntries = [de for de in dir_it]
     '''
