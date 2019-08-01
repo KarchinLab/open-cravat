@@ -924,3 +924,21 @@ div.pq-select-menu>.pq-select-option-label {
 	height: 1em;
 	cursor: pointer;
 }
+
+.butn {
+  -webkit-border-radius: 4;
+  -moz-border-radius: 4;
+  border-radius: 4px;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 20px;
+  background: #385487;
+  padding: 10px 20px 10px 20px;
+  text-decoration: none;
+}
+
+.butn:hover {
+  background: #42649e;
+  text-decoration: none;
+}
+

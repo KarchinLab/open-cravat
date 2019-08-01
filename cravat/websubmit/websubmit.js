@@ -329,6 +329,8 @@ function populateJobTr (job) {
         a.setAttribute('target', '_blank');
         var button = getEl('button');
         addEl(button, getTn('Launch'));
+        button.classList.add('butn');
+        button.classList.add('launch-button');
         button.disabled = !job.viewable;
         addEl(a, button);
         addEl(viewTd, a);
@@ -340,6 +342,7 @@ function populateJobTr (job) {
     dbTd.style.textAlign = 'center';
     // Excel
     var excelButton = getEl('button');
+    excelButton.classList.add('butn');
     addEl(excelButton, getTn('Excel'));
     excelButton.setAttribute('jobId', job.id);
     if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['excel'] == true) {
@@ -348,10 +351,11 @@ function populateJobTr (job) {
         excelButton.textContent = 'Generating...';
     } else {
         if (job.reports.includes('excel') == false) {
-            excelButton.style.backgroundColor = '#cccccc';
+            excelButton.classList.add('inactive-download-button');
             excelButton.addEventListener('click', createJobExcelReport);
             excelButton.title = 'Click to create.';
         } else {
+            excelButton.classList.add('active-download-button');
             excelButton.addEventListener('click', jobExcelDownloadButtonHandler);
             excelButton.title = 'Click to download.';
         }
@@ -359,6 +363,7 @@ function populateJobTr (job) {
     addEl(dbTd, excelButton);
     // Text
     var textButton = getEl('button');
+    textButton.classList.add('butn');
     addEl(textButton, getTn('Text'));
     textButton.setAttribute('jobId', job.id);
     if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['text'] == true) {
@@ -367,10 +372,11 @@ function populateJobTr (job) {
         textButton.textContent = 'Generating...';
     } else {
         if (job.reports.includes('text') == false) {
-            textButton.style.backgroundColor = '#cccccc';
+            textButton.classList.add('inactive-download-button');
             textButton.addEventListener('click', createJobTextReport);
             textButton.title = 'Click to create.';
         } else {
+            textButton.classList.add('active-download-button');
             textButton.addEventListener('click', jobTextDownloadButtonHandler);
             textButton.title = 'Click to download.';
         }
@@ -382,6 +388,8 @@ function populateJobTr (job) {
     logLink.setAttribute('target', '_blank');
     logLink.setAttribute('title', 'Click to download.');
     var button = getEl('button');
+    button.classList.add('butn');
+    button.classList.add('active-download-button');
     addEl(button, getTn('Log'));
     addEl(logLink, button);
     addEl(dbTd, logLink);
@@ -1357,16 +1365,20 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
     if (parentId == 'annotator-select-div') {
         if (servermode == false) {
             var btn = getEl('button');
-            btn.className = 'checkbox-group-all-button';
-            btn.textContent = 'All';
+            btn.classList.add('butn');
+            btn.classList.add('active-download-button');
+            btn.classList.add('checkbox-group-all-button');
+            btn.textContent = 'ALL';
             btn.addEventListener('click', function (evt) {
                 checkBoxGroupAllNoneHandler (evt);
             });
             addEl(allNoneDiv, btn);
         }
         var btn = getEl('button');
-        btn.className = 'checkbox-group-none-button';
-        btn.textContent = 'Clear';
+        btn.classList.add('butn');
+        btn.classList.add('active-download-button');
+        btn.classList.add('checkbox-group-none-button');
+        btn.textContent = 'CLEAR';
         btn.addEventListener('click', function (evt) {
             checkBoxGroupAllNoneHandler (evt);
         });
@@ -1383,6 +1395,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         var checkData = checkDatas[i];
         var checkDiv = getEl('div');
         checkDiv.classList.add('checkbox-group-element');
+        //checkDiv.classList.add('checkbox-container');
         checkDiv.setAttribute('name', checkData.name);
         checkDiv.setAttribute('kind', checkData.kind);
         if (checkData.groups != null) {
@@ -1399,8 +1412,11 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         } else {
             addEl(flexbox, checkDiv);
         }
+        var label = getEl('label');
+        label.classList.add('checkbox-container');
+        label.textContent = checkData.label + ' ';
         var check = getEl('input');
-        check.className = 'checkbox-group-check';
+        //check.className = 'checkbox-group-check';
         check.setAttribute('type', 'checkbox');
         check.setAttribute('name', checkData.name);
         check.setAttribute('value', checkData.value);
@@ -1417,11 +1433,19 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
                 onChangeAnnotatorGroupCheckbox(evt);
             });
         }
-        var label = getEl('span');
-        label.className = 'label';
-        label.setAttribute('module', checkData.value);
-        label.textContent = checkData.label + ' ';
+        var span = getEl('span');
+        span.className = 'checkmark';
+        span.setAttribute('module', checkData.value);
+        //label.textContent = checkData.label + ' ';
+        /*
+        var sp = getEl('span');
+        sp.className = 'checkmark';
+        */
         if (checkData.type == 'group') {
+            var t = getEl('span');
+            t.textContent = checkData.label + ' ';
+            t.style.marginLeft = '9px';
+            t.style.cursor = 'default';
             var btn = getEl('span');
             btn.className = 'icon';
             btn.textContent = '\u25B8';
@@ -1449,7 +1473,8 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
                 btn.textContent = text;
             });
             addEl(checkDiv, btn);
-            addEl(checkDiv, label);
+            //addEl(checkDiv, label);
+            addEl(checkDiv, t);
             var sdiv = getEl('div');
             sdiv.id = 'submit-annotator-group-sdiv-' + checkData.name;
             sdiv.classList.add('checkbox-group-element-sdiv');
@@ -1457,8 +1482,10 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
             sdiv.setAttribute('name', checkData.name);
             addEl(checkDiv, sdiv);
         } else {
-            addEl(checkDiv, check);
             addEl(checkDiv, label);
+            addEl(label, check);
+            addEl(label, span);
+            //addEl(checkDiv, sp);
         }
         checkDivs.push(checkDiv);
     }

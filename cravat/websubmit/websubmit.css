@@ -1,5 +1,23 @@
+@font-face {
+    font-family: 'roboto-medium';
+    src: url('/result/fonts/roboto-medium-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-medium-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'roboto-light';
+    src: url('/result/fonts/roboto-light-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-light-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'roboto-bold';
+    src: url('/result/fonts/roboto-bold-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-bold-webfont.woff2') format('woff2');
+}
+
 body * {
-    font-family: 'Gothic A1';
+    font-family: 'roboto-light';
 }
 
 #pageselect {
@@ -82,16 +100,18 @@ body * {
 }
 
 .divtitle {
+    font-family: "roboto-medium";
     font-size: 22px;
-    color: #000000;
+    color: #ffffff;
     top: -15px;
     position: relative;
 }
 
 .input-example-button {
     width: 35px;
-    background-color: #e7e7e7;
+    height: 23px;
     font-size: 11px;
+    /*padding: 1px 1px 1px 1px;*/
 }
 
 .or {
@@ -107,7 +127,7 @@ body * {
 
 .divbanner {
     position: absolute;
-    background-color: #c4cdd1;
+    background-color: #385487;
     width: 100%;
     height: 36px;
     top: 0px;
@@ -117,6 +137,7 @@ body * {
 }
 
 button {
+    font-family: 'roboto-bold';
     background-color: #fbfbfb;
     font-size: 12px;
 }
@@ -256,7 +277,7 @@ button {
     height: 20px;
     top: 6px;
     position: absolute;
-    right: 30px;
+    right: 36px;
 }
 
 .question-icon {
@@ -264,15 +285,6 @@ button {
     top: 6px;
     position: absolute;
     right: 70px;
-}
-
-.submit-annotate-button {
-    font-size: 24px; 
-    padding: 10px; 
-    width: 100%; 
-    background-color: #c4cdd1;
-    margin-bottom: 10px;
-    border-style: ridge;
 }
 
 .checkbox-group-all-none-div {
@@ -290,6 +302,11 @@ button {
     width: 50%;
     overflow: hidden;
     white-space: nowrap;
+}
+
+.checkbox-group-element span.icon {
+    position: relative;
+    top: 16px;
 }
 
 #submit-input-format-select {
@@ -391,7 +408,8 @@ input:checked + .slider:before {
 
 div.checkbox-group-element[kind=group] span.icon {
     position: relative;
-    left: 4px;
+    left: 2px;
+    top: 0px;
 }
 
 div.checkbox-group-element[kind=group] span.label {
@@ -420,14 +438,20 @@ div.checkbox-group-element[kind=group] span.label {
 }
 
 #annotator-select-div button.checkbox-group-all-button {
-    position: relative;
+    /*position: relative;
     border-radius: 5px;
+    font-size: 10px;
+    height: 23px;*/
     font-size: 10px;
 }
 
 #annotator-select-div button.checkbox-group-none-button {
+    /*
     position: relative;
     border-radius: 5px;
+    font-size: 10px;
+    height: 23px;
+    */
     font-size: 10px;
 }
 
@@ -447,5 +471,114 @@ div.checkbox-group-element[kind=group] span.label {
         url(//c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.woff) format("woff"),
         url(//c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.ttf) format("truetype");
     font-weight: 400;
+}
+
+.butn {
+  -webkit-border-radius: 4;
+  -moz-border-radius: 4;
+  border-radius: 4px;
+  font-family: 'roboto-bold';
+  color: #ffffff;
+  /*font-size: 20px;*/
+  background: #385487;
+  /*padding: 10px 20px 10px 20px;*/
+  text-decoration: none;
+}
+
+.butn:hover {
+  background: #42649e;
+  text-decoration: none;
+}
+
+.submit-annotate-button {
+    font-size: 24px; 
+    width: 100%; 
+    margin-bottom: 10px;
+    padding: 9px;
+    /*
+    padding: 10px; 
+    border-style: ridge;
+    background-color: #385487;
+    */
+}
+
+.launch-button {
+    background-color: #c5af8d;
+}
+
+.active-download-button {
+    background-color: #c5af8d;
+}
+
+.inactive-download-button {
+    background-color: #d1d3d4;
+}
+
+.checkbox-container {
+  display: block;
+  position: relative;
+  padding-left: 21px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  /*font-size: 22px;*/
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /*font-size: 12px;*/
+}
+
+/* Hide the browser's default checkbox */
+.checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* Create a custom checkbox */
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 16px;
+  width: 16px;
+  background-color: #e5e6e7;
+}
+
+/* On mouse-over, add a grey background color */
+.checkbox-container:hover input ~ .checkmark {
+  background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.checkbox-container input:checked ~ .checkmark {
+  background-color: #5eb4e5;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+.checkbox-container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* Style the checkmark/indicator */
+.checkbox-container .checkmark:after {
+  left: 4px;
+  top: 0px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
 }
 

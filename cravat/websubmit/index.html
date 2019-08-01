@@ -9,11 +9,6 @@
     <link rel="icon" href="/submit/icon.png" />
     <link rel="stylesheet" href="websubmit.css">
     <link rel="stylesheet" href="/store/webstore.css">
-    <!--
-	<script type="text/javascript" src="../result/js/paramquery-pro-3/pqgrid.min.js" ></script>   
-	<link rel="stylesheet" href="../result/js/paramquery-pro-3/pqgrid.min.css" />
-	<link rel="stylesheet" href="../result/js/paramquery-pro-3/pqgrid.ui.min.css" />
-    -->
     <script type='text/javascript' src='/result/js/pqselect.min.js'></script>
     <link rel='stylesheet' href='/result/css/pqselect.min.css' />
     <script src="websubmit.js?ver=1.4.4"></script>
@@ -24,11 +19,6 @@
         });
     </script> 
     <link href="https://fonts.googleapis.com/css?family=Gothic+A1" rel="stylesheet">
-    <!--
-    <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Hind" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Arimo" rel="stylesheet">
-    -->
 </head>
 
 <body>
@@ -123,7 +113,7 @@
         <a href='http://github.com/KarchinLab/open-cravat/wiki' target='_blank'><img src='question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
         <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='email.png' class='email-icon' onclick='mailto:support@cravat.us' /></a>
         <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' class='threedotsdiv'>
-            <img src='threedots.png' class='threedots' />
+            <img src='menu.png' class='threedots' />
         </div>
     </div>
 
@@ -171,8 +161,8 @@
                             </select>
                             <span style='font-size: 10px;'>)</span>
                             <span style='font-size: 13px;'>Example:</span>
-                            <button value="vcf" class='input-example-button'>VCF</button>
-                            <button value="cravat" class='input-example-button'>tsv</button>
+                            <button value="vcf" class='butn active-download-button input-example-button'>VCF</button>
+                            <button value="cravat" class='butn active-download-button input-example-button'>TSV</button>
                             <div class='or'>OR</div>
                         </td>
                     </tr>
@@ -185,7 +175,7 @@
                         </td>
                     </tr>
                 </table>
-                <div class='divbanner'></div>
+                <div class='divbanner' style='background-color: #5cb5e5;'></div>
             </div>
             <div id='annotchoosediv' class='container'>
                 <span class='divtitle'>Annotations</span>
@@ -193,12 +183,12 @@
                 <br />
                 <div id="annotator-group-select-div"></div>
                 <div id="annotator-select-div"></div>
-                <div class='divbanner'></div>
+                <div class='divbanner' style='background-color: #4a87bd;'></div>
             </div>
         </div>
         <br />
 
-        <div style='text-align: center;'><button id="submit-job-button" class='submit-annotate-button'>Annotate</button></div>
+        <div style='text-align: center;'><button id="submit-job-button" class='butn submit-annotate-button'>ANNOTATE</button></div>
     </div>
 
     </td><td valign='top' style='padding-left: 20px; width: 100%;'>
