@@ -241,3 +241,5 @@ module_tag_desc = {
     'variants': 'modules to study variants at the variant level',
     'visualization widgets': 'modules for visualizing variants',
 }
+
+legacy_gene_level_cols_to_skip = ['base__num_variants', 'base__so', 'base__all_so']

@@ -17,6 +17,7 @@ import re
 import aiosqlite3
 import types
 from distutils.version import LooseVersion
+from cravat import constants
 
 class CravatReport:
 
@@ -118,10 +119,18 @@ class CravatReport:
         if level == 'variant':
             hugo_present = 'base__hugo' in self.colnos['variant']
         datacols, datarows = await self.cf.get_filtered_iterator(level)
+        num_total_cols = len(datacols)
+        colnos_to_skip = []
+        for colno in range(len(datacols)):
+            if datacols[colno] in constants.legacy_gene_level_cols_to_skip:
+                colnos_to_skip.append(colno)
+        should_skip_some_cols = len(colnos_to_skip) > 0
         for datarow in datarows:
             if datarow is None:
                 continue
             datarow = list(datarow)
+            if should_skip_some_cols:
+                datarow = [datarow[colno] for colno in range(num_total_cols) if colno not in colnos_to_skip]
             if level == 'variant':
                 # adds gene level data to variant level.
                 if self.nogenelevelonvariantlevel == False and hugo_present:
@@ -278,6 +287,7 @@ class CravatReport:
         else:
             sql = 'pragma table_info("{}")'.format(header_table)
             await self.cursor.execute(sql)
+            # excluding static gene level aggregation columns for open-cravat < 1.5.0.
             header_cols = [row[1] for row in await self.cursor.fetchall()]
             select_order = [cname for cname in ColumnDefinition.db_order if cname in header_cols]
             sql = 'select {} from {}'.format(
@@ -287,6 +297,8 @@ class CravatReport:
             await self.cursor.execute(sql)
             column_headers = await self.cursor.fetchall()
             for column_header in column_headers:
+                if column_header[0] in constants.legacy_gene_level_cols_to_skip:
+                    continue
                 coldef = ColumnDefinition({})
                 coldef.from_row(column_header, order=select_order)
                 coldefs.append(coldef)
