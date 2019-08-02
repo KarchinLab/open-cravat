@@ -121,9 +121,10 @@ class CravatReport:
         datacols, datarows = await self.cf.get_filtered_iterator(level)
         num_total_cols = len(datacols)
         colnos_to_skip = []
-        for colno in range(len(datacols)):
-            if datacols[colno] in constants.legacy_gene_level_cols_to_skip:
-                colnos_to_skip.append(colno)
+        if level == 'gene':
+            for colno in range(len(datacols)):
+                if datacols[colno] in constants.legacy_gene_level_cols_to_skip:
+                    colnos_to_skip.append(colno)
         should_skip_some_cols = len(colnos_to_skip) > 0
         for datarow in datarows:
             if datarow is None:

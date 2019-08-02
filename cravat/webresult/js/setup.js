@@ -351,9 +351,19 @@ class FilterManager {
 	}
 
 	updateAll(filter) {
+		filter = new CravatFilter(filter);
 		this.updateSampleSelect(filter.sample);
 		this.updateGeneSelect(filter.genes);
 		this.updateVpropUI(filter);
+	}
+}
+
+class CravatFilter {
+	constructor (f) {
+		this.variant = f.variant!==undefined ? f.variant : {operator:'and',rules:[]};
+		this.smartfilter = f.smartfilter!==undefined ? f.smartfilter : {};
+		this.genes = f.gene!==undefined ? f.gene : [];
+		this.sample = f.sample!==undefined ? f.sample : {require:[],reject:[]};
 	}
 }
 

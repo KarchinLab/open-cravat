@@ -70,11 +70,9 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 					filterTab.innerText = filterTitle;
 					var vCountLoad = document.getElementById('filter-count-display');
 					vCountLoad.innerText = `${loaded}/${total} variants`
-                    // if (retrievedVarNum < totalVarNum) {
-                    //     span.textContent = retrievedVarNum + ' (out of ' + totalVarNum + ')';
-                    // } else {
-                    //     span.textContent = retrievedVarNum;
-                    // }
+					if (Object.keys(filterJson) !== 0) {
+						filterMgr.updateAll(filterJson);
+					}
                 }
 			}
 	    });
