@@ -434,6 +434,8 @@ function populateJobTr (job) {
     deleteTd.title = 'Click to delete.';
     deleteTd.style.textAlign = 'center';
     var deleteBtn = getEl('button');
+    deleteBtn.classList.add('butn');
+    deleteBtn.classList.add('active-download-button');
     addEl(deleteBtn, getTn('X'));
     addEl(deleteTd, deleteBtn);
     deleteBtn.setAttribute('jobId', job.id);
@@ -944,7 +946,9 @@ function populateAnnotators () {
             type: 'GET',
             success: function (data) {
                 GLOBALS.annotators = data
-                buildAnnotatorsSelector();
+                setTimeout(function () {
+                    buildAnnotatorsSelector();
+                }, 100);
             }
         })
     });
@@ -1108,6 +1112,11 @@ function buildAnnotatorsSelector () {
         var annotInfo = annotInfos[i];
         var module = localModuleInfo[annotInfo.name];
         var kind = null;
+        /*
+        console.log('@', localModuleInfo);
+        console.log('@', annotInfo);
+        console.log('@@', module);
+        */
         if (module.type == 'annotator') {
             kind = 'module';
         } else if (module.type == 'group') {
@@ -1366,7 +1375,6 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         if (servermode == false) {
             var btn = getEl('button');
             btn.classList.add('butn');
-            btn.classList.add('active-download-button');
             btn.classList.add('checkbox-group-all-button');
             btn.textContent = 'ALL';
             btn.addEventListener('click', function (evt) {
@@ -1376,7 +1384,6 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         }
         var btn = getEl('button');
         btn.classList.add('butn');
-        btn.classList.add('active-download-button');
         btn.classList.add('checkbox-group-none-button');
         btn.textContent = 'CLEAR';
         btn.addEventListener('click', function (evt) {
@@ -1846,10 +1853,10 @@ function openTerminal () {
 
 function resizePage () {
     var div = document.getElementById('submit-form');
-    var h = window.innerHeight - 195;
+    var h = window.innerHeight - 155;
     div.style.height = h + 'px';
     var div = document.getElementById('jobdiv');
-    var h = window.innerHeight - 125;
+    var h = window.innerHeight - 85;
     div.style.height = h + 'px';
 }
 

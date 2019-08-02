@@ -48,15 +48,17 @@ function addEl (pelem, child) {
 
 function onClickStoreHome () {
     var homeButton = document.getElementById('store-home-button');
-    var homeButtonClass = homeButton.className;
-    if (homeButtonClass == 'store-front-all-button-on') {
+    if (homeButton.classList.contains('store-front-all-button-on')) {
         showAllModulesDiv();
-        homeButton.className = 'store-front-all-button-off';
+        homeButton.classList.add('store-front-all-button-off');
+        homeButton.classList.remove('store-front-all-button-on');
         updateFilter();
-    } else if (homeButtonClass == 'store-front-all-button-off') {
+    } else if (homeButton.classList.contains('store-front-all-button-off')) {
         showStoreHome();
-        homeButton.className = 'store-front-all-button-on';
-        document.getElementById('store-tag-reset-button').className = 'store-front-all-button-off';
+        homeButton.classList.add('store-front-all-button-on');
+        homeButton.classList.remove('store-front-all-button-off');
+        document.getElementById('store-tag-reset-button').classList.add('store-front-all-button-off');
+        document.getElementById('store-tag-reset-button').classList.remove('store-front-all-button-on');
     }
 }
 
@@ -66,8 +68,10 @@ function onClickStoreTagResetButton () {
         this.checked = false;
     });
     updateFilter();
-    document.getElementById('store-home-button').className = 'store-front-all-button-off';
-    document.getElementById('store-tag-reset-button').className = 'store-front-all-button-on';
+    document.getElementById('store-home-button').classList.add('store-front-all-button-off');
+    document.getElementById('store-home-button').classList.remove('store-front-all-button-on');
+    document.getElementById('store-tag-reset-button').classList.add('store-front-all-button-on');
+    document.getElementById('store-tag-reset-button').classList.remove('store-front-all-button-off');
 }
 
 function clickTab (value) {
@@ -596,6 +600,9 @@ function populateStoreTagPanel () {
     $(div).empty();
     for (var i = 0; i < tagsCollected.length; i++) {
         var tag = tagsCollected[i];
+        var label = getEl('label');
+        label.className = 'checkbox-container';
+        label.textContent = tag;
         var input = getEl('input');
         input.type = 'checkbox';
         input.value = tag;
@@ -603,12 +610,11 @@ function populateStoreTagPanel () {
         input.addEventListener('click', function (evt) {
             onStoreTagCheckboxChange();
         });
-        addEl(div, input);
         var span = getEl('span');
-        span.class = 'store-tag-span';
-        span.textContent = tag;
-        addEl(div, span);
-        addEl(div, getEl('br'));
+        span.className = 'checkmark';
+        addEl(label, input);
+        addEl(label, span);
+        addEl(div, label);
     }
 }
 
@@ -649,11 +655,14 @@ function updateFilter () {
     populateAllModulesDiv();
     showAllModulesDiv();
     if (filterHasValue) {
-        document.getElementById('store-tag-reset-button').className = 'store-front-all-button-off';
+        document.getElementById('store-tag-reset-button').classList.add('store-front-all-button-off');
+        document.getElementById('store-tag-reset-button').classList.remove('store-front-all-button-on');
     } else {
-        document.getElementById('store-tag-reset-button').className = 'store-front-all-button-on';
+        document.getElementById('store-tag-reset-button').classList.add('store-front-all-button-on');
+        document.getElementById('store-tag-reset-button').classList.remove('store-front-all-button-off');
     }
-    document.getElementById('store-home-button').className = 'store-front-all-button-off';
+    document.getElementById('store-home-button').classList.add('store-front-all-button-off');
+    document.getElementById('store-home-button').classList.remove('store-front-all-button-on');
 }
 
 function onClickModuleTileAbortButton (evt) {
@@ -767,8 +776,9 @@ function onClickModuleTileUpdateButton (evt) {
 
 function getModuleTileUpdateButton (moduleName) {
     var button = getEl('button');
-    button.className = 'modulepanel-update-button';
-    button.textContent = 'Install update';
+    button.classList.add('butn');
+    button.classList.add('modulepanel-update-button');
+    button.textContent = 'UPDATE';
     button.setAttribute('module', moduleName);
     if (updateConflicts.hasOwnProperty(moduleName)) {
         button.setAttribute('disabled','true');
@@ -786,8 +796,9 @@ function getModuleTileUpdateButton (moduleName) {
 
 function getModuleTileUninstallButton (moduleName) {
     var button = getEl('button');
-    button.className = 'modulepanel-uninstall-button';
-    button.textContent = 'Uninstall';
+    button.classList.add('butn');
+    button.classList.add('modulepanel-uninstall-button');
+    button.textContent = 'UNINSTALL';
     button.setAttribute('module', moduleName);
     button.addEventListener('click', function (evt) {
         var moduleName = evt.target.getAttribute('module');
@@ -797,17 +808,22 @@ function getModuleTileUninstallButton (moduleName) {
 }
 
 function getModuleTileInstallButton (moduleName) {
+    var div = getEl('div');
+    div.classList.add('modulepanel-install-button-div');
     var button = getEl('button');
-    button.className = 'modulepanel-install-button';
-    button.textContent = 'Install';
+    button.classList.add('butn');
+    button.classList.add('modulepanel-install-button');
+    button.textContent = '\xa0INSTALL';
     button.setAttribute('module', moduleName);
     button.addEventListener('click', onClickModuleTileInstallButton);
-    return button;
+    addEl(div, button);
+    return div;
 }
 
 function getModuleTileAbortButton (moduleName) {
     var button = getEl('button');
-    button.className = 'modulepanel-stopinstall-button';
+    button.classList.add('butn');
+    button.classList.add('modulepanel-stopinstall-button');
     button.textContent = 'Cancel download';
     button.setAttribute('module', moduleName);
     button.removeEventListener('click', onClickModuleTileInstallButton);

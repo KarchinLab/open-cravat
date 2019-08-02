@@ -16,16 +16,22 @@
          url('/result/fonts/roboto-bold-webfont.woff2') format('woff2');
 }
 
+@font-face {
+    font-family: 'sourcesanspro-bold';
+    src: url('/result/fonts/sourcesanspro-bold-webfont.woff') format('woff'),
+         url('/result/fonts/sourcesanspro-bold-webfont.woff2') format('woff2');
+}
+
 body * {
     font-family: 'roboto-light';
 }
 
 #pageselect {
     position: fixed; 
-    top: 62px; 
+    top: 21px; 
     left: 0px; 
     font-size: 15px; 
-    color: #000000;
+    color: #ffffff;
     z-index: 201;
     outline: none;
 }
@@ -36,25 +42,24 @@ body * {
     padding: 6px;
     height: 24px;
     width: 80px;
-    transition: all 0.3s ease;
+    /*transition: all 0.3s ease;*/
     vertical-align: bottom;
     cursor: pointer;
-    background-color: #f0f0f0;
-    color: #000000;
+    background-color: #d1d3d4;
     height: 20px;
-    border-radius: 8px 8px 0px 0px;
+    border-radius: 2px 2px 0px 0px;
     border: 1px solid #939393
     border-bottom: 0px;
+    margin-left: 2px;
 }
 
 #pageselect div:hover {
-    background-color: #dddddd;
-    color: #000000;
+    background-color: #94d1eb;
 }
 
 #pageselect div[selval="t"] {
-    background-color: #c4cdd1;
-    color: #000000;
+    height: 30px;
+    background-color: #4a87bd;
 }
 
 #pageselect div[disabled='t'] {
@@ -143,23 +148,18 @@ button {
 }
 
 #jobs-table {
-    width: 100%;
+    width: calc(100% - 1px);
     border-collapse: collapse;
     border-spacing: 10px;
 }
 
-/*
-#jobs-table tbody tr:nth-child(even) .job-detail-td {
-    background-color: #eeeeaa;
+#jobs-table thead tr {
+    height: 34px;
+    background-color: #4a87bd;
 }
-
-#jobs-table tbody tr:nth-child(odd) .job-detail-td {
-    background-color: #eeeeaa;
-}
-*/
 
 #jobs-table tr.job-table-tr:hover {
-    background-color: #777777;
+    background-color: #dddddd;
 }
 
 .job-table-tr {
@@ -191,24 +191,27 @@ button {
     font-size: 15px;
 }
 
+#jobs-table thead td {
+    border: 1px solid #dddddd;
+}
+
 #jobs-table tbody tr.job-table-main-tr td {
-    cursor: pointer;
+    border: 1px solid #dddddd;
 }
 
 #jobs-table thead th {
     font-size: 13px;
     font-weight: bold;
-    border-bottom: 1px solid black;
-    box-shadow: 0px 0px 10px 0px #c7c7c7;
+    border-bottom: 1px solid #cccccc;
+    /*box-shadow: 0px 0px 10px 0px #c7c7c7;*/
 }
 
 #annotator-select-div span {
 }
 
 .logo {
-    width: 260px;
-    position: relative;
-    top: 39px;
+    width: 65px;
+    height: 57px;
 }
 
 .headerdiv {
@@ -216,12 +219,11 @@ button {
     top: 0px; 
     width: 100%; 
     z-index: 200; 
-    padding-bottom: 20px; 
-    height: 74px; 
+    height: 62px; 
     background-color: white; 
     left: 0px; 
     right: 0px;
-    border-bottom: 1px solid #a7a7a7;
+    border-bottom: 1px solid #dfdfdf;
 }
 
 #settingsdiv {
@@ -244,9 +246,6 @@ button {
 }
 
 #submitcontentdiv {
-    position: relative;
-    top: 75px;
-    display: block;
     width: 400px;
 }
 
@@ -260,10 +259,11 @@ button {
 
 #refresh-jobs-table-btn {
     width: 14px; 
-    height: 14px;
+    height: 17px;
     position: absolute; 
-    top: 22px; 
-    left: 3px;
+    top: 8px; 
+    left: 8px;
+    padding: 0px;
 }
 
 .threedots {
@@ -389,22 +389,17 @@ input:checked + .slider:before {
     overflow: hidden;
 }
 
+#annotator-group-select-div div.pq-select-button {
+    background-color: #c5af8d;
+}
+
+.ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight {
+    background-color: #c5af8d;
+}
+
 .checkbox-group-element-sdiv[kind=annotator-group-div] {
     width: 200%;
 }
-
-/*
-.checkbox-group-element-sdiv.off {
-    overflow: hidden;
-    max-height: 0px;
-    border: 0px;
-}
-
-.checkbox-group-element-sdiv.on {
-    overflow: hidden;
-    border: 1px solid gray;
-}
-*/
 
 div.checkbox-group-element[kind=group] span.icon {
     position: relative;
@@ -476,13 +471,16 @@ div.checkbox-group-element[kind=group] span.label {
 .butn {
   -webkit-border-radius: 4;
   -moz-border-radius: 4;
-  border-radius: 4px;
+  border-radius: 2px;
   font-family: 'roboto-bold';
   color: #ffffff;
   /*font-size: 20px;*/
-  background: #385487;
+  background: #c5af8d;
   /*padding: 10px 20px 10px 20px;*/
   text-decoration: none;
+  border-style: none;
+  margin-left: 1px;
+  margin-right: 1px;
 }
 
 .butn:hover {
@@ -493,13 +491,8 @@ div.checkbox-group-element[kind=group] span.label {
 .submit-annotate-button {
     font-size: 24px; 
     width: 100%; 
-    margin-bottom: 10px;
     padding: 9px;
-    /*
-    padding: 10px; 
-    border-style: ridge;
     background-color: #385487;
-    */
 }
 
 .launch-button {
@@ -518,7 +511,7 @@ div.checkbox-group-element[kind=group] span.label {
   display: block;
   position: relative;
   padding-left: 21px;
-  margin-bottom: 12px;
+  margin-bottom: 2px;
   cursor: pointer;
   /*font-size: 22px;*/
   -webkit-user-select: none;
@@ -580,5 +573,39 @@ div.checkbox-group-element[kind=group] span.label {
   -webkit-transform: rotate(45deg);
   -ms-transform: rotate(45deg);
   transform: rotate(45deg);
+}
+
+#submitdiv {
+    position: absolute;
+    top: 70px;
+}
+
+#jobdiv {
+    position: relative;
+    overflow: auto;
+}
+
+#input-file {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+
+#input-file + label {
+    font-size: 13px;
+    color: white;
+    background-color: #c5af8d;
+    display: inline-block;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+#input-file:focus + label, #input-file + label:hover {
+    background-color: #385487;
 }
 

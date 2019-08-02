@@ -105,21 +105,20 @@
     Version: <span class="curverspan" style="font-family: monospace;"></span>
 </div>
 
-<div id='submitdiv' class='appdiv'>
-    <div class = 'headerdiv' />
-        <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
-            <img src='logo.png' class='logo' />
-        </div>
-        <a href='http://github.com/KarchinLab/open-cravat/wiki' target='_blank'><img src='question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
-        <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='email.png' class='email-icon' onclick='mailto:support@cravat.us' /></a>
-        <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' class='threedotsdiv'>
-            <img src='menu.png' class='threedots' />
-        </div>
+<div class = 'headerdiv' />
+    <div style='position: absolute; left: calc(50% - 65px); top: 2px;'>
+        <img src='logo_new.png' class='logo' />
     </div>
+    <a href='http://github.com/KarchinLab/open-cravat/wiki' target='_blank'><img src='question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
+    <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='email.png' class='email-icon' onclick='mailto:support@cravat.us' /></a>
+    <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' class='threedotsdiv'>
+        <img src='menu.png' class='threedots' />
+    </div>
+</div>
 
+<div id='submitdiv' class='appdiv'>
     <table><tr><td valign='top' style=''>
     <div id='submitcontentdiv'>
-        <br />
         <div id="submit-form" style='overflow-y: auto;'>
             <div class='container'>
                 <span class='divtitle'>Variants</span>
@@ -139,8 +138,8 @@
                     <tr>
                         <td valign='top' class='variant-input-border-bottom' title="Upload file(s). Select multiple files using ctrl and shift keys">
                                 <br />
-                            Upload:
                             <input type="file" name="input-file" id="input-file" multiple/>
+                            <label for="input-file">Choose a file</label>
                             <div id="mult-inputs-message" style="display: none">
                                 Files:
                                 <div id="mult-inputs-list"></div>
@@ -161,8 +160,8 @@
                             </select>
                             <span style='font-size: 10px;'>)</span>
                             <span style='font-size: 13px;'>Example:</span>
-                            <button value="vcf" class='butn active-download-button input-example-button'>VCF</button>
-                            <button value="cravat" class='butn active-download-button input-example-button'>TSV</button>
+                            <button value="vcf" class='butn input-example-button'>VCF</button>
+                            <button value="cravat" class='butn input-example-button'>TSV</button>
                             <div class='or'>OR</div>
                         </td>
                     </tr>
@@ -175,7 +174,7 @@
                         </td>
                     </tr>
                 </table>
-                <div class='divbanner' style='background-color: #5cb5e5;'></div>
+                <div class='divbanner' style='background-color: #4a87bd;'></div>
             </div>
             <div id='annotchoosediv' class='container'>
                 <span class='divtitle'>Annotations</span>
@@ -191,14 +190,10 @@
         <div style='text-align: center;'><button id="submit-job-button" class='butn submit-annotate-button'>ANNOTATE</button></div>
     </div>
 
-    </td><td valign='top' style='padding-left: 20px; width: 100%;'>
-    <div id="jobdiv" style='position: relative; top: 93px; display: block; overflow: auto;'>
-        <br />
+    </td><td valign='top' style='padding-left: 5px; width: 100%;'>
+    <div id="jobdiv">
         <div style='width: 100%; text-align: right;'>
-            <!--
-            <img src='refresh.png' id='refresh-jobs-table-btn' />
-            -->
-            <button id='refresh-jobs-table-btn'><img src="refresh.png" style='width: 12px; height: 12px; position: absolute; top: -1px; left: 0px;'/></button>
+            <button id='refresh-jobs-table-btn' class='butn'>&#x21ba;</button>
         </div>
         <table id="jobs-table">
             <thead>
@@ -228,6 +223,7 @@
 </div> <!-- submitdiv -->
 
 <div id='storediv' class='appdiv' style='display: none;'>
+    <!--
     <div class='headerdiv' >
         <div style='position: absolute; left: calc(50% - 180px); bottom: 40px;'>
             <img src='logo.png' class='logo' />
@@ -235,17 +231,18 @@
         <a href='http://github.com/KarchinLab/open-cravat/wiki' target='_blank'><img src='question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
         <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='email.png' class='email-icon' onclick='mailto:support@cravat.us' /></a>
         <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' class='threedotsdiv'>
-            <img src='threedots.png' class='threedots' />
+            <img src='menu.png' class='threedots' />
         </div>
     </div>
+    -->
     <div id='messagediv'></div>
     <div id='storebodydiv'>
         <div id='storemenudiv'>
             <input type='text' id='store-namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()'/>
             <br />
             <br />
-                <button id='store-home-button' onclick='onClickStoreHome();' class='store-front-all-button-on'>Front Page</button>
-                <button id='store-tag-reset-button' onclick='onClickStoreTagResetButton();' class='store-front-all-button-off'>View All</button>
+                <button id='store-home-button' onclick='onClickStoreHome();' class='butn store-front-all-button-on'>Front Page</button>
+                <button id='store-tag-reset-button' onclick='onClickStoreTagResetButton();' class='butn store-front-all-button-off'>View All</button>
                 <br />
                 <br />
                 <span class='store-switch-text'>and</span>
@@ -256,23 +253,26 @@
                 <span class='store-switch-text'>or</span>
                 <br />
                 <hr />
-                <input type='checkbox' class='store-tag-checkbox' value='installed' id='store-tag-checkbox-installed' onclick='onStoreTagCheckboxChange();'/> Installed
-                <br />
-                <input type='checkbox' class='store-tag-checkbox' value='newavailable' id='store-tag-checkbox-newavailable' onclick='onStoreTagCheckboxChange();'/> Update available
-                <br />
+                <label class='checkbox-container'>Installed
+                    <input type='checkbox' class='store-tag-checkbox' value='installed' id='store-tag-checkbox-installed' onclick='onStoreTagCheckboxChange();'/>
+                    <span class='checkmark'>
+                </label>
+                <label class='checkbox-container'>Update available
+                    <input type='checkbox' class='store-tag-checkbox' value='newavailable' id='store-tag-checkbox-newavailable' onclick='onStoreTagCheckboxChange();'/>
+                    <span class='checkmark'>
+                </label>
                 <hr />
                 <div id='store-tag-custom-div'></div>
                 <hr />
                 <div id='store-install-all-button-div'>
                     <button id='store-install-all-button' onclick='onClickStoreInstallAllButton();' style='font-size: 14px;'>Install All</button>
                 <br />
-                <br />
             </div>
         </div>
         <div>
             <div id='store-update-all-div' >
                 <span id='store-update-all-span' style='color: red; font-size: 12px;'>Updates to your installed modules are available!</span>
-                <button id='store-update-all-button' onclick='onClickStoreUpdateAllButton();' style='font-size: 12px;'>Update All</button>
+                <button id='store-update-all-button' class='butn' onclick='onClickStoreUpdateAllButton();' style='font-size: 12px;'>Update All</button>
             </div>
             <div id='store-home-div'>
                 <span class='store-home-sectiontitle'>Most Downloaded</span>
