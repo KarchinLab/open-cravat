@@ -55,8 +55,7 @@ function submit () {
         annotators: [],
         reports: []
     }
-    var annotChecks = $('#annotator-select-div')
-                        .find('.checkbox-group-check');
+    var annotChecks = $('#annotator-select-div').find('input[type=checkbox][kind=module]');
     for (var i = 0; i<annotChecks.length; i++){
         var cb = annotChecks[i];
         if (cb.checked) {
@@ -1577,29 +1576,16 @@ function onChangeAnnotatorGroupCheckbox (tags) {
 }
 
 function checkBoxGroupAllNoneHandler (event) {
-    var elem = $(event.target);
+    var $elem = $(event.target);
     let checked;
-    if (elem.hasClass('checkbox-group-all-button')) {
+    if ($elem.hasClass('checkbox-group-all-button')) {
         checked = true;
     } else {
         checked = false;
     }
-    var checkElems = elem.closest('.checkbox-group')
-                           .find('input.checkbox-group-check');
-    for (var i = 0; i<checkElems.length; i++){
-        var checkElem = checkElems[i];
-        checkElem.checked = checked;
-    }
-    if (elem[0].parentElement.parentElement.id == 'annotator-select-div') {
-        var chk = null;
-        var cls = elem[0].className
-        if (cls == 'checkbox-group-all-button') {
-            chk = true;
-        } else if (cls == 'checkbox-group-none-button') {
-            chk = false;
-        }
-        $('#annotator-group-select-div input[type=checkbox]').prop('checked', chk);
-    }
+    $elem.parent().siblings('.checkbox-group-flexbox').children('.checkbox-group-element.show').each(function (i, elem) {
+        $(elem).find('input').prop('checked', checked);
+    });
 }
 
 function populateReports () {
