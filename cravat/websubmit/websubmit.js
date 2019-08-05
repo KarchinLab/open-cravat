@@ -1840,7 +1840,7 @@ function openTerminal () {
 
 function resizePage () {
     var div = document.getElementById('submit-form');
-    var h = window.innerHeight - 155;
+    var h = window.innerHeight - 185;
     div.style.height = h + 'px';
     var div = document.getElementById('jobdiv');
     var h = window.innerHeight - 85;

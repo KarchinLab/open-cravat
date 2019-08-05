@@ -120,7 +120,7 @@
     <table><tr><td valign='top' style=''>
     <div id='submitcontentdiv'>
         <div id="submit-form" style='overflow-y: auto;'>
-            <div class='container'>
+            <div id='submit-variant-div' class='container'>
                 <span class='divtitle'>Variants</span>
                 <table>
                     <tr>
@@ -150,8 +150,7 @@
                         <td valign='top' class='variant-input-border-bottom' style='text-align: right;'>
                             <br />
                             <div style='text-align: left;'>
-                                <span style='vertical-align: top;'>Type:</span>
-                                <textarea rows="1" id="input-text" style='' placeholder="Input text" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
+                                <textarea rows="1" id="input-text" style='' placeholder="Enter variants" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
                             <span style='font-size: 9px;'>(Force format:</span>
                             <select id='submit-input-format-select'>
@@ -174,19 +173,19 @@
                         </td>
                     </tr>
                 </table>
-                <div class='divbanner' style='background-color: #4a87bd;'></div>
+                <div class='divbanner' style='background-color: #9a7946;'></div>
             </div>
+            <div class='chevrondiv'><div class='chevron chevron1to2'></div></div>
             <div id='annotchoosediv' class='container'>
                 <span class='divtitle'>Annotations</span>
                 <br />
                 <br />
                 <div id="annotator-group-select-div"></div>
                 <div id="annotator-select-div"></div>
-                <div class='divbanner' style='background-color: #4a87bd;'></div>
+                <div class='divbanner' style='background-color: #3175b0;'></div>
             </div>
         </div>
-        <br />
-
+		<div class='chevrondiv'><div class='chevron chevron2to3'></div></div>
         <div style='text-align: center;'><button id="submit-job-button" class='butn submit-annotate-button'>ANNOTATE</button></div>
     </div>
 

@@ -98,7 +98,6 @@ body * {
     padding-top: 18px; 
     padding-bottom: 14px; 
     margin-right: 10px;
-    margin-bottom: 20px;
 }
 
 .container * {
@@ -106,25 +105,18 @@ body * {
 }
 
 .divtitle {
-    font-family: "roboto-medium";
+    font-family: sourcesanspro-bold;
     font-size: 22px;
     color: #ffffff;
     top: -15px;
     position: relative;
-}
-
-.input-example-button {
-    width: 35px;
-    height: 23px;
-    font-size: 11px;
-    /*padding: 1px 1px 1px 1px;*/
+    z-index: 1;
 }
 
 .or {
     position: absolute;
     top: -17px;
     left: 30px;
-    background-color: white;
     padding-top: 5px;
     padding-bottom: 5px;
     width: 26px;
@@ -138,7 +130,6 @@ body * {
     height: 36px;
     top: 0px;
     left: 0px;
-    z-index: -1;
     border-radius: 4px 4px 0px 0px;
 }
 
@@ -256,7 +247,7 @@ button {
 }
 
 #input-text {
-    width: calc(100% - 43px);
+    width: calc(100% + 40px);
 }
 
 #refresh-jobs-table-btn {
@@ -424,7 +415,7 @@ input:checked + .slider:before {
 }
 
 #annotator-group-select-div div.pq-select-button {
-    background-color: #c5af8d;
+    background-color: white;
 }
 
 .ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight {
@@ -476,7 +467,7 @@ input:checked + .slider:before {
   font-family: 'roboto-bold';
   color: #ffffff;
   /*font-size: 20px;*/
-  background: #c5af8d;
+  background-color: #c5af8d;
   /*padding: 10px 20px 10px 20px;*/
   text-decoration: none;
   border-style: none;
@@ -489,11 +480,18 @@ input:checked + .slider:before {
   text-decoration: none;
 }
 
+.input-example-button {
+    width: 35px;
+    height: 23px;
+    font-size: 11px;
+    background-color: #6e593a;
+}
+
 .submit-annotate-button {
     font-size: 24px; 
     width: 100%; 
     padding: 9px;
-    background-color: #385487;
+    background-color: #de6342;
 }
 
 .launch-button {
@@ -599,9 +597,10 @@ input:checked + .slider:before {
 }
 
 #input-file + label {
+    font-family: roboto-medium;
     font-size: 13px;
     color: white;
-    background-color: #c5af8d;
+    background-color: #6e593a;
     display: inline-block;
     padding-left: 10px;
     padding-right: 10px;
@@ -611,5 +610,66 @@ input:checked + .slider:before {
 
 #input-file:focus + label, #input-file + label:hover {
     background-color: #94d1eb;
+}
+
+#submit-variant-div {
+    background-color: #c6b08b;
+    color: black;
+}
+
+#annotchoosediv {
+    background-color: #5fa3c6;
+	color: white;
+}
+
+#annotchoosediv .div-header {
+	color: white;
+}
+
+.chevron {
+  position: relative;
+  text-align: center;
+  padding: 5px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  height: 2px;
+  width: 45px;
+  left: 157px;
+}
+
+.chevron:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 51%;
+  transform: skew(0deg, 23deg);
+}
+
+.chevron:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 50%;
+  transform: skew(0deg, -23deg);
+}
+
+.chevron1to2:before {
+  background-color: #c6b08b;
+}
+
+.chevron1to2:after {
+  background-color: #5fa3c6;
+}
+
+.chevron2to3:before {
+  background-color: #5fa3c6;
+}
+
+.chevron2to3:after {
+  background-color: #de6342;
 }
 
