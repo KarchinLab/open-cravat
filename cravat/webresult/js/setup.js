@@ -364,7 +364,7 @@ class CravatFilter {
 	constructor (f) {
 		this.variant = f.variant!==undefined ? f.variant : {operator:'and',rules:[]};
 		this.smartfilter = f.smartfilter!==undefined ? f.smartfilter : {};
-		this.genes = f.gene!==undefined ? f.gene : [];
+		this.genes = f.genes!==undefined ? f.genes : [];
 		this.sample = f.sample!==undefined ? f.sample : {require:[],reject:[]};
 	}
 }
