@@ -51,6 +51,7 @@ body * {
     border: 1px solid #939393
     border-bottom: 0px;
     margin-left: 2px;
+    font-family: roboto-medium;
 }
 
 #pageselect div:hover {
@@ -484,7 +485,7 @@ div.checkbox-group-element[kind=group] span.label {
 }
 
 .butn:hover {
-  background: #42649e;
+  background: #94d1eb;
   text-decoration: none;
 }
 
@@ -606,6 +607,6 @@ div.checkbox-group-element[kind=group] span.label {
 }
 
 #input-file:focus + label, #input-file + label:hover {
-    background-color: #385487;
+    background-color: #94d1eb;
 }
 
