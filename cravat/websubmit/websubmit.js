@@ -434,7 +434,7 @@ function populateJobTr (job) {
     deleteTd.style.textAlign = 'center';
     var deleteBtn = getEl('button');
     deleteBtn.classList.add('butn');
-    deleteBtn.classList.add('active-download-button');
+    /*deleteBtn.classList.add('active-download-button');*/
     addEl(deleteBtn, getTn('X'));
     addEl(deleteTd, deleteBtn);
     deleteBtn.setAttribute('jobId', job.id);
