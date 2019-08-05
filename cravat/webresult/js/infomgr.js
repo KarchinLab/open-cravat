@@ -60,7 +60,7 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 					var loaded = jsonResponseData.data.length;
 					var total = infomgr.jobinfo['Number of unique input variants'];
 					var filterTab = document.getElementById('tabhead_filter');
-					var filterTitle = 'Filter';
+					var filterTitle = 'FILTER';
 					if (loaded != total) {
 						filterTitle += ` ${loaded}/${total}`;
 						filterTab.classList.add('active');
