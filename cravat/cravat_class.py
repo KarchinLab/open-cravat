@@ -582,6 +582,7 @@ class Cravat (object):
             cmd.append('-x')
         if self.verbose:
             print(' '.join(cmd))
+        self.update_status('Running {title} ({level})'.format(title='Aggregator', level='variant'))
         v_aggregator = Aggregator(cmd)
         v_aggregator.run()
         rtime = time.time() - stime
@@ -597,6 +598,7 @@ class Cravat (object):
                '-n', self.run_name]
         if self.verbose:
             print(' '.join(cmd))
+        self.update_status('Running {title} ({level})'.format(title='Aggregator', level='gene'))
         g_aggregator = Aggregator(cmd)
         g_aggregator.run()
         rtime = time.time() - stime
@@ -612,6 +614,7 @@ class Cravat (object):
                '-n', self.run_name]
         if self.verbose:
             print(' '.join(cmd))
+        self.update_status('Running {title} ({level})'.format(title='Aggregator', level='sample'))
         s_aggregator = Aggregator(cmd)
         s_aggregator.run()
         rtime = time.time() - stime
@@ -626,6 +629,7 @@ class Cravat (object):
                '-n', self.run_name]
         if self.verbose:
             print(' '.join(cmd))
+        self.update_status('Running {title} ({level})'.format(title='Aggregator', level='mapping'))
         m_aggregator = Aggregator(cmd)
         m_aggregator.run()
         rtime = time.time() - stime
