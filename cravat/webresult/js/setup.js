@@ -126,16 +126,12 @@ class FilterManager {
 			.attr('id', this.sampleSelectId);
 		outerDiv.append(sampleSelDiv);
 		let sampleIds = getFilterCol('base__samples').categories;
-		let maxLen = sampleIds.reduce((a,b) => {return a.length>b.length ? a : b}, '').length;
-		maxLen = maxLen > 25 ? 25 : maxLen;
-		let sboxMaxWidth = `${maxLen}ch`;
 		for (let i=0; i<sampleIds.length; i++) {
 			let sid = sampleIds[i];
 			let sampleBox = $(getEl('div'))
 				.addClass('sample-selector')
 				.click(this.onSampleSelectorClick)
 				.addClass('sample-neutral')
-				.css('max-width', sboxMaxWidth)
 				.attr('title', sid);
 			sampleSelDiv.append(sampleBox);
 			sampleBox.append($(getEl('span'))
