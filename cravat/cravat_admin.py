@@ -187,7 +187,7 @@ def main ():
     def print_info(args):
         module_name = args.module
         installed = False
-        available = False
+        remote_available = False
         up_to_date = False
         local_info = None
         remote_info = None
@@ -196,17 +196,32 @@ def main ():
             remote_info = au.get_remote_module_info(module_name)
             print(remote_info)
             if remote_info != None:
-                available = True
+                remote_available = True
         except LookupError:
-            available = False
-        if available:
+            remote_available = False
+        # Local
+        release_note = {}
+        try:
+            local_info = au.get_local_module_info(module_name)
+            if local_info != None:
+                installed = True
+                del local_info.readme
+                release_note = local_info.conf.get('release_note', {})
+            else:
+                installed = False
+        except LookupError:
+            installed = False
+        if remote_available:
             versions = remote_info.versions
             data_sources = remote_info.data_sources
             new_versions = []
             for version in versions:
                 data_source = data_sources.get(version, None)
+                note = release_note.get(version, None)
                 if data_source:
                     version = version + ' (data source ' + data_source + ')'
+                if note:
+                    version = version + ' ' + note
                 new_versions.append(version)
             remote_info.versions = new_versions
             del remote_info.data_sources
@@ -222,16 +237,6 @@ def main ():
                 if 'desc' in col:
                     desc = col['desc']
                 print('  {}: {}'.format(col['title'], desc))
-        # Local
-        try:
-            local_info = au.get_local_module_info(module_name)
-            if local_info != None:
-                installed = True
-                del local_info.readme
-            else:
-                installed = False
-        except LookupError:
-            installed = False
         if installed:
             print('INSTALLED')
             if args.include_local:
@@ -242,7 +247,7 @@ def main ():
                 print(dump)
         else:
             print('NOT INSTALLED')
-        if installed and available:
+        if installed and remote_available:
             if installed and local_info.version == remote_info.latest_version:
                 up_to_date = True
             else:
