@@ -127,6 +127,9 @@ class FilterManager {
 			.attr('id', this.sampleSelectId);
 		outerDiv.append(sampleSelDiv);
 		let sampleIds = getFilterCol('base__samples').categories;
+		if (sampleIds.length==0 || (sampleIds.length==1 && !sampleIds[0])) {
+			outerDiv.closest('.filter-section').css('display','none');
+		}
 		for (let i=0; i<sampleIds.length; i++) {
 			let sid = sampleIds[i];
 			let sampleBox = $(getEl('div'))
