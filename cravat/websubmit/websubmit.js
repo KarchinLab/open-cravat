@@ -1849,7 +1849,8 @@ function resizePage () {
 function fileInputChange(event) {
     var fileInputElem = event.target;
     var files = fileInputElem.files;
-    if (files.length > 1) {
+    console.log('@', files);
+    if (files.length >= 1) {
         $('#mult-inputs-message').css('display','block');
         var $fileListDiv = $('#mult-inputs-list');
         $fileListDiv.empty();
@@ -1867,7 +1868,7 @@ function fileInputChange(event) {
 function populateMultInputsMessage() {
     var fileInputElem = document.getElementById('input-file');
     var files = fileInputElem.files;
-    if (files.length > 1) {
+    if (files.length >= 1) {
         $('#mult-inputs-message').css('display','block');
         var $fileListDiv = $('#mult-inputs-list');
         $fileListDiv.empty();
