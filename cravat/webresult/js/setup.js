@@ -865,6 +865,7 @@ function makeInfoTab (rightDiv) {
 	// Widgets
 	var widgetDiv = getEl('div');
 	widgetDiv.id = 'detailcontainerdiv_info';
+    widgetDiv.className = 'detailcontainerdiv';
 	addEl(rightContentDiv, widgetDiv);
 }
 

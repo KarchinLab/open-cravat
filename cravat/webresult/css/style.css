@@ -49,7 +49,6 @@ body * {
 	height: 28px;
 	padding: 3px;
 	font-size: 14px;
-    /*z-index: 100;*/
     border-radius: 6px;
     left: 5px;
 }
@@ -62,7 +61,8 @@ body * {
     font-size: 13px;
     border: none;
 	cursor: pointer;
-    z-index: 100;
+    font-family: roboto-medium;
+    color: white;
 }
 
 .menu2_container {
@@ -206,9 +206,9 @@ table.detailtable td {
 div.tabContent {
 	position: absolute;
 	top: 62px;
-	width: calc(100% - 12px);
-	/*border: 1px solid #c9c3ba;*/ 
-	padding: 0.5em; 
+    left: 0px;
+	width: calc(100% - 16px);
+	padding: 8px;
 	background-color: #ffffff; 
 	height: -moz-calc(100% - 90px);
 	height: -webkit-calc(100% - 90px);
@@ -262,9 +262,13 @@ div.tabContent.hide {
 .detaildiv {
 	overflow: auto;
 	position: absolute;
-	width: calc(100% - 6px);
+	width: calc(100% - 8px);
 	bottom: 10px;
 	height: 350px;
+}
+
+.detailcontainerdiv {
+    padding-top: 8px;
 }
 
 .detailcontainerwrapdiv {
@@ -285,11 +289,7 @@ div.tabContent.hide {
 .detailwidget {
 	font-size: 12px;
 	border: 1px solid #d0d0d0;
-	padding: 5px;
-	margin: 4px;
-    padding-top: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+    padding: 0px;
 }
 
 .detailwidgetheader {
@@ -691,7 +691,7 @@ div.pq-select-menu>.pq-select-option-label {
 
 #info_div {
 	display: inline-block;
-    width: calc(100% - 24px);
+    width: calc(100% - 30px);
     border: 1px solid #acacac;
 }
 
@@ -962,17 +962,18 @@ div.pq-select-menu>.pq-select-option-label {
 .butn {
   -webkit-border-radius: 4;
   -moz-border-radius: 4;
-  border-radius: 4px;
-  font-family: Arial;
+  border-radius: 2px;
+  font-family: 'roboto-medium';
   color: #ffffff;
-  font-size: 20px;
-  background: #385487;
-  padding: 10px 20px 10px 20px;
+  background: #c5af8d;
   text-decoration: none;
+  border-style: none;
+  margin-left: 1px;
+  margin-right: 1px;
 }
 
 .butn:hover {
-  background: #42649e;
+  background: #94d1eb;
   text-decoration: none;
 }
 

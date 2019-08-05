@@ -141,7 +141,7 @@ function resizesTheWindow () {
 	var rightDiv = document.getElementById('rightdiv_' + currentTab);
 	var cellValueDiv = document.getElementById('cellvaluediv_' + currentTab);
 	var browserHeight = isNaN(window.innerHeight) ? window.clientHeight : window.innerHeight;
-	var rightDivHeight = browserHeight - 67;
+	var rightDivHeight = browserHeight - 70;
     var tableDivHeight = 0;
     if (tableDiv) {
         tableDivHeight = tableDiv.offsetHeight;
