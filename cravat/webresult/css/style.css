@@ -24,7 +24,6 @@
 
 body * {
     font-family: 'roboto-light';
-	font-size: 10px;
 	margin: 0px;
 }
 
@@ -325,6 +324,10 @@ div.tabContent.hide {
 	padding: 0px;
     padding-left: 7px;
     padding-right: 7px;
+}
+
+.detailcontentdiv * {
+    font-size: 11px;
 }
 
 .tablecolumnselectorpanel {
