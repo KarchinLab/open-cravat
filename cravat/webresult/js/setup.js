@@ -708,9 +708,7 @@ function makeFilterJson () {
 		fjs.variant = makeGroupFilter(qbRoot);
 		fjs.smartfilter = {};
 	}
-	
 	filterJson = fjs;
-	console.log(filterJson);
 }
 
 function addSfValue(topRule, value) {
@@ -1537,7 +1535,8 @@ function populateWidgetSelectorPanel () {
 		var generator = widgetGenerators[widgetName]['info'];
 		var callServer = generator['callserver'];
 		var data = generator['variables']['data'];
-		if (callServer && data == undefined) {
+		if (callServer) {
+        /*if (true) {*/
 			if (generator['beforecallserver'] != undefined) {
 				generator['beforecallserver']();
 			}
