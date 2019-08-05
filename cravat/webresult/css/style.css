@@ -49,7 +49,7 @@ body * {
 	height: 28px;
 	padding: 3px;
 	font-size: 14px;
-    border-radius: 6px;
+    border-radius: 3px 3px 0px 0px;
     left: 5px;
 }
 
@@ -68,18 +68,15 @@ body * {
 .menu2_container {
 	display: none;
 	position: absolute;
-	top: 23px;
+	top: 31px;
 	left: -3px;
-	background-color: #c8c8c8;
+	background-color: #c5af8d;
 	width: 150px;
-	border: 1px solid #888888;
     z-index: 100;
 }
 
 .menu2 {
 	position: relative;
-	z-index: 1;
-	background-color: #c8c8c8;
 	color: black;
 	width: 130px;
 	padding-left: 6px;
@@ -90,12 +87,11 @@ body * {
 
 .menu3 {
     display: none;
-    left: 145px;
     position: absolute;
-    border: 1px solid #888888;
-    background-color: #c8c8c8;
+    top: 6px;
+    left: 150px;
+    background-color: #c5af8d;
     z-index: 100;
-    top: 0px;
 }
 
 .menu1 a {
