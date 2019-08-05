@@ -1,5 +1,29 @@
-body {
-	font-family: Roboto;
+@font-face {
+    font-family: 'roboto-medium';
+    src: url('/result/fonts/roboto-medium-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-medium-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'roboto-light';
+    src: url('/result/fonts/roboto-light-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-light-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'roboto-bold';
+    src: url('/result/fonts/roboto-bold-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-bold-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'sourcesanspro-bold';
+    src: url('/result/fonts/sourcesanspro-bold-webfont.woff') format('woff'),
+         url('/result/fonts/sourcesanspro-bold-webfont.woff2') format('woff2');
+}
+
+body * {
+    font-family: 'roboto-light';
 	font-size: 10px;
 	margin: 0px;
 }
@@ -20,12 +44,15 @@ body {
 	display: inline-block;
     vertical-align: bottom;
 	position: relative;
-	background-color: #d1d1d1;
+	background-color: #c5af8d;
+    color: white;
 	top: 0px;
-	height: 20px;
+	height: 28px;
 	padding: 3px;
 	font-size: 14px;
-    z-index: 100;
+    /*z-index: 100;*/
+    border-radius: 6px;
+    left: 5px;
 }
 
 .menu1 {
@@ -137,7 +164,7 @@ table.detailtable td {
 	padding: 3px;
 	margin: 5px;
 	font-size: 10px;
-	font-family: Roboto;
+	font-family: roboto-light;
 }
 
 .hiddencolumn[hide="true"] {
@@ -149,26 +176,28 @@ table.detailtable td {
 }
 
 .tabhead {
-	margin-right: -1px;
+	margin-right: 2px;
     display: inline-block;
     height: 14px;
     padding: 6px;
     transition: all 0.3s ease;
     vertical-align: bottom;
     font-size: 13px;
-    border: 1px solid #5b8588;
     cursor: pointer;
     position: relative;
     top: 4px;
+    font-family: roboto-medium;
+    color: white;
+    background-color: #d1d3d4;
 }
 
 .tabhead:hover {
-	background-color: #f0f0f0;
+	background-color: #94d1eb;
     height: 30px;
 }
 
 .tabhead.show {
-	background-color: #d6d6d6;
+	background-color: #4a87bd;
     height: 30px;
 }
 
@@ -196,17 +225,17 @@ div.tabContent.hide {
 }
 
 .pq-grid-cell {
-	font-family: Roboto;
+	font-family: roboto-light;
 	font-size: 12px;
 }
 
 .pq-grid-col {
-	font-family: Roboto;
+	font-family: roboto-light;
 	font-size: 12px;
 }
 
 .ui-widget {
-	font-family: Roboto;
+	font-family: roboto-light;
 	font-size: 12px;
 }
 
@@ -277,9 +306,9 @@ div.tabContent.hide {
 .detailwidgettitle {
 	display: inline-block;
 	width: calc(100% - 4px);
-	background: #d1dae0;
+	background: #4a87bd;
+    font-family: sourcesanspro-bold;
 	font-size: 13px;
-	font-weight: bold;
     height: 18px;
     margin-bottom: 6px;
 }
@@ -374,7 +403,7 @@ div.tabContent.hide {
 }
 
 .detailwidgetselect {
-	font-family: Roboto;
+	font-family: roboto-light;
 	font-size: 11px;
 }
 
@@ -388,8 +417,8 @@ div.tabContent.hide {
 }
 
 .section_header {
-	font-size: 16px;
-	font-weight: bold;
+	font-size: 13px;
+    font-family: sourcesanspro-bold;
 }
 
 .inlineselect {
@@ -660,20 +689,6 @@ div.pq-select-menu>.pq-select-option-label {
 	display: inline-block;
     width: calc(100% - 24px);
     border: 1px solid #acacac;
-}
-
-@font-face {
-    font-family: "Roboto";
-    src: url("../fonts/Roboto-Regular.ttf") format('truetype');
-    font-weight: 400;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: "Roboto";
-    src: url('../fonts/Roboto-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
 }
 
 #filterbutton {
@@ -951,5 +966,9 @@ div.pq-select-menu>.pq-select-option-label {
 .butn:hover {
   background: #42649e;
   text-decoration: none;
+}
+
+.pq-grid-cell, .pq-grid-number-cell {
+    padding: 0px;
 }
 

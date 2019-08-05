@@ -1560,8 +1560,6 @@ function populateWidgetSelectorPanel () {
 					drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
 				},
 			});
-		} else if (callServer && data != undefined) {
-			drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
 		} else {
 			drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, undefined);
 		}

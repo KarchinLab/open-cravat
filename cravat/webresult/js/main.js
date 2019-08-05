@@ -224,7 +224,7 @@ function makeTabHeadTabBody (resultTableLevel) {
 	if (tabTitle == 'info') {
 		tabTitle = 'summary';
 	}
-	span.textContent = tabTitle[0].toUpperCase() + tabTitle.substring(1);
+	span.textContent = tabTitle.toUpperCase();
 	addEl(tabHeadsDiv, span);
 	addEl(body, div);
 }
