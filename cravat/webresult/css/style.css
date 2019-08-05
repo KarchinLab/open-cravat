@@ -932,6 +932,10 @@ div.pq-select-menu>.pq-select-option-label {
 	height: 100%;
 	width: 75%;
 }
+#saved-filter-header {
+	font-size: 24px;
+	margin-bottom: 0.2em;
+}
 #saved-filter-list {
 	padding-inline-start: 0px;
 }
@@ -975,3 +979,6 @@ div.pq-select-menu>.pq-select-option-label {
     padding: 0px;
 }
 
+.title {
+	font-family: sourcesanspro-bold;
+}
