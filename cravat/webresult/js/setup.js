@@ -627,6 +627,7 @@ function makeFilterTab (rightDiv) {
 	loadControls.append(filterCount);
 	let filterApply = $(getEl('button'))
 		.attr('id', 'load_button')
+		.addClass('butn')
 		.append('Apply filter')
 		.click(function(evt) {
 			var infoReset = resetTab['info'];

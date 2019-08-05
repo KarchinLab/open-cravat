@@ -827,7 +827,7 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .filter-header {
-	background-color: #d1dae0;
+	background-color: #4a87bd;
 	font-size: 18px;
 	cursor: pointer;
 }
@@ -840,8 +840,9 @@ div.pq-select-menu>.pq-select-option-label {
 
 .filter-section {
 	margin: 10px;
-	border: 1px solid gray;
+	border: 0.5px solid #939393;
 	max-width: 800px;
+	border-radius: 4px;
 }
 
 
@@ -855,7 +856,7 @@ div.pq-select-menu>.pq-select-option-label {
 
 .vprop-option {
 	font-size: 18px;
-	background-color: #d1dae0;
+	background-color: #d1d3d4;
 	width: 50%;
 	text-align: center;
 	float: left;
@@ -863,7 +864,7 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .vprop-option.active {
-	background-color: #96b5c7;
+	background-color: #4a87bd;
 }
 
 .filter-header-arrow::after {
@@ -896,11 +897,10 @@ div.pq-select-menu>.pq-select-option-label {
 #load_button {
 	margin-left: auto;
 	width: 50%;
-	font-size: 18px;
 }
 #filter-save {
 	margin-left: 0.5ch;
-	height: 1.25em;
+	height: 2em;
 	cursor: pointer;
 }
 #tabhead_filter.active {
@@ -932,7 +932,7 @@ div.pq-select-menu>.pq-select-option-label {
 	cursor: pointer;
 }
 .filter-list-item-title:hover {
-	background-color: #d1dae0;
+	background-color: #4a87bd;
 }
 .filter-list-item-delete {
 	margin-left: auto;
