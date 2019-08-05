@@ -759,24 +759,35 @@ div.pq-select-menu>.pq-select-option-label {
 	cursor: pointer;
 	min-width: 10ch;
 	vertical-align: middle;
+	font-size: 16px;
+	-webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
 }
 
-.sample-state-span {
-	border: 1px solid black;
-	display: inline-block;
-	font-size: 16px;
+.sample-selector:hover {
+	background-color: #e6e7e8;
 }
+
+.sample-state-span::before {
+	font-size: 20px;
+}
+
 .sample-selector.sample-neutral > .sample-state-span::before {
-	content: "\2714";
-	visibility: hidden;
+	content: "\2610";
+	color: #d1d3d4;
 }
 .sample-selector.sample-require > .sample-state-span::before {
-	content: "\2714";
+	content: "\2611";
 	color: green;
 }
 
 .sample-selector.sample-reject > .sample-state-span::before {
-	content: "\2716";
+	content: "\2612";
     color: red;
 }
 

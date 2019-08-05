@@ -135,7 +135,7 @@ class FilterManager {
 				.addClass('sample-selector')
 				.click(this.onSampleSelectorClick)
 				.addClass('sample-neutral')
-				.css('max-width', sboxMaxWidth)
+				// .css('max-width', sboxMaxWidth)
 				.attr('title', sid);
 			sampleSelDiv.append(sampleBox);
 			sampleBox.append($(getEl('span'))
