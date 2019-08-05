@@ -310,6 +310,34 @@ button {
     top: 16px;
 }
 
+.checkbox-group-element-sdiv[kind=annotator-group-div] {
+    width: 200%;
+}
+
+div.checkbox-group-element[kind=group] span.icon {
+    position: relative;
+    left: 2px;
+    top: 0px;
+}
+
+div.checkbox-group-element[kind=group] span.label {
+    position: relative;
+    left: 7px;
+}
+
+#annotator-select-div button.checkbox-group-all-button {
+    font-size: 10px;
+}
+
+#annotator-select-div button.checkbox-group-none-button {
+    font-size: 10px;
+}
+
+#annotator-select-div > .checkbox-group-flexbox > .checkbox-group-element {
+    width: calc(50% - 10px);
+    border-right: 10px solid transparent;
+}
+
 #submit-input-format-select {
     font-size: 9px;
     width: 60px;
@@ -398,21 +426,6 @@ input:checked + .slider:before {
     background-color: #c5af8d;
 }
 
-.checkbox-group-element-sdiv[kind=annotator-group-div] {
-    width: 200%;
-}
-
-div.checkbox-group-element[kind=group] span.icon {
-    position: relative;
-    left: 2px;
-    top: 0px;
-}
-
-div.checkbox-group-element[kind=group] span.label {
-    position: relative;
-    left: 7px;
-}
-
 #annotator-group-select-div .div-header {
     display: inline-block;
     vertical-align: middle;
@@ -431,24 +444,6 @@ div.checkbox-group-element[kind=group] span.label {
 }
 #submit-annotator-set-switch span {
     font-size: 7px;
-}
-
-#annotator-select-div button.checkbox-group-all-button {
-    /*position: relative;
-    border-radius: 5px;
-    font-size: 10px;
-    height: 23px;*/
-    font-size: 10px;
-}
-
-#annotator-select-div button.checkbox-group-none-button {
-    /*
-    position: relative;
-    border-radius: 5px;
-    font-size: 10px;
-    height: 23px;
-    */
-    font-size: 10px;
 }
 
 .show {

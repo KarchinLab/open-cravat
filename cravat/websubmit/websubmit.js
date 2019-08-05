@@ -1421,6 +1421,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         var label = getEl('label');
         label.classList.add('checkbox-container');
         label.textContent = checkData.label + ' ';
+        label.title = checkData.label;
         var check = getEl('input');
         //check.className = 'checkbox-group-check';
         check.setAttribute('type', 'checkbox');
