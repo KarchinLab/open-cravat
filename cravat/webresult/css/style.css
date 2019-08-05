@@ -677,6 +677,7 @@ div.pq-select-menu>.pq-select-option-label {
     resize: none;
     overflow: auto;
     vertical-align: middle;
+    font-size: 11px;
 }
 
 .summary-jobinfo-table td {
