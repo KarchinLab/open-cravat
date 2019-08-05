@@ -301,8 +301,12 @@ button {
 
 .checkbox-group-element {
     width: 50%;
-    overflow: hidden;
     white-space: nowrap;
+}
+
+.checkbox-group-element label {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .checkbox-group-element span.icon {
@@ -524,6 +528,8 @@ input:checked + .slider:before {
   cursor: pointer;
   height: 0;
   width: 0;
+  top: 0px;
+  left: 0px;
 }
 
 /* Create a custom checkbox */
