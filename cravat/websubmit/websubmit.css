@@ -502,6 +502,10 @@ input:checked + .slider:before {
     background-color: #c5af8d;
 }
 
+.active-download-button:after {
+    content: ' ' url('/result/images/download12.png');
+}
+
 .inactive-download-button {
     background-color: #d1d3d4;
 }

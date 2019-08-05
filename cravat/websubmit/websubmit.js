@@ -327,7 +327,7 @@ function populateJobTr (job) {
         a.setAttribute('href', '/result/index.html?dbpath=' + job.db_path + '&job_id=' + job.id)
         a.setAttribute('target', '_blank');
         var button = getEl('button');
-        addEl(button, getTn('Launch'));
+        addEl(button, getTn('Open Result Viewer'));
         button.classList.add('butn');
         button.classList.add('launch-button');
         button.disabled = !job.viewable;
