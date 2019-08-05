@@ -96,15 +96,16 @@ class FilterManager {
 		let header = $(getEl('div'))
 			.addClass('filter-header')
 			.click(this.sectionHeaderClick);
-		if (!active) {
-			header.addClass('inactive')
-		}
-		rootDiv.append(header);
-		header.append($(getEl('span'))
+			if (!active) {
+				header.addClass('inactive')
+			}
+			rootDiv.append(header);
+			header.append($(getEl('span'))
 			.addClass('filter-header-arrow')
-		)
-		header.append($(getEl('span'))
+			)
+			header.append($(getEl('span'))
 			.addClass('filter-header-text')
+			.addClass('title')
 			.text(headerTitle)
 		)
 		let sampleContent = $(getEl('div'))
@@ -248,12 +249,14 @@ class FilterManager {
 		let sfHeader = $(getEl('span'))
 			.addClass('vprop-option')
 			.text('Smart Filters')
+			.addClass('title')
 			.click(this.vPropOptionClick)
 			.attr('value','sf');
 		fTypeDiv.append(sfHeader);
 		let qbHeader = $(getEl('span'))
 			.addClass('vprop-option')
 			.text('Query Builder')
+			.addClass('title')
 			.click(this.vPropOptionClick)
 			.attr('value','qb');
 		fTypeDiv.append(qbHeader);
@@ -563,8 +566,10 @@ function makeFilterTab (rightDiv) {
 	let leftPanel =$(getEl('div'))
 		.attr('id','filter-left-panel');
 	rightDiv.append(leftPanel);
-	leftPanel.append($(getEl('h2'))
+	leftPanel.append($(getEl('div'))
 		.text('Saved Filters')
+		.addClass('title')
+		.attr('id','saved-filter-header')
 	)
 	let savedList = $(getEl('ul'))
 		.attr('id','saved-filter-list');
