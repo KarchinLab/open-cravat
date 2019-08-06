@@ -1401,7 +1401,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         var checkData = checkDatas[i];
         var checkDiv = getEl('div');
         checkDiv.classList.add('checkbox-group-element');
-        //checkDiv.classList.add('checkbox-container');
+        checkDiv.classList.add('show');
         checkDiv.setAttribute('name', checkData.name);
         checkDiv.setAttribute('kind', checkData.kind);
         if (checkData.groups != null) {
@@ -1423,7 +1423,6 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         label.textContent = checkData.label + ' ';
         label.title = checkData.label;
         var check = getEl('input');
-        //check.className = 'checkbox-group-check';
         check.setAttribute('type', 'checkbox');
         check.setAttribute('name', checkData.name);
         check.setAttribute('value', checkData.value);

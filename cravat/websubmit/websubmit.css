@@ -284,6 +284,7 @@ button {
     position: absolute;
     top: 8px;
     right: 5px;
+    z-index: 100;
 }
 
 .checkbox-group-flexbox {
