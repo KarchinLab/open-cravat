@@ -292,7 +292,12 @@ function populateJobTr (job) {
     var jobTr = $('tr.job-table-main-tr[jobid=' + job.id + ']')[0];
     emptyElement(jobTr);
     // Input file name
-    addEl(jobTr, addEl(getEl('td'), getTn(job.orig_input_fname)));
+    if (Array.isArray(job.orig_input_fname)) {
+        input_fname = job.orig_input_fname.join(', ');
+    } else {
+        var input_fname = job.orig_input_fname;
+    }
+    addEl(jobTr, addEl(getEl('td'), getTn(input_fname)));
     // Number of annotators
     var annots = job.annotators;
     if (annots == undefined) {

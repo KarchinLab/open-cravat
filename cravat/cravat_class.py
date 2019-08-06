@@ -177,8 +177,8 @@ class Cravat (object):
             self.status_json['run_name'] = self.run_name
             self.status_json['assembly'] = self.input_assembly
             self.status_json['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
-            self.status_json['orig_input_fname'] = ', '.join([os.path.basename(x) for x in self.inputs])
-            self.status_json['orig_input_path'] = ', '.join(self.inputs)
+            self.status_json['orig_input_fname'] = [os.path.basename(x) for x in self.inputs]
+            self.status_json['orig_input_path'] = self.inputs
             self.status_json['submission_time'] = datetime.datetime.now().isoformat()
             self.status_json['viewable'] = False
             self.status_json['note'] = self.args.note
