@@ -300,10 +300,17 @@ async def connect_websocket (request):
     last_update_time = install_state['update_time']
     install_ws = web.WebSocketResponse(timeout=60*60*24*365)
     await install_ws.prepare(request)
+    ping_interval = 60
+    count = 0
     while True:
+        count += 1
         await asyncio.sleep(1)
         if last_update_time < install_state['update_time']:
             last_update_time = await send_socket_msg()
+        elif count % ping_interval == 0:
+            install_state['module_name'] = '@@@just-pinging@@@'
+            count = 0
+            await send_socket_msg()
     return install_ws
 
 async def queue_install (request):
