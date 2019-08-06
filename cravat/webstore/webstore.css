@@ -509,8 +509,8 @@ input:checked + .store-switch-slider:before {
 
 #store-systemmoduleupdate-announce-div {
     position: fixed;
-    top: 48px;
-    right: 10px;
+    top: 43px;
+    right: 90px;
     font-size: 12px;
     color: #f7684b;
     z-index: 201;
