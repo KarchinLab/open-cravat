@@ -42,10 +42,9 @@ body * {
     padding: 6px;
     height: 24px;
     width: 80px;
-    /*transition: all 0.3s ease;*/
     vertical-align: bottom;
     cursor: pointer;
-    background-color: #d1d3d4;
+    background-color: #94d1eb;
     height: 20px;
     border-radius: 2px 2px 0px 0px;
     border: 1px solid #939393
@@ -55,7 +54,7 @@ body * {
 }
 
 #pageselect div:hover {
-    background-color: #94d1eb;
+    background-color: #5cb5e5;
 }
 
 #pageselect div[selval="t"] {
@@ -467,9 +466,7 @@ input:checked + .slider:before {
   border-radius: 2px;
   font-family: 'roboto-bold';
   color: #ffffff;
-  /*font-size: 20px;*/
   background-color: #c5af8d;
-  /*padding: 10px 20px 10px 20px;*/
   text-decoration: none;
   border-style: none;
   margin-left: 1px;
@@ -477,7 +474,7 @@ input:checked + .slider:before {
 }
 
 .butn:hover {
-  background: #94d1eb;
+  background: #5cb5e5;
   text-decoration: none;
 }
 
@@ -499,16 +496,26 @@ input:checked + .slider:before {
     background-color: #c5af8d;
 }
 
+.launch-button:hover {
+    background-color: #6e593a;
+}
+
 .active-download-button {
     background-color: #c5af8d;
 }
 
+.active-download-button:hover {
+    background-color: #6e593a;
+}
+
+/*
 .active-download-button:after {
     content: ' ' url('/result/images/download12.png');
 }
+*/
 
 .inactive-download-button {
-    background-color: #d1d3d4;
+    background-color: #94d1eb;
 }
 
 .checkbox-container {
