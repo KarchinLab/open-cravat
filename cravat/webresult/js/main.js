@@ -664,6 +664,7 @@ function notifyToUseFilter () {
 		'Click the Filter button to use filters to reduce the number of ' +
 		'variants to ' + NUMVAR_LIMIT + ' or less, and click Update to load filtered variants.';
 	showInfonoticediv();
+    document.getElementById('tabhead_filter').style.pointerEvents = 'auto';
 }
 
 function hideWgnoticediv () {
