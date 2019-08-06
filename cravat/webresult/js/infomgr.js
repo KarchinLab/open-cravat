@@ -56,6 +56,7 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 			success: function (jsonResponseData) {
 				self.store(self, tabName, jsonResponseData, callback, callbackArgs);
 				writeLogDiv(tabName + ' data loaded');
+                addTextToInfonoticediv(jsonResponseData['warning_msgs']);
                 if (tabName == 'variant') {
 					var loaded = jsonResponseData.data.length;
 					var total = infomgr.jobinfo['Number of unique input variants'];

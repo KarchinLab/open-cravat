@@ -441,7 +441,14 @@ p {
 	font-size: 14px;
 	padding: 13px;
 	margin: 2px;
-	color: white;
+}
+
+.infonoticediv.show {
+    display: block;
+}
+
+.infonoticediv.hide {
+    display: none;
 }
 
 button {

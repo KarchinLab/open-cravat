@@ -251,7 +251,7 @@ class BaseAnnotator(object):
             if err_str_log not in self.unique_excs:
                 self.unique_excs.append(err_str_log)
                 self.logger.error(err_str_log)
-            self.error_logger.error('\n[{:d}]{}\n({})\n#'.format(lnum, line[:-1], str(e)))
+            self.error_logger.error('\n[{:d}]{}\n({})\n#'.format(lnum, line.rstrip(), str(e)))
         except Exception as e:
             self._log_exception(e, halt=False)
 

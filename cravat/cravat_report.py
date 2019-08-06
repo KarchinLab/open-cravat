@@ -36,6 +36,7 @@ class CravatReport:
         self.column_sub_allow_partial_match = {}
         self.colname_conversion = {}
         self._setup_logger()
+        self.warning_msgs = []
 
     async def prep (self):
         await self.connect_db()
@@ -93,7 +94,13 @@ class CravatReport:
             await self.cf.make_filtered_hugo_table()
             gene_summary_datas = {}
             for mi, o, cols in self.summarizing_modules:
-                gene_summary_data = await o.get_gene_summary_data(self.cf)
+                if hasattr(o, 'build_gene_collection'):
+                    msg = 'Obsolete module [{}] for gene level summarization. Update the module to get correct gene level summarization.'.format(mi.name)
+                    self.warning_msgs.append(msg)
+                    print('===Warning: {}'.format(msg))
+                    gene_summary_data = {}
+                else:
+                    gene_summary_data = await o.get_gene_summary_data(self.cf)
                 gene_summary_datas[mi.name] = [gene_summary_data, cols]
                 for col in cols:
                     if 'category' in col and col['category'] in ['single', 'multi']:
@@ -378,13 +385,13 @@ class CravatReport:
                 annot = annot_cls([mi.script_path, '__dummy__', '-d', self.output_dir], {})
                 cols = conf['gene_summary_output_columns']
                 columngroup = {}
-                columngroup['name'] = conf['name']
+                columngroup['name'] = os.path.basename(mi.script_path).rstrip('.py')
                 columngroup['displayname'] = conf['title']
                 columngroup['count'] = len(cols)
                 self.columngroups[level].append(columngroup)
                 for col in cols:
                     coldef = ColumnDefinition(col)
-                    coldef.name = conf['name'] + '__' + coldef.name
+                    coldef.name = columngroup['name'] + '__' + coldef.name
                     coldef.genesummary = True
                     column = coldef.get_colinfo()
                     columns.append(column)

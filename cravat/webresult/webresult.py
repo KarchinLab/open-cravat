@@ -351,6 +351,7 @@ async def get_result (request):
     content["data"] = get_datamodel(data[tab])
     content["status"] = "normal"
     content['modules_info'] = data['modules_info']
+    content['warning_msgs'] = data['warning_msgs']
     t = round(time.time() - t, 3)
     print('done in {}s. sending result of {}...'.format(t, dbbasename))
     return web.json_response(content)

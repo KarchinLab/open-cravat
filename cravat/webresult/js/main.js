@@ -531,9 +531,6 @@ function loadData (alertFlag, finalcallback) {
 			setupTab(currentTab);
             resizesTheWindow();
 		}
-        // setFilterButtonText(); //TODO delete this
-        // document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.'; //TODO delete this
-        enableUpdateButton();
 	}
 	var loadGeneResult = function () {
 		var numvar = infomgr.getData('variant').length;
@@ -631,12 +628,6 @@ function loadData (alertFlag, finalcallback) {
     disableUpdateButton();
 	loadVariantResult();
     filterArmed = filterJson;
-    // var filterButton = document.getElementById('filterbutton'); //TODO delete this
-    // if (filterArmed.variant != undefined && filterArmed.variant.rules.length > 0) {
-    //     filterButton.style.backgroundColor = 'red';
-    // } else {
-    //     filterButton.style.backgroundColor = '#c5dbdb';
-    // }
 }
 
 function setFilterButtonText () {
@@ -668,11 +659,11 @@ function unlockTabs () {
 function notifyToUseFilter () {
 	var div = document.getElementById('infonoticediv');
 	div.style.background = 'red';
-	div.style.display = 'block';
 	div.textContent = 
 		'Number of variants exceeds viewer limit (' + NUMVAR_LIMIT + ').' +
 		'Click the Filter button to use filters to reduce the number of ' +
 		'variants to ' + NUMVAR_LIMIT + ' or less, and click Update to load filtered variants.';
+	showInfonoticediv();
 }
 
 function hideWgnoticediv () {
@@ -683,8 +674,8 @@ function hideWgnoticediv () {
 function notifyOfReadyToLoad () {
 	var div = document.getElementById('infonoticediv');
 	div.style.background = 'white';
-	div.textContent = ' ';
-	div.style.display = 'none';
+	div.textContent = '';
+	hideInfonoticediv();
 }
 
 function getViewerWidgetSettingByWidgetkey (tabName, widgetId) {

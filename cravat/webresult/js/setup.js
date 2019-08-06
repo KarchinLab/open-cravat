@@ -2543,3 +2543,29 @@ function populateWidgetSelectorPanel () {
 				};
 	});
 }
+
+function showInfonoticediv () {
+    document.getElementById('infonoticediv').classList.add('show');
+    document.getElementById('infonoticediv').classList.remove('hide');
+}
+
+function hideInfonoticediv () {
+    document.getElementById('infonoticediv').classList.remove('show');
+    document.getElementById('infonoticediv').classList.add('hide');
+}
+
+function addTextToInfonoticediv (lines) {
+    if (lines == undefined) {
+        return;
+    }
+    var div = document.getElementById('infonoticediv');
+    for (var i = 0; i < lines.length; i++) {
+        var span = getEl('li');
+        span.textContent = lines[i];
+        addEl(div, span);
+    }
+    if (lines.length > 0) {
+        showInfonoticediv();
+    }
+}
+
