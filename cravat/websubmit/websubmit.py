@@ -65,23 +65,6 @@ class FileRouter(object):
             return None
         else:
             return os.path.join(jobs_dir, job_id)
-
-    async def job_input(self, request, job_id):
-        job_dir, statusjson = await self.job_status(request, job_id)
-        orig_input_fname = None
-        if 'orig_input_fname' in statusjson:
-            orig_input_fname = statusjson['orig_input_fname']
-        else:
-            fns = os.listdir(job_dir)
-            for fn in fns:
-                if fn.endswith('.crv'):
-                    orig_input_fname = fn[:-4]
-                    break
-        if orig_input_fname is not None:
-            orig_input_path = os.path.join(job_dir, orig_input_fname)
-        else:
-            orig_input_path = None
-        return orig_input_path
     
     async def job_run_name(self, request, job_id):
         job_dir, statusjson = await self.job_status(request, job_id)
@@ -128,31 +111,6 @@ class FileRouter(object):
                 with open(os.path.join(job_dir, fn)) as f:
                     statusjson = yaml.load(f)
         return job_dir, statusjson
-
-    '''
-    def get_orig_input_path (self, request, job_id):
-        job_dir = await self.job_dir(request, job_id)
-        fns = os.listdir(job_dir)
-        orig_input_fname = None
-        for fn in fns:
-            if fn.endswith('.status.json'):
-                with open(os.path.join(job_dir, fn)) as f:
-                    statusjson = json.loads(f.readline())
-                    if 'orig_input_fname' in statusjson:
-                        orig_input_fname = statusjson['orig_input_fname']
-            elif fn.endswith('.info.yaml'):
-                with open(os.path.join(job_dir, fn)) as f:
-                    infojson = yaml.load(f)
-                    if 'orig_input_fname' in infojson:
-                        orig_input_fname = infojson['orig_input_fname']
-        if orig_input_fname is not None:
-            orig_input_path = os.path.join(job_dir, orig_input_fname + '.log')
-            if os.path.exists(orig_input_path) == False:
-                orig_input_path = None
-        else:
-            orig_input_path = None
-        return orig_input_path
-    '''
 
     async def job_log (self, request, job_id):
         run_path = await self.job_run_path(request, job_id)
@@ -217,17 +175,16 @@ async def submit (request):
         elif part.name == 'options':
             job_options = await part.json()
     input_fnames = [fp.filename for fp in input_files]
-    if len(input_fnames) == 1:
-        orig_input_fname = input_fnames[0]
-    elif len(input_fnames) > 1:
-        orig_input_fname = ', '.join([os.path.basename(x) for x in input_fnames])
-    info_fname = '{}.status.json'.format(orig_input_fname)
+    run_name = input_fnames[0]
+    if len(input_fnames) > 1:
+        run_name += '_and_'+str(len(input_fnames)-1)+'_files'
+    info_fname = '{}.status.json'.format(run_name)
     job_info_fpath = os.path.join(job_dir, info_fname)
     job = WebJob(job_dir, job_info_fpath)
     job.save_job_options(job_options)
     job.set_info_values(
-                        orig_input_fname=orig_input_fname,
-                        orig_input_files=input_fnames,
+                        orig_input_fname=input_fnames,
+                        run_name=run_name,
                         submission_time=datetime.datetime.now().isoformat(),
                         viewable=False
                         )
@@ -363,12 +320,6 @@ async def get_job (job_id, request):
     )
     existing_reports = []
     for report_type in get_valid_report_types():
-        # ext = filerouter.report_extensions.get(report_type, '.'+report_type)
-        # job_input = await filerouter.job_input(request, job_id)
-        # if job_input is None:
-        #     continue
-        # report_fname = job_input + ext
-        # report_file = os.path.join(job_dir, report_fname)
         report_path = await filerouter.job_report(request, job_id, report_type)
         if report_path is not None and os.path.exists(report_path):
             existing_reports.append(report_type)
