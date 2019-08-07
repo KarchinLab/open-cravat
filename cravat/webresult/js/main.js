@@ -245,10 +245,6 @@ function enableUpdateButton () {
     document.getElementById('load_button').disabled = false;
 }
 
-function disableUpdateButton () {
-    document.getElementById('load_button').disabled = true;
-}
-
 function clearVariantGeneTab () {
     var tabs = ['variant', 'gene'];
     for (var i = 0; i < tabs.length; i++) {
@@ -531,6 +527,7 @@ function loadData (alertFlag, finalcallback) {
 			setupTab(currentTab);
             resizesTheWindow();
 		}
+        enableUpdateButton();
 	}
 	var loadGeneResult = function () {
 		var numvar = infomgr.getData('variant').length;
