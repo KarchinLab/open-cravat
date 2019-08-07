@@ -2239,7 +2239,7 @@ function populateWidgetSelectorPanel () {
                 var colgroupkey = infomgr.colgrouptitletokey[title];
                 var desc = infomgr.modulesInfo[currentTab][colgroupkey];
                 if (desc != undefined) {
-                    th.title = desc;
+                    $(th).attr('title', desc).tooltip();
                 }
 				th.setAttribute('colgrouptitle', title);
 				th.setAttribute('colgroupkey', colgroupkey);
