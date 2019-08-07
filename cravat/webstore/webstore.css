@@ -538,10 +538,10 @@ input:checked + .store-switch-slider:before {
 #store-noconnect-div {
     display: none;
     position: fixed;
-    top: 94px;
+    top: 63px;
     left: 0;
     width: 100%;
-    height: calc(100% - 94px);
+    height: calc(100% - 63px);
     z-index: 9;
     text-align: center;
     background-color: rgba(100, 100, 100, 0.77);
@@ -552,7 +552,10 @@ input:checked + .store-switch-slider:before {
     top: 50%;
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
-    color: #cddc39;
+    color: black;
+    padding: 20px;
+    background-color: #e6e7e8;
+    box-shadow: 0px 0px 50px 35px #c5af8d;
 }
 
 #pageselect {

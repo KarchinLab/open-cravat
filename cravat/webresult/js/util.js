@@ -895,10 +895,11 @@ function setServerStatus (connected) {
 			loadingDiv.id = 'connection-lost-div';
 			loadingDiv.className = 'data-retrieving-msg-div';
 			var loadingTxtDiv = getEl('div');
-			loadingTxtDiv.className = 'data-retrieving-msg-div-content';
+			loadingTxtDiv.className = 'store-noconnect-msg-div';
 			var span = getEl('span');
 			span.textContent = 'Lost connection to server';
 			addEl(loadingTxtDiv, span);
+            addEl(loadingTxtDiv, getEl('br'));
             addEl(loadingTxtDiv, getEl('br'));
 			var span = getEl('span');
 			span.textContent = 'Please launch OpenCRAVAT again.';

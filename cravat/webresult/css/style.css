@@ -591,6 +591,17 @@ div.pq-select-menu>.pq-select-option-label {
     z-index: 100;
 }
 
+.store-noconnect-msg-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    color: black;
+    padding: 20px;
+    background-color: #e6e7e8;
+    box-shadow: 0px 0px 50px 35px #c5af8d;
+}
+
 .data-retrieving-msg-div {
 	position: fixed;
 	text-align: center;

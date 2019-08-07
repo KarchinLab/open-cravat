@@ -841,7 +841,7 @@ function drawingRetrievingDataDiv (currentTab) {
 	var loadingDiv = getEl('div');
     loadingDiv.className = 'data-retrieving-msg-div';
 	var loadingTxtDiv = getEl('div');
-    loadingTxtDiv.className = 'data-retrieving-msg-div-content';
+    loadingTxtDiv.className = 'store-noconnect-msg-div';
     var span = getEl('span');
     span.textContent = 'Retrieving Data...';
 	addEl(loadingTxtDiv, span);
@@ -866,7 +866,7 @@ function drawingWidgetCaptureSpinnerDiv () {
 	var loadingDiv = getEl('div');
     loadingDiv.className = 'data-retrieving-msg-div';
 	var loadingTxtDiv = getEl('div');
-    loadingTxtDiv.className = 'data-retrieving-msg-div-content';
+    loadingTxtDiv.className = 'store-noconnect-msg-div';
     var span = getEl('span');
     span.textContent = 'Capturing widget content...';
 	addEl(loadingTxtDiv, span);
