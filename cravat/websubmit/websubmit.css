@@ -471,6 +471,7 @@ input:checked + .slider:before {
   border-style: none;
   margin-left: 1px;
   margin-right: 1px;
+  cursor: pointer;
 }
 
 .butn:hover {

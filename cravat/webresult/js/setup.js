@@ -1291,7 +1291,7 @@ function populateWidgetSelectorPanel () {
     panelDiv.style.cursor = 'auto';
 
 	var button = getEl('button');
-	button.style.backgroundColor = 'white';
+    button.classList.add('butn');
 	button.textContent = 'Redraw';
 	button.addEventListener('click', function (evt, ui) {
 		onClickDetailRedraw();
@@ -1299,7 +1299,7 @@ function populateWidgetSelectorPanel () {
 	addEl(panelDiv, button);
 
 	var button = getEl('button');
-	button.style.backgroundColor = 'white';
+    button.classList.add('butn');
 	button.textContent = 'Reset';
 	button.addEventListener('click', function (evt, ui) {
 		onClickDetailReset();
@@ -1307,7 +1307,7 @@ function populateWidgetSelectorPanel () {
 	addEl(panelDiv, button);
 
 	var button = getEl('button');
-	button.style.backgroundColor = 'white';
+    button.classList.add('butn');
 	button.textContent = 'Hide all';
 	button.addEventListener('click', function (evt, ui) {
 		changeWidgetShowHideAll(false);
@@ -1315,7 +1315,7 @@ function populateWidgetSelectorPanel () {
 	addEl(panelDiv, button);
 
 	var button = getEl('button');
-	button.style.backgroundColor = 'white';
+    button.classList.add('butn');
 	button.textContent = 'Show all';
 	button.addEventListener('click', function (evt, ui) {
 		changeWidgetShowHideAll(true);
@@ -1331,9 +1331,16 @@ function populateWidgetSelectorPanel () {
 			usedAnnotators[tabName].includes(infomgr.widgetReq[widgetName])) {
 			var div = getEl('div');
 			div.style.padding = '4px';
+            var label = getEl('label');
+            label.classList.add('checkbox-container');
+            label.textContent = infomgr.colgroupkeytotitle[widgetName];
 			var input = getEl('input');
 			input.id = 'widgettogglecheckbox_' + tabName + '_' + widgetName;
 			input.type = 'checkbox';
+            var span = getEl('span');
+            span.classList.add('checkmark');
+            addEl(label, input);
+            addEl(label, span);
             var vwsT = viewerWidgetSettings[tabName];
             if (vwsT == undefined) {
                 vwsT = [];
@@ -1354,11 +1361,7 @@ function populateWidgetSelectorPanel () {
 				input.addEventListener('click', function (evt) {
 					onClickWidgetSelectorCheckbox(tabName, evt);
 				});
-				addEl(div, input);
-				var span = getEl('span');
-				span.style.cursor = 'auto';
-				addEl(span, getTn(infomgr.colgroupkeytotitle[widgetName]));
-				addEl(div, span);
+				addEl(div, label);
 				if (generator['variables'] != undefined &&
 					generator['variables']['shoulddraw'] == false) {
 					input.disabled = 'disabled';
@@ -1962,10 +1965,11 @@ function populateWidgetSelectorPanel () {
 			// Group div
 			var groupDiv = document.createElement('fieldset');
 			groupDiv.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_id';
-			groupDiv.className = columnGroupPrefix + '_' + tabName + '_class';
-			var legend = getEl('legend');
-			legend.style.fontSize = '14px';
-			legend.style.fontWeight = 'bold';
+			//groupDiv.className = columnGroupPrefix + '_' + tabName + '_class';
+			groupDiv.className = 'columngroup-control-box';
+            var label = getEl('label');
+            label.classList.add('checkbox-container');
+            label.textContent = infomgr.colgroupkeytotitle[columnGroupName];
 			var checkbox = getEl('input');
 			checkbox.id = columnGroupPrefix + '_' + tabName + '_' + columnGroupName + '_' + '_checkbox';
 			checkbox.type = 'checkbox';
@@ -1983,9 +1987,11 @@ function populateWidgetSelectorPanel () {
 				}
 				updateTableColumns(tabName);
 			});
-			addEl(legend, checkbox);
-			addEl(legend, getTn(infomgr.colgroupkeytotitle[columnGroupName]));
-			addEl(groupDiv, legend);
+            var span = getEl('span');
+            span.className = 'checkmark';
+			addEl(label, checkbox);
+			addEl(label, span);
+			addEl(groupDiv, label);
 
 			// Columns
 			var columnsDiv = document.createElement('div');
@@ -1996,9 +2002,10 @@ function populateWidgetSelectorPanel () {
                 if (column == undefined) {
                     continue;
                 }
-				var span = getEl('span');
-				span.textContent = '\xA0';
-				addEl(columnsDiv, span);
+                var label = getEl('label');
+                label.classList.add('checkbox-container');
+                label.classList.add('layout-change-button-sublevel');
+                label.textContent = column.title;
 				var checkbox = getEl('input');
 				checkbox.id = columnGroupPrefix + '_' + tabName + '_' + column.col + '_' + '_checkbox';
 				checkbox.className = 'colcheckbox';
@@ -2010,12 +2017,13 @@ function populateWidgetSelectorPanel () {
 				checkbox.addEventListener('change', function (evt, ui) {
 					updateTableColumns(tabName);
 				});
-				addEl(columnsDiv, checkbox);
-				var span = document.createElement('span');
-				span.textContent = column.title;
-				addEl(columnsDiv, span);
-				var br = getEl('br');
-				addEl(columnsDiv, br);
+                var span = getEl('span');
+                span.className = 'checkmark';
+                addEl(label, checkbox);
+                addEl(label, span);
+				addEl(columnsDiv, label);
+				//var br = getEl('br');
+				//addEl(columnsDiv, br);
 			}
 			addEl(groupDiv, columnsDiv);
 			addEl(wholeDiv, groupDiv);
