@@ -1943,13 +1943,12 @@ function connectWebSocket () {
     ws.onopen = function (evt) {
     }
     ws.onclose = function (evt) {
+        console.log('@ re-establishing websocket');
+        connectWebSocket(failures);
     }
     ws.onmessage = function (evt) {
         var data = JSON.parse(evt.data);
         var module = data['module'];
-        if (module == undefined || module == '@@@just-pinging@@@') {
-            return;
-        }
         var msg = data['msg'];
         var isbase = data['isbase'];
         if (installInfo[module] == undefined) {
