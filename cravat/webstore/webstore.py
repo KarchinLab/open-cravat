@@ -307,6 +307,7 @@ async def connect_websocket (request):
         await asyncio.sleep(1)
         if last_update_time < install_state['update_time']:
             last_update_time = await send_socket_msg()
+            count = 0
         elif count % ping_interval == 0:
             install_state['module_name'] = '@@@just-pinging@@@'
             count = 0
