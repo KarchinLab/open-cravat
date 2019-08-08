@@ -651,7 +651,7 @@ input:checked + .slider:before {
 }
 
 #annotchoosediv {
-    background-color: #5fa3c6;
+    background-color: #96b6c6;
 	color: white;
     margin-top: 15px;
 }
