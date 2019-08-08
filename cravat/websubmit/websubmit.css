@@ -490,12 +490,12 @@ input:checked + .slider:before {
 
 .submit-annotate-button {
     font-size: 24px; 
-    width: calc(100% - 26px); 
+    width: 391px;
     padding: 9px;
     background-color: #de6342;
-    position: relative;
-    left: -14px;
-    top: -25px;
+    position: absolute;
+    left: 1px;
+    bottom: -2px;
 }
 
 .launch-button {
@@ -642,12 +642,12 @@ input:checked + .slider:before {
 }
 
 #submit-variant-div {
-    background-color: #f1e9d5;
+    background-color: #dbd3c8;
     color: black;
 }
 
 #submit-variant-div .divbanner {
-    background-color: #93896c;
+    background-color: #8c8780;
 }
 
 #annotchoosediv {
@@ -712,5 +712,16 @@ input:checked + .slider:before {
 
 .chevron2to3:after {
   background-color: #de6342;
+}
+
+#submit-form {
+    overflow-y: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+#submit-form::-webkit-scrollbar {
+    width: 0;
+    height: 0;
 }
 
