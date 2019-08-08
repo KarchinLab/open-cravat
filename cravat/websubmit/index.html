@@ -173,9 +173,12 @@
                         </td>
                     </tr>
                 </table>
-                <div class='divbanner' style='background-color: #9a7946;'></div>
+                <div class='divbanner'></div>
+                <div class='chevrondiv'><div class='chevron chevron1to2'></div></div>
             </div>
-            <div class='chevrondiv'><div class='chevron chevron1to2'></div></div>
+            <!--
+            <div><img src='down.png' /></div>
+            -->
             <div id='annotchoosediv' class='container'>
                 <span class='divtitle'>Annotations</span>
                 <br />
@@ -185,7 +188,7 @@
                 <div class='divbanner' style='background-color: #3175b0;'></div>
             </div>
         </div>
-		<div class='chevrondiv'><div class='chevron chevron2to3'></div></div>
+        <div class='chevrondiv'><div class='chevron chevron2to3'></div></div>
         <div style='text-align: center;'><button id="submit-job-button" class='butn submit-annotate-button'>ANNOTATE</button></div>
     </div>
 
@@ -210,8 +213,8 @@
             </tbody>
         </table>
         <div id='jobs-table-pagination-div' style='float: right;'>
-            <button id='jobs-table-pagination-prev-button' onclick='onClickJobsListPrevPage();'><</button>
-            <button id='jobs-table-pagination-next-button' onclick='onClickJobsListNextPage();'>></button>
+            <button id='jobs-table-pagination-prev-button' class='butn inactive-download-button' onclick='onClickJobsListPrevPage();'><</button>
+            <button id='jobs-table-pagination-next-button' class='butn inactive-download-button' onclick='onClickJobsListNextPage();'>></button>
         </div>
         <br />
     </div>  

@@ -439,7 +439,7 @@ function populateJobTr (job) {
     deleteTd.style.textAlign = 'center';
     var deleteBtn = getEl('button');
     deleteBtn.classList.add('butn');
-    deleteBtn.classList.add('active-download-button');
+    deleteBtn.classList.add('inactive-download-button');
     /*deleteBtn.classList.add('active-download-button');*/
     addEl(deleteBtn, getTn('X'));
     addEl(deleteTd, deleteBtn);
@@ -1845,7 +1845,7 @@ function openTerminal () {
 
 function resizePage () {
     var div = document.getElementById('submit-form');
-    var h = window.innerHeight - 185;
+    var h = window.innerHeight - 148;
     div.style.height = h + 'px';
     var div = document.getElementById('jobdiv');
     var h = window.innerHeight - 85;

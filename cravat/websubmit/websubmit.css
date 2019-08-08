@@ -29,7 +29,7 @@ body * {
 #pageselect {
     position: fixed; 
     top: 21px; 
-    left: 0px; 
+    left: 10px; 
     font-size: 15px; 
     color: #ffffff;
     z-index: 201;
@@ -148,6 +148,7 @@ button {
 #jobs-table thead tr {
     height: 34px;
     background-color: #4a87bd;
+    color: white;
 }
 
 #jobs-table tr.job-table-tr:hover {
@@ -177,8 +178,8 @@ button {
 }
 
 #jobs-table tbody td {
-    padding-top: 10px;
-    padding-bottom: 10px;
+    padding-top: 9px;
+    padding-bottom: 9px;
     cursor: default;
     font-size: 15px;
 }
@@ -203,7 +204,7 @@ button {
 
 .logo {
     width: 65px;
-    height: 57px;
+    padding: 3px;
 }
 
 .headerdiv {
@@ -256,27 +257,28 @@ button {
     top: 8px; 
     left: 8px;
     padding: 0px;
+    background-color: transparent;
 }
 
 .threedots {
-    height: 20px;
-    top: 6px;
+    height: 15px;
+    top: 9px;
     position: absolute;
     right: 10px;
 }
 
 .email-icon {
-    height: 20px;
-    top: 6px;
+    height: 15px;
+    top: 9px;
     position: absolute;
-    right: 36px;
+    right: 40px;
 }
 
 .question-icon {
-    height: 20px;
-    top: 6px;
+    height: 15px;
+    top: 9px;
     position: absolute;
-    right: 70px;
+    right: 77px;
 }
 
 .checkbox-group-all-none-div {
@@ -488,9 +490,12 @@ input:checked + .slider:before {
 
 .submit-annotate-button {
     font-size: 24px; 
-    width: 100%; 
+    width: calc(100% - 26px); 
     padding: 9px;
     background-color: #de6342;
+    position: relative;
+    left: -14px;
+    top: -25px;
 }
 
 .launch-button {
@@ -503,10 +508,12 @@ input:checked + .slider:before {
 
 .active-download-button {
     background-color: #c5af8d;
+    border: 1px solid #c5af8d;
 }
 
 .active-download-button:hover {
     background-color: #6e593a;
+    border: 1px solid #6e593a;
 }
 
 /*
@@ -516,7 +523,16 @@ input:checked + .slider:before {
 */
 
 .inactive-download-button {
-    background-color: #94d1eb;
+  background-color: white;
+  color: #c5af8d;
+  background-color: white;
+  border: 1px solid #c5af8d;
+}
+
+.inactive-download-button:hover {
+    background-color: #6e593a;
+    border: 1px solid #6e593a;
+    color: white;
 }
 
 .checkbox-container {
@@ -626,13 +642,18 @@ input:checked + .slider:before {
 }
 
 #submit-variant-div {
-    background-color: #c6b08b;
+    background-color: #f1e9d5;
     color: black;
+}
+
+#submit-variant-div .divbanner {
+    background-color: #93896c;
 }
 
 #annotchoosediv {
     background-color: #5fa3c6;
 	color: white;
+    margin-top: 15px;
 }
 
 #annotchoosediv .div-header {
@@ -640,14 +661,15 @@ input:checked + .slider:before {
 }
 
 .chevron {
-  position: relative;
+  position: absolute;
   text-align: center;
-  padding: 5px;
+  padding: 2px;
   margin-top: 16px;
   margin-bottom: 16px;
   height: 2px;
-  width: 45px;
-  left: 157px;
+  width: 26px;
+  right: 4px;
+  bottom: -8px;
 }
 
 .chevron:before {
@@ -678,8 +700,14 @@ input:checked + .slider:before {
   background-color: #5fa3c6;
 }
 
+.chevron2to3 {
+  position: relative;
+  top: -30px;
+  left: 339px;
+}
+
 .chevron2to3:before {
-  background-color: #5fa3c6;
+  background-color: #94d1eb;
 }
 
 .chevron2to3:after {
