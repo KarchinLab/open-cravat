@@ -555,7 +555,6 @@ input:checked + .store-switch-slider:before {
     color: black;
     padding: 20px;
     background-color: #e6e7e8;
-    box-shadow: 0px 0px 50px 35px #c5af8d;
 }
 
 #pageselect {
