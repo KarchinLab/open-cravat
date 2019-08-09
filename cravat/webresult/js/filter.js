@@ -371,7 +371,7 @@ const makeFilterGroupDiv = (filter) => {
     // Elements div
     const elemsDiv = $(getEl('div'))
         .addClass('filter-group-elements-div')
-        .attr('join-operator','AND');
+        .attr('join-operator','and');
     groupDiv.append(elemsDiv);
         
     // Controls div
@@ -490,10 +490,10 @@ const groupOperatorClickHandler = (event) => {
     const allElemsDiv = opDiv.parent();
     const curOperator = allElemsDiv.attr('join-operator');
     let newOperator;
-    if (curOperator === 'AND') {
-        newOperator = 'OR';
-    } else if (curOperator === 'OR') {
-        newOperator = 'AND';
+    if (curOperator.toLowerCase() === 'and') {
+        newOperator = 'or';
+    } else if (curOperator.toLowerCase() === 'or') {
+        newOperator = 'and';
     }
     opDiv.text(newOperator);
     opDiv.siblings('.filter-join-operator-div').text(newOperator);
