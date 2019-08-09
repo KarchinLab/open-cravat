@@ -544,8 +544,7 @@ function savedFilterClick(event) {
 	let target = $(this);
 	let filterName = target.text();
 	getSavedFilter(filterName).then((msg) => {
-		filterMgr.updateAll(msg);
-		$('#load_button').click();	
+		filterMgr.updateAll(msg)
 	});
 }
 
