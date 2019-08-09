@@ -222,33 +222,17 @@ const populateFilterValues = (valsContainer, testName, value) => {
             valToKeys = {};
             for (var i = 0; i < optionValues.length; i++) {
                 var val = optionValues[i];
-                valToKeys[val] = [val];
+                valToKeys[val] = val;
             }
         } else {
             valToKeys = swapJson(valSubDic);
         }
-        /*
-        if (value != undefined) {
-            for (var j = 0; j < value.length; j++) {
-                for (let k = 0; k < valSubDicKeys.length; k++) {
-                    const key = valSubDicKeys[k];
-                    value[j] = value[j].replace(new RegExp('\\b' + key + '\\b', 'g'), valSubDic[key]);
-                }
-            }
-        }
-        */
         if (optionValues != undefined) {
             for (var j = 0; j < optionValues.length; j++) {
                 var optionValue = optionValues[j];
                 if (optionValue == null) {
                     continue;
                 }
-                /*
-                for (let k = 0; k < valSubDicKeys.length; k++) {
-                    const key = valSubDicKeys[k];
-                    optionValue = optionValue.replace(new RegExp('\\b' + key + '\\b', 'g'), valSubDic[key]);
-                }
-                */
                 let vals = optionValue.split(';');
                 for (let k = 0; k < vals.length; k++) {
                     let val = vals[k];
@@ -259,18 +243,13 @@ const populateFilterValues = (valsContainer, testName, value) => {
                         if (keys == undefined) {
                             option.value = val;
                         } else {
-                            option.value = keys[0];
+                            option.value = keys;
                         }
                         option.textContent = val;
                         if (value != undefined && keys != undefined) {
                             for (var l = 0; l < value.length; l++) {
-                                for (var m = 0; m < keys.length; m++) {
-                                    if (value[l] == keys[m]) {
-                                        option.selected = true;
-                                        break;
-                                    }
-                                }
-                                if (option.selected == true) {
+                                if (value[l] === keys) {
+                                    option.selected = true;
                                     break;
                                 }
                             }
