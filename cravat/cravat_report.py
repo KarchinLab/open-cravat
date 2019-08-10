@@ -207,6 +207,14 @@ class CravatReport:
             self.mapper_name = r[0].split(':')[0]
 
     async def run (self, tab='all'):
+        # Pull the database version
+        sql = 'select colval from info where colkey="open-cravat"'
+        await self.cursor.execute(sql)
+        r = await self.cursor.fetchone()
+        if r:
+            self.db_version = LooseVersion(r[0])
+        else:
+            self.db_version = None #TODO figure out highest version that lacks this info
         start_time = time.time()
         if not (hasattr(self, 'no_log') and self.no_log):
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
@@ -261,7 +269,7 @@ class CravatReport:
     def write_header (self, level):
         pass
 
-    async def write_table_row (self, row):
+    def write_table_row (self, row):
         pass
 
     async def make_col_info (self, level):
@@ -555,14 +563,6 @@ class CravatReport:
             exit()
         self.conn = await aiosqlite3.connect(self.dbpath)
         self.cursor = await self.conn.cursor()
-        # Pull the database version
-        sql = 'select colval from info where colkey="open-cravat"'
-        await self.cursor.execute(sql)
-        r = await self.cursor.fetchone()
-        if r:
-            self.db_version = LooseVersion(r[0])
-        else:
-            self.db_version = None #TODO figure out highest version that lacks this info
 
     async def load_filter (self):
         self.cf = await CravatFilter.create(dbpath=self.dbpath)
