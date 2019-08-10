@@ -603,6 +603,9 @@ function populateStoreTagPanel () {
         var label = getEl('label');
         label.className = 'checkbox-container';
         label.textContent = tag;
+        if (tagDesc[tag] != undefined) {
+            label.title = tagDesc[tag];
+        }
         var input = getEl('input');
         input.type = 'checkbox';
         input.value = tag;
