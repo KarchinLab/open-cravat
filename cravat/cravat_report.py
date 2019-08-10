@@ -207,14 +207,6 @@ class CravatReport:
             self.mapper_name = r[0].split(':')[0]
 
     async def run (self, tab='all'):
-        # Pull the database version
-        sql = 'select colval from info where colkey="open-cravat"'
-        await self.cursor.execute(sql)
-        r = await self.cursor.fetchone()
-        if r:
-            self.db_version = LooseVersion(r[0])
-        else:
-            self.db_version = None #TODO figure out highest version that lacks this info
         start_time = time.time()
         if not (hasattr(self, 'no_log') and self.no_log):
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
@@ -273,6 +265,14 @@ class CravatReport:
         pass
 
     async def make_col_info (self, level):
+        # Pull the database version
+        sql = 'select colval from info where colkey="open-cravat"'
+        await self.cursor.execute(sql)
+        r = await self.cursor.fetchone()
+        if r:
+            self.db_version = LooseVersion(r[0])
+        else:
+            self.db_version = None #TODO figure out highest version that lacks this info
         await self.store_mapper()
         cravat_conf = self.conf.get_cravat_conf()
         if 'report_module_order' in cravat_conf:
