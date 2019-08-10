@@ -317,7 +317,7 @@ input:checked + .store-switch-slider:before {
 #store-sort-div {
     position: absolute;
     top: 14px;
-    right: -2px;
+    right: -3px;
 }
 
 #store-sort-label {
