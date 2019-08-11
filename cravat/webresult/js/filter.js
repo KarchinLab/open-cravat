@@ -388,6 +388,7 @@ const makeFilterGroupDiv = (filter) => {
     const addRuleBtn = $(getEl('button'))
         .text('+')
         .addClass('filter-control-button')
+        .addClass('butn')
         .click(function (evt) {
             addFilterRuleHandler(evt);
         })
@@ -400,6 +401,7 @@ const makeFilterGroupDiv = (filter) => {
     const addGroupBtn = $(getEl('button'))
         .text('( )')
         .addClass('filter-control-button')
+        .addClass('butn')
         .click(function (evt) {
             addFilterGroupHandler(evt);
         })
