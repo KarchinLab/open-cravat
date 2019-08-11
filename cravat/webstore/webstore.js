@@ -232,6 +232,10 @@ function getLocal () {
                 }
                 populateStoreHome();
                 populateAllModulesDiv();
+                var mg = document.getElementById('store-modulegroup-div').getAttribute('modulegroup');
+                if (mg != undefined && mg != '') {
+                    populateModuleGroupDiv(mg);
+                }
                 if (storeFirstOpen) {
                     showStoreHome();
                 }
@@ -838,6 +842,7 @@ function populateModuleGroupDiv (moduleGroupName) {
     document.getElementById('store-modulegroup-title-span').textContent = remoteModuleInfo[moduleGroupName]['title'];
     var div = document.getElementById('store-modulegroup-content-div');
     emptyElement(div);
+    div.parentElement.setAttribute('modulegroup', moduleGroupName);
     var remoteModuleNames = moduleGroupMembers[moduleGroupName];
     moduleLists['modulegroup'] = remoteModuleNames;
     for (var i = 0; i < remoteModuleNames.length; i++) {
@@ -858,7 +863,7 @@ function saveCurrentPage () {
     var divIds = ['store-home-div', 'store-allmodule-div', 'store-modulegroup-div'];
     for (var i = 0; i < divIds.length; i++) {
         var divId = divIds[i];
-        if (document.getElementById(divId).style.display == 'block') {
+        if (document.getElementById(divId).style.display != 'none') {
             currentPage = divId;
             break;
         }
@@ -939,13 +944,6 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
         var span = getEl('span');
         span.className = 'moduletile-group-updateavailable-span';
         span.textContent = 'Update available';
-        /*
-        span.addEventListener('click', function (evt) {
-            saveCurrentPage();
-            populateModuleGroupDiv(evt.target.parentElement.getAttribute('module'));
-            evt.stopPropagation();
-        });
-        */
         addEl(div, span);
     }
     return div
@@ -1946,7 +1944,7 @@ function connectWebSocket () {
     ws.onopen = function (evt) {
     }
     ws.onclose = function (evt) {
-        console.log('@ re-establishing websocket');
+        console.log('Re-establishing websocket');
         connectWebSocket(failures);
     }
     ws.onmessage = function (evt) {

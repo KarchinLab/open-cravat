@@ -968,10 +968,6 @@ function buildAnnotatorGroupSelector () {
         var tags = localModuleInfo[module].tags;
         for (var i = 0; i < tags.length; i++) {
             var tag = tags[i];
-            /*
-            if (tag == 'gene-level' || tag == 'variant-level') {
-            }
-            */
             if (tagsCollectedForSubmit.indexOf(tag) == -1) {
                 tagsCollectedForSubmit.push(tag);
             }
@@ -984,32 +980,6 @@ function buildAnnotatorGroupSelector () {
     var span = getEl('span');
     span.textContent = 'Module Category\xa0\xa0';
     addEl(div, span);
-    /*
-    var btn = getEl('span');
-    btn.textContent = '\u25BE';
-    btn.style.cursor = 'default';
-    btn.setAttribute('state', 'expanded');
-    btn.addEventListener('click', function (evt) {
-        var btn = evt.target;
-        var state = btn.getAttribute('state');
-        var text = null;
-        var grpDiv = document.querySelector('#annotator-group-select-div div.annotator-group-select');
-        if (state == 'collapsed') {
-            state = 'expanded';
-            text = '\u25BE';
-            grpDiv.classList.add('on');
-            grpDiv.classList.remove('off');
-        } else {
-            state = 'collapsed';
-            text = '\u25B8';
-            grpDiv.classList.add('off');
-            grpDiv.classList.remove('on');
-        }
-        btn.setAttribute('state', state);
-        btn.textContent = text;
-    });
-    addEl(div, btn);
-    */
     addEl(annotCheckDiv, div);
     var div = getEl('div');
     div.id = 'annotator-group-select-tag-div';
@@ -1063,17 +1033,8 @@ function buildAnnotatorGroupSelector () {
             item.title = desc;
         }
     });
-    //buildCheckBoxGroup(checkDatas, div);
     addEl(annotCheckDiv, getEl('br'));
     addEl(annotCheckDiv, getEl('br'));
-    /*
-    var checkDatas = [];
-    var div = getEl('div');
-    div.className = 'annotator-group-select';
-    addEl(annotCheckDiv, div);
-    buildCheckBoxGroup(checkDatas, div);
-    addEl(annotCheckDiv, getEl('hr'));
-    */
     var height = annotCheckDiv.offsetHeight;
     var stylesheets = window.document.styleSheets;
     for (var i = 0; i <= stylesheets.length; i++) {
@@ -1448,16 +1409,31 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         var span = getEl('span');
         span.className = 'checkmark';
         span.setAttribute('module', checkData.value);
-        //label.textContent = checkData.label + ' ';
-        /*
-        var sp = getEl('span');
-        sp.className = 'checkmark';
-        */
         if (checkData.type == 'group') {
             var t = getEl('span');
             t.textContent = checkData.label + ' ';
             t.style.marginLeft = '9px';
             t.style.cursor = 'default';
+            t.addEventListener('click', function (evt) {
+                var btn = evt.target.previousSibling;
+                var state = btn.getAttribute('state');
+                var name = btn.getAttribute('name');
+                var text = null;
+                var grpDiv = document.querySelector('div.checkbox-group-element-sdiv[name=' + name + ']');
+                if (state == 'collapsed') {
+                    state = 'expanded';
+                    text = '\u25BE';
+                    grpDiv.classList.add('on');
+                    grpDiv.classList.remove('off');
+                } else {
+                    state = 'collapsed';
+                    text = '\u25B8';
+                    grpDiv.classList.add('off');
+                    grpDiv.classList.remove('on');
+                }
+                btn.setAttribute('state', state);
+                btn.textContent = text;
+            });
             var btn = getEl('span');
             btn.className = 'icon';
             btn.textContent = '\u25B8';
@@ -1485,7 +1461,6 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
                 btn.textContent = text;
             });
             addEl(checkDiv, btn);
-            //addEl(checkDiv, label);
             addEl(checkDiv, t);
             var sdiv = getEl('div');
             sdiv.id = 'submit-annotator-group-sdiv-' + checkData.name;
