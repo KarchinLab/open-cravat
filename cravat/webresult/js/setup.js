@@ -86,6 +86,11 @@ class FilterManager {
 		this.vpropSfId = 'vprop-sf';
 		this.vpropQbId = 'vprop-qb';
 		this.qbRootId = 'qb-root';
+		this.qbBannedColumns = [
+			'base__numsample',
+			'base__samples',
+			'base__tags',
+		]
 	}
 
 	getFilterSection (headerTitle, active) {

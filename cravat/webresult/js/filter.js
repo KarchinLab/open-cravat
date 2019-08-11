@@ -322,6 +322,9 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
     }
     for (let i=0; i<allCols.length; i++) {
         const col = allCols[i];
+        if (filterMgr.qbBannedColumns.indexOf(col.col) > -1) {
+            continue;
+        }
         const colOpt = $(getEl('option'))
             .val(col.col)
             .append(col.title);
