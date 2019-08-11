@@ -322,6 +322,9 @@ const populateFilterColumnSelector = (colSel, groupTitle) => {
     }
     for (let i=0; i<allCols.length; i++) {
         const col = allCols[i];
+        if (filterMgr.qbBannedColumns.indexOf(col.col) > -1) {
+            continue;
+        }
         const colOpt = $(getEl('option'))
             .val(col.col)
             .append(col.title);
@@ -385,6 +388,7 @@ const makeFilterGroupDiv = (filter) => {
     const addRuleBtn = $(getEl('button'))
         .text('+')
         .addClass('filter-control-button')
+        .addClass('butn')
         .click(function (evt) {
             addFilterRuleHandler(evt);
         })
@@ -397,6 +401,7 @@ const makeFilterGroupDiv = (filter) => {
     const addGroupBtn = $(getEl('button'))
         .text('( )')
         .addClass('filter-control-button')
+        .addClass('butn')
         .click(function (evt) {
             addFilterGroupHandler(evt);
         })
