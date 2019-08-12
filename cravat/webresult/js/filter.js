@@ -560,7 +560,7 @@ const makeGroupFilter = (groupDiv) => {
                         var key = reportsubKeys[j];
                         var value = reportsubValues[j];
                         if ((colFilter.test == 'stringStarts' && value.startsWith(val)) ||
-                            (colFilter.test == 'stringEnds' && value.endsWith(val)) ||
+                        (colFilter.test == 'stringEnds' && value.endsWith(val)) ||
                             (colFilter.test == 'stringContains' && value.includes(val))) {
                             matchReportsubKeys.push(key);
                         }
@@ -585,6 +585,7 @@ const makeGroupFilter = (groupDiv) => {
         }
         // Negate
         colFilter.negate = colDiv.children('.filter-not-toggle').attr('active') === 'true';
+        colFilter.column = colFilter.column==='base__tags' ? 'tagsampler__tags' : colFilter.column //TODO: unhack
         filter.rules.push(colFilter)
     }
     // Groups

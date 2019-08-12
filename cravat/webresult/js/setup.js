@@ -89,7 +89,6 @@ class FilterManager {
 		this.qbBannedColumns = [
 			'base__numsample',
 			'base__samples',
-			'base__tags',
 		]
 	}
 
