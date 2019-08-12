@@ -239,7 +239,7 @@ button {
 }
 
 #submitcontentdiv {
-    width: 400px;
+    width: 390px;
 }
 
 #jobnoteinput {
@@ -716,12 +716,15 @@ input:checked + .slider:before {
 
 #submit-form {
     overflow-y: scroll;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    /*scrollbar-width: none;
+    -ms-overflow-style: none;*/
 }
 
+/*
 #submit-form::-webkit-scrollbar {
     width: 0;
     height: 0;
 }
+
+*/
 
