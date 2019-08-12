@@ -953,6 +953,7 @@ div.pq-select-menu>.pq-select-option-label {
 	width: 8%;
 }
 #filter-right-panel {
+	max-width: 1100px;
 	float: left;
 	height: 100%;
 	width: 75%;
