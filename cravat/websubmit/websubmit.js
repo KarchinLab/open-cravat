@@ -1065,7 +1065,7 @@ function buildAnnotatorGroupSelector () {
         displayText: '{0} selected',
         singlePlaceholder: 'Click to choose',
         multiplePlaceholder: 'Click to choose',
-        width: 200,
+        width: 198,
         search: false,
         selectallText: '',
     }).on('change', function (evt) {
