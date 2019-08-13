@@ -241,6 +241,21 @@ function createJobTextReport (evt) {
     });
 }
 
+function createJobVcfReport (evt) {
+    var jobid = evt.target.getAttribute('jobId');
+    if (websubmitReportBeingGenerated[jobid] == undefined) {
+        websubmitReportBeingGenerated[jobid] = {};
+    }
+    websubmitReportBeingGenerated[jobid]['vcf'] = true;
+    buildJobsTable();
+    generateReport(jobid, 'vcf', function () {
+        websubmitReportBeingGenerated[jobid]['vcf'] = false;
+        populateJobs().then(function () {
+            buildJobsTable();
+        });
+    });
+}
+
 function getAnnotatorsForJob (jobid) {
     var jis = GLOBALS.jobs;
     var anns = [];
@@ -386,6 +401,27 @@ function populateJobTr (job) {
         }
     }
     addEl(dbTd, textButton);
+    // VCF
+    var vcfButton = getEl('button');
+    vcfButton.classList.add('butn');
+    addEl(vcfButton, getTn('VCF'));
+    vcfButton.setAttribute('jobId', job.id);
+    if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['vcf'] == true) {
+        vcfButton.style.backgroundColor = '#cccccc';
+        vcfButton.setAttribute('disabled', true);
+        vcfButton.textContent = 'Generating...';
+    } else {
+        if (job.reports.includes('vcf') == false) {
+            vcfButton.classList.add('inactive-download-button');
+            vcfButton.addEventListener('click', createJobVcfReport);
+            vcfButton.title = 'Click to create.';
+        } else {
+            vcfButton.classList.add('active-download-button');
+            vcfButton.addEventListener('click', jobVcfDownloadButtonHandler);
+            vcfButton.title = 'Click to download.';
+        }
+    }
+    addEl(dbTd, vcfButton);
     // Log
     var logLink = getEl('a');
     logLink.setAttribute('href','jobs/' + job.id + '/log?');
@@ -728,6 +764,10 @@ function jobTextDownloadButtonHandler (event) {
     downloadJobText($(event.target).attr('jobId'));
 }
 
+function jobVcfDownloadButtonHandler (event) {
+    downloadJobVcf($(event.target).attr('jobId'));
+}
+
 function downloadJobExcel (jobId) {
     url = 'jobs/'+jobId+'/reports/excel';
     downloadFile(url);
@@ -735,6 +775,11 @@ function downloadJobExcel (jobId) {
 
 function downloadJobText (jobId) {
     url = 'jobs/'+jobId+'/reports/text';
+    downloadFile(url);
+}
+
+function downloadJobVcf (jobId) {
+    url = 'jobs/'+jobId+'/reports/vcf';
     downloadFile(url);
 }
 

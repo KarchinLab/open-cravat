@@ -30,7 +30,8 @@ class FileRouter(object):
         self.input_fname = 'input'
         self.report_extensions = {
             'text':'.tsv',
-            'excel':'.xlsx'
+            'excel':'.xlsx',
+            'vcf': '.vcf'
         }
         self.db_extension = '.sqlite'
         self.log_extension = '.log'
