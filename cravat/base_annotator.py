@@ -230,16 +230,31 @@ class BaseAnnotator(object):
         pass
 
     async def get_gene_summary_data (self, cf):
+        print('getting gene summary data for {}'.format(self.annotator_name))
+        t = time.time()
         hugos = await cf.get_filtered_hugo_list()
-        cols = [self.annotator_name + '__' + coldef['name'] for coldef in self.conf['output_columns'] if coldef['name'] != 'uid']
+        cols = [self.annotator_name + '__' + coldef['name'] \
+            for coldef in self.conf['output_columns'] \
+            if coldef['name'] != 'uid']
         data = {}
+        t = time.time()
+        rows = await cf.get_variant_data_for_cols(cols)
+        rows_by_hugo = {}
+        t = time.time()
+        for row in rows:
+            hugo = row[-1]
+            if hugo not in rows_by_hugo:
+                rows_by_hugo[hugo] = []
+            rows_by_hugo[hugo].append(row)
+        t = time.time()
         for hugo in hugos:
-            rows = await cf.get_variant_data_for_hugo(hugo, cols)
+            rows = rows_by_hugo[hugo]
             input_data = {}
             for i in range(len(cols)):
                 input_data[cols[i].split('__')[1]] = [row[i] for row in rows]
             out = self.summarize_by_gene(hugo, input_data)
             data[hugo] = out
+        print('finished getting gene summary data for {} in {}s'.format(self.annotator_name, time.time() - t))
         return data
 
     def _log_runtime_exception (self, lnum, line, input_data, e):

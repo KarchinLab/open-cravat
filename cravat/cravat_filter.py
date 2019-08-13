@@ -629,6 +629,16 @@ class CravatFilter ():
         hugos = [row[0] for row in rows]
         return hugos
 
+    async def get_variant_data_for_cols (self, cols):
+        if cols[0] == 'base__uid':
+            cols[0] = 'v.base__uid'
+        q = 'select {},base__hugo from variant as v inner join variant_filtered as f on v.base__uid=f.base__uid'.format(','.join(cols))
+        if cols[0] == 'v.base__uid':
+            cols[0] = 'base__uid'
+        await self.cursor.execute(q)
+        rows = await self.cursor.fetchall()
+        return rows
+
     async def get_variant_data_for_hugo (self, hugo, cols):
         if cols[0] == 'base__uid':
             cols[0] = 'v.base__uid'
