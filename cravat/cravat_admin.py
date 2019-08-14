@@ -194,7 +194,6 @@ def main ():
         # Remote
         try:
             remote_info = au.get_remote_module_info(module_name)
-            print(remote_info)
             if remote_info != None:
                 remote_available = True
         except LookupError:
