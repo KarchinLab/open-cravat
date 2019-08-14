@@ -267,7 +267,6 @@ class BaseMapper(object):
             raise e
 
     async def get_gene_summary_data (self, cf):
-        print('getting gene summary data for {}'.format(self.module_name))
         t = time.time()
         hugos = await cf.get_filtered_hugo_list()
         cols = ['base__' + coldef['name'] \
@@ -291,6 +290,5 @@ class BaseMapper(object):
                 input_data[cols[i].split('__')[1]] = [row[i] for row in rows]
             out = self.summarize_by_gene(hugo, input_data)
             data[hugo] = out
-        print('@ finished getting gene summary data for {} in {}s'.format(self.module_name, time.time() - t))
         return data
 
