@@ -402,26 +402,28 @@ function populateJobTr (job) {
     }
     addEl(dbTd, textButton);
     // VCF
-    var vcfButton = getEl('button');
-    vcfButton.classList.add('butn');
-    addEl(vcfButton, getTn('VCF'));
-    vcfButton.setAttribute('jobId', job.id);
-    if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['vcf'] == true) {
-        vcfButton.style.backgroundColor = '#cccccc';
-        vcfButton.setAttribute('disabled', true);
-        vcfButton.textContent = 'Generating...';
-    } else {
-        if (job.reports.includes('vcf') == false) {
-            vcfButton.classList.add('inactive-download-button');
-            vcfButton.addEventListener('click', createJobVcfReport);
-            vcfButton.title = 'Click to create.';
+    if (localModuleInfo['vcfreporter'] != undefined && localModuleInfo['vcfreporter'].exists) {
+        var vcfButton = getEl('button');
+        vcfButton.classList.add('butn');
+        addEl(vcfButton, getTn('VCF'));
+        vcfButton.setAttribute('jobId', job.id);
+        if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['vcf'] == true) {
+            vcfButton.style.backgroundColor = '#cccccc';
+            vcfButton.setAttribute('disabled', true);
+            vcfButton.textContent = 'Generating...';
         } else {
-            vcfButton.classList.add('active-download-button');
-            vcfButton.addEventListener('click', jobVcfDownloadButtonHandler);
-            vcfButton.title = 'Click to download.';
+            if (job.reports.includes('vcf') == false) {
+                vcfButton.classList.add('inactive-download-button');
+                vcfButton.addEventListener('click', createJobVcfReport);
+                vcfButton.title = 'Click to create.';
+            } else {
+                vcfButton.classList.add('active-download-button');
+                vcfButton.addEventListener('click', jobVcfDownloadButtonHandler);
+                vcfButton.title = 'Click to download.';
+            }
         }
+        addEl(dbTd, vcfButton);
     }
-    addEl(dbTd, vcfButton);
     // Log
     var logLink = getEl('a');
     logLink.setAttribute('href','jobs/' + job.id + '/log?');
