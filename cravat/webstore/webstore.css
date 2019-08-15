@@ -512,7 +512,7 @@ input:checked + .store-switch-slider:before {
 #store-systemmoduleupdate-announce-div {
     position: fixed;
     top: 43px;
-    right: 90px;
+    right: 126px;
     font-size: 12px;
     color: #f7684b;
     z-index: 201;
@@ -524,7 +524,8 @@ input:checked + .store-switch-slider:before {
     top: 50%;
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
-    color: #cddc39;
+    color: white;
+    font-weight: bold;
 }
 
 #store-systemmodule-msg-div {
