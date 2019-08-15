@@ -520,12 +520,13 @@ input:checked + .store-switch-slider:before {
 }
 
 #store-systemmodule-update-div {
-    position: absolute;
+	position: absolute;
     top: 50%;
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
-    color: white;
-    font-weight: bold;
+    color: black;
+    padding: 20px;
+    background-color: #e6e7e8;
 }
 
 #store-systemmodule-msg-div {
