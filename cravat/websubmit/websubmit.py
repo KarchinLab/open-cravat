@@ -80,11 +80,14 @@ class FileRouter(object):
 
     async def job_run_path(self, request, job_id):
         job_dir, _ = await self.job_status(request, job_id)
-        run_name = await self.job_run_name(request, job_id)
-        if run_name is not None:
-            run_path = os.path.join(job_dir, run_name)
-        else:
+        if job_dir is None:
             run_path = None
+        else:
+            run_name = await self.job_run_name(request, job_id)
+            if run_name is not None:
+                run_path = os.path.join(job_dir, run_name)
+            else:
+                run_path = None
         return run_path
 
     async def job_db(self, request, job_id):
@@ -101,16 +104,21 @@ class FileRouter(object):
         return report_path
 
     async def job_status (self, request, job_id):
-        job_dir = await self.job_dir(request, job_id)
-        fns = os.listdir(job_dir)
-        statusjson = {}
-        for fn in fns:
-            if fn.endswith('.status.json'):
-                with open(os.path.join(job_dir, fn)) as f:
-                    statusjson = json.loads(f.readline())
-            elif fn.endswith('.info.yaml'):
-                with open(os.path.join(job_dir, fn)) as f:
-                    statusjson = yaml.load(f)
+        try:
+            job_dir = await self.job_dir(request, job_id)
+            fns = os.listdir(job_dir)
+            statusjson = {}
+            for fn in fns:
+                if fn.endswith('.status.json'):
+                    with open(os.path.join(job_dir, fn)) as f:
+                        statusjson = json.loads(f.readline())
+                elif fn.endswith('.info.yaml'):
+                    with open(os.path.join(job_dir, fn)) as f:
+                        statusjson = yaml.load(f)
+        except Exception as e:
+            traceback.print_stack()
+            job_dir = None
+            statusjson = None
         return job_dir, statusjson
 
     async def job_log (self, request, job_id):

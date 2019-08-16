@@ -169,7 +169,7 @@ def migrate_result (args):
     except:
         print('Result DB is not open-cravat result DB or too old for migration')
         return
-    if oc_ver in ['1.4.4', '1.4.5', '1.5.0', '1.5.1']:
+    #if oc_ver in ['1.4.4', '1.4.5', '1.5.0', '1.5.1']:
     print('@ oc_ver=', oc_ver)
 
 

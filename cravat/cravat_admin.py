@@ -645,9 +645,9 @@ def main ():
     parser_new_annotator.set_defaults(func=new_annotator)
 
     # opens issue report
-    parser_issue_report = subparsers.add_parser('report-issue',
+    parser_report_issue = subparsers.add_parser('report-issue',
                                                help='opens a browser window to report issues')
-    parser_issue_report.set_defaults(func=report_issue)
+    parser_report_issue.set_defaults(func=report_issue)
 
     # shows system conf content.
     parser_show_system_conf = subparsers.add_parser('show-system-conf',
@@ -658,6 +658,7 @@ def main ():
     parser_show_version = subparsers.add_parser('version',
                                                help='shows open-cravat version')
     parser_show_version.set_defaults(func=show_version)
+
     ###########################################################################
 
     args = parser.parse_args()
