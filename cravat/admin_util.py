@@ -245,7 +245,10 @@ class ModuleInfoCache(object):
     def update_local(self):
         self.local = LocalInfoCache()
         if not(os.path.exists(self._modules_dir)):
-            msg = 'Modules directory ({}) does not exist'.format(self._modules_dir)
+            msg = 'Modules directory {} does not exist. Create or reattach it, or edit the configuration at {}'.format(
+                self._modules_dir,
+                constants.system_conf_path,
+            )
             raise exceptions.ConfigurationError(msg)
         for mg in os.listdir(self._modules_dir):
             mg_path = os.path.join(self._modules_dir, mg)
