@@ -401,7 +401,7 @@ function showVariantDetail (row, tabName) {
             }
         } catch (err) {
             console.log(err);
-            console.log('### continuing to the next widget ###');
+            console.log('### exception while drawing widget [' + colGroupKey + '] continuing to the next widget ###');
         }
 	}
 	if (reuseWidgets == false) {

@@ -21,7 +21,7 @@ class ExampleCommandsFormatter(object,):
         self._cmd_indent = cmd_indent
         self._desc_indent = desc_indent
         self._width = width
-        
+
     def add_example(self, cmd, desc):
         self._s += '\n\n'
         self._s += self._cmd_indent
@@ -34,18 +34,18 @@ class ExampleCommandsFormatter(object,):
         desc = textwrap.fill(desc,self._width-len(self._desc_indent))
         desc = textwrap.indent(desc,self._desc_indent)
         self._s += '\n'+desc
-       
+
     def __str__(self):
         return self._s
-    
+
 class InstallProgressStdout(au.InstallProgressHandler):
     def __init__ (self, module_name, module_version):
         super().__init__(module_name, module_version)
-    
+
     def stage_start(self, stage):
         self.cur_stage = stage
         sys.stdout.write(self._stage_msg(stage)+'\n')
-        
+
     def stage_progress(self, cur_chunk, total_chunks, cur_size, total_size):
         rem_chunks = total_chunks - cur_chunk
         perc = cur_size/total_size*100
@@ -59,7 +59,7 @@ class InstallProgressStdout(au.InstallProgressHandler):
         sys.stdout.write(out)
         if cur_chunk == total_chunks:
             sys.stdout.write('\n')
-            
+
 def humanize_bytes(num, binary=False):
     """Human friendly file size"""
     exp2unit_dec = {0:'B',1:'kB',2:'MB',3:'GB'}
@@ -85,7 +85,7 @@ def humanize_bytes(num, binary=False):
     if exponent == 0:
         quot_str = quot_str.rstrip('0').rstrip('.')
     return '{quotient} {unit}'.format(quotient=quot_str, unit=unit)
-    
+
 def main ():
     # Print usage if no args
     if len(sys.argv) == 1: sys.argv.append('-h')
@@ -177,7 +177,7 @@ def main ():
             list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags)
         else:
             list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags)
-    
+
     def yaml_string(x):
         s = yaml.dump(x, default_flow_style = False)
         s = re.sub('!!.*', '', s)
@@ -255,7 +255,7 @@ def main ():
                 print('UP TO DATE')
             else:
                 print('NEWER VERSION EXISTS')
-    
+
     def set_modules_dir(args):
         if args.directory:
             au.set_modules_dir(args.directory)
@@ -343,7 +343,7 @@ def main ():
             args.include_private = False
             args.skip_dependencies = False
             install_modules(args)
-        
+
     def uninstall_modules (args):
         matching_names = au.search_local(*args.modules)
         if len(matching_names) > 0:
@@ -362,10 +362,10 @@ def main ():
                 print('Uninstalled %s' %module_name)
         else:
             print('No modules found')
-            
+
     def publish_module (args):
         au.publish_module(args.module, args.user, args.password, overwrite=args.overwrite, include_data=args.data)
-        
+
     def install_base (args):
         sys_conf = au.get_system_conf()
         base_modules = sys_conf.get(constants.base_modules_key,[])
@@ -378,37 +378,37 @@ def main ():
                                skip_dependencies=False,
                                )
         install_modules(args)
-            
+
     def create_account (args):
         au.create_account(args.username, args.password)
-        
+
     def change_password (args):
         au.change_password(args.username, args.cur_pw, args.new_pw)
-        
+
     def send_reset_email (args):
         au.send_reset_email(args.username)
-        
+
     def send_verify_email (args):
         au.send_verify_email(args.username)
-        
+
     def check_login (args):
         au.check_login(args.username, args.password)
-    
+
     def make_example_input (arg):
         au.make_example_input(arg.directory)
-    
+
     def new_annotator (args):
         au.new_annotator(args.annotator_name)
         module_info = au.get_local_module_info(args.annotator_name)
         print('Annotator {0} created at {1}'.format(args.annotator_name,
                                                     module_info.directory))
-    
+
     def report_issue (args):
         au.report_issue()
-    
+
     def show_system_conf (args):
         au.show_system_conf()
-    
+
     def show_cravat_conf (args):
         au.show_cravat_conf()
 
@@ -420,7 +420,7 @@ def main ():
     ###########################################################################
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     subparsers = parser.add_subparsers(title='Commands')
-    
+
     # md
     md_examples = ExampleCommandsFormatter(prefix='cravat-admin md')
     md_examples.add_example('','Print the current CRAVAT modules directory')
@@ -440,7 +440,7 @@ def main ():
                             nargs='?',
                             help='sets modules directory.')
     parser_md.set_defaults(func=set_modules_dir)
-    
+
     # install-base
     parser_install_base = subparsers.add_parser('install-base',
                                                 help='installs base modules.',
@@ -473,7 +473,7 @@ def main ():
                                 action='store_true',
                                 help='Include private modules when checking for module existence')
     parser_install.set_defaults(func=install_modules)
-    
+
     # update
     update_examples = ExampleCommandsFormatter(prefix='cravat-admin update')
     update_examples.add_example('', 
@@ -498,7 +498,7 @@ def main ():
                                choices=('consensus','force','skip')
                                )
     parser_update.set_defaults(func=update_modules)
-    
+
     # uninstall
     parser_uninstall = subparsers.add_parser('uninstall',
                                           help='uninstalls modules.')
@@ -509,7 +509,7 @@ def main ():
                                   action='store_true',
                                   help='Proceed without prompt')
     parser_uninstall.set_defaults(func=uninstall_modules)
-    
+
     # info
     parser_info = subparsers.add_parser('info',
                                         help='shows module information.')
@@ -520,7 +520,7 @@ def main ():
                              help='Include local info',
                              action='store_true')
     parser_info.set_defaults(func=print_info)
-    
+
     # ls
     ls_examples = ExampleCommandsFormatter(prefix='cravat-admin ls')
     ls_examples.add_example('', 'List installed modules')
@@ -552,7 +552,7 @@ def main ():
         help='Only list modules of given tag(s)'
     )
     parser_ls.set_defaults(func=list_modules)
-    
+
     # publish
     parser_publish = subparsers.add_parser('publish',
                                            help='publishes a module.')
@@ -586,7 +586,7 @@ def main ():
                                 action='store_true',
                                 help='overwrites a published module/version')
     parser_publish.set_defaults(func=publish_module)
-    
+
     # create-account
     parser_create_account = subparsers.add_parser('create-account',
                                                   help='creates a CRAVAT store developer account.')
@@ -595,7 +595,7 @@ def main ():
     parser_create_account.add_argument('password',
                                        help='this is your password.')
     parser_create_account.set_defaults(func=create_account)
-    
+
     # change-password
     parser_change_password = subparsers.add_parser('change-password',
                                                    help='changes CRAVAT store account password.')
@@ -606,21 +606,21 @@ def main ():
     parser_change_password.add_argument('new_pw',
                                         help='new password')
     parser_change_password.set_defaults(func=change_password)
-    
+
     # reset-password
     parser_reset_pw = subparsers.add_parser('reset-password',
                                             help='resets CRAVAT store account password.')
     parser_reset_pw.add_argument('username',
                                  help='username')
     parser_reset_pw.set_defaults(func=send_reset_email)
-    
+
     # verify-email
     parser_verify_email = subparsers.add_parser('verify-email',
                                               help='sends a verification email.')
     parser_verify_email.add_argument('username',
                                      help='username')
     parser_verify_email.set_defaults(func=send_verify_email)
-    
+
     # check-login
     parser_check_login = subparsers.add_parser('check-login',
                                                help='checks username and password.')
@@ -629,7 +629,7 @@ def main ():
     parser_check_login.add_argument('password',
                                    help='password')
     parser_check_login.set_defaults(func=check_login)
-    
+
     # test input file
     parser_make_example_input = subparsers.add_parser('make-example-input',
                                                       help='makes a file with example input variants.')
@@ -643,26 +643,25 @@ def main ():
     parser_new_annotator.add_argument('annotator_name',
                                    help='Annotator name')
     parser_new_annotator.set_defaults(func=new_annotator)
-    
+
     # opens issue report
-    parser_new_annotator = subparsers.add_parser('report-issue',
+    parser_issue_report = subparsers.add_parser('report-issue',
                                                help='opens a browser window to report issues')
-    parser_new_annotator.set_defaults(func=report_issue)
-    
+    parser_issue_report.set_defaults(func=report_issue)
+
     # shows system conf content.
-    parser_new_annotator = subparsers.add_parser('show-system-conf',
+    parser_show_system_conf = subparsers.add_parser('show-system-conf',
                                                help='shows system configuration.')
-    parser_new_annotator.set_defaults(func=show_system_conf)
-    
+    parser_show_system_conf.set_defaults(func=show_system_conf)
+
     # shows version
-    parser_new_annotator = subparsers.add_parser('version',
+    parser_show_version = subparsers.add_parser('version',
                                                help='shows open-cravat version')
-    parser_new_annotator.set_defaults(func=show_version)
-    
+    parser_show_version.set_defaults(func=show_version)
     ###########################################################################
-    
+
     args = parser.parse_args()
     args.func(args) 
-    
+
 if __name__ == '__main__':
     main()

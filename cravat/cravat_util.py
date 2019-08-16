@@ -14,6 +14,7 @@ def get_args ():
     if len(sys.argv) == 1:
         sys.argv.append('-h')
     parser = argparse.ArgumentParser()
+    # converts db coordinate to hg38
     subparsers = parser.add_subparsers(title='Commands')
     subparser = subparsers.add_parser('converttohg38',
         help='converts hg19 coordinates in sqlite3 database to hg38 ones.')
@@ -35,6 +36,11 @@ def get_args ():
         required=False,
         help='chromosome column. If omitted, all tables will be tried to be converted.')
     subparser.set_defaults(func=converttohg38)
+    # migrate old result db
+    parser_migrate_result = subparsers.add_parser('migrate-result',
+                                               help='migrates result db made with older versions of open-cravat')
+    parser_migrate_result.add_argument('dbpath', help='path to result db')
+    parser_migrate_result.set_defaults(func=migrate_result)
     args = parser.parse_args()
     return args
 
@@ -144,6 +150,28 @@ def converttohg38 (args):
                 print('  ' + str(count) + '...')
         print('  ' + table + ': done.', count, 'rows converted')
     newdb.commit()
+
+def migrate_result (args):
+    dbpath = args.dbpath
+    if os.path.exists(dbpath) == False:
+        print('Result DB file [{}] does not exist.'.format(dbpath))
+    db = sqlite3.connect(dbpath)
+    cursor = db.cursor()
+    try:
+        q = 'select colval from info where colkey="open-cravat"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is None:
+            print('Result DB is too old for migration.')
+            return
+        else:
+            oc_ver = r[0]
+    except:
+        print('Result DB is not open-cravat result DB or too old for migration')
+        return
+    if oc_ver in ['1.4.4', '1.4.5', '1.5.0', '1.5.1']:
+    print('@ oc_ver=', oc_ver)
+
 
 def main ():
     args = get_args()
