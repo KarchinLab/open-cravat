@@ -189,12 +189,18 @@ def get_developer_dict (**kwargs):
     return d
 
 class LocalInfoCache(MutableMapping):
-
+    """
+    LocalInfoCache will initially store the paths to modules. When a module info
+    is requested, the module info will be created from the path, stored, and returned.
+    LocalInfoCache exposes the same interface as a dictionary.
+    """
     def __init__(self, *args, **kwargs):
         self.store = dict()
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
     def __getitem__(self, key):
+        if key not in self.store:
+            raise KeyError(key)
         if not isinstance(self.store[key], LocalModuleInfo):
             self.store[key] = LocalModuleInfo(self.store[key])
         return self.store[key]
@@ -239,7 +245,11 @@ class ModuleInfoCache(object):
     def update_local(self):
         self.local = LocalInfoCache()
         if not(os.path.exists(self._modules_dir)):
-            return
+            msg = 'Modules directory {} does not exist. Create or reattach it, or edit the configuration at {}'.format(
+                self._modules_dir,
+                constants.system_conf_path,
+            )
+            raise exceptions.ConfigurationError(msg)
         for mg in os.listdir(self._modules_dir):
             mg_path = os.path.join(self._modules_dir, mg)
             if not(os.path.isdir(mg_path)):
