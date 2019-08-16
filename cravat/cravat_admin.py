@@ -111,9 +111,12 @@ def main ():
         for line in yield_tabular_lines(l, *kwargs):
             print(line)
 
-    def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[]):
-        header = ['Name', 'Title', 'Type','Version','Data source ver','Size']
-        all_toks = [header]
+    def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False):
+        if quiet:
+            all_toks = []
+        else:
+            header = ['Name', 'Title', 'Type','Version','Data source ver','Size']
+            all_toks = [header]
         for module_name in au.search_local(pattern):
             module_info = au.get_local_module_info(module_name)
             if len(types) > 0 and module_info.type not in types:
@@ -126,13 +129,19 @@ def main ():
             if module_info.hidden and not include_hidden:
                 continue
             size = module_info.get_size()
-            toks = [module_name, module_info.title, module_info.type, module_info.version, module_info.datasource, humanize_bytes(size)]
+            if quiet:
+                toks = [module_name]
+            else:
+                toks = [module_name, module_info.title, module_info.type, module_info.version, module_info.datasource, humanize_bytes(size)]
             all_toks.append(toks)
         print_tabular_lines(all_toks)
 
-    def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[]):
-        header = ['Name', 'Title', 'Type','Installed','Up to date', 'Store latest ver','Store data source ver', 'Local ver', 'Local data source ver', 'Size']
-        all_toks = [header]
+    def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False):
+        if quiet:
+            all_toks = []
+        else:
+            header = ['Name', 'Title', 'Type','Installed','Up to date', 'Store latest ver','Store data source ver', 'Local ver', 'Local data source ver', 'Size']
+            all_toks = [header]
         for module_name in au.search_remote(pattern):
             remote_info = au.get_remote_module_info(module_name)
             if len(types) > 0 and remote_info.type not in types:
@@ -159,24 +168,27 @@ def main ():
                 local_version = ''
                 up_to_date = ''
                 local_datasource = ''
-            toks = [module_name,
-                    remote_info.title,
-                    remote_info.type,
-                    installed,
-                    up_to_date,
-                    remote_info.latest_version,
-                    remote_info.datasource,
-                    local_version,
-                    local_datasource,
-                    humanize_bytes(remote_info.size)]
+            if quiet:
+                toks = [module_name]
+            else:
+                toks = [module_name,
+                        remote_info.title,
+                        remote_info.type,
+                        installed,
+                        up_to_date,
+                        remote_info.latest_version,
+                        remote_info.datasource,
+                        local_version,
+                        local_datasource,
+                        humanize_bytes(remote_info.size)]
             all_toks.append(toks)
         print_tabular_lines(all_toks)
 
     def list_modules(args):
         if args.available:
-            list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags)
+            list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet)
         else:
-            list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags)
+            list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet)
     
     def yaml_string(x):
         s = yaml.dump(x, default_flow_style = False)
@@ -551,6 +563,9 @@ def main ():
         default=[],
         help='Only list modules of given tag(s)'
     )
+    parser_ls.add_argument('-q','--quiet',
+                           action='store_true',
+                           help='Only list module names')
     parser_ls.set_defaults(func=list_modules)
     
     # publish
