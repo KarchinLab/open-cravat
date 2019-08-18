@@ -215,14 +215,20 @@ def migrate_result (args):
     q = 'select * from gene limit 1'
     cursor.execute(q)
     cols = [v[0] for v in cursor.description]
-    cols_to_retrieve = ['base__hugo']
-    if 'base__note' in cols:
-        cols_to_retrieve.append('base__note')
-        note_to_add = False
-    else:
-        note_to_add = True
+    gene_cols_to_retrieve = []
+    note_to_add = True
+    for col in cols:
+        module = col.split('__')[0]
+        if module == 'base':
+            if col == 'base__hugo':
+                gene_cols_to_retrieve.append(col)
+            elif col == 'base__note':
+                gene_cols_to_retrieve.append(col)
+                note_to_add = False
+        else:
+            gene_cols_to_retrieve.append(col)
     cursor.execute('alter table gene rename to gene_old')
-    cursor.execute('create table gene as select {} from gene_old'.format(','.join(cols_to_retrieve)))
+    cursor.execute('create table gene as select {} from gene_old'.format(','.join(gene_cols_to_retrieve)))
     if note_to_add:
         cursor.execute('alter table gene add column base__note text')
     cursor.execute('drop table gene_old')
@@ -251,7 +257,7 @@ def migrate_result (args):
             colidx = {}
             for r in rs:
                 col_name = r[colnos['col_name']]
-                if table == 'gene' and col_name not in ['base__hugo', 'base__note']:
+                if table == 'gene' and col_name not in gene_cols_to_retrieve:
                     continue
                 module = col_name.split('__')[0]
                 if module not in colidx:
