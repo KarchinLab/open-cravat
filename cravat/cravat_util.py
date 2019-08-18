@@ -192,24 +192,6 @@ def migrate_result_145_to_150 (dbpath):
     check_result_db_version(dbpath, '1.4.5')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
-    cursor.execute('update info set colval="1.5.0" where colkey="open-cravat"')
-    db.commit()
-    cursor.close()
-    db.close()
-
-def migrate_result_150_to_151 (dbpath):
-    check_result_db_version(dbpath, '1.5.0')
-    db = sqlite3.connect(dbpath)
-    cursor = db.cursor()
-    cursor.execute('update info set colval="1.5.1" where colkey="open-cravat"')
-    db.commit()
-    cursor.close()
-    db.close()
-
-def migrate_result_151_to_152 (dbpath):
-    check_result_db_version(dbpath, '1.5.1')
-    db = sqlite3.connect(dbpath)
-    cursor = db.cursor()
     # gene
     q = 'select * from gene limit 1'
     cursor.execute(q)
@@ -347,8 +329,26 @@ def migrate_result_151_to_152 (dbpath):
     if r is None:
         q = 'insert into info values ("_annotator_desc", "{}")'
         cursor.execute(q)
-    q = 'update info set colval="1.5.2" where colkey="open-cravat"'
+    q = 'update info set colval="1.5.0" where colkey="open-cravat"'
     cursor.execute(q)
+    db.commit()
+    cursor.close()
+    db.close()
+
+def migrate_result_150_to_151 (dbpath):
+    check_result_db_version(dbpath, '1.5.0')
+    db = sqlite3.connect(dbpath)
+    cursor = db.cursor()
+    cursor.execute('update info set colval="1.5.1" where colkey="open-cravat"')
+    db.commit()
+    cursor.close()
+    db.close()
+
+def migrate_result_151_to_152 (dbpath):
+    check_result_db_version(dbpath, '1.5.1')
+    db = sqlite3.connect(dbpath)
+    cursor = db.cursor()
+    cursor.execute('update info set colval="1.5.2" where colkey="open-cravat"')
     db.commit()
     cursor.close()
     db.close()
