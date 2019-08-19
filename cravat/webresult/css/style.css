@@ -859,6 +859,9 @@ div.pq-select-menu>.pq-select-option-label {
 	font-size: 18px;
 	cursor: pointer;
 }
+.filter-header-text {
+	color: white;
+}
 .filter-content {
 	margin: 10px;
 }
@@ -888,10 +891,15 @@ div.pq-select-menu>.pq-select-option-label {
 	text-align: center;
 	float: left;
 	cursor: pointer;
+	color: white;
 }
 
 .vprop-option.active {
 	background-color: #4a87bd;
+}
+
+.filter-header-arrow {
+	color: white;
 }
 
 .filter-header-arrow::after {
