@@ -320,6 +320,7 @@ class FilterManager {
 		filter = filter===undefined ? {} : filter;
 		outerDiv.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
 		let qbDiv = makeFilterGroupDiv(filter);
+		qbDiv.children('.filter-element-remove').css('display','none');
 		qbDiv.attr('id', this.qbRootId);
 		outerDiv.append(qbDiv);
 	}
