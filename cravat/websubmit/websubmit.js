@@ -1821,11 +1821,16 @@ function populatePackageVersions () {
         var curverspans = document.getElementsByClassName('curverspan');
         for (var i = 0; i < curverspans.length; i++) {
             var curverspan = curverspans[i];
+            /*
             var a = getEl('a');
             a.href = "https://github.com/KarchinLab/open-cravat/wiki/Release-Notes";
             a.target = '_blank';
             a.textContent = data.current;
             addEl(curverspan, a);
+            */
+            var s = getEl('span');
+            s.textContent = data.current;
+            addEl(curverspan, s);
             if (data.update) {
                 var a = getEl('a');
                 a.href = 'https://github.com/KarchinLab/open-cravat/wiki/Update-Instructions';
