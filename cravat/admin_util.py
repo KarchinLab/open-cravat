@@ -670,24 +670,6 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         stage_handler.stage_start('finish')
         wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
         wf.close()
-        '''
-        if module_name.startswith('wg') == False:
-            wgmodule_name = 'wg' + module_name
-            if module_exists_remote(wgmodule_name):
-                try:
-                    stage_handler.module_name = module_name
-                    stage_handler.module_version = None
-                    install_module(
-                        'wg' + module_name, 
-                        stage_handler=stage_handler, 
-                        version=None, 
-                        force_data=False)
-                    stage_handler.module_name = module_name
-                    stage_handler.module_version = version
-                    stage_handler.stage_start('finish')
-                except:
-                    traceback.print_exc()
-        '''
     except Exception as e:
         if type(e) == exceptions.KillInstallException:
             stage_handler.stage_start('killed')
