@@ -529,6 +529,15 @@ def serve_widgetfile (request):
     if os.path.exists(filepath):
         return web.FileResponse(filepath)
 
+def serve_dynamic (request):
+    queries = request.rel_url.query
+    filepath = os.sep.join(queries['filepath'].split('|'))
+    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), filepath)
+    if os.path.exists(filepath):
+        response = web.FileResponse(filepath)
+        response.headers['Cache-Control'] = 'no-cache'
+        return response
+
 async def serve_runwidget (request):
     path = 'wg' + request.match_info['module']
     queries = request.rel_url.query
@@ -597,3 +606,4 @@ routes.append(['GET', '/result/widgetfile/{module_dir}/{filename}', serve_widget
 routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])
 routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
 routes.append(['GET', '/result/service/smartfilters', load_smartfilters])
+routes.append(['GET', '/result/dynamic', serve_dynamic])
