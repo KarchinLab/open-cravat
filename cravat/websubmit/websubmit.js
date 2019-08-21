@@ -147,7 +147,7 @@ function submit () {
             return;
         }
         $.ajax({
-            url:'submit',
+            url:'/submit/submit',
             data: fd,
             type: 'POST',
             processData: false,
@@ -748,7 +748,7 @@ function downloadReport (jobId, reportType) {
 
 function generateReport (jobId, reportType, callback) {
     $.ajax({
-        url:'jobs/'+jobId+'/reports/'+reportType,
+        url:'/submit/jobs/'+jobId+'/reports/'+reportType,
         type: 'POST',
         processData: false,
         contentType: 'application/json',
@@ -801,7 +801,7 @@ function jobDeleteButtonHandler (event) {
 
 function deleteJob (jobId) {
     $.ajax({
-        url:'jobs/'+jobId,
+        url:'/submit/jobs/'+jobId,
         type: 'DELETE',
         contentType: 'application/json',
         success: function (data) {
@@ -834,7 +834,7 @@ function inputExampleChangeHandler (event) {
         if (cachedText === undefined) {
             var fname = formatAssembly + '.txt';
             $.ajax({
-                url:'input-examples/'+fname,
+                url:'/submit/input-examples/'+fname,
                 type: 'GET',
                 contentType: 'application/json',
                 success: function (data) {
@@ -931,7 +931,7 @@ function showJobListPage () {
 function populateJobs () {
     return new Promise((resolve, reject) => {
         $.ajax({
-            url:'jobs',
+            url:'/submit/jobs',
             type: 'GET',
             async: true,
             success: function (response) {
@@ -994,7 +994,7 @@ function refreshJobsTable () {
 function populateAnnotators () {
     return new Promise((resolve, reject) => {
         $.ajax({
-            url:'annotators',
+            url:'/submit/annotators',
             type: 'GET',
             success: function (data) {
                 GLOBALS.annotators = data
@@ -1619,7 +1619,7 @@ function checkBoxGroupAllNoneHandler (event) {
 function populateReports () {
     return new Promise((resolve, reject) => {
         $.ajax({
-            url:'reports',
+            url:'/submit/reports',
             type: 'GET',
             success: function (data) {
                 GLOBALS.reports = data
