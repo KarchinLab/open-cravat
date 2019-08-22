@@ -422,11 +422,11 @@ class CravatReport:
         for colgrp in newcolgrps:
             colgrp['lastcol'] = colpos + colgrp['count']
             colpos = colgrp['lastcol']
-        colgrpnames = [v['name'] for v in colgrps if v['name'] not in priority_colgroupnames]
+        colgrpnames = [v['displayname'] for v in colgrps if v['name'] not in priority_colgroupnames]
         colgrpnames.sort()
         for colgrpname in colgrpnames:
             for colgrp in colgrps:
-                if colgrp['name'] == colgrpname:
+                if colgrp['displayname'] == colgrpname:
                     colgrp['lastcol'] = colpos + colgrp['count']
                     newcolgrps.append(colgrp)
                     colpos += colgrp['count']
