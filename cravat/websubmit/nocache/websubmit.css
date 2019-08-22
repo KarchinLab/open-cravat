@@ -549,6 +549,10 @@ input:checked + .slider:before {
   /*font-size: 12px;*/
 }
 
+.checkbox-container:hover {
+    background-color: #3175b0;
+}
+
 /* Hide the browser's default checkbox */
 .checkbox-container input {
   position: absolute;

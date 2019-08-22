@@ -1031,6 +1031,10 @@ div.pq-select-menu>.pq-select-option-label {
   /*font-size: 12px;*/
 }
 
+.checkbox-container:hover {
+    background-color: #888888;
+}
+
 /* Hide the browser's default checkbox */
 .checkbox-container input {
   position: absolute;
