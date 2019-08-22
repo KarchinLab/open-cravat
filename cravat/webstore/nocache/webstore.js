@@ -856,7 +856,6 @@ function populateModuleGroupDiv (moduleGroupName) {
         }
         addEl(div, panel);
     }
-    showStoreModuleGroup();
 }
 
 function saveCurrentPage () {
@@ -887,6 +886,7 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
         var moduleName = evt.target.getAttribute('module');
         saveCurrentPage();
         populateModuleGroupDiv(moduleName);
+        showStoreModuleGroup();
         evt.stopPropagation();
     }
     var img = addLogo(moduleName, sdiv);
@@ -895,6 +895,7 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
             var moduleName = evt.target.parentElement.getAttribute('module');
             saveCurrentPage();
             populateModuleGroupDiv(moduleName);
+            showStoreModuleGroup();
             evt.stopPropagation();
         }
     }
