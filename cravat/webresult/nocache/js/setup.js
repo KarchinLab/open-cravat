@@ -2137,7 +2137,14 @@ function populateWidgetSelectorPanel () {
 			var rowNo = clickInfo['r1'];
 			var colNo = clickInfo['c1'];
 			var rowData = $grids[tabName].pqGrid('getData')[rowNo];
-			var cellData = rowData[colNo];
+            var cell = $grids[tabName].pqGrid('getCell', {rowIndx: rowNo, colIndx: colNo})[0];
+            var cellData = null;
+            if (cell == undefined) {
+                // fallback for initial open of a tab
+                cellData = rowData[colNo];
+            } else {
+                cellData = cell.textContent;
+            }
 			var valueText = null;
 			if (cellData == undefined || cellData == '' || cellData == null) {
 				valueText = '';
