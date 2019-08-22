@@ -134,6 +134,20 @@ class TCPSitePatched (web_runner.BaseSite):
         await super().start()
         self._server = await self.loop.create_server(self._runner.server, self._host, self._port, ssl=self._ssl_context, backlog=self._backlog, reuse_address=self._reuse_address, reuse_port=self._reuse_port)
 
+@web.middleware
+async def middleware (request, handler):
+    response = await handler(request)
+    url_parts = request.url.parts
+    nocache = False
+    if url_parts[0] == '/':
+        if url_parts[2] == 'nocache':
+            nocache = True
+    elif url_parts[0] == 'nocache':
+        nocache = True
+    if nocache:
+        response.headers['Cache-Control'] = 'no-cache'
+    return response
+
 class WebServer (object):
     def __init__ (self, host=None, port=None, loop=None):
         serv = get_server()
@@ -149,7 +163,8 @@ class WebServer (object):
         asyncio.ensure_future(self.start(), loop=self.loop)
 
     async def start (self):
-        self.app = web.Application(loop=self.loop)
+        global middleware
+        self.app = web.Application(loop=self.loop, middlewares=[middleware])
         self.setup_routes()
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()

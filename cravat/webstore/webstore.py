@@ -402,15 +402,6 @@ async def unqueue_install (request):
 async def get_tag_desc (request):
     return constants.module_tag_desc
 
-def serve_dynamic (request):
-    queries = request.rel_url.query
-    filepath = os.sep.join(queries['filepath'].split('|'))
-    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), filepath)
-    if os.path.exists(filepath):
-        response = web.FileResponse(filepath)
-        response.headers['Cache-Control'] = 'no-cache'
-        return response
-
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 #routes.append(['GET', '/store/install', install_module])
@@ -430,4 +421,3 @@ routes.append(['GET', '/store/freemodulesspace', get_free_modules_space])
 routes.append(['GET', '/store/killinstall', kill_install])
 routes.append(['GET', '/store/unqueue', unqueue_install])
 routes.append(['GET', '/store/tagdesc', get_tag_desc])
-routes.append(['GET', '/store/dynamic', serve_dynamic])

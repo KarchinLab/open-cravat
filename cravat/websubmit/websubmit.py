@@ -775,15 +775,6 @@ class JobTracker (object):
         # List currently tracked jobs
         return list(self._jobs.keys())
 
-def serve_dynamic (request):
-    queries = request.rel_url.query
-    filepath = os.sep.join(queries['filepath'].split('|'))
-    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), filepath)
-    if os.path.exists(filepath):
-        response = web.FileResponse(filepath)
-        response.headers['Cache-Control'] = 'no-cache'
-        return response
-
 job_tracker = JobTracker()
 
 def get_last_assembly (request):
@@ -822,7 +813,6 @@ routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
 routes.append(['GET', '/submit/getjobs', get_jobs])
-routes.append(['GET', '/submit/dynamic', serve_dynamic])
 
 if __name__ == '__main__':
     app = web.Application()
