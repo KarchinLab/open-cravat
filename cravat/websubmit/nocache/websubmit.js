@@ -1125,11 +1125,6 @@ function buildAnnotatorsSelector () {
         var annotInfo = annotInfos[i];
         var module = localModuleInfo[annotInfo.name];
         var kind = null;
-        /*
-        console.log('@', localModuleInfo);
-        console.log('@', annotInfo);
-        console.log('@@', module);
-        */
         if (module.type == 'annotator') {
             kind = 'module';
         } else if (module.type == 'group') {
@@ -1882,7 +1877,6 @@ function resizePage () {
 function fileInputChange(event) {
     var fileInputElem = event.target;
     var files = fileInputElem.files;
-    console.log('@', files);
     if (files.length >= 1) {
         $('#mult-inputs-message').css('display','block');
         var $fileListDiv = $('#mult-inputs-list');
