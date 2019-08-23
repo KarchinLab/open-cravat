@@ -398,18 +398,25 @@ class SmartFilter {
 			let sfDiv = $(e.currentTarget);
 			if (sfDiv.hasClass('smartfilter-inactive')) {
 				this.setSfState(sfDiv, true);
+				e.preventDefault();
 			}
 		}, true) // Not using jquery so that event fires on capture phase
+		let titleSpan = $(getEl('span'))
+			.addClass('sf-title')
+			outerDiv.append(titleSpan);
+		let titleLabel = $(getEl('label'))
+			.attr('title', this.sfDef.description)
+			.addClass('checkbox-container')
+			.append(this.sfDef.title);
+		titleSpan.append(titleLabel);
 		let activeCb = $(getEl('input'))
 			.attr('type','checkbox')
 			.addClass('smartfilter-checkbox')
 			.change(this.sfCheckboxChangeHandler.bind(this));
-		outerDiv.append(activeCb);
-		let titleSpan = $(getEl('span'))
-			.attr('title', this.sfDef.description)
-			.addClass('sf-title')
-			.append(this.sfDef.title);
-		outerDiv.append(titleSpan);
+		titleLabel.append(activeCb);
+		titleLabel.append($(getEl('span'))
+			.addClass('checkmark')
+		)
 		let selectorSpan = $(getEl('span'))
 			.addClass('sf-selector');
 		outerDiv.append(selectorSpan);
