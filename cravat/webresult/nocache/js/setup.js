@@ -800,6 +800,8 @@ function pullSfValue(selectorDiv) {
 		} else {
 			return $(selOpts[0]).prop('typedValue');
 		}
+	} else if (selectorType === 'empty') {
+		return null;
 	}
 }
 
