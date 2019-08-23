@@ -2019,6 +2019,19 @@ function populateWidgetSelectorPanel () {
 				checkbox.setAttribute('col', column.col);
 				checkbox.setAttribute('colno', columnKeyNo);
 				checkbox.addEventListener('change', function (evt, ui) {
+                    var chkbx = evt.target;
+                    var chkbxSdiv = chkbx.parentElement.parentElement;
+                    var grpChkbx = chkbxSdiv.parentElement;
+                    var clickPresence = false;
+                    Array.from(
+                        chkbxSdiv.getElementsByClassName('colcheckbox')).forEach(
+                            function(e) {
+                                if (e.checked) {
+                                    clickPresence = true;
+                                }
+                            }
+                    );
+                    grpChkbx.querySelector('label input').checked = clickPresence;
 					updateTableColumns(tabName);
 				});
                 var span = getEl('span');
