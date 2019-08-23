@@ -222,6 +222,12 @@ class MasterCravatConverter(object):
             else:
                 self.input_format = valid_formats[0]
         self.primary_converter = self.converters[self.input_format]
+        if len(self.input_files) > 1:
+            for f in self.input_files[1:]:
+                if not self.primary_converter.check_format(f):
+                    raise ExpectedException('Inconsistent file types')
+                else:
+                    f.seek(0)
         self.logger.info('input format: %s' %self.input_format)
 
     def _open_output_files (self):
