@@ -417,6 +417,10 @@ class SmartFilter {
 			let valueInput = $(getEl('input'))
 				.val(this.value);
 			selectorSpan.append(valueInput);
+		} else if (this.selectorType === 'inputString') {
+			let valueInput = $(getEl('input'))
+				.val(this.value);
+			selectorSpan.append(valueInput);
 		} else if (this.selectorType === 'select') {
 			let select = $(getEl('select'))
 				.addClass('filter-value-input')
@@ -775,6 +779,8 @@ function pullSfValue(selectorDiv) {
 	let selectorWrapper = selectorDiv.children('.sf-selector');
 	if (selectorType === 'inputFloat') {
 		return parseFloat(selectorWrapper.children('input').val());
+	} else if (selectorType === 'inputString') {
+		return selectorWrapper.children('input').val();
 	} else if (selectorType === 'select') {
 		let selector = selectorWrapper.children('.filter-value-input').first();
 		let selOpts = selector[0].selectedOptions;
