@@ -765,9 +765,7 @@ div.pq-select-menu>.pq-select-option-label {
 	position: relative;
 	display: flex;
 }
-.smartfilter.smartfilter-inactive {
-	color: gray;
-}
+
 .smartfilter.smartfilter-active {
 	font-weight: bold;
 }
@@ -881,6 +879,9 @@ div.pq-select-menu>.pq-select-option-label {
 .sf-title {
 	flex: 0 1 30%;
 	padding-right: 10px;
+}
+.sf-title > .checkbox-container {
+	width: fit-content;
 }
 
 .vprop-option {
