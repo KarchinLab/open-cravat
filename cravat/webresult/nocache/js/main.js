@@ -237,12 +237,20 @@ function addTabHeadsAndTabContentDivs () {
 	}
 }
 
-function disableUpdateButton () {
-    document.getElementById('load_button').disabled = true;
+function disableUpdateButton ({countHigh=false}={}) {
+    var btn = document.getElementById('load_button');
+    btn.disabled = true;
+    if (countHigh) {
+        btn.innerText = `Count must be below ${NUMVAR_LIMIT}`;
+    } else {
+        btn.innerText = 'Apply filter';
+    }
 }
 
 function enableUpdateButton () {
-    document.getElementById('load_button').disabled = false;
+    var btn = document.getElementById('load_button');
+    btn.disabled = false;
+    btn.innerText = 'Apply filter';
 }
 
 function clearVariantGeneTab () {
@@ -574,7 +582,7 @@ function loadData (alertFlag, finalcallback) {
             var numvar = Number(infomgr.jobinfo['Number of unique input variants']);
             if (filterJson.length == 0 && numvar > NUMVAR_LIMIT) {
                 lockTabs();
-                disableUpdateButton();
+                disableUpdateButton({countHigh:true});
                 flagNotifyToUseFilter = true;
                 if (document.getElementById('infonoticediv')) {
                     notifyToUseFilter();
@@ -590,7 +598,7 @@ function loadData (alertFlag, finalcallback) {
                 infomgr.count(dbPath, 'variant', function (numvar) {
                     if (numvar > NUMVAR_LIMIT) {
                         lockTabs();
-                        disableUpdateButton();
+                        disableUpdateButton({countLow:true});
                         flagNotifyToUseFilter = true;
                         if (document.getElementById('infonoticediv')) {
                             notifyToUseFilter();

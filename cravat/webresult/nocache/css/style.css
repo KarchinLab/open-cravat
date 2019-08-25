@@ -935,14 +935,9 @@ div.pq-select-menu>.pq-select-option-label {
 #load_button {
 	margin-left: auto;
 	width: 50%;
-    background-color: #4a87bd;
-    height: 34px;
+	height: 34px;
     font-family: sourcesanspro-bold;
     font-size: 18px;
-}
-
-#load_button:hover {
-    background-color: #5cb5e5;
 }
 
 #filter-save {
@@ -1006,8 +1001,16 @@ div.pq-select-menu>.pq-select-option-label {
   cursor: pointer;
 }
 
-.butn:hover {
+.butn:hover:enabled {
   background-color: #5cb5e5;
+}
+
+.butn:disabled {
+	background-color: inherit;
+    color: #c5af8d;
+    border-style: solid;
+	border-color: #c5af8d;
+	cursor: inherit;
 }
 
 .pq-grid-cell, .pq-grid-number-cell {

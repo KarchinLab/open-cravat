@@ -635,10 +635,12 @@ function makeFilterTab (rightDiv) {
 			infomgr.count(dbPath, 'variant', (msg, data) => {
 				let count = data.n;
 				refreshFilterCounts(count);
-				if (count <= NUMVAR_LIMIT && count > 0) {
-					enableUpdateButton();
+				if (count > NUMVAR_LIMIT) {
+					disableUpdateButton({countHigh:true});
+				} else if (count === 0) {
+					disableUpdateButton()
 				} else {
-					disableUpdateButton();
+					enableUpdateButton();
 				}
 			})
 		}
