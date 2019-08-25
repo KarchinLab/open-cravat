@@ -158,18 +158,36 @@ base_smartfilters = [
             'defaultValue': '0.1',
         },
         'filter': {
-            'operator': 'or',
+            'operator': 'and',
             'rules': [
                 {
-                    'column': 'gnomad__af', 
-                    'test': 'lessThanEq',
-                    'value': '${value}'
+                    'operator': 'or',
+                    'rules': [
+                        {
+                            'column': 'gnomad__af', 
+                            'test': 'lessThanEq',
+                            'value': '${value}'
+                        },
+                        {
+                            'column': 'gnomad__af', 
+                            'test': 'noData'
+                        }
+                    ]
                 },
                 {
-                    'column': 'thousandgenomes__af', 
-                    'test': 'lessThanEq',
-                    'value': '${value}'
-                },
+                    'operator': 'or',
+                    'rules': [
+                        {
+                            'column': 'thousandgenomes__af', 
+                            'test': 'lessThanEq',
+                            'value': '${value}'
+                        },
+                        {
+                            'column': 'thousandgenomes__af', 
+                            'test': 'noData',
+                        },
+                    ]
+                }
             ]
         },
     },
