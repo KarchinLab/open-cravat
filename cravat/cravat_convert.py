@@ -288,6 +288,7 @@ class MasterCravatConverter(object):
         start_time = time.time()
         multiple_files = len(self.input_files) > 1
         fileno = 0
+        total_lnum = 0
         for f in self.input_files:
             fileno += 1
             self.primary_converter.setup(f)
@@ -299,6 +300,7 @@ class MasterCravatConverter(object):
                 cur_fname = os.path.basename(f.name)
                 samp_prefix = cur_fname
                 read_lnum += 1
+                total_lnum += 1
                 try:
                     # all_wdicts is a list, since one input line can become
                     # multiple output lines
@@ -350,14 +352,14 @@ class MasterCravatConverter(object):
         self.logger.info('error lines: %d' %num_errors)
         self._close_files()
         if self.status_writer is not None:
-            self.status_writer.queue_status_update('num_input_var', read_lnum)
+            self.status_writer.queue_status_update('num_input_var', total_lnum)
             self.status_writer.queue_status_update('num_unique_var', write_lnum)
             self.status_writer.queue_status_update('num_error_input', num_errors)
         end_time = time.time()
         self.logger.info('finished: %s' %\
             time.asctime(time.localtime(end_time)))
         runtime = round(end_time - start_time, 3)
-        self.logger.info('num input lines: {}'.format(read_lnum))
+        self.logger.info('num input lines: {}'.format(total_lnum))
         self.logger.info('runtime: %s'%runtime)
         return self.primary_converter.format_name
 
