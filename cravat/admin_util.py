@@ -1230,12 +1230,10 @@ class ReadyState(object):
 
     READY = 0
     MISSING_MD = 1
-    SYS_MODULES = 2
 
     messages = {
         0: '',
         1: 'Modules directory not found',
-        2: 'Missing system modules',
     }
 
     def __init__(self, code=READY):
@@ -1275,7 +1273,7 @@ def ready_resolution_console():
             set_modules_dir(full_path)
             print(full_path)
         else:
-            exit()
+            exit()        
 
 
 """
