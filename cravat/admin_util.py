@@ -1274,6 +1274,7 @@ def ready_resolution_console():
             print(full_path)
         else:
             exit()        
+    exit()
 
 
 """

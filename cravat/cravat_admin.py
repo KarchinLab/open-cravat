@@ -427,6 +427,9 @@ def main ():
     def show_version (args):
         au.show_cravat_version()
 
+    # Check that the system is ready
+    au.ready_resolution_console()
+
     ###########################################################################
     # PARSERS START HERE
     ###########################################################################
