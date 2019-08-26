@@ -302,6 +302,7 @@ function copyColModel (colModelGroup) {
         newcol.link_format = col.link_format;
         newcol.filter = col.filter;
         newcol.fromgenelevel = true;
+        newcol.render = col.render;
         newColModel.push(newcol);
     }
     newColModelGroup.colModel = newColModel;
