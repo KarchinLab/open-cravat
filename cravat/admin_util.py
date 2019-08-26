@@ -1273,6 +1273,7 @@ def ready_resolution_console():
             set_modules_dir(full_path)
             print(full_path)
         else:
+            print('Please manually recreate/reattach the modules directory')
             exit()        
     exit()
 
