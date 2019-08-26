@@ -258,14 +258,14 @@ def migrate_result_145_to_150 (dbpath):
                     col_def['categories'] = []
                 else:
                     col_def['categories'] = json.loads(col_def['categories'])
-                if col_def['width'] is None:
-                    col_def['width'] = 100
                 if col_def['hidden'] is None:
+                    col_def['hidden'] = False
+                if col_def['hidden'] == 1:
+                    col_def['hidden'] = True
+                elif col_def['hidden'] == 0:
                     col_def['hidden'] = False
                 if col_def['filterable'] is None:
                     col_def['filterable'] = True
-                if col_def['desc'] is None:
-                    col_def['desc'] = ''
                 q = 'insert into {}_header values (\'{}\', \'{}\')'.format(table, col_name, json.dumps(col_def))
                 cursor.execute(q)
             if table == 'gene' and note_to_add:
