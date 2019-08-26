@@ -1230,6 +1230,12 @@ def show_cravat_version ():
     version = get_current_package_version()
     print(version)
 
+def system_ready():
+    if not(os.path.exists(get_modules_dir())):
+        return {'ready':False, code:1, 'message':'Modules directory not found'}
+    if not module_exists_local('hg38'):
+        return {'ready':False, code:2, 'message':'No mapper installed'}
+
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info
