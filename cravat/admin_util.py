@@ -245,11 +245,7 @@ class ModuleInfoCache(object):
     def update_local(self):
         self.local = LocalInfoCache()
         if not(os.path.exists(self._modules_dir)):
-            msg = 'Modules directory {} does not exist. Create or reattach it, or edit the configuration at {}'.format(
-                self._modules_dir,
-                constants.system_conf_path,
-            )
-            raise exceptions.ConfigurationError(msg)
+            return
         for mg in os.listdir(self._modules_dir):
             mg_path = os.path.join(self._modules_dir, mg)
             if not(os.path.isdir(mg_path)):
@@ -1230,11 +1226,51 @@ def show_cravat_version ():
     version = get_current_package_version()
     print(version)
 
+class ReadyState(object):
+
+    messages = {
+        0: '',
+        1: 'Modules directory not found'
+    }
+
+    def __init__(self, code=0):
+        if code not in self.messages:
+            raise ValueError(code)
+        self.code = code
+    
+    @property
+    def message(self):
+        return self.messages[self.code]
+    
+    def __bool__(self):
+        return self.code==0
+
+    def __iter__(self):
+        yield 'ready', bool(self)
+        yield 'code', self.code
+        yield 'message', self.message
+
 def system_ready():
     if not(os.path.exists(get_modules_dir())):
-        return {'ready':False, code:1, 'message':'Modules directory not found'}
-    if not module_exists_local('hg38'):
-        return {'ready':False, code:2, 'message':'No mapper installed'}
+        return ReadyState(code=1)
+    return ReadyState()
+
+def ready_resolution_console():
+    rs = system_ready()
+    if rs:
+        return
+    print(rs.message)
+    if rs.code == 1:
+        msg = 'Current modules directory is {}.\nInput a new modules directory, or press enter to exit.\n> '.format(
+                get_modules_dir()
+            )
+        new_md = input(msg)
+        if new_md:
+            full_path = os.path.abspath(new_md)
+            set_modules_dir(full_path)
+            print(full_path)
+        else:
+            exit()
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
