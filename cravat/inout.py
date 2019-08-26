@@ -448,9 +448,9 @@ class ColumnDefinition (object):
         self.categories = d.get('categories',[])
         self.width = d.get('width')
         self.desc = d.get('desc')
-        self.hidden = d.get('hidden',False)
+        self.hidden = bool(d.get('hidden',False))
         self.category = d.get('category')
-        self.filterable = d.get('filterable',True)
+        self.filterable = bool(d.get('filterable',True))
         self.link_format = d.get('link_format')
         self.genesummary = d.get('genesummary',False)
 
