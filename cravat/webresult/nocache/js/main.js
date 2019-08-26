@@ -537,6 +537,11 @@ function loadData (alertFlag, finalcallback) {
             resizesTheWindow();
 		}
         enableUpdateButton();
+        unlockTabs();
+        if (jobDataLoadingDiv != null) {
+            jobDataLoadingDiv.parentElement.removeChild(jobDataLoadingDiv);
+            jobDataLoadingDiv = null;
+        }
 	}
 	var loadGeneResult = function () {
 		var numvar = infomgr.getData('variant').length;
@@ -553,7 +558,6 @@ function loadData (alertFlag, finalcallback) {
 			return;
 		} else {
 			flagNotifyToUseFilter = false;
-			unlockTabs();
 			if (document.getElementById('infonoticediv')) {
 				notifyOfReadyToLoad();
 			}
@@ -591,7 +595,7 @@ function loadData (alertFlag, finalcallback) {
                 } else {
                     flagNotifyToUseFilter = true;
                 }
-                removeLoadingDiv();
+                //removeLoadingDiv();
                 firstLoad = true;
                 return;
             }
@@ -607,14 +611,14 @@ function loadData (alertFlag, finalcallback) {
                         } else {
                             flagNotifyToUseFilter = true;
                         }
-                        removeLoadingDiv();
+                        //removeLoadingDiv();
                         return;
                     } else {
                         if (flagNotifyToUseFilter) {
                             notifyOfReadyToLoad();
                             flagNotifyToUseFilter = false;
                         }
-                        removeLoadingDiv();
+                        //removeLoadingDiv();
                         callLoadVariant();
                     }
                 });
@@ -623,7 +627,7 @@ function loadData (alertFlag, finalcallback) {
                     notifyOfReadyToLoad();
                     flagNotifyToUseFilter = false;
                 }
-                removeLoadingDiv();
+                //removeLoadingDiv();
                 callLoadVariant();
             }
 		} else {

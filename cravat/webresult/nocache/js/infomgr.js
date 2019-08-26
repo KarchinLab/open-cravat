@@ -287,10 +287,12 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 		callback(callbackArgs);
 	}
 	
+    /*
 	if (jobDataLoadingDiv != null) {
 		jobDataLoadingDiv.parentElement.removeChild(jobDataLoadingDiv);
 		jobDataLoadingDiv = null;
 	}
+    */
 }
 
 InfoMgr.prototype.getData = function (tabName) {
