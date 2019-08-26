@@ -1228,12 +1228,17 @@ def show_cravat_version ():
 
 class ReadyState(object):
 
+    READY = 0
+    MISSING_MD = 1
+    SYS_MODULES = 2
+
     messages = {
         0: '',
-        1: 'Modules directory not found'
+        1: 'Modules directory not found',
+        2: 'Missing system modules',
     }
 
-    def __init__(self, code=0):
+    def __init__(self, code=self.READY):
         if code not in self.messages:
             raise ValueError(code)
         self.code = code
@@ -1243,7 +1248,7 @@ class ReadyState(object):
         return self.messages[self.code]
     
     def __bool__(self):
-        return self.code==0
+        return self.code==self.READY
 
     def __iter__(self):
         yield 'ready', bool(self)
@@ -1260,7 +1265,7 @@ def ready_resolution_console():
     if rs:
         return
     print(rs.message)
-    if rs.code == 1:
+    if rs.code == SystemReady.MISSING_MD:
         msg = 'Current modules directory is {}.\nInput a new modules directory, or press enter to exit.\n> '.format(
                 get_modules_dir()
             )
@@ -1271,6 +1276,7 @@ def ready_resolution_console():
             print(full_path)
         else:
             exit()
+
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
