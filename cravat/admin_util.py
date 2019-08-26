@@ -923,7 +923,11 @@ def publish_module(module_name, user, password, overwrite=False, include_data=Tr
     zip_builder = su.ModuleArchiveBuilder(zf_path, base_path=local_info.directory)
     for item_name in os.listdir(local_info.directory):
             item_path = os.path.join(local_info.directory, item_name)
-            if item_path == local_info.data_dir and not(include_data):
+            if item_name.endswith('ofinstall'):
+                continue
+            elif item_name == '__pycache__':
+                continue
+            elif item_path == local_info.data_dir and not(include_data):
                 continue
             else:
                 zip_builder.add_item(item_path)
