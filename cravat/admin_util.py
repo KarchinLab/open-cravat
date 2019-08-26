@@ -1238,7 +1238,7 @@ class ReadyState(object):
         2: 'Missing system modules',
     }
 
-    def __init__(self, code=self.READY):
+    def __init__(self, code=READY):
         if code not in self.messages:
             raise ValueError(code)
         self.code = code
@@ -1257,7 +1257,7 @@ class ReadyState(object):
 
 def system_ready():
     if not(os.path.exists(get_modules_dir())):
-        return ReadyState(code=1)
+        return ReadyState(code=ReadyState.MISSING_MD)
     return ReadyState()
 
 def ready_resolution_console():
@@ -1265,7 +1265,7 @@ def ready_resolution_console():
     if rs:
         return
     print(rs.message)
-    if rs.code == SystemReady.MISSING_MD:
+    if rs.code == ReadyState.MISSING_MD:
         msg = 'Current modules directory is {}.\nInput a new modules directory, or press enter to exit.\n> '.format(
                 get_modules_dir()
             )
