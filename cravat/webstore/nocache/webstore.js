@@ -102,14 +102,24 @@ function onClickInstallBaseComponents () {
 
 function showSystemModulePage () {
     document.getElementById('store-systemmodule-div').style.display = 'block';
-    if (baseInstalled == false) {
-        document.getElementById('store-systemmodule-missing-div').style.display = 'block';
+    if (systemReadyObj.ready == false) {
+        document.getElementById('store-systemmodule-systemnotready-div').style.display = 'block';
+        var span = document.getElementById('store-systemmodule-systemnotready-span');
+        var span2 = document.getElementById('store-systemmodule-systemnotready-span2');
+        span.textContent = systemReadyObj['message'];
+        if (systemReadyObj['code'] == 1) {
+            span2.textContent = 'Please use the settings menu at top right to set the correct modules directory.';
+        }
     } else {
-        document.getElementById('store-systemmodule-missing-div').style.display = 'none';
-    }
-    document.getElementById('store-systemmodule-update-div').style.display = 'none';
-    if (baseToInstall.length == 0) {
-        document.getElementById('store-systemmodule-install-button').disabled = true;
+        if (baseInstalled == false) {
+            document.getElementById('store-systemmodule-missing-div').style.display = 'block';
+        } else {
+            document.getElementById('store-systemmodule-missing-div').style.display = 'none';
+        }
+        document.getElementById('store-systemmodule-update-div').style.display = 'none';
+        if (baseToInstall.length == 0) {
+            document.getElementById('store-systemmodule-install-button').disabled = true;
+        }
     }
 }
 
@@ -535,6 +545,22 @@ function trimRemote () {
     }
 }
 
+function checkSystemReady () {
+    $.ajax({
+        url: '/issystemready',
+        async: true,
+        success: function (response) {
+            systemReadyObj = response;
+            if (systemReadyObj.ready) {
+                getLocal();
+            } else {
+                hidePageselect();
+                showSystemModulePage();
+            }
+        },
+    });
+}
+
 function getRemote () {
 	$.ajax({
         url: '/store/remote',
@@ -556,7 +582,7 @@ function getRemote () {
                     installInfo[module] = {'msg': 'queued'};
                 }
             }
-            getLocal();
+            checkSystemReady();
         }
 	});
 }

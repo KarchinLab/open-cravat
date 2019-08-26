@@ -140,7 +140,7 @@ async def middleware (request, handler):
     url_parts = request.url.parts
     nocache = False
     if url_parts[0] == '/':
-        if url_parts[2] == 'nocache':
+        if len(url_parts) >= 3 and url_parts[2] == 'nocache':
             nocache = True
     elif url_parts[0] == 'nocache':
         nocache = True
@@ -184,6 +184,7 @@ class WebServer (object):
         self.app.router.add_static('/submit', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
         self.app.router.add_get('/hello', hello)
         self.app.router.add_get('/heartbeat', heartbeat)
+        self.app.router.add_get('/issystemready', is_system_ready)
         ws.start_worker()
 
 async def hello(request):
@@ -195,6 +196,9 @@ async def heartbeat(request):
     async for msg in ws:
         pass
     return ws
+
+async def is_system_ready (request):
+    return web.json_response(dict(au.system_ready()))
 
 def main ():
     '''

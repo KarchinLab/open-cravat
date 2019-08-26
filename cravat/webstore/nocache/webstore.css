@@ -499,6 +499,16 @@ input:checked + .store-switch-slider:before {
     background-color: rgba(100, 100, 100, 0.77);
 }
 
+#store-systemmodule-systemnotready-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    color: black;
+    padding: 20px;
+    background-color: #e6e7e8;
+}
+
 #store-systemmodule-missing-div {
     position: absolute;
     top: 50%;

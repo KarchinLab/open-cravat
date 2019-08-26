@@ -18,6 +18,7 @@ var tagsCollectedForSubmit = [];
 var jobsPerPageInList = 15;
 var jobsListCurStart = 0;
 var jobsListCurEnd = jobsPerPageInList;
+var systemReadyObj = null;
 
 function submit () {
     if (servermode && logged == false) {
