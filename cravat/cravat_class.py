@@ -186,6 +186,9 @@ class Cravat (object):
             self.status_json['reports'] = self.args.reports if self.args.reports != None else []
             self.pkg_ver = au.get_current_package_version()
             self.status_json['open_cravat_version'] = self.pkg_ver
+            annotators = list(self.annotators.keys())
+            annotators.sort()
+            self.status_json['annotators'] = annotators
             with open(self.status_json_path,'w') as wf:
                 wf.write(json.dumps(self.status_json))
 
@@ -583,7 +586,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='variant'))
-        v_aggregator = Aggregator(cmd)
+        v_aggregator = Aggregator(cmd, self.status_writer)
         v_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime)) 
@@ -599,7 +602,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='gene'))
-        g_aggregator = Aggregator(cmd)
+        g_aggregator = Aggregator(cmd, self.status_writer)
         g_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -615,7 +618,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='sample'))
-        s_aggregator = Aggregator(cmd)
+        s_aggregator = Aggregator(cmd, self.status_writer)
         s_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -630,7 +633,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='mapping'))
-        m_aggregator = Aggregator(cmd)
+        m_aggregator = Aggregator(cmd, self.status_writer)
         m_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -652,7 +655,7 @@ class Cravat (object):
             if self.verbose:
                 print(' '.join(cmd))
             post_agg_cls = util.load_class('CravatPostAggregator', module.script_path)
-            post_agg = post_agg_cls(cmd)
+            post_agg = post_agg_cls(cmd, self.status_writer)
             stime = time.time()
             post_agg.run()
             rtime = time.time() - stime

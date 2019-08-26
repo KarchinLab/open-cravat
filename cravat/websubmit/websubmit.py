@@ -116,7 +116,7 @@ class FileRouter(object):
                     with open(os.path.join(job_dir, fn)) as f:
                         statusjson = yaml.load(f)
         except Exception as e:
-            traceback.print_stack()
+            traceback.print_exc()
             job_dir = None
             statusjson = None
         return job_dir, statusjson

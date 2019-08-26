@@ -18,7 +18,8 @@ class BasePostAggregator (object):
                       'int':'integer',
                       'float':'real'}
 
-    def __init__(self, cmd_args):
+    def __init__(self, cmd_args, status_writer):
+        self.status_writer = status_writer
         # self.module_name = get_caller_name(sys.modules[self.__module__].__file__)
         self.module_name = get_caller_name(cmd_args[0])
         self.parse_cmd_args(cmd_args)
@@ -90,8 +91,11 @@ class BasePostAggregator (object):
         if not self.should_run_annotate:
             return
         start_time = time.time()
+        self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.conf['title'], self.module_name))
+        last_status_update_time = time.time()
         self.logger.info('started: {0}'.format(time.asctime(time.localtime(start_time))))
         self.base_setup()
+        lnum = 0
         for input_data in self._get_input():
             try:
                 output_dict = self.annotate(input_data)
@@ -99,6 +103,11 @@ class BasePostAggregator (object):
                 for k, v in output_dict.items():
                     fixed_output[self.module_name + '__' + k] = v
                 self.write_output(input_data, fixed_output)
+                cur_time = time.time()
+                lnum += 1
+                if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
+                    self.status_writer.queue_status_update('status', 'Running {} ({}): row {}'.format(self.conf['title'], self.module_name, lnum))
+                    last_status_update_time = cur_time
             except Exception as e:
                 self._log_runtime_exception(input_data, e)
         self.fill_categories()
@@ -108,6 +117,7 @@ class BasePostAggregator (object):
         run_time = end_time - start_time
         self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
         self.logger.info('runtime: {0:0.3f}'.format(run_time))
+        self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.module_name))
 
     def fill_categories (self):
         for col_d in self.conf['output_columns']:
