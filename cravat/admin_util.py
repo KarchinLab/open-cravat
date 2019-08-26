@@ -610,6 +610,9 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                 raise exceptions.KillInstallException
         wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
         wf.close()
+        endofinstall_path = os.path.join(module_dir, 'endofinstall')
+        if os.path.exists(os.path.join(module_dir, 'endofinstall')):
+            os.remove(endofinstall_path)
         zipfile_path = os.path.join(module_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
         r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
