@@ -668,6 +668,7 @@ class Cravat (object):
             try:
                 module = au.get_local_module_info(module_name)
                 self.announce_module(module)
+                print('')
                 cmd = [module.script_path, 
                        '-s', os.path.join(self.output_dir, self.run_name),
                        os.path.join(self.output_dir, self.run_name + '.sqlite'),
@@ -689,7 +690,7 @@ class Cravat (object):
                 stime = time.time()
                 await reporter.run()
                 rtime = time.time() - stime
-                print('finished in {0:.3f}s'.format(rtime))
+                print('\t    finished in {0:.3f}s'.format(rtime))
             except Exception as e:
                 traceback.print_exc()
                 self.logger.exception(e)

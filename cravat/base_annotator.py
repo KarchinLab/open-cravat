@@ -230,7 +230,7 @@ class BaseAnnotator(object):
         pass
 
     async def get_gene_summary_data (self, cf):
-        print('getting gene summary data for {}'.format(self.annotator_name))
+        print('            {}: getting gene summary data'.format(self.annotator_name))
         t = time.time()
         hugos = await cf.get_filtered_hugo_list()
         cols = [self.annotator_name + '__' + coldef['name'] \
@@ -254,7 +254,7 @@ class BaseAnnotator(object):
                 input_data[cols[i].split('__')[1]] = [row[i] for row in rows]
             out = self.summarize_by_gene(hugo, input_data)
             data[hugo] = out
-        print('finished getting gene summary data for {} in {}s'.format(self.annotator_name, time.time() - t))
+        print('            {}: finished getting gene summary data in {:0.3f}s'.format(self.annotator_name, time.time() - t))
         return data
 
     def _log_runtime_exception (self, lnum, line, input_data, e):
