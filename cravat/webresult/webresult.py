@@ -527,7 +527,9 @@ def serve_widgetfile (request):
         request.match_info['filename']
         )
     if os.path.exists(filepath):
-        return web.FileResponse(filepath)
+        response = web.FileResponse(filepath)
+        response.headers['Cache-Control'] = 'no-cache'
+        return response
 
 async def serve_runwidget (request):
     path = 'wg' + request.match_info['module']
