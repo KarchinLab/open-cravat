@@ -669,7 +669,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         stage_handler.stage_start('finish')
         wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
         wf.close()
-    except Exception as e:
+    except (Exception, KeyboardInterrupt, SystemExit) as e:
         if type(e) == exceptions.KillInstallException:
             stage_handler.stage_start('killed')
         try:
