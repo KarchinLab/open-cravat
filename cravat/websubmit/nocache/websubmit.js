@@ -1541,7 +1541,8 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         for (var i = 0; i <= stylesheets.length; i++) {
             var stylesheet = stylesheets[i];
             if (stylesheet.href.indexOf('websubmit.css') >= 0) {
-                stylesheet.insertRule(divid + ' {overflow: hidden; width: 99%; transition: max-height .4s; max-height: ' + height + 'px;}');
+                //stylesheet.insertRule(divid + ' {overflow: hidden; width: 99%; transition: max-height .4s; max-height: ' + height + 'px;}');
+                stylesheet.insertRule(divid + ' {overflow: hidden; width: 99%; transition: max-height .4s; max-height: inherit;}');
                 stylesheet.insertRule(divid + '.off {overflow: hidden; max-height: 0px;}');
                 stylesheet.insertRule(divid + '.on {overflow: hidden; border: 1px dotted #aaaaaa;}');
                 break;
