@@ -143,8 +143,9 @@ function getLocal () {
                     mI['tags'] = tags;
                 }
                 if (remoteModuleName in localModuleInfo) {
-                    var idx = tags.indexOf('installed');
-                    if (idx == -1) {
+                    //var idx = tags.indexOf('installed');
+                    //if (idx == -1) {
+                    if (localModuleInfo[remoteModuleName].exists) {
                         tags.push('installed');
                     }
                     if (moduleNamesInInstallQueue.indexOf(remoteModuleName) == -1) {
