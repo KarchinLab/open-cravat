@@ -186,6 +186,9 @@ class Cravat (object):
             self.status_json['reports'] = self.args.reports if self.args.reports != None else []
             self.pkg_ver = au.get_current_package_version()
             self.status_json['open_cravat_version'] = self.pkg_ver
+            annot_names = list(self.annotators.keys())
+            annot_names.sort()
+            self.status_json['annotators'] = annot_names
             with open(self.status_json_path,'w') as wf:
                 wf.write(json.dumps(self.status_json))
 
