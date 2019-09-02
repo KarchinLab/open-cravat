@@ -347,14 +347,19 @@ class CravatReport:
             for module in modules_to_add:
                 if not module in gene_annotators:
                     continue
-                mi = au.get_local_module_info(module)
-                cols = mi.conf['output_columns']
-                self.columngroups[level].append({'name': mi.name, 
-                                     'displayname': mi.title,
+                q = 'select col_def from gene_header where col_name like "{}__%"'.format(module)
+                await self.cursor.execute(q)
+                rs = await self.cursor.fetchall()
+                cols = [json.loads(v[0]) for v in rs]
+                q = 'select displayname from gene_annotator where name="{}"'.format(module)
+                await self.cursor.execute(q)
+                r = await self.cursor.fetchone()
+                displayname = r[0]
+                self.columngroups[level].append({'name': module,
+                                     'displayname': displayname,
                                      'count': len(cols)})
                 for col in cols:
                     coldef = ColumnDefinition(col)
-                    coldef.name = mi.name + '__' + coldef.name
                     self.colnos[level][coldef.name] = colcount
                     colcount += 1
                     if coldef.category in ['category', 'multicategory'] and len(coldef.categories) == 0:
@@ -375,7 +380,10 @@ class CravatReport:
             local_modules = au.get_local_module_infos_of_type('annotator')
             summarizer_module_names = []
             for module_name in done_var_annotators:
-                if module_name == 'base' or module_name not in local_modules:
+                if module_name in ['base', 'tagsampler']:
+                    continue
+                if module_name not in local_modules:
+                    print('            [{}] does not exist in the system. Gene level summary for this module is skipped.'.format(module_name))
                     continue
                 module = local_modules[module_name]
                 if 'can_summarize_by_gene' in module.conf:
