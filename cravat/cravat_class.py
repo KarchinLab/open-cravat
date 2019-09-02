@@ -117,7 +117,7 @@ cravat_cmd_parser.add_argument('--cleanup',
     dest='cleanup',
     action='store_true',
     default=False,
-    help='At the end of the run, cravat will erase all intermediary files for the job created by cravat, except the log (.log and .err) and the result (.sqlite) files.')
+    help='At the end of the run, cravat will erase intermediary files, ending with var, gen, crv, crx, crg, crs, crm, crt, or json extension, for the job created by cravat.')
 cravat_cmd_parser.add_argument('--version',
     dest='show_version',
     action='store_true',
