@@ -156,7 +156,7 @@ def converttohg38 (args):
     newdb.commit()
 
 migrate_functions = {}
-supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1']
+supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2']
 
 def check_result_db_version (dbpath, version):
     try:
@@ -353,10 +353,27 @@ def migrate_result_151_to_152 (dbpath):
     cursor.close()
     db.close()
 
+def migrate_result_152_to_153 (dbpath):
+    check_result_db_version(dbpath, '1.5.2')
+    db = sqlite3.connect(dbpath)
+    cursor = db.cursor()
+    q = 'select col_def from variant_header where col_name="base__coding"'
+    cursor.execute(q)
+    r = cursor.fetchone()
+    coldef = json.loads(r[0])
+    coldef['categories'] = ['Yes']
+    q = 'update variant_header set col_def=\'{}\' where col_name="base__coding"'.format(json.dumps(coldef))
+    cursor.execute(q)
+    cursor.execute('update info set colval="1.5.3" where colkey="open-cravat"')
+    db.commit()
+    cursor.close()
+    db.close()
+
 migrate_functions['1.4.4'] = migrate_result_144_to_145
 migrate_functions['1.4.5'] = migrate_result_145_to_150
 migrate_functions['1.5.0'] = migrate_result_150_to_151
 migrate_functions['1.5.1'] = migrate_result_151_to_152
+migrate_functions['1.5.2'] = migrate_result_152_to_153
 
 def migrate_result (args):
     def get_dbpaths (dbpaths, path):
