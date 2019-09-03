@@ -362,8 +362,8 @@ def migrate_result_152_to_153 (dbpath):
     r = cursor.fetchone()
     coldef = json.loads(r[0])
     coldef['categories'] = ['Yes']
-    q = 'update variant_header set col_def=\'{}\' where col_name="base__coding"'.format(json.dumps(coldef))
-    cursor.execute(q)
+    q = 'update variant_header set col_def=? where col_name="base__coding"'
+    cursor.execute(q,[json.dumps(coldef)])
     cursor.execute('update info set colval="1.5.3" where colkey="open-cravat"')
     db.commit()
     cursor.close()
