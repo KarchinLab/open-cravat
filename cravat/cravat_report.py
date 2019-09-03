@@ -352,7 +352,7 @@ class CravatReport:
                     q = 'select col_def from gene_header where col_name like "{}__%"'.format(module)
                     await self.cursor.execute(q)
                     rs = await self.cursor.fetchall()
-                    for r in await self.cursor.fetchall():
+                    for r in rs:
                         cd = ColumnDefinition({})
                         cd.from_json(r[0])
                         cols.append(cd)
