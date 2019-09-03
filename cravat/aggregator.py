@@ -22,7 +22,8 @@ class Aggregator (object):
                       'float':'real'}
     commit_threshold = 10000
 
-    def __init__(self, cmd_args):
+    def __init__(self, cmd_args, status_writer):
+        self.status_writer = status_writer
         self.annotators = []
         self.ipaths = {}
         self.readers = {}
@@ -92,6 +93,8 @@ class Aggregator (object):
         if self.input_base_fname == None:
             return
         start_time = time.time()
+        self.status_writer.queue_status_update('status', 'Started {} ({})'.format('Aggregator', self.level))
+        last_status_update_time = time.time()
         self.logger.info('started: %s' %\
                          time.asctime(time.localtime(start_time)))
         self.dbconn.commit()
@@ -113,6 +116,10 @@ class Aggregator (object):
                 self.cursor.execute(q, vals)
                 if n%self.commit_threshold == 0:
                     self.dbconn.commit()
+                cur_time = time.time()
+                if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
+                    self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format('Aggregator', self.level + ':base', lnum))
+                    last_status_update_time = cur_time
             except Exception as e:
                 self._log_runtime_error(lnum, line, e)
         self.dbconn.commit()
@@ -142,6 +149,10 @@ class Aggregator (object):
                     self.cursor.execute(q)
                     if n%self.commit_threshold == 0:
                         self.dbconn.commit()
+                    cur_time = time.time()
+                    if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
+                        self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format('Aggregator', self.level + ':base', lnum))
+                        last_status_update_time = cur_time
                 except Exception as e:
                     self._log_runtime_error(lnum, line, e)
             self.dbconn.commit()
@@ -153,6 +164,7 @@ class Aggregator (object):
         runtime = end_time - start_time
         self.logger.info('runtime: %s' %round(runtime, 3))
         self._cleanup()
+        self.status_writer.queue_status_update('status', 'Finished {} ({})'.format('Aggregator', self.level))
 
     def make_reportsub (self):
         if self.level in ['variant', 'gene']:

@@ -586,7 +586,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='variant'))
-        v_aggregator = Aggregator(cmd)
+        v_aggregator = Aggregator(cmd, self.status_writer)
         v_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime)) 
@@ -602,7 +602,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='gene'))
-        g_aggregator = Aggregator(cmd)
+        g_aggregator = Aggregator(cmd, self.status_writer)
         g_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -618,7 +618,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='sample'))
-        s_aggregator = Aggregator(cmd)
+        s_aggregator = Aggregator(cmd, self.status_writer)
         s_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -633,7 +633,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='mapping'))
-        m_aggregator = Aggregator(cmd)
+        m_aggregator = Aggregator(cmd, self.status_writer)
         m_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -655,7 +655,7 @@ class Cravat (object):
             if self.verbose:
                 print(' '.join(cmd))
             post_agg_cls = util.load_class('CravatPostAggregator', module.script_path)
-            post_agg = post_agg_cls(cmd)
+            post_agg = post_agg_cls(cmd, self.status_writer)
             stime = time.time()
             post_agg.run()
             rtime = time.time() - stime
