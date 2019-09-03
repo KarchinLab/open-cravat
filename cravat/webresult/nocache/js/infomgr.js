@@ -6,10 +6,13 @@ function InfoMgr () {
 	this.columngroupss = {};
 	this.columngroupkeys = {};
 	this.colgroupkeytotitle = {};
+	this.colgrouptitletokey = {};
 	this.stats = {};
 	this.statuss = {};
 	this.jobinfo = {};
 	this.widgetReq = {};
+    this.colgroupdefaulthiddenexist = {};
+    this.modulesInfo = {};
 }
 
 InfoMgr.prototype.getStatus = function (jobId) {
@@ -42,6 +45,9 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 		if (jobDataLoadingDiv == null) {
 			drawingRetrievingDataDiv(tabName);
 		}
+		if (filterJson === []){ //TODO find and fix the cause of this
+			filterJson = {};
+		}
 		$.ajax({
 			url: '/result/service/result', 
 			type: 'get',
@@ -50,15 +56,24 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 			success: function (jsonResponseData) {
 				self.store(self, tabName, jsonResponseData, callback, callbackArgs);
 				writeLogDiv(tabName + ' data loaded');
-                var span = document.getElementById('numberofuniqueinputvariants_span');
-                if (tabName == 'variant' && span != undefined) {
-                    var retrievedVarNum = jsonResponseData.data.length;
-                    var totalVarNum = infomgr.jobinfo['Number of unique input variants'];
-                    if (retrievedVarNum < totalVarNum) {
-                        span.textContent = retrievedVarNum + ' (out of ' + totalVarNum + ')';
-                    } else {
-                        span.textContent = retrievedVarNum;
-                    }
+                addTextToInfonoticediv(jsonResponseData['warning_msgs']);
+                if (tabName == 'variant') {
+					var loaded = jsonResponseData.data.length;
+					var total = infomgr.jobinfo['Number of unique input variants'];
+					var filterTab = document.getElementById('tabhead_filter');
+					var filterTitle = 'FILTER';
+					if (loaded != total) {
+						filterTitle += ` ${loaded}/${total}`;
+						filterTab.classList.add('active');
+					} else {
+						filterTab.classList.remove('active');
+					}
+					filterTab.innerText = filterTitle;
+					var vCountLoad = document.getElementById('filter-count-display');
+					vCountLoad.innerText = `${loaded}/${total} variants`
+					if (Object.keys(filterJson) !== 0) {
+						filterMgr.updateAll(filterJson);
+					}
                 }
 			}
 	    });
@@ -94,6 +109,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 	self.colModels[tabName] = jsonResponseData['columns'];
 	self.stats[tabName] = jsonResponseData['stat'];
 	self.statuss[tabName] = jsonResponseData['status'];
+    self.modulesInfo[tabName] = jsonResponseData['modules_info'];
 	if (tabName == 'gene') {
 		self.geneRows = {};
 		for (var i = 0; i < self.datas[tabName].length; i++) {
@@ -105,10 +121,15 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 	var columnnos = {};
 	var columngroups = {};
 	var columns = [];
+    self.colgroupdefaulthiddenexist[tabName] = {};
 	for (var i = 0; i < colModel.length; i++) {
 		var colsInGroup = colModel[i]['colModel'];
+        var defaultHiddenInGroup = false;
 		for (var j = 0; j < colsInGroup.length; j++) {
 			var column = colsInGroup[j];
+            if (column.default_hidden == true) {
+                defaultHiddenInGroup = true;
+            }
 			columns.push(column);
 			column['sortType'] =
 				function (row1, row2, dataIndx) {
@@ -176,8 +197,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 					content = `<a href="${linkUrl}" target="_blank">${linkText}</a>`;
 					title = linkUrl;
 				} else if (content.startsWith('http')) {
-					content = `<a href="${content}" target="_blank">Link</a>`;
-
+					content = `<a href="${content}" target="_blank">View</a>`;
 				}
 				return `<span title="${title}">${content}</span>`;
 			};
@@ -242,20 +262,22 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                         this[0].nextSibling.classList.add('ui-state-hover');
                     };
                 }
-
             }
 			var columnKey = column['col'];
 			var columnNo = column['dataIndx'];
 			columnnos[columnKey] = columnNo;
 			var columnGroup = column['colgroup'];
 			var columnGroupKey = column['colgroupkey'];
-			if (columngroups[columnGroup] == undefined) {
-				columngroups[columnGroup] = [];
+			if (columngroups[columnGroupKey] == undefined) {
+				columngroups[columnGroupKey] = [];
 			}
-			columngroups[columnGroup].push(columnKey);
-			self.columngroupkeys[columnGroup] = columnGroupKey;
+			columngroups[columnGroupKey].push(columnKey);
+			self.columngroupkeys[columnGroupKey] = columnGroupKey;
 			self.colgroupkeytotitle[columnGroupKey] = columnGroup;
+			self.colgrouptitletokey[columnGroup] = columnGroupKey;
 		}
+        colModel[i].default_hidden_exist = defaultHiddenInGroup;
+        self.colgroupdefaulthiddenexist[tabName][colModel[i].name] = defaultHiddenInGroup;
 	}
 	self.columnss[tabName] = columns;
 	self.columnnoss[tabName] = columnnos;
@@ -265,10 +287,12 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 		callback(callbackArgs);
 	}
 	
+    /*
 	if (jobDataLoadingDiv != null) {
 		jobDataLoadingDiv.parentElement.removeChild(jobDataLoadingDiv);
 		jobDataLoadingDiv = null;
 	}
+    */
 }
 
 InfoMgr.prototype.getData = function (tabName) {

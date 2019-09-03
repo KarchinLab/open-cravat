@@ -31,9 +31,13 @@
 }
 
 .modulepanel-title-span {
-    font-weight: bold;
     width: 195px;
     word-break: break-word;
+    font-family: sourcesanspro-bold;
+}
+
+h1 {
+    font-family: sourcesanspro-bold;
 }
 
 .modulepanel-org-span {
@@ -59,7 +63,7 @@
     position: absolute;
     right: 10px;
     top: 191px;
-    font-size: 13px;
+    font-size: 11px;
     width: 70px;
     text-align: right;
     cursor: default;
@@ -73,6 +77,9 @@
     position: absolute;
     bottom: 3px;
     right: 9px;
+    height: 25px;
+    background-color: #94d1eb;
+    height: 24px;
 }
 
 .modulepanel-uninstall-button {
@@ -80,15 +87,32 @@
     bottom: 3px;
     right: 9px;
     font-size: 13px;
-    background-color: #d6e9f9;
+    background-color: #e6e7e8;
+    color: #414042;
+    height: 24px;
 }
 
-.modulepanel-install-button {
+.modulepanel-install-button-div {
     position: absolute;
     bottom: 3px;
     right: 9px;
     font-size: 13px;
-    background-color: #ffffff;
+    background-color: #d1d3d4;
+}
+
+.modulepanel-install-button {
+    font-size: 13px;
+    background-color: #d1d3d4;
+    color: #414042;
+    height: 24px;
+}
+
+.modulepanel-install-button:before {
+    content: url('/result/images/download12.png');
+}
+
+.modulepanel-install-button-div img {
+    width: 12px;
 }
 
 .modulepanel-stopinstall-button {
@@ -96,7 +120,9 @@
     bottom: 3px;
     right: 9px;
     font-size: 13px;
-    background-color: #ffaaaa;
+    background-color: #414042;
+    color: #ffffff;
+    height: 24px;
 }
 
 .modulepanel-unqueueinstall-button {
@@ -104,7 +130,9 @@
     bottom: 3px;
     right: 9px;
     font-size: 13px;
-    background-color: #ffaaaa;
+    background-color: #414042;
+    color: #ffffff;
+    height: 24px;
 }
 
 .moduletile {
@@ -220,16 +248,17 @@ div.modulegroup span.modulepanel-datasource-span {
 
 #storebodydiv {
     position: absolute;
-    top: 92px;
+    top: 56px;
     width: calc(100% - 10px);
 }
 
 #storemenudiv {
     position: fixed;
-    top: 108px;
+    top: 70px;
     width: 201px;
     height: calc(100% - 110px);
     overflow: auto;
+    font-size: 14px;
 }
 
 .store-switch {
@@ -287,8 +316,16 @@ input:checked + .store-switch-slider:before {
 
 #store-sort-div {
     position: absolute;
-    top: 17px;
-    right: 17px;
+    top: 14px;
+    right: -3px;
+}
+
+#store-sort-label {
+    font-size: 13px;
+}
+
+#store-sort-select {
+    font-size: 12px;
 }
 
 #remotemodulepanels {
@@ -344,7 +381,8 @@ input:checked + .store-switch-slider:before {
 
 .store-home-sectiontitle {
     font-size: 20px;
-    font-weight: bold;
+    font-family: sourcesanspro-bold;
+    color: #385487;
 }
 
 .store-home-carouseldiv {
@@ -361,11 +399,11 @@ input:checked + .store-switch-slider:before {
 }
 
 .store-front-all-button-on {
-    background-color: rgb(214, 212, 212, 0.93);
+    background-color: #385487;
 }
 
 .store-front-all-button-off {
-    background-color: '';
+    background-color: #d1d3d4;
 }
 
 .moduledetaildiv {
@@ -387,7 +425,6 @@ input:checked + .store-switch-slider:before {
 }
 
 #store-namefilter {
-    font-size: 16px;
     width: 180px;
 }
 
@@ -453,13 +490,23 @@ input:checked + .store-switch-slider:before {
 #store-systemmodule-div {
     display: none;
     position: fixed;
-    top: 94px;
+    top: 63px;
     left: 0;
     width: 100%;
-    height: calc(100% - 94px);
+    height: calc(100% - 63px);
     z-index: 9;
     text-align: center;
     background-color: rgba(100, 100, 100, 0.77);
+}
+
+#store-systemmodule-systemnotready-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    color: black;
+    padding: 20px;
+    background-color: #e6e7e8;
 }
 
 #store-systemmodule-missing-div {
@@ -467,13 +514,15 @@ input:checked + .store-switch-slider:before {
     top: 50%;
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
-    color: #cddc39;
+    color: black;
+    padding: 20px;
+    background-color: #e6e7e8;
 }
 
 #store-systemmoduleupdate-announce-div {
     position: fixed;
-    top: 48px;
-    right: 10px;
+    top: 43px;
+    right: 126px;
     font-size: 12px;
     color: #f7684b;
     z-index: 201;
@@ -481,11 +530,13 @@ input:checked + .store-switch-slider:before {
 }
 
 #store-systemmodule-update-div {
-    position: absolute;
+	position: absolute;
     top: 50%;
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
-    color: #cddc39;
+    color: black;
+    padding: 20px;
+    background-color: #e6e7e8;
 }
 
 #store-systemmodule-msg-div {
@@ -501,10 +552,10 @@ input:checked + .store-switch-slider:before {
 #store-noconnect-div {
     display: none;
     position: fixed;
-    top: 94px;
+    top: 63px;
     left: 0;
     width: 100%;
-    height: calc(100% - 94px);
+    height: calc(100% - 63px);
     z-index: 9;
     text-align: center;
     background-color: rgba(100, 100, 100, 0.77);
@@ -515,7 +566,9 @@ input:checked + .store-switch-slider:before {
     top: 50%;
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
-    color: #cddc39;
+    color: black;
+    padding: 20px;
+    background-color: #e6e7e8;
 }
 
 #pageselect {
@@ -527,7 +580,16 @@ input:checked + .store-switch-slider:before {
     left: 240px;
     top: 13px;
     display: none;
-    color: #f7684b;
+    /*color: #f7684b;*/
     width: calc(100% - 240px);
 }
 
+#verdiv {
+    position: fixed;
+    top: 43px;
+    right: 10px;
+    height: 15px;
+    font-size: 13px;
+    vertical-align: bottom;
+    z-index: 201;
+}

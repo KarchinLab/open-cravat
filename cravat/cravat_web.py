@@ -166,6 +166,20 @@ class TCPSitePatched (web_runner.BaseSite):
         await super().start()
         self._server = await self.loop.create_server(self._runner.server, self._host, self._port, ssl=self._ssl_context, backlog=self._backlog, reuse_address=self._reuse_address, reuse_port=self._reuse_port)
 
+@web.middleware
+async def middleware (request, handler):
+    response = await handler(request)
+    url_parts = request.url.parts
+    nocache = False
+    if url_parts[0] == '/':
+        if len(url_parts) >= 3 and url_parts[2] == 'nocache':
+            nocache = True
+    elif url_parts[0] == 'nocache':
+        nocache = True
+    if nocache:
+        response.headers['Cache-Control'] = 'no-cache'
+    return response
+
 class WebServer (object):
     def __init__ (self, host=None, port=None, loop=None, ssl_context=None):
         serv = get_server()
@@ -182,7 +196,8 @@ class WebServer (object):
         asyncio.ensure_future(self.start(), loop=self.loop)
 
     async def start (self):
-        self.app = web.Application(loop=self.loop)
+        global middleware
+        self.app = web.Application(loop=self.loop, middlewares=[middleware])
         if server_ready:
             cravatserver.setup(self.app)
         self.setup_routes()
@@ -207,6 +222,7 @@ class WebServer (object):
         self.app.router.add_static('/submit', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
         self.app.router.add_get('/hello', hello)
         self.app.router.add_get('/heartbeat', heartbeat)
+        self.app.router.add_get('/issystemready', is_system_ready)
         ws.start_worker()
 
 async def hello(request):
@@ -218,6 +234,9 @@ async def heartbeat(request):
     async for msg in ws:
         pass
     return ws
+
+async def is_system_ready (request):
+    return web.json_response(dict(au.system_ready()))
 
 def main ():
 

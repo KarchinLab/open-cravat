@@ -131,6 +131,10 @@ class BaseAnnotator(object):
                                 action='store_true',
                                 dest='plainoutput',
                                 help='Skip column definition writing')
+            parser.add_argument('--confs',
+                dest='confs',
+                default='{}',
+                help='Configuration string')
             self.cmd_arg_parser = parser
         except Exception as e:
             self._log_exception(e)
@@ -160,6 +164,10 @@ class BaseAnnotator(object):
                 self.update_status_json_flag = False
             if parsed_args.conf:
                 self.job_conf_path = parsed_args.conf
+            self.confs = None
+            if parsed_args.confs is not None:
+                confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+                self.confs = json.loads(confs)
         except Exception as e:
             self._log_exception(e)
 
@@ -197,10 +205,8 @@ class BaseAnnotator(object):
                     self.output_writer.write_data(output_dict)
                 except Exception as e:
                     self._log_runtime_exception(lnum, line, input_data, e)
-
             # This does summarizing.
             self.postprocess()
-
             self.base_cleanup()
             end_time = time.time()
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
@@ -210,45 +216,45 @@ class BaseAnnotator(object):
             print('        {}: runtime {:0.3f}s'.format(self.annotator_name, run_time))
             if self.update_status_json_flag:
                 version = self.conf.get('version', 'unknown')
-                #self.status_writer.add_annotator_version_to_status_json(self.annotator_name, version)
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
         except Exception as e:
             self._log_exception(e)
         if hasattr(self, 'log_handler'):
             self.log_handler.close()
+        '''
         if self.output_basename == '__dummy__':
             os.remove(self.log_path)
+        '''
 
     def postprocess (self):
         pass
 
     async def get_gene_summary_data (self, cf):
+        print('            {}: getting gene summary data'.format(self.annotator_name))
+        t = time.time()
+        hugos = await cf.get_filtered_hugo_list()
         cols = [self.annotator_name + '__' + coldef['name'] \
-                for coldef in self.conf['output_columns']]
-        cols[0] = 'base__hugo'
-        gene_collection = {}
-        async for d in cf.get_variant_iterator_filtered_uids_cols(cols):
-            hugo = d['hugo']
-            if hugo == None:
-                continue
-            if hugo not in gene_collection:
-                gene_collection[hugo] = {}
-                for col in cols[1:]:
-                    gene_collection[hugo][col.split('__')[1]] = []
-            self.build_gene_collection(hugo, d, gene_collection)
+            for coldef in self.conf['output_columns'] \
+            if coldef['name'] != 'uid']
         data = {}
-        for hugo in gene_collection:
-            out = self.summarize_by_gene(hugo, gene_collection)
-            if out == None:
-                continue
-            row = []
-            for col in cols[1:]:
-                if col in out:
-                    val = out[col]
-                else:
-                    val = None
-                row.append(val)
+        t = time.time()
+        rows = await cf.get_variant_data_for_cols(cols)
+        rows_by_hugo = {}
+        t = time.time()
+        for row in rows:
+            hugo = row[-1]
+            if hugo not in rows_by_hugo:
+                rows_by_hugo[hugo] = []
+            rows_by_hugo[hugo].append(row)
+        t = time.time()
+        for hugo in hugos:
+            rows = rows_by_hugo[hugo]
+            input_data = {}
+            for i in range(len(cols)):
+                input_data[cols[i].split('__')[1]] = [row[i] for row in rows]
+            out = self.summarize_by_gene(hugo, input_data)
             data[hugo] = out
+        print('            {}: finished getting gene summary data in {:0.3f}s'.format(self.annotator_name, time.time() - t))
         return data
 
     def _log_runtime_exception (self, lnum, line, input_data, e):
@@ -260,7 +266,7 @@ class BaseAnnotator(object):
             if err_str_log not in self.unique_excs:
                 self.unique_excs.append(err_str_log)
                 self.logger.error(err_str_log)
-            self.error_logger.error('\n[{:d}]{}\n({})\n#'.format(lnum, line[:-1], str(e)))
+            self.error_logger.error('\n[{:d}]{}\n({})\n#'.format(lnum, line.rstrip(), str(e)))
         except Exception as e:
             self._log_exception(e, halt=False)
 
@@ -429,14 +435,20 @@ class BaseAnnotator(object):
     def _setup_logger(self):
         try:
             self.logger = logging.getLogger('cravat.' + self.annotator_name)
-            self.log_path = os.path.join(self.output_dir, self.output_basename + '.log')
-            log_handler = logging.FileHandler(self.log_path, 'a')
+            if self.output_basename != '__dummy__':
+                self.log_path = os.path.join(self.output_dir, self.output_basename + '.log')
+                log_handler = logging.FileHandler(self.log_path, 'a')
+            else:
+                log_handler = logging.StreamHandler()
             formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
             log_handler.setFormatter(formatter)
             self.logger.addHandler(log_handler)
             self.error_logger = logging.getLogger('error.' + self.annotator_name)
-            error_log_path = os.path.join(self.output_dir, self.output_basename + '.err')
-            error_log_handler = logging.FileHandler(error_log_path, 'a')
+            if self.output_basename != '__dummy__':
+                error_log_path = os.path.join(self.output_dir, self.output_basename + '.err')
+                error_log_handler = logging.FileHandler(error_log_path, 'a')
+            else:
+                error_log_handler = logging.StreamHandler()
             formatter = logging.Formatter('SOURCE:%(name)-20s %(message)s')
             error_log_handler.setFormatter(formatter)
             self.error_logger.addHandler(error_log_handler)

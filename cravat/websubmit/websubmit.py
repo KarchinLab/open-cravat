@@ -31,7 +31,8 @@ class FileRouter(object):
         self.input_fname = 'input'
         self.report_extensions = {
             'text':'.tsv',
-            'excel':'.xlsx'
+            'excel':'.xlsx',
+            'vcf': '.vcf'
         }
         self.db_extension = '.sqlite'
         self.log_extension = '.log'
@@ -105,11 +106,14 @@ class FileRouter(object):
 
     async def job_run_path(self, request, job_id):
         job_dir, _ = await self.job_status(request, job_id)
-        run_name = await self.job_run_name(request, job_id)
-        if run_name is not None:
-            run_path = os.path.join(job_dir, run_name)
-        else:
+        if job_dir is None:
             run_path = None
+        else:
+            run_name = await self.job_run_name(request, job_id)
+            if run_name is not None:
+                run_path = os.path.join(job_dir, run_name)
+            else:
+                run_path = None
         return run_path
 
     async def job_db(self, request, job_id):
@@ -126,16 +130,21 @@ class FileRouter(object):
         return report_path
 
     async def job_status (self, request, job_id):
-        job_dir = await self.job_dir(request, job_id)
-        fns = os.listdir(job_dir)
-        statusjson = {}
-        for fn in fns:
-            if fn.endswith('.status.json'):
-                with open(os.path.join(job_dir, fn)) as f:
-                    statusjson = json.loads(f.readline())
-            elif fn.endswith('.info.yaml'):
-                with open(os.path.join(job_dir, fn)) as f:
-                    statusjson = yaml.load(f)
+        try:
+            job_dir = await self.job_dir(request, job_id)
+            fns = os.listdir(job_dir)
+            statusjson = {}
+            for fn in fns:
+                if fn.endswith('.status.json'):
+                    with open(os.path.join(job_dir, fn)) as f:
+                        statusjson = json.loads(f.readline())
+                elif fn.endswith('.info.yaml'):
+                    with open(os.path.join(job_dir, fn)) as f:
+                        statusjson = yaml.load(f)
+        except Exception as e:
+            traceback.print_stack()
+            job_dir = None
+            statusjson = None
         return job_dir, statusjson
 
     async def job_log (self, request, job_id):
@@ -206,17 +215,16 @@ async def submit (request):
         elif part.name == 'options':
             job_options = await part.json()
     input_fnames = [fp.filename for fp in input_files]
-    if len(input_fnames) == 1:
-        orig_input_fname = input_fnames[0]
-    elif len(input_fnames) > 1:
-        orig_input_fname = ', '.join([os.path.basename(x) for x in input_fnames])
-    info_fname = '{}.status.json'.format(orig_input_fname)
+    run_name = input_fnames[0]
+    if len(input_fnames) > 1:
+        run_name += '_and_'+str(len(input_fnames)-1)+'_files'
+    info_fname = '{}.status.json'.format(run_name)
     job_info_fpath = os.path.join(job_dir, info_fname)
     job = WebJob(job_dir, job_info_fpath)
     job.save_job_options(job_options)
     job.set_info_values(
-                        orig_input_fname=orig_input_fname,
-                        orig_input_files=input_fnames,
+                        orig_input_fname=input_fnames,
+                        run_name=run_name,
                         submission_time=datetime.datetime.now().isoformat(),
                         viewable=False
                         )
@@ -309,7 +317,7 @@ async def get_job (request, job_id):
     if jobs_dir is None:
         return None
     if os.path.exists(jobs_dir) == False:
-        os.mkdir(jobs_dir)
+        os.makedirs(jobs_dir)
     job_dir = os.path.join(jobs_dir, job_id)
     '''
     job_dir = await filerouter.job_dir(request, job_id)
@@ -352,6 +360,43 @@ async def get_job (request, job_id):
     job.set_info_values(reports=existing_reports)
     return job
 
+'''
+async def get_jobs_details (request):
+    queries = request.rel_url.query
+    ids = int(queries['jobids'])
+    all_jobs = []
+    for job_id in ids:
+        try:
+            job = await get_job(job_id, request)
+            if job is None:
+                continue
+            all_jobs.append(job)
+        except:
+            traceback.print_exc()
+            continue
+    return web.json_response([job.get_info_dict() for job in all_jobs])
+'''
+
+async def get_jobs (request):
+    global filerouter
+    jobs_dir = await filerouter.get_jobs_dir(request)
+    if jobs_dir is None:
+        return web.json_response([])
+    if os.path.exists(jobs_dir) == False:
+        os.makedirs(jobs_dir)
+    queries = request.rel_url.query
+    ids = json.loads(queries['ids'])
+    jobs = []
+    for job_id in ids:
+        try:
+            job = await get_job(job_id, request)
+            if job is not None:
+                jobs.append(job)
+        except:
+            traceback.print_exc()
+            continue
+    return web.json_response([job.get_info_dict() for job in jobs])
+
 async def get_all_jobs (request):
     global servermode
     if servermode:
@@ -365,10 +410,14 @@ async def get_all_jobs (request):
     all_jobs = []
     for jobs_dir in jobs_dirs:
         if os.path.exists(jobs_dir) == False:
-            os.mkdir(jobs_dir)
-        ids = os.listdir(jobs_dir)
-        ids.sort(reverse=True)
-        for job_id in ids:
+            os.makedirs(jobs_dir)
+        dir_it = os.scandir(jobs_dir)
+        direntries = [de for de in dir_it]
+        de_names = [de.name for de in direntries]
+        #de_names.sort(reverse=True)
+        all_jobs.extend(de_names)
+        '''
+        for job_id in de_names:
             try:
                 job = await get_job(request, job_id)
                 if job is None:
@@ -377,7 +426,10 @@ async def get_all_jobs (request):
             except:
                 traceback.print_exc()
                 continue
-    return web.json_response([job.get_info_dict() for job in all_jobs])
+        '''
+    all_jobs.sort()
+    #return web.json_response([job.get_info_dict() for job in all_jobs])
+    return web.json_response(all_jobs)
 
 async def view_job(request):
     global VIEW_PROCESS
@@ -554,6 +606,7 @@ class JobTracker (object):
 
     async def cancel_job(self, id):
         p = self._jobs.get(id)
+        p.poll()
         if p:
             if platform.platform().lower().startswith('windows'):
                 # proc.kill() doesn't work well on windows
@@ -564,6 +617,7 @@ class JobTracker (object):
                         break
             else:
                 p.kill()
+        self.clean_jobs(id)
 
     def clean_jobs(self, id):
         # Clean up completed jobs
@@ -573,7 +627,7 @@ class JobTracker (object):
                 to_del.append(id)
         for id in to_del:
             del self._jobs[id]
-    
+
     def list_jobs(self):
         # List currently tracked jobs
         return list(self._jobs.keys())
@@ -591,6 +645,7 @@ routes = []
 routes.append(['POST','/submit/submit',submit])
 routes.append(['GET','/submit/annotators',get_annotators])
 routes.append(['GET','/submit/jobs',get_all_jobs])
+#routes.append(['GET','/submit/jobsdetails',get_jobs_details])
 routes.append(['GET','/submit/jobs/{job_id}',view_job])
 routes.append(['DELETE','/submit/jobs/{job_id}',delete_job])
 routes.append(['GET','/submit/jobs/{job_id}/db', download_db])

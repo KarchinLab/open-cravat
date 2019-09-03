@@ -14,6 +14,7 @@ def get_args ():
     if len(sys.argv) == 1:
         sys.argv.append('-h')
     parser = argparse.ArgumentParser()
+    # converts db coordinate to hg38
     subparsers = parser.add_subparsers(title='Commands')
     subparser = subparsers.add_parser('converttohg38',
         help='converts hg19 coordinates in sqlite3 database to hg38 ones.')
@@ -35,6 +36,15 @@ def get_args ():
         required=False,
         help='chromosome column. If omitted, all tables will be tried to be converted.')
     subparser.set_defaults(func=converttohg38)
+    # migrate old result db
+    parser_migrate_result = subparsers.add_parser('migrate-result',
+                                               help='migrates result db made with older versions of open-cravat')
+    parser_migrate_result.add_argument('dbpath', help='path to a result db file or a directory')
+    parser_migrate_result.add_argument('-r', dest='recursive',
+        action='store_true', default=False, help='recursive operation')
+    parser_migrate_result.add_argument('-c', dest='backup',
+        action='store_true', default=False, help='backup original copy with .bak extension')
+    parser_migrate_result.set_defaults(func=migrate_result)
     args = parser.parse_args()
     return args
 
@@ -144,6 +154,267 @@ def converttohg38 (args):
                 print('  ' + str(count) + '...')
         print('  ' + table + ': done.', count, 'rows converted')
     newdb.commit()
+
+migrate_functions = {}
+supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1']
+
+def check_result_db_version (dbpath, version):
+    try:
+        db = sqlite3.connect(dbpath)
+        cursor = db.cursor()
+        q = 'select colval from info where colkey="open-cravat"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is None:
+            raise
+        else:
+            oc_ver = r[0]
+        if oc_ver != version:
+            raise
+        checked = True
+    except:
+        raise
+    finally:
+        cursor.close()
+        db.close()
+    return True
+
+def migrate_result_144_to_145 (dbpath):
+    check_result_db_version(dbpath, '1.4.4')
+    db = sqlite3.connect(dbpath)
+    cursor = db.cursor()
+    cursor.execute('update info set colval="1.4.5" where colkey="open-cravat"')
+    db.commit()
+    cursor.close()
+    db.close()
+
+def migrate_result_145_to_150 (dbpath):
+    check_result_db_version(dbpath, '1.4.5')
+    db = sqlite3.connect(dbpath)
+    cursor = db.cursor()
+    # gene
+    q = 'select * from gene limit 1'
+    cursor.execute(q)
+    cols = [v[0] for v in cursor.description]
+    gene_cols_to_retrieve = []
+    note_to_add = True
+    for col in cols:
+        module = col.split('__')[0]
+        if module == 'base':
+            if col == 'base__hugo':
+                gene_cols_to_retrieve.append(col)
+            elif col == 'base__note':
+                gene_cols_to_retrieve.append(col)
+                note_to_add = False
+        else:
+            gene_cols_to_retrieve.append(col)
+    cursor.execute('alter table gene rename to gene_old')
+    cursor.execute('create table gene as select {} from gene_old'.format(','.join(gene_cols_to_retrieve)))
+    if note_to_add:
+        cursor.execute('alter table gene add column base__note text')
+    cursor.execute('drop table gene_old')
+    cursor.execute('create index gene_idx_0 on gene (base__hugo)')
+    # variant_header, gene_header, mapping_header, sample_header
+    for table in ['variant', 'gene', 'mapping', 'sample']:
+        q = 'select * from {}_header'.format(table)
+        cursor.execute(q)
+        rs = cursor.fetchall()
+        cols = [v[0] for v in cursor.description]
+        if len(cols) == 2 and 'col_name' in cols and 'col_def' in cols:
+            pass
+        else:
+            q = 'alter table {}_header rename to {}_header_old'.format(table, table)
+            cursor.execute(q)
+            q = 'create table {}_header (col_name text, col_def text)'.format(table)
+            cursor.execute(q)
+            old_colkeys = ['col_name', 'col_title', 'col_type', 'col_cats', 'col_width', 'col_desc', 'col_hidden', 'col_ctg', 'col_filterable', 'col_link_format']
+            old_to_new_colkey = {'col_name': 'name', 'col_title': 'title', 'col_type': 'type', 'col_cats': 'categories', 'col_width': 'width', 'col_desc': 'desc', 'col_hidden': 'hidden', 'col_ctg': 'category', 'col_filterable': 'filterable', 'col_link_format': 'link_format'}
+            colnos = {}
+            for c in old_colkeys:
+                try:
+                    colnos[c] = cols.index(c)
+                except:
+                    colnos[c] = None
+            colidx = {}
+            for r in rs:
+                col_name = r[colnos['col_name']]
+                if table == 'gene' and col_name not in gene_cols_to_retrieve:
+                    continue
+                module = col_name.split('__')[0]
+                if module not in colidx:
+                    colidx[module] = 0
+                else:
+                    colidx[module] += 1
+                col_def = {}
+                for c in old_colkeys:
+                    if colnos[c] is not None:
+                        value = r[colnos[c]]
+                    else:
+                        value = None
+                    col_def[old_to_new_colkey[c]] = value
+                col_def['index'] = colidx[module]
+                col_def['genesummary'] = False
+                if col_def['categories'] is None:
+                    col_def['categories'] = []
+                else:
+                    col_def['categories'] = json.loads(col_def['categories'])
+                if col_def['hidden'] is None:
+                    col_def['hidden'] = False
+                if col_def['hidden'] == 1:
+                    col_def['hidden'] = True
+                elif col_def['hidden'] == 0:
+                    col_def['hidden'] = False
+                if col_def['filterable'] is None:
+                    col_def['filterable'] = True
+                q = 'insert into {}_header values (\'{}\', \'{}\')'.format(table, col_name, json.dumps(col_def))
+                cursor.execute(q)
+            if table == 'gene' and note_to_add:
+                q = 'insert into gene_header (\'base__note\', \'{"name": "base__note", "index": 1, "title": "Note", "type": "string", "categories": [], "width": 50, "desc": null, "hidden": false, "category": null, "filterable": true, "link_format": null, "genesummary": false}\')'
+                cursor.execute(q)
+            q = 'drop table {}_header_old'.format(table)
+        cursor.execute(q)
+        db.commit()
+    # mapping
+    # base__fileno cannot be determined. set to 0.
+    q = 'select * from mapping limit 1'
+    cursor.execute(q)
+    cols = [v[0] for v in cursor.description]
+    if 'base__fileno' not in cols:
+        q = 'alter table mapping add column base__fileno integer'
+        cursor.execute(q)
+        q = 'update mapping set base__fileno=0'
+        cursor.execute(q)
+    db.commit()
+    # smartfilters
+    try:
+        cursor.execute('select * from smartfilters')
+    except:
+        q = 'create table smartfilters (name text, definition text)'
+        cursor.execute(q)
+        db.commit()
+    # info
+    q = 'select colval from info where colkey="_converter_format"'
+    cursor.execute(q)
+    r = cursor.fetchone()
+    if r is None:
+        q = 'insert into info values ("_converter_format", "")'
+        cursor.execute(q)
+    q = 'select colval from info where colkey="_mapper"'
+    cursor.execute(q)
+    r = cursor.fetchone()
+    if r is None:
+        q = 'select colval from info where colkey="Gene mapper"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        hg38ver = r[0].split('(')[1].strip(')')
+        q = 'insert into info values ("_mapper", "hg38:{}")'.format(hg38ver)
+        cursor.execute(q)
+    q = 'select colval from info where colkey="_input_paths"'
+    cursor.execute(q)
+    r = cursor.fetchone()
+    if r is None:
+        q = 'select colval from info where colkey="Input file name"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        ips = r[0].split(';')
+        input_paths_str = '{'
+        for i in range(len(ips)):
+            input_paths_str += "'" + str(i) + "': '" + ips[i] + "', "
+        input_paths_str += '}'
+        q = 'insert into info values ("_input_paths", "{}")'.format(input_paths_str)
+        cursor.execute(q)
+    q = 'select colval from info where colkey="_annotator_desc"'
+    cursor.execute(q)
+    r = cursor.fetchone()
+    if r is None:
+        q = 'insert into info values ("_annotator_desc", "{}")'
+        cursor.execute(q)
+    q = 'update info set colval="1.5.0" where colkey="open-cravat"'
+    cursor.execute(q)
+    db.commit()
+    cursor.close()
+    db.close()
+
+def migrate_result_150_to_151 (dbpath):
+    check_result_db_version(dbpath, '1.5.0')
+    db = sqlite3.connect(dbpath)
+    cursor = db.cursor()
+    cursor.execute('update info set colval="1.5.1" where colkey="open-cravat"')
+    db.commit()
+    cursor.close()
+    db.close()
+
+def migrate_result_151_to_152 (dbpath):
+    check_result_db_version(dbpath, '1.5.1')
+    db = sqlite3.connect(dbpath)
+    cursor = db.cursor()
+    cursor.execute('update info set colval="1.5.2" where colkey="open-cravat"')
+    db.commit()
+    cursor.close()
+    db.close()
+
+migrate_functions['1.4.4'] = migrate_result_144_to_145
+migrate_functions['1.4.5'] = migrate_result_145_to_150
+migrate_functions['1.5.0'] = migrate_result_150_to_151
+migrate_functions['1.5.1'] = migrate_result_151_to_152
+
+def migrate_result (args):
+    def get_dbpaths (dbpaths, path):
+        for fn in os.listdir(path):
+            p = os.path.join(path, fn)
+            if os.path.isdir(p) and args.recursive:
+                get_dbpaths(dbpaths, p)
+            else:
+                if fn.endswith('.sqlite'):
+                    dbpaths.append(p)
+    dbpath = args.dbpath
+    if os.path.exists(dbpath) == False:
+        print('[{}] does not exist.'.format(dbpath))
+        return
+    if os.path.isdir(dbpath):
+        dbpaths = []
+        get_dbpaths(dbpaths, dbpath)
+    else:
+        dbpaths = [dbpath]
+    print('Result database files to convert are:')
+    for dbpath in dbpaths:
+        print('    ' + dbpath)
+    for dbpath in dbpaths:
+        print('converting [{}]...'.format(dbpath))
+        global supported_oc_ver
+        try:
+            db = sqlite3.connect(dbpath)
+            cursor = db.cursor()
+        except:
+            print('  [{}] is not open-cravat result DB.'.format(dbpath))
+            continue
+        try:
+            q = 'select colval from info where colkey="open-cravat"'
+            cursor.execute(q)
+            r = cursor.fetchone()
+            if r is None:
+                print('  Result DB is too old for migration.')
+                continue
+            else:
+                oc_ver = r[0]
+        except:
+            print('  [{}] is not open-cravat result DB or too old for migration.'.format(dbpath))
+            continue
+        if oc_ver not in supported_oc_ver:
+            print('  OpenCRAVAT version of {} is not supported for migration. Supported versions are {}.'.format(oc_ver, str(supported_oc_ver)))
+            continue
+        try:
+            if args.backup:
+                bak_path = dbpath + '.bak'
+                print('  making backup copy [{}]...'.format(bak_path))
+                shutil.copy(dbpath, bak_path)
+            ver_idx = supported_oc_ver.index(oc_ver)
+            for mig_ver in supported_oc_ver[ver_idx:]:
+                print('  converting from open-cravat version {}...'.format(mig_ver))
+                migrate_functions[mig_ver](dbpath)
+        except:
+            traceback.print_exc()
+            print('  converting [{}] was not successful.'.format(dbpath))
 
 def main ():
     args = get_args()

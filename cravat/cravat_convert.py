@@ -13,6 +13,7 @@ from pyliftover import LiftOver
 import copy
 import cravat.cravat_util as cu
 from cravat.util import detect_encoding
+import json
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
@@ -101,8 +102,17 @@ class MasterCravatConverter(object):
                             choices=['hg38']+list(constants.liftover_chain_paths.keys()),
                             default='hg38',
                             help='Input gene assembly. Will be lifted over to hg38')
+        parser.add_argument('--confs',
+            dest='confs',
+            default='{}',
+            help='Configuration string')
         parsed_args = parser.parse_args(args)
         self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs]
+        self.input_path_dict = {}
+        self.input_path_dict2 = {}
+        for i in range(len(self.input_paths)):
+            self.input_path_dict[i] = self.input_paths[i]
+            self.input_path_dict2[self.input_paths[i]] = i
         if parsed_args.format:
             self.input_format = parsed_args.format
         self.input_dir = os.path.dirname(self.input_paths[0])
@@ -123,6 +133,10 @@ class MasterCravatConverter(object):
         else:
             self.lifter = None
         self.status_fpath = os.path.join(self.output_dir, self.output_base_fname + '.status.json')
+        self.confs = None
+        if parsed_args.confs is not None:
+            confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+            self.confs = json.loads(confs)
 
     def setup (self):
         """ Do necesarry pre-run tasks """
@@ -208,6 +222,12 @@ class MasterCravatConverter(object):
             else:
                 self.input_format = valid_formats[0]
         self.primary_converter = self.converters[self.input_format]
+        if len(self.input_files) > 1:
+            for f in self.input_files[1:]:
+                if not self.primary_converter.check_format(f):
+                    raise ExpectedException('Inconsistent file types')
+                else:
+                    f.seek(0)
         self.logger.info('input format: %s' %self.input_format)
 
     def _open_output_files (self):
@@ -226,6 +246,7 @@ class MasterCravatConverter(object):
         self.crv_writer.write_definition()
         for index_columns in constants.crv_idx:
             self.crv_writer.add_index(index_columns)
+        self.crv_writer.wf.write('#input_format={}\n'.format(self.primary_converter.format_name))
         # Setup err file
         self.err_path = os.path.join(self.output_dir,
                                      self.output_base_fname + '.converter.err')
@@ -236,6 +257,7 @@ class MasterCravatConverter(object):
         self.crm_writer.write_definition()
         for index_columns in constants.crm_idx:
             self.crm_writer.add_index(index_columns)
+        self.crm_writer.write_input_paths(self.input_path_dict)
         # Setup crs sample file
         self.crs_path = os.path.join(self.output_dir, self.output_base_fname +'.crs')
         self.crs_writer = CravatWriter(self.crs_path)
@@ -265,8 +287,10 @@ class MasterCravatConverter(object):
         self.setup()
         start_time = time.time()
         multiple_files = len(self.input_files) > 1
-        total_num_input = 0
+        fileno = 0
+        total_lnum = 0
         for f in self.input_files:
+            fileno += 1
             self.primary_converter.setup(f)
             f.seek(0)
             read_lnum = 0
@@ -274,9 +298,9 @@ class MasterCravatConverter(object):
             num_errors = 0
             for l in f:
                 cur_fname = os.path.basename(f.name)
-                samp_prefix = '.'.join(cur_fname.split('.')[:-1])
+                samp_prefix = cur_fname
                 read_lnum += 1
-                total_num_input += 1
+                total_lnum += 1
                 try:
                     # all_wdicts is a list, since one input line can become
                     # multiple output lines
@@ -291,50 +315,53 @@ class MasterCravatConverter(object):
                     UIDMap = [] 
                     for wdict in all_wdicts:
                         chrom = wdict['chrom']
-                        if not chrom.startswith('chr'): chrom = 'chr' + chrom
-                        wdict['chrom'] = self.chromdict.get(chrom, chrom)
-                        if multiple_files:
-                            wdict['sample_id'] = '_'.join([samp_prefix, wdict['sample_id']])
-                        if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
-                            num_errors += 1
-                            e = BadFormatError('Reference base required for non SNV')
-                            self._log_conversion_error(read_lnum, l, e)
-                            continue
-                        if self.do_liftover:
-                            prelift_wdict = copy.copy(wdict)
-                            try:
-                                wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'],
-                                                                            wdict['pos'])
-                            except LiftoverFailure as e:
+                        if chrom is not None:
+                            if not chrom.startswith('chr'): chrom = 'chr' + chrom
+                            wdict['chrom'] = self.chromdict.get(chrom, chrom)
+                            if multiple_files:
+                                if wdict['sample_id']:
+                                    wdict['sample_id'] = '__'.join([samp_prefix, wdict['sample_id']])
+                                else:
+                                    wdict['sample_id'] = samp_prefix
+                            if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
                                 num_errors += 1
+                                e = BadFormatError('Reference base required for non SNV')
                                 self._log_conversion_error(read_lnum, l, e)
                                 continue
-                        unique, UID = self.vtracker.addVar(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])                       
-                        wdict['uid'] = UID
-                        if unique:
-                            write_lnum += 1
-                            self.crv_writer.write_data(wdict)
                             if self.do_liftover:
-                                prelift_wdict['uid'] = UID
-                                self.crl_writer.write_data(prelift_wdict)
-                        if UID not in UIDMap: 
-                            #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
-                            self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID})
-                            UIDMap.append(UID)
+                                prelift_wdict = copy.copy(wdict)
+                                try:
+                                    wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
+                                except LiftoverFailure as e:
+                                    num_errors += 1
+                                    self._log_conversion_error(read_lnum, l, e)
+                                    continue
+                            unique, UID = self.vtracker.addVar(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])                       
+                            wdict['uid'] = UID
+                            if unique:
+                                write_lnum += 1
+                                self.crv_writer.write_data(wdict)
+                                if self.do_liftover:
+                                    prelift_wdict['uid'] = UID
+                                    self.crl_writer.write_data(prelift_wdict)
+                            if UID not in UIDMap: 
+                                #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
+                                self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID, 'fileno': self.input_path_dict2[f.name]})
+                                UIDMap.append(UID)
                         self.crs_writer.write_data(wdict)
         self.logger.info('error lines: %d' %num_errors)
         self._close_files()
         if self.status_writer is not None:
-            self.status_writer.queue_status_update('num_input_var', read_lnum)
+            self.status_writer.queue_status_update('num_input_var', total_lnum)
             self.status_writer.queue_status_update('num_unique_var', write_lnum)
             self.status_writer.queue_status_update('num_error_input', num_errors)
         end_time = time.time()
         self.logger.info('finished: %s' %\
             time.asctime(time.localtime(end_time)))
         runtime = round(end_time - start_time, 3)
-        self.logger.info('num input lines: {}'.format(read_lnum))
+        self.logger.info('num input lines: {}'.format(total_lnum))
         self.logger.info('runtime: %s'%runtime)
-        return total_num_input
+        return total_lnum, self.primary_converter.format_name
 
     def liftover(self, old_chrom, old_pos):
         new_coords = self.lifter.convert_coordinate(old_chrom, int(old_pos))

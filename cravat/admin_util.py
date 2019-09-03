@@ -16,6 +16,7 @@ import pkg_resources
 from collections import defaultdict
 from types import SimpleNamespace
 from . import exceptions
+from collections import MutableMapping
 
 def load_yml_conf(yml_conf_path):
     """
@@ -127,6 +128,7 @@ class LocalModuleInfo (object):
             self.datasource = self.conf['datasource']
         else:
             self.datasource = ''
+        self.smartfilters = self.conf.get('smartfilters')
         if 'groups' in self.conf:
             self.groups = self.conf['groups']
         else:
@@ -172,6 +174,7 @@ class RemoteModuleInfo(object):
         self.developer = get_developer_dict(**dev_dict)
         self.data_versions = kwargs.get('data_versions', {})
         self.data_sources = kwargs.get('data_sources', {})
+        self.tags = kwargs.get('tags', [])
 
     def has_version(self, version):
         return version in self.versions    
@@ -185,11 +188,42 @@ def get_developer_dict (**kwargs):
     d['website'] = kwargs.get('website', '')
     return d
 
+class LocalInfoCache(MutableMapping):
+    """
+    LocalInfoCache will initially store the paths to modules. When a module info
+    is requested, the module info will be created from the path, stored, and returned.
+    LocalInfoCache exposes the same interface as a dictionary.
+    """
+    def __init__(self, *args, **kwargs):
+        self.store = dict()
+        self.update(dict(*args, **kwargs))  # use the free update to set keys
+
+    def __getitem__(self, key):
+        if key not in self.store:
+            raise KeyError(key)
+        if not isinstance(self.store[key], LocalModuleInfo):
+            self.store[key] = LocalModuleInfo(self.store[key])
+        return self.store[key]
+
+    def __setitem__(self, key, value):
+        if not(isinstance(value, LocalModuleInfo) or os.path.isdir(value)):
+            raise ValueError(value)
+        self.store[key] = value
+
+    def __delitem__(self, key):
+        del self.store[key]
+
+    def __iter__(self):
+        return iter(self.store)
+
+    def __len__(self):
+        return len(self.store)
+
 class ModuleInfoCache(object):
     def __init__(self):
         self._sys_conf = get_system_conf()
         self._modules_dir = get_modules_dir()
-        self.local = {}
+        self.local = LocalInfoCache()
         self._remote_url = None
         self.remote = {}
         self._remote_fetched = False
@@ -209,7 +243,7 @@ class ModuleInfoCache(object):
             self._counts_fetched = True
 
     def update_local(self):
-        self.local = {}
+        self.local = LocalInfoCache()
         if not(os.path.exists(self._modules_dir)):
             return
         for mg in os.listdir(self._modules_dir):
@@ -219,9 +253,10 @@ class ModuleInfoCache(object):
             for module_name in os.listdir(mg_path):
                 module_dir = os.path.join(mg_path, module_name)
                 if os.path.isdir(module_dir):
-                    local_info = LocalModuleInfo(module_dir)
-                    if local_info.is_valid_module():
-                        self.local[module_name] = local_info
+                    # local_info = LocalModuleInfo(module_dir)
+                    # if local_info.is_valid_module():
+                    #     self.local[module_name] = local_info
+                    self.local[module_name] = module_dir
 
     def update_remote(self, force=False):
         if force or not(self._remote_fetched):
@@ -571,6 +606,9 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                 raise exceptions.KillInstallException
         wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
         wf.close()
+        endofinstall_path = os.path.join(module_dir, 'endofinstall')
+        if os.path.exists(os.path.join(module_dir, 'endofinstall')):
+            os.remove(endofinstall_path)
         zipfile_path = os.path.join(module_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
         r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
@@ -631,25 +669,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         stage_handler.stage_start('finish')
         wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
         wf.close()
-        '''
-        if module_name.startswith('wg') == False:
-            wgmodule_name = 'wg' + module_name
-            if module_exists_remote(wgmodule_name):
-                try:
-                    stage_handler.module_name = module_name
-                    stage_handler.module_version = None
-                    install_module(
-                        'wg' + module_name, 
-                        stage_handler=stage_handler, 
-                        version=None, 
-                        force_data=False)
-                    stage_handler.module_name = module_name
-                    stage_handler.module_version = version
-                    stage_handler.stage_start('finish')
-                except:
-                    traceback.print_exc()
-        '''
-    except Exception as e:
+    except (Exception, KeyboardInterrupt, SystemExit) as e:
         if type(e) == exceptions.KillInstallException:
             stage_handler.stage_start('killed')
         try:
@@ -902,7 +922,11 @@ def publish_module(module_name, user, password, overwrite=False, include_data=Tr
     zip_builder = su.ModuleArchiveBuilder(zf_path, base_path=local_info.directory)
     for item_name in os.listdir(local_info.directory):
             item_path = os.path.join(local_info.directory, item_name)
-            if item_path == local_info.data_dir and not(include_data):
+            if item_name.endswith('ofinstall'):
+                continue
+            elif item_name == '__pycache__':
+                continue
+            elif item_path == local_info.data_dir and not(include_data):
                 continue
             else:
                 zip_builder.add_item(item_path)
@@ -1087,12 +1111,7 @@ def get_latest_package_version():
         return None
 
 def get_current_package_version():
-    curdir = os.path.dirname(os.path.abspath(__file__))
-    setup_path = os.path.join(curdir, '..', 'setup.py')
-    f = open(setup_path)
-    for line in f:
-        if 'version=' in line:
-            version = line.split('=')[1].split(',')[0].strip("'")
+    version = pkg_resources.get_distribution('open-cravat').version
     return version
 
 def get_remote_module_config (module_name):
@@ -1167,7 +1186,7 @@ def get_updatable(modules=[], strategy='consensus'):
         if not versions:
             continue
         selected_version = versions[-1]
-        if LooseVersion(selected_version) <= LooseVersion(local_info.version):
+        if selected_version and local_info.version and LooseVersion(selected_version) <= LooseVersion(local_info.version):
             continue
         if reqs:
             resolution_applied[mname] = reqs
@@ -1186,7 +1205,7 @@ def get_updatable(modules=[], strategy='consensus'):
                     if version_passes:
                         passing_versions.append(version)
                 selected_version = passing_versions[-1] if passing_versions else None
-        if selected_version and LooseVersion(selected_version) > LooseVersion(local_info.version):
+        if selected_version and local_info.version and LooseVersion(selected_version) > LooseVersion(local_info.version):
             update_data_version = get_remote_data_version(mname, selected_version)
             installed_data_version = get_remote_data_version(mname, local_info.version)
             if update_data_version is not None and update_data_version != installed_data_version:
@@ -1202,6 +1221,62 @@ def get_last_assembly ():
     conf = get_cravat_conf()
     last_assembly = conf.get('last_assembly', 'hg38')
     return last_assembly
+
+def show_cravat_version ():
+    version = get_current_package_version()
+    print(version)
+
+class ReadyState(object):
+
+    READY = 0
+    MISSING_MD = 1
+
+    messages = {
+        0: '',
+        1: 'Modules directory not found',
+    }
+
+    def __init__(self, code=READY):
+        if code not in self.messages:
+            raise ValueError(code)
+        self.code = code
+    
+    @property
+    def message(self):
+        return self.messages[self.code]
+    
+    def __bool__(self):
+        return self.code==self.READY
+
+    def __iter__(self):
+        yield 'ready', bool(self)
+        yield 'code', self.code
+        yield 'message', self.message
+
+def system_ready():
+    if not(os.path.exists(get_modules_dir())):
+        return ReadyState(code=ReadyState.MISSING_MD)
+    return ReadyState()
+
+def ready_resolution_console():
+    rs = system_ready()
+    if rs:
+        return
+    print(rs.message)
+    if rs.code == ReadyState.MISSING_MD:
+        msg = 'Current modules directory is {}.\nInput a new modules directory, or press enter to exit.\n> '.format(
+                get_modules_dir()
+            )
+        new_md = input(msg)
+        if new_md:
+            full_path = os.path.abspath(new_md)
+            set_modules_dir(full_path)
+            print(full_path)
+        else:
+            print('Please manually recreate/reattach the modules directory')
+            exit()        
+    exit()
+
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

@@ -9,6 +9,7 @@ import csv
 from io import StringIO
 from cravat.util import detect_encoding
 import sys
+from json.decoder import JSONDecodeError
 
 csv.register_dialect('cravat', delimiter=',', quotechar='@')
 
@@ -54,33 +55,14 @@ class CravatReader (CravatFile):
                 cols = l.split('=')[1].split(',')
                 self.index_columns.append(cols)
             elif l.startswith('#column='):
-                csv_row = '='.join(l.split('=')[1:])
-                col_info = list(csv.reader([csv_row], dialect='cravat'))[0]
-                col_index = int(col_info[0])
-                col_title = col_info[1]
-                col_name = col_info[2]
-                col_type = col_info[3]
-                self._validate_col_type(col_type)
-                col_cats = json.loads(col_info[4]) if col_info[4] else {}
-                col_width = col_info[5] if col_info[5] else None
-                col_desc = col_info[6] if col_info[6] else None
-                # Using json properly converts "False" to False, bool("False") evalueates to True
-                col_hidden = json.loads(col_info[7].lower()) if col_info[7] else True
-                col_ctg = col_info[8] if col_info[8] else None
-                col_filterable = json.loads(col_info[9].lower()) if col_info[9] else True
-                link_format = col_info[10] if col_info[10] else None
-                if link_format == '': link_format = None
-                self.columns[col_index] = {'title':col_title,
-                                           'name':col_name,
-                                           'type':col_type,
-                                           'categories':col_cats,
-                                           'width':col_width,
-                                           'desc':col_desc,
-                                           'hidden':col_hidden,
-                                           'category': col_ctg,
-                                           'filterable': col_filterable,
-                                           'link_format': link_format,
-                                           }
+                coldef = ColumnDefinition({})
+                col_s = '='.join(l.split('=')[1:])
+                try:
+                    coldef.from_json(col_s)
+                except JSONDecodeError:
+                    coldef.from_var_csv(col_s)
+                self._validate_col_type(coldef.type)
+                self.columns[coldef.index] = coldef
             elif l.startswith('#report_substitution='):
                 self.report_substitution = json.loads(l.split('=')[1])
             else:
@@ -92,15 +74,15 @@ class CravatReader (CravatFile):
     def override_column(self, index, name, title=None, data_type='string', cats=[], category=None):
         if title == None:
             title = ' '.join(x.title() for x in name.split('_'))
-        self.columns[index]['title'] = title
-        self.columns[index]['name'] = name
-        self.columns[index]['type'] = data_type
-        self.columns[index]['categories'] = cats
-        self.columns[index]['category'] = category
+        self.columns[index].title= title
+        self.columns[index].name = name
+        self.columns[index].type = data_type
+        self.columns[index].categories = cats
+        self.columns[index].category = category
 
     def get_column_names(self):
         sorted_order = sorted(list(self.columns.keys()))
-        return [self.columns[x]['name'] for x in sorted_order]
+        return [self.columns[x].name for x in sorted_order]
 
     def get_annotator_name (self):
         return self.annotator_name
@@ -124,8 +106,8 @@ class CravatReader (CravatFile):
                 yield None, BadFormatError(err_msg)
                 continue
             for col_index, col_def in self.columns.items():
-                col_name = col_def['name']
-                col_type = col_def['type']
+                col_name = col_def.name
+                col_type = col_def.type
                 tok = toks[col_index]
                 if tok == '':
                     out[col_name] = None
@@ -176,7 +158,6 @@ class CravatWriter(CravatFile):
                  titles_prefix='#'):
         super().__init__(path)
         self.wf = open(self.path,'w', encoding='utf-8')
-        #sys.stderr.write('writing [' + self.path + ']. encoding=' + self.wf.encoding + '\n')
         self._ready_to_write = False
         self.ordered_columns = []
         self.name_to_col_index = {}
@@ -187,22 +168,13 @@ class CravatWriter(CravatFile):
         self._titles_written = False
         self.titles_prefix = titles_prefix
 
-    def add_column(self, col_index, col_def, override=False):
+    def add_column(self, col_index, col_d, override=False):
         if col_index == 'append':
             col_index = len(self.columns)
         else:
             col_index = int(col_index)
-        title = str(col_def['title'])
-        col_type = col_def['type']
-        self._validate_col_type(col_type)
-        col_name = col_def['name']
-        col_cats = json.dumps(col_def.get('categories'))
-        col_width = col_def.get('width')
-        col_desc = col_def.get('desc')
-        col_hidden = col_def.get('hidden',False)
-        col_ctg = col_def.get('category', None)
-        col_filterable = col_def.get('filterable',True)
-        link_format = col_def.get('link_format',None)
+        col_d['index'] = col_index
+        col_def = ColumnDefinition(col_d)
         if not(override):
             try:
                 self.columns[col_index]
@@ -212,19 +184,9 @@ class CravatWriter(CravatFile):
             except KeyError:
                 pass
         for i in self.columns:
-            if self.columns[i]['name'] == col_name:
-                raise Exception('A column with name %s already exists.' %col_name)
-        self.columns[col_index] = {'name':col_name,
-                                   'type':col_type,
-                                   'title':title,
-                                   'categories': col_cats,
-                                   'width': col_width,
-                                   'desc': col_desc,
-                                   'hidden': col_hidden,
-                                   'category': col_ctg,
-                                   'filterable': col_filterable,
-                                   'link_format': link_format,
-                                   }
+            if self.columns[i].name == col_def.name:
+                raise Exception('A column with name %s already exists.' %col_def.name)
+        self.columns[col_index] = col_def
 
     def add_columns(self, col_list, append=False):
         """
@@ -246,8 +208,8 @@ class CravatWriter(CravatFile):
                 raise Exception('Column %d must be defined' %correct_index)
             col_def = self.columns[col_index]
             self.ordered_columns.append(col_def)
-            self.title_toks.append(col_def['title'])
-            self.name_to_col_index[col_def['name']] = col_index
+            self.title_toks.append(col_def.title)
+            self.name_to_col_index[col_def.name] = col_index
         self._ready_to_write = True
 
     def write_names (self, annotator_name, annotator_display_name, annotator_version):
@@ -272,18 +234,16 @@ class CravatWriter(CravatFile):
 
     def write_definition(self, conf=None):
         self._prep_for_write()
-        val_order = ['title','name','type','categories','width','desc','hidden','category','filterable','link_format']
-        for col_index, col_def in enumerate(self.ordered_columns):
-            ordered_vals = [col_index]+[col_def[k] for k in val_order]
-            s_buffer = StringIO()
-            csv.writer(s_buffer,dialect='cravat').writerow(ordered_vals)
-            s_buffer.seek(0)
-            col_def_line = '#column='+s_buffer.read().rstrip('\r\n')+'\n'
-            self.wf.write(col_def_line)
+        for col_def in self.ordered_columns:
+            self.write_meta_line('column',col_def.get_json())
         if conf and 'report_substitution' in conf:
-            self.wf.write('#report_substitution={}\n'.format(
-                json.dumps(conf['report_substitution'])))
+            self.write_meta_line('report_substitution', json.dumps(conf['report_substitution']))
         self._definition_written = True
+        self.wf.flush()
+
+    def write_input_paths (self, input_path_dict):
+        s = '#input_paths={}\n'.format(json.dumps(input_path_dict))
+        self.wf.write(s)
         self.wf.flush()
 
     def write_titles(self):
@@ -403,6 +363,10 @@ class AllMappingsParser (object):
         mapping.protein = self.none_to_empty(t[self._protein_index])
         return mapping
 
+    def delete_gene (self, gene):
+        if gene in self._d:
+            del self._d[gene]
+
     def get_all_mappings (self):
         mappings = []
         for gene, ts in self._d.items():
@@ -428,3 +392,112 @@ class AllMappingsParser (object):
         s = protein + ':' + achange + ':' + tr + ':' + tchange + ':' + \
             so + ':' + gene
         return s
+
+class ColumnDefinition (object):
+
+    csv_order = [
+        'index',
+        'title',
+        'name',
+        'type',
+        'categories',
+        'width',
+        'desc',
+        'hidden',
+        'category',
+        'filterable',
+        'link_format',
+        'genesummary',
+    ]
+
+    db_order = [ #TODO change name to denote legacy
+        'col_name',
+        'col_title',
+        'col_type',
+        'col_cats',
+        'col_width',
+        'col_desc',
+        'col_hidden',
+        'col_ctg',
+        'col_filterable',
+        'col_link_format'
+    ]
+    
+    sql_map = {
+        'col_name':'name',
+        'col_title':'title',
+        'col_type':'type',
+        'col_cats':'categories',
+        'col_width':'width',
+        'col_desc':'desc',
+        'col_hidden':'hidden',
+        'col_ctg':'category',
+        'col_filterable':'filterable',
+        'col_link_format':'link_format',
+        'col_genesummary':'genesummary',
+    }
+
+    def __init__(self, d):
+        self._load_dict(d)
+    
+    def _load_dict(self, d):
+        self.index = d.get('index')
+        self.name = d.get('name')
+        self.title = d.get('title')
+        self.type = d.get('type')
+        self.categories = d.get('categories',[])
+        self.width = d.get('width')
+        self.desc = d.get('desc')
+        self.hidden = bool(d.get('hidden',False))
+        self.category = d.get('category')
+        self.filterable = bool(d.get('filterable',True))
+        self.link_format = d.get('link_format')
+        self.genesummary = d.get('genesummary',False)
+
+    def from_row(self, row, order=None):
+        if order is None:
+            order = self.db_order
+        d = {self.sql_map[column] : value for column, value in zip(order,row)}
+        self._load_dict(d)
+        if isinstance(self.categories, str):
+            self.categories = json.loads(self.categories)
+
+    def from_var_csv(self, row):
+        l = list(csv.reader([row], dialect='cravat'))[0]
+        self._load_dict(dict(zip(self.csv_order[:len(l)], l)))
+        self.index = int(self.index)
+        if isinstance(self.categories, str):
+            self.categories = json.loads(self.categories)
+        if self.categories is None:
+            self.categories = []
+        if isinstance(self.hidden, str):
+            self.hidden = json.loads(self.hidden.lower())
+        if isinstance(self.filterable, str):
+            self.filterable = json.loads(self.filterable.lower())
+        if self.link_format=='':
+            self.link_format = None
+    
+    def from_json(self, sjson):
+        self._load_dict(json.loads(sjson))
+
+    def get_json(self):
+        return json.dumps(self.__dict__)
+
+    def get_colinfo(self):
+        return {
+            'col_name': self.name,
+            'col_title': self.title,
+            'col_type': self.type,
+            'col_cats': self.categories,
+            'col_width': self.width,
+            'col_desc': self.desc,
+            'col_hidden': self.hidden,
+            'col_ctg': self.category,
+            'col_filterable': self.filterable,
+            'link_format': self.link_format,
+            'col_genesummary': self.genesummary,
+        }
+    
+    def __iter__(self): # Allows casting to dict
+        for k,v in self.__dict__.items():
+            yield k,v

@@ -12,6 +12,7 @@ import re
 from cravat import ConfigLoader
 from cravat import admin_util as au
 from cravat import CravatFilter
+from cravat.constants import base_smartfilters
 from aiohttp import web
 import time
 
@@ -244,8 +245,9 @@ async def delete_filter_setting (request):
     r = await table_exists(cursor, table)
     if r:
         q = 'delete from ' + table + ' where name="' + name + '" and datatype="filter"'
+        print(q)
         await cursor.execute(q)
-        conn.commit()
+        await conn.commit()
         content = 'deleted'
     else:
         content = 'no such table'
@@ -258,7 +260,7 @@ async def get_status (request):
     dbpath = queries['dbpath']
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
-    q = 'select * from info'
+    q = 'select * from info where colkey not like "\_%" escape "\\"'
     await cursor.execute(q)
     content = {}
     for row in await cursor.fetchall():
@@ -327,12 +329,14 @@ async def get_result (request):
         args.extend(['-c', confpath])
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
+    args.append('--nogenelevelonvariantlevel')
     reporter = m.Reporter(args, None)
     await reporter.prep()
     dbbasename = os.path.basename(dbpath)
     print('getting result [{}] from {} for viewer...'.format(tab, dbbasename))
     t = time.time()
     data = await reporter.run(tab=tab)
+    data['modules_info'] = await get_modules_info(request)
     t = round(time.time() - t, 3)
     print('result [{}] obtained from {} in {}s. packing...'.format(tab, dbbasename, t))
     t = time.time()
@@ -346,6 +350,8 @@ async def get_result (request):
     content['columns'] = get_colmodel(tab, data['colinfo'])
     content["data"] = get_datamodel(data[tab])
     content["status"] = "normal"
+    content['modules_info'] = data['modules_info']
+    content['warning_msgs'] = data['warning_msgs']
     t = round(time.time() - t, 3)
     print('done in {}s. sending result of {}...'.format(t, dbbasename))
     return web.json_response(content)
@@ -361,6 +367,7 @@ async def get_result_levels (request):
     if len(ret) > 0:
         content = [v[0].split('_')[0] for v in ret]
         content.insert(0, 'info')
+        content.insert(1,'filter')
     else:
         content = []
     content.remove('sample')
@@ -413,9 +420,10 @@ def get_colmodel (tab, colinfo):
     dataindx = 0
     for groupkey in groupkeys_ordered:
         [grouptitle, col_count] = groupnames[groupkey]
-        columngroupdef = {'title': grouptitle, 'colModel': []}
+        columngroupdef = {'name': groupkey, 'title': grouptitle, 'colModel': []}
         startidx = dataindx
         endidx = startidx + col_count
+        genesummary_present = False
         for d in colinfo[tab]['columns'][startidx:endidx]:
             cats = d['col_cats']
             column = {
@@ -434,6 +442,7 @@ def get_colmodel (tab, colinfo):
                 'desc': d['col_desc'],
                 'type': d['col_type'],
                 'hidden': d['col_hidden'],
+                'default_hidden': d['col_hidden'],
                 'ctg': d['col_ctg'],
                 'filterable': d['col_filterable'],
                 'link_format': d.get('link_format'),
@@ -475,8 +484,12 @@ def get_colmodel (tab, colinfo):
                 column['retfilt'] = True
                 column['retfilttype'] = 'between'
                 column['multiseloptions'] = []
+            if 'col_genesummary' in d and d['col_genesummary'] == True:
+                genesummary_present = True
             columngroupdef['colModel'].append(column)
             dataindx += 1
+        if genesummary_present:
+            columngroupdef['genesummary'] = True
         colModel.append(columngroupdef)
     return colModel
 
@@ -514,7 +527,9 @@ def serve_widgetfile (request):
         request.match_info['filename']
         )
     if os.path.exists(filepath):
-        return web.FileResponse(filepath)
+        response = web.FileResponse(filepath)
+        response.headers['Cache-Control'] = 'no-cache'
+        return response
 
 async def serve_runwidget (request):
     path = 'wg' + request.match_info['module']
@@ -525,6 +540,43 @@ async def serve_runwidget (request):
     m = imp.load_module(path, f, fn, d)
     content = await m.get_data(queries)
     return web.json_response(content)
+
+async def get_modules_info (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
+    q = 'select colval from info where colkey="_annotator_desc"'
+    await cursor.execute(q)
+    r = await cursor.fetchone()
+    if r is None or r[0] == '{}':
+        content = {}
+    else:
+        s = r[0].strip('{').strip('}')
+        toks = s.split("', '")
+        d = {}
+        for tok in toks:
+            t2 = tok.split(':')
+            k = t2[0].strip().strip("'").replace("'", "\'")
+            v = t2[1].strip().strip("'").replace("'", "\'")
+            d[k] = v
+        content = d
+    return content
+    
+async def load_smartfilters (request):
+    queries = request.rel_url.query
+    dbpath = queries['dbpath']
+    sfs = {'base':base_smartfilters}
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
+    sf_table = 'smartfilters'
+    if await table_exists(cursor, sf_table):
+        q = 'select name, definition from {};'.format(sf_table)
+        await cursor.execute(q)
+        r = await cursor.fetchall()
+        for mname, definitions in r:
+            sfs[mname] = json.loads(definitions)
+    return web.json_response(sfs)
 
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
@@ -546,4 +598,4 @@ routes.append(['GET', '/result/service/getnowgannotmodules', get_nowg_annot_modu
 routes.append(['GET', '/result/widgetfile/{module_dir}/{filename}', serve_widgetfile])
 routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])
 routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
-
+routes.append(['GET', '/result/service/smartfilters', load_smartfilters])

@@ -4,7 +4,7 @@ import argparse
 import logging
 import time
 from .inout import CravatReader, CravatWriter, AllMappingsParser
-from .constants import crx_def, crx_idx, crg_def, crg_idx, crt_def, crt_idx
+from .constants import crx_def, crx_idx, crg_def, crg_idx, crt_def, crt_idx, gene_level_so_exclude
 from .util import most_severe_so, so_severity
 from .exceptions import InvalidData
 from cravat.config_loader import ConfigLoader
@@ -69,6 +69,10 @@ class BaseMapper(object):
                                      dest='output_dir',
                                      help='Output directory. '\
                                           +'Default is input file directory.')
+        self.cmd_parser.add_argument('--confs',
+            dest='confs',
+            default='{}',
+            help='Configuration string')
 
     def _define_additional_cmd_args(self):
         """This method allows sub-classes to override and provide addittional command line args"""
@@ -88,6 +92,10 @@ class BaseMapper(object):
             self.output_base_fname = self.cmd_args.name
         else:
             self.output_base_fname = self.input_fname
+        self.confs = None
+        if self.cmd_args.confs is not None:
+            confs = self.cmd_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+            self.confs = json.loads(confs)
 
     def base_setup(self):
         self._setup_io()
@@ -204,6 +212,13 @@ class BaseMapper(object):
             return
         tmap_parser = AllMappingsParser(tmap_json)
         for hugo in tmap_parser.get_genes():
+            sos = tmap_parser.get_uniq_sos_for_gene(genes=[hugo])
+            for so in gene_level_so_exclude:
+                if so in sos:
+                    sos.remove(so)
+            if len(sos) == 0:
+                tmap_parser.delete_gene(hugo)
+                continue
             so = most_severe_so(tmap_parser.get_uniq_sos_for_gene(genes=[hugo]))
             try:
                 self.gene_info[hugo]['variant_count'] += 1
@@ -250,3 +265,32 @@ class BaseMapper(object):
         self.error_logger.error('\nLINE:{:d}\nINPUT:{}\nERROR:{}\n#'.format(ln, line[:-1], str(e)))
         if not(isinstance(e, InvalidData)):
             raise e
+
+    async def get_gene_summary_data (self, cf):
+        print('            {}: started getting gene summary data'.format(self.module_name))
+        t = time.time()
+        hugos = await cf.get_filtered_hugo_list()
+        cols = ['base__' + coldef['name'] \
+                for coldef in crx_def]
+        cols.extend(['tagsampler__numsample'])
+        data = {}
+        t = time.time()
+        rows = await cf.get_variant_data_for_cols(cols)
+        rows_by_hugo = {}
+        t = time.time()
+        for row in rows:
+            hugo = row[-1]
+            if hugo not in rows_by_hugo:
+                rows_by_hugo[hugo] = []
+            rows_by_hugo[hugo].append(row)
+        t = time.time()
+        for hugo in hugos:
+            rows = rows_by_hugo[hugo]
+            input_data = {}
+            for i in range(len(cols)):
+                input_data[cols[i].split('__')[1]] = [row[i] for row in rows]
+            out = self.summarize_by_gene(hugo, input_data)
+            data[hugo] = out
+        print('            {}: finished getting gene summary data in {:0.3f}s'.format(self.module_name, time.time() - t))
+        return data
+

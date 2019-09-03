@@ -6,17 +6,30 @@ function getExportContent (tabName) {
 	content += '# Result database: ' + dbPath + '\n';
 	content += '# Report section (tab): ' + tabName + '\n';
 	// Writes filters.
-	content += '# Filters: ';
+	content += '# Load filters: ';
     content += JSON.stringify(filterJson) + '\n';
-
+    content += '# Table filters:\n';
 	var colTitles = [];
 	var colGroups = $grids[tabName].pqGrid('option', 'colModel');
+    var colNos = [];
+    var colNo = -1;
+    var colGroupTitles = [];
+    var colGroupNumCols = {};
 	for (var colGroupNo = 0; colGroupNo < colGroups.length; colGroupNo++) {
 		var colGroup = colGroups[colGroupNo];
 		var cols = colGroup.colModel;
+        var colExist = false;
+        var numCols = 0;
 		for (var j = 0; j < cols.length; j++) {
+            colNo++;
 			var col = cols[j];
-			colTitles.push(col.title);
+            if (col.hidden) {
+                continue;
+            }
+            colExist = true;
+            colNos.push(colNo);
+            numCols++;
+			colTitles.push(col.title.replace(' ', '_'));
 			var filter = col.filter;
 			if (filter != undefined) {
 				if (filter.on == true) {
@@ -29,6 +42,8 @@ function getExportContent (tabName) {
 							content += '#     ' + col.title + ': ' + condition + ' ' + value + '\n';
 						} else if (condition == 'between') {
 							content += '#     ' + col.title + ': ' + condition + ' ' + value + ' and ' + value2 + '\n';
+                        } else if (col.filter.type == 'select') {
+                            content += '#     ' + col.title + ': ' + value + '\n';
 						} else {
 							content += '#     ' + col.title + ': ' + condition + ' ' + value + '\n';
 						}
@@ -36,12 +51,32 @@ function getExportContent (tabName) {
 				}
 			}
 		}
+        if (colExist) {
+            var colGroupTitle = colGroup.title.replace(' ', '_');
+            colGroupTitles.push(colGroupTitle);
+            colGroupNumCols[colGroupTitle] = numCols;
+        }
 	}
-	content += '\n';
 	// Writes data headers.
+    if (colGroupTitles.length == 0) {
+        return '';
+    }
+    content += colGroupTitles[0];
+    for (var j = 0; j < colGroupNumCols[colGroupTitles[0]]; j++) {
+        content += '\t';
+    }
+    for (var i = 1; i < colGroupTitles.length; i++) {
+        var colGroupTitle = colGroupTitles[i];
+        content += colGroupTitle;
+        var numCols = colGroupNumCols[colGroupTitle];
+        for (var j = 0; j < numCols; j++) {
+            content += '\t';
+        }
+    }
+    content += '\n';
 	content += colTitles[0];
-	for (var colNo = 1; colNo < colTitles.length; colNo++) {
-		content += '\t' + colTitles[colNo];
+	for (var i = 1; i < colTitles.length; i++) {
+		content += '\t' + colTitles[i];
 	}
 	content += '\n';
 	// Writes data rows.
@@ -49,8 +84,8 @@ function getExportContent (tabName) {
 	for (var rowNo = 0; rowNo < rows.length; rowNo++) {
 		var row = rows[rowNo];
 		content += row[0];
-		for (var colNo = 1; colNo < row.length; colNo++) {
-			var value = row[colNo];
+		for (var i = 1; i < colNos.length; i++) {
+			var value = row[colNos[i]];
 			if (value == null) {
 				value = '';
 			}
@@ -106,7 +141,7 @@ function resizesTheWindow () {
 	var rightDiv = document.getElementById('rightdiv_' + currentTab);
 	var cellValueDiv = document.getElementById('cellvaluediv_' + currentTab);
 	var browserHeight = isNaN(window.innerHeight) ? window.clientHeight : window.innerHeight;
-	var rightDivHeight = browserHeight - 67;
+	var rightDivHeight = browserHeight - 70;
     var tableDivHeight = 0;
     if (tableDiv) {
         tableDivHeight = tableDiv.offsetHeight;
@@ -189,7 +224,7 @@ function makeTabHeadTabBody (resultTableLevel) {
 	if (tabTitle == 'info') {
 		tabTitle = 'summary';
 	}
-	span.textContent = tabTitle[0].toUpperCase() + tabTitle.substring(1);
+	span.textContent = tabTitle.toUpperCase();
 	addEl(tabHeadsDiv, span);
 	addEl(body, div);
 }
@@ -202,16 +237,20 @@ function addTabHeadsAndTabContentDivs () {
 	}
 }
 
-function disableUpdateButton () {
-    document.getElementById('load_button').disabled = true;
+function disableUpdateButton ({countHigh=false}={}) {
+    var btn = document.getElementById('load_button');
+    btn.disabled = true;
+    if (countHigh) {
+        btn.innerText = `Count must be below ${NUMVAR_LIMIT}`;
+    } else {
+        btn.innerText = 'Apply filter';
+    }
 }
 
 function enableUpdateButton () {
-    document.getElementById('load_button').disabled = false;
-}
-
-function disableUpdateButton () {
-    document.getElementById('load_button').disabled = true;
+    var btn = document.getElementById('load_button');
+    btn.disabled = false;
+    btn.innerText = 'Apply filter';
 }
 
 function clearVariantGeneTab () {
@@ -223,6 +262,246 @@ function clearVariantGeneTab () {
     }
 }
 
+function iterationCopy (src) {
+    var target = {};
+    for (var prop in src) {
+        if (src.hasOwnProperty(prop)) {
+            target[prop] = src[prop];
+        }
+    }
+    return target;
+}
+
+function copyColModel (colModelGroup) {
+    var newColModelGroup = {};
+    newColModelGroup.name = colModelGroup.name;
+    newColModelGroup.title = colModelGroup.title;
+    var newColModel = [];
+    var colModel = colModelGroup.colModel;
+    for (var i = 0; i < colModel.length; i++) {
+        var col = colModel[i];
+        var newcol = {};
+        newcol.col = col.col;
+        newcol.colgroup = col.colgroup;
+        newcol.colgroupkey = col.colgroupkey;
+        newcol.title = col.title;
+        newcol.align = col.align;
+        newcol.dataIndx = col.dataIndx;
+        newcol.retfilt = col.retfilt;
+        newcol.retfilttype = col.retfilttype;
+        newcol.multiseloptions = col.multiseloptions;
+        newcol.reportsub = col.reportsub;
+        newcol.categories = col.categories;
+        newcol.width = col.width;
+        newcol.desc = col.desc;
+        newcol.type = col.type;
+        newcol.hidden = col.hidden;
+        newcol.default_hidden = col.default_hidden;
+        newcol.ctg = col.ctg;
+        newcol.filterable = col.filterable;
+        newcol.link_format = col.link_format;
+        newcol.filter = col.filter;
+        newcol.fromgenelevel = true;
+        newcol.render = col.render;
+        newColModel.push(newcol);
+    }
+    newColModelGroup.colModel = newColModel;
+    return newColModelGroup;
+}
+
+function addGeneLevelToVariantLevel () {
+    var oriNoColVar = infomgr.columnss.variant.length;
+    // colModel
+    var geneColModels = infomgr.colModels['gene'];
+    var colNo = oriNoColVar;
+    var colgroupsToSkip = [];
+    var colsToSkip = [];
+    for (var i = 0; i < geneColModels.length; i++) {
+        var colModel = geneColModels[i];
+        if (colModel.name == 'base' || colModel['genesummary'] == true) {
+            colgroupsToSkip.push(colModel.name);
+            for (var j = 0; j < colModel.colModel.length; j++) {
+                colsToSkip.push(colModel.colModel[j].col);
+            }
+            continue;
+        }
+        var colModel = copyColModel(geneColModels[i]);
+        /*
+        var cols = colModel.colModel;
+        for (var j = 0; j < cols.length; j++) {
+            cols[j].dataIndx = colNo;
+            colNo++;
+        }
+        */
+        infomgr.colModels['variant'].push(colModel);
+    }
+    // Sorts colModel.
+    var vcm = infomgr.colModels['variant'];
+    for (var i = 0; i < vcm.length - 1; i++) {
+        for (var j = i + 1; j < vcm.length; j++) {
+            var cmi = vcm[i];
+            var cmj = vcm[j];
+            if (cmi.name == 'base' || cmi.name == 'tagsampler' || cmi.name.startsWith('hg')) {
+                continue;
+            }
+            if (cmi.title.toLowerCase() > cmj.title.toLowerCase()) {
+                var tmp = cmi;
+                vcm[i] = cmj;
+                vcm[j] = tmp;
+            }
+        }
+    }
+    // assigns dataIndx to variant colModels.
+    var vcm = infomgr.colModels['variant'];
+    var varDataIndx = 0;
+    var colNoDict = {};
+    var varColumnss = [];
+    var varColumngroupss = {};
+    var varColumnnoss = {};
+    for (var i = 0; i < vcm.length; i++) {
+        var varColModel = vcm[i].colModel;
+        var varColNames = [];
+        for (var j = 0; j < varColModel.length; j++) {
+            var varCol = varColModel[j];
+            var level = 'variant';
+            if (varCol.fromgenelevel == true) {
+                level = 'gene';
+            }
+            colNoDict[varDataIndx] = {'level': level, 'colno': varCol.dataIndx};
+            varCol.dataIndx = varDataIndx;
+            varColumnnoss[varCol.col] = varDataIndx;
+            varDataIndx++;
+            varColumnss.push(varCol);
+            varColNames.push(varCol.col);
+        }
+        varColumngroupss[vcm[i].name] = varColNames;
+    }
+    infomgr.columnss.variant = varColumnss;
+    infomgr.columngroupss.variant = varColumngroupss;
+    infomgr.columnnoss.variant = varColumnnoss;
+    // columngroupss
+    /*
+    var geneColumnGroups = infomgr.columngroupss.gene;
+    var geneColumnGroupNames = Object.keys(geneColumnGroups);
+    for (var i = 0; i < geneColumnGroupNames.length; i++) {
+        var geneColumnGroupName = geneColumnGroupNames[i];
+        if (geneColumnGroupName == 'base' || colgroupsToSkip.indexOf(geneColumnGroupName) >= 0) {
+            continue;
+        }
+        infomgr.columngroupss.variant[geneColumnGroupName] = geneColumnGroups[geneColumnGroupName];
+    }
+    */
+    // columnnoss
+    /*
+    var geneColumnnos = infomgr.columnnoss.gene;
+    var maxColNo = Math.max(...Object.values(infomgr.columnnoss.variant));
+    var geneColumnNames = Object.keys(geneColumnnos);
+    var colNoDict = {};
+    var varColNo = 0;
+    var varColumnnoss = {};
+    var varColumnss = [];
+    var initVarColumnnossKeys = Object.keys(infomgr.columnnoss.variant);
+    var initGeneColumnnossKeys = Object.keys(infomgr.columnnoss.gene);
+        // infomgr.colModels.variant already has gene level colModels.
+    for (var j = 0; j < infomgr.colModels.variant.length; j++) {
+        var varColModel = infomgr.colModels.variant[j];
+        var varColModelName = varColModel.name;
+        var colAdded = false;
+        for (var k = 0; k < initVarColumnnossKeys.length; k++) {
+            var colkey = initVarColumnnossKeys[k];
+            var colgrp = colkey.split('__')[0];
+            if (colgrp == varColModelName) {
+                varColumnnoss[colgrp] = varColNo;
+                varColumnss.push(infomgr.columnss.variant[k]);
+                colNoDict[varColNo] = {'level': 'variant', 'colno': k};
+                varColNo++;
+                colAdded = true;
+            }
+        }
+        // does not add gene column group if variant level already has it.
+        if (colAdded) {
+            continue;
+        }
+        for (var k = 0; k < initGeneColumnnossKeys.length; k++) {
+            var colkey = initGeneColumnnossKeys[k];
+            if (colsToSkip.indexOf(colkey) >= 0) {
+                continue;
+            }
+            var colgrp = colkey.split('__')[0];
+            if (colgrp == varColModelName) {
+                varColumnnoss[colgrp] = varColNo;
+                varColumnss.push(JSON.parse(JSON.stringify(infomgr.columnss.gene[k])));
+                colNoDict[varColNo] = {'level': 'gene', 'colno': k};
+                varColNo++;
+            }
+        }
+    }
+    infomgr.columnnoss.variant = varColumnnoss;
+    infomgr.columnss.variant = varColumnss;
+    */
+    // column default hidden exist
+    var vcs = Object.keys(infomgr.colgroupdefaulthiddenexist.variant);
+    var gcs = Object.keys(infomgr.colgroupdefaulthiddenexist.gene);
+    for (var i = 0; i < gcs.length; i++) {
+        var colgrpname = gcs[i];
+        if (vcs.indexOf(colgrpname) == -1) {
+            infomgr.colgroupdefaulthiddenexist['variant'][colgrpname] = JSON.parse(JSON.stringify(infomgr.colgroupdefaulthiddenexist['gene'][colgrpname]));
+        }
+    }
+    // dataModel
+    var geneDataModels = infomgr.datas.gene;
+    geneRows = {};
+    for (var i = 0; i < geneDataModels.length; i++) {
+        var row = geneDataModels[i];
+        var hugo = row[0];
+        geneRows[hugo] = row;
+    }
+    var hugoColNo = infomgr.getColumnNo('variant', 'base__hugo');
+    function convertToInt (v) {
+        return parseInt(v);
+    }
+    var numCols = Math.max(...Object.keys(colNoDict).map(convertToInt)) + 1;
+    for (var varRowNo = 0; varRowNo < infomgr.datas.variant.length; varRowNo++) {
+        var varRow = infomgr.datas.variant[varRowNo];
+        var hugo = varRow[hugoColNo];
+        var geneRow = geneRows[hugo];
+        var newRow = [];
+        for (var colNo = 0; colNo < numCols; colNo++) {
+            var colTo = colNoDict[colNo];
+            var level = colTo['level'];
+            var colno = colTo['colno'];
+            var cell = null;
+            if (level == 'variant') {
+                cell = infomgr.datas[level][varRowNo][colno];
+            } else if (level == 'gene') {
+                if (geneRow == undefined) {
+                    cell = null;
+                } else {
+                    cell = geneRow[colno];
+                }
+            }
+            newRow.push(cell);
+        }
+        infomgr.datas.variant[varRowNo] = newRow;
+    }
+}
+
+var makeVariantByGene = function () {
+    if (infomgr.datas.variant != undefined) {
+        varByGene = {};
+        var variantRows = infomgr.datas.variant;
+        var hugoColNo = infomgr.getColumnNo('variant', 'base__hugo');
+        for (var i = 0; i < variantRows.length; i++) {
+            var row = variantRows[i];
+            var hugo = row[hugoColNo];
+            if (varByGene[hugo] == undefined) {
+                varByGene[hugo] = [];
+            }
+            varByGene[hugo].push(i);
+        }
+    }
+};
+
 function loadData (alertFlag, finalcallback) {
     disableUpdateButton();
 	var infoReset = resetTab['info'];
@@ -231,22 +510,9 @@ function loadData (alertFlag, finalcallback) {
     resetTab['variant'] = true;
     resetTab['gene'] = true;
 	infomgr.datas = {};
-    var makeVariantByGene = function () {
-        if (infomgr.datas.variant != undefined) {
-            varByGene = {};
-            var variantRows = infomgr.datas.variant;
-            var hugoColNo = infomgr.getColumnNo('variant', 'base__hugo');
-            for (var i = 0; i < variantRows.length; i++) {
-                var row = variantRows[i];
-                var hugo = row[hugoColNo];
-                if (varByGene[hugo] == undefined) {
-                    varByGene[hugo] = [];
-                }
-                varByGene[hugo].push(i);
-            }
-        }
-    };
 	var removeSpinner = function () {
+        addGeneLevelToVariantLevel();
+        makeVariantByGene();
 		if (spinner != null) {
 			spinner.remove();
 		}
@@ -270,10 +536,12 @@ function loadData (alertFlag, finalcallback) {
 			setupTab(currentTab);
             resizesTheWindow();
 		}
-        setFilterButtonText();
-        makeVariantByGene();
-        document.getElementById('load_innerdiv_msg_info').textContent = infomgr.datas.variant.length + ' variants meet the criteria.';
         enableUpdateButton();
+        unlockTabs();
+        if (jobDataLoadingDiv != null) {
+            jobDataLoadingDiv.parentElement.removeChild(jobDataLoadingDiv);
+            jobDataLoadingDiv = null;
+        }
 	}
 	var loadGeneResult = function () {
 		var numvar = infomgr.getData('variant').length;
@@ -290,7 +558,6 @@ function loadData (alertFlag, finalcallback) {
 			return;
 		} else {
 			flagNotifyToUseFilter = false;
-			unlockTabs();
 			if (document.getElementById('infonoticediv')) {
 				notifyOfReadyToLoad();
 			}
@@ -320,7 +587,7 @@ function loadData (alertFlag, finalcallback) {
             var numvar = Number(infomgr.jobinfo['Number of unique input variants']);
             if (filterJson.length == 0 && numvar > NUMVAR_LIMIT) {
                 lockTabs();
-                disableUpdateButton();
+                disableUpdateButton({countHigh:true});
                 flagNotifyToUseFilter = true;
                 if (document.getElementById('infonoticediv')) {
                     notifyToUseFilter();
@@ -328,7 +595,7 @@ function loadData (alertFlag, finalcallback) {
                 } else {
                     flagNotifyToUseFilter = true;
                 }
-                removeLoadingDiv();
+                //removeLoadingDiv();
                 firstLoad = true;
                 return;
             }
@@ -336,7 +603,7 @@ function loadData (alertFlag, finalcallback) {
                 infomgr.count(dbPath, 'variant', function (numvar) {
                     if (numvar > NUMVAR_LIMIT) {
                         lockTabs();
-                        disableUpdateButton();
+                        disableUpdateButton({countLow:true});
                         flagNotifyToUseFilter = true;
                         if (document.getElementById('infonoticediv')) {
                             notifyToUseFilter();
@@ -344,14 +611,14 @@ function loadData (alertFlag, finalcallback) {
                         } else {
                             flagNotifyToUseFilter = true;
                         }
-                        removeLoadingDiv();
+                        //removeLoadingDiv();
                         return;
                     } else {
                         if (flagNotifyToUseFilter) {
                             notifyOfReadyToLoad();
                             flagNotifyToUseFilter = false;
                         }
-                        removeLoadingDiv();
+                        //removeLoadingDiv();
                         callLoadVariant();
                     }
                 });
@@ -360,7 +627,7 @@ function loadData (alertFlag, finalcallback) {
                     notifyOfReadyToLoad();
                     flagNotifyToUseFilter = false;
                 }
-                removeLoadingDiv();
+                //removeLoadingDiv();
                 callLoadVariant();
             }
 		} else {
@@ -371,12 +638,6 @@ function loadData (alertFlag, finalcallback) {
     disableUpdateButton();
 	loadVariantResult();
     filterArmed = filterJson;
-    var filterButton = document.getElementById('filterbutton');
-    if (filterArmed.variant != undefined && (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0)) {
-        filterButton.style.backgroundColor = 'red';
-    } else {
-        filterButton.style.backgroundColor = '#c5dbdb';
-    }
 }
 
 function setFilterButtonText () {
@@ -408,11 +669,12 @@ function unlockTabs () {
 function notifyToUseFilter () {
 	var div = document.getElementById('infonoticediv');
 	div.style.background = 'red';
-	div.style.display = 'block';
 	div.textContent = 
 		'Number of variants exceeds viewer limit (' + NUMVAR_LIMIT + ').' +
 		'Click the Filter button to use filters to reduce the number of ' +
 		'variants to ' + NUMVAR_LIMIT + ' or less, and click Update to load filtered variants.';
+	showInfonoticediv();
+    document.getElementById('tabhead_filter').style.pointerEvents = 'auto';
 }
 
 function hideWgnoticediv () {
@@ -423,8 +685,8 @@ function hideWgnoticediv () {
 function notifyOfReadyToLoad () {
 	var div = document.getElementById('infonoticediv');
 	div.style.background = 'white';
-	div.textContent = ' ';
-	div.style.display = 'none';
+	div.textContent = '';
+	hideInfonoticediv();
 }
 
 function getViewerWidgetSettingByWidgetkey (tabName, widgetId) {
@@ -467,8 +729,14 @@ function firstLoadData () {
                         for (var k = 0; k < widgetNames.length; k++) {
                             var widgetName = widgetNames[k];
                             var widgetTabs = Object.keys(widgetGenerators[widgetName]);
+                            if (widgetTabs.length == 1 && widgetTabs[0] == 'gene') {
+                                widgetTabs.unshift('variant');
+                            }
                             var req = infomgr.widgetReq[widgetName];
                             var generator = widgetGenerators[widgetName];
+                            if (generator['gene'] != undefined && generator['variant'] == undefined) {
+                                generator['variant'] = generator['gene'];
+                            }
                             for (var j = 0; j < widgetTabs.length; j++) {
                                 var widgetTab = widgetTabs[j];
                                 if (generator[widgetTab]['variables'] == undefined) {
@@ -586,7 +854,7 @@ function drawingRetrievingDataDiv (currentTab) {
 	var loadingDiv = getEl('div');
     loadingDiv.className = 'data-retrieving-msg-div';
 	var loadingTxtDiv = getEl('div');
-    loadingTxtDiv.className = 'data-retrieving-msg-div-content';
+    loadingTxtDiv.className = 'store-noconnect-msg-div';
     var span = getEl('span');
     span.textContent = 'Retrieving Data...';
 	addEl(loadingTxtDiv, span);
@@ -611,7 +879,7 @@ function drawingWidgetCaptureSpinnerDiv () {
 	var loadingDiv = getEl('div');
     loadingDiv.className = 'data-retrieving-msg-div';
 	var loadingTxtDiv = getEl('div');
-    loadingTxtDiv.className = 'data-retrieving-msg-div-content';
+    loadingTxtDiv.className = 'store-noconnect-msg-div';
     var span = getEl('span');
     span.textContent = 'Capturing widget content...';
 	addEl(loadingTxtDiv, span);
@@ -667,17 +935,23 @@ function turnOnMenu (elemId) {
 	document.getElementById(elemId).style.display = 'block';
 }
 
+function turnOffLayoutMenu () {
+    var submenu = document.querySelector('#menu_div .menu1 .menu2_container');
+    submenu.classList.add('hide');
+    submenu.classList.remove('show-block');
+}
+
 function onClickMenu1 (menu) {
     var submenus = menu.getElementsByClassName('menu2_container');
     for (var i = 0; i < submenus.length; i++) {
         var submenu = submenus[i];
-        var d = submenu.style.display;
-        if (d == 'block') {
-            d = 'none';
+        if (submenu.classList.contains('show-block')) {
+            submenu.classList.add('hide');
+            submenu.classList.remove('show-block');
         } else {
-            d = 'block';
+            submenu.classList.remove('hide');
+            submenu.classList.add('show-block');
         }
-        submenu.style.display = d;
     }
 }
 
@@ -786,12 +1060,18 @@ function webresult_run () {
     //window.onbeforeunload = triggerAutosave;
     getResultLevels(afterGetResultLevels);
     document.addEventListener('click', function (evt) {
+        var target = evt.target;
         var tableHeaderContextmenuId = 'table-header-contextmenu-' + currentTab;
-        if (evt.target.closest(tableHeaderContextmenuId) == null) {
+        if (target.closest(tableHeaderContextmenuId) == null) {
             var div = document.getElementById(tableHeaderContextmenuId);
             if (div != null) {
                 div.style.display = 'none';
             }
+        }
+        // closes layout menu.
+        if (target.closest('#menu_div') == null) {
+            var layoutMenu = document.querySelector('#menu_div .menu1');
+            turnOffLayoutMenu();
         }
     });
     checkConnection();

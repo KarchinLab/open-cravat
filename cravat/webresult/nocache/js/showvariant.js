@@ -58,7 +58,7 @@ function getWidgetTableTr (values,linkNames) {
 				linkNameItr += 1;
 			}
 			else{
-				addEl(td, addEl(spanText, getTn('Link')));
+				addEl(td, addEl(spanText, getTn('View')));
 			}
 		}
 		else{
@@ -391,7 +391,6 @@ function showVariantDetail (row, tabName) {
                         generator['function'](widgetContentDiv, row, tabName);
                     }
                     var setting = getViewerWidgetSettingByWidgetkey(tabName, colGroupKey);
-                    console.log(colGroupKey, setting);
                     if (setting != null) {
                         var display = setting['display'];
                         if (display != undefined) {
@@ -402,7 +401,7 @@ function showVariantDetail (row, tabName) {
             }
         } catch (err) {
             console.log(err);
-            console.log('### continuing to the next widget ###');
+            console.log('### exception while drawing widget [' + colGroupKey + '] continuing to the next widget ###');
         }
 	}
 	if (reuseWidgets == false) {

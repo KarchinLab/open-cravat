@@ -28,6 +28,8 @@ var uninstalledModules = [];
 var moduleGroupMembers = {};
 var currentPage = null;
 var installedGroups = {};
+var tagsCollected = [];
+var tagDesc = {};
 
 function getEl(tag){
 	var new_node = document.createElement(tag);
@@ -46,15 +48,17 @@ function addEl (pelem, child) {
 
 function onClickStoreHome () {
     var homeButton = document.getElementById('store-home-button');
-    var homeButtonClass = homeButton.className;
-    if (homeButtonClass == 'store-front-all-button-on') {
+    if (homeButton.classList.contains('store-front-all-button-on')) {
         showAllModulesDiv();
-        homeButton.className = 'store-front-all-button-off';
+        homeButton.classList.add('store-front-all-button-off');
+        homeButton.classList.remove('store-front-all-button-on');
         updateFilter();
-    } else if (homeButtonClass == 'store-front-all-button-off') {
+    } else if (homeButton.classList.contains('store-front-all-button-off')) {
         showStoreHome();
-        homeButton.className = 'store-front-all-button-on';
-        document.getElementById('store-tag-reset-button').className = 'store-front-all-button-off';
+        homeButton.classList.add('store-front-all-button-on');
+        homeButton.classList.remove('store-front-all-button-off');
+        document.getElementById('store-tag-reset-button').classList.add('store-front-all-button-off');
+        document.getElementById('store-tag-reset-button').classList.remove('store-front-all-button-on');
     }
 }
 
@@ -64,8 +68,10 @@ function onClickStoreTagResetButton () {
         this.checked = false;
     });
     updateFilter();
-    document.getElementById('store-home-button').className = 'store-front-all-button-off';
-    document.getElementById('store-tag-reset-button').className = 'store-front-all-button-on';
+    document.getElementById('store-home-button').classList.add('store-front-all-button-off');
+    document.getElementById('store-home-button').classList.remove('store-front-all-button-on');
+    document.getElementById('store-tag-reset-button').classList.add('store-front-all-button-on');
+    document.getElementById('store-tag-reset-button').classList.remove('store-front-all-button-off');
 }
 
 function clickTab (value) {
@@ -96,14 +102,24 @@ function onClickInstallBaseComponents () {
 
 function showSystemModulePage () {
     document.getElementById('store-systemmodule-div').style.display = 'block';
-    if (baseInstalled == false) {
-        document.getElementById('store-systemmodule-missing-div').style.display = 'block';
+    if (systemReadyObj.ready == false) {
+        document.getElementById('store-systemmodule-systemnotready-div').style.display = 'block';
+        var span = document.getElementById('store-systemmodule-systemnotready-span');
+        var span2 = document.getElementById('store-systemmodule-systemnotready-span2');
+        span.textContent = systemReadyObj['message'];
+        if (systemReadyObj['code'] == 1) {
+            span2.textContent = 'Please use the settings menu at top right to set the correct modules directory.';
+        }
     } else {
-        document.getElementById('store-systemmodule-missing-div').style.display = 'none';
-    }
-    document.getElementById('store-systemmodule-update-div').style.display = 'none';
-    if (baseToInstall.length == 0) {
-        document.getElementById('store-systemmodule-install-button').disabled = true;
+        if (baseInstalled == false) {
+            document.getElementById('store-systemmodule-missing-div').style.display = 'block';
+        } else {
+            document.getElementById('store-systemmodule-missing-div').style.display = 'none';
+        }
+        document.getElementById('store-systemmodule-update-div').style.display = 'none';
+        if (baseToInstall.length == 0) {
+            document.getElementById('store-systemmodule-install-button').disabled = true;
+        }
     }
 }
 
@@ -127,8 +143,9 @@ function getLocal () {
                     mI['tags'] = tags;
                 }
                 if (remoteModuleName in localModuleInfo) {
-                    var idx = tags.indexOf('installed');
-                    if (idx == -1) {
+                    //var idx = tags.indexOf('installed');
+                    //if (idx == -1) {
+                    if (localModuleInfo[remoteModuleName].exists) {
                         tags.push('installed');
                     }
                     if (moduleNamesInInstallQueue.indexOf(remoteModuleName) == -1) {
@@ -226,6 +243,10 @@ function getLocal () {
                 }
                 populateStoreHome();
                 populateAllModulesDiv();
+                var mg = document.getElementById('store-modulegroup-div').getAttribute('modulegroup');
+                if (mg != undefined && mg != '') {
+                    populateModuleGroupDiv(mg);
+                }
                 if (storeFirstOpen) {
                     showStoreHome();
                 }
@@ -249,6 +270,7 @@ function getLocal () {
             enableStoreTabHead();
             makeInstalledGroup();
             buildAnnotatorGroupSelector();
+            populateAnnotators();
         });
     });
 }
@@ -530,12 +552,29 @@ function trimRemote () {
     }
 }
 
+function checkSystemReady () {
+    $.ajax({
+        url: '/issystemready',
+        async: true,
+        success: function (response) {
+            systemReadyObj = response;
+            if (systemReadyObj.ready) {
+                getLocal();
+            } else {
+                hidePageselect();
+                showSystemModulePage();
+            }
+        },
+    });
+}
+
 function getRemote () {
 	$.ajax({
         url: '/store/remote',
         async: true,
         success: function(data){
-            remoteModuleInfo = data;
+            remoteModuleInfo = data['data'];
+            tagDesc = data['tagdesc'];
             for (var moduleName in remoteModuleInfo) {
                 var moduleInfo = remoteModuleInfo[moduleName];
                 if (! ('tags' in moduleInfo) || moduleInfo['tags'] == null) {
@@ -550,7 +589,7 @@ function getRemote () {
                     installInfo[module] = {'msg': 'queued'};
                 }
             }
-            getLocal();
+            checkSystemReady();
         }
 	});
 }
@@ -601,6 +640,12 @@ function populateStoreTagPanel () {
     $(div).empty();
     for (var i = 0; i < tagsCollected.length; i++) {
         var tag = tagsCollected[i];
+        var label = getEl('label');
+        label.className = 'checkbox-container';
+        label.textContent = tag;
+        if (tagDesc[tag] != undefined) {
+            label.title = tagDesc[tag];
+        }
         var input = getEl('input');
         input.type = 'checkbox';
         input.value = tag;
@@ -608,12 +653,11 @@ function populateStoreTagPanel () {
         input.addEventListener('click', function (evt) {
             onStoreTagCheckboxChange();
         });
-        addEl(div, input);
         var span = getEl('span');
-        span.class = 'store-tag-span';
-        span.textContent = tag;
-        addEl(div, span);
-        addEl(div, getEl('br'));
+        span.className = 'checkmark';
+        addEl(label, input);
+        addEl(label, span);
+        addEl(div, label);
     }
 }
 
@@ -654,11 +698,14 @@ function updateFilter () {
     populateAllModulesDiv();
     showAllModulesDiv();
     if (filterHasValue) {
-        document.getElementById('store-tag-reset-button').className = 'store-front-all-button-off';
+        document.getElementById('store-tag-reset-button').classList.add('store-front-all-button-off');
+        document.getElementById('store-tag-reset-button').classList.remove('store-front-all-button-on');
     } else {
-        document.getElementById('store-tag-reset-button').className = 'store-front-all-button-on';
+        document.getElementById('store-tag-reset-button').classList.add('store-front-all-button-on');
+        document.getElementById('store-tag-reset-button').classList.remove('store-front-all-button-off');
     }
-    document.getElementById('store-home-button').className = 'store-front-all-button-off';
+    document.getElementById('store-home-button').classList.add('store-front-all-button-off');
+    document.getElementById('store-home-button').classList.remove('store-front-all-button-on');
 }
 
 function onClickModuleTileAbortButton (evt) {
@@ -772,8 +819,9 @@ function onClickModuleTileUpdateButton (evt) {
 
 function getModuleTileUpdateButton (moduleName) {
     var button = getEl('button');
-    button.className = 'modulepanel-update-button';
-    button.textContent = 'Install update';
+    button.classList.add('butn');
+    button.classList.add('modulepanel-update-button');
+    button.textContent = 'UPDATE';
     button.setAttribute('module', moduleName);
     if (updateConflicts.hasOwnProperty(moduleName)) {
         button.setAttribute('disabled','true');
@@ -791,8 +839,9 @@ function getModuleTileUpdateButton (moduleName) {
 
 function getModuleTileUninstallButton (moduleName) {
     var button = getEl('button');
-    button.className = 'modulepanel-uninstall-button';
-    button.textContent = 'Uninstall';
+    button.classList.add('butn');
+    button.classList.add('modulepanel-uninstall-button');
+    button.textContent = 'UNINSTALL';
     button.setAttribute('module', moduleName);
     button.addEventListener('click', function (evt) {
         var moduleName = evt.target.getAttribute('module');
@@ -802,17 +851,22 @@ function getModuleTileUninstallButton (moduleName) {
 }
 
 function getModuleTileInstallButton (moduleName) {
+    var div = getEl('div');
+    div.classList.add('modulepanel-install-button-div');
     var button = getEl('button');
-    button.className = 'modulepanel-install-button';
-    button.textContent = 'Install';
+    button.classList.add('butn');
+    button.classList.add('modulepanel-install-button');
+    button.textContent = '\xa0INSTALL';
     button.setAttribute('module', moduleName);
     button.addEventListener('click', onClickModuleTileInstallButton);
-    return button;
+    addEl(div, button);
+    return div;
 }
 
 function getModuleTileAbortButton (moduleName) {
     var button = getEl('button');
-    button.className = 'modulepanel-stopinstall-button';
+    button.classList.add('butn');
+    button.classList.add('modulepanel-stopinstall-button');
     button.textContent = 'Cancel download';
     button.setAttribute('module', moduleName);
     button.removeEventListener('click', onClickModuleTileInstallButton);
@@ -824,6 +878,7 @@ function populateModuleGroupDiv (moduleGroupName) {
     document.getElementById('store-modulegroup-title-span').textContent = remoteModuleInfo[moduleGroupName]['title'];
     var div = document.getElementById('store-modulegroup-content-div');
     emptyElement(div);
+    div.parentElement.setAttribute('modulegroup', moduleGroupName);
     var remoteModuleNames = moduleGroupMembers[moduleGroupName];
     moduleLists['modulegroup'] = remoteModuleNames;
     for (var i = 0; i < remoteModuleNames.length; i++) {
@@ -837,14 +892,13 @@ function populateModuleGroupDiv (moduleGroupName) {
         }
         addEl(div, panel);
     }
-    showStoreModuleGroup();
 }
 
 function saveCurrentPage () {
     var divIds = ['store-home-div', 'store-allmodule-div', 'store-modulegroup-div'];
     for (var i = 0; i < divIds.length; i++) {
         var divId = divIds[i];
-        if (document.getElementById(divId).style.display == 'block') {
+        if (document.getElementById(divId).style.display != 'none') {
             currentPage = divId;
             break;
         }
@@ -868,6 +922,7 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
         var moduleName = evt.target.getAttribute('module');
         saveCurrentPage();
         populateModuleGroupDiv(moduleName);
+        showStoreModuleGroup();
         evt.stopPropagation();
     }
     var img = addLogo(moduleName, sdiv);
@@ -876,6 +931,7 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
             var moduleName = evt.target.parentElement.getAttribute('module');
             saveCurrentPage();
             populateModuleGroupDiv(moduleName);
+            showStoreModuleGroup();
             evt.stopPropagation();
         }
     }
@@ -1562,9 +1618,11 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
                 var descs = [];
                 for (var i1 = 0; i1 < outputs.length; i1++) {
                     var o = outputs[i1];
+                    var desc = '';
                     if (o['desc'] != undefined) {
-                        descs.push([o['title'], o['desc']]);
+                        desc = o['desc'];
                     }
+                    descs.push([o['title'], desc]);
                 }
                 if (descs.length > 0) {
                     outputColumnDiv.style.display = 'block';
@@ -1714,6 +1772,20 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     addEl(d, span);
     span = getEl('span');
     span.textContent = mInfo['type'];
+    addEl(d, span);
+    addEl(infodiv, d);
+    d = getEl('div');
+    span = getEl('span');
+    span.style.fontWeight = 'bold';
+    span.textContent = 'Required modules: ';
+    addEl(d, span);
+    span = getEl('span');
+    if (mInfo['requires'] != null) {
+        span.textContent = mInfo['requires'];
+    } else {
+        span.textContent = 'None';
+    }
+    span.style.wordBreak = 'break-all';
     addEl(d, span);
     addEl(infodiv, d);
     if (currentTab == 'store') {
@@ -1953,6 +2025,8 @@ function connectWebSocket () {
     ws.onopen = function (evt) {
     }
     ws.onclose = function (evt) {
+        console.log('Re-establishing websocket');
+        connectWebSocket(failures);
     }
     ws.onmessage = function (evt) {
         var data = JSON.parse(evt.data);

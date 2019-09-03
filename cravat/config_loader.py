@@ -107,7 +107,10 @@ class ConfigLoader():
                 return None
         else:
             return None
-        
+
+    def override_run_conf (self, run_conf):
+        self._all['run'] = au.recursive_update(self._all['run'], run_conf)
+    
     def override_cravat_conf (self, cravat_conf):
         self._all['cravat'] = au.recursive_update(self._all['cravat'],
                                                cravat_conf)

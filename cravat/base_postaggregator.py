@@ -9,6 +9,8 @@ from cravat.util import get_caller_name
 from cravat.config_loader import ConfigLoader
 from cravat.constants import VARIANT, GENE, LEVELS
 from cravat.exceptions import InvalidData
+from cravat.inout import ColumnDefinition
+import json
 
 class BasePostAggregator (object):
 
@@ -62,6 +64,10 @@ class BasePostAggregator (object):
                             default='variant',
                             help='Summarize level. '\
                                  +'Default is variant.')
+        parser.add_argument('--confs',
+            dest='confs',
+            default='{}',
+            help='Configuration string')
         self.cmd_arg_parser = parser
 
     def parse_cmd_args(self, cmd_args):
@@ -75,6 +81,10 @@ class BasePostAggregator (object):
             self.level = parsed_args.level
         self.levelno = LEVELS[self.level]
         self.dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
+        self.confs = None
+        if parsed_args.confs is not None:
+            confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+            self.confs = json.loads(confs)
 
     def run(self):
         if not self.should_run_annotate:
@@ -100,10 +110,11 @@ class BasePostAggregator (object):
         self.logger.info('runtime: {0:0.3f}'.format(run_time))
 
     def fill_categories (self):
-        for col_def in self.conf['output_columns']:
-            if 'category' not in col_def or col_def['category'] not in ['single', 'multi']:
+        for col_d in self.conf['output_columns']:
+            col_def = ColumnDefinition(col_d)
+            if col_def.category not in ['single', 'multi']:
                 continue
-            col_name = col_def['name']
+            col_name = col_def.name
             q = 'select distinct {} from {}'.format(col_name, self.level)
             self.cursor.execute(q)
             rs = self.cursor.fetchall()
@@ -114,11 +125,9 @@ class BasePostAggregator (object):
                     if col_cat not in col_cats:
                         col_cats.append(col_cat)
             col_cats.sort()
-            q = 'update {}_header set col_cats=\'{}\' where col_name=\'{}\''.format(
-                self.level,
-                '[' + ','.join(['"' + v + '"' for v in col_cats]) + ']',
-                col_name)
-            self.cursor.execute(q)
+            col_def.categories = col_cats
+            q = 'update {}_header set col_def=? where col_name=?'.format(self.level)
+            self.cursor.execute(q, [col_def.get_json(), col_def.name])
         self.dbconn.commit()
 
     def write_output (self, input_data, output_dict):
@@ -186,25 +195,18 @@ class BasePostAggregator (object):
         self.cursor_w.execute(q)
         # data table and header table
         header_table_name = self.level + '_header'
-        for col_def in self.conf['output_columns']:
-            colname = col_def['name']
-            coltitle = col_def['title']
-            coltype = col_def['type']
-            colcats = col_def.get('categories', "[]")
-            colwidth = col_def.get('width')
-            coldesc = col_def.get('desc')
-            colhidden = col_def.get('hidden',False)
-            col_ctg = col_def.get('category', None)
-            col_filterable = col_def.get('filterable',True)
-            col_link_format = col_def.get('link_format')
+        for col_d in self.conf['output_columns']:
+            col_def = ColumnDefinition(col_d)
+            colname = col_def.name
+            coltype = col_def.type
             # data table
             q = 'alter table ' + self.level + ' add column ' +\
                 colname + ' ' + self.cr_type_to_sql[coltype]
             self.cursor_w.execute(q)
             # header table
             # use prepared statement to allow " characters in colcats and coldesc
-            q = 'insert into {} values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'.format(header_table_name)
-            self.cursor_w.execute(q,[colname, coltitle, coltype, colcats, colwidth, coldesc, colhidden, col_ctg, col_filterable, col_link_format])
+            q = 'insert into {} values (?, ?)'.format(header_table_name)
+            self.cursor_w.execute(q,[colname, col_def.get_json()])
         self.dbconn.commit()
 
     # Placeholder, intended to be overridded in derived class

@@ -1,6 +1,29 @@
-body {
-	font-family: Roboto;
-	font-size: 10px;
+@font-face {
+    font-family: 'roboto-medium';
+    src: url('/result/fonts/roboto-medium-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-medium-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'roboto-light';
+    src: url('/result/fonts/roboto-light-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-light-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'roboto-bold';
+    src: url('/result/fonts/roboto-bold-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-bold-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'sourcesanspro-bold';
+    src: url('/result/fonts/sourcesanspro-bold-webfont.woff') format('woff'),
+         url('/result/fonts/sourcesanspro-bold-webfont.woff2') format('woff2');
+}
+
+body * {
+    font-family: 'roboto-light';
 	margin: 0px;
 }
 
@@ -20,12 +43,14 @@ body {
 	display: inline-block;
     vertical-align: bottom;
 	position: relative;
-	background-color: #d1d1d1;
+	background-color: #c5af8d;
+    color: white;
 	top: 0px;
-	height: 20px;
+	height: 28px;
 	padding: 3px;
-	font-size: 13px;
-    z-index: 100;
+	font-size: 14px;
+    border-radius: 3px 3px 0px 0px;
+    left: 5px;
 }
 
 .menu1 {
@@ -36,24 +61,21 @@ body {
     font-size: 13px;
     border: none;
 	cursor: pointer;
-    z-index: 100;
+    font-family: roboto-medium;
+    color: white;
 }
 
 .menu2_container {
-	display: none;
 	position: absolute;
-	top: 23px;
+	top: 31px;
 	left: -3px;
-	background-color: #c8c8c8;
+	background-color: #d1d3d4;
 	width: 150px;
-	border: 1px solid #888888;
     z-index: 100;
 }
 
 .menu2 {
 	position: relative;
-	z-index: 1;
-	background-color: #c8c8c8;
 	color: black;
 	width: 130px;
 	padding-left: 6px;
@@ -64,12 +86,12 @@ body {
 
 .menu3 {
     display: none;
-    left: 145px;
     position: absolute;
-    border: 1px solid #888888;
-    background-color: #c8c8c8;
+    top: 6px;
+    left: 150px;
+    background-color: #d1d3d4;
     z-index: 100;
-    top: 0px;
+    padding: 10px;
 }
 
 .menu1 a {
@@ -137,7 +159,7 @@ table.detailtable td {
 	padding: 3px;
 	margin: 5px;
 	font-size: 10px;
-	font-family: Roboto;
+	font-family: roboto-light;
 }
 
 .hiddencolumn[hide="true"] {
@@ -149,26 +171,28 @@ table.detailtable td {
 }
 
 .tabhead {
-	margin-right: -1px;
+	margin-right: 2px;
     display: inline-block;
     height: 14px;
     padding: 6px;
     transition: all 0.3s ease;
     vertical-align: bottom;
     font-size: 13px;
-    border: 1px solid #5b8588;
     cursor: pointer;
     position: relative;
-    top: 4px;
+    top: 5px;
+    font-family: roboto-medium;
+    color: white;
+    background-color: #d1d3d4;
 }
 
 .tabhead:hover {
-	background-color: #f0f0f0;
+	background-color: #94d1eb;
     height: 30px;
 }
 
 .tabhead.show {
-	background-color: #d6d6d6;
+	background-color: #4a87bd;
     height: 30px;
 }
 
@@ -178,9 +202,9 @@ table.detailtable td {
 div.tabContent {
 	position: absolute;
 	top: 62px;
-	width: calc(100% - 12px);
-	/*border: 1px solid #c9c3ba;*/ 
-	padding: 0.5em; 
+    left: 0px;
+	width: calc(100% - 16px);
+	padding: 8px;
 	background-color: #ffffff; 
 	height: -moz-calc(100% - 90px);
 	height: -webkit-calc(100% - 90px);
@@ -196,17 +220,17 @@ div.tabContent.hide {
 }
 
 .pq-grid-cell {
-	font-family: Roboto;
+	font-family: roboto-light;
 	font-size: 12px;
 }
 
 .pq-grid-col {
-	font-family: Roboto;
+	font-family: roboto-light;
 	font-size: 12px;
 }
 
 .ui-widget {
-	font-family: Roboto;
+	font-family: roboto-light;
 	font-size: 12px;
 }
 
@@ -234,9 +258,13 @@ div.tabContent.hide {
 .detaildiv {
 	overflow: auto;
 	position: absolute;
-	width: calc(100% - 6px);
+	width: calc(100% - 8px);
 	bottom: 10px;
 	height: 350px;
+}
+
+.detailcontainerdiv {
+    /*padding-top: 8px;*/
 }
 
 .detailcontainerwrapdiv {
@@ -257,11 +285,7 @@ div.tabContent.hide {
 .detailwidget {
 	font-size: 12px;
 	border: 1px solid #d0d0d0;
-	padding: 5px;
-	margin: 4px;
-    padding-top: 0px;
-    padding-left: 0px;
-    padding-right: 0px;
+    padding: 0px;
 }
 
 .detailwidgetheader {
@@ -277,9 +301,9 @@ div.tabContent.hide {
 .detailwidgettitle {
 	display: inline-block;
 	width: calc(100% - 4px);
-	background: #d1dae0;
+	background: #4a87bd;
+    font-family: sourcesanspro-bold;
 	font-size: 13px;
-	font-weight: bold;
     height: 18px;
     margin-bottom: 6px;
 }
@@ -296,6 +320,10 @@ div.tabContent.hide {
 	padding: 0px;
     padding-left: 7px;
     padding-right: 7px;
+}
+
+.detailcontentdiv * {
+    font-size: 11px;
 }
 
 .tablecolumnselectorpanel {
@@ -374,7 +402,7 @@ div.tabContent.hide {
 }
 
 .detailwidgetselect {
-	font-family: Roboto;
+	font-family: roboto-light;
 	font-size: 11px;
 }
 
@@ -388,8 +416,8 @@ div.tabContent.hide {
 }
 
 .section_header {
-	font-size: 16px;
-	font-weight: bold;
+	font-size: 13px;
+    font-family: sourcesanspro-bold;
 }
 
 .inlineselect {
@@ -413,7 +441,14 @@ p {
 	font-size: 14px;
 	padding: 13px;
 	margin: 2px;
-	color: white;
+}
+
+.infonoticediv.show {
+    display: block;
+}
+
+.infonoticediv.hide {
+    display: none;
 }
 
 button {
@@ -468,7 +503,6 @@ div.filter-not-toggle {
 }
 
 .filter-control-button {
-	font-weight: bold;
 	padding-left: 4px;
     padding-right: 4px;
     padding-top: 2px;
@@ -553,6 +587,16 @@ div.pq-select-menu>.pq-select-option-label {
 
 #filterdiv {
     z-index: 100;
+}
+
+.store-noconnect-msg-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    color: black;
+    padding: 20px;
+    background-color: #e6e7e8;
 }
 
 .data-retrieving-msg-div {
@@ -645,6 +689,7 @@ div.pq-select-menu>.pq-select-option-label {
     resize: none;
     overflow: auto;
     vertical-align: middle;
+    font-size: 11px;
 }
 
 .summary-jobinfo-table td {
@@ -658,22 +703,8 @@ div.pq-select-menu>.pq-select-option-label {
 
 #info_div {
 	display: inline-block;
-    width: calc(100% - 24px);
+    width: calc(100% - 30px);
     border: 1px solid #acacac;
-}
-
-@font-face {
-    font-family: "Roboto";
-    src: url("../fonts/Roboto-Regular.ttf") format('truetype');
-    font-weight: 400;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: "Roboto";
-    src: url('../fonts/Roboto-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
 }
 
 #filterbutton {
@@ -726,5 +757,357 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .widgetspinner {
-    width: 20px;
+	width: 20px;
 }
+
+.smartfilter {
+	margin: 5px;
+	position: relative;
+	display: flex;
+}
+
+.smartfilter.smartfilter-active {
+	font-weight: bold;
+}
+
+#sample-select-cont {
+	max-height: 300px;
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	width: 100%;
+	overflow-x: auto;
+}
+
+.sample-selector {
+	overflow-x: hidden;
+	text-overflow: ellipsis;
+	margin: 2px;
+	padding: 2px;
+	width: fit-content;
+	cursor: pointer;
+	min-width: 10ch;
+	vertical-align: middle;
+	font-size: 16px;
+	-webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+
+.sample-selector:hover {
+	background-color: #e6e7e8;
+}
+
+.sample-state-span::before {
+	font-size: 20px;
+}
+
+.sample-selector.sample-neutral > .sample-state-span::before {
+	content: "\2610";
+	color: #d1d3d4;
+}
+.sample-selector.sample-require > .sample-state-span::before {
+	content: "\2611";
+	color: green;
+}
+
+.sample-selector.sample-reject > .sample-state-span::before {
+	content: "\2612";
+    color: red;
+}
+
+.module-header-plus-sign {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    cursor: pointer;
+}
+
+#connection-lost-div {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 200;
+}
+
+.sample-selector-label {
+	margin-left: 5px;
+}
+
+#gene-list-text {
+	height: 8em;
+	display: block;
+}
+
+#gene-list-file {
+	display: block;
+}
+
+#rightdiv_filter {
+	font-size: 14px;
+}
+
+.filter-header {
+	background-color: #4a87bd;
+	font-size: 18px;
+	cursor: pointer;
+}
+.filter-header-text {
+	color: white;
+}
+.filter-content {
+	margin: 10px;
+}
+.filter-header.inactive + .filter-content {
+	display: none;
+}
+
+.filter-section {
+	margin: 10px;
+	border: 0.5px solid #939393;
+	border-radius: 4px;
+}
+
+
+.sf-selector {
+	flex: 0 1 70%;
+}
+.sf-title {
+	flex: 0 1 30%;
+	padding-right: 10px;
+}
+.sf-title > .checkbox-container {
+	width: fit-content;
+}
+
+.vprop-option {
+	font-size: 18px;
+	background-color: #d1d3d4;
+	width: 50%;
+	text-align: center;
+	float: left;
+	cursor: pointer;
+	color: white;
+}
+
+.vprop-option.active {
+	background-color: #4a87bd;
+}
+
+.filter-header-arrow {
+	color: white;
+}
+
+.filter-header-arrow::after {
+	content: "\2b9f";
+}
+.inactive > .filter-header-arrow::after {
+	content: "\2b9e";
+}
+#vprop-sf {
+	max-width: 800px;
+}
+.smartfilter-checkbox {
+	width: 15px;
+	height: 15px;
+}
+.filter-header-text {
+	margin-left: 3px;
+}
+#filter-load-controls {
+	display: flex;
+	border: none;
+	align-items: center;
+	font-size: 18px;
+}
+#filter-count-btn {
+	width: 20px;
+	height: 20px;
+	cursor: pointer;
+}
+#filter-count-display {
+	margin-left: 5px;
+}
+#load_button {
+	margin-left: auto;
+	width: 50%;
+	height: 34px;
+    font-family: sourcesanspro-bold;
+    font-size: 18px;
+}
+
+#filter-save {
+	margin-left: 0.5ch;
+	height: 2em;
+	cursor: pointer;
+}
+#tabhead_filter.active {
+	background-color: #d1dae0;
+}
+#filter-left-panel {
+	float: left;
+	height: 100%;
+	border-right: 1px solid gray;
+	padding: 5px;
+	width: 8%;
+}
+#filter-right-panel {
+	max-width: 1100px;
+	float: left;
+	height: 100%;
+	width: 75%;
+}
+#saved-filter-header {
+	font-size: 24px;
+	margin-bottom: 0.2em;
+}
+#saved-filter-list {
+	padding-inline-start: 0px;
+}
+.filter-list-item {
+	display: flex;
+}
+.filter-list-item-title {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	width: 100rem;
+	cursor: pointer;
+}
+.filter-list-item-title:hover {
+	background-color: #4a87bd;
+}
+.filter-list-item-delete {
+	margin-left: auto;
+	height: 1em;
+	cursor: pointer;
+}
+
+.butn {
+  -webkit-border-radius: 4;
+  -moz-border-radius: 4;
+  border-radius: 2px;
+  font-family: 'roboto-medium';
+  color: #ffffff;
+  background: #c5af8d;
+  text-decoration: none;
+  border-style: none;
+  margin-left: 1px;
+  margin-right: 1px;
+  cursor: pointer;
+}
+
+.butn:hover:enabled {
+  background-color: #5cb5e5;
+}
+
+.butn:disabled {
+	background-color: inherit;
+    color: #c5af8d;
+    border-style: solid;
+	border-color: #c5af8d;
+	cursor: inherit;
+}
+
+.pq-grid-cell, .pq-grid-number-cell {
+    padding: 0px;
+}
+
+.title {
+	font-family: sourcesanspro-bold;
+}
+
+.checkbox-container {
+  display: block;
+  position: relative;
+  padding-left: 21px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  /*font-size: 22px;*/
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /*font-size: 12px;*/
+}
+
+.checkbox-container:hover {
+    background-color: #888888;
+}
+
+/* Hide the browser's default checkbox */
+.checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+  top: 0px;
+  left: 0px;
+}
+
+/* Create a custom checkbox */
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 16px;
+  width: 16px;
+  background-color: #e5e6e7;
+}
+
+/* On mouse-over, add a grey background color */
+.checkbox-container:hover input ~ .checkmark {
+  background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.checkbox-container input:checked ~ .checkmark {
+  background-color: #5eb4e5;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+.checkbox-container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* Style the checkmark/indicator */
+.checkbox-container .checkmark:after {
+  left: 4px;
+  top: 0px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+.layout-change-button-sublevel {
+    left: 20px;
+}
+
+.columngroup-control-box {
+    border: 0;
+}
+
+.menu2_container.show-block {
+    display: block;
+}
+
+.menu2_container.hide {
+    display: none;
+}
+

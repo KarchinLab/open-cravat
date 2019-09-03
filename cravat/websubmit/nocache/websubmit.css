@@ -1,0 +1,734 @@
+@font-face {
+    font-family: 'roboto-medium';
+    src: url('/result/fonts/roboto-medium-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-medium-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'roboto-light';
+    src: url('/result/fonts/roboto-light-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-light-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'roboto-bold';
+    src: url('/result/fonts/roboto-bold-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-bold-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'sourcesanspro-bold';
+    src: url('/result/fonts/sourcesanspro-bold-webfont.woff') format('woff'),
+         url('/result/fonts/sourcesanspro-bold-webfont.woff2') format('woff2');
+}
+
+body * {
+    font-family: 'roboto-light';
+}
+
+#pageselect {
+    position: fixed; 
+    top: 21px; 
+    left: 10px; 
+    font-size: 15px; 
+    color: #ffffff;
+    z-index: 201;
+    outline: none;
+}
+
+#pageselect div {
+    display: inline-block;
+    text-align: center;
+    padding: 6px;
+    height: 24px;
+    width: 80px;
+    vertical-align: bottom;
+    cursor: pointer;
+    background-color: #94d1eb;
+    height: 20px;
+    border-radius: 2px 2px 0px 0px;
+    border: 1px solid #939393
+    border-bottom: 0px;
+    margin-left: 2px;
+    font-family: roboto-medium;
+}
+
+#pageselect div:hover {
+    background-color: #5cb5e5;
+}
+
+#pageselect div[selval="t"] {
+    height: 30px;
+    background-color: #4a87bd;
+}
+
+#pageselect div[disabled='t'] {
+    pointer-events: none;
+    color: white;
+}
+
+#tabselectdiv {
+    position: absolute; 
+    top: 74px; 
+    left: 0px;
+}
+
+#tabselect {
+    height: 46px;
+    overflow: auto;
+    outline: none;
+    border-radius: 24px;
+}
+
+#tabselect option {
+    display: inline-block;
+    font-size: 20px;
+    width: 90px;
+    text-align: center;
+    padding: 10px;
+}
+
+.container {
+    position: relative;
+    border: 0.5px solid #939393; 
+    border-radius: 4px 4px 0px 0px; 
+    padding-left: 30px; 
+    padding-right: 30px; 
+    padding-top: 18px; 
+    padding-bottom: 14px; 
+    margin-right: 10px;
+}
+
+.container * {
+    font-size: 13px;
+}
+
+.divtitle {
+    font-family: sourcesanspro-bold;
+    font-size: 22px;
+    color: #ffffff;
+    top: -15px;
+    position: relative;
+    z-index: 1;
+}
+
+.or {
+    position: absolute;
+    top: -17px;
+    left: 30px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 26px;
+    color: #4b4b4b;
+}
+
+.divbanner {
+    position: absolute;
+    background-color: #385487;
+    width: 100%;
+    height: 36px;
+    top: 0px;
+    left: 0px;
+    border-radius: 4px 4px 0px 0px;
+}
+
+button {
+    font-family: 'roboto-bold';
+    background-color: #fbfbfb;
+    font-size: 12px;
+}
+
+#jobs-table {
+    width: calc(100% - 1px);
+    border-collapse: collapse;
+    border-spacing: 10px;
+    text-align: center;
+}
+
+#jobs-table thead tr {
+    height: 34px;
+    background-color: #4a87bd;
+    color: white;
+}
+
+#jobs-table tr.job-table-tr:hover {
+    background-color: #dddddd;
+}
+
+.job-table-tr {
+    border-bottom: 1px dotted #aaaaaa;
+}
+
+.job-detail-tr {
+    background-color: #f2f2f2;
+}
+
+.job-detail-tr td table tr td:first-of-type {
+    text-align: right;
+    text-decoration: underline;
+}
+
+.highlighted-tr {
+    background-color: #949494;
+    color: black;
+}
+
+.hidden-tr {
+    display: none;
+}
+
+#jobs-table tbody td {
+    padding-top: 9px;
+    padding-bottom: 9px;
+    cursor: default;
+    font-size: 15px;
+}
+
+#jobs-table thead td {
+    border: 1px solid #dddddd;
+}
+
+#jobs-table tbody tr.job-table-main-tr td {
+    border: 1px solid #dddddd;
+}
+
+#jobs-table thead th {
+    font-size: 13px;
+    font-weight: bold;
+    border-bottom: 1px solid #cccccc;
+    /*box-shadow: 0px 0px 10px 0px #c7c7c7;*/
+}
+
+#annotator-select-div span {
+}
+
+.logo {
+    width: 65px;
+    padding: 3px;
+}
+
+.headerdiv {
+    position: fixed; 
+    top: 0px; 
+    width: 100%; 
+    z-index: 200; 
+    height: 62px; 
+    background-color: white; 
+    left: 0px; 
+    right: 0px;
+    border-bottom: 1px solid #dfdfdf;
+}
+
+#settingsdiv {
+    display: none;
+    position: fixed;
+    top: 27px;
+    right: 6px;
+    background-color: white;
+    z-index: 202;
+    box-shadow: 2px 2px 2px gray;
+    border: 1px solid #a2a2a2;
+    padding: 14px;
+    font-size: 13px;
+}
+
+.variant-input-border-bottom {
+    position: relative;
+    border-bottom: 1px dotted #cbcbcb;
+    padding-bottom: 20px;
+}
+
+#submitcontentdiv {
+    width: 390px;
+}
+
+#jobnoteinput {
+    width: calc(100% - 44px);
+}
+
+#input-text {
+    width: calc(100% + 40px);
+}
+
+#refresh-jobs-table-btn {
+    width: 14px; 
+    height: 17px;
+    position: absolute; 
+    top: 8px; 
+    left: 8px;
+    padding: 0px;
+    background-color: transparent;
+}
+
+.threedots {
+    height: 15px;
+    top: 9px;
+    position: absolute;
+    right: 10px;
+}
+
+.email-icon {
+    height: 15px;
+    top: 9px;
+    position: absolute;
+    right: 40px;
+}
+
+.question-icon {
+    height: 15px;
+    top: 9px;
+    position: absolute;
+    right: 77px;
+}
+
+.checkbox-group-all-none-div {
+    position: absolute;
+    top: 8px;
+    right: 5px;
+    z-index: 8;
+}
+
+.checkbox-group-flexbox {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.checkbox-group-element {
+    width: 50%;
+    white-space: nowrap;
+}
+
+.checkbox-group-element label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.checkbox-group-element span.icon {
+    position: relative;
+    top: 16px;
+}
+
+.checkbox-group-element-sdiv[kind=annotator-group-div] {
+    width: 200%;
+}
+
+div.checkbox-group-element[kind=group] span.icon {
+    position: relative;
+    left: 2px;
+    top: 0px;
+}
+
+div.checkbox-group-element[kind=group] span.label {
+    position: relative;
+    left: 7px;
+}
+
+#annotator-select-div button.checkbox-group-all-button {
+    font-size: 10px;
+}
+
+#annotator-select-div button.checkbox-group-none-button {
+    font-size: 10px;
+}
+
+#annotator-select-div > .checkbox-group-flexbox > .checkbox-group-element {
+    width: calc(50% - 10px);
+    border-right: 10px solid transparent;
+}
+
+#submit-input-format-select {
+    font-size: 9px;
+    width: 60px;
+}
+
+#submit-input-format-select option {
+    font-size: 9px;
+}
+
+#mult-inputs-list p {
+    margin-top: 1px;
+    margin-bottom: 1px;
+    margin-left: 40px;
+}
+
+.slider-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 21px;
+}
+
+.slider-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #a8a8a8;
+    transition: .4s;
+    border-radius: 10px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 13px;
+    width: 13px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #7eb94a;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #7eb94a;
+}
+
+input:checked + .slider:before {
+    transform: translateX(14px);
+}
+
+#annotator-group-select-tag-div {
+    display: inline-block;
+    vertical-align: middle;
+    overflow: hidden;
+    transition: max-height .4s;
+}
+
+#annotator-group-select-tag-div.off {
+    overflow: hidden;
+    max-height: 0px;
+}
+
+#annotator-group-select-tag-div.on {
+    overflow: hidden;
+}
+
+#annotator-group-select-div div.pq-select-button {
+    background-color: white;
+}
+
+.ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight {
+    background-color: #c5af8d;
+}
+
+#annotator-group-select-div .div-header {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 12px;
+    color: #899989;
+}
+
+#submit-annotator-set-switch {
+    display: inline-block;
+    vertical-align: middle;
+    text-align: center;
+    position: relative;
+    top: -6px;
+    width: 56px;
+    line-height: 2px;
+}
+#submit-annotator-set-switch span {
+    font-size: 7px;
+}
+
+.show {
+    display: block;
+}
+
+.hide {
+    display: none;
+}
+
+@font-face {
+    font-family: SegoeUI;
+    src:
+        local("Segoe UI"),
+        url(//c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.woff2) format("woff2"),
+        url(//c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.woff) format("woff"),
+        url(//c.s-microsoft.com/static/fonts/segoe-ui/west-european/normal/latest.ttf) format("truetype");
+    font-weight: 400;
+}
+
+.butn {
+  -webkit-border-radius: 4;
+  -moz-border-radius: 4;
+  border-radius: 2px;
+  font-family: 'roboto-bold';
+  color: #ffffff;
+  background-color: #c5af8d;
+  text-decoration: none;
+  border-style: none;
+  margin-left: 1px;
+  margin-right: 1px;
+  cursor: pointer;
+}
+
+.butn:hover {
+  background: #5cb5e5;
+  text-decoration: none;
+}
+
+.input-example-button {
+    width: 35px;
+    height: 23px;
+    font-size: 11px;
+    background-color: #6e593a;
+}
+
+.submit-annotate-button {
+    font-size: 24px; 
+    width: 391px;
+    padding: 9px;
+    background-color: #de6342;
+    position: absolute;
+    left: 1px;
+    bottom: -2px;
+}
+
+.launch-button {
+    background-color: #c5af8d;
+}
+
+.launch-button:hover {
+    background-color: #6e593a;
+}
+
+.active-download-button {
+    background-color: #c5af8d;
+    border: 1px solid #c5af8d;
+}
+
+.active-download-button:hover {
+    background-color: #6e593a;
+    border: 1px solid #6e593a;
+}
+
+/*
+.active-download-button:after {
+    content: ' ' url('/result/images/download12.png');
+}
+*/
+
+.inactive-download-button {
+  background-color: white;
+  color: #c5af8d;
+  background-color: white;
+  border: 1px solid #c5af8d;
+}
+
+.inactive-download-button:hover {
+    background-color: #6e593a;
+    border: 1px solid #6e593a;
+    color: white;
+}
+
+.checkbox-container {
+  display: block;
+  position: relative;
+  padding-left: 21px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  /*font-size: 22px;*/
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /*font-size: 12px;*/
+}
+
+.checkbox-container:hover {
+    background-color: #3175b0;
+}
+
+/* Hide the browser's default checkbox */
+.checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+  top: 0px;
+  left: 0px;
+}
+
+/* Create a custom checkbox */
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 16px;
+  width: 16px;
+  background-color: #e5e6e7;
+}
+
+/* On mouse-over, add a grey background color */
+.checkbox-container:hover input ~ .checkmark {
+  background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.checkbox-container input:checked ~ .checkmark {
+  background-color: #5eb4e5;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+.checkbox-container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* Style the checkmark/indicator */
+.checkbox-container .checkmark:after {
+  left: 4px;
+  top: 0px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+#submitdiv {
+    position: absolute;
+    top: 70px;
+    width: calc(100% - 10px);
+}
+
+#jobdiv {
+    position: relative;
+    overflow: auto;
+}
+
+#input-file {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+
+#input-file + label {
+    font-family: roboto-medium;
+    font-size: 13px;
+    color: white;
+    background-color: #6e593a;
+    display: inline-block;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+#input-file:focus + label, #input-file + label:hover {
+    background-color: #94d1eb;
+}
+
+#submit-variant-div {
+    background-color: #dbd3c8;
+    color: black;
+}
+
+#submit-variant-div .divbanner {
+    background-color: #8c8780;
+}
+
+#annotchoosediv {
+    background-color: #96b6c6;
+	color: white;
+    margin-top: 15px;
+}
+
+#annotchoosediv .div-header {
+	color: white;
+}
+
+.chevron {
+  position: absolute;
+  text-align: center;
+  padding: 2px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  height: 2px;
+  width: 26px;
+  right: 4px;
+  bottom: -8px;
+}
+
+.chevron:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 51%;
+  transform: skew(0deg, 23deg);
+}
+
+.chevron:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 50%;
+  transform: skew(0deg, -23deg);
+}
+
+.chevron1to2:before {
+  background-color: #c6b08b;
+}
+
+.chevron1to2:after {
+  background-color: #5fa3c6;
+}
+
+.chevron2to3 {
+  position: relative;
+  top: -30px;
+  left: 329px;
+}
+
+.chevron2to3:before {
+  background-color: #94d1eb;
+}
+
+.chevron2to3:after {
+  background-color: #de6342;
+}
+
+#submit-form {
+    overflow-y: scroll;
+    /*scrollbar-width: none;
+    -ms-overflow-style: none;*/
+}
+
+/*
+#submit-form::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+*/
+

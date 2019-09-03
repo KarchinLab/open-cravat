@@ -6,61 +6,60 @@
 	<script>CLOSURE_NO_DEPS = true;</script>
     <!-- Below prevents favicon.ico error in Chrome at least -->
     <link rel="shortcut icon" href='#'>
-    <link rel="icon" href="/submit/icon.png" />
+    <link rel="icon" href="/submit/logo_transparent.png" />
 	<!-- jQuery -->
-	<script src="js/lib/jquery-3.2.1.min.js"></script>
-    <script src="js/lib/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
-    <link rel='stylesheet' href='js/lib/jquery-ui-1.12.1.custom/jquery-ui.css' />
+	<script src="/result/js/jquery-3.2.1.min.js"></script>
+    <script src="/result/js/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+    <link rel='stylesheet' href='/result/js/jquery-ui-1.12.1.custom/jquery-ui.css' />
 	
 	<!-- ParamQuery -->
-	<script type="text/javascript" src="js/lib/paramquery-pro-3/pqgrid.min.js" ></script>   
-	<link rel="stylesheet" href="js/lib/paramquery-pro-3/pqgrid.min.css" />
-	<link rel="stylesheet" href="js/lib/paramquery-pro-3/pqgrid.ui.min.css" />
-    <script type='text/javascript' src='js/lib/pqselect.min.js'></script>
-    <link rel='stylesheet' href='css/pqselect.min.css' />
+	<script type="text/javascript" src="/result/js/paramquery-pro-3/pqgrid.min.js" ></script>   
+	<link rel="stylesheet" href="/result/js/paramquery-pro-3/pqgrid.min.css" />
+	<link rel="stylesheet" href="/result/js/paramquery-pro-3/pqgrid.ui.min.css" />
+    <script type='text/javascript' src='/result/js/pqselect.min.js'></script>
+    <link rel='stylesheet' href='/result/css/pqselect.min.css' />
 	
 	<!-- Chart.js -->
-	<script src='js/lib/Chart.js'></script>
+	<script src='/result/js/Chart.js'></script>
 	
 	<!-- Raphael -->
-	<script src='js/lib/raphael-min.js'></script>
+	<script src='/result/js/raphael-min.js'></script>
 	
-	<!-- OpenCRAVAT own script -->
-	<script src='js/infomgr.js?ver=1.4.4'></script>
-	<script src='js/variables.js?ver=1.4.4'></script>
-	<script src='js/util.js?ver=1.4.4'></script>
-	<script src='js/setup.js?ver=1.4.4'></script>
-	<script src='js/showvariant.js?ver=1.4.4'></script>
-	<script src='js/main.js?ver=1.4.4'></script>
-	<script src='js/filter.js?ver=1.4.4'></script>
+	<!-- Javascript -->
+	<script src='/result/nocache/js/infomgr.js'></script>
+	<script src='/result/nocache/js/variables.js'></script>
+	<script src='/result/nocache/js/util.js'></script>
+	<script src='/result/nocache/js/setup.js'></script>
+	<script src='/result/nocache/js/showvariant.js'></script>
+	<script src='/result/nocache/js/main.js'></script>
+	<script src='/result/nocache/js/filter.js'></script>
 	
 	<!-- Packery -->
-	<script src='js/lib/packery.pkgd.js'></script>
+	<script src='/result/js/packery.pkgd.js'></script>
 
 	<!-- GraphicsJS -->	
-	<script src='js/lib/graphics.js'></script>
+	<script src='/result/js/graphics.js'></script>
 	
 	<!-- CSS -->
-	<link rel='stylesheet' href='css/style.css' />
+	<link rel='stylesheet' href='/result/nocache/css/style.css' />
 
     <!-- Font -->
     <link href="https://fonts.googleapis.com/css?family=Gothic+A1" rel="stylesheet" crossorigin="anonymous">
 
-    <!-- widget image capture and download -->
-    <script type='text/javascript' src='js/lib/dom-to-image.min.js'></script>
-    <script type='text/javascript' src='js/lib/download.js'></script>
+    <script type='text/javascript' src='/result/js/dom-to-image.min.js'></script>
+    <script type='text/javascript' src='/result/js/download.js'></script>
 
 	<title>CRAVAT: Result Viewer</title>
 </head>
 
 <body style='min-width: 800px;'>
-<div style='box-shadow: 0px 0px 20px grey;'>
-    <div style='display: inline-block; background-color: white; vertical-align: bottom;'>
-        <img src='logo.png' style='height: 50px; vertical-align: bottom; cursor: pointer;' onclick='window.open("/submit/index.html");'/>
+<div style='border-bottom: 1px solid #dfdfdf;'>
+    <div style='display: inline-block; background-color: white; vertical-align: bottom; position: relative; top: -3px;'>
+        <img src='/submit/logo.png' style='height: 50px; vertical-align: bottom; cursor: pointer;' onclick='window.open("/submit/index.html");'/>
     </div>
     <div id="menu_div" class='menu1_container'>
         <div class='menu1' id='layout_menu' onclick="onClickMenu1(this);">Layout
-            <div class='menu2_container'>
+            <div class='menu2_container hide' >
                 <div class='menu2' onclick="saveLayoutSettingAs(event);">Save as...</div>
                 <div class='menu2' onclick="loadLayoutSettingAs(event);">Load...
                     <div class='menu3' id='load_layout_select_div'></div>
@@ -81,24 +80,18 @@
         </div>
     </div>
 
-    <div style='display: inline-block; vertical-align: bottom;'>
-        <button id='filterbutton' onclick='toggleFilterDiv()'>Filter</button>
-        <div id='filterdiv' style='display: none; position: absolute; z-index: 100; background: #e8e8e8; padding: 16px; border: 1px solid gray;'></div>
-    </div>
-
     <div style='display: inline-block;'>
         <div id='tabheads' style='position: relative; display: inline-block; vertical-align: bottom;'>
             &nbsp;&nbsp;&nbsp;&nbsp;
         </div>
     </div>
-
     <div id='tabledetailmaxbuttondiv' style='position: absolute; top: 2px; right: 88px;'>
-        <button id='tabledetailmaxbutton' onclick='onClickTableDetailMinMaxButton();'>View table</button>
+        <button id='tabledetailmaxbutton' class='butn' onclick='onClickTableDetailMinMaxButton();'>View table</button>
     </div>
     <div style='position: absolute; top: 0px; right: 0px;'>
-        <a href='https://github.com/KarchinLab/open-cravat/wiki/3.-Viewing-Results#interactive-viewer' target='_blank' title='Help Wiki'><img src='question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
-        <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='email.png' title='Email for support' class='email-icon' onclick='mailto:support@cravat.us' /></a>
-        <input type='image' onclick='quicksave();' src='images/save.png' title='Quick save' style='width: 21px; padding: 2px;' />
+        <a href='https://github.com/KarchinLab/open-cravat/wiki/3.-Viewing-Results#interactive-viewer' target='_blank' title='Help Wiki'><img src='/result/images/question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
+        <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='/result/images/mail.png' title='Email for support' class='email-icon' onclick='mailto:support@cravat.us' /></a>
+        <input type='image' onclick='quicksave();' src='images/save_new.png' title='Quick save' style='width: 21px; padding: 2px;' />
     </div>
 </div>
 

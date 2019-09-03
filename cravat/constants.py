@@ -77,9 +77,11 @@ liftover_chain_paths = {
 # built-in file column definitions
 crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'width': 90},
            {'name':'tags', 'title':'User Tags', 'type':'string', 'width': 90},
-           {'name':'uid', 'title':'UID', 'type':'int', 'width': 70}]
+           {'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
+           {'name':'fileno', 'title':'Input File Number', 'type':'int', 'width':90, 'filterable':False, 'hidden':True},
+    ]
 crm_idx = [['uid'],['tags']]
-crs_def = [{'name':'uid', 'title':'UID', 'type':'string', 'width': 70},
+crs_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
            {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90, 'category': 'multi'}]
 crs_idx = [['uid'], ['sample_id']]
 crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 60, 'hidden':True, 'filterable': False},
@@ -117,26 +119,6 @@ crx_def = crv_def + \
            ]
 crx_idx = [['uid']]
 crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70, 'filterable': True},
-           {'name':'num_variants', 'title':'Variants in Gene', 'type':'int', 'width': 60, 'filterable': False},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 120, 'category': 'single',
-               'categories': [
-                   '2KD',
-                   '2KU', 
-                   'UT3', 
-                   'UT5', 
-                   'INT', 
-                   'UNK', 
-                   'SYN', 
-                   'MIS', 
-                   'CSS', 
-                   'IND', 
-                   'INI', 
-                   'STL', 
-                   'SPL', 
-                   'STG', 
-                   'FSD', 
-                   'FSI'], 'filterable': True},
-           {'name':'all_so', 'title':'All Sequence Ontologies', 'type':'string', 'width': 90, 'filterable': False},
            {'name': 'note', 'title': 'Note', 'type': 'string', 'width': 50},
           ]
 crg_idx = [['hugo']]
@@ -163,3 +145,120 @@ GENE = 1
 LEVELS = {'variant': VARIANT, 'gene': GENE}
 
 viewer_effective_digits = 3
+
+gene_level_so_exclude = ['2KU', '2KD']
+
+base_smartfilters = [
+    {
+        'name': 'popstats',
+        'title': 'Population AF <=',
+        'description': 'Set a maximum allele frequency.',
+        'allowPartial': True,
+        'selector': {
+            'type': 'inputFloat',
+            'defaultValue': '0.1',
+        },
+        'filter': {
+            'operator': 'and',
+            'rules': [
+                {
+                    'operator': 'or',
+                    'rules': [
+                        {
+                            'column': 'gnomad__af', 
+                            'test': 'lessThanEq',
+                            'value': '${value}'
+                        },
+                        {
+                            'column': 'gnomad__af', 
+                            'test': 'noData'
+                        }
+                    ]
+                },
+                {
+                    'operator': 'or',
+                    'rules': [
+                        {
+                            'column': 'thousandgenomes__af', 
+                            'test': 'lessThanEq',
+                            'value': '${value}'
+                        },
+                        {
+                            'column': 'thousandgenomes__af', 
+                            'test': 'noData',
+                        },
+                    ]
+                }
+            ]
+        },
+    },
+    {
+        'name': 'so',
+        'title': 'Sequence Ontology',
+        'description': 'Select sequence ontologies.',
+        'selector': {
+            'type': 'select',
+            'optionsColumn': 'base__so',
+            'multiple': True,
+            'defaultValue':['MIS'],
+        },
+        'filter': {
+            'column': 'base__so', 
+            'test': 'select',
+            'value': '${value}'
+        },
+    },
+    {
+        'name': 'chrom',
+        'title': 'Chromosome',
+        'description': 'Select chromosome(s).',
+        'selector': {
+            'type': 'select',
+            'multiple': True,
+            'optionsColumn': 'base__chrom',
+        },
+        'filter': {
+            'column': 'base__chrom', 
+            'test': 'select',
+            'value': '${value}'
+        },
+    },
+    {
+        'name': 'coding',
+        'title': 'Coding',
+        'description': 'Include only coding/noncoding variants',
+        'selector': {
+            'type': 'select',
+            'options': {'No':True, 'Yes':False},
+            'defaultValue': False,
+        },            
+        'filter': {
+            'column': 'base__coding', 
+            'test': 'hasData',
+            'negate': '${value}'
+        },
+    }
+]
+
+module_tag_desc = {
+    'cancer': 'tools for cancer research',
+    'clinical relevance': 'tools for assessing clinical relevance of variants',
+    'converters': 'modules for using the result of other tools as open-cravat input',
+    'dbnsfp': 'modules ported from dbNSFP',
+    'denovo': 'modules related to denovo variants',
+    'evolution': 'modules for studying variants in evolutionary context',
+    'genes': 'modules for studying variants at the gene level',
+    'genomic features': 'modules for studying genomic features',
+    'germline': 'modules for studying germline variants',
+    'interaction': 'modules for studying molecular interactions',
+    'literature': 'modules for variant-related literature',
+    'multiple assays': 'modules for multiplex assays',
+    'noncoding': 'modules for studying noncoding variants',
+    'populations': 'modules for studying population statistics of variants',
+    'protein visualization': 'modules to visualize variants on protein structures',
+    'variant effect prediction': 'modules to predict variant effects',
+    'variants': 'modules to study variants at the variant level',
+    'visualization widgets': 'modules for visualizing variants',
+}
+
+legacy_gene_level_cols_to_skip = ['base__num_variants', 'base__so', 'base__all_so']
