@@ -347,10 +347,29 @@ class CravatReport:
             for module in modules_to_add:
                 if not module in gene_annotators:
                     continue
-                q = 'select col_def from gene_header where col_name like "{}__%"'.format(module)
-                await self.cursor.execute(q)
-                rs = await self.cursor.fetchall()
-                cols = [json.loads(v[0]) for v in rs]
+                cols = []
+                if self.db_version >= LooseVersion('1.5.0'):
+                    q = 'select col_def from gene_header where col_name like "{}__%"'.format(module)
+                    await self.cursor.execute(q)
+                    rs = await self.cursor.fetchall()
+                    for r in await self.cursor.fetchall():
+                        cd = ColumnDefinition({})
+                        cd.from_json(r[0])
+                        cols.append(cd)
+                else:
+                    q = 'pragma table_info("gene_header")'
+                    await self.cursor.execute(q)
+                    header_cols = [row[1] for row in await self.cursor.fetchall()]
+                    select_order = [cname for cname in ColumnDefinition.db_order if cname in header_cols]
+                    q = 'select {} from gene_header where col_name like "{}__%'.format(
+                        ', '.join(select_order),
+                        module,
+                    )
+                    await self.cursor.execute(q)
+                    for column_header in await self.cursor.fetchall():
+                        cd = ColumnDefinition({})
+                        cd.from_row(column_header, order=select_order)
+                        cols.append(coldef)
                 q = 'select displayname from gene_annotator where name="{}"'.format(module)
                 await self.cursor.execute(q)
                 r = await self.cursor.fetchone()
@@ -358,8 +377,7 @@ class CravatReport:
                 self.columngroups[level].append({'name': module,
                                      'displayname': displayname,
                                      'count': len(cols)})
-                for col in cols:
-                    coldef = ColumnDefinition(col)
+                for coldef in cols:
                     self.colnos[level][coldef.name] = colcount
                     colcount += 1
                     if coldef.category in ['category', 'multicategory'] and len(coldef.categories) == 0:
