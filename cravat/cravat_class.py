@@ -118,7 +118,7 @@ cravat_cmd_parser.add_argument('--cleanup',
     dest='cleanup',
     action='store_true',
     default=False,
-    help='At the end of the run, cravat will erase all intermediary files for the job created by cravat, except the log (.log and .err) and the result (.sqlite) files.')
+    help='At the end of the run, cravat will erase intermediary files, ending with var, gen, crv, crx, crg, crs, crm, crt, or json extension, for the job created by cravat.')
 cravat_cmd_parser.add_argument('--writeadmindb',
     dest='writeadmindb',
     action='store_true',
@@ -615,7 +615,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='variant'))
-        v_aggregator = Aggregator(cmd)
+        v_aggregator = Aggregator(cmd, self.status_writer)
         v_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime)) 
@@ -631,7 +631,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='gene'))
-        g_aggregator = Aggregator(cmd)
+        g_aggregator = Aggregator(cmd, self.status_writer)
         g_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -647,7 +647,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='sample'))
-        s_aggregator = Aggregator(cmd)
+        s_aggregator = Aggregator(cmd, self.status_writer)
         s_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -662,7 +662,7 @@ class Cravat (object):
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='mapping'))
-        m_aggregator = Aggregator(cmd)
+        m_aggregator = Aggregator(cmd, self.status_writer)
         m_aggregator.run()
         rtime = time.time() - stime
         print('finished in {0:.3f}s'.format(rtime))
@@ -684,7 +684,7 @@ class Cravat (object):
             if self.verbose:
                 print(' '.join(cmd))
             post_agg_cls = util.load_class('CravatPostAggregator', module.script_path)
-            post_agg = post_agg_cls(cmd)
+            post_agg = post_agg_cls(cmd, self.status_writer)
             stime = time.time()
             post_agg.run()
             rtime = time.time() - stime

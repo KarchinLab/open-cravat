@@ -286,6 +286,8 @@ class MasterCravatConverter(object):
         """ Convert input file to a .crv file using the primary converter."""
         self.setup()
         start_time = time.time()
+        self.status_writer.queue_status_update('status', 'Started {} ({})'.format('Converter', self.primary_converter.format_name))
+        last_status_update_time = time.time()
         multiple_files = len(self.input_files) > 1
         fileno = 0
         total_lnum = 0
@@ -349,6 +351,10 @@ class MasterCravatConverter(object):
                                 self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID, 'fileno': self.input_path_dict2[f.name]})
                                 UIDMap.append(UID)
                         self.crs_writer.write_data(wdict)
+            cur_time = time.time()
+            if total_lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
+                self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format('Converter', cur_fname, read_lnum))
+                last_status_update_time = cur_time
         self.logger.info('error lines: %d' %num_errors)
         self._close_files()
         if self.status_writer is not None:
@@ -361,6 +367,7 @@ class MasterCravatConverter(object):
         runtime = round(end_time - start_time, 3)
         self.logger.info('num input lines: {}'.format(total_lnum))
         self.logger.info('runtime: %s'%runtime)
+        self.status_writer.queue_status_update('status', 'Finished {} ({})'.format('Converter', self.primary_converter.format_name))
         return total_lnum, self.primary_converter.format_name
 
     def liftover(self, old_chrom, old_pos):

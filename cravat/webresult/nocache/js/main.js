@@ -595,7 +595,7 @@ function loadData (alertFlag, finalcallback) {
                 } else {
                     flagNotifyToUseFilter = true;
                 }
-                //removeLoadingDiv();
+                removeLoadingDiv();
                 firstLoad = true;
                 return;
             }
@@ -611,7 +611,7 @@ function loadData (alertFlag, finalcallback) {
                         } else {
                             flagNotifyToUseFilter = true;
                         }
-                        //removeLoadingDiv();
+                        removeLoadingDiv();
                         return;
                     } else {
                         if (flagNotifyToUseFilter) {
@@ -660,6 +660,7 @@ function removeLoadingDiv () {
 
 function lockTabs () {
 	$('#tabheads div').css('pointer-events', 'none').css('opacity', '0.5');
+    $('#tabhead_info').css('pointer-events', 'auto').css('opacity', '1');
 }
 
 function unlockTabs () {
