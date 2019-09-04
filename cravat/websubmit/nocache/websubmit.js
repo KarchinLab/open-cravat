@@ -1799,11 +1799,21 @@ function resetSystemConf () {
 }
 
 function getServermode () {
-	setupNoServerMode();
+    $.ajax({
+        url: '/submit/servermode',
+        type: 'get',
+        success: function (response) {
+            servermode = response['servermode'];
+            if (servermode == false) {
+                setupNoServerMode();
+            } else {
+                setupServerMode();
+            }
+        }
+    });
 }
 
 function setupNoServerMode () {
-    document.getElementById('accountdiv').style.display = 'none';
 }
 
 function msgAccountDiv (msg) {

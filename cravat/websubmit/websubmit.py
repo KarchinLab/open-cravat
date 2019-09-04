@@ -379,7 +379,8 @@ async def get_jobs_details (request):
 
 async def get_jobs (request):
     global filerouter
-    jobs_dir = await filerouter.get_jobs_dir(request)
+    jobs_dirs = await filerouter.get_jobs_dirs(request)
+    jobs_dir = jobs_dirs[0]
     if jobs_dir is None:
         return web.json_response([])
     if os.path.exists(jobs_dir) == False:
@@ -389,7 +390,7 @@ async def get_jobs (request):
     jobs = []
     for job_id in ids:
         try:
-            job = await get_job(job_id, request)
+            job = await get_job(request, job_id)
             if job is not None:
                 jobs.append(job)
         except:
@@ -662,6 +663,7 @@ routes.append(['GET', '/submit/servermode', get_servermode])
 routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
+routes.append(['GET', '/submit/getjobs', get_jobs])
 
 if __name__ == '__main__':
     app = web.Application()

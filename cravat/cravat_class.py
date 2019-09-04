@@ -22,6 +22,7 @@ import oyaml as yaml
 import cravat.cravat_util as cu
 import collections
 import asyncio
+import sqlite3
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path_1 input_file_path_2 ...',
