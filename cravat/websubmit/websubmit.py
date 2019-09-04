@@ -415,7 +415,6 @@ async def get_all_jobs (request):
         dir_it = os.scandir(jobs_dir)
         direntries = [de for de in dir_it]
         de_names = [de.name for de in direntries]
-        #de_names.sort(reverse=True)
         all_jobs.extend(de_names)
         '''
         for job_id in de_names:
@@ -428,7 +427,7 @@ async def get_all_jobs (request):
                 traceback.print_exc()
                 continue
         '''
-    all_jobs.sort()
+    all_jobs.sort(reverse=True)
     #return web.json_response([job.get_info_dict() for job in all_jobs])
     return web.json_response(all_jobs)
 

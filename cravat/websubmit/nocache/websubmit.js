@@ -1816,11 +1816,13 @@ function getServermode () {
 function setupNoServerMode () {
 }
 
-function msgAccountDiv (msg) {
-    document.getElementById('accountmsgdiv').textContent = msg;
-    setTimeout(function () {
-        document.getElementById('accountmsgdiv').textContent = '';
-    }, 3000);
+function setupServerMode () {
+    $('head').append('<link rel="stylesheet" type="text/css" href="/server/nocache/cravatserver.css">');
+    $.getScript('/server/nocache/cravatserver.js', function () {
+        checkLogged(username)
+    });
+    document.getElementById('settingsdiv').style.display = 'none';
+    document.querySelector('.threedotsdiv').style.display = 'none';
 }
 
 function populatePackageVersions () {
@@ -1930,7 +1932,7 @@ function addListeners () {
     $('#no-annotators-button').click(allNoAnnotatorsHandler);
     $('.input-example-button').click(inputExampleChangeHandler)
     $('#refresh-jobs-table-btn').click(refreshJobsTable);
-    $('#threedotsdiv').click(onClickThreeDots);
+    $('.threedotsdiv').click(onClickThreeDots);
     $('.jobsdirinput').change(setJobsDir);
     document.addEventListener('click', function (evt) {
         if (evt.target.classList.contains('moduledetaildiv-submit-elem') == false && evt.target.closest('.moduledetailbutton') == null ) {
