@@ -34,14 +34,41 @@ if importlib.util.find_spec('cravatserver') is not None:
 else:
     server_ready = False
 
-donotopenbrowser = False
+parser = argparse.ArgumentParser()
+parser.add_argument('--server',
+                    dest='servermode',
+                    action='store_true',
+                    default=False,
+                    help='run in server mode')
+parser.add_argument('--donotopenbrowser',
+                    dest='donotopenbrowser',
+                    action='store_true',
+                    default=False,
+                    help='do not open the cravat web page')
+parser.add_argument('--nossl',
+    dest='nossl',
+    action='store_true',
+    default=False,
+    help='Force not to accept https connection')
+args = parser.parse_args(sys.argv[1:])
+donotopenbrowser = args.donotopenbrowser
+servermode = args.servermode
+wu.servermode = args.servermode
+ws.servermode = args.servermode
+if server_ready:
+    cravatserver.servermode = servermode
+if servermode and server_ready == False:
+    print('open-cravat-server package is required to run OpenCRAVAT Server.\nRun "pip install open-cravat-server" to get the package.')
+    exit()
+
 ssl_enabled = False
 protocol = None
 conf = ConfigLoader()
 sysconf = au.get_system_conf()
+nossl = args.nossl
 if 'conf_dir' in sysconf:
     pem_path = os.path.join(sysconf['conf_dir'], 'cert.pem')
-    if os.path.exists(pem_path):
+    if os.path.exists(pem_path) and nossl == False:
         ssl_enabled = True
         sc = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         sc.load_cert_chain(pem_path)
@@ -49,32 +76,6 @@ if ssl_enabled:
     protocol = 'https://'
 else:
     protocol = 'http://'
-
-def check_donotopenbrowser ():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--server',
-                        dest='servermode',
-                        action='store_true',
-                        default=False,
-                        help='run in server mode')
-    parser.add_argument('--donotopenbrowser',
-                        dest='donotopenbrowser',
-                        action='store_true',
-                        default=False,
-                        help='do not open the cravat web page')
-    args = parser.parse_args(sys.argv[1:])
-    global donotopenbrowser
-    donotopenbrowser = args.donotopenbrowser
-    global servermode
-    servermode = args.servermode
-    wu.servermode = args.servermode
-    ws.servermode = args.servermode
-    global server_ready
-    if server_ready:
-        cravatserver.servermode = servermode
-    if servermode and server_ready == False:
-        print('open-cravat-server package is required to run OpenCRAVAT Server.\nRun "pip install open-cravat-server" to get the package.')
-        exit()
 
 def result ():
     parser = argparse.ArgumentParser()
@@ -92,7 +93,6 @@ def result ():
     confpath = parsed_args.confpath
     runid = os.path.basename(dbpath).replace('.sqlite', '')
     sys.argv = sys.argv[1:]
-    check_donotopenbrowser()
     global donotopenbrowser
     if not donotopenbrowser:
         server = get_server()
@@ -101,7 +101,6 @@ def result ():
     main()
 
 def store ():
-    check_donotopenbrowser()
     ws.start_install_queue_manager()
     global donotopenbrowser
     if not donotopenbrowser:
@@ -110,7 +109,6 @@ def store ():
         webbrowser.open(protocol + '{host}:{port}/store/index.html'.format(host=server.get('host'), port=server.get('port')))
 
 def submit ():
-    check_donotopenbrowser()
     global donotopenbrowser
     if not donotopenbrowser:
         server = get_server()
@@ -128,9 +126,12 @@ def get_server():
     conf = ConfigLoader()
     pl = platform.platform()
     if pl.startswith('Windows'):
-        def_host = 'localhost'
-    elif pl.startswith('Linux'):
         def_host = '0.0.0.0'
+    elif pl.startswith('Linux'):
+        if 'Microsoft' in pl:
+            def_host = 'localhost'
+        else:
+            def_host = '0.0.0.0'
     elif pl.startswith('Darwin'):
         def_host = '0.0.0.0'
     else:
@@ -159,7 +160,8 @@ class TCPSitePatched (web_runner.BaseSite):
 
     @property
     def name(self):
-        scheme = 'https' if self._ssl_context else 'http'
+        global ssl_enabled
+        scheme = 'https' if ssl_enabled else 'http'
         return str(URL.build(scheme=scheme, host=self._host, port=self._port))
 
     async def start(self):
@@ -168,7 +170,6 @@ class TCPSitePatched (web_runner.BaseSite):
 
 @web.middleware
 async def middleware (request, handler):
-    print('@ request=', request)
     response = await handler(request)
     url_parts = request.url.parts
     nocache = False
