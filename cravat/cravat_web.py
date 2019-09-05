@@ -130,7 +130,7 @@ def get_server():
     if pl.startswith('Windows'):
         def_host = 'localhost'
     elif pl.startswith('Linux'):
-        def_host = 'localhost'
+        def_host = '0.0.0.0'
     elif pl.startswith('Darwin'):
         def_host = '0.0.0.0'
     else:
@@ -168,6 +168,7 @@ class TCPSitePatched (web_runner.BaseSite):
 
 @web.middleware
 async def middleware (request, handler):
+    print('@ request=', request)
     response = await handler(request)
     url_parts = request.url.parts
     nocache = False

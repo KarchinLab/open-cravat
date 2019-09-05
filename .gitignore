@@ -14,3 +14,4 @@ cravat/modules/**
 /dist/
 .DS*
 __dummy__*
+/cravat/jobs

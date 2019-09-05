@@ -2115,7 +2115,11 @@ function showYesNoDialog (content, yescallback, noSpace, justOk) {
         var btn = getEl('button');
         btn.textContent = 'Ok';
         btn.addEventListener('click', function (evt) {
-            $('#yesnodialog').remove();
+            if (yescallback == undefined || yescallback == null) {
+                $('#yesnodialog').remove();
+            } else {
+                yescallback();
+            }
         });
         addEl(btnDiv, btn);
     } else {
