@@ -226,6 +226,8 @@ class WebServer (object):
         self.app.router.add_get('/heartbeat', heartbeat)
         self.app.router.add_get('/issystemready', is_system_ready)
         ws.start_worker()
+        wu.loop = self.loop
+        wu.start_worker(self.loop)
 
 async def hello(request):
     return web.Response(text='OpenCRAVAT server is running here. '+str(dt.datetime.now()))
@@ -241,10 +243,8 @@ async def is_system_ready (request):
     return web.json_response(dict(au.system_ready()))
 
 def main ():
-
     def wakeup ():
         loop.call_later(0.1, wakeup)
-
     serv = get_server()
     global protocol
     hello_url = protocol + '{host}:{port}/hello'.format(host=serv.get('host'),port=serv.get('port'))

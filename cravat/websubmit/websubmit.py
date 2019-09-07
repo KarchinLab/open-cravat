@@ -19,6 +19,8 @@ import signal
 import multiprocessing as mp
 import asyncio
 import importlib
+from multiprocessing import Process, Pipe, Value, Manager, Queue
+from queue import Empty
 if importlib.util.find_spec('cravatserver') is not None:
     import cravatserver
 
@@ -160,6 +162,17 @@ class FileRouter(object):
 class WebJob(object):
     def __init__(self, job_dir, job_status_fpath):
         self.info = {}
+        self.info['orig_input_fname'] = ''
+        self.info['assembly'] = ''
+        self.info['note'] = ''
+        self.info['db_path'] = ''
+        self.info['viewable'] = False
+        self.info['reports'] = []
+        self.info['annotators'] = ''
+        self.info['annotator_version'] = ''
+        self.info['open_cravat_version'] = ''
+        self.info['num_input_var'] = ''
+        self.info['submission_time'] = ''
         self.job_dir = job_dir
         self.job_status_fpath = job_status_fpath
         self.info['id'] = os.path.basename(job_dir)
@@ -168,8 +181,11 @@ class WebJob(object):
         self.set_values(**job_options)
 
     def read_info_file(self):
-        with open(self.job_status_fpath) as f:
-            info_dict = yaml.load(f)
+        if os.path.exists(self.job_status_fpath) == False:
+            info_dict = {'status': 'Error'}
+        else:
+            with open(self.job_status_fpath) as f:
+                info_dict = yaml.load(f)
         if info_dict != None:
             self.set_values(**info_dict)
 
@@ -187,7 +203,6 @@ def get_next_job_id():
 
 async def submit (request):
     global filerouter
-    global job_tracker
     global servermode
     if servermode:
         r = await cravatserver.is_loggedin(request)
@@ -240,9 +255,12 @@ async def submit (request):
         run_args.append(os.path.join(job_dir, fn))
     # Annotators
     if len(job_options['annotators']) > 0:
+        annotators = job_options['annotators']
+        annotators.sort()
         run_args.append('-a')
-        run_args.extend(job_options['annotators'])
+        run_args.extend(annotators)
     else:
+        annotators = ''
         run_args.append('-e')
         run_args.append('*')
     # Liftover assembly
@@ -257,8 +275,11 @@ async def submit (request):
         run_args.extend(['--skip', 'reporter'])
     # Note
     if 'note' in job_options:
-        run_args.append('--note')
-        run_args.append(job_options['note'])
+        note = job_options['note']
+    else:
+        note = ''
+    run_args.append('--note')
+    run_args.append(job_options['note'])
     # Forced input format
     if 'forcedinputformat' in job_options:
         run_args.append('--forcedinputformat')
@@ -266,13 +287,37 @@ async def submit (request):
     if servermode:
         run_args.append('--writeadmindb')
         run_args.extend(['--jobid', job_id])
-    p = subprocess.Popen(run_args)
-    job_tracker.add_job(job_id, p)
+    global job_queue
+    global run_jobs_info
+    job_ids = run_jobs_info['job_ids']
+    job_ids.append(job_id)
+    run_jobs_info['job_ids'] = job_ids
+    qitem = {'cmd': 'submit', 'job_id': job_id, 'run_args': run_args}
+    job_queue.put(qitem)
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
-    # admin.sqlite
     if servermode:
         await cravatserver.add_job_info(request, job)
+    # makes temporary status.json
+    wf = open(os.path.join(job_dir, run_name + '.status.json'), 'w')
+    status_json = {}
+    status_json['job_dir'] = job_dir
+    status_json['id'] = job_id
+    status_json['run_name'] = run_name
+    status_json['assembly'] = ''
+    status_json['db_path'] = ''
+    status_json['orig_input_fname'] = input_fnames
+    status_json['orig_input_path'] = input_fpaths
+    status_json['submission_time'] = datetime.datetime.now().isoformat()
+    status_json['viewable'] = False
+    status_json['note'] = note
+    status_json['status'] = 'Submitted'
+    status_json['reports'] = []
+    pkg_ver = au.get_current_package_version()
+    status_json['open_cravat_version'] = pkg_ver
+    status_json['annotators'] = annotators
+    wf.write(json.dumps(status_json))
+    wf.close()
     return web.json_response(job.get_info_dict())
 
 def count_lines(f):
@@ -322,12 +367,18 @@ async def get_job (request, job_id):
     '''
     job_dir = await filerouter.job_dir(request, job_id)
     if os.path.exists(job_dir) == False:
-        return None
+        job = WebJob(job_dir, None)
+        job.info['status'] = 'Error'
+        return job
     if os.path.isdir(job_dir) == False:
-        return None
+        job = WebJob(job_dir, None)
+        job.info['status'] = 'Error'
+        return job
     fns = find_files_by_ending(job_dir, '.status.json')
     if len(fns) < 1:
-        return None
+        job = WebJob(job_dir, None)
+        job.info['status'] = 'Error'
+        return job
     status_fname = fns[0]
     status_fpath = os.path.join(job_dir, status_fname)
     job = WebJob(job_dir, status_fpath)
@@ -341,6 +392,11 @@ async def get_job (request, job_id):
                 if k == 'status' and 'status' in job.info:
                     continue
                 job.info[k] = v
+    global run_jobs_info
+    if 'status' not in job.info:
+        job.info['status'] = 'Aborted'
+    elif job.info['status'] not in ['Finished', 'Error'] and job_id not in run_jobs_info['job_ids']:
+        job.info['status'] = 'Aborted'
     fns = find_files_by_ending(job_dir, '.sqlite')
     if len(fns) > 0:
         db_path = os.path.join(job_dir, fns[0])
@@ -414,7 +470,15 @@ async def get_all_jobs (request):
             os.makedirs(jobs_dir)
         dir_it = os.scandir(jobs_dir)
         direntries = [de for de in dir_it]
-        de_names = [de.name for de in direntries]
+        de_names = []
+        for it in direntries:
+            '''
+            status_glob = glob.glob(os.path.join(it.path, '*.status.json'))
+            print('glob=', status_glob)
+            if len(status_glob) > 0:
+                de_names.append(it.name)
+            '''
+            de_names.append(it.name)
         all_jobs.extend(de_names)
         '''
         for job_id in de_names:
@@ -440,20 +504,6 @@ async def view_job(request):
         if type(VIEW_PROCESS) == subprocess.Popen:
             VIEW_PROCESS.kill()
         VIEW_PROCESS = subprocess.Popen(['cravat-view', db_path])
-        return web.Response()
-    else:
-        return web.Response(status=404)
-
-async def delete_job(request):
-    global filerouter
-    global job_tracker
-    job_id = request.match_info['job_id']
-    if job_tracker.get_process(job_id) is not None:
-        print('\nKilling job {}'.format(job_id))
-        await job_tracker.cancel_job(job_id)
-    job_dir = await filerouter.job_dir(request, job_id)
-    if os.path.exists(job_dir):
-        shutil.rmtree(job_dir)
         return web.Response()
     else:
         return web.Response(status=404)
@@ -494,11 +544,11 @@ async def generate_report(request):
     report_type = request.match_info['report_type']
     if report_type in get_valid_report_types():
         job_input = await filerouter.job_run_path(request, job_id)
-        cmd_args = ['cravat', job_input]
-        cmd_args.extend(['--startat', 'reporter'])
-        cmd_args.extend(['--repeat', 'reporter'])
-        cmd_args.extend(['-t', report_type])
-        p = subprocess.Popen(cmd_args)
+        run_args = ['cravat', job_input]
+        run_args.extend(['--startat', 'reporter'])
+        run_args.extend(['--repeat', 'reporter'])
+        run_args.extend(['-t', report_type])
+        p = subprocess.Popen(run_args)
         p.wait()
     return web.Response()
 
@@ -591,52 +641,132 @@ end tell'
     response = 'done'
     return web.json_response(response)
 
-class JobTracker (object):
-
-    def __init__(self):
-        self._jobs = {}
-
-    def add_job(self, id, proc):
-        # Add a job to tracking
-        self._jobs[id] = proc
-
-    def get_process(self, id):
-        # Return the process for a job
-        return self._jobs.get(id)
-
-    async def cancel_job(self, id):
-        p = self._jobs.get(id)
-        p.poll()
-        if p:
-            if platform.platform().lower().startswith('windows'):
-                # proc.kill() doesn't work well on windows
-                subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=p.pid),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                while True:
-                    await asyncio.sleep(0.25)
-                    if p.poll() is not None:
-                        break
-            else:
-                p.kill()
-        self.clean_jobs(id)
-
-    def clean_jobs(self, id):
-        # Clean up completed jobs
-        to_del = []
-        for id, p in self._jobs.items():
-            if p.poll() is not None:
-                to_del.append(id)
-        for id in to_del:
-            del self._jobs[id]
-
-    def list_jobs(self):
-        # List currently tracked jobs
-        return list(self._jobs.keys())
-
-job_tracker = JobTracker()
-
 def get_last_assembly (request):
     last_assembly = au.get_last_assembly()
     return web.json_response(last_assembly)
+
+async def delete_job (request):
+    global job_queue
+    job_id = request.match_info['job_id']
+    global filerouter
+    job_dir = await filerouter.job_dir(request, job_id)
+    qitem = {'cmd': 'delete', 'job_id': job_id, 'job_dir': job_dir}
+    job_queue.put(qitem)
+    while True:
+        if os.path.exists(job_dir) == False:
+            break
+        else:
+            asyncio.sleep(0.5)
+    return web.Response()
+
+max_num_concurrent_jobs = 2
+job_worker = None
+job_queue = None
+run_jobs_info = None
+def start_worker (main_loop):
+    global job_worker
+    global job_queue
+    global run_jobs_info
+    global loop
+    job_queue = Queue()
+    run_jobs_info = Manager().dict()
+    if job_worker == None:
+        job_worker = Process(target=fetch_job_queue, args=(job_queue, run_jobs_info, loop))
+        job_worker.start()
+
+def fetch_job_queue (job_queue, run_jobs_info, main_loop):
+    class JobTracker (object):
+        def __init__(self, main_loop):
+            self.running_jobs = {}
+            self.queue = []
+            self.max_concurrent_jobs = 2
+            self.run_args = {}
+            self.run_jobs_info = run_jobs_info
+            self.run_jobs_info['job_ids'] = []
+            self.loop = main_loop
+
+        def add_job(self, qitem):
+            self.queue.append(qitem['job_id'])
+            self.run_args[qitem['job_id']] = qitem['run_args']
+            #job_ids = self.run_jobs_info['job_ids']
+            #job_ids.append(qitem['job_id'])
+            #self.run_jobs_info['job_ids'] = job_ids
+
+        def get_process(self, uid):
+            # Return the process for a job
+            return self.running_jobs.get(uid)
+
+        async def cancel_job(self, uid):
+            p = self.running_jobs.get(uid)
+            p.poll()
+            if p:
+                if platform.platform().lower().startswith('windows'):
+                    # proc.kill() doesn't work well on windows
+                    subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=p.pid),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                    while True:
+                        await asyncio.sleep(0.25)
+                        if p.poll() is not None:
+                            break
+                else:
+                    p.kill()
+            self.clean_jobs(id)
+
+        def clean_jobs(self, uid):
+            # Clean up completed jobs
+            to_del = []
+            for uid, p in self.running_jobs.items():
+                if p.poll() is not None:
+                    to_del.append(uid)
+            for uid in to_del:
+                del self.running_jobs[uid]
+                job_ids = self.run_jobs_info['job_ids']
+                job_ids.remove(uid)
+                self.run_jobs_info['job_ids'] = job_ids
+
+        def list_running_jobs(self):
+            # List currently tracked jobs
+            return list(self.running_jobs.keys())
+
+        def run_available_jobs (self):
+            num_available_slot = self.max_concurrent_jobs - len(self.running_jobs)
+            if num_available_slot > 0 and len(self.queue) > 0:
+                for i in range(num_available_slot):
+                    if len(self.queue) > 0:
+                        job_id = self.queue.pop(0)
+                        run_args = self.run_args[job_id]
+                        del self.run_args[job_id]
+                        p = subprocess.Popen(run_args)
+                        self.running_jobs[job_id] = p
+
+        async def delete_job (self, qitem):
+            global filerouter
+            job_id = qitem['job_id']
+            if job_tracker.get_process(job_id) is not None:
+                print('\nKilling job {}'.format(job_id))
+                await job_tracker.cancel_job(job_id)
+            job_dir = qitem['job_dir']
+            if os.path.exists(job_dir):
+                shutil.rmtree(job_dir)
+
+    async def job_worker_main ():
+        while True:
+            job_tracker.clean_jobs(None)
+            job_tracker.run_available_jobs()
+            try:
+                qitem = job_queue.get_nowait()
+                cmd = qitem['cmd']
+                if cmd == 'submit':
+                    job_tracker.add_job(qitem)
+                if cmd == 'delete':
+                    await job_tracker.delete_job(qitem)
+            except Empty:
+                pass
+            finally:
+                await asyncio.sleep(1)
+
+    job_tracker = JobTracker(main_loop)
+    main_loop = asyncio.new_event_loop()
+    main_loop.run_until_complete(job_worker_main())
 
 filerouter = FileRouter()
 VIEW_PROCESS = None

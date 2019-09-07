@@ -180,6 +180,26 @@ class Cravat (object):
             with open(self.status_json_path) as f:
                 self.status_json = json.load(f)
                 self.pkg_ver = self.status_json['open_cravat_version']
+            if self.status_json['status'] == 'Submitted':
+                self.status_json['job_dir'] = self.output_dir
+                self.status_json['id'] = os.path.basename(os.path.normpath(self.output_dir))
+                self.status_json['run_name'] = self.run_name
+                self.status_json['assembly'] = self.input_assembly
+                self.status_json['db_path'] = os.path.join(self.output_dir, self.run_name + '.sqlite')
+                self.status_json['orig_input_fname'] = [os.path.basename(x) for x in self.inputs]
+                self.status_json['orig_input_path'] = self.inputs
+                self.status_json['submission_time'] = datetime.datetime.now().isoformat()
+                self.status_json['viewable'] = False
+                self.status_json['note'] = self.args.note
+                self.status_json['status'] = 'Starting'
+                self.status_json['reports'] = self.args.reports if self.args.reports != None else []
+                self.pkg_ver = au.get_current_package_version()
+                self.status_json['open_cravat_version'] = self.pkg_ver
+                annot_names = list(self.annotators.keys())
+                annot_names.sort()
+                self.status_json['annotators'] = annot_names
+                with open(self.status_json_path,'w') as wf:
+                    wf.write(json.dumps(self.status_json))
         else:
             self.status_json = {}
             self.status_json['job_dir'] = self.output_dir

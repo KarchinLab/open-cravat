@@ -204,7 +204,7 @@ function addJob (job, prepend) {
     }
     GLOBALS.idToJob[job.id] = job;
     var status = job.status;
-    if (status != 'Finished' && status != 'Error') {
+    if (status != 'Finished' && status != 'Error' && status != 'Aborted') {
         jobRunning[job.id] = true;
     } else if (jobRunning[job.id] != undefined) {
         delete jobRunning[job.id];
@@ -380,7 +380,9 @@ function populateJobTr (job) {
             excelButton.title = 'Click to download.';
         }
     }
-    addEl(dbTd, excelButton);
+    if (status == 'Finished') {
+        addEl(dbTd, excelButton);
+    }
     // Text
     var textButton = getEl('button');
     textButton.classList.add('butn');
@@ -401,7 +403,9 @@ function populateJobTr (job) {
             textButton.title = 'Click to download.';
         }
     }
-    addEl(dbTd, textButton);
+    if (status == 'Finished') {
+        addEl(dbTd, textButton);
+    }
     // VCF
     if (localModuleInfo['vcfreporter'] != undefined && localModuleInfo['vcfreporter'].exists) {
         var vcfButton = getEl('button');
@@ -423,6 +427,8 @@ function populateJobTr (job) {
                 vcfButton.title = 'Click to download.';
             }
         }
+    }
+    if (status == 'Finished') {
         addEl(dbTd, vcfButton);
     }
     // Log
@@ -565,32 +571,36 @@ function populateJobDetailTr (job) {
         td.textContent = 'Submitted';
         addEl(tr, td);
         var td = getEl('td');
-        var t = new Date(job.submission_time);
-        var month = t.getMonth() + 1;
-        if (month < 10) {
-            month = '0' + month;
+        if (job.submission_time == 'Invalid Date') {
+            td.textContent = '';
+        } else {
+            var t = new Date(job.submission_time);
+            var month = t.getMonth() + 1;
+            if (month < 10) {
+                month = '0' + month;
+            }
+            var d = t.getDate();
+            if (d < 10) {
+                d = '0' + d;
+            }
+            var h = t.getHours();
+            if (h < 10) {
+                h = '0' + h;
+            }
+            var m = t.getMinutes();
+            if (m < 10) {
+                m = '0' + m;
+            }
+            var s = t.getSeconds();
+            if (s < 10) {
+                s = '0' + s;
+            }
+            td.textContent = t.getFullYear() + '.' + month + '.' + d + ' ' + h + ':' + m + ':' + s;
         }
-        var d = t.getDate();
-        if (d < 10) {
-            d = '0' + d;
-        }
-        var h = t.getHours();
-        if (h < 10) {
-            h = '0' + h;
-        }
-        var m = t.getMinutes();
-        if (m < 10) {
-            m = '0' + m;
-        }
-        var s = t.getSeconds();
-        if (s < 10) {
-            s = '0' + s;
-        }
-        td.textContent = t.getFullYear() + '.' + month + '.' + d + ' ' + h + ':' + m + ':' + s;
         addEl(tr, td);
         addEl(tbody, tr);
     }
-    if (job.db_path != undefined) {
+    if (job.db_path != undefined && job.db_path != '') {
         var tr = getEl('tr');
         var td = getEl('td');
         td.textContent = 'Result DB';
@@ -671,9 +681,11 @@ function fillJobTable (allJobs, start, end, jobsTable) {
         if (ji == undefined) {
             continue;
         }
+        /*
         if (job.submission_time == 'Invalid Date') {
             continue;
         }
+        */
         var jobTr = getEl('tr');
         jobTr.classList.add('job-table-tr');
         jobTr.classList.add('job-table-main-tr');
@@ -797,6 +809,9 @@ function getEl (tag) {
 function jobDeleteButtonHandler (event) {
     event.stopPropagation();
     var jobId = $(event.target).attr('jobId');
+    document.querySelectorAll('#jobs-table tr.job-table-tr[jobid="' + jobId + '"] td').forEach(function (el) {
+        el.classList.add('strikenout');
+    });
     deleteJob(jobId);
 }
 
@@ -807,7 +822,6 @@ function deleteJob (jobId) {
         contentType: 'application/json',
         success: function (data) {
             populateJobs().then(() => {
-                //buildJobsTable();
                 showJobListPage();
             });
         }
@@ -918,7 +932,7 @@ function showJobListPage () {
 							}
 							*/
 							updateRunningJobTrs(job);
-							if (job.status == 'Finished') {
+							if (job.status == 'Finished' || job.status == 'Aborted' || job.status == 'Error') {
 								delete jobRunning[job.id];
 							}
 						}
@@ -940,46 +954,6 @@ function populateJobs () {
                 jobsListCurStart = 0;
                 jobsListCurEnd = jobsListCurStart + jobsPerPageInList;
                 showJobListPage();
-/*
-                for (var i=0; i<GLOBALS.jobs.length; i++) {
-                    var job = allJobs[i];
-                    var status = job.status;
-                    if (status == 'Finished' || status == 'Error') {
-                        delete jobRunning[job.id];
-                    } else {
-                        jobRunning[job.id] = true;
-                    }
-                    addJob(job);
-                }
-                //sortJobs();
-                buildJobsTable();
-                var runningJobIds = Object.keys(jobRunning);
-                if (runningJobIds.length == 0) {
-                    return;
-                }
-                $.ajax({
-                    url: '/submit/getjobs',
-                    data: {'ids': JSON.stringify(runningJobIds)},
-                    ajax: true,
-                    success: function (response) {
-                        for (var i=0; i < response.length; i++) {
-                            var job = response[i];
-                            GLOBALS.idToJob[job.id] = job;
-                            /*
-                            for (var j = 0; j < GLOBALS.jobs; j++) {
-                                if (job.id == GLOBALS.jobs[j].id) {
-                                    GLOBALS.jobs[j] = job;
-                                    break;
-                                }
-                            }
-                            updateRunningJobTrs(job);
-                            if (job.status == 'Finished') {
-                                delete jobRunning[job.id];
-                            }
-                        }
-                    },
-                });
-                */
             },
             fail: function (response) {
                 alert('fail at populate jobs');
@@ -989,7 +963,7 @@ function populateJobs () {
 }
 
 function refreshJobsTable () {
-    populateJobs();//.then(buildJobsTable());
+    populateJobs();
 }
 
 function populateAnnotators () {
