@@ -50,11 +50,19 @@ parser.add_argument('--nossl',
     action='store_true',
     default=False,
     help='Force not to accept https connection')
+parser.add_argument('--restart',
+    dest='restart',
+    action='store_true',
+    default=False,
+    help=argparse.SUPPRESS)
+
 args = parser.parse_args(sys.argv[1:])
 donotopenbrowser = args.donotopenbrowser
 servermode = args.servermode
 wu.servermode = args.servermode
 ws.servermode = args.servermode
+if args.restart:
+    donotopenbrowser = True
 if server_ready:
     cravatserver.servermode = servermode
 if servermode and server_ready == False:

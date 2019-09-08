@@ -21,6 +21,7 @@ import asyncio
 import importlib
 from multiprocessing import Process, Pipe, Value, Manager, Queue
 from queue import Empty
+from cravat import constants
 if importlib.util.find_spec('cravatserver') is not None:
     import cravatserver
 
@@ -659,7 +660,13 @@ async def delete_job (request):
             asyncio.sleep(0.5)
     return web.Response()
 
-max_num_concurrent_jobs = 2
+system_conf = au.get_system_conf()
+if 'max_num_concurrent_jobs' not in system_conf:
+    max_num_concurrent_jobs = constants.default_max_num_concurrent_jobs
+    system_conf['max_num_concurrent_jobs'] = max_num_concurrent_jobs
+    au.write_system_conf_file(system_conf)
+else:
+    max_num_concurrent_jobs = system_conf['max_num_concurrent_jobs']
 job_worker = None
 job_queue = None
 run_jobs_info = None
