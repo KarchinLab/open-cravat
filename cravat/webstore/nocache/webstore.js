@@ -880,17 +880,24 @@ function populateModuleGroupDiv (moduleGroupName) {
     emptyElement(div);
     div.parentElement.setAttribute('modulegroup', moduleGroupName);
     var remoteModuleNames = moduleGroupMembers[moduleGroupName];
-    moduleLists['modulegroup'] = remoteModuleNames;
-    for (var i = 0; i < remoteModuleNames.length; i++) {
-        var remoteModuleName = remoteModuleNames[i];
-        var remoteModule = remoteModuleInfo[remoteModuleName];
-        var panel = null;
-        if (remoteModule['type'] != 'group') {
-            panel = getRemoteModulePanel(remoteModuleName, 'modulegroup', i);
-        } else {
-            panel = getRemoteModuleGroupPanel(remoteModuleName, 'modulegroup', i);
-        }
+    if (remoteModuleNames == undefined) {
+        var panel = getEl('div');
+        panel.classList.add('no-group-member-msg-div');
+        panel.textContent = 'No module in this group';
         addEl(div, panel);
+    } else {
+        moduleLists['modulegroup'] = remoteModuleNames;
+        for (var i = 0; i < remoteModuleNames.length; i++) {
+            var remoteModuleName = remoteModuleNames[i];
+            var remoteModule = remoteModuleInfo[remoteModuleName];
+            var panel = null;
+            if (remoteModule['type'] != 'group') {
+                panel = getRemoteModulePanel(remoteModuleName, 'modulegroup', i);
+            } else {
+                panel = getRemoteModuleGroupPanel(remoteModuleName, 'modulegroup', i);
+            }
+            addEl(div, panel);
+        }
     }
 }
 
@@ -919,7 +926,11 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
     sdiv.className = 'moduletile-logodiv';
     sdiv.setAttribute('module', moduleName);
     sdiv.onclick = function (evt) {
-        var moduleName = evt.target.getAttribute('module');
+        var target = evt.target;
+        if (target.classList.contains('moduletile-title')) {
+            target = target.parentElement;
+        }
+        var moduleName = target.getAttribute('module');
         saveCurrentPage();
         populateModuleGroupDiv(moduleName);
         showStoreModuleGroup();
@@ -970,11 +981,13 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
     }
     var members = moduleGroupMembers[moduleName];
     var updateAvail = false;
-    for (var i = 0; i < members.length; i++) {
-        var member = members[i];
-        if (remoteModuleInfo[member].tags.indexOf('newavailable') != -1) {
-            updateAvail = true;
-            break;
+    if (members != undefined) {
+        for (var i = 0; i < members.length; i++) {
+            var member = members[i];
+            if (remoteModuleInfo[member].tags.indexOf('newavailable') != -1) {
+                updateAvail = true;
+                break;
+            }
         }
     }
     if (updateAvail && (servermode == false || (logged == true && username == 'admin'))) {
