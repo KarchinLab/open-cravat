@@ -728,3 +728,8 @@ input:checked + .slider:before {
   text-decoration: line-through;
 }
 
+.no-group-member-msg-div {
+    position: relative;
+    top: 50px;
+}
+
