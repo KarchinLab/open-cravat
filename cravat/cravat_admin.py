@@ -344,9 +344,10 @@ def main ():
             size = update_info.size
             status_table.append([mname, version, humanize_bytes(size)])
         print_tabular_lines(status_table)
-        user_cont = input('Update the above modules? (y/n) > ')
-        if user_cont.lower() not in ['y','yes']:
-            exit()
+        if not args.y:
+            user_cont = input('Update the above modules? (y/n) > ')
+            if user_cont.lower() not in ['y','yes']:
+                exit()
         for mname, update_info in updates.items():
             args.modules = [mname]
             args.force_data = False
@@ -506,6 +507,10 @@ def main ():
     parser_update.add_argument('modules',
                                 nargs='*',
                                 help='Modules to update.')
+    parser_update.add_argument('-y',
+                               action='store_true',
+                               help='Proceed without prompt'
+                               )
     parser_update.add_argument('--strategy',
                                help='Dependency resolution strategy. "consensus" will attemp to resolve dependencies. "force" will install the highest available version. "skip" will skip modules with constraints.',
                                default='consensus',
