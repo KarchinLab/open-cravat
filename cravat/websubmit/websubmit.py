@@ -578,6 +578,14 @@ async def get_system_conf_info (request):
     return web.json_response(info)
 
 async def update_system_conf (request):
+    global servermode
+    if servermode:
+        username = await cravatserver.get_username(request)
+        if username != 'admin':
+            return web.json_response({'success': False, 'msg': 'Only admin can change the settings.'})
+        r = await cravatserver.is_loggedin(request)
+        if r == False:
+            return web.json_response({'success': False, 'mgs': 'Only logged-in admin can change the settings.'})
     queries = request.rel_url.query
     sysconf = json.loads(queries['sysconf'])
     try:
@@ -587,6 +595,12 @@ async def update_system_conf (request):
             cravat_yml_path = os.path.join(modules_dir, 'cravat.yml')
             if os.path.exists(cravat_yml_path) == False:
                 au.set_modules_dir(modules_dir)
+        global job_queue
+        qitem = {
+            'cmd': 'set_max_num_concurrent_jobs', 
+            'max_num_concurrent_jobs': sysconf['max_num_concurrent_jobs']
+        }
+        job_queue.put(qitem)
     except:
         raise
         sysconf = {}
@@ -657,7 +671,7 @@ async def delete_job (request):
         if os.path.exists(job_dir) == False:
             break
         else:
-            asyncio.sleep(0.5)
+            await asyncio.sleep(0.5)
     return web.Response()
 
 system_conf = au.get_system_conf()
@@ -686,7 +700,8 @@ def fetch_job_queue (job_queue, run_jobs_info, main_loop):
         def __init__(self, main_loop):
             self.running_jobs = {}
             self.queue = []
-            self.max_concurrent_jobs = 2
+            global system_conf
+            self.max_num_concurrent_jobs = int(system_conf['max_num_concurrent_jobs'])
             self.run_args = {}
             self.run_jobs_info = run_jobs_info
             self.run_jobs_info['job_ids'] = []
@@ -735,7 +750,7 @@ def fetch_job_queue (job_queue, run_jobs_info, main_loop):
             return list(self.running_jobs.keys())
 
         def run_available_jobs (self):
-            num_available_slot = self.max_concurrent_jobs - len(self.running_jobs)
+            num_available_slot = self.max_num_concurrent_jobs - len(self.running_jobs)
             if num_available_slot > 0 and len(self.queue) > 0:
                 for i in range(num_available_slot):
                     if len(self.queue) > 0:
@@ -748,12 +763,19 @@ def fetch_job_queue (job_queue, run_jobs_info, main_loop):
         async def delete_job (self, qitem):
             global filerouter
             job_id = qitem['job_id']
-            if job_tracker.get_process(job_id) is not None:
+            if self.get_process(job_id) is not None:
                 print('\nKilling job {}'.format(job_id))
-                await job_tracker.cancel_job(job_id)
+                await self.cancel_job(job_id)
             job_dir = qitem['job_dir']
             if os.path.exists(job_dir):
                 shutil.rmtree(job_dir)
+
+        def set_max_num_concurrent_jobs (self, qitem):
+            value = qitem['max_num_concurrent_jobs']
+            try:
+                self.max_num_concurrent_jobs = int(value)
+            except:
+                print('Invalid maximum number of concurrent jobs [{}]'.format(value))
 
     async def job_worker_main ():
         while True:
@@ -764,8 +786,10 @@ def fetch_job_queue (job_queue, run_jobs_info, main_loop):
                 cmd = qitem['cmd']
                 if cmd == 'submit':
                     job_tracker.add_job(qitem)
-                if cmd == 'delete':
+                elif cmd == 'delete':
                     await job_tracker.delete_job(qitem)
+                elif cmd == 'set_max_num_concurrent_jobs':
+                    job_tracker.set_max_num_concurrent_jobs(qitem)
             except Empty:
                 pass
             finally:
@@ -774,6 +798,25 @@ def fetch_job_queue (job_queue, run_jobs_info, main_loop):
     job_tracker = JobTracker(main_loop)
     main_loop = asyncio.new_event_loop()
     main_loop.run_until_complete(job_worker_main())
+
+'''
+async def get_max_num_concurrent_jobs (request):
+    global servermode
+    if servermode:
+        username = await cravatserver.get_username(request)
+        if username != 'admin':
+            return web.json_response({'success': False, 'msg': 'Only admin can change the settings.'})
+        r = await cravatserver.is_loggedin(request)
+        if r == False:
+            return web.json_response({'success': False, 'mgs': 'Only logged-in admin can change the settings.'})
+    sys_conf = au.get_system_conf()
+    max_num_concurrent_jobs = sys_conf['max_num_concurrent_jobs']
+    response = {
+        'success:': True, 
+        'msg': 'Maximum number of concurrent jobs is now {}.'.format(max_num_concurrent_jobs), 
+        'max_num_concurrent_jobs': max_num_concurrent_jobs}
+    return web.json_response(response)
+'''
 
 filerouter = FileRouter()
 VIEW_PROCESS = None
@@ -800,6 +843,7 @@ routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
 routes.append(['GET', '/submit/getjobs', get_jobs])
+#routes.append(['GET', '/submit/maxnumconcurrentjobs', get_max_num_concurrent_jobs])
 
 if __name__ == '__main__':
     app = web.Application()

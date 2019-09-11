@@ -1716,6 +1716,8 @@ function loadSystemConf () {
             cutoff = 250000;
         }
         s.value = cutoff;
+        var s = document.getElementById('settings_max_num_concurrent_jobs');
+        s.value = response['content']['max_num_concurrent_jobs'];
     });
 }
 
@@ -1734,6 +1736,8 @@ function updateSystemConf () {
         response['content']['modules_dir'] = s.value;
         var s = document.getElementById('settings_num_input_line_warning_cutoff');
         response['content']['num_input_line_warning_cutoff'] = s.value;
+        var s = document.getElementById('settings_max_num_concurrent_jobs');
+        response['content']['max_num_concurrent_jobs'] = s.value;
         $.ajax({
             url:'/submit/updatesystemconf',
             data: {'sysconf': JSON.stringify(response['content'])},
@@ -1755,8 +1759,14 @@ function updateSystemConf () {
                     addEl(mdiv, span);
                     addEl(mdiv, getEl('br'));
                     addEl(mdiv, getEl('br'));
+                    var span = getEl('span');
+                    span.textContent = response['msg'];
+                    addEl(mdiv, span);
+                    addEl(mdiv, getEl('br'));
+                    addEl(mdiv, getEl('br'));
                     var justOk = true;
                     showYesNoDialog(mdiv, null, false, justOk);
+                    return;
                 }
                 if (response['sysconf']['jobs_dir'] != undefined) {
                     populateJobs();
