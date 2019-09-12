@@ -1812,6 +1812,9 @@ function setupServerMode () {
 function populatePackageVersions () {
     $.get('/submit/packageversions').done(function(data){
         systemReadyObj.online = data.latest != null
+        if (systemReadyObj.online == false) {
+            document.querySelector('#nointernetdiv').style.display = 'block';
+        }
         var curverspans = document.getElementsByClassName('curverspan');
         for (var i = 0; i < curverspans.length; i++) {
             var curverspan = curverspans[i];
