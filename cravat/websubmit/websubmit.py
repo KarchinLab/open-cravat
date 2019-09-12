@@ -797,24 +797,8 @@ def fetch_job_queue (job_queue, run_jobs_info, main_loop):
     main_loop = asyncio.new_event_loop()
     main_loop.run_until_complete(job_worker_main())
 
-'''
-async def get_max_num_concurrent_jobs (request):
-    global servermode
-    if servermode:
-        username = await cravatserver.get_username(request)
-        if username != 'admin':
-            return web.json_response({'success': False, 'msg': 'Only admin can change the settings.'})
-        r = await cravatserver.is_loggedin(request)
-        if r == False:
-            return web.json_response({'success': False, 'mgs': 'Only logged-in admin can change the settings.'})
-    sys_conf = au.get_system_conf()
-    max_num_concurrent_jobs = sys_conf['max_num_concurrent_jobs']
-    response = {
-        'success:': True, 
-        'msg': 'Maximum number of concurrent jobs is now {}.'.format(max_num_concurrent_jobs), 
-        'max_num_concurrent_jobs': max_num_concurrent_jobs}
-    return web.json_response(response)
-'''
+async def redirect_to_index (request):
+    return web.HTTPFound('/submit/index.html')
 
 filerouter = FileRouter()
 VIEW_PROCESS = None
@@ -840,6 +824,7 @@ routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
 routes.append(['GET', '/submit/getjobs', get_jobs])
+routes.append(['GET', '/', redirect_to_index])
 
 if __name__ == '__main__':
     app = web.Application()
