@@ -65,6 +65,7 @@ body * {
 #pageselect div[disabled='t'] {
     pointer-events: none;
     color: white;
+    background-color: #aaaaaa;
 }
 
 #tabselectdiv {

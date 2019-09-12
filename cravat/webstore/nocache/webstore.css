@@ -462,12 +462,6 @@ input:checked + .store-switch-slider:before {
 }
 
 #yesnodialog .buttondiv {
-    /*
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    */
     font-size: 16px;
 }
 
@@ -593,3 +587,4 @@ input:checked + .store-switch-slider:before {
     vertical-align: bottom;
     z-index: 201;
 }
+

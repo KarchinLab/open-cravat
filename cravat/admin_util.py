@@ -1091,7 +1091,11 @@ def get_package_versions():
     """
     Return available open-cravat versions from pypi, sorted asc
     """
-    r = requests.get('https://pypi.org/pypi/open-cravat/json')
+    try:
+        r = requests.get('https://pypi.org/pypi/open-cravat/json', timeout=(3, None))
+    except requests.exceptions.ConnectionError:
+        print('Internec connection is not available.')
+        return None
     if r.status_code == 200:
         d = json.loads(r.text)
         all_vers = list(d['releases'].keys())

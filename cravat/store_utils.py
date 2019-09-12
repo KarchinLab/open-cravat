@@ -9,6 +9,7 @@ from . import exceptions
 import json
 import pkg_resources
 from urllib.error import HTTPError
+import types
 
 class PathBuilder(object):
     """
@@ -139,7 +140,11 @@ def stream_to_file(url, fpath, stage_handler=None, stages=50, install_state=None
     function which is called when the uploaded size passes each of 
     total_size/stages.
     """
-    r = requests.get(url, stream=True)
+    try:
+        r = requests.get(url, stream=True, timeout=(3, None))
+    except requests.exceptions.ConnectionError:
+        r = types.SimpleNamespaces()
+        r.status_code = 503
     if r.status_code == 200:
         total_size = int(r.headers.get('content-length', 0))
         chunk_size = 8192
@@ -156,7 +161,7 @@ def stream_to_file(url, fpath, stage_handler=None, stages=50, install_state=None
 
 def get_file_to_string(url):
     try:
-        r = requests.get(url)
+        r = requests.get(url, timeout=(3, None))
         if r.status_code == 200:
             return r.text
         else:

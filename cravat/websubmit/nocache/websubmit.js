@@ -18,7 +18,7 @@ var tagsCollectedForSubmit = [];
 var jobsPerPageInList = 15;
 var jobsListCurStart = 0;
 var jobsListCurEnd = jobsPerPageInList;
-var systemReadyObj = null;
+var systemReadyObj = {};
 
 function submit () {
     if (servermode && logged == false) {
@@ -1811,16 +1811,10 @@ function setupServerMode () {
 
 function populatePackageVersions () {
     $.get('/submit/packageversions').done(function(data){
+        systemReadyObj.online = data.latest != null
         var curverspans = document.getElementsByClassName('curverspan');
         for (var i = 0; i < curverspans.length; i++) {
             var curverspan = curverspans[i];
-            /*
-            var a = getEl('a');
-            a.href = "https://github.com/KarchinLab/open-cravat/wiki/Release-Notes";
-            a.target = '_blank';
-            a.textContent = data.current;
-            addEl(curverspan, a);
-            */
             var s = getEl('span');
             s.textContent = data.current;
             addEl(curverspan, s);
@@ -1832,6 +1826,7 @@ function populatePackageVersions () {
                 addEl(curverspan, a);
             }
         }
+        getRemote();
 	});
 }
 
@@ -2032,25 +2027,18 @@ function websubmit_run () {
     getServermode();
     connectWebSocket();
     checkConnection();
+    populatePackageVersions();
     setLastAssembly();
     getBaseModuleNames();
-    getRemote();
     addListeners();
     if (servermode == false) {
         populateJobs();
     }
-    /*
-    if (servermode == false) {
-        populateReports();
-    }
-    */
-    //getJobsDir();
     resizePage();
     window.onresize = function (evt) {
         resizePage();
     }
     loadSystemConf();
-    populatePackageVersions();
     populateMultInputsMessage();
 };
 

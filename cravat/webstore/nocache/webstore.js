@@ -143,8 +143,6 @@ function getLocal () {
                     mI['tags'] = tags;
                 }
                 if (remoteModuleName in localModuleInfo) {
-                    //var idx = tags.indexOf('installed');
-                    //if (idx == -1) {
                     if (localModuleInfo[remoteModuleName].exists) {
                         tags.push('installed');
                     }
@@ -267,7 +265,11 @@ function getLocal () {
             showOrHideInstallAllButton();
             showOrHideUpdateAllButton();
             showOrHideSystemModuleUpdateButton();
-            enableStoreTabHead();
+            if (systemReadyObj.online) {
+                enableStoreTabHead();
+            } else {
+                disableStoreTabHead();
+            }
             makeInstalledGroup();
             buildAnnotatorGroupSelector();
             populateAnnotators();
@@ -296,6 +298,12 @@ function makeInstalledGroup () {
 
 function enableStoreTabHead () {
     document.getElementById('storediv_tabhead').setAttribute('disabled', 'f');
+}
+
+function disableStoreTabHead () {
+    document.getElementById('storediv_tabhead').setAttribute('disabled', 't');
+    document.getElementById('storediv_tabhead').classList.add('disabled');
+    document.getElementById('storediv_tabhead').title = 'Internet connection not available';
 }
 
 function showOrHideSystemModuleUpdateButton () {
@@ -557,7 +565,11 @@ function checkSystemReady () {
         url: '/issystemready',
         async: true,
         success: function (response) {
+            var online = systemReadyObj.online;
             systemReadyObj = response;
+            if (online != undefined) {
+                systemReadyObj.online = online;
+            }
             if (systemReadyObj.ready) {
                 getLocal();
             } else {

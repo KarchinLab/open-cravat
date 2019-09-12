@@ -250,7 +250,6 @@ async def submit (request):
     for fpath in input_fpaths:
         with open(fpath) as f:
             tot_lines += count_lines(f)
-    #expected_runtime = get_expected_runtime(tot_lines, job_options['annotators'])
     run_args = ['cravat']
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))
@@ -493,7 +492,6 @@ async def get_all_jobs (request):
                 continue
         '''
     all_jobs.sort(reverse=True)
-    #return web.json_response([job.get_info_dict() for job in all_jobs])
     return web.json_response(all_jobs)
 
 async def view_job(request):
@@ -623,7 +621,10 @@ def get_servermode (request):
 async def get_package_versions(request):
     cur_ver = au.get_current_package_version()
     lat_ver = au.get_latest_package_version()
-    update = LooseVersion(lat_ver) > LooseVersion(cur_ver)
+    if lat_ver is not None:
+        update = LooseVersion(lat_ver) > LooseVersion(cur_ver)
+    else:
+        update = False
     d = {
         'current': cur_ver,
         'latest': lat_ver,
@@ -710,9 +711,6 @@ def fetch_job_queue (job_queue, run_jobs_info, main_loop):
         def add_job(self, qitem):
             self.queue.append(qitem['job_id'])
             self.run_args[qitem['job_id']] = qitem['run_args']
-            #job_ids = self.run_jobs_info['job_ids']
-            #job_ids.append(qitem['job_id'])
-            #self.run_jobs_info['job_ids'] = job_ids
 
         def get_process(self, uid):
             # Return the process for a job
@@ -825,7 +823,6 @@ routes = []
 routes.append(['POST','/submit/submit',submit])
 routes.append(['GET','/submit/annotators',get_annotators])
 routes.append(['GET','/submit/jobs',get_all_jobs])
-#routes.append(['GET','/submit/jobsdetails',get_jobs_details])
 routes.append(['GET','/submit/jobs/{job_id}',view_job])
 routes.append(['DELETE','/submit/jobs/{job_id}',delete_job])
 routes.append(['GET','/submit/jobs/{job_id}/db', download_db])
@@ -843,7 +840,6 @@ routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
 routes.append(['GET', '/submit/getjobs', get_jobs])
-#routes.append(['GET', '/submit/maxnumconcurrentjobs', get_max_num_concurrent_jobs])
 
 if __name__ == '__main__':
     app = web.Application()
