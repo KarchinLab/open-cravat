@@ -5,7 +5,8 @@ import subprocess
 import yaml
 import json
 from cravat import admin_util as au
-from cravat import ConfigLoader, run_cravat_job
+from cravat.config_loader import ConfigLoader
+from cravat.cravat_class import run_cravat_job
 import sys
 import traceback
 import shutil

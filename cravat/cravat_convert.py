@@ -6,7 +6,7 @@ import argparse
 import time
 import traceback
 import cravat.constants as constants
-from cravat import CravatWriter
+from cravat.inout import CravatWriter
 from cravat.exceptions import LiftoverFailure, InvalidData, BadFormatError, ExpectedException
 import cravat.admin_util as au
 from pyliftover import LiftOver

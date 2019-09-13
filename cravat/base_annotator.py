@@ -18,6 +18,7 @@ from .exceptions import ConfigurationError
 import sqlite3
 import json
 import cravat.cravat_util as cu
+import cravat.admin_util as au
 
 class BaseAnnotator(object):
 
@@ -30,8 +31,10 @@ class BaseAnnotator(object):
                              'crg':[x['name'] for x in crg_def]}
     required_conf_keys = ['level', 'output_columns']
 
-    def __init__(self, cmd_args, status_writer):
+    def __init__(self, cmd_args, status_writer, for_api=False):
         try:
+            if for_api:
+                return
             self.status_writer = status_writer
             self.logger = None
             main_fpath = cmd_args[0]

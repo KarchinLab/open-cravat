@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cravat import Cravat, cravat_cmd_parser
+from cravat.cravat_class import Cravat, cravat_cmd_parser
 from cravat.admin_util import ready_resolution_console
 import asyncio
 
