@@ -97,7 +97,9 @@ class ConfigLoader():
             return None
     
     def get_cravat_conf(self):
-        return self._all['cravat']
+        if 'cravat' not in self._all:
+            self._load_main_conf()
+        return self._main
     
     def get_cravat_conf_value (self, key):
         if 'cravat' in self._all:

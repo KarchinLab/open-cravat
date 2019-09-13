@@ -572,7 +572,6 @@ def set_jobs_dir (request):
 
 async def get_system_conf_info (request):
     info = au.get_system_conf_info(json=True)
-    global filerouter
     return web.json_response(info)
 
 async def update_system_conf (request):

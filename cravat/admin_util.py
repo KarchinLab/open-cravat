@@ -17,6 +17,7 @@ from collections import defaultdict
 from types import SimpleNamespace
 from . import exceptions
 from collections import MutableMapping
+import multiprocessing
 
 def load_yml_conf(yml_conf_path):
     """
@@ -817,6 +818,18 @@ def get_system_conf ():
     if constants.jobs_dir_key not in conf:
         conf[constants.jobs_dir_key] = constants.default_jobs_dir
         conf_modified = True
+    key = 'num_input_line_warning_cutoff'
+    if key not in conf:
+        conf[key] = constants.default_num_input_line_warning_cutoff
+        conf_modified = True
+    key = 'max_num_concurrent_jobs'
+    if key not in conf:
+        conf[key] = constants.default_max_num_concurrent_jobs
+        conf_modified = True
+    key = 'max_num_concurrent_annotators_per_job'
+    if key not in conf:
+        conf[key] = constants.default_max_num_concurrent_annotators_per_job
+        conf_modified = True
     if conf_modified:
         write_system_conf_file(conf)
     return conf
@@ -828,6 +841,18 @@ def get_modules_dir():
     conf = get_system_conf()
     modules_dir = conf[constants.modules_dir_key]
     return modules_dir
+
+def get_annotator_dir (module_name):
+    module_dir = os.path.join(get_modules_dir(), 'annotators', module_name)
+    if os.path.exists(module_dir) == False:
+        module_dir = None
+    return module_dir
+
+def get_annotator_script_path (module_name):
+    module_path = os.path.join(get_modules_dir(), 'annotators', module_name, module_name + '.py')
+    if os.path.exists(module_path) == False:
+        module_path = None
+    return module_path
 
 def get_conf_dir ():
     conf = get_system_conf()
@@ -1038,18 +1063,13 @@ def report_issue ():
     webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
 
 def get_system_conf_info (json=False):
-    #set_jobs_dir(get_jobs_dir())
     confpath = constants.system_conf_path
     if os.path.exists(confpath):
-        conf = load_yml_conf(confpath)
+        conf = get_system_conf()
         confexists = True
     else:
         conf = {}
         confexists = False
-    '''
-    if constants.modules_dir_key not in conf:
-        conf[constants.modules_dir_key] = constants.default_modules_dir
-    '''
     if json:
         content = conf
     else:
@@ -1064,6 +1084,12 @@ def get_cravat_conf ():
     else:
         cravat_conf = {}
     return cravat_conf
+
+def write_cravat_conf (cravat_conf):
+    confpath = get_main_conf_path()
+    wf = open(confpath, 'w')
+    yaml.dump(cravat_conf, wf, default_flow_style=False)
+    wf.close()
 
 def get_cravat_conf_info ():
     cravat_conf = get_cravat_conf()
@@ -1281,6 +1307,16 @@ def ready_resolution_console():
             exit()        
     exit()
 
+def get_max_num_concurrent_annotators_per_job ():
+    sys_conf = get_system_conf()
+    key = 'max_num_concurrent_annotators_per_job'
+    if key in sys_conf:
+        num_workers = sys_conf.get(key)
+    else:
+        num_workers = max(1, multiprocessing.cpu_count() - 1)
+        sys_conf[key] = num_workers
+        write_system_conf_file(sys_conf)
+    return num_workers
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

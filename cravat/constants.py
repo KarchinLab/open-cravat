@@ -263,4 +263,6 @@ module_tag_desc = {
 }
 
 legacy_gene_level_cols_to_skip = ['base__num_variants', 'base__so', 'base__all_so']
+default_num_input_line_warning_cutoff = 25000
 default_max_num_concurrent_jobs = 1
+default_max_num_concurrent_annotators_per_job = 1

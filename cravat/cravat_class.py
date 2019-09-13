@@ -750,10 +750,7 @@ class Cravat (object):
         return all_reporters_ran_well
 
     def run_annotators_mp (self):
-        default_workers = mp.cpu_count() - 1
-        if default_workers < 1: 
-            default_workers = 1
-        num_workers = self.cravat_conf.get('num_workers', default_workers)
+        num_workers = au.get_max_num_concurrent_annotators_per_job()
         if self.args.mp is not None:
             try:
                 self.args.mp = int(self.args.mp)

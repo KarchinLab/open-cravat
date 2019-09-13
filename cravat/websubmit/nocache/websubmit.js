@@ -1711,13 +1711,12 @@ function loadSystemConf () {
         var s = document.getElementById('settings_modules_dir_input');
         s.value = response['content']['modules_dir'];
         var s = document.getElementById('settings_num_input_line_warning_cutoff');
-        var cutoff = response['content']['num_input_line_warning_cutoff'];
-        if (cutoff == undefined) {
-            cutoff = 250000;
-        }
+        var cutoff = parseInt(response['content']['num_input_line_warning_cutoff']);
         s.value = cutoff;
         var s = document.getElementById('settings_max_num_concurrent_jobs');
-        s.value = response['content']['max_num_concurrent_jobs'];
+        s.value = parseInt(response['content']['max_num_concurrent_jobs']);
+        var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
+        s.value = parseInt(response['content']['max_num_concurrent_annotators_per_job']);
     });
 }
 
@@ -1735,9 +1734,11 @@ function updateSystemConf () {
         var s = document.getElementById('settings_modules_dir_input');
         response['content']['modules_dir'] = s.value;
         var s = document.getElementById('settings_num_input_line_warning_cutoff');
-        response['content']['num_input_line_warning_cutoff'] = s.value;
+        response['content']['num_input_line_warning_cutoff'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_jobs');
-        response['content']['max_num_concurrent_jobs'] = s.value;
+        response['content']['max_num_concurrent_jobs'] = parseInt(s.value);
+        var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
+        response['content']['max_num_concurrent_annotators_per_job'] = parseInt(s.value);
         $.ajax({
             url:'/submit/updatesystemconf',
             data: {'sysconf': JSON.stringify(response['content'])},
