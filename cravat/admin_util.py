@@ -389,6 +389,13 @@ def search_local(*patterns):
             matching_names.append(module_name)
     return matching_names
 
+def get_local_by_type (types):
+    modules = []
+    for module in list(mic.local.values()):
+        if module.type in types:
+            modules.append(module)
+    return modules
+
 def module_exists_local(module_name):
     """
     Returns True if a module exists locally. False otherwise.

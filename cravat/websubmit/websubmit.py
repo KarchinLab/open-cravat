@@ -23,6 +23,7 @@ import importlib
 from multiprocessing import Process, Pipe, Value, Manager, Queue
 from queue import Empty
 from cravat import constants
+from cravat import get_annotator_for_api
 if importlib.util.find_spec('cravatserver') is not None:
     import cravatserver
 
@@ -800,8 +801,39 @@ def fetch_job_queue (job_queue, run_jobs_info, main_loop):
 async def redirect_to_index (request):
     return web.HTTPFound('/submit/index.html')
 
+async def get_api_annotation (request):
+    queries = request.rel_url.query
+    input_data = json.loads(queries['input_data'].replace("'", '"'))
+    if 'annotators' in queries:
+        annotators = json.loads(queries['annotators'].replace("'", '"'))
+    else:
+        annotators = None
+    global api_annotators
+    if api_annotators is None:
+        print('populating api annotators')
+        api_annotators = {}
+        modules = au.get_local_by_type(['annotator'])
+        for module in modules:
+            api_annotator = get_annotator_for_api(module.name)
+            if api_annotator is None:
+                continue
+            api_annotators[module.name] = api_annotator
+        print('done populating api annotators')
+    response = {}
+    for k, v in api_annotators.items():
+        if annotators is not None and k not in annotators:
+            continue
+        try:
+            response[k] = v.annotate(input_data={'chrom':'chr1', 'pos': 12777320, 'ref_base': 'C', 'alt_base': 'T'})
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            response[k] = None
+    return web.json_response(response)
+
 filerouter = FileRouter()
 VIEW_PROCESS = None
+api_annotators = None
 
 routes = []
 routes.append(['POST','/submit/submit',submit])
@@ -824,6 +856,7 @@ routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
 routes.append(['GET', '/submit/getjobs', get_jobs])
+routes.append(['GET', '/submit/annotate', get_api_annotation])
 routes.append(['GET', '/', redirect_to_index])
 
 if __name__ == '__main__':
