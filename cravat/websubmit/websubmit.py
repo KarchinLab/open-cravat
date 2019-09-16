@@ -694,10 +694,10 @@ def start_worker (main_loop):
     job_queue = Queue()
     run_jobs_info = Manager().dict()
     if job_worker == None:
-        job_worker = Process(target=fetch_job_queue, args=(job_queue, run_jobs_info, loop))
+        job_worker = Process(target=fetch_job_queue, args=(job_queue, run_jobs_info))
         job_worker.start()
 
-def fetch_job_queue (job_queue, run_jobs_info, main_loop):
+def fetch_job_queue (job_queue, run_jobs_info):
     class JobTracker (object):
         def __init__(self, main_loop):
             self.running_jobs = {}
@@ -794,8 +794,8 @@ def fetch_job_queue (job_queue, run_jobs_info, main_loop):
             finally:
                 await asyncio.sleep(1)
 
-    job_tracker = JobTracker(main_loop)
     main_loop = asyncio.new_event_loop()
+    job_tracker = JobTracker(main_loop)
     main_loop.run_until_complete(job_worker_main())
 
 async def redirect_to_index (request):
