@@ -694,10 +694,10 @@ function makeFilterJson () {
 	}
 	// Gene list
 	let geneListString = $('#gene-list-text').val();
-	let geneList = []
-	if (geneListString.length > 0) {
-		geneList = geneListString.split('\n');
-	}
+	let geneList = geneListString.split('\n')
+        .map(s=>s.trim())
+        .map(s=>s.toUpperCase())
+        .filter(s=>s);
 	fjs.genes = geneList;
 	// Variant Properties
 	let activeVprop = $('#vprop-sel').val();
