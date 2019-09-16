@@ -178,8 +178,11 @@ class Cravat (object):
         self.status_json_path = os.path.join(self.output_dir, status_fname)
         if os.path.exists(self.status_json_path) == True:
             with open(self.status_json_path) as f:
-                self.status_json = json.load(f)
-                self.pkg_ver = self.status_json['open_cravat_version']
+                try:
+                    self.status_json = json.load(f)
+                    self.pkg_ver = self.status_json['open_cravat_version']
+                except:
+                    self.pkg_ver = au.get_current_package_version()
             if self.status_json['status'] == 'Submitted':
                 self.status_json['job_dir'] = self.output_dir
                 self.status_json['id'] = os.path.basename(os.path.normpath(self.output_dir))

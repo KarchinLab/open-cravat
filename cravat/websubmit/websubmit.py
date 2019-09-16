@@ -23,7 +23,7 @@ import importlib
 from multiprocessing import Process, Pipe, Value, Manager, Queue
 from queue import Empty
 from cravat import constants
-from cravat import get_annotator_for_api
+from cravat import get_live_annotator
 if importlib.util.find_spec('cravatserver') is not None:
     import cravatserver
 
@@ -814,7 +814,7 @@ async def get_api_annotation (request):
         api_annotators = {}
         modules = au.get_local_by_type(['annotator'])
         for module in modules:
-            api_annotator = get_annotator_for_api(module.name)
+            api_annotator = get_live_annotator(module.name)
             if api_annotator is None:
                 continue
             api_annotators[module.name] = api_annotator
