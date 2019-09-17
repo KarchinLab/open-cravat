@@ -23,7 +23,7 @@ import importlib
 from multiprocessing import Process, Pipe, Value, Manager, Queue
 from queue import Empty
 from cravat import constants
-from cravat import get_live_annotator
+from cravat import get_live_annotator, get_live_mapper
 if importlib.util.find_spec('cravatserver') is not None:
     import cravatserver
 
@@ -801,39 +801,54 @@ def fetch_job_queue (job_queue, run_jobs_info):
 async def redirect_to_index (request):
     return web.HTTPFound('/submit/index.html')
 
-async def get_api_annotation (request):
+async def get_live_annotation (request):
+    from cravat.constants import mapping_parser_name
+    from cravat.inout import AllMappingsParser
+    from cravat.constants import all_mappings_col_name
     queries = request.rel_url.query
     input_data = json.loads(queries['input_data'].replace("'", '"'))
     if 'annotators' in queries:
         annotators = json.loads(queries['annotators'].replace("'", '"'))
     else:
         annotators = None
-    global api_annotators
-    if api_annotators is None:
-        print('populating api annotators')
-        api_annotators = {}
+    global live_modules
+    if live_modules is None:
+        print('populating live annotators')
+        live_modules = {}
+        cravat_conf = au.get_cravat_conf()
+        if 'genemapper' in cravat_conf:
+            default_mapper = cravat_conf['genemapper']
+        else:
+            default_mapper = 'hg38'
+        mapper = get_live_mapper(default_mapper)
         modules = au.get_local_by_type(['annotator'])
         for module in modules:
-            api_annotator = get_live_annotator(module.name)
-            if api_annotator is None:
+            annotator = get_live_annotator(module.name)
+            if annotator is None:
                 continue
-            api_annotators[module.name] = api_annotator
-        print('done populating api annotators')
+            live_modules[module.name] = annotator
+        print('done populating live annotators')
     response = {}
-    for k, v in api_annotators.items():
+    if 'uid' not in input_data:
+        input_data['uid'] = 0
+    crx_data, alt_transcripts = mapper.map(input_data)
+    crx_data[mapping_parser_name] = AllMappingsParser(crx_data[all_mappings_col_name])
+    for k, v in live_modules.items():
         if annotators is not None and k not in annotators:
             continue
         try:
-            response[k] = v.annotate(input_data={'chrom':'chr1', 'pos': 12777320, 'ref_base': 'C', 'alt_base': 'T'})
+            response[k] = v.annotate(input_data=crx_data)
         except Exception as e:
             import traceback
             traceback.print_exc()
             response[k] = None
+    del crx_data[mapping_parser_name]
+    response['crx'] = crx_data
     return web.json_response(response)
 
 filerouter = FileRouter()
 VIEW_PROCESS = None
-api_annotators = None
+live_modules = None
 
 routes = []
 routes.append(['POST','/submit/submit',submit])
@@ -856,7 +871,7 @@ routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
 routes.append(['GET', '/submit/getjobs', get_jobs])
-routes.append(['GET', '/submit/annotate', get_api_annotation])
+routes.append(['GET', '/submit/annotate', get_live_annotation])
 routes.append(['GET', '/', redirect_to_index])
 
 if __name__ == '__main__':

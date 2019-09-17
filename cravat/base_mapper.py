@@ -12,6 +12,7 @@ import sys
 import pkg_resources
 import json
 import cravat.cravat_util as cu
+from types import SimpleNamespace
 
 class BaseMapper(object):
     """
@@ -21,7 +22,16 @@ class BaseMapper(object):
     It handles command line arguments, option parsing and file io for the
     mapping process.
     """
-    def __init__(self, cmd_args, status_writer):
+    def __init__(self, cmd_args, status_writer, live=False):
+        if live:
+            self.live = live
+            self.cmd_args = SimpleNamespace()
+            self.cmd_args.include_sources = []
+            self.cmd_args.exclude_sources = []
+            self.cmd_args.primary_source = 'EnsemblT'
+            self.input_path = ''
+            self._setup_logger()
+            return
         self.status_writer = status_writer
         main_fpath = cmd_args[0]
         main_basename = os.path.basename(main_fpath)

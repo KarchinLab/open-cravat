@@ -31,9 +31,9 @@ class BaseAnnotator(object):
                              'crg':[x['name'] for x in crg_def]}
     required_conf_keys = ['level', 'output_columns']
 
-    def __init__(self, cmd_args, status_writer, for_api=False):
+    def __init__(self, cmd_args, status_writer, live=False):
         try:
-            if for_api:
+            if live:
                 return
             self.status_writer = status_writer
             self.logger = None

@@ -25,10 +25,9 @@ def get_live_annotator (module_name):
     config_loader = ConfigLoader()
     script_path = admin_util.get_annotator_script_path(module_name)
     ModuleClass = util.load_class('CravatAnnotator', script_path)
-    module = ModuleClass(None, None, for_api=True)
+    module = ModuleClass(None, None, live=True)
     try:
-        module.annotator_name = os.path.basename(script_path)[:-3]
-        #print('  {}'.format(module.annotator_name))
+        module.annotator_name = module_name
         module.annotator_dir = os.path.dirname(script_path)
         module.data_dir = os.path.join(module.annotator_dir, 'data')
         module._open_db_connection()
@@ -36,5 +35,24 @@ def get_live_annotator (module_name):
         module.setup()
     except:
         print('    module loading error: {}'.format(module.annotator_name))
+        return None
+    return module
+
+def get_live_mapper (module_name):
+    import os
+    config_loader = ConfigLoader()
+    script_path = admin_util.get_mapper_script_path(module_name)
+    ModuleClass = util.load_class('Mapper', script_path)
+    module = ModuleClass(None, None, live=True)
+    try:
+        module.module_name = module_name
+        module.mapper_dir = os.path.dirname(script_path)
+        module.data_dir = os.path.join(module.mapper_dir, 'data')
+        module.conf = config_loader.get_module_conf(module_name)
+        module.setup()
+    except Exception as e:
+        print('    module loading error: {}'.format(module_name))
+        import traceback
+        traceback.print_exc()
         return None
     return module

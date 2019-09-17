@@ -14,3 +14,5 @@ class BaseConverter(object):
             self.format_name
         raise NotImplementedError(err_msg)
     
+    def addl_operation_for_unique_variant (self, wdict, wdict_no):
+        pass
