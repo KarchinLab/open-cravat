@@ -973,26 +973,28 @@ def publish_module(module_name, user, password, overwrite=False, include_data=Tr
     post_url = '/'.join([publish_url, module_name, local_info.version])
     if overwrite:
         post_url += '?overwrite=1'
-    fields={
-            'manifest': (
-                         'manifest.json',
-                         json.dumps(manifest),
-                         'application/json'
-                        ),
-            'archive': (
-                        zf_name,
-                        open(zf_path,'rb'),
-                        'application/octet-stream'
-                       )
-            }
-    print('Uploading to store')
-    r = su.stream_multipart_post(post_url, fields, stage_handler=print_stage_handler, auth=(user,password))
+    with open(zf_path,'rb') as zf:
+        fields={
+                'manifest': (
+                            'manifest.json',
+                            json.dumps(manifest),
+                            'application/json'
+                            ),
+                'archive': (
+                            zf_name,
+                            zf,
+                            'application/octet-stream'
+                        )
+                }
+        print('Uploading to store')
+        r = su.stream_multipart_post(post_url, fields, stage_handler=print_stage_handler, auth=(user,password))
     if r.status_code != 200:
         print('Upload failed')
         print(r.status_code)
         print(r.text)
     if r.text:
         print(r.text)
+    os.remove(zf_path)
 
 def create_account(username, password):
     sys_conf = get_system_conf()
