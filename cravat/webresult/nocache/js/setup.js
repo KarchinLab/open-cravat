@@ -78,10 +78,13 @@ function filterHeaderClick (event) {
 class FilterManager {
 
 	constructor() {
-		this.sampleSelectId = 'sample-select-cont';
+        this.sampleContId = 'filter-cont-sample';
+        this.geneContId = 'filter-cont-gene';
+        this.variantContId = 'filter-cont-variant'
+
+        this.sampleSelectId = 'sample-select-cont';
 		this.geneTextId = 'gene-list-text';
 		this.geneFileId = 'gene-list-file';
-		this.vPropContentId = 'vprop-cont';
 		this.vpropSelectId = 'vprop-sel';
 		this.vpropSfId = 'vprop-sf';
 		this.vpropQbId = 'vprop-qb';
@@ -100,18 +103,24 @@ class FilterManager {
 		let header = $(getEl('div'))
 			.addClass('filter-header')
 			.click(this.sectionHeaderClick);
-			if (!active) {
-				header.addClass('inactive')
-			}
-			rootDiv.append(header);
-			header.append($(getEl('span'))
+        if (!active) {
+            header.addClass('inactive')
+        }
+        rootDiv.append(header);
+        header.append($(getEl('span'))
 			.addClass('filter-header-arrow')
-			)
-			header.append($(getEl('span'))
+        )
+        header.append($(getEl('span'))
 			.addClass('filter-header-text')
 			.addClass('title')
 			.text(headerTitle)
-		)
+        )
+        header.append($(getEl('button'))
+            .addClass('filter-section-clear')
+            .addClass('butn')
+            .text('Clear')
+            .click(this.sectionClearClick.bind(this))
+        )
 		let sampleContent = $(getEl('div'))
 			.addClass('filter-content');
 		rootDiv.append(sampleContent);
@@ -120,10 +129,24 @@ class FilterManager {
 
 	sectionHeaderClick (event) {
 		$(this).toggleClass('inactive')
-	}
+    }
+    
+    sectionClearClick (event) {
+        let elem = $(event.target);
+        let contentId = $(elem).parent().siblings('.filter-content').attr('id');
+        if (contentId === this.sampleContId) {
+            this.updateSampleSelect();
+        } else if (contentId === this.geneContId) {
+            this.updateGeneSelect();
+        } else if (contentId === this.variantContId) {
+            this.updateVpropUI();
+        }
+        event.stopPropagation();
+    }
 
 	addSampleSelect (outerDiv, filter) {
-		filter = filter===undefined ? {require:[],reject:[]} : filter;
+        filter = new CravatFilter(filter);
+        outerDiv.attr('id', this.sampleContId);
 		outerDiv.append($(getEl('div'))
 			.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
 		)
@@ -149,10 +172,10 @@ class FilterManager {
 				.text(sid)
 				.addClass('sample-selector-label')
 			)
-			if (filter.require.indexOf(sid) >= 0) {
+			if (filter.sample.require.indexOf(sid) >= 0) {
 				sampleBox.removeClass('sample-neutral');
 				sampleBox.addClass('sample-require');
-			} else if (filter.reject.indexOf(sid) >= 0) {
+			} else if (filter.sample.reject.indexOf(sid) >= 0) {
 				sampleBox.removeClass('sample-neutral');
 				sampleBox.addClass('sample-reject');
 			}
@@ -161,14 +184,13 @@ class FilterManager {
 	}
 
 	updateSampleSelect (filter) {
+        filter = new CravatFilter(filter);
 		let sampleContent = $('#'+this.sampleSelectId).parent();
 		sampleContent.empty();
 		this.addSampleSelect(sampleContent,filter);
 		let sampleHeader = sampleContent.siblings('.filter-header');
-		if (filter.require.length>0 || filter.reject.length>0) {
+		if (filter.sample.require.length>0 || filter.sample.reject.length>0) {
 			sampleHeader.removeClass('inactive');
-		} else {
-			sampleHeader.addClass('inactive');
 		}
 	}
 
@@ -191,7 +213,8 @@ class FilterManager {
 	}
 
 	addGeneSelect (outerDiv, filter) {
-		filter = filter===undefined ? [] : filter;
+        filter = new CravatFilter(filter);
+        outerDiv.attr('id', this.geneContId);
 		outerDiv.append($(getEl('div'))
 			.text('Type a list of gene names to include. One per line. Or, load a gene list from a file.')
 		)
@@ -204,8 +227,8 @@ class FilterManager {
 			.attr('id', this.geneFileId)
 			.change(this.onGeneListSelectorChange.bind(this));
 		outerDiv.append(geneFileInput);
-		if (filter.length > 0) {
-			geneTextArea.val(filter.join('\n'));
+		if (filter.genes.length > 0) {
+			geneTextArea.val(filter.genes.join('\n'));
 		}
 		return outerDiv;
 	}
@@ -228,20 +251,19 @@ class FilterManager {
 	}
 
 	updateGeneSelect (filter) {
+        filter = new CravatFilter(filter);
 		let geneSelect = $('#'+this.geneTextId).parent();
 		geneSelect.empty();
-		this.addGeneSelect(geneSelect, filter);
-		let geneHeader = geneSelect.closest('.filter-content').siblings('.filter-header');
-		if (filter.length > 0) {
-			geneHeader.removeClass('inactive');
-		} else {
-			geneHeader.addClass('inactive');
-		}
+        this.addGeneSelect(geneSelect, filter);
+        let geneHeader = geneSelect.closest('.filter-content').siblings('.filter-header');
+        if (filter.genes.length > 0) {
+            geneHeader.removeClass('inactive');
+        }
 	}
 
 	addVpropUI (vPropCont, filter) {
-		filter = filter===undefined ? {'smartfilter':{},'variant':{}} : filter;
-		vPropCont.attr('id', this.vPropContentId);
+        filter = new CravatFilter(filter);
+		vPropCont.attr('id', this.variantContId);
 		vPropCont.append($(getEl('div'))
 			.text('Select variants by applying filters or building a query'))
 		let fTypeDiv = $(getEl('div'));
@@ -270,11 +292,11 @@ class FilterManager {
 		let sfContent = $(getEl('div'))
 			.attr('id', this.vpropSfId);
 		vPropCont.append(sfContent);
-		this.addSfUI(sfContent, filter.smartfilter);
+		this.addSfUI(sfContent, filter);
 		let qbContent = $(getEl('div'))
 			.attr('id', this.vpropQbId);
 		vPropCont.append(qbContent);
-		this.addQbUI(qbContent, filter.variant);
+		this.addQbUI(qbContent, filter);
 
 		// Activate the correct vProp type
 		let sfValued = Object.keys(filter.smartfilter).length !== 0;
@@ -290,7 +312,7 @@ class FilterManager {
 	}
 
 	addSfUI (outerDiv, filter) {
-		filter = filter===undefined ? {} : filter;
+		filter = new CravatFilter(filter);
 		outerDiv.append($(getEl('div'))
 			.text('Click a filter to apply it.')
 		)
@@ -305,8 +327,8 @@ class FilterManager {
 				let sfName = sfGroup.order[j];
 				let sfDef = sfGroup.definitions[sfName];
 				let sfVal = undefined;
-				if (filter.hasOwnProperty(sfSource)) {
-					sfVal = filter[sfSource][sfName];
+				if (filter.smartfilter.hasOwnProperty(sfSource)) {
+					sfVal = filter.smartfilter[sfSource][sfName];
 				}
 				let sf = new SmartFilter(sfDef, sfVal);
 				let sfDiv = sf.getDiv();
@@ -317,19 +339,24 @@ class FilterManager {
 	}
 
 	addQbUI (outerDiv, filter) {
-		filter = filter===undefined ? {} : filter;
+		filter = new CravatFilter(filter);
 		outerDiv.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
-		let qbDiv = makeFilterGroupDiv(filter);
+		let qbDiv = makeFilterGroupDiv(filter.variant);
 		qbDiv.children('.filter-element-remove').css('display','none');
 		qbDiv.attr('id', this.qbRootId);
 		outerDiv.append(qbDiv);
 	}
 
 	updateVpropUI (filter) {
-		let vPropCont = $('#'+this.vPropContentId);
+        filter = new CravatFilter(filter);
+		let vPropCont = $('#'+this.variantContId);
 		vPropCont.empty()
-		this.addVpropUI(vPropCont, filter);
-	}
+        this.addVpropUI(vPropCont, filter);
+        let vpropHeader = vPropCont.siblings('.filter-header');
+        if (filter.variant.rules.length > 0) {
+            vpropHeader.removeClass('inactive');
+        }
+    }
 
 	vPropSelectChange (event) {
 		let sel = $(event.target);
@@ -358,15 +385,15 @@ class FilterManager {
 	}
 
 	updateAll(filter) {
-		filter = new CravatFilter(filter);
-		this.updateSampleSelect(filter.sample);
-		this.updateGeneSelect(filter.genes);
+		this.updateSampleSelect(filter);
+		this.updateGeneSelect(filter);
 		this.updateVpropUI(filter);
 	}
 }
 
 class CravatFilter {
 	constructor (f) {
+        f = f !== undefined ? f : {};
 		this.variant = f.variant!==undefined ? f.variant : {operator:'and',rules:[]};
 		this.smartfilter = f.smartfilter!==undefined ? f.smartfilter : {};
 		this.genes = f.genes!==undefined ? f.genes : [];
@@ -682,7 +709,7 @@ function refreshFilterCounts(n) {
 function makeFilterJson () {
 	let fjs = {}
 	// Samples
-	let sampleSelectors = $('#sample-select-cont').children();
+	let sampleSelectors = $('#'+filterMgr.sampleSelectId).children();
 	fjs.sample = {'require':[],'reject':[]}
 	for (let i=0; i<sampleSelectors.length; i++) {
 		let sel = $(sampleSelectors[i]);
@@ -693,16 +720,16 @@ function makeFilterJson () {
 		}
 	}
 	// Gene list
-	let geneListString = $('#gene-list-text').val();
+	let geneListString = $('#'+filterMgr.geneTextId).val();
 	let geneList = geneListString.split('\n')
         .map(s=>s.trim())
         .map(s=>s.toUpperCase())
         .filter(s=>s);
 	fjs.genes = geneList;
 	// Variant Properties
-	let activeVprop = $('#vprop-sel').val();
+	let activeVprop = $('#'+filterMgr.vpropSelectId).val();
 	if (activeVprop === 'sf') {
-		let sfWrapDiv = $('#vprop-sf');
+		let sfWrapDiv = $('#'+filterMgr.vpropSfId);
 		let sfDivs = sfWrapDiv.children('div');
 		let fullSf = {operator: 'and', rules:[]}
 		let sfState = {};
@@ -726,7 +753,7 @@ function makeFilterJson () {
 		fjs.variant = fullSf;
 		fjs.smartfilter = sfState;
 	} else if (activeVprop === 'qb') {
-		let qbRoot = $('#qb-root');
+		let qbRoot = $('#'+filterMgr.qbRootId);
 		fjs.variant = makeGroupFilter(qbRoot);
 		fjs.smartfilter = {};
 	}
