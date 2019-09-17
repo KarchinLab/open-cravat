@@ -16,7 +16,7 @@ import pkg_resources
 from collections import defaultdict
 from types import SimpleNamespace
 from . import exceptions
-from collections import MutableMapping
+from collections.abc import MutableMapping
 import multiprocessing
 
 def load_yml_conf(yml_conf_path):
