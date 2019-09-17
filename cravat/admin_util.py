@@ -11,7 +11,7 @@ from . import util
 import requests
 import traceback
 import re
-from distutils.version import StrictVersion, LooseVersion
+from distutils.version import LooseVersion
 import pkg_resources
 from collections import defaultdict
 from types import SimpleNamespace
@@ -453,8 +453,8 @@ def get_remote_module_readme(module_name, version=None):
     return mic.get_remote_readme(module_name, version=version)
 
 def compare_version (v1, v2):
-    sv1 = StrictVersion(v1)
-    sv2 = StrictVersion(v2)
+    sv1 = LooseVersion(v1)
+    sv2 = LooseVersion(v2)
     if sv1 == sv2:
         return 0
     elif sv1 > sv2:
