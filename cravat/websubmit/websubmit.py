@@ -799,19 +799,35 @@ def fetch_job_queue (job_queue, run_jobs_info):
     main_loop.run_until_complete(job_worker_main())
 
 async def redirect_to_index (request):
-    return web.HTTPFound('/submit/index.html')
+    global servermode
+    if servermode:
+        url = '/server/nocache/login.html'
+    else:
+        url = '/submit/index.html'
+    return web.HTTPFound(url)
 
 async def get_live_annotation (request):
     from cravat.constants import mapping_parser_name
     from cravat.inout import AllMappingsParser
     from cravat.constants import all_mappings_col_name
     queries = request.rel_url.query
-    input_data = json.loads(queries['input_data'].replace("'", '"'))
+    chrom = queries['chrom']
+    pos = queries['pos']
+    ref_base = queries['ref_base']
+    alt_base = queries['alt_base']
+    if 'uid' not in queries:
+        uid = 'noid'
+    else:
+        uid = queries['uid']
+    #input_data = json.loads(queries['input_data'].replace("'", '"'))
+    input_data = {'uid': uid, 'chrom': chrom, 'pos': int(pos), 'ref_base': ref_base, 'alt_base': alt_base}
     if 'annotators' in queries:
-        annotators = json.loads(queries['annotators'].replace("'", '"'))
+        #annotators = json.loads(queries['annotators'].replace("'", '"'))
+        annotators = queries['annotators'].split(',')
     else:
         annotators = None
     global live_modules
+    global mapper
     if live_modules is None:
         print('populating live annotators')
         live_modules = {}
@@ -829,8 +845,6 @@ async def get_live_annotation (request):
             live_modules[module.name] = annotator
         print('done populating live annotators')
     response = {}
-    if 'uid' not in input_data:
-        input_data['uid'] = 0
     crx_data, alt_transcripts = mapper.map(input_data)
     crx_data[mapping_parser_name] = AllMappingsParser(crx_data[all_mappings_col_name])
     for k, v in live_modules.items():
@@ -849,6 +863,7 @@ async def get_live_annotation (request):
 filerouter = FileRouter()
 VIEW_PROCESS = None
 live_modules = None
+mapper = None
 
 routes = []
 routes.append(['POST','/submit/submit',submit])
