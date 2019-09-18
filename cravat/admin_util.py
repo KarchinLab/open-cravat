@@ -11,12 +11,12 @@ from . import util
 import requests
 import traceback
 import re
-from distutils.version import StrictVersion, LooseVersion
+from distutils.version import LooseVersion
 import pkg_resources
 from collections import defaultdict
 from types import SimpleNamespace
 from . import exceptions
-from collections import MutableMapping
+from collections.abc import MutableMapping
 import multiprocessing
 
 def load_yml_conf(yml_conf_path):
@@ -276,8 +276,7 @@ class ModuleInfoCache(object):
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
-        if mic.remote == {}:
-            self.update_remote()
+        self.update_remote()
         # Resolve name and version
         if module_name not in self.remote:
             raise LookupError(module_name)
@@ -299,8 +298,7 @@ class ModuleInfoCache(object):
         return readme
     
     def get_remote_config(self, module_name, version=None):
-        if mic.remote == {}:
-            self.update_remote()
+        self.update_remote()
         if version == None:
             version = self.remote[module_name]['latest_version']
         # Check cache
@@ -350,8 +348,7 @@ def list_remote():
     """
     Returns a list of remotely available modules.
     """
-    if mic.remote == {}:
-        mic.update_remote()
+    mic.update_remote()
     return sorted(list(mic.remote.keys()))
 
 def get_local_module_infos(types=[], names=[]):
@@ -406,8 +403,7 @@ def module_exists_remote(module_name, version=None, include_private=False):
     """
     Returns true if a module (optionally versioned) exists in remote
     """
-    if mic.remote == {}:
-        mic.update_remote()
+    mic.update_remote()
     found = False
     if module_name in mic.remote:
         if version is None:
@@ -429,16 +425,14 @@ def get_remote_latest_version(module_name):
     """
     Returns latest remotely available version of a module.
     """
-    if mic.remote == {}:
-        mic.update_remote()
+    mic.update_remote()
     return mic.remote[module_name]['latest_version']
 
 def get_remote_module_info(module_name):
     """
     Returns a RemoteModuleInfo object for a module.
     """
-    if mic.remote == {}:
-        mic.update_remote()
+    mic.update_remote()
     if module_exists_remote(module_name, version=None):
         mdict = mic.remote[module_name]
         module = RemoteModuleInfo(module_name, **mdict)
@@ -453,8 +447,8 @@ def get_remote_module_readme(module_name, version=None):
     return mic.get_remote_readme(module_name, version=version)
 
 def compare_version (v1, v2):
-    sv1 = StrictVersion(v1)
-    sv2 = StrictVersion(v2)
+    sv1 = LooseVersion(v1)
+    sv2 = LooseVersion(v2)
     if sv1 == sv2:
         return 0
     elif sv1 > sv2:
@@ -696,8 +690,7 @@ def get_remote_data_version(module_name, version):
     Get the data version to install for a module.
     Return the input version if module_name or version is not found.
     """
-    if mic.remote == {}:
-        mic.update_remote()
+    mic.update_remote()
     try:
         manifest_entry = mic.remote[module_name]
     except KeyError:
@@ -782,8 +775,7 @@ def get_local_module_infos_of_type (t):
 
 def get_remote_module_infos_of_type (t):
     modules = {}
-    if mic.remote == {}:
-        mic.update_remote()
+    mic.update_remote()
     for module_name in mic.remote:
         if mic.remote[module_name]['type'] == t:
             modules[module_name] = mic.remote[module_name] 
@@ -973,26 +965,28 @@ def publish_module(module_name, user, password, overwrite=False, include_data=Tr
     post_url = '/'.join([publish_url, module_name, local_info.version])
     if overwrite:
         post_url += '?overwrite=1'
-    fields={
-            'manifest': (
-                         'manifest.json',
-                         json.dumps(manifest),
-                         'application/json'
-                        ),
-            'archive': (
-                        zf_name,
-                        open(zf_path,'rb'),
-                        'application/octet-stream'
-                       )
-            }
-    print('Uploading to store')
-    r = su.stream_multipart_post(post_url, fields, stage_handler=print_stage_handler, auth=(user,password))
+    with open(zf_path,'rb') as zf:
+        fields={
+                'manifest': (
+                            'manifest.json',
+                            json.dumps(manifest),
+                            'application/json'
+                            ),
+                'archive': (
+                            zf_name,
+                            zf,
+                            'application/octet-stream'
+                        )
+                }
+        print('Uploading to store')
+        r = su.stream_multipart_post(post_url, fields, stage_handler=print_stage_handler, auth=(user,password))
     if r.status_code != 200:
         print('Upload failed')
         print(r.status_code)
         print(r.text)
     if r.text:
         print(r.text)
+    os.remove(zf_path)
 
 def create_account(username, password):
     sys_conf = get_system_conf()
@@ -1167,8 +1161,7 @@ def get_download_counts ():
     return counts
 
 def get_install_deps (module_name, version=None, skip_installed=True):
-    if mic.remote == {}:
-        mic.update_remote()
+    mic.update_remote()
     # If input module version not provided, set to highest
     if version is None:
         version = get_remote_latest_version(module_name)
