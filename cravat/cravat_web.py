@@ -28,13 +28,24 @@ import requests
 import traceback
 import ssl
 import importlib
+import socket
 if importlib.util.find_spec('cravatserver') is not None:
     import cravatserver
     server_ready = True
 else:
     server_ready = False
 
+donotopenbrowser = None
+servermode = None
+
 parser = argparse.ArgumentParser()
+if os.path.basename(sys.argv[0]) == 'cravat-view':
+    parser.add_argument('dbpath',
+                        help='path to a CRAVAT result SQLite file')
+    parser.add_argument('-c',
+                        dest='confpath',
+                        default=None,
+                        help='path to a CRAVAT configuration file')
 parser.add_argument('--server',
                     dest='servermode',
                     action='store_true',
@@ -50,23 +61,12 @@ parser.add_argument('--nossl',
     action='store_true',
     default=False,
     help='Force not to accept https connection')
-'''
-parser.add_argument('--restart',
-    dest='restart',
-    action='store_true',
-    default=False,
-    help=argparse.SUPPRESS)
-'''
-
 args = parser.parse_args(sys.argv[1:])
 donotopenbrowser = args.donotopenbrowser
 servermode = args.servermode
 wu.servermode = args.servermode
 ws.servermode = args.servermode
-'''
-if args.restart:
-    donotopenbrowser = True
-'''
+
 if server_ready:
     cravatserver.servermode = servermode
 if servermode and server_ready == False:
@@ -90,19 +90,12 @@ else:
     protocol = 'http://'
 
 def result ():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('dbpath',
-                        help='path to a CRAVAT result SQLite file')
-    parser.add_argument('-c',
-                        dest='confpath',
-                        default=None,
-                        help='path to a CRAVAT configuration file')
-    parsed_args = parser.parse_args(sys.argv[1:])
-    dbpath = os.path.abspath(parsed_args.dbpath)
+    global args
+    dbpath = os.path.abspath(args.dbpath)
     if os.path.exists(dbpath) == False:
         sys.stderr.write(dbpath + ' does not exist.\n')
         exit(-1)
-    confpath = parsed_args.confpath
+    confpath = args.confpath
     runid = os.path.basename(dbpath).replace('.sqlite', '')
     sys.argv = sys.argv[1:]
     global donotopenbrowser
@@ -234,15 +227,10 @@ class WebServer (object):
         self.app.router.add_static('/store', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webstore'))
         self.app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
         self.app.router.add_static('/submit', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
-        self.app.router.add_get('/hello', hello)
         self.app.router.add_get('/heartbeat', heartbeat)
         self.app.router.add_get('/issystemready', is_system_ready)
         ws.start_worker()
-        wu.loop = self.loop
-        wu.start_worker(self.loop)
-
-async def hello(request):
-    return web.Response(text='OpenCRAVAT server is running here. '+str(dt.datetime.now()))
+        wu.start_worker()
 
 async def heartbeat(request):
     ws = web.WebSocketResponse(timeout=60*60*24*365)
@@ -255,15 +243,20 @@ async def is_system_ready (request):
     return web.json_response(dict(au.system_ready()))
 
 def main ():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(1)
     def wakeup ():
         loop.call_later(0.1, wakeup)
     serv = get_server()
     global protocol
-    hello_url = protocol + '{host}:{port}/hello'.format(host=serv.get('host'),port=serv.get('port'))
+    host = serv.get('host')
+    port = serv.get('port')
     try:
-        r = requests.get(hello_url, timeout=0.01)
-        print('OpenCRAVAT is already running at port {}:{}.'.format(serv.get('host'), serv.get('port')))
-        return
+        sr = s.connect_ex((host, port))
+        s.close()
+        if sr == 0:
+            print('OpenCRAVAT is already running at {}{}:{}.'.format(protocol, serv.get('host'), serv.get('port')))
+            return
     except requests.exceptions.ConnectionError:
         pass
     print('OpenCRAVAT is served at {}:{}'.format(serv.get('host'), serv.get('port')))
