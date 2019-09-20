@@ -686,7 +686,7 @@ else:
 job_worker = None
 job_queue = None
 run_jobs_info = None
-def start_worker (main_loop):
+def start_worker ():
     global job_worker
     global job_queue
     global run_jobs_info
