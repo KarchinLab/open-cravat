@@ -56,6 +56,8 @@ if not jobs_dir_key in conf:
     wf = open(system_conf_path, 'w')
     yaml.dump(conf, wf, default_flow_style=False)
     wf.close()
+# Live conf
+live_conf_fname = 'live.yml'
 
 base_modules_key = 'base_modules'
 main_conf_fname = 'cravat.yml'

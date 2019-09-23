@@ -686,11 +686,10 @@ else:
 job_worker = None
 job_queue = None
 run_jobs_info = None
-def start_worker (main_loop):
+def start_worker ():
     global job_worker
     global job_queue
     global run_jobs_info
-    global loop
     job_queue = Queue()
     run_jobs_info = Manager().dict()
     if job_worker == None:
@@ -806,46 +805,51 @@ async def redirect_to_index (request):
         url = '/submit/index.html'
     return web.HTTPFound(url)
 
-async def get_live_annotation (request):
-    from cravat.constants import mapping_parser_name
-    from cravat.inout import AllMappingsParser
-    from cravat.constants import all_mappings_col_name
-    queries = request.rel_url.query
-    chrom = queries['chrom']
-    pos = queries['pos']
-    ref_base = queries['ref_base']
-    alt_base = queries['alt_base']
-    if 'uid' not in queries:
-        uid = 'noid'
-    else:
-        uid = queries['uid']
-    #input_data = json.loads(queries['input_data'].replace("'", '"'))
-    input_data = {'uid': uid, 'chrom': chrom, 'pos': int(pos), 'ref_base': ref_base, 'alt_base': alt_base}
-    if 'annotators' in queries:
-        #annotators = json.loads(queries['annotators'].replace("'", '"'))
-        annotators = queries['annotators'].split(',')
-    else:
-        annotators = None
+async def load_live_modules ():
     global live_modules
-    global mapper
-    if live_modules is None:
-        print('populating live annotators')
-        live_modules = {}
-        cravat_conf = au.get_cravat_conf()
-        if 'genemapper' in cravat_conf:
-            default_mapper = cravat_conf['genemapper']
-        else:
-            default_mapper = 'hg38'
-        mapper = get_live_mapper(default_mapper)
-        modules = au.get_local_by_type(['annotator'])
-        for module in modules:
-            annotator = get_live_annotator(module.name)
-            if annotator is None:
-                continue
-            live_modules[module.name] = annotator
-        print('done populating live annotators')
+    global live_mapper
+    global include_live_modules
+    global exclude_live_modules
+    print('populating live annotators')
+    live_conf = au.get_live_annotation_conf()
+    print('@ live_conf=', live_conf)
+    if 'include' in live_conf:
+        include_live_modules = live_conf['include']
+    else:
+        include_live_modules = []
+    if 'exclude' in live_conf:
+        exclude_live_modules = live_conf['exclude']
+    else:
+        exclude_live_modules = []
+    live_modules = {}
+    cravat_conf = au.get_cravat_conf()
+    if 'genemapper' in cravat_conf:
+        default_mapper = cravat_conf['genemapper']
+    else:
+        default_mapper = 'hg38'
+    live_mapper = await get_live_mapper(default_mapper)
+    modules = au.get_local_by_type(['annotator'])
+    for module in modules:
+        if module.name is exclude_live_modules:
+            print('@ passing', module.name)
+            continue
+        if len(include_live_modules) > 0 and module.name not in include_live_modules:
+            print('@ not included', module.name)
+            continue
+        annotator = await get_live_annotator(module.name)
+        if annotator is None:
+            continue
+        live_modules[module.name] = annotator
+    print('done populating live annotators')
+
+async def live_annotate (input_data, annotators):
+    from cravat.constants import mapping_parser_name
+    from cravat.constants import all_mappings_col_name
+    from cravat.inout import AllMappingsParser
+    global live_modules
+    global live_mapper
     response = {}
-    crx_data, alt_transcripts = mapper.map(input_data)
+    crx_data, alt_transcripts = live_mapper.map(input_data)
     crx_data[mapping_parser_name] = AllMappingsParser(crx_data[all_mappings_col_name])
     for k, v in live_modules.items():
         if annotators is not None and k not in annotators:
@@ -858,12 +862,39 @@ async def get_live_annotation (request):
             response[k] = None
     del crx_data[mapping_parser_name]
     response['crx'] = crx_data
+    return response
+
+async def get_live_annotation (request):
+    queries = request.rel_url.query
+    chrom = queries['chrom']
+    pos = queries['pos']
+    ref_base = queries['ref_base']
+    alt_base = queries['alt_base']
+    if 'uid' not in queries:
+        uid = 'noid'
+    else:
+        uid = queries['uid']
+    input_data = {'uid': uid, 'chrom': chrom, 'pos': int(pos), 'ref_base': ref_base, 'alt_base': alt_base}
+    if 'annotators' in queries:
+        annotators = queries['annotators'].split(',')
+    else:
+        annotators = None
+    global live_modules
+    global mapper
+    print('@ annotators=', annotators)
+    if live_modules is None:
+        await load_live_modules()
+        response = await live_annotate(input_data, annotators)
+    else:
+        response = await live_annotate(input_data, annotators)
     return web.json_response(response)
 
 filerouter = FileRouter()
 VIEW_PROCESS = None
 live_modules = None
-mapper = None
+include_live_modules = None
+exclude_live_modules = None
+live_mapper = None
 
 routes = []
 routes.append(['POST','/submit/submit',submit])

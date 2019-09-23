@@ -1324,6 +1324,19 @@ def get_max_num_concurrent_annotators_per_job ():
         write_system_conf_file(sys_conf)
     return num_workers
 
+def get_live_annotation_conf ():
+    sys_conf = get_system_conf()
+    conf_dir = sys_conf[constants.conf_dir_key]
+    live_conf_path = os.path.join(conf_dir, constants.live_conf_fname)
+    if os.path.exists(live_conf_path) == False:
+        live_conf = {}
+        wf = open(live_conf_path, 'w')
+        wf.write(yaml.dump(live_conf, default_flow_style=False))
+        wf.close()
+    else:
+        live_conf = load_yml_conf(live_conf_path)
+    return live_conf
+    
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info
