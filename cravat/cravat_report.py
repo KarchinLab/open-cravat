@@ -84,15 +84,87 @@ class CravatReport:
                     row[colno] = value
         return row
 
+    #def process_datarow (self, datarow, should_skip_some_cols):
+    def process_datarow (self, args):
+        datarow = args[0]
+        should_skip_some_cols = args[1]
+        level = args[2]
+        gene_summary_datas = args[3]
+        if datarow is None:
+            return None
+        datarow = list(datarow)
+        if should_skip_some_cols:
+            datarow = [datarow[colno] for colno in range(num_total_cols) if colno not in colnos_to_skip]
+        if level == 'variant':
+            # adds gene level data to variant level.
+            if self.nogenelevelonvariantlevel == False and hugo_present:
+                hugo = datarow[self.colnos['variant']['base__hugo']]
+                loop = asyncio.get_event_loop()
+                #generow = await self.cf.get_gene_row(hugo)
+                future = asyncio.ensure_future(self.cf.get_gene_row(hugo), loop)
+                generow = future.result()
+                if generow is None:
+                    datarow.extend([None for i in range(len(self.var_added_cols))])
+                else:
+                    datarow.extend([generow[self.colnos['gene'][colname]] for colname in self.var_added_cols])
+        elif level == 'gene':
+            # adds summary data to gene level.
+            hugo = datarow[0]
+            for mi, _, _ in self.summarizing_modules:
+                module_name = mi.name
+                [gene_summary_data, cols] = gene_summary_datas[module_name]
+                if hugo in gene_summary_data and gene_summary_data[hugo] is not None and len(gene_summary_data[hugo]) == len(cols):
+                    datarow.extend([gene_summary_data[hugo][col['name']] for col in cols])
+                else:
+                    datarow.extend([None for v in cols])
+        # re-orders data row.
+        new_datarow = []
+        colnos = self.colnos[level]
+        for colname in [col['col_name'] for col in self.colinfo[level]['columns']]:
+            #if colname not in colnos:
+            if colname in self.colname_conversion[level]:
+                newcolname = self.colname_conversion[level][colname]
+                #newcolname = self.mapper_name + '__' + colname.split('__')[1]
+                if newcolname in colnos:
+                    colno = colnos[newcolname]
+                else:
+                    self.logger.info('column name does not exist in data: {}'.format(colname))
+                    continue
+            else:
+                colno = colnos[colname]
+            value = datarow[colno]
+            new_datarow.append(value)
+        # does report substitution.
+        new_datarow = self.substitute_val(level, new_datarow)
+        if hasattr(self, 'keep_json_all_mapping') == False and level == 'variant':
+            colno = self.colnos['variant']['base__all_mappings']
+            all_map = json.loads(new_datarow[colno])
+            newvals = []
+            for hugo in all_map:
+                for maprow in all_map[hugo]:
+                    [protid, protchange, so, transcript, rnachange] = maprow
+                    if protid == None:
+                        protid = '(na)'
+                    if protchange == None:
+                        protchange = '(na)'
+                    if rnachange == None:
+                        rnachange = '(na)'
+                    newval = transcript + ':' + hugo + ':' + protid + ':' + so + ':' + protchange + ':' + rnachange
+                    newvals.append(newval)
+            newvals.sort()
+            newcell = '; '.join(newvals)
+            new_datarow[colno] = newcell
+        return new_datarow
+
     async def run_level (self, level):
         ret = await self.table_exists(level)
         if ret == False:
             return
+        gene_summary_datas = {}
         if level == 'variant':
             await self.cf.make_filtered_uid_table()
         elif level == 'gene':
             await self.cf.make_filtered_hugo_table()
-            gene_summary_datas = {}
             for mi, o, cols in self.summarizing_modules:
                 if hasattr(o, 'build_gene_collection'):
                     msg = 'Obsolete module [{}] for gene level summarization. Update the module to get correct gene level summarization.'.format(mi.name)
@@ -133,7 +205,17 @@ class CravatReport:
                 if datacols[colno] in constants.legacy_gene_level_cols_to_skip:
                     colnos_to_skip.append(colno)
         should_skip_some_cols = len(colnos_to_skip) > 0
+        num_executors = 8
+        from concurrent.futures import ThreadPoolExecutor
+        executor = ThreadPoolExecutor(max_workers=num_executors)
         for datarow in datarows:
+        #for rowno in range(0, len(datarows), num_executors):
+            #executor.submit(self.process_datarow, datarow, should_skip_some_cols)
+            #datarow_pool = [[datarow, should_skip_some_cols, level, gene_summary_datas] for datarow in datarows[rowno:rowno + num_executors]]
+            #its = executor.map(self.process_datarow, datarow_pool)
+            #for new_datarow in its:
+            #    self.write_table_row(new_datarow)
+            #continue
             if datarow is None:
                 continue
             datarow = list(datarow)

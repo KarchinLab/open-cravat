@@ -41,6 +41,7 @@ class FileRouter(object):
         }
         self.db_extension = '.sqlite'
         self.log_extension = '.log'
+        self.status_extension = '.status.json'
 
     async def get_jobs_dirs (self, request):
         root_jobs_dir = au.get_jobs_dir()
@@ -124,6 +125,11 @@ class FileRouter(object):
     async def job_db(self, request, job_id):
         run_path = await self.job_run_path(request, job_id)
         output_fname = run_path + self.db_extension
+        return output_fname
+
+    async def job_status_path (self, request, job_id):
+        run_path = await self.job_run_path(request, job_id)
+        output_fname = run_path + self.status_extension
         return output_fname
 
     async def job_report(self, request, job_id, report_type):
@@ -217,7 +223,7 @@ async def submit (request):
     job_dir = os.path.join(jobs_dir, job_id)
     os.makedirs(job_dir, exist_ok=True)
     reader = await request.multipart()
-    job_options = None
+    job_options = {}
     input_files = []
     while True:
         part = await reader.next()
@@ -508,6 +514,15 @@ async def view_job(request):
         return web.Response()
     else:
         return web.Response(status=404)
+
+async def get_job_status (request):
+    global filerouter
+    job_id = request.match_info['job_id']
+    status_path = await filerouter.job_status_path(request, job_id)
+    f = open(status_path)
+    status = yaml.load(f)
+    f.close()
+    return web.json_response(status)
 
 async def download_db(request):
     global filerouter
@@ -812,7 +827,6 @@ async def load_live_modules ():
     global exclude_live_modules
     print('populating live annotators')
     live_conf = au.get_live_annotation_conf()
-    print('@ live_conf=', live_conf)
     if 'include' in live_conf:
         include_live_modules = live_conf['include']
     else:
@@ -831,10 +845,8 @@ async def load_live_modules ():
     modules = au.get_local_by_type(['annotator'])
     for module in modules:
         if module.name is exclude_live_modules:
-            print('@ passing', module.name)
             continue
         if len(include_live_modules) > 0 and module.name not in include_live_modules:
-            print('@ not included', module.name)
             continue
         annotator = await get_live_annotator(module.name)
         if annotator is None:
@@ -881,7 +893,6 @@ async def get_live_annotation (request):
         annotators = None
     global live_modules
     global mapper
-    print('@ annotators=', annotators)
     if live_modules is None:
         await load_live_modules()
         response = await live_annotate(input_data, annotators)
@@ -919,6 +930,7 @@ routes.append(['GET', '/submit/lastassembly', get_last_assembly])
 routes.append(['GET', '/submit/getjobs', get_jobs])
 routes.append(['GET', '/submit/annotate', get_live_annotation])
 routes.append(['GET', '/', redirect_to_index])
+routes.append(['GET', '/submit/jobs/{job_id}/status', get_job_status])
 
 if __name__ == '__main__':
     app = web.Application()

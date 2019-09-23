@@ -29,6 +29,7 @@ import traceback
 import ssl
 import importlib
 import socket
+import concurrent
 if importlib.util.find_spec('cravatserver') is not None:
     import cravatserver
     server_ready = True
@@ -175,8 +176,16 @@ class TCPSitePatched (web_runner.BaseSite):
 
 @web.middleware
 async def middleware (request, handler):
-    response = await handler(request)
+    global loop
     url_parts = request.url.parts
+    '''
+    if url_parts[1] == 'result' and url_parts[2] == 'method':
+        future = asyncio.run_coroutine_threadsafe(handler(request), loop)
+        response = future.result()
+    else:
+        response = await handler(request)
+    '''
+    response = await handler(request)
     nocache = False
     if url_parts[0] == '/':
         if len(url_parts) >= 3 and url_parts[2] == 'nocache':
@@ -242,10 +251,12 @@ async def heartbeat(request):
 async def is_system_ready (request):
     return web.json_response(dict(au.system_ready()))
 
+loop = None
 def main ():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(1)
     def wakeup ():
+        global loop
         loop.call_later(0.1, wakeup)
     serv = get_server()
     global protocol
@@ -261,6 +272,7 @@ def main ():
         pass
     print('OpenCRAVAT is served at {}:{}'.format(serv.get('host'), serv.get('port')))
     print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')
+    global loop
     loop = asyncio.get_event_loop()
     loop.call_later(0.1, wakeup)
     global ssl_enabled

@@ -19,8 +19,9 @@ from .cravat_filter import CravatFilter
 #from .webresult.webresult import *
 #from .webstore.webstore import *
 from .cravat_class import Cravat
+from .util import get_ucsc_bins
 
-def get_live_annotator (module_name):
+async def get_live_annotator (module_name):
     import os
     config_loader = ConfigLoader()
     script_path = admin_util.get_annotator_script_path(module_name)
@@ -38,7 +39,7 @@ def get_live_annotator (module_name):
         return None
     return module
 
-def get_live_mapper (module_name):
+async def get_live_mapper (module_name):
     import os
     config_loader = ConfigLoader()
     script_path = admin_util.get_mapper_script_path(module_name)
@@ -52,7 +53,5 @@ def get_live_mapper (module_name):
         module.setup()
     except Exception as e:
         print('    module loading error: {}'.format(module_name))
-        import traceback
-        traceback.print_exc()
         return None
     return module

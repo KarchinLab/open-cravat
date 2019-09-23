@@ -15,6 +15,7 @@ from cravat import CravatFilter
 from cravat.constants import base_smartfilters
 from aiohttp import web
 import time
+from concurrent.futures import ProcessPoolExecutor
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -310,7 +311,10 @@ async def get_count (request):
 async def get_result (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']
+    dbname = os.path.basename(dbpath)
     tab = queries['tab']
+    print('(Getting result of [{}]:[{}]...)'.format(dbname, tab))
+    start_time = time.time()
     if 'filter' in queries:
         filterstring = queries['filter']
     else:
@@ -332,14 +336,12 @@ async def get_result (request):
     args.append('--nogenelevelonvariantlevel')
     reporter = m.Reporter(args, None)
     await reporter.prep()
-    dbbasename = os.path.basename(dbpath)
-    print('getting result [{}] from {} for viewer...'.format(tab, dbbasename))
-    t = time.time()
+    #print('  getting result [{}] from {} for viewer...'.format(tab, dbname))
+    #t = time.time()
     data = await reporter.run(tab=tab)
     data['modules_info'] = await get_modules_info(request)
-    t = round(time.time() - t, 3)
-    print('result [{}] obtained from {} in {}s. packing...'.format(tab, dbbasename, t))
-    t = time.time()
+    #t = round(time.time() - start_time, 3)
+    #print('  result [{}] obtained from {} in {}s. packing...'.format(tab, dbname, t))
     content = {}
     content['stat'] = {'rowsreturned': True, 
                    'wherestr':'', 
@@ -352,8 +354,8 @@ async def get_result (request):
     content["status"] = "normal"
     content['modules_info'] = data['modules_info']
     content['warning_msgs'] = data['warning_msgs']
-    t = round(time.time() - t, 3)
-    print('done in {}s. sending result of {}...'.format(t, dbbasename))
+    t = round(time.time() - start_time, 3)
+    print('Done getting result of [{}][{}] in {}s'.format(dbname, tab, t))
     return web.json_response(content)
 
 async def get_result_levels (request):
@@ -599,3 +601,6 @@ routes.append(['GET', '/result/widgetfile/{module_dir}/{filename}', serve_widget
 routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])
 routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
 routes.append(['GET', '/result/service/smartfilters', load_smartfilters])
+
+executor = ProcessPoolExecutor()
+
