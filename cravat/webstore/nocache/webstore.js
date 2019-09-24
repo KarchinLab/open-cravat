@@ -1685,6 +1685,14 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     infodiv.style.maxWidth = (wiw * 0.8 * 0.3) + 'px';
     var d = getEl('div');
     span = getEl('span');
+    if (mInfo.commercial_warning) {
+        span.textContent = mInfo.commercial_warning;
+        span.style.color = 'red';
+    }
+    addEl(d,span);
+    addEl(infodiv,d);
+    var d = getEl('div');
+    span = getEl('span');
     span.textContent = mInfo.description;
     addEl(d, span);
     addEl(infodiv, d);
