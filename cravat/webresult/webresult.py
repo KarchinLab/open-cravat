@@ -564,7 +564,7 @@ async def get_modules_info (request):
             d[k] = v
         content = d
     return content
-    
+
 async def load_smartfilters (request):
     queries = request.rel_url.query
     dbpath = queries['dbpath']

@@ -826,14 +826,19 @@ async def load_live_modules ():
     global include_live_modules
     global exclude_live_modules
     print('populating live annotators')
-    live_conf = au.get_live_annotation_conf()
-    if 'include' in live_conf:
-        include_live_modules = live_conf['include']
+    conf = au.get_system_conf()
+    if 'live' in conf:
+        live_conf = conf['live']
+        if 'include' in live_conf:
+            include_live_modules = live_conf['include']
+        else:
+            include_live_modules = []
+        if 'exclude' in live_conf:
+            exclude_live_modules = live_conf['exclude']
+        else:
+            exclude_live_modules = []
     else:
         include_live_modules = []
-    if 'exclude' in live_conf:
-        exclude_live_modules = live_conf['exclude']
-    else:
         exclude_live_modules = []
     live_modules = {}
     cravat_conf = au.get_cravat_conf()
@@ -844,7 +849,7 @@ async def load_live_modules ():
     live_mapper = await get_live_mapper(default_mapper)
     modules = au.get_local_by_type(['annotator'])
     for module in modules:
-        if module.name is exclude_live_modules:
+        if module.name in exclude_live_modules:
             continue
         if len(include_live_modules) > 0 and module.name not in include_live_modules:
             continue
