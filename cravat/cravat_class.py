@@ -722,7 +722,9 @@ class Cravat (object):
         for module_name in module_names:
             try:
                 module = au.get_local_module_info(module_name)
-                self.announce_module(module)
+                if module is None:
+                    print('        {} does not exist.'.format(module_name))
+                    continue
                 print('')
                 cmd = [module.script_path, 
                        '-s', os.path.join(self.output_dir, self.run_name),
