@@ -721,8 +721,6 @@ input:checked + .slider:before {
 
 #submit-form {
     overflow-y: scroll;
-    /*scrollbar-width: none;
-    -ms-overflow-style: none;*/
 }
 
 .strikenout {
@@ -732,5 +730,68 @@ input:checked + .slider:before {
 .no-group-member-msg-div {
     position: relative;
     top: 50px;
+}
+
+#spinner-div {
+    position: fixed;
+    top: 63px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 63px);
+    z-index: 9;
+    text-align: center;
+    background-color: rgba(100, 100, 100, 0.77);
+}
+
+/*
+#spinner-div img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+}
+*/
+
+#spinner-div-progress-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    width: 300px;
+    height: 30px;
+}
+
+#spinner-div-progress-bar {
+    background-color: white;
+    box-shadow: 2px 2px 2px 0px black;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 0%;
+    height: 100%;
+}
+
+#spinner-div-progress-num {
+    position: absolute;
+    top: calc(50% + 40px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    width: 100px;
+    height: 30px;
+    color: white;
+}
+
+#spinner-div-progress-title {
+    position: absolute;
+    top: calc(50% - 40px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    width: 200px;
+    height: 30px;
+    color: white;
+}
+
+#submit-job-button:disabled {
+    background-color: gray;
 }
 

@@ -19,13 +19,14 @@ var jobsPerPageInList = 15;
 var jobsListCurStart = 0;
 var jobsListCurEnd = jobsPerPageInList;
 var systemReadyObj = {};
+var formData = null;
 
 function submit () {
     if (servermode && logged == false) {
         alert('Log in before submitting a job.');
         return;
     }
-    let fd = new FormData();
+    formData = new FormData();
     var textInputElem = $('#input-text');
     var textVal = textInputElem.val();
     let inputFiles = [];
@@ -45,12 +46,9 @@ function submit () {
         alert('Choose a input variant files, enter variants, or click an input example button.');
         return;
     }
-    document.getElementById('submit-job-button').disabled = true;
-    setTimeout(function () {
-        document.getElementById('submit-job-button').disabled = false;
-    }, 1000);
+    document.querySelector('#submit-job-button').disabled = true;
     for (var i=0; i<inputFiles.length; i++) {
-        fd.append('file_'+i,inputFiles[i]);
+        formData.append('file_'+i,inputFiles[i]);
     }
     var submitOpts = {
         annotators: [],
@@ -75,7 +73,7 @@ function submit () {
     submitOpts.forcedinputformat = $('#submit-input-format-select').val();
     var note = document.getElementById('jobnoteinput').value;
     submitOpts.note = note;
-    fd.append('options',JSON.stringify(submitOpts));
+    formData.append('options',JSON.stringify(submitOpts));
     // reads number of input lines
     var lineCount = 0;
     var numFileRead = 0;
@@ -143,36 +141,43 @@ function submit () {
         reader.readAsText(inputFiles[i]);
     }
 
-    function commitSubmit (proceed) {
-        if (proceed == false) {
-            return;
-        }
-        $.ajax({
-            url:'/submit/submit',
-            data: fd,
-            type: 'POST',
-            processData: false,
-            contentType: false,
-            success: function (data) {
-                if (data['status']['status'] == 'Submitted') {
-                    submittedJobs.push(data);
-                    addJob(data, true);
-                    //sortJobs();
-                    buildJobsTable();
-                }
-                if (data.expected_runtime > 0) {
-                }
-                jobRunning[data['id']] = true;
+    function commitSubmit () {
+        showSpinner();
+        var req = new XMLHttpRequest();
+        req.open('POST', '/submit/submit');
+        //req.setRequestHeader('Content-Type', 'multipart/form-data; boundary=blob');
+        req.upload.onprogress = function (evt) {
+            var uploadPerc = evt.loaded / evt.total * 100;
+            document.querySelector('#spinner-div-progress-bar').style.width = uploadPerc + '%';            
+            document.querySelector('#spinner-div-progress-num').textContent = uploadPerc.toFixed(0) + '%';            
+        };
+        req.onload = function (evt) {
+            document.querySelector('#submit-job-button').disabled = false;
+            hideSpinner();
+            var response = JSON.parse(evt.currentTarget.response);
+            if (response['status']['status'] == 'Submitted') {
+                submittedJobs.push(response);
+                addJob(response, true);
+                //sortJobs();
+                buildJobsTable();
             }
-        })
-        $('#submit-job-button').attr('disabled','disabled');
-        setTimeout(function(){
-                $('#submit-job-button').removeAttr('disabled');
-            },
-            1500
-        );
+            if (response.expected_runtime > 0) {
+            }
+            jobRunning[response['id']] = true;
+        };
+        req.send(formData);
     }
 };
+
+function showSpinner () {
+    document.querySelector('#spinner-div').classList.add('show');
+    document.querySelector('#spinner-div').classList.remove('hide');
+}
+
+function hideSpinner () {
+    document.querySelector('#spinner-div').classList.remove('show');
+    document.querySelector('#spinner-div').classList.add('hide');
+}
 
 function sortJobs () {
     for (var i = 0; i < GLOBALS.jobs.length - 1; i++) {
@@ -2026,6 +2031,7 @@ function onSubmitClickTagBoxCheck (evt) {
 }
 
 function websubmit_run () {
+    hideSpinner();
     var urlParams = new URLSearchParams(window.location.search);
     username = urlParams.get('username');
     getServermode();
