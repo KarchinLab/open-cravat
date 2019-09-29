@@ -173,14 +173,17 @@ class Cravat (object):
         manager.start()
         self.status_writer = manager.StatusWriter(self.status_json_path)
 
-    def check_valid_reporters (self):
-        absent_reporter_modules = []
+    def check_valid_modules (self):
+        absent_modules = []
+        module_names = self.args.annotators
         for report in self.reports:
             module_name = report + 'reporter'
+            module_names.append(module_name)
+        for module_name in module_names:
             if au.module_exists_local(module_name) == False:
-                absent_reporter_modules.append(module_name)
-        if len(absent_reporter_modules) > 0:
-            msg = 'Invalid reporter module(s): {}'.format(','.join(absent_reporter_modules))
+                absent_modules.append(module_name)
+        if len(absent_modules) > 0:
+            msg = 'Invalid module(s): {}'.format(','.join(absent_modules))
             self.logger.info(msg)
             print(msg)
             raise InvalidReporter
@@ -263,7 +266,7 @@ class Cravat (object):
     async def main (self):
         no_problem_in_run = True
         try:
-            self.check_valid_reporters()
+            self.check_valid_modules()
             self.update_status('Started cravat')
             print('Input file(s):', ', '.join(self.inputs))
             self.set_and_check_input_files()
@@ -442,8 +445,7 @@ class Cravat (object):
         if self.annotator_names == None:
             self.annotators = au.get_local_module_infos_of_type('annotator')
         else:
-            self.annotators = \
-                au.get_local_module_infos_by_names(self.annotator_names)
+            self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
         self.excludes = self.args.excludes
         if self.excludes == ['*']:
             self.annotators = {}
