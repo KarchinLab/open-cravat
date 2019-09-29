@@ -176,6 +176,8 @@ class Cravat (object):
     def check_valid_modules (self):
         absent_modules = []
         module_names = self.args.annotators
+        if module_names is None:
+            module_names = []
         for report in self.reports:
             module_name = report + 'reporter'
             module_names.append(module_name)
