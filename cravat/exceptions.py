@@ -23,3 +23,6 @@ class ExpectedException (Exception):
 
 class KillInstallException (Exception):
     pass
+
+class InvalidReporter (Exception):
+    pass

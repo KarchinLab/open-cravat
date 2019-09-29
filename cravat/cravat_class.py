@@ -173,6 +173,18 @@ class Cravat (object):
         manager.start()
         self.status_writer = manager.StatusWriter(self.status_json_path)
 
+    def check_valid_reporters (self):
+        absent_reporter_modules = []
+        for report in self.reports:
+            module_name = report + 'reporter'
+            if au.module_exists_local(module_name) == False:
+                absent_reporter_modules.append(module_name)
+        if len(absent_reporter_modules) > 0:
+            msg = 'Invalid reporter module(s): {}'.format(','.join(absent_reporter_modules))
+            self.logger.info(msg)
+            print(msg)
+            raise InvalidReporter
+
     def write_initial_status_json (self):
         status_fname = '{}.status.json'.format(self.run_name)
         self.status_json_path = os.path.join(self.output_dir, status_fname)
@@ -251,6 +263,7 @@ class Cravat (object):
     async def main (self):
         no_problem_in_run = True
         try:
+            self.check_valid_reporters()
             self.update_status('Started cravat')
             print('Input file(s):', ', '.join(self.inputs))
             self.set_and_check_input_files()
@@ -390,7 +403,7 @@ class Cravat (object):
     def handle_exception (self, e):
         exc_str = traceback.format_exc()
         exc_class = e.__class__
-        if exc_class == InvalidData:
+        if exc_class in [InvalidData, InvalidReporter]:
             pass
         elif exc_class == ExpectedException:
             self.logger.exception('An expected exception occurred.')
