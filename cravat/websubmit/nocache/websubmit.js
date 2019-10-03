@@ -216,50 +216,33 @@ function addJob (job, prepend) {
     }
 }
 
-function createJobExcelReport (evt) {
-    var button = evt.target;
-    var jobid = button.getAttribute('jobId');
-    if (websubmitReportBeingGenerated[jobid] == undefined) {
-        websubmitReportBeingGenerated[jobid] = {};
+function createJobReport (evt) {
+    var btn = evt.target;
+    var jobId = btn.getAttribute('jobid');
+    var reportType = btn.getAttribute('report-type');
+    if (websubmitReportBeingGenerated[jobId] == undefined) {
+        websubmitReportBeingGenerated[jobId] = {};
     }
-    websubmitReportBeingGenerated[jobid]['excel'] = true;
+    websubmitReportBeingGenerated[jobId][reportType] = true;
     buildJobsTable();
-    generateReport(jobid, 'excel', function () {
-        websubmitReportBeingGenerated[jobid]['excel'] = false;
+    generateReport(jobId, reportType, function () {
+        websubmitReportBeingGenerated[jobId][reportType] = false;
         populateJobs().then(function () {
             buildJobsTable();
         });
     });
 }
 
-function createJobTextReport (evt) {
-    var jobid = evt.target.getAttribute('jobId');
-    if (websubmitReportBeingGenerated[jobid] == undefined) {
-        websubmitReportBeingGenerated[jobid] = {};
-    }
-    websubmitReportBeingGenerated[jobid]['text'] = true;
-    buildJobsTable();
-    generateReport(jobid, 'text', function () {
-        websubmitReportBeingGenerated[jobid]['text'] = false;
-        populateJobs().then(function () {
-            buildJobsTable();
-        });
-    });
-}
-
-function createJobVcfReport (evt) {
-    var jobid = evt.target.getAttribute('jobId');
-    if (websubmitReportBeingGenerated[jobid] == undefined) {
-        websubmitReportBeingGenerated[jobid] = {};
-    }
-    websubmitReportBeingGenerated[jobid]['vcf'] = true;
-    buildJobsTable();
-    generateReport(jobid, 'vcf', function () {
-        websubmitReportBeingGenerated[jobid]['vcf'] = false;
-        populateJobs().then(function () {
-            buildJobsTable();
-        });
-    });
+function generateReport (jobId, reportType, callback) {
+    $.ajax({
+        url:'/submit/jobs/'+jobId+'/reports/'+reportType,
+        type: 'POST',
+        processData: false,
+        contentType: 'application/json',
+        success: function (data) {
+            callback();
+        }
+    })
 }
 
 function getAnnotatorsForJob (jobid) {
@@ -365,124 +348,36 @@ function populateJobTr (job) {
     addEl(jobTr, viewTd);
     var dbTd = getEl('td');
     dbTd.style.textAlign = 'center';
-    // Excel
-    var excelButton = getEl('button');
-    excelButton.classList.add('butn');
-    addEl(excelButton, getTn('Excel'));
-    excelButton.setAttribute('jobId', job.id);
-    if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['excel'] == true) {
-        excelButton.style.backgroundColor = '#cccccc';
-        excelButton.setAttribute('disabled', true);
-        excelButton.textContent = 'Generating...';
-    } else {
-        if (job.reports.includes('excel') == false) {
-            excelButton.classList.add('inactive-download-button');
-            excelButton.addEventListener('click', createJobExcelReport);
-            excelButton.title = 'Click to create.';
+    // Reports
+    for (var i = 0; i < GLOBALS.reports.valid.length; i++) {
+        var reportType = GLOBALS.reports.valid[i];
+        var btn = getEl('button');
+        btn.classList.add('butn');
+        btn.setAttribute('jobid', job.id);
+        btn.setAttribute('report-type', reportType);
+        addEl(btn, getTn(reportType.toUpperCase()));
+        if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id][reportType] == true) {
+            btn.style.backgroundColor = '#cccccc';
+            btn.setAttribute('disabled', true);
+            btn.textContent = 'Generating...';
         } else {
-            excelButton.classList.add('active-download-button');
-            excelButton.addEventListener('click', jobExcelDownloadButtonHandler);
-            excelButton.title = 'Click to download.';
-        }
-    }
-    if (status == 'Finished') {
-        addEl(dbTd, excelButton);
-    }
-    // Text
-    var textButton = getEl('button');
-    textButton.classList.add('butn');
-    addEl(textButton, getTn('Text'));
-    textButton.setAttribute('jobId', job.id);
-    if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['text'] == true) {
-        textButton.style.backgroundColor = '#cccccc';
-        textButton.setAttribute('disabled', true);
-        textButton.textContent = 'Generating...';
-    } else {
-        if (job.reports.includes('text') == false) {
-            textButton.classList.add('inactive-download-button');
-            textButton.addEventListener('click', createJobTextReport);
-            textButton.title = 'Click to create.';
-        } else {
-            textButton.classList.add('active-download-button');
-            textButton.addEventListener('click', jobTextDownloadButtonHandler);
-            textButton.title = 'Click to download.';
-        }
-    }
-    if (status == 'Finished') {
-        addEl(dbTd, textButton);
-    }
-    // VCF
-    if (localModuleInfo['vcfreporter'] != undefined && localModuleInfo['vcfreporter'].exists) {
-        var vcfButton = getEl('button');
-        vcfButton.classList.add('butn');
-        addEl(vcfButton, getTn('VCF'));
-        vcfButton.setAttribute('jobId', job.id);
-        if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id]['vcf'] == true) {
-            vcfButton.style.backgroundColor = '#cccccc';
-            vcfButton.setAttribute('disabled', true);
-            vcfButton.textContent = 'Generating...';
-        } else {
-            if (job.reports.includes('vcf') == false) {
-                vcfButton.classList.add('inactive-download-button');
-                vcfButton.addEventListener('click', createJobVcfReport);
-                vcfButton.title = 'Click to create.';
+            var jobId = btn.getAttribute('jobid');
+            var reportType = btn.getAttribute('report-type');
+            if (job.reports.includes(reportType) == false) {
+                btn.classList.add('inactive-download-button');
+                btn.addEventListener('click', function (evt) {createJobReport(evt);});
+                btn.title = 'Click to create.';
             } else {
-                vcfButton.classList.add('active-download-button');
-                vcfButton.addEventListener('click', jobVcfDownloadButtonHandler);
-                vcfButton.title = 'Click to download.';
+                btn.classList.add('active-download-button');
+                btn.addEventListener('click', function (evt) {jobReportDownloadButtonHandler(evt);});
+                btn.title = 'Click to download.';
             }
         }
-    }
-    if (status == 'Finished') {
-        addEl(dbTd, vcfButton);
-    }
-    // Log
-    var logLink = getEl('a');
-    logLink.setAttribute('href','jobs/' + job.id + '/log?');
-    logLink.setAttribute('target', '_blank');
-    logLink.setAttribute('title', 'Click to download.');
-    var button = getEl('button');
-    button.classList.add('butn');
-    button.classList.add('active-download-button');
-    addEl(button, getTn('Log'));
-    addEl(logLink, button);
-    addEl(dbTd, logLink);
-    addEl(jobTr, dbTd);
-    /*
-    // Reports
-    var reportTd = $(getEl('td'));
-    jobTr.append(reportTd);
-    var reportSelector = $(getEl('select'))
-        .attr('jobId',job.id)
-        .addClass('report-type-selector')
-        .change(reportSelectorChangeHandler)
-    reportTd.append(reportSelector);
-    jobReports = job.reports;
-    let firstExistingReport;
-    var curSelectedReport = curSelectedReports[job.id];
-    for (let i=0; i<GLOBALS.reports.valid.length; i++) {
-        let reportType = GLOBALS.reports.valid[i];
-        if (firstExistingReport === undefined && jobReports.includes(reportType)) {
-            firstExistingReport = reportType;
+        if (job.status == 'Finished') {
+            addEl(dbTd, btn);
         }
-        let typeOpt = $(getEl('option'))
-        .attr('value', reportType)
-        .append(reportType[0].toUpperCase()+reportType.slice(1));
-        reportSelector.append(typeOpt);
     }
-    var shownReportType = curSelectedReport ? curSelectedReport : firstExistingReport;
-    reportSelector.val(shownReportType);
-    var repDwnBtn = $(getEl('button'))
-        .addClass('report-download-button')
-        .append('Download')
-        .attr('disabled', !job.reports.includes(shownReportType))
-        .click(reportDownloadButtonHandler);
-    reportTd.append(repDwnBtn);
-    repGenBtn = $(getEl('button'))
-        .append('Generate')
-        .click(reportGenerateButtonHandler)
-    reportTd.append(repGenBtn);
-    */
+    addEl(jobTr, dbTd);
     // Delete
     var deleteTd = getEl('td');
     deleteTd.title = 'Click to delete.';
@@ -750,56 +645,15 @@ function reportSelectorChangeHandler (event) {
     downloadBtn.attr('disabled',!job.reports.includes(reportType));
 }
 
-function reportDownloadButtonHandler (event) {
-    var btn = $(event.target);
-    var selector = btn.siblings('.report-type-selector');
-    var jobId = selector.attr('jobId');
-    var reportType = selector.val();
+function jobReportDownloadButtonHandler (evt) {
+    var btn = evt.target;
+    var jobId = btn.getAttribute('jobid');
+    var reportType = btn.getAttribute('report-type');
     downloadReport(jobId, reportType);
 }
 
 function downloadReport (jobId, reportType) {
-    // url = 'http://'+window.location.host+'/rest/jobs/'+jobId+'/reports/'+reportType;
     url = 'jobs/'+jobId+'/reports/'+reportType;
-    downloadFile(url);
-}
-
-function generateReport (jobId, reportType, callback) {
-    $.ajax({
-        url:'/submit/jobs/'+jobId+'/reports/'+reportType,
-        type: 'POST',
-        processData: false,
-        contentType: 'application/json',
-        success: function (data) {
-            callback();
-        }
-    })
-}
-
-function jobExcelDownloadButtonHandler (event) {
-    downloadJobExcel($(event.target).attr('jobId'));
-}
-
-function jobTextDownloadButtonHandler (event) {
-    downloadJobText($(event.target).attr('jobId'));
-}
-
-function jobVcfDownloadButtonHandler (event) {
-    downloadJobVcf($(event.target).attr('jobId'));
-}
-
-function downloadJobExcel (jobId) {
-    url = 'jobs/'+jobId+'/reports/excel';
-    downloadFile(url);
-}
-
-function downloadJobText (jobId) {
-    url = 'jobs/'+jobId+'/reports/text';
-    downloadFile(url);
-}
-
-function downloadJobVcf (jobId) {
-    url = 'jobs/'+jobId+'/reports/vcf';
     downloadFile(url);
 }
 
@@ -1816,27 +1670,30 @@ function setupServerMode () {
 }
 
 function populatePackageVersions () {
-    $.get('/submit/packageversions').done(function(data){
-        systemReadyObj.online = data.latest != null
-        if (systemReadyObj.online == false) {
-            document.querySelector('#nointernetdiv').style.display = 'block';
-        }
-        var curverspans = document.getElementsByClassName('curverspan');
-        for (var i = 0; i < curverspans.length; i++) {
-            var curverspan = curverspans[i];
-            var s = getEl('span');
-            s.textContent = data.current;
-            addEl(curverspan, s);
-            if (data.update) {
-                var a = getEl('a');
-                a.href = 'https://github.com/KarchinLab/open-cravat/wiki/Update-Instructions';
-                a.target = '_blank';
-                a.textContent = '(' + data.latest + ')';
-                addEl(curverspan, a);
+    $.get('/submit/reports').done(function(data) {
+        GLOBALS.reports = data;
+        $.get('/submit/packageversions').done(function(data){
+            systemReadyObj.online = data.latest != null
+            if (systemReadyObj.online == false) {
+                document.querySelector('#nointernetdiv').style.display = 'block';
             }
-        }
-        getRemote();
-	});
+            var curverspans = document.getElementsByClassName('curverspan');
+            for (var i = 0; i < curverspans.length; i++) {
+                var curverspan = curverspans[i];
+                var s = getEl('span');
+                s.textContent = data.current;
+                addEl(curverspan, s);
+                if (data.update) {
+                    var a = getEl('a');
+                    a.href = 'https://github.com/KarchinLab/open-cravat/wiki/Update-Instructions';
+                    a.target = '_blank';
+                    a.textContent = '(' + data.latest + ')';
+                    addEl(curverspan, a);
+                }
+            }
+            getRemote();
+        });
+    });
 }
 
 function onClickInputTextArea () {
@@ -2041,9 +1898,6 @@ function websubmit_run () {
     setLastAssembly();
     getBaseModuleNames();
     addListeners();
-    if (servermode == false) {
-        populateJobs();
-    }
     resizePage();
     window.onresize = function (evt) {
         resizePage();

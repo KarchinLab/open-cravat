@@ -132,12 +132,23 @@ class FileRouter(object):
         output_fname = run_path + self.status_extension
         return output_fname
 
-    async def job_report(self, request, job_id, report_type):
-        ext = self.report_extensions.get(report_type, '.'+report_type)
+    async def job_report (self, request, job_id, report_type):
         run_path = await self.job_run_path(request, job_id)
         if run_path is None:
             return None
-        report_path = run_path + ext
+        run_name = os.path.basename(run_path)
+        if report_type in self.report_extensions:
+            ext = self.report_extensions.get(report_type, '.'+report_type)
+            report_path = [run_path + ext]
+        else:
+            reporter = au.get_local_module_info(report_type + 'reporter')
+            conf = reporter.conf
+            if 'output_filename_schema' in conf:
+                output_filename_schemas = conf['output_filename_schema']
+                report_path = []
+                for output_filename_schema in output_filename_schemas:
+                    output_filename = output_filename_schema.replace('{run_name}', run_name)
+                    report_path.append(output_filename)
         return report_path
 
     async def job_status (self, request, job_id):
@@ -365,14 +376,6 @@ def find_files_by_ending (d, ending):
 
 async def get_job (request, job_id):
     global filerouter
-    '''
-    jobs_dirs = await filerouter.get_jobs_dirs(request)
-    if jobs_dir is None:
-        return None
-    if os.path.exists(jobs_dir) == False:
-        os.makedirs(jobs_dir)
-    job_dir = os.path.join(jobs_dir, job_id)
-    '''
     job_dir = await filerouter.job_dir(request, job_id)
     if os.path.exists(job_dir) == False:
         job = WebJob(job_dir, None)
@@ -418,28 +421,17 @@ async def get_job (request, job_id):
     )
     existing_reports = []
     for report_type in get_valid_report_types():
-        report_path = await filerouter.job_report(request, job_id, report_type)
-        if report_path is not None and os.path.exists(report_path):
-            existing_reports.append(report_type)
+        report_paths = await filerouter.job_report(request, job_id, report_type)
+        if report_paths is not None:
+            report_exist = True
+            for p in report_paths:
+                if os.path.exists(os.path.join(job_dir, p)) == False:
+                    report_exist = False
+                    break
+            if report_exist:
+                existing_reports.append(report_type)
     job.set_info_values(reports=existing_reports)
     return job
-
-'''
-async def get_jobs_details (request):
-    queries = request.rel_url.query
-    ids = int(queries['jobids'])
-    all_jobs = []
-    for job_id in ids:
-        try:
-            job = await get_job(job_id, request)
-            if job is None:
-                continue
-            all_jobs.append(job)
-        except:
-            traceback.print_exc()
-            continue
-    return web.json_response([job.get_info_dict() for job in all_jobs])
-'''
 
 async def get_jobs (request):
     global filerouter
@@ -547,7 +539,7 @@ def get_valid_report_types():
     report_types = [x.name.split('reporter')[0] for x in reporter_infos]
     return report_types
 
-def get_report_types(request):
+async def get_report_types(request):
     global cfl
     default_reporter = cfl.get_cravat_conf_value('reporter')
     default_type = default_reporter.split('reporter')[0]
@@ -572,10 +564,18 @@ async def download_report(request):
     global filerouter
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
-    report_path = await filerouter.job_report(request, job_id, report_type) 
-    report_name = job_id+'.'+report_path.split('.')[-1]
-    headers = {'Content-Disposition':'attachment; filename='+report_name}
-    return web.FileResponse(report_path, headers=headers)
+    report_filenames = await filerouter.job_report(request, job_id, report_type) 
+    job_dir = await filerouter.job_dir(request, job_id)
+    # For now, handles only one file-download.
+    report_paths = [os.path.join(job_dir, v) for v in report_filenames]
+    report_path = report_paths[0]
+    if os.path.exists(report_path):
+        report_filename = os.path.basename(report_path)
+        headers = {'Content-Disposition':'attachment; filename='+report_filename}
+        response = web.FileResponse(report_path, headers=headers)
+        return response
+    else:
+        raise web.HTTPNotFound
 
 def get_jobs_dir (request):
     jobs_dir = au.get_jobs_dir()
@@ -905,6 +905,11 @@ async def get_live_annotation (request):
         response = await live_annotate(input_data, annotators)
     return web.json_response(response)
 
+async def get_available_report_types (request):
+    job_id = request.match_info['job_id']
+    global filerouter
+    job_dir = filerouter.job_dir(request, job_id)
+
 filerouter = FileRouter()
 VIEW_PROCESS = None
 live_modules = None
@@ -920,6 +925,7 @@ routes.append(['GET','/submit/jobs/{job_id}',view_job])
 routes.append(['DELETE','/submit/jobs/{job_id}',delete_job])
 routes.append(['GET','/submit/jobs/{job_id}/db', download_db])
 routes.append(['GET','/submit/reports',get_report_types])
+routes.append(['POST','/submit/jobs/{job_id}/reports', get_available_report_types])
 routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',generate_report])
 routes.append(['GET','/submit/jobs/{job_id}/reports/{report_type}',download_report])
 routes.append(['GET','/submit/jobs/{job_id}/log',get_job_log])

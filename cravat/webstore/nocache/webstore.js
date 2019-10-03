@@ -273,6 +273,9 @@ function getLocal () {
             makeInstalledGroup();
             buildAnnotatorGroupSelector();
             populateAnnotators();
+            if (servermode == false) {
+                populateJobs();
+            }
         });
     });
 }
