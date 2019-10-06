@@ -86,6 +86,19 @@ setup(
     cmdclass={
               'install':InstallCommand,
               },
-    install_requires=['pyyaml<5.1', 'requests', 'requests_toolbelt', 'pyliftover', 'websockets', 'markdown', 'aiohttp', 'chardet', 'aiosqlite3', 'oyaml', 'infi.systray', 'intervaltree'],
+    install_requires=[
+        'pyyaml<5.1',
+        'requests',
+        'requests_toolbelt',
+        'pyliftover',
+        'websockets',
+        'markdown',
+        'aiohttp',
+        'chardet>=3.0.4',
+        'aiosqlite3',
+        'oyaml',
+        'infi.systray',
+        'intervaltree',
+        ],
     python_requires='>=3.6',
 )
