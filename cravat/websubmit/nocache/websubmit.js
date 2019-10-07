@@ -351,6 +351,9 @@ function populateJobTr (job) {
     // Reports
     for (var i = 0; i < GLOBALS.reports.valid.length; i++) {
         var reportType = GLOBALS.reports.valid[i];
+        if (reportType == 'text') {
+            continue;
+        }
         var btn = getEl('button');
         btn.classList.add('butn');
         btn.setAttribute('jobid', job.id);
