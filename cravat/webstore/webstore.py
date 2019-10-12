@@ -19,8 +19,6 @@ import shutil
 import copy
 import aiosqlite3
 import importlib
-if importlib.util.find_spec('cravatserver') is not None:
-    import cravatserver
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
@@ -231,14 +229,15 @@ async def install_widgets_for_module (request):
 
 async def uninstall_module (request):
     global servermode
-    r = await cravatserver.is_admin_loggedin(request)
-    if servermode and r == False:
-        response = 'failure'
-    else:
-        queries = request.rel_url.query
-        module_name = queries['name']
-        au.uninstall_module(module_name)
-        response = 'uninstalled ' + module_name
+    if servermode and server_ready:
+        r = await cravatserver.is_admin_loggedin(request)
+        if r == False:
+            response = 'failure'
+            return web.json_response(response)
+    queries = request.rel_url.query
+    module_name = queries['name']
+    au.uninstall_module(module_name)
+    response = 'uninstalled ' + module_name
     return web.json_response(response)
 
 def start_worker ():
@@ -288,9 +287,11 @@ async def connect_websocket (request):
 async def queue_install (request):
     global install_queue
     global servermode
-    r =  await cravatserver.is_admin_loggedin(request)
-    if servermode and r == False:
-        return web.Response(text='notadmin')
+    if servermode and server_ready:
+        r = await cravatserver.is_admin_loggedin(request)
+        if r == False:
+            response = 'notadmin'
+            return web.json_response(response)
     queries = request.rel_url.query
     if 'version' in queries:
         module_version = queries['version']
@@ -311,14 +312,15 @@ async def get_base_modules (request):
 
 async def install_base_modules (request):
     global servermode
-    r = await cravatserver.is_admin_loggedin(request)
-    if servermode and r == False:
-        response = 'failed'
-    else:
-        base_modules = system_conf.get(constants.base_modules_key,[])
-        for module in base_modules:
-            install_queue.put({'module': module, 'version': None})
-        response = 'queued'
+    if servermode and server_ready:
+        r = await cravatserver.is_admin_loggedin(request)
+        if r == False:
+            response = 'failed'
+            return web.json_response(response)
+    base_modules = system_conf.get(constants.base_modules_key,[])
+    for module in base_modules:
+        install_queue.put({'module': module, 'version': None})
+    response = 'queued'
     return web.json_response(response)
 
 async def get_md (request):

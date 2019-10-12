@@ -24,8 +24,6 @@ from multiprocessing import Process, Pipe, Value, Manager, Queue
 from queue import Empty
 from cravat import constants
 from cravat import get_live_annotator, get_live_mapper
-if importlib.util.find_spec('cravatserver') is not None:
-    import cravatserver
 
 cfl = ConfigLoader()
 

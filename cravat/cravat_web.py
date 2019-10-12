@@ -30,11 +30,6 @@ import ssl
 import importlib
 import socket
 import concurrent
-if importlib.util.find_spec('cravatserver') is not None:
-    import cravatserver
-    server_ready = True
-else:
-    server_ready = False
 
 donotopenbrowser = None
 servermode = None
@@ -65,11 +60,27 @@ parser.add_argument('--nossl',
 args = parser.parse_args(sys.argv[1:])
 donotopenbrowser = args.donotopenbrowser
 servermode = args.servermode
+if servermode and importlib.util.find_spec('cravatserver') is not None:
+    try:
+        import cravatserver
+        server_ready = True
+    except Exception as e:
+        traceback.print_exc()
+        print('Error while loading open-cravat-server. Starting in a non-server mode...')
+        server_ready = False
+        servermode = False
+else:
+    servermode = False
+    server_ready = False
 wu.servermode = args.servermode
 ws.servermode = args.servermode
+wu.server_ready = server_ready
+ws.server_ready = server_ready
 
 if server_ready:
     cravatserver.servermode = servermode
+    wu.cravatserver = cravatserver
+    ws.cravatserver = cravatserver
 if servermode and server_ready == False:
     print('open-cravat-server package is required to run OpenCRAVAT Server.\nRun "pip install open-cravat-server" to get the package.')
     exit()
@@ -178,13 +189,6 @@ class TCPSitePatched (web_runner.BaseSite):
 async def middleware (request, handler):
     global loop
     url_parts = request.url.parts
-    '''
-    if url_parts[1] == 'result' and url_parts[2] == 'method':
-        future = asyncio.run_coroutine_threadsafe(handler(request), loop)
-        response = future.result()
-    else:
-        response = await handler(request)
-    '''
     response = await handler(request)
     nocache = False
     if url_parts[0] == '/':
