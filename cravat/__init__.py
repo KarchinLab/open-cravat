@@ -21,7 +21,7 @@ from .cravat_filter import CravatFilter
 from .cravat_class import Cravat
 from .util import get_ucsc_bins
 
-async def get_live_annotator (module_name):
+def get_live_annotator (module_name):
     import os
     config_loader = ConfigLoader()
     script_path = admin_util.get_annotator_script_path(module_name)
@@ -39,7 +39,7 @@ async def get_live_annotator (module_name):
         return None
     return module
 
-async def get_live_mapper (module_name):
+def get_live_mapper (module_name):
     import os
     config_loader = ConfigLoader()
     script_path = admin_util.get_mapper_script_path(module_name)

@@ -44,7 +44,8 @@ class FileRouter(object):
     async def get_jobs_dirs (self, request):
         root_jobs_dir = au.get_jobs_dir()
         global servermode
-        if servermode:
+        global server_ready
+        if servermode and server_ready:
             username = await cravatserver.get_username(request)
         else:
             username = 'default'
@@ -67,7 +68,7 @@ class FileRouter(object):
         if jobs_dirs == None:
             return None
         else:
-            if servermode:
+            if servermode and server_ready:
                 username = await cravatserver.get_username(request)
                 if username != 'admin':
                     return os.path.join(jobs_dirs[0], job_id)
@@ -222,7 +223,7 @@ def get_next_job_id():
 async def submit (request):
     global filerouter
     global servermode
-    if servermode:
+    if servermode and server_ready:
         r = await cravatserver.is_loggedin(request)
         if r == False:
             return web.json_response({'status': 'notloggedin'})
@@ -313,7 +314,7 @@ async def submit (request):
     job_queue.put(qitem)
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
-    if servermode:
+    if servermode and server_ready:
         await cravatserver.add_job_info(request, job)
     # makes temporary status.json
     wf = open(os.path.join(job_dir, run_name + '.status.json'), 'w')
@@ -454,7 +455,7 @@ async def get_jobs (request):
 
 async def get_all_jobs (request):
     global servermode
-    if servermode:
+    if servermode and server_ready:
         r = await cravatserver.is_loggedin(request)
         if r == False:
             return web.json_response({'status': 'notloggedin'})
@@ -470,25 +471,8 @@ async def get_all_jobs (request):
         direntries = [de for de in dir_it]
         de_names = []
         for it in direntries:
-            '''
-            status_glob = glob.glob(os.path.join(it.path, '*.status.json'))
-            print('glob=', status_glob)
-            if len(status_glob) > 0:
-                de_names.append(it.name)
-            '''
             de_names.append(it.name)
         all_jobs.extend(de_names)
-        '''
-        for job_id in de_names:
-            try:
-                job = await get_job(request, job_id)
-                if job is None:
-                    continue
-                all_jobs.append(job)
-            except:
-                traceback.print_exc()
-                continue
-        '''
     all_jobs.sort(reverse=True)
     return web.json_response(all_jobs)
 
@@ -591,7 +575,7 @@ async def get_system_conf_info (request):
 
 async def update_system_conf (request):
     global servermode
-    if servermode:
+    if servermode and server_ready:
         username = await cravatserver.get_username(request)
         if username != 'admin':
             return web.json_response({'success': False, 'msg': 'Only admin can change the settings.'})
@@ -630,7 +614,8 @@ def reset_system_conf (request):
 
 def get_servermode (request):
     global servermode
-    return web.json_response({'servermode': servermode})
+    global server_ready
+    return web.json_response({'servermode': servermode and server_ready})
 
 async def get_package_versions(request):
     cur_ver = au.get_current_package_version()
@@ -844,14 +829,14 @@ async def load_live_modules ():
         default_mapper = cravat_conf['genemapper']
     else:
         default_mapper = 'hg38'
-    live_mapper = await get_live_mapper(default_mapper)
+    live_mapper = get_live_mapper(default_mapper)
     modules = au.get_local_by_type(['annotator'])
     for module in modules:
         if module.name in exclude_live_modules:
             continue
         if len(include_live_modules) > 0 and module.name not in include_live_modules:
             continue
-        annotator = await get_live_annotator(module.name)
+        annotator = get_live_annotator(module.name)
         if annotator is None:
             continue
         live_modules[module.name] = annotator
