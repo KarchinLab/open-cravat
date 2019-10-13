@@ -797,8 +797,13 @@ def fetch_job_queue (job_queue, run_jobs_info):
 
 async def redirect_to_index (request):
     global servermode
-    if servermode:
-        url = '/server/nocache/login.html'
+    global server_ready
+    if servermode and server_ready:
+        r = await cravatserver.is_loggedin(request)
+        if r == False:
+            url = '/server/nocache/login.html'
+        else:
+            url = '/submit/index.html'
     else:
         url = '/submit/index.html'
     return web.HTTPFound(url)
