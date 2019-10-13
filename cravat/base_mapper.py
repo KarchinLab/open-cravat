@@ -304,3 +304,21 @@ class BaseMapper(object):
         print('            {}: finished getting gene summary data in {:0.3f}s'.format(self.module_name, time.time() - t))
         return data
 
+    def live_report_substitute (self, d):
+        import re
+        if 'report_substitution' not in self.conf:
+            return
+        rs_dic = self.conf['report_substitution']
+        rs_dic_keys = list(rs_dic.keys())
+        for colname in d.keys():
+            if colname in rs_dic_keys:
+                value = d[colname]
+                if colname in ['all_mappings', 'all_so']:
+                    for target in list(rs_dic[colname].keys()):
+                        value = re.sub('\\b' + target + '\\b', rs_dic[colname][target], value)
+                else:
+                    if value in rs_dic[colname]:
+                        value = rs_dic[colname][value]
+                d[colname] = value
+        return d
+
