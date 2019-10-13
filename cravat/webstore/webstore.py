@@ -388,6 +388,15 @@ async def unqueue_install (request):
 async def get_tag_desc (request):
     return constants.module_tag_desc
 
+async def update_remote (request):
+    if servermode and server_ready:
+        r = await cravatserver.is_admin_loggedin(request)
+        if r == False:
+            response = 'notadmin'
+            return web.json_response(response)
+    au.mic.update_remote(force=True)
+    return web.json_response('done')
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/installwidgetsformodule', install_widgets_for_module])
@@ -406,3 +415,4 @@ routes.append(['GET', '/store/freemodulesspace', get_free_modules_space])
 routes.append(['GET', '/store/killinstall', kill_install])
 routes.append(['GET', '/store/unqueue', unqueue_install])
 routes.append(['GET', '/store/tagdesc', get_tag_desc])
+routes.append(['GET', '/store/updateremote', update_remote])

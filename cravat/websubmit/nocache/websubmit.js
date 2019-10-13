@@ -179,6 +179,16 @@ function hideSpinner () {
     document.querySelector('#spinner-div').classList.add('hide');
 }
 
+function showUpdateRemoteSpinner () {
+    document.querySelector('#update-remote-spinner-div').classList.remove('hide');
+    document.querySelector('#update-remote-spinner-div').classList.add('show');
+}
+
+function hideUpdateRemoteSpinner () {
+    document.querySelector('#update-remote-spinner-div').classList.remove('show');
+    document.querySelector('#update-remote-spinner-div').classList.add('hide');
+}
+
 function sortJobs () {
     for (var i = 0; i < GLOBALS.jobs.length - 1; i++) {
         for (var j = i + 1; j < GLOBALS.jobs.length; j++) {
@@ -1892,6 +1902,7 @@ function onSubmitClickTagBoxCheck (evt) {
 
 function websubmit_run () {
     hideSpinner();
+    hideUpdateRemoteSpinner();
     var urlParams = new URLSearchParams(window.location.search);
     username = urlParams.get('username');
     getServermode();

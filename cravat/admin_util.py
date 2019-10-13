@@ -344,11 +344,11 @@ def list_local():
     """
     return sorted(list(mic.local.keys()))
 
-def list_remote():
+def list_remote(force=False):
     """
     Returns a list of remotely available modules.
     """
-    mic.update_remote()
+    mic.update_remote(force=force)
     return sorted(list(mic.remote.keys()))
 
 def get_local_module_infos(types=[], names=[]):

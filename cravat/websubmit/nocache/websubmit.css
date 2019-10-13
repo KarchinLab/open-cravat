@@ -795,3 +795,24 @@ input:checked + .slider:before {
     background-color: gray;
 }
 
+#update-remote-spinner-div {
+    position: fixed;
+    top: 63px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 63px);
+    z-index: 9;
+    text-align: center;
+    background-color: rgba(100, 100, 100, 0.77);
+}
+
+#update-remote-spinner-div-text {
+    position: absolute;
+    top: calc(50% - 40px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    width: 200px;
+    height: 30px;
+    color: white;
+}
+

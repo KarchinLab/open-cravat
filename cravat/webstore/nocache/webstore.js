@@ -74,6 +74,17 @@ function onClickStoreTagResetButton () {
     document.getElementById('store-tag-reset-button').classList.remove('store-front-all-button-off');
 }
 
+function onClickStoreUpdateRemoteButton () {
+    showUpdateRemoteSpinner();
+    $.ajax({
+        url: '/store/updateremote',
+        success: function (response) {
+            hideUpdateRemoteSpinner();
+            getRemote();
+        },
+    });
+}
+
 function clickTab (value) {
     var tabs = document.getElementById('pageselect').children;
     for (var i = 0; i < tabs.length; i++) {
