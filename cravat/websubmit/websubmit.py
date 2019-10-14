@@ -532,15 +532,14 @@ async def generate_report(request):
     global filerouter
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
-    if report_type in get_valid_report_types():
-        job_input = await filerouter.job_run_path(request, job_id)
-        run_args = ['cravat', job_input]
-        run_args.extend(['--startat', 'reporter'])
-        run_args.extend(['--repeat', 'reporter'])
-        run_args.extend(['-t', report_type])
-        p = subprocess.Popen(run_args)
-        p.wait()
-    return web.Response()
+    job_input = await filerouter.job_run_path(request, job_id)
+    run_args = ['cravat', job_input]
+    run_args.extend(['--startat', 'reporter'])
+    run_args.extend(['--repeat', 'reporter'])
+    run_args.extend(['-t', report_type])
+    p = subprocess.Popen(run_args)
+    p.wait()
+    return web.json_response('done')
 
 async def download_report(request):
     global filerouter
@@ -899,7 +898,19 @@ async def get_live_annotation (request):
 async def get_available_report_types (request):
     job_id = request.match_info['job_id']
     global filerouter
-    job_dir = filerouter.job_dir(request, job_id)
+    job_dir = await filerouter.job_dir(request, job_id)
+    existing_reports = []
+    for report_type in get_valid_report_types():
+        report_paths = await filerouter.job_report(request, job_id, report_type)
+        if report_paths is not None:
+            report_exist = True
+            for p in report_paths:
+                if os.path.exists(os.path.join(job_dir, p)) == False:
+                    report_exist = False
+                    break
+            if report_exist:
+                existing_reports.append(report_type)
+    return web.json_response(existing_reports)
 
 filerouter = FileRouter()
 VIEW_PROCESS = None
@@ -916,7 +927,7 @@ routes.append(['GET','/submit/jobs/{job_id}',view_job])
 routes.append(['DELETE','/submit/jobs/{job_id}',delete_job])
 routes.append(['GET','/submit/jobs/{job_id}/db', download_db])
 routes.append(['GET','/submit/reports',get_report_types])
-routes.append(['POST','/submit/jobs/{job_id}/reports', get_available_report_types])
+routes.append(['GET','/submit/jobs/{job_id}/reports', get_available_report_types])
 routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',generate_report])
 routes.append(['GET','/submit/jobs/{job_id}/reports/{report_type}',download_report])
 routes.append(['GET','/submit/jobs/{job_id}/log',get_job_log])

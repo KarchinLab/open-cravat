@@ -247,7 +247,7 @@ function generateReport (jobId, reportType, callback) {
     $.ajax({
         url:'/submit/jobs/'+jobId+'/reports/'+reportType,
         type: 'POST',
-        processData: false,
+        //processData: false,
         contentType: 'application/json',
         success: function (data) {
             callback();
