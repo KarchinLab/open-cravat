@@ -72,6 +72,11 @@ try:
         action='store_true',
         default=False,
         help='Force not to accept https connection')
+    parser.add_argument('--echoexception',
+        dest='echoexception',
+        action='store_true',
+        default=False,
+        help='Console echoes exceptions written to log file.')
     args = parser.parse_args(sys.argv[1:])
     donotopenbrowser = args.donotopenbrowser
     servermode = args.servermode
@@ -118,13 +123,15 @@ try:
         protocol = 'http://'
 except Exception as e:
     logger.exception(e)
+    if args.echoexception:
+        traceback.print_exc()
     logger.info('Exiting...')
     print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
     exit()
 
 def result ():
+    global args
     try:
-        global args
         dbpath = os.path.abspath(args.dbpath)
         if os.path.exists(dbpath) == False:
             sys.stderr.write(dbpath + ' does not exist.\n')
@@ -140,11 +147,14 @@ def result ():
         main()
     except Exception as e:
         logger.exception(e)
+        if args.echoexception:
+            traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
         exit()
 
 def store ():
+    global args
     try:
         ws.start_install_queue_manager()
         global donotopenbrowser
@@ -154,11 +164,14 @@ def store ():
             webbrowser.open(protocol + '{host}:{port}/store/index.html'.format(host=server.get('host'), port=server.get('port')))
     except Exception as e:
         logger.exception(e)
+        if args.echoexception:
+            traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
         exit()
 
 def submit ():
+    global args
     try:
         global donotopenbrowser
         if not donotopenbrowser:
@@ -173,11 +186,14 @@ def submit ():
         main()
     except Exception as e:
         logger.exception(e)
+        if args.echoexception:
+            traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
         exit()
 
 def get_server():
+    global args
     try:
         server = {}
         conf = ConfigLoader()
@@ -200,6 +216,8 @@ def get_server():
         return server
     except Exception as e:
         logger.exception(e)
+        if args.echoexception:
+            traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
         exit()
@@ -233,17 +251,23 @@ class TCPSitePatched (web_runner.BaseSite):
 @web.middleware
 async def middleware (request, handler):
     global loop
-    url_parts = request.url.parts
-    response = await handler(request)
-    nocache = False
-    if url_parts[0] == '/':
-        if len(url_parts) >= 3 and url_parts[2] == 'nocache':
+    global args
+    try:
+        url_parts = request.url.parts
+        response = await handler(request)
+        nocache = False
+        if url_parts[0] == '/':
+            if len(url_parts) >= 3 and url_parts[2] == 'nocache':
+                nocache = True
+        elif url_parts[0] == 'nocache':
             nocache = True
-    elif url_parts[0] == 'nocache':
-        nocache = True
-    if nocache:
-        response.headers['Cache-Control'] = 'no-cache'
-    return response
+        if nocache:
+            response.headers['Cache-Control'] = 'no-cache'
+        return response
+    except Exception as e:
+        logger.exception(e)
+        if args.echoexception:
+            traceback.print_exc()
 
 class WebServer (object):
     def __init__ (self, host=None, port=None, loop=None, ssl_context=None):
@@ -302,6 +326,7 @@ async def is_system_ready (request):
 
 loop = None
 def main ():
+    global args
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1)
@@ -339,6 +364,8 @@ def main ():
             pass
     except Exception as e:
         logger.exception(e)
+        if args.echoexception:
+            traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
         exit()
