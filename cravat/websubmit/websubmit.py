@@ -272,7 +272,7 @@ async def submit (request):
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))
     # Annotators
-    if len(job_options['annotators']) > 0:
+    if 'annotators' in job_options and len(job_options['annotators']) > 0:
         annotators = job_options['annotators']
         annotators.sort()
         run_args.append('-a')
@@ -283,10 +283,14 @@ async def submit (request):
         run_args.append('*')
     # Liftover assembly
     run_args.append('-l')
-    run_args.append(job_options['assembly'])
-    au.set_cravat_conf_prop('last_assembly', job_options['assembly'])
+    if 'assembly' in job_options:
+        assembly = job_options['assembly']
+    else:
+        assembly = constants.default_assembly
+    run_args.append(assembly)
+    au.set_cravat_conf_prop('last_assembly', assembly)
     # Reports
-    if len(job_options['reports']) > 0:
+    if 'reports' in job_options and len(job_options['reports']) > 0:
         run_args.append('-t')
         run_args.extend(job_options['reports'])
     else:
@@ -297,7 +301,11 @@ async def submit (request):
     else:
         note = ''
     run_args.append('--note')
-    run_args.append(job_options['note'])
+    if 'note' in job_options:
+        note = job_options['note']
+    else:
+        note = ''
+    run_args.append(note)
     # Forced input format
     if 'forcedinputformat' in job_options:
         run_args.append('--forcedinputformat')
