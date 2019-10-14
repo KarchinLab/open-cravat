@@ -30,6 +30,20 @@ import ssl
 import importlib
 import socket
 import concurrent
+import logging
+from cravat import constants
+
+conf = ConfigLoader()
+sysconf = au.get_system_conf()
+log_dir = sysconf[constants.log_dir_key]
+log_path = os.path.join(log_dir, 'wcravat.log')
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+log_handler = logging.handlers.RotatingFileHandler(log_path, maxBytes=1024*1024*10, backupCount=5)
+log_formatter = logging.Formatter('%(asctime)s: %(message)s', '%Y/%m/%d %H:%M:%S')
+log_handler.setFormatter(log_formatter)
+logger.addHandler(log_handler)
+logger.info('Starting wcravat...')
 
 donotopenbrowser = None
 servermode = None
@@ -65,10 +79,10 @@ if servermode and importlib.util.find_spec('cravatserver') is not None:
         import cravatserver
         server_ready = True
     except Exception as e:
-        traceback.print_exc()
-        print('Error while loading open-cravat-server. Starting in a non-server mode...')
-        server_ready = False
-        servermode = False
+        logger.exception(e)
+        logger.info('Exiting...')
+        print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
+        exit()
 else:
     servermode = False
     server_ready = False
@@ -82,13 +96,14 @@ if server_ready:
     wu.cravatserver = cravatserver
     ws.cravatserver = cravatserver
 if servermode and server_ready == False:
-    print('open-cravat-server package is required to run OpenCRAVAT Server.\nRun "pip install open-cravat-server" to get the package.')
+    msg = 'open-cravat-server package is required to run OpenCRAVAT Server.\nRun "pip install open-cravat-server" to get the package.'
+    logger.info(msg)
+    logger.info('Exiting...')
+    print(msg)
     exit()
 
 ssl_enabled = False
 protocol = None
-conf = ConfigLoader()
-sysconf = au.get_system_conf()
 nossl = args.nossl
 if 'conf_dir' in sysconf:
     pem_path = os.path.join(sysconf['conf_dir'], 'cert.pem')
@@ -270,11 +285,13 @@ def main ():
         sr = s.connect_ex((host, port))
         s.close()
         if sr == 0:
+            logger.info('wcravat already running. Exiting from this instance of wcravat...') 
             print('OpenCRAVAT is already running at {}{}:{}.'.format(protocol, serv.get('host'), serv.get('port')))
             return
     except requests.exceptions.ConnectionError:
         pass
     print('OpenCRAVAT is served at {}:{}'.format(serv.get('host'), serv.get('port')))
+    logger.info('Serving OpenCRAVAT server at {}:{}'.format(serv.get('host'), serv.get('port')))
     print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')
     global loop
     loop = asyncio.get_event_loop()

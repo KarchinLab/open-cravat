@@ -7,3 +7,4 @@ liftover/canFam*
 pyliftover.tar
 conf
 req.cnf
+logs

@@ -56,6 +56,17 @@ if not jobs_dir_key in conf:
     wf = open(system_conf_path, 'w')
     yaml.dump(conf, wf, default_flow_style=False)
     wf.close()
+# log dir
+log_dir_key = 'log_dir'
+log_dir_name = 'logs'
+if not log_dir_key in conf:
+    default_log_dir = os.path.join(oc_root_dir, log_dir_name)
+    if os.path.exists(default_log_dir) == False:
+        os.mkdir(default_log_dir)
+    conf[log_dir_key] = default_log_dir
+    wf = open(system_conf_path, 'w')
+    yaml.dump(conf, wf, default_flow_style=False)
+    wf.close()
 # Live conf
 live_conf_fname = 'live.yml'
 
