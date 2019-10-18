@@ -316,6 +316,8 @@ class WebServer (object):
 
 async def heartbeat(request):
     ws = web.WebSocketResponse(timeout=60*60*24*365)
+    if servermode and server_ready:
+        await cravatserver.update_last_active(request)
     await ws.prepare(request)
     async for msg in ws:
         pass
@@ -352,6 +354,15 @@ def main ():
         global loop
         loop = asyncio.get_event_loop()
         loop.call_later(0.1, wakeup)
+        async def clean_sessions():
+            """
+            Clean sessions every hour.
+            """
+            while True:
+                await cravatserver.admindb.clean_sessions()
+                await asyncio.sleep(3600)
+        if servermode and server_ready:
+            loop.create_task(clean_sessions())
         global ssl_enabled
         if ssl_enabled:
             global sc
