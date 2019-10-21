@@ -317,7 +317,7 @@ class WebServer (object):
 async def heartbeat(request):
     ws = web.WebSocketResponse(timeout=60*60*24*365)
     if servermode and server_ready:
-        await cravatserver.update_last_active(request)
+        asyncio.get_running_loop().create_task(cravatserver.update_last_active(request))
     await ws.prepare(request)
     async for msg in ws:
         pass
