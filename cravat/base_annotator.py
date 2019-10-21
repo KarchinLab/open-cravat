@@ -330,7 +330,7 @@ class BaseAnnotator(object):
                         %(num_expected, num_provided))
             for sec_name, sec_input_path in self.secondary_paths.items():
                 key_col = self.conf['secondary_inputs'][sec_name].get('match_columns',{}).get('secondary','uid')
-                use_columns = self.conf['secondary_inputs'][sec_name]['use_columns']
+                use_columns = self.conf['secondary_inputs'][sec_name].get('use_columns',[])
                 fetcher = SecondaryInputFetcher(sec_input_path,
                                                 key_col,
                                                 fetch_cols=use_columns)
