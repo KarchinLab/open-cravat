@@ -39,11 +39,18 @@ def recursive_update(d1, d2):
     """
     d3 = copy.deepcopy(d1) # Copy perhaps not needed. Test.
     for k, v in d2.items():
-        if isinstance(v, dict):
-            t = recursive_update(d3.get(k,{}), v)
-            d3[k] = t
+        if k in d3:
+            orig_v = d3[k]
+            if isinstance(v, dict):
+                if isinstance(orig_v, dict) == False:
+                    d3[k] = v
+                else:
+                    t = recursive_update(d3.get(k,{}), v)
+                    d3[k] = t
+            else:
+                d3[k] = d2[k]
         else:
-            d3[k] = d2[k]
+            d3[k] = v
     return d3
 
 class LocalModuleInfo (object):

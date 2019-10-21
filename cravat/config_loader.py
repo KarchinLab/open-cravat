@@ -101,6 +101,10 @@ class ConfigLoader():
             self._load_main_conf()
         return self._main
     
+    def get_modules_conf(self):
+        conf = self._all.get('modules', {})
+        return conf
+    
     def get_cravat_conf_value (self, key):
         if 'cravat' in self._all:
             if key in self._all['cravat']:
@@ -114,9 +118,11 @@ class ConfigLoader():
         self._all['run'] = au.recursive_update(self._all['run'], run_conf)
     
     def override_cravat_conf (self, cravat_conf):
-        self._all['cravat'] = au.recursive_update(self._all['cravat'],
-                                               cravat_conf)
-    
+        self._all['cravat'] = au.recursive_update(self._all['cravat'], cravat_conf)
+
+    def override_all_conf (self, conf):
+        self._all = au.recursive_update(self._all, conf)
+
     def get_local_module_confs (self):
         return self._all['modules']
 

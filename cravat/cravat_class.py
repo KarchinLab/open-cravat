@@ -156,9 +156,6 @@ class Cravat (object):
         self.pythonpath = sys.executable
         self.annotators = {}        
         self.make_args_namespace(kwargs)
-        if self.args.confs != None:
-            confs_conf = json.loads(self.args.confs.replace("'", '"'))
-            self.conf.override_cravat_conf(confs_conf)
         self.cravat_conf = self.conf.get_cravat_conf()
         self.get_logger()
         self.start_time = time.time()
@@ -166,6 +163,16 @@ class Cravat (object):
         self.logger.info('input assembly: {}'.format(self.input_assembly))
         if self.run_conf_path != '':
             self.logger.info('conf file: {}'.format(self.run_conf_path))
+        if self.args.confs != None:
+            conf_bak = self.conf
+            try:
+                confs_conf = json.loads(self.args.confs.replace("'", '"'))
+                self.conf.override_all_conf(confs_conf)
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.info('Error in processing cs option. --cs option was not applied.')
+                self.conf = conf_bak
+        self.modules_conf = self.conf.get_modules_conf()
         self.write_initial_status_json()
         self.unique_logs = {}
         manager = MyManager()
@@ -610,9 +617,10 @@ class Cravat (object):
                '-d', self.output_dir,
                '-l', self.input_assembly]
         if module.name in self.cravat_conf:
-            confs = json.dumps(self.cravat_conf[module.name])
-            confs = "'" + confs.replace("'", '"') + "'"
-            cmd.extend(['--confs', confs])
+            if module.name in self.modules_conf:
+                confs = json.dumps(self.modules_conf[module.name])
+                confs = "'" + confs.replace("'", '"') + "'"
+                cmd.extend(['--confs', confs])
         if self.args.forcedinputformat is not None:
             cmd.extend(['-f', self.args.forcedinputformat])
         self.announce_module(module)

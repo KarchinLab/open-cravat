@@ -96,9 +96,10 @@ try:
     ws.servermode = args.servermode
     wu.server_ready = server_ready
     ws.server_ready = server_ready
-
     if server_ready:
         cravatserver.servermode = servermode
+        cravatserver.server_ready = server_ready
+        cravatserver.logger = logger
         wu.cravatserver = cravatserver
         ws.cravatserver = cravatserver
     if servermode and server_ready == False:
@@ -286,6 +287,7 @@ class WebServer (object):
 
     async def start (self):
         global middleware
+        global server_ready
         self.app = web.Application(loop=self.loop, middlewares=[middleware])
         if server_ready:
             cravatserver.setup(self.app)
