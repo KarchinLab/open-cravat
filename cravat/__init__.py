@@ -19,7 +19,8 @@ from .cravat_filter import CravatFilter
 #from .webresult.webresult import *
 #from .webstore.webstore import *
 from .cravat_class import Cravat
-from .util import get_ucsc_bins
+from .util import get_ucsc_bins, reverse_complement, translate_codon, more_severe_so, switch_strand
+from .constants import crx_def
 
 def get_live_annotator (module_name):
     import os

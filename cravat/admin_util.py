@@ -112,10 +112,7 @@ class LocalModuleInfo (object):
             self.input_format = self.conf['input_format']
         else:
             self.input_format = None
-        if 'secondary_inputs' in self.conf:
-            self.secondary_module_names = list(self.conf['secondary_inputs'].keys())
-        else:
-            self.secondary_module_names = []
+        self.secondary_module_names = list(self.conf.get('secondary_inputs',{}))
         if self.type == 'annotator':
             if self.level == 'variant':
                 self.output_suffix = self.name + '.var'

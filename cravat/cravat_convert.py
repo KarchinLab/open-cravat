@@ -19,8 +19,9 @@ class VTracker:
     """ This helper class is used to identify the unique variants from the input 
         so the crv file will not contain multiple copies of the same variant.
     """
-    var_by_chrom = {}
-    current_UID = 1
+    def __init__(self):
+        self.var_by_chrom = {}
+        self.current_UID = 1
     
     #Add a variant - Returns true if the variant is a new unique variant, false
     #if it is a duplicate.  Also returns the UID.

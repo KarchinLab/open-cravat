@@ -324,16 +324,13 @@ class BaseAnnotator(object):
                 num_expected = 0
             num_provided = len(self.secondary_paths)
             if num_expected > num_provided:
-                raise Exception('Too few secondary inputs. %d expected, ' +\
-                    '%d provided'%(num_expected, num_provided))
+                raise Exception(f'Too few secondary inputs. {num_expected} expected, {num_provided} provided')
             elif num_expected < num_provided:
                 raise Exception('Too many secondary inputs. %d expected, %d provided'\
                         %(num_expected, num_provided))
             for sec_name, sec_input_path in self.secondary_paths.items():
-                key_col = self.conf['secondary_inputs'][sec_name]\
-                                                       ['match_columns']\
-                                                       ['secondary']
-                use_columns = self.conf['secondary_inputs'][sec_name]['use_columns']
+                key_col = self.conf['secondary_inputs'][sec_name].get('match_columns',{}).get('secondary','uid')
+                use_columns = self.conf['secondary_inputs'][sec_name].get('use_columns',[])
                 fetcher = SecondaryInputFetcher(sec_input_path,
                                                 key_col,
                                                 fetch_cols=use_columns)
@@ -472,10 +469,7 @@ class BaseAnnotator(object):
                         AllMappingsParser(input_data[all_mappings_col_name])
                 secondary_data = {}
                 for annotator_name, fetcher in self.secondary_readers.items():
-                    input_key_col = self.conf['secondary_inputs']\
-                                              [annotator_name]\
-                                               ['match_columns']\
-                                                ['primary']
+                    input_key_col = self.conf['secondary_inputs'][annotator_name].get('match_columns',{}).get('primary','uid')
                     input_key_data = input_data[input_key_col]
                     secondary_data[annotator_name] = fetcher.get(input_key_data)
                 yield lnum, line, input_data, secondary_data

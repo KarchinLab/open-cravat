@@ -196,6 +196,14 @@ class Cravat (object):
             self.logger.info(msg)
             print(msg)
             raise InvalidReporter
+        for mname, linfo in self.annotators.items():
+            for sec_name in linfo.secondary_module_names:
+                if not au.module_exists_local(sec_name):
+                    msg = f'Invalid secondary annotator {sec_name} requested by {mname}'
+                    self.logger.info(msg)
+                    print(msg)
+                    raise InvalidReporter
+                
 
     def write_initial_status_json (self):
         status_fname = '{}.status.json'.format(self.run_name)

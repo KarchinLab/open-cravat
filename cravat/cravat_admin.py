@@ -485,7 +485,7 @@ def main ():
     parser_install.add_argument('--skip-dependencies',
                                 action='store_true',
                                 help='Skip installing dependencies of selected modules')
-    parser_install.add_argument('--include-private',
+    parser_install.add_argument('-p','--include-private',
                                 action='store_true',
                                 help='Include private modules when checking for module existence')
     parser_install.set_defaults(func=install_modules)
