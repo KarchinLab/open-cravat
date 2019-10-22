@@ -305,6 +305,7 @@ function emptyElement (elem) {
 function populateJobTr (job) {
     var jobTr = $('tr.job-table-main-tr[jobid=' + job.id + ']')[0];
     emptyElement(jobTr);
+    // Username 
     // Input file name
     if (Array.isArray(job.orig_input_fname)) {
         input_fname = job.orig_input_fname.join(', ');
@@ -594,11 +595,6 @@ function fillJobTable (allJobs, start, end, jobsTable) {
         if (ji == undefined) {
             continue;
         }
-        /*
-        if (job.submission_time == 'Invalid Date') {
-            continue;
-        }
-        */
         var jobTr = getEl('tr');
         jobTr.classList.add('job-table-tr');
         jobTr.classList.add('job-table-main-tr');

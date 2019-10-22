@@ -438,6 +438,7 @@ async def get_job (request, job_id):
             if report_exist:
                 existing_reports.append(report_type)
     job.set_info_values(reports=existing_reports)
+    job.info['username'] = os.path.basename(os.path.dirname(job_dir))
     return job
 
 async def get_jobs (request):
