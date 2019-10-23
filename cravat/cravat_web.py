@@ -72,8 +72,8 @@ try:
         action='store_true',
         default=False,
         help='Force not to accept https connection')
-    parser.add_argument('--echoexception',
-        dest='echoexception',
+    parser.add_argument('--nostdoutexception',
+        dest='nostdoutexception',
         action='store_true',
         default=False,
         help='Console echoes exceptions written to log file.')
@@ -124,7 +124,7 @@ try:
         protocol = 'http://'
 except Exception as e:
     logger.exception(e)
-    if args.echoexception:
+    if args.nostdoutexception == False:
         traceback.print_exc()
     logger.info('Exiting...')
     print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
@@ -148,7 +148,7 @@ def result ():
         main()
     except Exception as e:
         logger.exception(e)
-        if args.echoexception:
+        if args.nostdoutexception == False:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
@@ -165,7 +165,7 @@ def store ():
             webbrowser.open(protocol + '{host}:{port}/store/index.html'.format(host=server.get('host'), port=server.get('port')))
     except Exception as e:
         logger.exception(e)
-        if args.echoexception:
+        if args.nostdoutexception == False:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
@@ -187,7 +187,7 @@ def submit ():
         main()
     except Exception as e:
         logger.exception(e)
-        if args.echoexception:
+        if args.nostdoutexception == False:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
@@ -217,7 +217,7 @@ def get_server():
         return server
     except Exception as e:
         logger.exception(e)
-        if args.echoexception:
+        if args.nostdoutexception == False:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
@@ -267,7 +267,7 @@ async def middleware (request, handler):
         return response
     except Exception as e:
         logger.exception(e)
-        if args.echoexception:
+        if args.nostdoutexception == False:
             traceback.print_exc()
 
 class WebServer (object):
@@ -360,9 +360,14 @@ def main ():
             """
             Clean sessions every hour.
             """
-            while True:
-                await cravatserver.admindb.clean_sessions()
-                await asyncio.sleep(3600)
+            try:
+                while True:
+                    await cravatserver.admindb.clean_sessions()
+                    await asyncio.sleep(3600)
+            except Exception as e:
+                logger.exception(e)
+                if args.nostdoutexception == False:
+                    traceback.print_exc()
         if servermode and server_ready:
             loop.create_task(clean_sessions())
         global ssl_enabled
@@ -377,7 +382,7 @@ def main ():
             pass
     except Exception as e:
         logger.exception(e)
-        if args.echoexception:
+        if args.nostdoutexception == False:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))

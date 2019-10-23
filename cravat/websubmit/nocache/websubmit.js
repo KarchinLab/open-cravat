@@ -306,6 +306,11 @@ function populateJobTr (job) {
     var jobTr = $('tr.job-table-main-tr[jobid=' + job.id + ']')[0];
     emptyElement(jobTr);
     // Username 
+    if (adminMode == true) {
+        var td = getEl('td');
+        addEl(td, getTn(job.username));
+        addEl(jobTr, td);
+    }
     // Input file name
     if (Array.isArray(job.orig_input_fname)) {
         input_fname = job.orig_input_fname.join(', ');
@@ -579,6 +584,12 @@ function buildJobsTable () {
         var jobId = selector.attr('jobId');
         var val = selector.val();
         curSelectedReports[jobId] = val;
+    }
+    var headerTr = document.querySelector('#jobs-table thead tr');
+    if (adminMode == true) {
+        var td = getEl('th');
+        td.textContent = 'User';
+        headerTr.prepend(td);
     }
     var jobsTable = document.querySelector('#jobs-table tbody');
     $(jobsTable).empty();
