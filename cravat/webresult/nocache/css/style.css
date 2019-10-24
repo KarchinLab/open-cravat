@@ -938,7 +938,7 @@ div.pq-select-menu>.pq-select-option-label {
 	content: "\25b7";
 }
 .inactive > .filter-header-arrow::after {
-	content: "\2bbd";
+	content: "\25bd";
 }
 #vprop-sf {
 	max-width: 800px;
