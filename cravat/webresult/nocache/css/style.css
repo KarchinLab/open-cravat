@@ -935,10 +935,10 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .filter-header-arrow::after {
-	content: "\25b7";
+	content: "\25bd";
 }
 .inactive > .filter-header-arrow::after {
-	content: "\25bd";
+	content: "\25b7";
 }
 #vprop-sf {
 	max-width: 800px;
