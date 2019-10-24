@@ -22,21 +22,23 @@ InfoMgr.prototype.getStatus = function (jobId) {
 
 
 InfoMgr.prototype.count = function (dbPath, tabName, callback) {
-	$.get('/result/service/count', {tab: tabName, dbpath: dbPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
+	$.get('/result/service/count', {'username': username, 'job_id': jobId, tab: tabName, dbpath: dbPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
 		var msg = jsonResponseData['n'] + ' variants meet the criteria';
 		callback(msg, jsonResponseData);
     });
 }
 
-InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJson) {
-	if (loadKey == null) {
+InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson) {
+	/*
+    if (loadKey == null) {
 		return;
 	}
 	var toks = loadKey.split('_');
-	this.fetchtype = 'job';
 	if (toks[2] == '+' || toks[2] == '-') {
 		this.fetchtype = 'single';
 	}
+    */
+	this.fetchtype = 'job';
 	if (tabName == 'info') {
 		this.fetchtype = 'info';
 	}
@@ -52,7 +54,7 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 			url: '/result/service/result', 
 			type: 'get',
 			async: true,
-			data: {job_id: loadKey, tab: tabName, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)},
+			data: {'username': username, job_id: jobId, tab: tabName, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)},
 			success: function (jsonResponseData) {
 				self.store(self, tabName, jsonResponseData, callback, callbackArgs);
 				writeLogDiv(tabName + ' data loaded');
@@ -87,7 +89,7 @@ InfoMgr.prototype.load = function (loadKey, tabName, callback, callbackArgs, fJs
 	    	}
 		});
 	} else if (this.fetchtype == 'info') {
-		$.get('/result/service/status', {jobid: jobId, dbpath: dbPath}).done(function (jsonResponseData) {
+		$.get('/result/service/status', {'username': username, 'job_id': jobId, dbpath: dbPath}).done(function (jsonResponseData) {
 			self.jobinfo = jsonResponseData;
 			if (callback != null) {
 				callback(callbackArgs);

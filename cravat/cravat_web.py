@@ -52,11 +52,21 @@ try:
     parser = argparse.ArgumentParser()
     if os.path.basename(sys.argv[0]) == 'cravat-view':
         parser.add_argument('dbpath',
-                            help='path to a CRAVAT result SQLite file')
+            nargs='?',
+            default=None,
+            help='path to a CRAVAT result SQLite file')
         parser.add_argument('-c',
                             dest='confpath',
                             default=None,
                             help='path to a CRAVAT configuration file')
+        parser.add_argument('--username',
+            dest='username',
+            default=None,
+            help='username of the job')
+        parser.add_argument('--jobid',
+            dest='job_id',
+            default=None,
+            help='ID of the job')
     parser.add_argument('--server',
                         dest='servermode',
                         action='store_true',
@@ -94,8 +104,13 @@ try:
         server_ready = False
     wu.servermode = args.servermode
     ws.servermode = args.servermode
+    wr.servermode = args.servermode
+    wu.filerouter.servermode = args.servermode
     wu.server_ready = server_ready
     ws.server_ready = server_ready
+    wr.server_ready = server_ready
+    wu.filerouter.server_ready = server_ready
+    wr.wu = wu
     if server_ready:
         cravatserver.servermode = servermode
         cravatserver.server_ready = server_ready
@@ -133,18 +148,29 @@ except Exception as e:
 def result ():
     global args
     try:
-        dbpath = os.path.abspath(args.dbpath)
-        if os.path.exists(dbpath) == False:
-            sys.stderr.write(dbpath + ' does not exist.\n')
-            exit(-1)
+        dbpath = args.dbpath
+        if dbpath is not None:
+            dbpath = os.path.abspath(dbpath)
+            if dbpath is not None and os.path.exists(dbpath) == False:
+                sys.stderr.write(dbpath + ' does not exist.\n')
+                exit(-1)
+        username = args.username
+        job_id = args.job_id
         confpath = args.confpath
-        runid = os.path.basename(dbpath).replace('.sqlite', '')
         sys.argv = sys.argv[1:]
         global donotopenbrowser
         if not donotopenbrowser:
             server = get_server()
             global protocol
-            webbrowser.open(protocol + '{host}:{port}/result/index.html?job_id='.format(host=server.get('host'), port=server.get('port')) + runid + '&dbpath=' + dbpath)
+            url = '{host}:{port}/result/index.html'.format(host=server.get('host'), port=server.get('port'))
+            if dbpath is not None:
+                url = url + '?dbpath={}'.format(dbpath)
+            elif username is not None and job_id is not None:
+                url = url + '?username={}&job_id={}'.format(username, job_id)
+            else:
+                print('Provide the path to a OpenCRAVAT result sqlite file or both username and job ID')
+                exit()
+            webbrowser.open(protocol + url)
         main()
     except Exception as e:
         logger.exception(e)
@@ -266,6 +292,7 @@ async def middleware (request, handler):
             response.headers['Cache-Control'] = 'no-cache'
         return response
     except Exception as e:
+        logger.info('Exception occurred at request={}'.format(request))
         logger.exception(e)
         if args.nostdoutexception == False:
             traceback.print_exc()

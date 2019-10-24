@@ -41,11 +41,9 @@ class FileRouter(object):
         self.log_extension = '.log'
         self.status_extension = '.status.json'
 
-    async def get_jobs_dirs (self, request):
+    async def get_jobs_dirs (self, request, given_username=None):
         root_jobs_dir = au.get_jobs_dir()
-        global servermode
-        global server_ready
-        if servermode and server_ready:
+        if self.servermode and self.server_ready:
             username = await cravatserver.get_username(request)
         else:
             username = 'default'
@@ -57,29 +55,38 @@ class FileRouter(object):
                 if os.path.isdir(path):
                     jobs_dirs.append(path)
         else:
-            jobs_dir = os.path.join(root_jobs_dir, username)
-            if os.path.exists(jobs_dir) == False:
-                os.mkdir(jobs_dir)
-            jobs_dirs = [jobs_dir]
+            if username is None:
+                jobs_dirs = []
+            else:
+                jobs_dir = os.path.join(root_jobs_dir, username)
+                if os.path.exists(jobs_dir) == False:
+                    os.mkdir(jobs_dir)
+                jobs_dirs = [jobs_dir]
         return jobs_dirs
 
-    async def job_dir(self, request, job_id):
+    async def job_dir(self, request, job_id, given_username=None):
         jobs_dirs = await self.get_jobs_dirs(request)
-        if jobs_dirs == None:
-            return None
-        else:
-            if servermode and server_ready:
-                username = await cravatserver.get_username(request)
-                if username != 'admin':
-                    return os.path.join(jobs_dirs[0], job_id)
+        job_dir = None
+        if jobs_dirs is not None:
+            if self.servermode and self.server_ready:
+                if given_username is not None:
+                    username = given_username
                 else:
-                    for jobs_dir in jobs_dirs:
-                        job_dir = os.path.join(jobs_dir, job_id)
-                        if os.path.exists(job_dir):
-                            return job_dir
-                    return None
+                    username = await cravatserver.get_username(request)
+                if username is None:
+                    job_dir = None
+                else:
+                    if username != 'admin':
+                        job_dir = os.path.join(os.path.dirname(jobs_dirs[0]), username, job_id)
+                        #job_dir = os.path.join(jobs_dirs[0], job_id)
+                    else:
+                        for jobs_dir in jobs_dirs:
+                            job_dir = os.path.join(jobs_dir, job_id)
+                            if os.path.exists(job_dir):
+                                break
             else:
-                return os.path.join(jobs_dirs[0], job_id)
+                job_dir = os.path.join(jobs_dirs[0], job_id)
+        return job_dir
 
     async def job_input(self, request, job_id):
         job_dir, statusjson = await self.job_status(request, job_id)
@@ -920,6 +927,19 @@ async def get_available_report_types (request):
             if report_exist:
                 existing_reports.append(report_type)
     return web.json_response(existing_reports)
+
+def get_status_json_in_dir (job_dir):
+    if job_dir is None:
+        status_json = None
+    else:
+        fns = glob.glob(job_dir + '/*.status.json')
+        fns.sort()
+        if len(fns) == 0:
+            status_json = None
+        else:
+            with open(os.path.join(job_dir, fns[0])) as f:
+                status_json = json.load(f)
+    return status_json
 
 filerouter = FileRouter()
 VIEW_PROCESS = None

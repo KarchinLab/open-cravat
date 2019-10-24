@@ -196,7 +196,7 @@ function getResultLevels (callback) {
         method: 'GET',
         url: '/result/service/getresulttablelevels',
         async: true,
-        data: {'dbpath': dbPath},
+        data: {'job_id': jobId, 'username': username, 'dbpath': dbPath},
         success: function (response) {
             resultLevels = response;
             callback();
@@ -841,7 +841,7 @@ var afterLoadDefaultFilter = function (args) {
 function checkWidgets () {
 	$.ajax({
         url: '/result/service/getnowgannotmodules', 
-        data: {dbpath: dbPath},
+        data: {'username': username, 'job_id': jobId, dbpath: dbPath},
         async: true,
         success: function (jsonResponseData) {
             var noWgAnnotModules = jsonResponseData;
@@ -1001,7 +1001,7 @@ function afterGetResultLevels () {
         changeMenu();
     });
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
-    $.get('/result/service/variantcols', {dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
+    $.get('/result/service/variantcols', {job_id: jobId, username: username, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
         filterCols = jsonResponseData['columns']['variant'];
         usedAnnotators = {};
         var cols = jsonResponseData['columns']['variant'];
@@ -1029,12 +1029,18 @@ function afterGetResultLevels () {
 
 function webresult_run () {
     var urlParams = new URLSearchParams(window.location.search);
+    username = urlParams.get('username');
     jobId = urlParams.get('job_id');
     dbPath = urlParams.get('dbpath');
     confPath = urlParams.get('confpath');
     $grids = {};
     gridObjs = {};
-    document.title = 'CRAVAT: ' + jobId;
+    if (jobId != null) {
+        document.title = 'CRAVAT: ' + jobId;
+    } else if (dbPath != null) {
+        var toks = dbPath.split('/');
+        document.title = 'CRAVAT: ' + toks[toks.length - 1];
+    }
     var resizeTimeout = null;
     $(window).resize(function(event) {
         shouldResizeScreen = {};

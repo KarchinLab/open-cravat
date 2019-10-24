@@ -30,7 +30,7 @@ async def get_nowg_annot_modules (request):
     return web.json_response({})
     # Below is not run. Delete the above and change the below so that remote manifest's required_annotator is used.
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
     remote_widget_modules = au.get_remote_module_infos_of_type('webviewerwidget')
@@ -71,7 +71,7 @@ async def get_nowg_annot_modules (request):
 
 async def get_filter_save_names (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
     table = 'viewersetup'
@@ -91,7 +91,7 @@ async def get_filter_save_names (request):
 
 async def get_layout_save_names (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
     table = 'viewersetup'
@@ -109,7 +109,7 @@ async def get_layout_save_names (request):
 
 async def rename_layout_setting (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
     new_name = queries['newname']
     conn = await aiosqlite3.connect(dbpath)
@@ -127,7 +127,7 @@ async def rename_layout_setting (request):
 
 async def delete_layout_setting (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
@@ -144,7 +144,7 @@ async def delete_layout_setting (request):
 
 async def load_layout_setting (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
@@ -167,7 +167,7 @@ async def load_layout_setting (request):
 
 async def load_filter_setting (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
@@ -189,9 +189,8 @@ async def load_filter_setting (request):
     return web.json_response(content)
 
 async def save_layout_setting (request):
-    #queries = request.rel_url.query
     queries = await request.post()
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
     savedata = queries['savedata']
     conn = await aiosqlite3.connect(dbpath)
@@ -211,7 +210,7 @@ async def save_layout_setting (request):
 
 async def save_filter_setting (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
     savedata = queries['savedata']
     conn = await aiosqlite3.connect(dbpath)
@@ -238,7 +237,7 @@ async def save_filter_setting (request):
 
 async def delete_filter_setting (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
@@ -258,7 +257,7 @@ async def delete_filter_setting (request):
 
 async def get_status (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
     q = 'select * from info where colkey not like "\_%" escape "\\"'
@@ -290,7 +289,7 @@ def get_widgetlist (request):
 
 async def get_count (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     tab = queries['tab']
     if 'filter' in queries:
         filterstring = queries['filter']
@@ -310,7 +309,7 @@ async def get_count (request):
 
 async def get_result (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     dbname = os.path.basename(dbpath)
     tab = queries['tab']
     print('(Getting result of [{}]:[{}]...)'.format(dbname, tab))
@@ -360,7 +359,8 @@ async def get_result (request):
 
 async def get_result_levels (request):
     queries = request.rel_url.query
-    conn = await aiosqlite3.connect(queries['dbpath'])
+    job_id, dbpath = await get_jobid_dbpath(request)
+    conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
     sql = 'select name from sqlite_master where type="table" and ' +\
         'name like "%_header"'
@@ -378,9 +378,39 @@ async def get_result_levels (request):
     await conn.close()
     return web.json_response(content)
 
+async def get_jobid_dbpath (request):
+    queries = request.rel_url.query
+    if 'username' in queries:
+        given_username = queries['username']
+    else:
+        given_username = ''
+    if 'job_id' in queries:
+        job_id = queries['job_id']
+    else:
+        job_id = ''
+    if 'dbpath' in queries:
+        dbpath = queries['dbpath']
+    else:
+        dbpath = ''
+    if dbpath == '':
+        if 'job_id' != '':
+            global wu
+            if given_username != '':
+                job_dir = await wu.filerouter.job_dir(request, job_id, given_username=given_username)
+            else:
+                job_dir = await wu.filerouter.job_dir(request, job_id)
+            status_json = wu.get_status_json_in_dir(job_dir)
+            if status_json is not None and 'db_path' in status_json:
+                dbpath = status_json['db_path']
+            else:
+                dbpath = None
+        else:
+            return web.json_response({})
+    return job_id, dbpath
+
 async def get_variant_cols (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     if 'confpath' in queries:
         confpath = queries['confpath']
     else:
@@ -536,6 +566,9 @@ def serve_widgetfile (request):
 async def serve_runwidget (request):
     path = 'wg' + request.match_info['module']
     queries = request.rel_url.query
+    job_id, dbpath = await get_jobid_dbpath(request)
+    if ('dbpath' not in queries or queries['dbpath'] == '') and dbpath is not None:
+        queries = {'dbpath': dbpath}
     f, fn, d = imp.find_module(path, 
         [os.path.join(au.get_modules_dir(), 
                       'webviewerwidgets', path)])
@@ -545,7 +578,7 @@ async def serve_runwidget (request):
 
 async def get_modules_info (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
     q = 'select colval from info where colkey="_annotator_desc"'
@@ -567,7 +600,7 @@ async def get_modules_info (request):
 
 async def load_smartfilters (request):
     queries = request.rel_url.query
-    dbpath = queries['dbpath']
+    job_id, dbpath = await get_jobid_dbpath(request)
     sfs = {'base':base_smartfilters}
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()

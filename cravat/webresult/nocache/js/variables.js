@@ -6,6 +6,7 @@ var columns = null;
 var columnnos = null;
 var selectedRowIds = {};
 var selectedRowNos = {};
+var username = null;
 var jobId = null;
 var currentTab = null;
 var ascendingSort = {};

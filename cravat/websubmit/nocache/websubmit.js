@@ -349,7 +349,7 @@ function populateJobTr (job) {
     viewTd.style.textAlign  = 'center';
     if (statusC == 'Finished') {
         var a = getEl('a');
-        a.setAttribute('href', '/result/index.html?dbpath=' + job.db_path + '&job_id=' + job.id)
+        a.setAttribute('href', '/result/index.html?job_id=' + job.id)
         a.setAttribute('target', '_blank');
         var button = getEl('button');
         addEl(button, getTn('Open Result Viewer'));

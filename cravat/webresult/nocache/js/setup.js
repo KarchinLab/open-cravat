@@ -549,7 +549,7 @@ class SmartFilter {
 filterMgr = new FilterManager();
 
 function populateFilterSaveNames() {
-	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getfiltersavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
 		let quicksaveIndex = response.indexOf('quicksave-name-internal-use');
 		if (quicksaveIndex > -1) {
 			response.splice(quicksaveIndex,1);
@@ -1607,7 +1607,7 @@ function drawSummaryWidget (widgetName) {
         addEl(widgetContentDiv, spinner);
         $.ajax({
             url: '/result/runwidget/' + widgetName, 
-            data: {dbpath: dbPath, params: JSON.stringify(callServerParams)},
+            data: {'username': username, 'job_id': jobId, dbpath: dbPath, params: JSON.stringify(callServerParams)},
             async: true,
             success: function (response) {
                 var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');

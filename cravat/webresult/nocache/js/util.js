@@ -222,7 +222,7 @@ function saveFilterSetting (name, useFilterJson) {
 			type: 'GET',
 			async: true,
 			url: '/result/service/savefiltersetting', 
-			data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
+			data: {'username': username, 'job_id': jobId, 'dbpath': dbPath, name: name, 'savedata': saveDataStr},
 			success: function (response) {
 				writeLogDiv('Filter setting has been saved.');
 				resolve();
@@ -233,7 +233,7 @@ function saveFilterSetting (name, useFilterJson) {
 
 function deleteFilterSetting (name) {
 	return new Promise((resolve, reject) => {
-		$.get('/result/service/deletefiltersetting', {'dbpath': dbPath, name: name}).done(function (response) {
+		$.get('/result/service/deletefiltersetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, name: name}).done(function (response) {
 			if (response == 'deleted') {
 				writeLogDiv('Filter setting has been deleted.');
 			} else {
@@ -247,7 +247,7 @@ function deleteFilterSetting (name) {
 
 function saveFilterSettingAs () {
 	return new Promise((resolve, reject) => {
-		$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+		$.get('/result/service/getfiltersavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
 			var quickSaveNameIdx = response.indexOf(quickSaveName);
 			if (quickSaveNameIdx >= 0) {
 				response.splice(quickSaveNameIdx, 1);
@@ -269,7 +269,7 @@ function saveFilterSettingAs () {
 }
 
 function deleteFilterSettingAs () {
-	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getfiltersavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
             response.splice(quickSaveNameIdx, 1);
@@ -289,7 +289,7 @@ function deleteFilterSettingAs () {
 function saveLayoutSettingAs (evt) {
     hideAllMenu3();
     evt.stopPropagation();
-	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getlayoutsavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
             response.splice(quickSaveNameIdx, 1);
@@ -363,7 +363,7 @@ function saveWidgetSetting (name) {
 		url: '/result/service/savewidgetsetting', 
 		type: 'get',
 		async: true,
-		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr},
+		data: {'username': username, 'job_id': jobId, 'dbpath': dbPath, name: name, 'savedata': saveDataStr},
 		success: function (response) {
 			writeLogDiv('Widget setting has been saved.');
 		}
@@ -518,7 +518,7 @@ function saveLayoutSetting (name, nextAction) {
 	$.ajax({
 		url: '/result/service/savelayoutsetting', 
 		type: 'post',
-		data: {'dbpath': dbPath, name: name, 'savedata': saveDataStr}, 
+		data: {'username': username, 'job_id': jobId, 'dbpath': dbPath, name: name, 'savedata': saveDataStr}, 
 		async: true,
 		success: function (response) {
 			lastUsedLayoutName = name;
@@ -652,7 +652,7 @@ function applyTableSetting (level) {
 }
 
 function loadFilterSettingAs () {
-	$.get('/result/service/getfiltersavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getfiltersavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
             response.splice(quickSaveNameIdx, 1);
@@ -687,7 +687,7 @@ function loadFilterSettingAs () {
 }
 
 function loadFilterSetting (name, callback, doNotCount) {
-	$.get('/result/service/smartfilters', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/smartfilters', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
 		smartFilters = {};
 		for (let source in response) {
 			let sfs = response[source];
@@ -707,7 +707,7 @@ function loadFilterSetting (name, callback, doNotCount) {
 			}
 		}
 		setupTab('filter');
-		$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+		$.get('/result/service/loadfiltersetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name}).done(function (response) {
 			writeLogDiv('Filter setting loaded');
 			var data = response;
 			filterJson = data['filterSet'];
@@ -726,7 +726,7 @@ function loadFilterSetting (name, callback, doNotCount) {
 
 function getSavedFilter (name) {
 	return new Promise((resolve, reject) => {
-		$.get('/result/service/loadfiltersetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+		$.get('/result/service/loadfiltersetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name}).done(function (response) {
 			resolve(response['filterSet'])
 		});
 	})
@@ -745,7 +745,7 @@ function loadLayoutSettingAs (evt) {
 	emptyElement(div);
     div.style.display = 'block';
     evt.stopPropagation();
-	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getlayoutsavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
             response.splice(quickSaveNameIdx, 1);
@@ -764,7 +764,7 @@ function loadLayoutSettingAs (evt) {
 }
 
 function loadLayoutSetting (name, callback) {
-	$.get('/result/service/loadlayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+	$.get('/result/service/loadlayoutsetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name}).done(function (response) {
 		var data = response;
 		loadedTableSettings = data['tableSettings'];
 		if (loadedTableSettings == undefined) {
@@ -808,7 +808,7 @@ function deleteLayoutSettingAs (evt) {
 	emptyElement(div);
     div.style.display = 'block';
     evt.stopPropagation();
-	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getlayoutsavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
         /*
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
@@ -834,7 +834,7 @@ function deleteLayoutSettingAs (evt) {
 }
 
 function deleteLayoutSetting (name, callback) {
-	$.get('/result/service/deletelayoutsetting', {'dbpath': dbPath, 'name': name}).done(function (response) {
+	$.get('/result/service/deletelayoutsetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Layout setting deleted');
     });
 }
@@ -845,7 +845,7 @@ function renameLayoutSettingAs (evt) {
 	emptyElement(div);
     div.style.display = 'block';
     evt.stopPropagation();
-	$.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+	$.get('/result/service/getlayoutsavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
             response.splice(quickSaveNameIdx, 1);
@@ -867,7 +867,7 @@ function renameLayoutSetting (name, callback) {
 	var msg = 'Please enter a new name for layout ' + name + '.';
 	var newName = prompt(msg, lastUsedLayoutName);
 	if (newName != null) {
-		$.get('/result/service/renamelayoutsetting', {'dbpath': dbPath, 'name': name, 'newname': newName}).done(function (response) {
+		$.get('/result/service/renamelayoutsetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name, 'newname': newName}).done(function (response) {
 			writeLogDiv('Layout name has been changed.');
 		});
 	}
