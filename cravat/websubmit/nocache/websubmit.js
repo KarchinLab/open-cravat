@@ -20,6 +20,7 @@ var jobsListCurStart = 0;
 var jobsListCurEnd = jobsPerPageInList;
 var systemReadyObj = {};
 var formData = null;
+var adminMode = false;
 
 function submit () {
     if (servermode && logged == false) {
