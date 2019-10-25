@@ -335,13 +335,19 @@ class WebServer (object):
         for route in routes:
             method, path, func_name = route
             self.app.router.add_route(method, path, func_name)
-        self.app.router.add_static('/store', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webstore'))
-        self.app.router.add_static('/result', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'webresult'))
-        self.app.router.add_static('/submit', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'websubmit'))
+        source_dir = os.path.dirname(os.path.realpath(__file__))
+        self.app.router.add_static('/store', os.path.join(source_dir, 'webstore'))
+        self.app.router.add_static('/result', os.path.join(source_dir, 'webresult'))
+        self.app.router.add_static('/submit', os.path.join(source_dir, 'websubmit'))
         self.app.router.add_get('/heartbeat', heartbeat)
         self.app.router.add_get('/issystemready', is_system_ready)
+        self.app.router.add_get('/favicon.ico', serve_favicon)
         ws.start_worker()
         wu.start_worker()
+
+async def serve_favicon (request):
+    source_dir = os.path.dirname(os.path.realpath(__file__))
+    return web.FileResponse(os.path.join(source_dir, 'favicon.ico'))
 
 async def heartbeat(request):
     ws = web.WebSocketResponse(timeout=60*60*24*365)
