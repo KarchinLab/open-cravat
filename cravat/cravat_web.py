@@ -39,7 +39,7 @@ log_dir = sysconf[constants.log_dir_key]
 log_path = os.path.join(log_dir, 'wcravat.log')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-log_handler = logging.handlers.RotatingFileHandler(log_path, maxBytes=1024*1024*10, backupCount=5)
+log_handler = logging.handlers.TimedRotatingFileHandler(log_path, when='d', backupCount=30)
 log_formatter = logging.Formatter('%(asctime)s: %(message)s', '%Y/%m/%d %H:%M:%S')
 log_handler.setFormatter(log_formatter)
 logger.addHandler(log_handler)
