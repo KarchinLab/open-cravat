@@ -862,6 +862,16 @@ async def load_live_modules ():
         live_modules[module.name] = annotator
     print('done populating live annotators')
 
+def clean_annot_dict (d):
+    keys = d.keys()
+    for key in keys:
+        value = d[key]
+        if value == '' or value == {}:
+            d[key] = None
+        elif type(value) is dict:
+            d[key] = clean_annot_dict(value)
+    return d
+
 async def live_annotate (input_data, annotators):
     from cravat.constants import mapping_parser_name
     from cravat.constants import all_mappings_col_name
@@ -878,6 +888,10 @@ async def live_annotate (input_data, annotators):
         try:
             annot_data = v.annotate(input_data=crx_data)
             annot_data = v.live_report_substitute(annot_data)
+            if annot_data == '' or annot_data == {}:
+                annot_data = None
+            elif type(annot_data) is dict:
+                annot_data = clean_annot_dict(annot_data)
             response[k] = annot_data
         except Exception as e:
             import traceback
