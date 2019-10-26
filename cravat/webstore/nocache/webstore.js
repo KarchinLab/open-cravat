@@ -199,22 +199,6 @@ function getLocal () {
                 }
                 remoteModule.tags = remoteTags;
             }
-            for (var mn in remoteModuleInfo) {
-                var groups = remoteModuleInfo[mn]['groups'];
-                if (groups != undefined && groups.length > 0) {
-                    for (var i = 0; i < groups.length; i++) {
-                        var group = groups[i];
-                        if (remoteModuleInfo[group] == undefined) {
-                            return;
-                        }
-                        if (moduleGroupMembers[group] == undefined) {
-                            moduleGroupMembers[group] = [];
-                        }
-                        moduleGroupMembers[group].push(mn);
-                    }
-                    remoteModuleInfo[mn]['groups'] = true;
-                }
-            }
             baseInstalled = true;
             var moduleNamesInInstallQueue = Object.keys(installInfo);
             baseToInstall = [];
@@ -445,12 +429,49 @@ function getMostDownloadedModuleNames () {
     return top10ModuleNames;
 }
 
+function updateModuleGroupInfo () {
+    for (var mn in remoteModuleInfo) {
+        var groups = remoteModuleInfo[mn]['groups'];
+        if (groups != undefined && groups.length > 0) {
+            for (var i = 0; i < groups.length; i++) {
+                var group = groups[i];
+                if (remoteModuleInfo[group] == undefined) {
+                    return;
+                }
+                if (moduleGroupMembers[group] == undefined) {
+                    moduleGroupMembers[group] = [];
+                }
+                moduleGroupMembers[group].push(mn);
+            }
+        }
+    }
+    var groupNames = Object.keys(moduleGroupMembers);
+    for (var i = 0; i < groupNames.length; i++) {
+        var gn = groupNames[i];
+        var mns = moduleGroupMembers[gn];
+        var group = remoteModuleInfo[gn];
+        for (var j = 0; j < mns.length; j++) {
+            var mn = mns[j];
+            var m = remoteModuleInfo[mn];
+            var d1 = new Date(group.publish_time);
+            var d2 = new Date(m.publish_time);
+            if (d1 < d2) {
+                group.publish_time = m.publish_time;
+            }
+        }
+    }
+}
+
 function getNewestModuleNames () {
     var moduleNames = Object.keys(remoteModuleInfo);
     for (var i = 0; i < moduleNames.length; i++) {
         for (var j = i + 1; j < moduleNames.length - 1; j++) {
-            var d1 = new Date(remoteModuleInfo[moduleNames[i]].publish_time);
-            var d2 = new Date(remoteModuleInfo[moduleNames[j]].publish_time);
+            var n1 = moduleNames[i];
+            var n2 = moduleNames[j];
+            var m1 = remoteModuleInfo[n1];
+            var m2 = remoteModuleInfo[n2];
+            var d1 = new Date(m1.publish_time);
+            var d2 = new Date(m2.publish_time);
             if (d1 < d2) {
                 var tmp = moduleNames[i];
                 moduleNames[i] = moduleNames[j];
@@ -468,10 +489,14 @@ function getNewestModuleNames () {
         if (baseModuleNames.indexOf(moduleName) >= 0) {
             continue;
         }
-        if (remoteModuleInfo[moduleName].hidden == true) {
+        var m = remoteModuleInfo[moduleName];
+        if (m.hidden == true) {
             continue;
         }
-        if (remoteModuleInfo[moduleName].type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
+        if (m.type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
+            continue;
+        }
+        if (m.groups.length > 0) {
             continue;
         }
         top10ModuleNames.push(moduleName);
@@ -607,6 +632,7 @@ function getRemote () {
                     moduleInfo.tags = [];
                 }
             }
+            updateModuleGroupInfo();
             var modules = Object.keys(remoteModuleInfo);
             for (var i = 0; i < modules.length; i++) {
                 var module = modules[i];
@@ -1175,7 +1201,7 @@ function getFilteredRemoteModules () {
         var remoteModuleNameLower = remoteModuleName.toLowerCase();
         var remoteModule = remoteModuleInfo[remoteModuleName];
         var newCheck = document.getElementById('store-tag-checkbox-newavailable').checked;
-        if (remoteModule['groups'] == true) {
+        if (remoteModule['groups'].length > 0) {
             var pass = false;
             if (currentPage == 'storediv-modulegroup-div') {
                 pass = true;
