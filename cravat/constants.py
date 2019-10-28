@@ -13,7 +13,7 @@ if pl.startswith('Windows'):
     oc_root_dir = os.path.join(os.path.expandvars('%systemdrive%'), os.sep, 'open-cravat')
 elif pl.startswith('Linux'):
     oc_root_dir = packagedir
-elif pl.startswith('Darwin'):
+elif pl.startswith('Darwin') or pl.startswith('macOS'):
     oc_root_dir = '/Users/Shared/open-cravat'
 if os.path.exists(oc_root_dir) == False:
     os.mkdir(oc_root_dir)
