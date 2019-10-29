@@ -24,6 +24,7 @@ from multiprocessing import Process, Pipe, Value, Manager, Queue
 from queue import Empty
 from cravat import constants
 from cravat import get_live_annotator, get_live_mapper
+import signal
 
 cfl = ConfigLoader()
 
@@ -743,14 +744,28 @@ def fetch_job_queue (job_queue, run_jobs_info):
         async def cancel_job(self, uid):
             p = self.running_jobs.get(uid)
             p.poll()
+            pl = platform.platform().lower()
             if p:
-                if platform.platform().lower().startswith('windows'):
+                if pl.startswith('windows'):
                     # proc.kill() doesn't work well on windows
                     subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=p.pid),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                     while True:
                         await asyncio.sleep(0.25)
                         if p.poll() is not None:
                             break
+                elif pl.startswith('darwin') or pl.startswith('macos'):
+                    lines = subprocess.check_output('ps -a | grep {} | grep cravat'.format(uid), shell=True)
+                    lines = lines.decode('utf-8')
+                    lines = lines.split('\n')
+                    pids = [int(l.strip().split(' ')[0]) for l in lines if l != '']
+                    for pid in pids:
+                        if pid == p.pid:
+                            p.kill()
+                        else:
+                            try:
+                                os.kill(pid, signal.SIGTERM)
+                            except ProcessLookupError:
+                                continue
                 else:
                     p.kill()
             self.clean_jobs(id)
