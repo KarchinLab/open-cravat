@@ -74,3 +74,5 @@ var showcaseWidgets = {'info': ['sosamplesummary', 'ndexchasmplussummary', 'ndex
 
 var geneRows = {};
 var colgroupkeysWithMissingCols = [];
+
+var separateSample = false;

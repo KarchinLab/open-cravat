@@ -133,6 +133,11 @@ cravat_cmd_parser.add_argument('--version',
     action='store_true',
     default=False,
     help='Shows open-cravat version.')
+cravat_cmd_parser.add_argument('--separatesample',
+    dest='separatesample',
+    action='store_true',
+    default=False,
+    help='Separate variant results by sample')
 
 class MyManager (multiprocessing.managers.SyncManager):
     pass
@@ -781,6 +786,8 @@ class Cravat (object):
                 cmd.append('--inputfiles')
                 for input_file in self.inputs:
                     cmd.append(input_file)
+                if self.args.separatesample:
+                    cmd.append('--separatesample')
                 if self.verbose:
                     print(' '.join(cmd))
                 Reporter = util.load_class('Reporter', module.script_path)

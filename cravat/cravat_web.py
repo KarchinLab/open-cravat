@@ -87,6 +87,7 @@ try:
         action='store_true',
         default=False,
         help='Console echoes exceptions written to log file.')
+
     args = parser.parse_args(sys.argv[1:])
     donotopenbrowser = args.donotopenbrowser
     servermode = args.servermode

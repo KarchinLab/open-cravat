@@ -333,6 +333,16 @@ async def get_result (request):
     if filterstring != None:
         args.extend(['--filterstring', filterstring])
     args.append('--nogenelevelonvariantlevel')
+    if 'separatesample' in queries:
+        separatesample = queries['separatesample']
+        if separatesample == 'true':
+            separatesample = True
+        else:
+            separatesample = False
+    else:
+        separatesample = False
+    if separatesample:
+        args.append('--separatesample')
     reporter = m.Reporter(args, None)
     await reporter.prep()
     #print('  getting result [{}] from {} for viewer...'.format(tab, dbname))

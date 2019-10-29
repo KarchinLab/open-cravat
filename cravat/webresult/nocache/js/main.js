@@ -1033,6 +1033,11 @@ function webresult_run () {
     jobId = urlParams.get('job_id');
     dbPath = urlParams.get('dbpath');
     confPath = urlParams.get('confpath');
+    if (urlParams.get('separatesample') == 'true') {
+        separateSample = true;
+    } else {
+        separateSample = false;
+    }
     $grids = {};
     gridObjs = {};
     if (jobId != null) {

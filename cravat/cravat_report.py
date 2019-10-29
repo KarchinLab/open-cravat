@@ -84,7 +84,6 @@ class CravatReport:
                     row[colno] = value
         return row
 
-    #def process_datarow (self, datarow, should_skip_some_cols):
     def process_datarow (self, args):
         datarow = args[0]
         should_skip_some_cols = args[1]
@@ -100,7 +99,6 @@ class CravatReport:
             if self.nogenelevelonvariantlevel == False and hugo_present:
                 hugo = datarow[self.colnos['variant']['base__hugo']]
                 loop = asyncio.get_event_loop()
-                #generow = await self.cf.get_gene_row(hugo)
                 future = asyncio.ensure_future(self.cf.get_gene_row(hugo), loop)
                 generow = future.result()
                 if generow is None:
@@ -121,10 +119,8 @@ class CravatReport:
         new_datarow = []
         colnos = self.colnos[level]
         for colname in [col['col_name'] for col in self.colinfo[level]['columns']]:
-            #if colname not in colnos:
             if colname in self.colname_conversion[level]:
                 newcolname = self.colname_conversion[level][colname]
-                #newcolname = self.mapper_name + '__' + colname.split('__')[1]
                 if newcolname in colnos:
                     colno = colnos[newcolname]
                 else:
@@ -205,17 +201,12 @@ class CravatReport:
                 if datacols[colno] in constants.legacy_gene_level_cols_to_skip:
                     colnos_to_skip.append(colno)
         should_skip_some_cols = len(colnos_to_skip) > 0
-        num_executors = 8
-        from concurrent.futures import ThreadPoolExecutor
-        executor = ThreadPoolExecutor(max_workers=num_executors)
+        if level == 'variant' and self.args.separatesample:
+            write_variant_sample_separately = True
+            sample_colno = self.colnos['variant']['base__samples']
+        else:
+            write_variant_sample_separately = False
         for datarow in datarows:
-        #for rowno in range(0, len(datarows), num_executors):
-            #executor.submit(self.process_datarow, datarow, should_skip_some_cols)
-            #datarow_pool = [[datarow, should_skip_some_cols, level, gene_summary_datas] for datarow in datarows[rowno:rowno + num_executors]]
-            #its = executor.map(self.process_datarow, datarow_pool)
-            #for new_datarow in its:
-            #    self.write_table_row(new_datarow)
-            #continue
             if datarow is None:
                 continue
             datarow = list(datarow)
@@ -244,14 +235,12 @@ class CravatReport:
             new_datarow = []
             colnos = self.colnos[level]
             for colname in [col['col_name'] for col in self.colinfo[level]['columns']]:
-                #if colname not in colnos:
                 if colname in self.colname_conversion[level]:
-                    newcolname = self.colname_conversion[level][colname]
-                    #newcolname = self.mapper_name + '__' + colname.split('__')[1]
-                    if newcolname in colnos:
-                        colno = colnos[newcolname]
+                    oldcolname = self.colname_conversion[level][colname]
+                    if oldcolname in colnos:
+                        colno = colnos[oldcolname]
                     else:
-                        self.logger.info('column name does not exist in data: {}'.format(colname))
+                        self.logger.info('column name does not exist in data: {}'.format(oldcolname))
                         continue
                 else:
                     colno = colnos[colname]
@@ -277,7 +266,18 @@ class CravatReport:
                 newvals.sort()
                 newcell = '; '.join(newvals)
                 new_datarow[colno] = newcell
-            self.write_table_row(new_datarow)
+            if write_variant_sample_separately:
+                samples = new_datarow[sample_colno]
+                if samples is not None:
+                    samples = new_datarow[sample_colno].split(';')
+                    for sample in samples:
+                        sample_datarow = new_datarow
+                        sample_datarow[sample_colno] = sample
+                        self.write_table_row(sample_datarow)
+                else:
+                    self.write_table_row(new_datarow)
+            else:
+                self.write_table_row(new_datarow)
 
     async def store_mapper (self):
         q = 'select colval from info where colkey="_mapper"'
@@ -542,6 +542,7 @@ class CravatReport:
         # re-orders columns.
         self.colname_conversion[level] = {}
         new_columns = []
+        colno = 0
         for colgrp in newcolgrps:
             colgrpname = colgrp['name']
             for col in columns:
@@ -551,8 +552,12 @@ class CravatReport:
                     self.colname_conversion[level][newcolname] = col['col_name']
                     col['col_name'] = newcolname
                     new_columns.append(col)
+                    self.colnos[level][newcolname] = colno
+                    colno += 1
                 elif grpname == colgrpname:
                     new_columns.append(col)
+                    self.colnos[level][col['col_name']] = colno
+                    colno += 1
         self.colinfo[level] = {'colgroups': newcolgrps, 'columns': new_columns}
         # report substitution
         if level in ['variant', 'gene']:
@@ -630,6 +635,11 @@ class CravatReport:
             dest='inputfiles',
             default=None,
             help='Original input file path')
+        parser.add_argument('--separatesample',
+            dest='separatesample',
+            action='store_true',
+            default=False,
+            help='Write each variant-sample pair on a separate line')
         parsed_args = parser.parse_args(cmd_args[1:])
         self.parsed_args = parsed_args
         self.dbpath = parsed_args.dbpath
