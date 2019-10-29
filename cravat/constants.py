@@ -280,3 +280,4 @@ default_num_input_line_warning_cutoff = 25000
 default_max_num_concurrent_jobs = 1
 default_max_num_concurrent_annotators_per_job = 1
 default_assembly = 'hg38'
+default_assembly_key = 'default_assembly'

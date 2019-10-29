@@ -8,7 +8,7 @@ from .config_loader import ConfigLoader
 import aiosqlite3
 import datetime
 from types import SimpleNamespace
-from .constants import liftover_chain_paths, admindb_path
+from .constants import liftover_chain_paths, admindb_path, default_assembly_key
 import json
 import logging
 import traceback
@@ -156,11 +156,9 @@ class Cravat (object):
         self.pythonpath = sys.executable
         self.annotators = {}        
         self.make_args_namespace(kwargs)
-        self.cravat_conf = self.conf.get_cravat_conf()
         self.get_logger()
         self.start_time = time.time()
         self.logger.info('started: {0}'.format(time.asctime(time.localtime(self.start_time))))
-        self.logger.info('input assembly: {}'.format(self.input_assembly))
         if self.run_conf_path != '':
             self.logger.info('conf file: {}'.format(self.run_conf_path))
         if self.args.confs != None:
@@ -285,7 +283,11 @@ class Cravat (object):
         try:
             self.check_valid_modules()
             self.update_status('Started cravat')
-            print('Input file(s):', ', '.join(self.inputs))
+            input_files_str = ', '.join(self.inputs)
+            print('Input file(s): {}'.format(input_files_str))
+            print('Genome assembly: {}'.format(self.input_assembly))
+            self.logger.info('input files: {}'.format(input_files_str))
+            self.logger.info('input assembly: {}'.format(self.input_assembly))
             self.set_and_check_input_files()
             converter_ran = False
             if self.endlevel >= self.runlevels['converter'] and \
@@ -439,6 +441,7 @@ class Cravat (object):
         if 'conf' in full_args: 
             self.run_conf_path = full_args['conf']
         self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
+        self.cravat_conf = self.conf.get_cravat_conf()
         self.run_conf = self.conf.get_run_conf()
         self.args = SimpleNamespace(**full_args)
         if self.args.show_version:
@@ -491,7 +494,12 @@ class Cravat (object):
         if self.reports is None:
             self.reports = ['excel']
         if self.args.liftover is None:
-            self.input_assembly = 'hg38'
+            if default_assembly_key in self.cravat_conf:
+                self.input_assembly = self.cravat_conf[default_assembly_key]
+            else:
+                msg = 'Genome assembly should be given with -l option or a default genome assembly should be defined in cravat.yml as default_assembly.'
+                print(msg)
+                exit()
         else:
             self.input_assembly = self.args.liftover
         if self.args.repeat is None:
