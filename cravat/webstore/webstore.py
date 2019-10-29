@@ -19,6 +19,7 @@ import shutil
 import copy
 import aiosqlite3
 import importlib
+import concurrent.futures
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
@@ -278,7 +279,10 @@ async def connect_websocket (request):
     install_ws = web.WebSocketResponse(timeout=60*60*24*365)
     await install_ws.prepare(request)
     while True:
-        await asyncio.sleep(1)
+        try:
+            await asyncio.sleep(1)
+        except concurrent.futures._base.CancelledError:
+            return install_ws
         if last_update_time < install_state['update_time']:
             last_update_time = await send_socket_msg()
     return install_ws
