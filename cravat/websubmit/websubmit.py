@@ -40,6 +40,7 @@ class FileRouter(object):
         self.db_extension = '.sqlite'
         self.log_extension = '.log'
         self.status_extension = '.status.json'
+        self.job_statuses = {}
 
     async def get_jobs_dirs (self, request, given_username=None):
         root_jobs_dir = au.get_jobs_dir()
@@ -165,10 +166,20 @@ class FileRouter(object):
             for fn in fns:
                 if fn.endswith('.status.json'):
                     with open(os.path.join(job_dir, fn)) as f:
-                        statusjson = json.loads(f.readline())
+                        try:
+                            statusjson = json.loads(f.readline())
+                        except json.JSONDecodeError as e:
+                            if job_id in self.job_statuses:
+                                statusjson = self.job_statuses[job_id]
+                            else:
+                                raise e
+                        break
                 elif fn.endswith('.info.yaml'):
                     with open(os.path.join(job_dir, fn)) as f:
                         statusjson = yaml.load(f)
+                        break
+            if statusjson != {}:
+                self.job_statuses[job_id] = statusjson
         except Exception as e:
             traceback.print_exc()
             job_dir = None
