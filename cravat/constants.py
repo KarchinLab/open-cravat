@@ -281,3 +281,4 @@ default_max_num_concurrent_jobs = 1
 default_max_num_concurrent_annotators_per_job = 1
 default_assembly = 'hg38'
 default_assembly_key = 'default_assembly'
+assembly_choices = ['hg38', 'hg19', 'hg18']

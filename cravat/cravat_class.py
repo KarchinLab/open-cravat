@@ -8,7 +8,7 @@ from .config_loader import ConfigLoader
 import aiosqlite3
 import datetime
 from types import SimpleNamespace
-from .constants import liftover_chain_paths, admindb_path, default_assembly_key
+from . import constants
 import json
 import logging
 import traceback
@@ -88,7 +88,7 @@ cravat_cmd_parser.add_argument('-t',
                     help='report types. If omitted, default one in cravat.yml is used.')
 cravat_cmd_parser.add_argument('-l',
                     dest='liftover',
-                    choices=['hg38', 'hg19', 'hg18'],
+                    choices=constants.assembly_choices,
                     default=None,
                     help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
 cravat_cmd_parser.add_argument('-x',
@@ -397,12 +397,12 @@ class Cravat (object):
     async def write_admin_db (self, runtime, numinput):
         if runtime is None or numinput is None:
             return
-        if os.path.exists(admindb_path) == False:
-            s = '{} does not exist.'.format(admindb_path)
+        if os.path.exists(constants.admindb_path) == False:
+            s = '{} does not exist.'.format(constants.admindb_path)
             self.logger.info(s)
             print(s)
             return
-        db = await aiosqlite3.connect(admindb_path)
+        db = await aiosqlite3.connect(constants.admindb_path)
         cursor = await db.cursor()
         q = 'update jobs set runtime={}, numinput={} where jobid="{}"'.format(runtime, numinput, self.args.jobid)
         await cursor.execute(q)
@@ -499,10 +499,10 @@ class Cravat (object):
         if self.reports is None:
             self.reports = ['excel']
         if self.args.liftover is None:
-            if default_assembly_key in self.cravat_conf:
-                self.input_assembly = self.cravat_conf[default_assembly_key]
+            if constants.default_assembly_key in self.cravat_conf:
+                self.input_assembly = self.cravat_conf[constants.default_assembly_key]
             else:
-                msg = 'Genome assembly should be given with -l option or a default genome assembly should be defined in cravat.yml as default_assembly.'
+                msg = 'Genome assembly should be given (as one of {}) with -l option or a default genome assembly should be defined in cravat.yml as default_assembly.'.format(', '.join(constants.assembly_choices))
                 print(msg)
                 exit()
         else:
