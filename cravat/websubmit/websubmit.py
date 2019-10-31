@@ -896,6 +896,14 @@ def clean_annot_dict (d):
             d[key] = None
         elif type(value) is dict:
             d[key] = clean_annot_dict(value)
+    if type(d) is dict:
+        all_none = True
+        for key in keys:
+            if d[key] is not None:
+                all_none = False
+                break
+        if all_none:
+            d = None
     return d
 
 async def live_annotate (input_data, annotators):
