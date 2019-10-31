@@ -392,7 +392,7 @@ def main ():
         loop.call_later(0.1, wakeup)
         async def clean_sessions():
             """
-            Clean sessions every hour.
+            Clean sessions periodically.
             """
             try:
                 max_age = conf.get_cravat_conf().get('max_session_age',604800) # default 1 week
