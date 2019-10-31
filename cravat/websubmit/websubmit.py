@@ -565,6 +565,7 @@ async def generate_report(request):
     run_args.extend(['--startat', 'reporter'])
     run_args.extend(['--repeat', 'reporter'])
     run_args.extend(['-t', report_type])
+    run_args.extend(['-l', 'hg38'])
     p = subprocess.Popen(run_args)
     p.wait()
     return web.json_response('done')
