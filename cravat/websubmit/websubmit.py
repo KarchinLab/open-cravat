@@ -565,6 +565,7 @@ async def generate_report(request):
     run_args.extend(['--startat', 'reporter'])
     run_args.extend(['--repeat', 'reporter'])
     run_args.extend(['-t', report_type])
+    run_args.extend(['-l', 'hg38'])
     p = subprocess.Popen(run_args)
     p.wait()
     return web.json_response('done')
@@ -684,8 +685,15 @@ end tell'
     return web.json_response(response)
 
 def get_last_assembly (request):
+    global servermode
+    global server_ready
     last_assembly = au.get_last_assembly()
-    return web.json_response(last_assembly)
+    default_assembly = au.get_default_assembly()
+    if servermode and server_ready and default_assembly is not None:
+        assembly = default_assembly
+    else:
+        assembly = last_assembly
+    return web.json_response(assembly)
 
 async def delete_job (request):
     global job_queue
@@ -896,6 +904,14 @@ def clean_annot_dict (d):
             d[key] = None
         elif type(value) is dict:
             d[key] = clean_annot_dict(value)
+    if type(d) is dict:
+        all_none = True
+        for key in keys:
+            if d[key] is not None:
+                all_none = False
+                break
+        if all_none:
+            d = None
     return d
 
 async def live_annotate (input_data, annotators):

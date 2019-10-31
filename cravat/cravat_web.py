@@ -320,7 +320,7 @@ class WebServer (object):
         if server_ready:
             cravatserver.setup(self.app)
         self.setup_routes()
-        self.runner = web.AppRunner(self.app)
+        self.runner = web.AppRunner(self.app, access_log=None)
         await self.runner.setup()
         self.site = TCPSitePatched(self.runner, self.host, self.port, loop=self.loop, ssl_context=self.ssl_context)
         await self.site.start()
@@ -392,18 +392,21 @@ def main ():
         loop.call_later(0.1, wakeup)
         async def clean_sessions():
             """
-            Clean sessions every hour.
+            Clean sessions periodically.
             """
             try:
+                max_age = conf.get_cravat_conf().get('max_session_age',604800) # default 1 week
+                interval = conf.get_cravat_conf().get('session_clean_interval',3600) # default 1 hr
                 while True:
-                    await cravatserver.admindb.clean_sessions()
-                    await asyncio.sleep(3600)
+                    await cravatserver.admindb.clean_sessions(max_age)
+                    await asyncio.sleep(interval)
             except Exception as e:
                 logger.exception(e)
                 if args.nostdoutexception == False:
                     traceback.print_exc()
         if servermode and server_ready:
-            loop.create_task(clean_sessions())
+            if 'max_session_age' in conf.get_cravat_conf():
+                loop.create_task(clean_sessions())
         global ssl_enabled
         if ssl_enabled:
             global sc

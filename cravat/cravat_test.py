@@ -51,6 +51,7 @@ class Tester():
             cmd_list.extend(['-a', self.module.name])
         else:
             cmd_list.extend(['--skip', 'annotator'])
+        cmd_list.extend(['-l', 'hg38'])
         print(' '.join(cmd_list))
         exit_code = subprocess.call(' '.join(cmd_list), shell=True, stdout=self.log, stderr=subprocess.STDOUT)
         if exit_code != 0:
