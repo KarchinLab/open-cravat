@@ -145,6 +145,7 @@ function getLocal () {
             updates = data.updates;
             updateConflicts = data.conflicts;
             newModuleAvailable = false;
+            updateModuleGroupInfo();
             var moduleNamesInInstallQueue = Object.keys(installInfo);
             for (var remoteModuleName in remoteModuleInfo) {
                 var mI = remoteModuleInfo[remoteModuleName];
@@ -435,7 +436,22 @@ function updateModuleGroupInfo () {
         if (groups != undefined && groups.length > 0) {
             for (var i = 0; i < groups.length; i++) {
                 var group = groups[i];
-                if (remoteModuleInfo[group] == undefined) {
+                if (remoteModuleInfo[group] == undefined && localModuleInfo[group] == undefined) {
+                    return;
+                }
+                if (moduleGroupMembers[group] == undefined) {
+                    moduleGroupMembers[group] = [];
+                }
+                moduleGroupMembers[group].push(mn);
+            }
+        }
+    }
+    for (var mn in localModuleInfo) {
+        var groups = localModuleInfo[mn]['groups'];
+        if (groups != undefined && groups.length > 0) {
+            for (var i = 0; i < groups.length; i++) {
+                var group = groups[i];
+                if (remoteModuleInfo[group] == undefined && localModuleInfo[group] == undefined) {
                     return;
                 }
                 if (moduleGroupMembers[group] == undefined) {
@@ -450,6 +466,13 @@ function updateModuleGroupInfo () {
         var gn = groupNames[i];
         var mns = moduleGroupMembers[gn];
         var group = remoteModuleInfo[gn];
+        if (group == undefined) {
+            group = localModuleInfo[gn];
+        }
+        if (group == undefined) {
+            delete moduleGroupMembers[gn];
+            continue;
+        }
         for (var j = 0; j < mns.length; j++) {
             var mn = mns[j];
             var m = remoteModuleInfo[mn];
@@ -460,6 +483,7 @@ function updateModuleGroupInfo () {
             }
         }
     }
+    console.log('@ moduleGroupMembers=', moduleGroupMembers);
 }
 
 function getNewestModuleNames () {
@@ -632,7 +656,6 @@ function getRemote () {
                     moduleInfo.tags = [];
                 }
             }
-            updateModuleGroupInfo();
             var modules = Object.keys(remoteModuleInfo);
             for (var i = 0; i < modules.length; i++) {
                 var module = modules[i];
@@ -1195,6 +1218,7 @@ function getRemoteModulePanel (moduleName, moduleListName, moduleListPos) {
 function getFilteredRemoteModules () {
     var filteredRemoteModules = {};
     var remoteModuleNames = Object.keys(remoteModuleInfo);
+    var localModuleNames = Object.keys(localModuleInfo);
     var hasFilter = Object.keys(filter).length > 0;
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];

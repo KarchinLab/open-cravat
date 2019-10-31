@@ -502,7 +502,7 @@ class Cravat (object):
             if constants.default_assembly_key in self.cravat_conf:
                 self.input_assembly = self.cravat_conf[constants.default_assembly_key]
             else:
-                msg = 'Genome assembly should be given (as one of {}) with -l option or a default genome assembly should be defined in cravat.yml as default_assembly.'.format(', '.join(constants.assembly_choices))
+                msg = 'Genome assembly should be given (as one of {}) with -l option or a default genome assembly should be defined in {}/cravat.yml as default_assembly.'.format(', '.join(constants.assembly_choices), constants.conf['conf_dir'])
                 print(msg)
                 exit()
         else:

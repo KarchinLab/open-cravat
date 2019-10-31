@@ -253,11 +253,12 @@ class ModuleInfoCache(object):
             return
         for mg in os.listdir(self._modules_dir):
             mg_path = os.path.join(self._modules_dir, mg)
-            if not(os.path.isdir(mg_path)):
+            basename = os.path.basename(mg_path)
+            if not(os.path.isdir(mg_path)) or basename.startswith('.') or basename.startswith('_'):
                 continue
             for module_name in os.listdir(mg_path):
                 module_dir = os.path.join(mg_path, module_name)
-                if os.path.isdir(module_dir):
+                if module_dir.startswith('.') == False and os.path.isdir(module_dir):
                     # local_info = LocalModuleInfo(module_dir)
                     # if local_info.is_valid_module():
                     #     self.local[module_name] = local_info
