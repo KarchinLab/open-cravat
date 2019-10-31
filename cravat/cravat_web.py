@@ -320,7 +320,7 @@ class WebServer (object):
         if server_ready:
             cravatserver.setup(self.app)
         self.setup_routes()
-        self.runner = web.AppRunner(self.app)
+        self.runner = web.AppRunner(self.app, access_log=None)
         await self.runner.setup()
         self.site = TCPSitePatched(self.runner, self.host, self.port, loop=self.loop, ssl_context=self.ssl_context)
         await self.site.start()
