@@ -1262,6 +1262,11 @@ def get_last_assembly ():
     last_assembly = conf.get('last_assembly', 'hg38')
     return last_assembly
 
+def get_default_assembly ():
+    conf = get_cravat_conf()
+    default_assembly = conf.get('default_assembly', None)
+    return default_assembly
+
 def show_cravat_version ():
     version = get_current_package_version()
     print(version)

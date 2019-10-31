@@ -685,8 +685,15 @@ end tell'
     return web.json_response(response)
 
 def get_last_assembly (request):
+    global servermode
+    global server_ready
     last_assembly = au.get_last_assembly()
-    return web.json_response(last_assembly)
+    default_assembly = au.get_default_assembly()
+    if servermode and server_ready and default_assembly is not None:
+        assembly = default_assembly
+    else:
+        assembly = last_assembly
+    return web.json_response(assembly)
 
 async def delete_job (request):
     global job_queue
