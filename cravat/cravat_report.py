@@ -29,6 +29,7 @@ class CravatReport:
         self.filtertable = 'filter'
         self.colinfo = {}
         self.colnos = {}
+        self.newcolnos = {}
         self.var_added_cols = []
         self.summarizing_modules = []
         self.columngroups = {}
@@ -203,10 +204,12 @@ class CravatReport:
         should_skip_some_cols = len(colnos_to_skip) > 0
         if level == 'variant' and self.args.separatesample:
             write_variant_sample_separately = True
-            sample_colno = self.colnos['variant']['base__samples']
+            sample_newcolno = self.newcolnos['variant']['base__samples']
         else:
             write_variant_sample_separately = False
         colnos = self.colnos[level]
+        newcolnos = self.newcolnos[level]
+        all_mappings_newcolno = self.newcolnos['variant']['base__all_mappings']
         for datarow in datarows:
             if datarow is None:
                 continue
@@ -249,8 +252,7 @@ class CravatReport:
             # does report substitution.
             new_datarow = self.substitute_val(level, new_datarow)
             if hasattr(self, 'keep_json_all_mapping') == False and level == 'variant':
-                colno = self.colnos['variant']['base__all_mappings']
-                all_map = json.loads(new_datarow[colno])
+                all_map = json.loads(new_datarow[all_mappings_newcolno])
                 newvals = []
                 for hugo in all_map:
                     for maprow in all_map[hugo]:
@@ -265,14 +267,14 @@ class CravatReport:
                         newvals.append(newval)
                 newvals.sort()
                 newcell = '; '.join(newvals)
-                new_datarow[colno] = newcell
+                new_datarow[all_mappings_newcolno] = newcell
             if write_variant_sample_separately:
-                samples = new_datarow[sample_colno]
+                samples = new_datarow[sample_newcolno]
                 if samples is not None:
-                    samples = new_datarow[sample_colno].split(';')
+                    samples = samples.split(';')
                     for sample in samples:
                         sample_datarow = new_datarow
-                        sample_datarow[sample_colno] = sample
+                        sample_datarow[sample_newcolno] = sample
                         self.write_table_row(sample_datarow)
                 else:
                     self.write_table_row(new_datarow)
@@ -542,21 +544,27 @@ class CravatReport:
         # re-orders columns.
         self.colname_conversion[level] = {}
         new_columns = []
+        self.newcolnos[level] = {}
+        newcolno = 0
         for colgrp in newcolgrps:
             colgrpname = colgrp['name']
             for col in columns:
                 colname = col['col_name']
-                colno = self.colnos[level][colname]
                 [grpname, oricolname] = colname.split('__')
-                if grpname in [self.mapper_name, 'tagsampler']:
+                if colgrpname == 'base' and grpname in [self.mapper_name, 'tagsampler']:
                     newcolname = 'base__' + colname.split('__')[1]
                     self.colname_conversion[level][newcolname] = colname
                     col['col_name'] = newcolname
                     new_columns.append(col)
-                    self.colnos[level][newcolname] = colno
+                    self.newcolnos[level][newcolname] = newcolno
+                    #self.colnos[level][newcolname] = colno
+                    #del self.colnos[level][oldcolname]
                 elif grpname == colgrpname:
                     new_columns.append(col)
-                    self.colnos[level][col['col_name']] = colno
+                    self.newcolnos[level][colname] = newcolno
+                else:
+                    continue
+                newcolno += 1
         self.colinfo[level] = {'colgroups': newcolgrps, 'columns': new_columns}
         # report substitution
         if level in ['variant', 'gene']:
