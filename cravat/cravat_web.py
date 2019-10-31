@@ -395,15 +395,18 @@ def main ():
             Clean sessions every hour.
             """
             try:
+                max_age = conf.get_cravat_conf().get('max_session_age',604800) # default 1 week
+                interval = conf.get_cravat_conf().get('session_clean_interval',3600) # default 1 hr
                 while True:
-                    await cravatserver.admindb.clean_sessions()
-                    await asyncio.sleep(3600)
+                    await cravatserver.admindb.clean_sessions(max_age)
+                    await asyncio.sleep(interval)
             except Exception as e:
                 logger.exception(e)
                 if args.nostdoutexception == False:
                     traceback.print_exc()
         if servermode and server_ready:
-            loop.create_task(clean_sessions())
+            if 'max_session_age' in conf.get_cravat_conf():
+                loop.create_task(clean_sessions())
         global ssl_enabled
         if ssl_enabled:
             global sc
