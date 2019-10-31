@@ -126,27 +126,20 @@ class Aggregator (object):
         for annot_name in self.annotators:
             reader = self.readers[annot_name]
             n = 0
+            ordered_cnames = [cname for cname in reader.get_column_names() if cname != self.key_name]
+            insert_template = 'update {} set {} where {}=?'.format(
+                self.table_name,
+                ', '.join([f'{cname}=?' for cname in ordered_cnames]),
+                self.base_prefix+'__'+self.key_name,
+            )
+            print(insert_template, ordered_cnames)
             for lnum, line, rd in reader.loop_data():
                 try:
                     n += 1
                     key_val = rd[self.key_name]
-                    reader_col_names = [x for x in rd if x != self.key_name]
-                    update_toks = []
-                    for col_name in reader_col_names:
-                        val = rd[col_name]
-                        set_val = 'null'
-                        if val is not None:
-                            if type(val) is str:
-                                set_val = '"%s"' %val
-                            else:
-                                set_val = str(val)
-                        update_toks.append('%s=%s' %(col_name, set_val))
-                    q = 'update %s set %s where %s="%s";' %(
-                        self.table_name,
-                        ', '.join(update_toks),
-                        self.base_prefix + '__' + self.key_name,
-                        key_val)
-                    self.cursor.execute(q)
+                    ins_vals = [rd.get(cname) for cname in ordered_cnames]
+                    ins_vals.append(key_val)
+                    self.cursor.execute(insert_template, ins_vals)
                     if n%self.commit_threshold == 0:
                         self.dbconn.commit()
                     cur_time = time.time()
@@ -168,7 +161,7 @@ class Aggregator (object):
 
     def make_reportsub (self):
         if self.level in ['variant', 'gene']:
-            q = 'select * from {}_reportsub'.format(self.level)
+            q = f'select * from {self.level}_reportsub'
             self.cursor.execute(q)
             self.reportsub = {}
             for r in self.cursor.fetchall():
@@ -190,7 +183,7 @@ class Aggregator (object):
         header_table = self.level+'_header'
         coldefs = []
         if LooseVersion(au.get_current_package_version()) >= LooseVersion('1.5.0'):
-            sql = 'select col_def from '+header_table
+            sql = f'select col_def from {header_table}'
             self.cursor.execute(sql)
             for row in self.cursor:
                 coljson = row[0]
@@ -198,7 +191,7 @@ class Aggregator (object):
                 coldef.from_json(coljson)
                 coldefs.append(coldef)
         else:
-            sql = 'pragma table_info("{}")'.format(header_table)
+            sql = f'pragma table_info("{header_table}")'
             self.cursor.execute(sql)
             header_cols = [row[1] for row in self.cursor.fetchall()]
             select_order = [cname for cname in ColumnDefinition.db_order if cname in header_cols]
@@ -216,7 +209,7 @@ class Aggregator (object):
             col_cats = coldef.categories
             if coldef.category in ['single', 'multi']:
                 if col_cats is not None and len(col_cats) == 0:
-                    q = 'select distinct {} from {}'.format(coldef.name, self.level)
+                    q = f'select distinct {coldef.name} from {self.level}'
                     self.cursor.execute(q)
                     col_set = set([])
                     for r in self.cursor:
@@ -232,7 +225,7 @@ class Aggregator (object):
         self.dbconn.commit()
 
     def update_col_def (self, col_def):
-        q = 'update {}_header set col_def=? where col_name=?'.format(self.level)
+        q = f'update {self.level}_header set col_def=? where col_name=?'
         self.cursor.execute(q, [col_def.get_json(), col_def.name])
 
     def _cleanup(self):
@@ -298,13 +291,11 @@ class Aggregator (object):
         unique_names = set([])
         # annotator table
         annotator_table = self.level + '_annotator'
-        q = 'drop table if exists {:}'.format(annotator_table)
+        q = f'drop table if exists {annotator_table}'
         self.cursor.execute(q)
-        q = 'create table {:} (name text, displayname text, version text)'.format(
-            annotator_table)
+        q = f'create table {annotator_table} (name text, displayname text, version text)'
         self.cursor.execute(q)
-        q = 'insert into {:} values ("{:}", "{:}", "{:}")'.format(
-            annotator_table, 'base', 'Variant Annotation', "")
+        q = f'insert into {annotator_table} values ("base", "Variant Annotation", "")'
         self.cursor.execute(q)
         for _, col_def in self.base_reader.get_all_col_defs().items():
             col_name = self.base_prefix + '__' + col_def.name
@@ -320,9 +311,8 @@ class Aggregator (object):
             if annotator_displayname == '':
                 annotator_displayname = annotator_name.upper()
             annotator_version = reader.get_annotator_version()
-            q = 'insert into {:} values ("{:}", "{:}", "{:}")'.format(
-                annotator_table, annotator_name, annotator_displayname, annotator_version)
-            self.cursor.execute(q)
+            q = f'insert into {annotator_table} values (?, ?, ?)'
+            self.cursor.execute(q, [annotator_name, annotator_displayname, annotator_version])
             orded_col_index = sorted(list(reader.get_all_col_defs().keys()))
             for col_index in orded_col_index:
                 col_def = reader.get_col_def(col_index)
@@ -343,60 +333,51 @@ class Aggregator (object):
             s = name + ' ' + sql_type
             col_def_strings.append(s)
         # data table
-        q = 'drop table if exists %s' %self.table_name
+        q = f'drop table if exists {self.table_name}'
         self.cursor.execute(q)
-        q = 'create table %s (%s);' \
-            %(self.table_name, ', '.join(col_def_strings))
+        q = 'create table {} ({});'.format(
+            self.table_name,
+            ', '.join(col_def_strings),
+        )
         self.cursor.execute(q)
         # index tables
         index_n = 0
         # index_columns is a list of columns to include in this index
         for index_columns in self.base_reader.get_index_columns():
             cols = ['base__{0}'.format(x) for x in index_columns]
-            q = 'create index {table_name}_idx_{idx_num} on {table_name} ({columns});'\
-                .format(table_name = self.table_name,
-                        idx_num = str(index_n),
-                        columns = ', '.join(cols)
-                        )
+            q = 'create index {}_idx_{} on {} ({});'.format(
+                self.table_name,
+                index_n,
+                self.table_name,
+                ', '.join(cols),
+            )
             self.cursor.execute(q)
             index_n += 1
         # header table
-        q = 'drop table if exists %s' %self.header_table_name
+        q = f'drop table if exists {self.header_table_name}'
         self.cursor.execute(q)
-        q = 'create table %s (col_name text, col_def text);' \
-            %(self.header_table_name)
+        q = f'create table {self.header_table_name} (col_name text, col_def text);'
         self.cursor.execute(q)
+        insert_template = f'insert into {self.header_table_name} values (?, ?)'
         for col_def in columns:
-            col_row = [col_def.name, col_def.get_json()]
-            # use prepared statement to allow " characters in categories and desc
-            insert_template = 'insert into {} values (?, ?)'.format(self.header_table_name)
-            self.cursor.execute(insert_template, col_row)
+            self.cursor.execute(insert_template, [col_def.name, col_def.get_json()])
         # report substitution table
         if self.level in ['variant', 'gene']:
-            q = 'drop table if exists {}'.format(self.reportsub_table_name)
+            q = f'drop table if exists {self.reportsub_table_name}'
             self.cursor.execute(q)
-            q = 'create table {} (module text, subdict text)'.format(self.reportsub_table_name)
+            q = f'create table {self.reportsub_table_name} (module text, subdict text)'
             self.cursor.execute(q)
             if hasattr(self.base_reader, 'report_substitution'):
                 sub = self.base_reader.report_substitution
                 if sub:
-                    module = 'base'
-                    q = 'insert into {} values (\'{}\', \'{}\')'.format(
-                        self.reportsub_table_name,
-                        'base',
-                        json.dumps(sub)
-                    )
-                    self.cursor.execute(q)
+                    q = f'insert into {self.reportsub_table_name} values ("base", ?)'
+                    self.cursor.execute(q,[json.dumps(sub)])
             for module in self.readers:
                 if hasattr(self.base_reader, 'report_substitution'):
                     sub = self.readers[module].report_substitution
                     if sub:
-                        q = 'insert into {} values ("{}", \'{}\')'.format(
-                            self.reportsub_table_name,
-                            module,
-                            json.dumps(sub)
-                        )
-                        self.cursor.execute(q)
+                        q = f'insert into {self.reportsub_table_name} values (?, ?)'
+                        self.cursor.execute(q, [module, json.dumps(sub)])
         self.make_reportsub()
         # filter and layout save table
         q = 'drop table if exists viewersetup'
