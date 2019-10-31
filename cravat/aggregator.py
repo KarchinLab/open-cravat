@@ -132,7 +132,6 @@ class Aggregator (object):
                 ', '.join([f'{cname}=?' for cname in ordered_cnames]),
                 self.base_prefix+'__'+self.key_name,
             )
-            print(insert_template, ordered_cnames)
             for lnum, line, rd in reader.loop_data():
                 try:
                     n += 1
