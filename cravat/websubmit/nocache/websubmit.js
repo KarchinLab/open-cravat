@@ -588,9 +588,12 @@ function buildJobsTable () {
     }
     var headerTr = document.querySelector('#jobs-table thead tr');
     if (adminMode == true) {
-        var td = getEl('th');
-        td.textContent = 'User';
-        headerTr.prepend(td);
+        var firstTd = headerTr.firstChild;
+        if (firstTd.textContent != 'User') {
+            var td = getEl('th');
+            td.textContent = 'User';
+            headerTr.prepend(td);
+        }
     }
     var jobsTable = document.querySelector('#jobs-table tbody');
     $(jobsTable).empty();
