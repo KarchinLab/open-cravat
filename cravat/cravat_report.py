@@ -206,6 +206,7 @@ class CravatReport:
             sample_colno = self.colnos['variant']['base__samples']
         else:
             write_variant_sample_separately = False
+        colnos = self.colnos[level]
         for datarow in datarows:
             if datarow is None:
                 continue
@@ -233,7 +234,6 @@ class CravatReport:
                         datarow.extend([None for v in cols])
             # re-orders data row.
             new_datarow = []
-            colnos = self.colnos[level]
             for colname in [col['col_name'] for col in self.colinfo[level]['columns']]:
                 if colname in self.colname_conversion[level]:
                     oldcolname = self.colname_conversion[level][colname]
@@ -542,22 +542,21 @@ class CravatReport:
         # re-orders columns.
         self.colname_conversion[level] = {}
         new_columns = []
-        colno = 0
         for colgrp in newcolgrps:
             colgrpname = colgrp['name']
             for col in columns:
-                [grpname, oricolname] = col['col_name'].split('__')
+                colname = col['col_name']
+                colno = self.colnos[level][colname]
+                [grpname, oricolname] = colname.split('__')
                 if grpname in [self.mapper_name, 'tagsampler']:
-                    newcolname = 'base__' + col['col_name'].split('__')[1]
-                    self.colname_conversion[level][newcolname] = col['col_name']
+                    newcolname = 'base__' + colname.split('__')[1]
+                    self.colname_conversion[level][newcolname] = colname
                     col['col_name'] = newcolname
                     new_columns.append(col)
                     self.colnos[level][newcolname] = colno
-                    colno += 1
                 elif grpname == colgrpname:
                     new_columns.append(col)
                     self.colnos[level][col['col_name']] = colno
-                    colno += 1
         self.colinfo[level] = {'colgroups': newcolgrps, 'columns': new_columns}
         # report substitution
         if level in ['variant', 'gene']:
