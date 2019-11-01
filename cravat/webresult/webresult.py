@@ -578,7 +578,12 @@ async def serve_runwidget (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
     if ('dbpath' not in queries or queries['dbpath'] == '') and dbpath is not None:
-        queries = {'dbpath': dbpath}
+        new_queries = {}
+        new_queries['dbpath'] = dbpath
+        for key in queries:
+            if key != 'dbpath':
+                new_queries[key] = queries[key]
+        queries = new_queries
     f, fn, d = imp.find_module(path, 
         [os.path.join(au.get_modules_dir(), 
                       'webviewerwidgets', path)])
@@ -644,6 +649,4 @@ routes.append(['GET', '/result/widgetfile/{module_dir}/{filename}', serve_widget
 routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])
 routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
 routes.append(['GET', '/result/service/smartfilters', load_smartfilters])
-
-executor = ProcessPoolExecutor()
 
