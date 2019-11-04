@@ -145,6 +145,7 @@ class FileRouter(object):
         if run_path is None:
             return None
         run_name = os.path.basename(run_path)
+        report_path = None
         if report_type in self.report_extensions:
             ext = self.report_extensions.get(report_type, '.'+report_type)
             report_path = [run_path + ext]
