@@ -966,7 +966,7 @@ div.pq-select-menu>.pq-select-option-label {
 }
 #load_button {
 	margin-left: auto;
-	width: 50%;
+	width: fit-content;
 	height: 34px;
     font-family: sourcesanspro-bold;
     font-size: 18px;
