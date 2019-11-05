@@ -657,20 +657,16 @@ function makeFilterTab (rightDiv) {
 	.attr('src','images/arrow-spinner-static.gif')
 	.attr('id','filter-count-btn')
 		.click(function(e) {
-			$(e.target).attr('src','images/arrow-spinner.gif')
-			makeFilterJson();
-			infomgr.count(dbPath, 'variant', (msg, data) => {
-				let count = data.n;
-				refreshFilterCounts(count);
-				if (count === 0) {
-					disableUpdateButton()
-				} else {
-					enableUpdateButton();
-				}
-			})
+            $(e.target).attr('src','images/arrow-spinner.gif')
+			countFilterVariants();
 		}
-	);
-	loadControls.append(filterCount);
+    );
+    loadControls.append(filterCount);
+    let countWarning = $(getEl('div'))
+        .attr('id','filter-tab-count-warning')
+        .text(`Variants will not load if count is above ${NUMVAR_LIMIT}`)
+        .css('display','none');
+    loadControls.append(countWarning);
 	let filterApply = $(getEl('button'))
 		.attr('id', 'load_button')
 		.addClass('butn')
@@ -679,8 +675,12 @@ function makeFilterTab (rightDiv) {
 			var infoReset = resetTab['info'];
 			resetTab = {'info': infoReset};
 			showSpinner('filter', document.body);
-			makeFilterJson(); //TODO: this, better
-			loadData(false, null);
+            makeFilterJson();
+            countFilterVariants().then((n) => {
+                if (n <= NUMVAR_LIMIT) {
+                    loadData(false, null);
+                }
+            });
 		}
 	);
 	loadControls.append(filterApply);
@@ -693,15 +693,39 @@ function makeFilterTab (rightDiv) {
 				populateFilterSaveNames();
 			})
 		});
-	loadControls.append(saveIcon)
+    loadControls.append(saveIcon)
+}
+
+function countFilterVariants() {
+    return new Promise((resolve, reject) => {
+        makeFilterJson();
+        infomgr.count(dbPath, 'variant', (msg, data) => {
+            let count = data.n;
+            refreshFilterCounts(count);
+            resolve(count);
+        })
+    })
+}
+
+function showFilterCountWarning(show) {
+    var warnDiv = document.getElementById('filter-tab-count-warning');
+    if (show) {
+        warnDiv.style.display = null;
+    } else {
+        warnDiv.style.display = 'none';
+    }
 }
 
 function refreshFilterCounts(n) {
-	let t = infomgr.jobinfo['Number of unique input variants']; //TODO is this really the best way to do this?
+	let t = infomgr.jobinfo['Number of unique input variants'];
 	let countDisplay = $('#filter-count-display');
 	countDisplay.text(`${n}/${t} variants`);
 	$('#filter-count-btn').attr('src','images/arrow-spinner-static.gif');
-
+    if (n > NUMVAR_LIMIT) {
+        showFilterCountWarning(true);
+    } else {
+        showFilterCountWarning(false);
+    }
 }
 
 function makeFilterJson () {

@@ -1019,6 +1019,11 @@ div.pq-select-menu>.pq-select-option-label {
 	cursor: pointer;
 }
 
+#filter-tab-count-warning {
+	color: red;
+	margin-left: 10px;
+}
+
 
 .pq-grid-cell, .pq-grid-number-cell {
     padding: 0px;

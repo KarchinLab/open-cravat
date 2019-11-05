@@ -580,6 +580,7 @@ function loadData (alertFlag, finalcallback) {
 			firstLoad = false;
             var numvar = Number(infomgr.jobinfo['Number of unique input variants']);
             if (filterJson.length == 0 && numvar > NUMVAR_LIMIT) {
+                refreshFilterCounts(numvar);
                 lockTabs();
                 flagNotifyToUseFilter = true;
                 if (document.getElementById('infonoticediv')) {
@@ -627,7 +628,6 @@ function loadData (alertFlag, finalcallback) {
 		}
 	}
 	lockTabs();
-    disableUpdateButton();
 	loadVariantResult();
     filterArmed = filterJson;
 }
