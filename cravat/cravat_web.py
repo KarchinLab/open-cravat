@@ -353,7 +353,7 @@ async def serve_favicon (request):
 async def heartbeat(request):
     ws = web.WebSocketResponse(timeout=60*60*24*365)
     if servermode and server_ready:
-        asyncio.get_running_loop().create_task(cravat_multiuser.update_last_active(request))
+        asyncio.get_event_loop().create_task(cravat_multiuser.update_last_active(request))
     await ws.prepare(request)
     async for msg in ws:
         pass
