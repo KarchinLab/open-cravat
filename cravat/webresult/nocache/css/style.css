@@ -960,6 +960,11 @@ div.pq-select-menu>.pq-select-option-label {
 	width: 20px;
 	height: 20px;
 	cursor: pointer;
+	margin-left: 2px;
+	background-color: #d1d3d4;
+}
+#filter-count-btn:hover {
+	background-color: #4a87bd;
 }
 #filter-count-display {
 	margin-left: 5px;
