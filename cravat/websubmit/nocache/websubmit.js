@@ -1686,8 +1686,8 @@ function setupNoServerMode () {
 }
 
 function setupServerMode () {
-    $('head').append('<link rel="stylesheet" type="text/css" href="/server/nocache/cravatserver.css">');
-    $.getScript('/server/nocache/cravatserver.js', function () {
+    $('head').append('<link rel="stylesheet" type="text/css" href="/server/nocache/cravat_multiuser.css">');
+    $.getScript('/server/nocache/cravat_multiuser.js', function () {
         checkLogged(username)
     });
     document.getElementById('settingsdiv').style.display = 'none';
