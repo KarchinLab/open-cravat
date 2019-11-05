@@ -654,7 +654,8 @@ function makeFilterTab (rightDiv) {
 		.text('Count not up to date');
 	loadControls.append(countDisplay);
 	let filterCount = $(getEl('img'))
-	.attr('src','images/arrow-spinner-static.gif')
+    .attr('src','images/arrow-spinner-static.gif')
+    .attr('title','Refresh count')
 	.attr('id','filter-count-btn')
 		.click(function(e) {
             $(e.target).attr('src','images/arrow-spinner.gif')
