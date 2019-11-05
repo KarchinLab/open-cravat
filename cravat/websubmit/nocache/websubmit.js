@@ -883,7 +883,7 @@ function buildAnnotatorGroupSelector () {
     var div = getEl('div');
     div.className = 'div-header';
     var span = getEl('span');
-    span.textContent = 'Filter by Module\xa0\xa0';
+    span.textContent = 'Filter by Type\xa0\xa0';
     addEl(div, span);
     addEl(annotCheckDiv, div);
     var div = getEl('div');
