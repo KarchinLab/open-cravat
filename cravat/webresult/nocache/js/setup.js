@@ -662,9 +662,7 @@ function makeFilterTab (rightDiv) {
 			infomgr.count(dbPath, 'variant', (msg, data) => {
 				let count = data.n;
 				refreshFilterCounts(count);
-				if (count > NUMVAR_LIMIT) {
-					disableUpdateButton({countHigh:true});
-				} else if (count === 0) {
+				if (count === 0) {
 					disableUpdateButton()
 				} else {
 					enableUpdateButton();
@@ -896,10 +894,6 @@ function makeInfoTab (rightDiv) {
 	infoDiv.id = 'info_div';
 	addEl(rightContentDiv, infoDiv);
 
-	// Filter
-	// var filterDiv = document.getElementById('filterdiv');
-	// populateLoadDiv('info', filterDiv); //TOOD delete all this
-
 	// Widget Notice
 	var wgNoticeDiv = getEl('fieldset');
 	wgNoticeDiv.id = 'wgnoticediv';
@@ -915,26 +909,6 @@ function makeInfoTab (rightDiv) {
 	widgetDiv.id = 'detailcontainerdiv_info';
     widgetDiv.className = 'detailcontainerdiv';
 	addEl(rightContentDiv, widgetDiv);
-}
-
-function toggleFilterDiv () {
-	var filterDiv = document.getElementById('filterdiv');
-	var filterButton = document.getElementById('filterbutton');
-	var display = filterDiv.style.display;
-	if (display == 'none') {
-		display = 'block';
-		filterButton.style.backgroundColor = 'black';
-		filterButton.style.color = '#c5dbdb';
-	} else {
-		display = 'none';
-        if (filterArmed.variant != undefined && (filterArmed.variant.groups.length > 0 || filterArmed.variant.columns.length > 0)) {
-            filterButton.style.backgroundColor = 'red';
-        } else {
-            filterButton.style.backgroundColor = '#c5dbdb';
-        }
-		filterButton.style.color = 'black';
-	}
-	filterDiv.style.display = display;
 }
 
 function populateSummaryWidgetDiv () {
@@ -1788,212 +1762,6 @@ function getLoadSelectorDiv (tabName) {
     addEl(div, selectDetailDiv);
 
     return div;
-}
-
-function updateLoadMsgDiv (msg) {
-    var msgDiv = document.getElementById('load_innerdiv_msg_info');
-    emptyElement(msgDiv);
-    addEl(msgDiv, getTn(msg));
-}
-
-function setFilterSelect (div) {
-    var selectDiv = div.parentElement.previousSibling;
-    var col = div.getAttribute('col');
-    var retfilttype = div.getAttribute('retfilttype');
-    var val1 = div.getAttribute('val1');
-    var val2 = div.getAttribute('val2');
-    var checked = div.getAttribute('checked');
-    var select = selectDiv.getElementsByClassName('inlineselect')[0];
-    onChangeFilterSelector(col, retfilttype, val1, val2, checked);
-}
-
-function populateLoadDiv (tabName, filterDiv) {
-    // Title
-    var legend = getEl('legend');
-    legend.className = 'section_header';
-    addEl(legend, getTn('Variant Filters'));
-
-    // Save Filter Set button
-    var button = getEl('button');
-    button.style.marginLeft = '10px';
-    button.onclick = function(event) {
-        saveFilterSettingAs();
-    };
-    addEl(button, getTn('Save...'));
-    addEl(legend, button);
-
-    // Load Filter Set button
-    var button = getEl('button');
-    button.style.marginLeft = '10px';
-    button.onclick = function(event) {
-        var filterDiv = document.getElementById('load_filter_select_div');
-        var display = filterDiv.style.display;
-        if (display == 'none') {
-            filterDiv.style.display = 'block';
-            loadFilterSettingAs();
-        } else {
-            filterDiv.style.display = 'none';
-        }
-    };
-    addEl(button, getTn('Load...'));
-    addEl(legend, button);
-
-    // Delete Filter Set button
-    var button = getEl('button');
-    button.style.marginLeft = '10px';
-    button.onclick = function (evt) {
-        deleteFilterSettingAs();
-    }
-    addEl(button, getTn('Delete...'));
-    addEl(legend, button);
-
-    // Filter name div
-    var div = getEl('div');
-    div.id = 'load_filter_select_div';
-    div.style.display = 'none';
-    div.style.position = 'absolute';
-    div.style.left = '198px';
-    div.style.padding = '6px';
-    div.style.overflow = 'auto';
-    div.style.backgroundColor = 'rgb(232, 232, 232)';
-    div.style.border = '1px solid black';
-    addEl(legend, div);
-
-    addEl(filterDiv, legend);
-
-    // Description
-    var div = getEl('div');
-    var p = getEl('p');
-    p.textContent = 'Add variant filters below. Click "Count" to count the '
-                   +'number of variants passing the filter. Click "Update" to '
-                   +'apply the filter.'
-    addEl(div, p);
-    addEl(filterDiv, div);
-
-    // Filter
-    var div = getEl('div');
-    div.id = 'filterwrapdiv';
-    populateFilterWrapDiv(div);
-    $(filterDiv).append(div);
-
-    // Message
-    var div = getEl('div');
-    div.id = prefixLoadDiv + 'msg_' + tabName;
-    div.style.height = '20px';
-    div.style.fontFamily = 'Verdana';
-    div.style.fontSize = '12px';
-    addEl(filterDiv, div);
-
-    // Count button
-    var button = getEl('button');
-    button.id = 'count_button';
-    button.onclick = function (evt) {
-        makeFilterJson();
-        infomgr.count(dbPath, 'variant', function (msg, data) {
-            updateLoadMsgDiv(msg);
-            var count = data['n'];
-            if (count <= NUMVAR_LIMIT && count > 0) {
-                enableUpdateButton();
-            } else {
-                disableUpdateButton();
-            }
-        });
-    }
-    button.textContent = 'Count';
-    addEl(filterDiv, button);
-
-    // Update button
-    var button = getEl('button');
-    button.id = 'load_button';
-    button.onclick = function(evt) {
-        toggleFilterDiv();
-        evt.target.disabled = true;
-        var infoReset = resetTab['info'];
-        resetTab = {'info': infoReset};
-        showSpinner(tabName, document.body);
-        makeFilterJson();
-        loadData(false, null);
-    };
-    addEl(button, getTn('Update'));
-    addEl(filterDiv, button);
-
-    // Close button
-    var button = getEl('div');
-    button.style.position = 'absolute';
-    button.style.top = '2px';
-    button.style.right = '4px';
-    button.style.fontSize = '20px';
-    button.textContent = 'X';
-    button.style.cursor = 'default';
-    button.addEventListener('click', function (evt) {
-        toggleFilterDiv();
-    });
-    addEl(filterDiv, button);
-}
-
-function onClickFilterLevelButton (button) {
-    var simpleFilterDiv = document.getElementById('filter-root-group-div-simple');
-    var advancedFilterDiv = document.getElementById('filter-root-group-div-advanced');
-    if (button.classList.contains('filter-level-simple')) {
-        button.classList.remove('filter-level-simple');
-        button.classList.add('filter-level-advanced');
-        simpleFilterDiv.style.display = 'none';
-        advancedFilterDiv.style.display = null;
-    } else if (button.classList.contains('filter-level-advanced')) {
-        button.classList.remove('filter-level-advanced');
-        button.classList.add('filter-level-simple');
-        simpleFilterDiv.style.display = null;
-        advancedFilterDiv.style.display = 'none';
-    }
-}
-
-function populateFilterWrapDiv (div) {
-    var button = getEl('span');
-    button.className = 'filter-level-button';
-    button.addEventListener('click', function (evt) {
-        onClickFilterLevelButton(evt.target);
-    });
-    button.classList.add('filter-level-simple');
-    addEl(div, button);
-    addEl(div, getEl('br'));
-    var filter = undefined;
-    var filterSimple = undefined;
-    var advancedColumnsPresent = false;
-    if (filterJson.hasOwnProperty('variant')) {
-        filter = filterJson;
-        // Make copy without groups for simple filter
-        filterSimple = JSON.parse(JSON.stringify(filter));
-        filterSimple.variant.groups = [];
-        // Also exclude columns that are only available in advanced
-        const topFilterCols = filterSimple.variant.columns;
-        const topSimpleCols = []
-        for (let i=0; i<topFilterCols.length; i++) {
-            let filterCol = topFilterCols[i];
-            let colModel = getFilterColByName(filterCol.column);
-            if (colModel.filterable) {
-                topSimpleCols.push(filterCol)
-            } else {
-                advancedColumnsPresent = true;
-            }
-        }
-        filterSimple.variant.columns = topSimpleCols;
-    }
-    var filterRootGroupDivSimple = makeFilterRootGroupDiv(filterSimple, 'filter-root-group-div-simple', 'simple');
-    $(div).append(filterRootGroupDivSimple);
-    button.classList.remove('filter-level-simple'); // Must toggle to advanced so that advanced filter uses all columns in rules selector
-    button.classList.add('filter-level-advanced');
-    var filterRootGroupDivAdvanced = makeFilterRootGroupDiv(filter, 'filter-root-group-div-advanced', 'advanced');
-    button.classList.remove('filter-level-advanced'); // Toggle back
-    button.classList.add('filter-level-simple');
-    $(div).append(filterRootGroupDivAdvanced);
-    filterRootGroupDivSimple[0].style.display = null;
-    filterRootGroupDivAdvanced[0].style.display = 'none';
-    if ((filter && filter.variant.groups.length > 0) || advancedColumnsPresent) { // Advanced filter
-        filterRootGroupDivSimple[0].style.display = 'none';
-        filterRootGroupDivAdvanced[0].style.display = null; // Setting element.style null means inherited css style is used
-        button.classList.remove('filter-level-simple');
-        button.classList.add('filter-level-advanced');
-    }
 }
 
 function populateTableColumnSelectorPanel () {
