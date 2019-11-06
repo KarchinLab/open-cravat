@@ -843,7 +843,10 @@ def fetch_job_queue (job_queue, run_jobs_info):
 
     main_loop = asyncio.new_event_loop()
     job_tracker = JobTracker(main_loop)
-    main_loop.run_until_complete(job_worker_main())
+    try:
+        main_loop.run_until_complete(job_worker_main())
+    except KeyboardInterrupt:
+        pass
 
 async def redirect_to_index (request):
     global servermode
