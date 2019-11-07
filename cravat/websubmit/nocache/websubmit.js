@@ -142,7 +142,11 @@ function submit () {
         reader.readAsText(inputFiles[i]);
     }
 
-    function commitSubmit () {
+    function commitSubmit (flag) {
+        if (flag == false) {
+            document.querySelector('#submit-job-button').disabled = false;
+            return;
+        }
         showSpinner();
         var req = new XMLHttpRequest();
         req.open('POST', '/submit/submit');
