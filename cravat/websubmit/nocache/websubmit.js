@@ -401,6 +401,17 @@ function populateJobTr (job) {
             addEl(dbTd, btn);
         }
     }
+    // Log
+    var logLink = getEl('a');
+    logLink.setAttribute('href','/submit/jobs/' + job.id + '/log');
+    logLink.setAttribute('target', '_blank');
+    logLink.setAttribute('title', 'Click to download.');
+    var button = getEl('button');
+    button.classList.add('butn');
+    button.classList.add('active-download-button');
+    addEl(button, getTn('Log'));
+    addEl(logLink, button);
+    addEl(dbTd, logLink);
     addEl(jobTr, dbTd);
     // Delete
     var deleteTd = getEl('td');
