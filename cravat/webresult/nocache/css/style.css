@@ -960,13 +960,18 @@ div.pq-select-menu>.pq-select-option-label {
 	width: 20px;
 	height: 20px;
 	cursor: pointer;
+	margin-left: 2px;
+	background-color: #d1d3d4;
+}
+#filter-count-btn:hover {
+	background-color: #4a87bd;
 }
 #filter-count-display {
 	margin-left: 5px;
 }
 #load_button {
 	margin-left: auto;
-	width: 50%;
+	width: fit-content;
 	height: 34px;
     font-family: sourcesanspro-bold;
     font-size: 18px;
@@ -1017,6 +1022,11 @@ div.pq-select-menu>.pq-select-option-label {
 	margin-left: auto;
 	height: 1em;
 	cursor: pointer;
+}
+
+#filter-tab-count-warning {
+	color: red;
+	margin-left: 10px;
 }
 
 

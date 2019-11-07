@@ -883,7 +883,7 @@ function buildAnnotatorGroupSelector () {
     var div = getEl('div');
     div.className = 'div-header';
     var span = getEl('span');
-    span.textContent = 'Module Category\xa0\xa0';
+    span.textContent = 'View Category\xa0\xa0';
     addEl(div, span);
     addEl(annotCheckDiv, div);
     var div = getEl('div');
@@ -931,6 +931,7 @@ function buildAnnotatorGroupSelector () {
     }).on('change', function (evt) {
         var tags = $(this).val();
         onChangeAnnotatorGroupCheckbox(tags);
+        document.querySelector('#annotator-group-select-tag-div').children[2].style.display = 'none';
     });
     $.each($('.pq-select-menu').children(), function (i, item) {
         var desc = tagDesc[item.textContent];
@@ -1685,8 +1686,8 @@ function setupNoServerMode () {
 }
 
 function setupServerMode () {
-    $('head').append('<link rel="stylesheet" type="text/css" href="/server/nocache/cravatserver.css">');
-    $.getScript('/server/nocache/cravatserver.js', function () {
+    $('head').append('<link rel="stylesheet" type="text/css" href="/server/nocache/cravat_multiuser.css">');
+    $.getScript('/server/nocache/cravat_multiuser.js', function () {
         checkLogged(username)
     });
     document.getElementById('settingsdiv').style.display = 'none';

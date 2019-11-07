@@ -46,7 +46,7 @@ class FileRouter(object):
     async def get_jobs_dirs (self, request, given_username=None):
         root_jobs_dir = au.get_jobs_dir()
         if self.servermode and self.server_ready:
-            username = await cravatserver.get_username(request)
+            username = await cravat_multiuser.get_username(request)
         else:
             username = 'default'
         if username == 'admin':
@@ -74,7 +74,7 @@ class FileRouter(object):
                 if given_username is not None:
                     username = given_username
                 else:
-                    username = await cravatserver.get_username(request)
+                    username = await cravat_multiuser.get_username(request)
                 if username is None:
                     job_dir = None
                 else:
@@ -145,6 +145,7 @@ class FileRouter(object):
         if run_path is None:
             return None
         run_name = os.path.basename(run_path)
+        report_path = None
         if report_type in self.report_extensions:
             ext = self.report_extensions.get(report_type, '.'+report_type)
             report_path = [run_path + ext]
@@ -243,7 +244,7 @@ async def submit (request):
     global filerouter
     global servermode
     if servermode and server_ready:
-        r = await cravatserver.is_loggedin(request)
+        r = await cravat_multiuser.is_loggedin(request)
         if r == False:
             return web.json_response({'status': 'notloggedin'})
     jobs_dirs = await filerouter.get_jobs_dirs(request)
@@ -342,7 +343,7 @@ async def submit (request):
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
     if servermode and server_ready:
-        await cravatserver.add_job_info(request, job)
+        await cravat_multiuser.add_job_info(request, job)
     # makes temporary status.json
     wf = open(os.path.join(job_dir, run_name + '.status.json'), 'w')
     status_json = {}
@@ -484,7 +485,7 @@ async def get_jobs (request):
 async def get_all_jobs (request):
     global servermode
     if servermode and server_ready:
-        r = await cravatserver.is_loggedin(request)
+        r = await cravat_multiuser.is_loggedin(request)
         if r == False:
             return web.json_response({'status': 'notloggedin'})
     global filerouter
@@ -604,10 +605,10 @@ async def get_system_conf_info (request):
 async def update_system_conf (request):
     global servermode
     if servermode and server_ready:
-        username = await cravatserver.get_username(request)
+        username = await cravat_multiuser.get_username(request)
         if username != 'admin':
             return web.json_response({'success': False, 'msg': 'Only admin can change the settings.'})
-        r = await cravatserver.is_loggedin(request)
+        r = await cravat_multiuser.is_loggedin(request)
         if r == False:
             return web.json_response({'success': False, 'mgs': 'Only logged-in admin can change the settings.'})
     queries = request.rel_url.query
@@ -842,13 +843,16 @@ def fetch_job_queue (job_queue, run_jobs_info):
 
     main_loop = asyncio.new_event_loop()
     job_tracker = JobTracker(main_loop)
-    main_loop.run_until_complete(job_worker_main())
+    try:
+        main_loop.run_until_complete(job_worker_main())
+    except KeyboardInterrupt:
+        pass
 
 async def redirect_to_index (request):
     global servermode
     global server_ready
     if servermode and server_ready:
-        r = await cravatserver.is_loggedin(request)
+        r = await cravat_multiuser.is_loggedin(request)
         if r == False:
             url = '/server/nocache/login.html'
         else:

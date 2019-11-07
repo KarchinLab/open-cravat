@@ -67,11 +67,11 @@ try:
             dest='job_id',
             default=None,
             help='ID of the job')
-    parser.add_argument('--server',
+    parser.add_argument('--multiuser',
                         dest='servermode',
                         action='store_true',
                         default=False,
-                        help='run in server mode')
+                        help='Runs in multiuser mode')
     parser.add_argument('--donotopenbrowser',
                         dest='donotopenbrowser',
                         action='store_true',
@@ -91,14 +91,14 @@ try:
     args = parser.parse_args(sys.argv[1:])
     donotopenbrowser = args.donotopenbrowser
     servermode = args.servermode
-    if servermode and importlib.util.find_spec('cravatserver') is not None:
+    if servermode and importlib.util.find_spec('cravat_multiuser') is not None:
         try:
-            import cravatserver
+            import cravat_multiuser
             server_ready = True
         except Exception as e:
             logger.exception(e)
             logger.info('Exiting...')
-            print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
+            print('Error occurred while loading open-cravat-multiuser.\nCheck {} for details.'.format(log_path))
             exit()
     else:
         servermode = False
@@ -113,11 +113,11 @@ try:
     wu.filerouter.server_ready = server_ready
     wr.wu = wu
     if server_ready:
-        cravatserver.servermode = servermode
-        cravatserver.server_ready = server_ready
-        cravatserver.logger = logger
-        wu.cravatserver = cravatserver
-        ws.cravatserver = cravatserver
+        cravat_multiuser.servermode = servermode
+        cravat_multiuser.server_ready = server_ready
+        cravat_multiuser.logger = logger
+        wu.cravat_multiuser = cravat_multiuser
+        ws.cravat_multiuser = cravat_multiuser
     if servermode and server_ready == False:
         msg = 'open-cravat-server package is required to run OpenCRAVAT Server.\nRun "pip install open-cravat-server" to get the package.'
         logger.info(msg)
@@ -143,7 +143,7 @@ except Exception as e:
     if args.nostdoutexception == False:
         traceback.print_exc()
     logger.info('Exiting...')
-    print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
+    print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
     exit()
 
 def result ():
@@ -178,7 +178,7 @@ def result ():
         if args.nostdoutexception == False:
             traceback.print_exc()
         logger.info('Exiting...')
-        print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
+        print('Error occurred while starting OpenCRAVAT result viewer.\nCheck {} for details.'.format(log_path))
         exit()
 
 def store ():
@@ -195,7 +195,7 @@ def store ():
         if args.nostdoutexception == False:
             traceback.print_exc()
         logger.info('Exiting...')
-        print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
+        print('Error occurred while starting OpenCRAVAT web store.\nCheck {} for details.'.format(log_path))
         exit()
 
 def submit ():
@@ -217,7 +217,7 @@ def submit ():
         if args.nostdoutexception == False:
             traceback.print_exc()
         logger.info('Exiting...')
-        print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
+        print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
         exit()
 
 def get_server():
@@ -247,7 +247,7 @@ def get_server():
         if args.nostdoutexception == False:
             traceback.print_exc()
         logger.info('Exiting...')
-        print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
+        print('Error occurred while OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
         exit()
 
 class TCPSitePatched (web_runner.BaseSite):
@@ -318,7 +318,7 @@ class WebServer (object):
         global server_ready
         self.app = web.Application(loop=self.loop, middlewares=[middleware])
         if server_ready:
-            cravatserver.setup(self.app)
+            cravat_multiuser.setup(self.app)
         self.setup_routes()
         self.runner = web.AppRunner(self.app, access_log=None)
         await self.runner.setup()
@@ -332,7 +332,7 @@ class WebServer (object):
         routes.extend(wu.routes)
         global server_ready
         if server_ready:
-            cravatserver.add_routes(self.app.router)
+            cravat_multiuser.add_routes(self.app.router)
         for route in routes:
             method, path, func_name = route
             self.app.router.add_route(method, path, func_name)
@@ -353,7 +353,7 @@ async def serve_favicon (request):
 async def heartbeat(request):
     ws = web.WebSocketResponse(timeout=60*60*24*365)
     if servermode and server_ready:
-        asyncio.get_running_loop().create_task(cravatserver.update_last_active(request))
+        asyncio.get_event_loop().create_task(cravat_multiuser.update_last_active(request))
     await ws.prepare(request)
     async for msg in ws:
         pass
@@ -398,7 +398,7 @@ def main ():
                 max_age = conf.get_cravat_conf().get('max_session_age',604800) # default 1 week
                 interval = conf.get_cravat_conf().get('session_clean_interval',3600) # default 1 hr
                 while True:
-                    await cravatserver.admindb.clean_sessions(max_age)
+                    await cravat_multiuser.admindb.clean_sessions(max_age)
                     await asyncio.sleep(interval)
             except Exception as e:
                 logger.exception(e)
@@ -422,7 +422,7 @@ def main ():
         if args.nostdoutexception == False:
             traceback.print_exc()
         logger.info('Exiting...')
-        print('Error occurred while loading open-cravat-server.\nCheck {} for details.'.format(log_path))
+        print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
         exit()
 
 if __name__ == '__main__':

@@ -389,7 +389,11 @@ async def get_result_levels (request):
     return web.json_response(content)
 
 async def get_jobid_dbpath (request):
-    queries = request.rel_url.query
+    method = request.method
+    if method == 'GET':
+        queries = request.rel_url.query
+    elif method == 'POST':
+        queries = await request.post()
     if 'username' in queries:
         given_username = queries['username']
     else:

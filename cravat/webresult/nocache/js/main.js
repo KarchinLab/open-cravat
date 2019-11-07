@@ -240,11 +240,6 @@ function addTabHeadsAndTabContentDivs () {
 function disableUpdateButton ({countHigh=false}={}) {
     var btn = document.getElementById('load_button');
     btn.disabled = true;
-    if (countHigh) {
-        btn.innerText = `Count must be below ${NUMVAR_LIMIT}`;
-    } else {
-        btn.innerText = 'Apply filter';
-    }
 }
 
 function enableUpdateButton () {
@@ -503,7 +498,6 @@ var makeVariantByGene = function () {
 };
 
 function loadData (alertFlag, finalcallback) {
-    disableUpdateButton();
 	var infoReset = resetTab['info'];
 	resetTab = {'info': infoReset};
 	resetTab['summary'] = true;
@@ -586,8 +580,8 @@ function loadData (alertFlag, finalcallback) {
 			firstLoad = false;
             var numvar = Number(infomgr.jobinfo['Number of unique input variants']);
             if (filterJson.length == 0 && numvar > NUMVAR_LIMIT) {
+                refreshFilterCounts(numvar);
                 lockTabs();
-                disableUpdateButton({countHigh:true});
                 flagNotifyToUseFilter = true;
                 if (document.getElementById('infonoticediv')) {
                     notifyToUseFilter();
@@ -603,7 +597,6 @@ function loadData (alertFlag, finalcallback) {
                 infomgr.count(dbPath, 'variant', function (numvar) {
                     if (numvar > NUMVAR_LIMIT) {
                         lockTabs();
-                        disableUpdateButton({countLow:true});
                         flagNotifyToUseFilter = true;
                         if (document.getElementById('infonoticediv')) {
                             notifyToUseFilter();
@@ -635,7 +628,6 @@ function loadData (alertFlag, finalcallback) {
 		}
 	}
 	lockTabs();
-    disableUpdateButton();
 	loadVariantResult();
     filterArmed = filterJson;
 }
@@ -672,7 +664,7 @@ function notifyToUseFilter () {
 	div.style.background = 'red';
 	div.textContent = 
 		'Number of variants exceeds viewer limit (' + NUMVAR_LIMIT + ').' +
-		'Click the Filter button to use filters to reduce the number of ' +
+		'Use the filter tab to reduce the number of ' +
 		'variants to ' + NUMVAR_LIMIT + ' or less, and click Update to load filtered variants.';
 	showInfonoticediv();
     document.getElementById('tabhead_filter').style.pointerEvents = 'auto';

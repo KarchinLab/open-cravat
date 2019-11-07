@@ -480,12 +480,13 @@ class CravatReport:
             done_var_annotators = [v[0] for v in await self.cursor.fetchall()]
             self.summarizing_modules = []
             local_modules = au.get_local_module_infos_of_type('annotator')
+            local_modules.update(au.get_local_module_infos_of_type('postaggregator'))
             summarizer_module_names = []
             for module_name in done_var_annotators:
-                if module_name in ['base', 'tagsampler']:
+                if module_name in ['base', 'hg19', 'hg18', 'extra_vcf_info']:
                     continue
                 if module_name not in local_modules:
-                    print('            [{}] does not exist in the system. Gene level summary for this module is skipped.'.format(module_name))
+                    print('            [{}] module does not exist in the system. Gene level summary for this module is skipped.'.format(module_name))
                     continue
                 module = local_modules[module_name]
                 if 'can_summarize_by_gene' in module.conf:
