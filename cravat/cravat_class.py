@@ -157,7 +157,6 @@ class Cravat (object):
         self.should_run_annotators = True
         self.should_run_aggregator = True
         self.should_run_reporter = True
-        self.has_secondary_input = False
         self.pythonpath = sys.executable
         self.annotators = {}        
         self.make_args_namespace(kwargs)
@@ -323,14 +322,19 @@ class Cravat (object):
                 rtime = time.time() - stime
                 print('finished in {0:.3f}s'.format(rtime))
                 self.mapper_ran = True
-            self.make_module_run_list()
+            self.populate_secondary_annotators()
+            self.done_annotators = {}
+            for mname, module in self.annotators.items():
+                if self.check_module_output(module) is not None:
+                    self.done_annotators[mname] = module
+            self.run_annotators = {aname: self.annotators[aname] for aname in set(self.annotators) - set(self.done_annotators)}
             self.annotator_ran = False
             if self.endlevel >= self.runlevels['annotator'] and \
                     self.startlevel <= self.runlevels['annotator'] and \
                     not 'annotator' in self.args.skip and \
                     (
                         self.mapper_ran or \
-                        len(self.ordered_annotators) > 0
+                        len(self.run_annotators) > 0
                     ):
                 print('Running annotators...')
                 stime = time.time()
@@ -418,7 +422,7 @@ class Cravat (object):
         q = 'create table if not exists smartfilters (name text, definition text)'
         cursor.execute(q)
         ins_template = 'insert into smartfilters (name, definition) values (?, ?);'
-        for linfo in self.ordered_annotators:
+        for linfo in self.annotators.values():
             if linfo.smartfilters is not None:
                 mname = linfo.name
                 json_info = json.dumps(linfo.smartfilters)
@@ -564,12 +568,12 @@ class Cravat (object):
         else:
             self.crg_present = False
 
-    def make_module_run_list (self):
-        self.ordered_annotators = []
-        self.modules = {}
+    def populate_secondary_annotators (self):
+        secondaries = {}
         for module in self.annotators.values():
-            self.add_annotator_to_queue(module)
-        annot_names = [v.name for v in self.ordered_annotators]
+            self._find_secondary_annotators(module, secondaries)
+        self.annotators.update(secondaries)
+        annot_names = [v.name for v in self.annotators.values()]
         annot_names = list(set(annot_names))
         filenames = os.listdir(self.output_dir)
         for filename in filenames:
@@ -586,24 +590,11 @@ class Cravat (object):
             self.status_writer.queue_status_update('annotators', annot_names, force=True)
         self.annot_names = annot_names
 
-    def add_annotator_to_queue (self, module):
-        if module.directory == None:
-            sys.exit('Module %s is not installed' % module)
-        if module.name not in self.modules:
-            self.modules[module.name] = module
-        secondary_modules = self.get_secondary_modules(module)
-        if len(secondary_modules) > 0:
-            self.has_secondary_input = True
-        for secondary_module in secondary_modules:
-            if 'annotator' in self.args.repeat or \
-                    self.check_module_output(secondary_module) == None:
-                self.add_annotator_to_queue(secondary_module)
-        ordered_module_names = [m.name for m in self.ordered_annotators]
-        if module.name not in ordered_module_names:
-            if 'annotator' in self.args.repeat or \
-                    self.check_module_output(module) == None or \
-                    self.mapper_ran:
-                self.ordered_annotators.append(module)
+    def _find_secondary_annotators (self, module, ret):
+        sannots = self.get_secondary_modules(module)
+        for sannot in sannots:
+            ret[sannot.name] = sannot
+            self._find_secondary_annotators(sannot, ret)
 
     def get_module_output_path (self, module):
         if module.level == 'variant':
@@ -817,7 +808,7 @@ class Cravat (object):
                 self.logger.exception('error handling mp argument:')
         self.logger.info('num_workers: {}'.format(num_workers))
         run_args = {}
-        for module in self.ordered_annotators:
+        for module in self.run_annotators.values():
             # Make command
             if module.level == 'variant':
                 if 'input_format' in module.conf:
@@ -837,7 +828,7 @@ class Cravat (object):
             if 'secondary_inputs' in module.conf:
                 secondary_module_names = module.conf['secondary_inputs']
                 for secondary_module_name in secondary_module_names:
-                    secondary_module = self.modules[secondary_module_name]
+                    secondary_module = self.annotators[secondary_module_name]
                     secondary_output_path =\
                         self.get_module_output_path(secondary_module)
                     secondary_opts.extend([
@@ -858,30 +849,29 @@ class Cravat (object):
         self.logger.removeHandler(self.log_handler)
         start_queue = self.manager.Queue()
         end_queue = self.manager.Queue()
-        all_mnames = set([m.name for m in self.ordered_annotators])
+        all_mnames = set(self.run_annotators)
         assigned_mnames = set()
-        done_mnames = set()
+        done_mnames = set(self.done_annotators)
         queue_populated = self.manager.Value('c_bool',False)
         pool_args = [[start_queue, end_queue, queue_populated, self.status_writer]]*num_workers
         with mp.Pool(processes=num_workers) as pool:
             results = pool.starmap_async(annot_from_queue, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
             pool.close()
-            for module in self.ordered_annotators:
-                if not module.secondary_module_names:
-                    start_queue.put(run_args[module.name])
-                    assigned_mnames.add(module.name)
+            for mname, module in self.run_annotators.items():
+                if mname not in assigned_mnames and set(module.secondary_module_names) <= done_mnames:
+                    start_queue.put(run_args[mname])
+                    assigned_mnames.add(mname)
             while assigned_mnames != all_mnames: #TODO not handling case where parent module errors out
                 finished_module = end_queue.get()
                 done_mnames.add(finished_module)
-                for module in self.ordered_annotators:
-                    if module.name not in assigned_mnames and set(module.secondary_module_names) < done_mnames:
-                        start_queue.put(run_args[module.name])
-                        assigned_mnames.add(module.name)
-                        continue
+                for mname, module in self.annotators.items():
+                    if mname not in assigned_mnames and set(module.secondary_module_names) <= done_mnames:
+                        start_queue.put(run_args[mname])
+                        assigned_mnames.add(mname)
             queue_populated = True
             pool.join()
         try:
-            for result in results.get():
+            for _ in results.get():
                 pass
         except Exception as e:
             self.handle_exception(e)
@@ -890,7 +880,7 @@ class Cravat (object):
         formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
         self.log_handler.setFormatter(formatter)
         self.logger.addHandler(self.log_handler)
-        if len(self.ordered_annotators) > 0:
+        if len(self.run_annotators) > 0:
             self.annotator_ran = True
 
     def table_exists (self, cursor, table):
