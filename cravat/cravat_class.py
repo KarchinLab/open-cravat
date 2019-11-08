@@ -12,7 +12,7 @@ from . import constants
 import json
 import logging
 import traceback
-from .mp_runners import run_annotator_mp
+from .mp_runners import annot_from_queue
 import multiprocessing as mp
 import multiprocessing.managers
 from logging.handlers import QueueListener
@@ -178,10 +178,10 @@ class Cravat (object):
         self.modules_conf = self.conf.get_modules_conf()
         self.write_initial_status_json()
         self.unique_logs = {}
-        manager = MyManager()
-        manager.register('StatusWriter', StatusWriter)
-        manager.start()
-        self.status_writer = manager.StatusWriter(self.status_json_path)
+        self.manager = MyManager()
+        self.manager.register('StatusWriter', StatusWriter)
+        self.manager.start()
+        self.status_writer = self.manager.StatusWriter(self.status_json_path)
 
     def check_valid_modules (self):
         absent_modules = []
@@ -811,14 +811,12 @@ class Cravat (object):
         if self.args.mp is not None:
             try:
                 self.args.mp = int(self.args.mp)
-                if self.args.mp >= 1 and self.args.mp <= default_workers:
+                if self.args.mp >= 1:
                     num_workers = self.args.mp
             except:
                 self.logger.exception('error handling mp argument:')
-        if self.has_secondary_input:
-            num_workers = 1
         self.logger.info('num_workers: {}'.format(num_workers))
-        all_cmds = []
+        run_args = {}
         for module in self.ordered_annotators:
             # Make command
             if module.level == 'variant':
@@ -856,17 +854,31 @@ class Cravat (object):
                 confs = json.dumps(self.cravat_conf[module.name])
                 confs = "'" + confs.replace("'", '"') + "'"
                 cmd.extend(['--confs', confs])
-            all_cmds.append(cmd)
-        ds = [self.status_writer for i in range(len(self.ordered_annotators))]
-        pool_args = zip(
-            self.ordered_annotators,
-            all_cmds,
-            ds,
-        )
+            run_args[module.name] = (module, cmd)
         self.logger.removeHandler(self.log_handler)
+        start_queue = self.manager.Queue()
+        end_queue = self.manager.Queue()
+        all_mnames = set([m.name for m in self.ordered_annotators])
+        assigned_mnames = set()
+        done_mnames = set()
+        queue_populated = self.manager.Value('c_bool',False)
+        pool_args = [[start_queue, end_queue, queue_populated, self.status_writer]]*num_workers
         with mp.Pool(processes=num_workers) as pool:
-            results = pool.starmap_async(run_annotator_mp, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
+            results = pool.starmap_async(annot_from_queue, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
             pool.close()
+            for module in self.ordered_annotators:
+                if not module.secondary_module_names:
+                    start_queue.put(run_args[module.name])
+                    assigned_mnames.add(module.name)
+            while assigned_mnames != all_mnames: #TODO not handling case where parent module errors out
+                finished_module = end_queue.get()
+                done_mnames.add(finished_module)
+                for module in self.ordered_annotators:
+                    if module.name not in assigned_mnames and set(module.secondary_module_names) < done_mnames:
+                        start_queue.put(run_args[module.name])
+                        assigned_mnames.add(module.name)
+                        continue
+            queue_populated = True
             pool.join()
         try:
             for result in results.get():
