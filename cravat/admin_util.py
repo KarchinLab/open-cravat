@@ -1333,6 +1333,11 @@ def get_max_num_concurrent_annotators_per_job ():
         write_system_conf_file(sys_conf)
     return num_workers
 
+def get_remote_manifest ():
+    if len(mic.remote) == 0:
+        mic.update_remote()
+    return mic.remote
+
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
 module info

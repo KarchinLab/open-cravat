@@ -103,7 +103,7 @@ def fetch_install_queue (install_queue, install_state):
 async def get_remote_manifest(request):
     content = {'data': {}, 'tagdesc': {}}
     try:
-        content['data'] = au.mic.remote
+        content['data'] = au.get_remote_manifest()
     except:
         traceback.print_exc()
         content = {'data': {}, 'tagdesc': {}}
