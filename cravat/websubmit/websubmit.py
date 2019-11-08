@@ -763,7 +763,7 @@ def fetch_job_queue (job_queue, run_jobs_info):
                         if p.poll() is not None:
                             break
                 elif pl.startswith('darwin') or pl.startswith('macos'):
-                    lines = subprocess.check_output('ps -a | grep {} | grep cravat'.format(uid), shell=True)
+                    lines = subprocess.check_output('ps -ef | grep {} | grep cravat'.format(uid), shell=True)
                     lines = lines.decode('utf-8')
                     lines = lines.split('\n')
                     pids = [int(l.strip().split(' ')[0]) for l in lines if l != '']
