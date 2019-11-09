@@ -595,6 +595,38 @@ async def serve_runwidget (request):
     content = await m.get_data(queries)
     return web.json_response(content)
 
+async def serve_runwidget_post (request):
+    path = 'wg' + request.match_info['module']
+    job_id, dbpath = await get_jobid_dbpath(request)
+    queries = await request.post()
+    new_queries = {}
+    for k in queries:
+        val = queries[k]
+        if val == '':
+            val = '""'
+        elif val.startswith('{') and val.endswith('}'):
+            pass
+        elif val.startswith('[') and val.endswith(']'):
+            pass
+        else:
+            val = '"' + val + '"'
+        val = json.loads(val)
+        new_queries[k] = val
+    queries = new_queries
+    if ('dbpath' not in queries or queries['dbpath'] == '') and dbpath is not None:
+        new_queries = {}
+        new_queries['dbpath'] = dbpath
+        for key in queries:
+            if key != 'dbpath':
+                new_queries[key] = queries[key]
+        queries = new_queries
+    f, fn, d = imp.find_module(path, 
+        [os.path.join(au.get_modules_dir(), 
+                      'webviewerwidgets', path)])
+    m = imp.load_module(path, f, fn, d)
+    content = await m.get_data(queries)
+    return web.json_response(content)
+
 async def get_modules_info (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
@@ -651,6 +683,7 @@ routes.append(['GET', '/result/service/getfiltersavenames', get_filter_save_name
 routes.append(['GET', '/result/service/getnowgannotmodules', get_nowg_annot_modules])
 routes.append(['GET', '/result/widgetfile/{module_dir}/{filename}', serve_widgetfile])
 routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])
+routes.append(['POST', '/result/runwidget/{module}', serve_runwidget_post])
 routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
 routes.append(['GET', '/result/service/smartfilters', load_smartfilters])
 
