@@ -675,7 +675,7 @@ function makeFilterTab (rightDiv) {
 		.click(function(evt) {
 			var infoReset = resetTab['info'];
 			resetTab = {'info': infoReset};
-			showSpinner('filter', document.body);
+			drawingRetrievingDataDiv('filter');
             makeFilterJson();
             countFilterVariants().then((n) => {
                 if (n <= NUMVAR_LIMIT) {

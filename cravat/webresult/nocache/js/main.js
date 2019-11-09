@@ -845,27 +845,29 @@ function checkWidgets () {
 }
 
 function drawingRetrievingDataDiv (currentTab) {
-	var currentTabDiv = document.getElementById('tab_'+currentTab);
-	var loadingDiv = getEl('div');
-    loadingDiv.className = 'data-retrieving-msg-div';
-	var loadingTxtDiv = getEl('div');
-    loadingTxtDiv.className = 'store-noconnect-msg-div';
-    var span = getEl('span');
-    span.textContent = 'Retrieving Data...';
-	addEl(loadingTxtDiv, span);
-    addEl(loadingTxtDiv, getEl('br'));
-	var loadingSpinCircleDiv = getEl('div');
-	var loadingSpinCircleImg = getEl('img');
-	loadingSpinCircleImg.src = "images/bigSpinner.gif";
-	addEl(loadingTxtDiv, loadingSpinCircleImg);
-	addEl(loadingDiv, loadingTxtDiv);
-    var dW = document.body.offsetWidth;
-    var dH = document.body.offsetHeight;
-	loadingDiv.style.top = 0;
-	loadingDiv.style.left = 0;
-	jobDataLoadingDiv = loadingDiv;
-    var parentDiv = document.body;
-    addEl(parentDiv, loadingDiv);
+    if (jobDataLoadingDiv == null) {
+        var currentTabDiv = document.getElementById('tab_'+currentTab);
+        var loadingDiv = getEl('div');
+        loadingDiv.className = 'data-retrieving-msg-div';
+        var loadingTxtDiv = getEl('div');
+        loadingTxtDiv.className = 'store-noconnect-msg-div';
+        var span = getEl('span');
+        span.textContent = 'Retrieving Data...';
+        addEl(loadingTxtDiv, span);
+        addEl(loadingTxtDiv, getEl('br'));
+        var loadingSpinCircleDiv = getEl('div');
+        var loadingSpinCircleImg = getEl('img');
+        loadingSpinCircleImg.src = "images/bigSpinner.gif";
+        addEl(loadingTxtDiv, loadingSpinCircleImg);
+        addEl(loadingDiv, loadingTxtDiv);
+        var dW = document.body.offsetWidth;
+        var dH = document.body.offsetHeight;
+        loadingDiv.style.top = 0;
+        loadingDiv.style.left = 0;
+        jobDataLoadingDiv = loadingDiv;
+        var parentDiv = document.body;
+        addEl(parentDiv, loadingDiv);
+    }
 	return loadingDiv;
 }
 
