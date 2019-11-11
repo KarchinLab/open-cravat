@@ -350,7 +350,7 @@ async def submit (request):
     status_json['job_dir'] = job_dir
     status_json['id'] = job_id
     status_json['run_name'] = run_name
-    status_json['assembly'] = ''
+    status_json['assembly'] = assembly
     status_json['db_path'] = ''
     status_json['orig_input_fname'] = input_fnames
     status_json['orig_input_path'] = input_fpaths
@@ -763,7 +763,7 @@ def fetch_job_queue (job_queue, run_jobs_info):
                         if p.poll() is not None:
                             break
                 elif pl.startswith('darwin') or pl.startswith('macos'):
-                    lines = subprocess.check_output('ps -a | grep {} | grep cravat'.format(uid), shell=True)
+                    lines = subprocess.check_output('ps -ef | grep {} | grep cravat'.format(uid), shell=True)
                     lines = lines.decode('utf-8')
                     lines = lines.split('\n')
                     pids = [int(l.strip().split(' ')[0]) for l in lines if l != '']

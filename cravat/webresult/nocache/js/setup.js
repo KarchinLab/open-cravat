@@ -675,7 +675,7 @@ function makeFilterTab (rightDiv) {
 		.click(function(evt) {
 			var infoReset = resetTab['info'];
 			resetTab = {'info': infoReset};
-			showSpinner('filter', document.body);
+			drawingRetrievingDataDiv('filter');
             makeFilterJson();
             countFilterVariants().then((n) => {
                 if (n <= NUMVAR_LIMIT) {
@@ -1590,6 +1590,12 @@ function drawSummaryWidget (widgetName) {
     var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
     emptyElement(widgetContentDiv);
     var generator = widgetGenerators[widgetName]['info'];
+    var requestmethod = generator['requestmethod'];
+    if (requestmethod != undefined && requestmethod.toLowerCase() == 'post') {
+        requestmethod = 'POST';
+    } else {
+        requestmethod = 'GET';
+    }
     var callServer = generator['callserver'];
     var data = generator['variables']['data'];
     if (callServer) {
@@ -1604,18 +1610,34 @@ function drawSummaryWidget (widgetName) {
         var spinner = getSpinner();
         spinner.className = 'widgetspinner';
         addEl(widgetContentDiv, spinner);
-        $.ajax({
-            url: '/result/runwidget/' + widgetName, 
-            data: {'username': username, 'job_id': jobId, dbpath: dbPath, params: JSON.stringify(callServerParams)},
-            async: true,
-            success: function (response) {
-                var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
-                var spinner = widgetContentDiv.getElementsByClassName('widgetspinner')[0];
-                $(spinner).remove();
-                var data = response['data'];
-                drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
-            },
-        });
+        if (requestmethod == 'POST') {
+            var params = JSON.stringify(callServerParams);
+            $.post(
+                '/result/runwidget/' + widgetName, 
+                {'username': username, 'job_id': jobId, dbpath: dbPath, params: params},
+                function (response) {
+                    var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
+                    var spinner = widgetContentDiv.getElementsByClassName('widgetspinner')[0];
+                    $(spinner).remove();
+                    var data = response['data'];
+                    drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
+                },
+            );
+        } else {
+            $.ajax({
+                url: '/result/runwidget/' + widgetName, 
+                data: {'username': username, 'job_id': jobId, dbpath: dbPath, params: JSON.stringify(callServerParams)},
+                async: true,
+                method: requestmethod,
+                success: function (response) {
+                    var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
+                    var spinner = widgetContentDiv.getElementsByClassName('widgetspinner')[0];
+                    $(spinner).remove();
+                    var data = response['data'];
+                    drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, data);
+                },
+            });
+        }
     } else {
         drawSummaryWidgetGivenData(widgetName, widgetContentDiv, generator, undefined);
     }

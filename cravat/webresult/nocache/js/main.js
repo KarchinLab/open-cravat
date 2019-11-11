@@ -211,14 +211,14 @@ function makeTabHeadTabBody (resultTableLevel) {
 	var div = getEl('div');
 	span.id = 'tabhead_' + resultTableLevel;
 	div.id = 'tab_' + resultTableLevel;
-	span.className = 'tabhead ';
-	div.className = 'tabcontent ';
+	span.classList.add('tabhead');
+	div.classList.add('tabcontent');
 	if (resultTableLevel == currentTab) {
-		span.className += 'show';
-		div.className += 'show';
+		span.classList.add('show');
+		div.classList.add('show');
 	} else {
-		span.className += 'hide';
-		div.className += 'hide';
+		span.classList.add('hide');
+		div.classList.add('hide');
 	}
 	var tabTitle = resultTableLevel;
 	if (tabTitle == 'info') {
@@ -498,6 +498,7 @@ var makeVariantByGene = function () {
 };
 
 function loadData (alertFlag, finalcallback) {
+    lockTabs();
 	var infoReset = resetTab['info'];
 	resetTab = {'info': infoReset};
 	resetTab['summary'] = true;
@@ -536,6 +537,7 @@ function loadData (alertFlag, finalcallback) {
             jobDataLoadingDiv.parentElement.removeChild(jobDataLoadingDiv);
             jobDataLoadingDiv = null;
         }
+        selectTab('info');
 	}
 	var loadGeneResult = function () {
 		var numvar = infomgr.getData('variant').length;
@@ -843,27 +845,29 @@ function checkWidgets () {
 }
 
 function drawingRetrievingDataDiv (currentTab) {
-	var currentTabDiv = document.getElementById('tab_'+currentTab);
-	var loadingDiv = getEl('div');
-    loadingDiv.className = 'data-retrieving-msg-div';
-	var loadingTxtDiv = getEl('div');
-    loadingTxtDiv.className = 'store-noconnect-msg-div';
-    var span = getEl('span');
-    span.textContent = 'Retrieving Data...';
-	addEl(loadingTxtDiv, span);
-    addEl(loadingTxtDiv, getEl('br'));
-	var loadingSpinCircleDiv = getEl('div');
-	var loadingSpinCircleImg = getEl('img');
-	loadingSpinCircleImg.src = "images/bigSpinner.gif";
-	addEl(loadingTxtDiv, loadingSpinCircleImg);
-	addEl(loadingDiv, loadingTxtDiv);
-    var dW = document.body.offsetWidth;
-    var dH = document.body.offsetHeight;
-	loadingDiv.style.top = 0;
-	loadingDiv.style.left = 0;
-	jobDataLoadingDiv = loadingDiv;
-    var parentDiv = document.body;
-    addEl(parentDiv, loadingDiv);
+    if (jobDataLoadingDiv == null) {
+        var currentTabDiv = document.getElementById('tab_'+currentTab);
+        var loadingDiv = getEl('div');
+        loadingDiv.className = 'data-retrieving-msg-div';
+        var loadingTxtDiv = getEl('div');
+        loadingTxtDiv.className = 'store-noconnect-msg-div';
+        var span = getEl('span');
+        span.textContent = 'Retrieving Data...';
+        addEl(loadingTxtDiv, span);
+        addEl(loadingTxtDiv, getEl('br'));
+        var loadingSpinCircleDiv = getEl('div');
+        var loadingSpinCircleImg = getEl('img');
+        loadingSpinCircleImg.src = "images/bigSpinner.gif";
+        addEl(loadingTxtDiv, loadingSpinCircleImg);
+        addEl(loadingDiv, loadingTxtDiv);
+        var dW = document.body.offsetWidth;
+        var dH = document.body.offsetHeight;
+        loadingDiv.style.top = 0;
+        loadingDiv.style.left = 0;
+        jobDataLoadingDiv = loadingDiv;
+        var parentDiv = document.body;
+        addEl(parentDiv, loadingDiv);
+    }
 	return loadingDiv;
 }
 
@@ -1017,6 +1021,10 @@ function afterGetResultLevels () {
         }
         firstLoadData();
     });
+}
+
+function selectTab (tabName) {
+    document.querySelector('#tabhead_' + tabName).click();
 }
 
 function webresult_run () {
