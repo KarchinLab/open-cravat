@@ -698,34 +698,43 @@ function makeFilterTab (rightDiv) {
 }
 
 function countFilterVariants() {
+    let countBtn = $('#filter-count-btn')
+    gifPath = 'images/arrow-spinner.gif'
+    imgPath = 'images/arrow-spinner-static.gif'
+    countBtn.attr('src',gifPath);
+    let changeToImg = false;
+    // Spin for at least 1 second
+    setTimeout(()=>{
+        if (changeToImg) {
+            countBtn.attr('src', imgPath);
+        } else {
+            changeToImg = true;
+        }
+    },1000);
     return new Promise((resolve, reject) => {
         makeFilterJson();
         infomgr.count(dbPath, 'variant', (msg, data) => {
             let count = data.n;
-            refreshFilterCounts(count);
+            if (changeToImg) {
+                countBtn.attr('src', imgPath);
+            } else {
+                changeToImg = true;
+            }
+            displayFilterCount(count);
             resolve(count);
         })
     })
 }
 
-function showFilterCountWarning(show) {
-    var warnDiv = document.getElementById('filter-tab-count-warning');
-    if (show) {
-        warnDiv.style.display = null;
-    } else {
-        warnDiv.style.display = 'none';
-    }
-}
-
-function refreshFilterCounts(n) {
+function displayFilterCount(n) {
 	let t = infomgr.jobinfo['Number of unique input variants'];
 	let countDisplay = $('#filter-count-display');
 	countDisplay.text(`${n}/${t} variants`);
-	$('#filter-count-btn').attr('src','images/arrow-spinner-static.gif');
+    var warnDiv = document.getElementById('filter-tab-count-warning');
     if (n > NUMVAR_LIMIT) {
-        showFilterCountWarning(true);
+        warnDiv.style.display = null;
     } else {
-        showFilterCountWarning(false);
+        warnDiv.style.display = 'none';
     }
 }
 
