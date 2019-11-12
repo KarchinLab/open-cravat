@@ -537,7 +537,7 @@ function loadData (alertFlag, finalcallback) {
             jobDataLoadingDiv.parentElement.removeChild(jobDataLoadingDiv);
             jobDataLoadingDiv = null;
         }
-        selectTab('info');
+        //selectTab('info');
 	}
 	var loadGeneResult = function () {
 		var numvar = infomgr.getData('variant').length;
@@ -582,7 +582,7 @@ function loadData (alertFlag, finalcallback) {
 			firstLoad = false;
             var numvar = Number(infomgr.jobinfo['Number of unique input variants']);
             if (filterJson.length == 0 && numvar > NUMVAR_LIMIT) {
-                refreshFilterCounts(numvar);
+                displayFilterCount(numvar);
                 lockTabs();
                 flagNotifyToUseFilter = true;
                 if (document.getElementById('infonoticediv')) {

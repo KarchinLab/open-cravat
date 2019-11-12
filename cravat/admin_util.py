@@ -1324,15 +1324,7 @@ def ready_resolution_console():
     exit()
 
 def get_max_num_concurrent_annotators_per_job ():
-    sys_conf = get_system_conf()
-    key = 'max_num_concurrent_annotators_per_job'
-    if key in sys_conf:
-        num_workers = sys_conf.get(key)
-    else:
-        num_workers = max(1, multiprocessing.cpu_count() - 1)
-        sys_conf[key] = num_workers
-        write_system_conf_file(sys_conf)
-    return num_workers
+    return get_system_conf()['max_num_concurrent_annotators_per_job']
 
 def get_remote_manifest ():
     if len(mic.remote) == 0:

@@ -1752,6 +1752,7 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     if (mInfo.commercial_warning) {
         span.textContent = mInfo.commercial_warning;
         span.style.color = 'red';
+        span.style['font-weight'] = 'bold';
     }
     addEl(d,span);
     addEl(infodiv,d);
