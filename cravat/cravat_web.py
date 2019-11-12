@@ -32,6 +32,7 @@ import socket
 import concurrent
 import logging
 from cravat import constants
+import time
 
 conf = ConfigLoader()
 sysconf = au.get_system_conf()
@@ -171,8 +172,8 @@ def result ():
             else:
                 print('Provide the path to a OpenCRAVAT result sqlite file or both username and job ID')
                 exit()
-            webbrowser.open(protocol + url)
-        main()
+            url = protocol + url
+        main(url=url)
     except Exception as e:
         logger.exception(e)
         if args.nostdoutexception == False:
@@ -181,37 +182,22 @@ def result ():
         print('Error occurred while starting OpenCRAVAT result viewer.\nCheck {} for details.'.format(log_path))
         exit()
 
-def store ():
-    global args
-    try:
-        ws.start_install_queue_manager()
-        global donotopenbrowser
-        if not donotopenbrowser:
-            server = get_server()
-            global protocol
-            webbrowser.open(protocol + '{host}:{port}/store/index.html'.format(host=server.get('host'), port=server.get('port')))
-    except Exception as e:
-        logger.exception(e)
-        if args.nostdoutexception == False:
-            traceback.print_exc()
-        logger.info('Exiting...')
-        print('Error occurred while starting OpenCRAVAT web store.\nCheck {} for details.'.format(log_path))
-        exit()
-
 def submit ():
     global args
     try:
         global donotopenbrowser
+        url = None
         if not donotopenbrowser:
             server = get_server()
             global protocol
             global server_ready
             global servermode
             if server_ready and servermode:
-                webbrowser.open(protocol + '{host}:{port}/server/nocache/login.html'.format(host=server.get('host'), port=server.get('port')))
+                url = '{host}:{port}/server/nocache/login.html'.format(host=server.get('host'), port=server.get('port'))
             else:
-                webbrowser.open(protocol + '{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port')))
-        main()
+                url = '{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port'))
+            url = protocol + url
+        main(url=url)
     except Exception as e:
         logger.exception(e)
         if args.nostdoutexception == False:
@@ -299,7 +285,7 @@ async def middleware (request, handler):
             traceback.print_exc()
 
 class WebServer (object):
-    def __init__ (self, host=None, port=None, loop=None, ssl_context=None):
+    def __init__ (self, host=None, port=None, loop=None, ssl_context=None, url=None):
         serv = get_server()
         if host is None:
             host = serv['host']
@@ -311,7 +297,16 @@ class WebServer (object):
             loop = asyncio.get_event_loop()
         self.ssl_context = ssl_context
         self.loop = loop
+        self.server_started = False
         asyncio.ensure_future(self.start(), loop=self.loop)
+        global donotopenbrowser
+        if donotopenbrowser == False and url is not None:
+            asyncio.ensure_future(self.open_url(url), loop=self.loop)
+
+    async def open_url (self, url):
+        while not self.server_started:
+            await asyncio.sleep(0.2)
+        webbrowser.open(url)
 
     async def start (self):
         global middleware
@@ -324,6 +319,7 @@ class WebServer (object):
         await self.runner.setup()
         self.site = TCPSitePatched(self.runner, self.host, self.port, loop=self.loop, ssl_context=self.ssl_context)
         await self.site.start()
+        self.server_started = True
 
     def setup_routes (self):
         routes = list()
@@ -363,7 +359,7 @@ async def is_system_ready (request):
     return web.json_response(dict(au.system_ready()))
 
 loop = None
-def main ():
+def main (url=None):
     global args
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -410,9 +406,9 @@ def main ():
         global ssl_enabled
         if ssl_enabled:
             global sc
-            server = WebServer(loop=loop, ssl_context=sc)
+            server = WebServer(loop=loop, ssl_context=sc, url=url)
         else:
-            server = WebServer(loop=loop)
+            server = WebServer(loop=loop, url=url)
         try:
             loop.run_forever()
         except KeyboardInterrupt:

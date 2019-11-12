@@ -238,11 +238,13 @@ div.tabContent {
 }
 
 div.tabContent.show { 
-	display: block; 
+	/*display: block; */
+	visibility: visible; 
 }
 
 div.tabContent.hide { 
-	display: none; 
+	/*display: none; */
+    visibility: hidden;
 }
 
 .pq-grid-cell {
