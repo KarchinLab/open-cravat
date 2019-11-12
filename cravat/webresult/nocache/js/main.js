@@ -537,7 +537,7 @@ function loadData (alertFlag, finalcallback) {
             jobDataLoadingDiv.parentElement.removeChild(jobDataLoadingDiv);
             jobDataLoadingDiv = null;
         }
-        selectTab('info');
+        //selectTab('info');
 	}
 	var loadGeneResult = function () {
 		var numvar = infomgr.getData('variant').length;
