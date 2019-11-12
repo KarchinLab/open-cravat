@@ -1724,10 +1724,13 @@ function populatePackageVersions () {
                 s.textContent = data.current;
                 addEl(curverspan, s);
                 if (data.update) {
+                    s.textContent = s.textContent + '\xa0';
                     var a = getEl('a');
                     a.href = 'https://github.com/KarchinLab/open-cravat/wiki/Update-Instructions';
                     a.target = '_blank';
-                    a.textContent = '(' + data.latest + ')';
+                    //a.textContent = '(' + data.latest + ')';
+                    a.textContent = 'new release available';
+                    a.style.color = 'red';
                     addEl(curverspan, a);
                 }
             }
