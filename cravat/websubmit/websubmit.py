@@ -947,8 +947,17 @@ async def live_annotate (input_data, annotators):
     response['crx'] = crx_data
     return response
 
-async def get_live_annotation (request):
+async def get_live_annotation_post (request):
+    queries = await request.post()
+    response = await get_live_annotation(queries)
+    return web.json_response(response)
+
+async def get_live_annotation_get (request):
     queries = request.rel_url.query
+    response = await get_live_annotation(request)
+    return web.json_response(response)
+
+async def get_live_annotation (queries):
     chrom = queries['chrom']
     pos = queries['pos']
     ref_base = queries['ref_base']
@@ -969,7 +978,7 @@ async def get_live_annotation (request):
         response = await live_annotate(input_data, annotators)
     else:
         response = await live_annotate(input_data, annotators)
-    return web.json_response(response)
+    return response
 
 async def get_available_report_types (request):
     job_id = request.match_info['job_id']
@@ -1030,7 +1039,8 @@ routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
 routes.append(['GET', '/submit/getjobs', get_jobs])
-routes.append(['GET', '/submit/annotate', get_live_annotation])
+routes.append(['GET', '/submit/annotate', get_live_annotation_get])
+routes.append(['POST', '/submit/annotate', get_live_annotation_post])
 routes.append(['GET', '/', redirect_to_index])
 routes.append(['GET', '/submit/jobs/{job_id}/status', get_job_status])
 

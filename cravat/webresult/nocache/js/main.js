@@ -559,7 +559,7 @@ function loadData (alertFlag, finalcallback) {
 			}
 		}
 		if (resultLevels.indexOf('gene') != -1) {
-			infomgr.load(jobId, 'gene', removeSpinner, null, filterJson);
+			infomgr.load(jobId, 'gene', removeSpinner, null, filterJson, 'job');
 		} else {
             removeSpinner();
         }
@@ -573,7 +573,7 @@ function loadData (alertFlag, finalcallback) {
                 callback = removeSpinner;
 		    }
 		    if (resultLevels.indexOf('variant') != -1) {
-                infomgr.load(jobId, 'variant', callback, null, filterJson);
+                infomgr.load(jobId, 'variant', callback, null, filterJson, 'job');
 		    } else {
                 callback();
 		    }
@@ -824,7 +824,8 @@ var afterLoadDefaultWidgetSetting = function (args) {
             loadData(false, showTab('info'));
         }, 
         null, 
-        filterJson
+        filterJson,
+        'info'
     );
 }
 

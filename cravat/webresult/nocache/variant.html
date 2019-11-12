@@ -1,0 +1,121 @@
+<html>
+<head>
+	<script src="/result/js/jquery-3.2.1.min.js"></script>
+	<script src='/result/nocache/js/infomgr.js?ver=1.7.0'></script>
+    <title></title>
+</head>
+<body>
+
+<div id='inputdiv'>
+    <form name='input_form' method='GET'>
+        <input id='input_chrom' name='inputChrom' />
+        <input id='input_pos' name='inputPos' />
+        <input id='input_ref' name='inputRef' />
+        <input id='input_alt' name='inputAlt' />
+        <input type='button' id='input_submit' name='input_submit' value='Annotate' onclick='submitForm(this.form);' />
+    </form>
+    <div id='detaildiv'></div>
+</div>
+
+<script>
+function getInputDataFromUrl () {
+    var urlParams = new URLSearchParams(window.location.search);
+    var inputChrom = urlParams.get('chrom');
+    var inputPos = urlParams.get('pos');
+    var inputRef = urlParams.get('ref_base');
+    var inputAlt = urlParams.get('alt_base');
+    console.log('@', inputChrom, inputPos, inputRef, inputAlt);
+    var inputData = cleanInputData(inputChrom, inputPos, inputRef, inputAlt);
+    return inputData;
+}
+
+function cleanInputData (inputChrom, inputPos, inputRef, inputAlt) {
+    if (inputChrom == '') {
+        inputChrom = null;
+    }
+    if (inputPos == '') {
+        inputPos = null;
+    }
+    if (inputRef == '') {
+        inputRef = null;
+    }
+    if (inputAlt == '') {
+        inputAlt = null;
+    }
+    console.log('@@', inputChrom, inputPos, inputRef, inputAlt);
+    if (inputChrom == null || inputPos == null || inputRef == null || inputAlt == null) {
+        return null;
+    } else {
+        return {'chrom': inputChrom, 'pos': inputPos, 'ref': inputRef, 'alt': inputAlt};
+    }
+}
+
+function submitForm (form) {
+    var inputData = cleanInputData(form.inputChrom.value, form.inputPos.value, form.inputRef.value, form.inputAlt.value);
+    if (inputData != null) {
+        submitAnnotate(inputData['chrom'], inputData['pos'], inputData['ref'], inputData['alt']);
+    }
+}
+
+function submitAnnotate (inputChrom, inputPos, inputRef, inputAlt) {
+    //var http = new XMLHTTPRequest();
+    var url = '/submit/annotate';
+    var params = {'chrom':inputChrom, 'pos':parseInt(inputPos), 'ref_base':inputRef, 'alt_base':inputAlt};
+    console.log('@ params=', params);
+    $.ajax({
+        type: 'POST',
+        url: url,
+        data: params,
+        success: function (response) {
+            showAnnotation(response);
+        }
+    });
+}
+
+function showAnnotation (response) {
+    console.log(response);
+}
+
+function getWidgets (callback, callbackArgs) {
+    $.get('/result/service/widgetlist', {}).done(function (jsonResponseData) {
+        var tmpWidgets = jsonResponseData;
+        var widgetLoadCount = 0;
+        widgetGenerators = {};
+        widgetInfo = {};
+        for (var i = 0; i < tmpWidgets.length; i++) {
+            var tmpWidget = tmpWidgets[i];
+            var widgetName = tmpWidget['name'];
+            var widgetNameNoWg = widgetName.substring(2);
+            widgetInfo[widgetNameNoWg] = tmpWidget;
+            $.getScript('/result/widgetfile/' + widgetName + '/' + widgetName + '.js', function () {
+                widgetLoadCount += 1;
+                if (widgetLoadCount == tmpWidgets.length) {
+                    callback(callbackArgs);
+                }
+            });
+        }
+    });
+}
+
+var infomgr = new InfoMgr();
+var widgetInfo = {};
+var widgetGenerators = {};
+
+function processUrl () {
+    var inputData = getInputDataFromUrl();
+    console.log('@ inputData=', inputData);
+    if (inputData != null) {
+        submitAnnotate(inputData['chrom'], inputData['pos'], inputData['ref'], inputData['alt']);
+    }
+}
+
+function run () {
+    getWidgets(processUrl, null);
+}
+
+run();
+
+</script>
+</body>
+</html>
+
