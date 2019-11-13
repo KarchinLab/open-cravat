@@ -888,7 +888,7 @@ async def load_live_modules ():
     else:
         default_mapper = 'hg38'
     live_mapper = get_live_mapper(default_mapper)
-    modules = au.get_local_by_type(['annotator'])
+    modules = au.get_local_module_infos(types=['annotator'])
     for module in modules:
         if module.name in exclude_live_modules:
             continue

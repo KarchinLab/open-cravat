@@ -483,7 +483,6 @@ function updateModuleGroupInfo () {
             }
         }
     }
-    console.log('@ moduleGroupMembers=', moduleGroupMembers);
 }
 
 function getNewestModuleNames () {
