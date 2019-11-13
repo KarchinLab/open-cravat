@@ -14,6 +14,7 @@ import copy
 import cravat.cravat_util as cu
 from cravat.util import detect_encoding
 import json
+import gzip
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
@@ -58,8 +59,6 @@ class MasterCravatConverter(object):
     def __init__(self, args=None, status_writer=None):
         args = args if args else sys.argv
         self.status_writer = status_writer
-        # self.input_path = None
-        # self.f = None
         self.input_paths = []
         self.input_files = []
         self.input_format = None
@@ -145,18 +144,15 @@ class MasterCravatConverter(object):
         # Open file handle to input path
         for input_path in self.input_paths:
             encoding = detect_encoding(input_path)
-            self.input_files.append(open(input_path, encoding=encoding))
+            if input_path.endswith('.gz'):
+                f = gzip.open(input_path, mode='rt', encoding=encoding)
+            else:
+                f = open(input_path, encoding=encoding)
+            self.input_files.append(f)
         # Read in the available converters
         self._initialize_converters()
         # Select the converter that matches the input format
         self._select_primary_converter()
-        
-        # A correct .crv file is not processed.
-        #todo handle this for multiple inputs. have to convert them so they can be merged 
-        # if self.input_format == 'crv' and \
-        #     self.input_paths[0].split('.')[-1] == 'crv':
-        #     self.logger.info('Input file is already a crv file. Exiting converter.')
-        #     exit(0)
         
         # Open the output files
         self._open_output_files()
