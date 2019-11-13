@@ -14,6 +14,7 @@ import copy
 import cravat.cravat_util as cu
 from cravat.util import detect_encoding
 import json
+import gzip
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
@@ -145,7 +146,12 @@ class MasterCravatConverter(object):
         # Open file handle to input path
         for input_path in self.input_paths:
             encoding = detect_encoding(input_path)
-            self.input_files.append(open(input_path, encoding=encoding))
+            print(input_path, encoding)
+            if input_path.endswith('.gz'):
+                f = gzip.open(input_path, mode='rt', encoding=encoding)
+            else:
+                f = open(input_path, encoding=encoding)
+            self.input_files.append(f)
         # Read in the available converters
         self._initialize_converters()
         # Select the converter that matches the input format
