@@ -18,6 +18,7 @@ from types import SimpleNamespace
 from . import exceptions
 from collections.abc import MutableMapping
 import multiprocessing
+import importlib
 
 def load_yml_conf(yml_conf_path):
     """
@@ -390,13 +391,6 @@ def search_local(*patterns):
         if any([re.fullmatch(pattern, module_name) for pattern in patterns]):
             matching_names.append(module_name)
     return matching_names
-
-def get_local_by_type (types):
-    modules = []
-    for module in list(mic.local.values()):
-        if module.type in types:
-            modules.append(module)
-    return modules
 
 def module_exists_local(module_name):
     """
@@ -1338,6 +1332,22 @@ def get_remote_manifest ():
     if len(mic.remote) == 0:
         mic.update_remote()
     return mic.remote
+
+def input_formats():
+    converters = get_local_module_infos(types=['converter'])
+    formats = set()
+    for module_info in converters:
+        spec = importlib.util.spec_from_file_location(module_info.name,
+                                                          module_info.script_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        converter = module.CravatConverter()
+        format = converter.format_name
+        if not format:
+            format = module_info.name.split('-')[0]
+        formats.add(format)
+        
+    return formats
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

@@ -59,8 +59,6 @@ class MasterCravatConverter(object):
     def __init__(self, args=None, status_writer=None):
         args = args if args else sys.argv
         self.status_writer = status_writer
-        # self.input_path = None
-        # self.f = None
         self.input_paths = []
         self.input_files = []
         self.input_format = None
@@ -156,13 +154,6 @@ class MasterCravatConverter(object):
         # Select the converter that matches the input format
         self._select_primary_converter()
         
-        # A correct .crv file is not processed.
-        #todo handle this for multiple inputs. have to convert them so they can be merged 
-        # if self.input_format == 'crv' and \
-        #     self.input_paths[0].split('.')[-1] == 'crv':
-        #     self.logger.info('Input file is already a crv file. Exiting converter.')
-        #     exit(0)
-        
         # Open the output files
         self._open_output_files()
         self.ready_to_convert = True
@@ -198,6 +189,7 @@ class MasterCravatConverter(object):
                     %converter.format_name
                 raise ExpectedException(err_msg)
         self.possible_formats = list(self.converters.keys())
+        print('possible_formats=',self.possible_formats)
 
     def _select_primary_converter(self):
         """ Choose the converter which matches the input format.

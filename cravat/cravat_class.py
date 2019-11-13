@@ -113,6 +113,7 @@ cravat_cmd_parser.add_argument('--mp',
 cravat_cmd_parser.add_argument('--forcedinputformat',
                     dest='forcedinputformat',
                     default=None,
+                    choices=au.input_formats(),
                     help='Force input format')
 cravat_cmd_parser.add_argument('--cleanup',
     dest='cleanup',
