@@ -146,7 +146,6 @@ class MasterCravatConverter(object):
         # Open file handle to input path
         for input_path in self.input_paths:
             encoding = detect_encoding(input_path)
-            print(input_path, encoding)
             if input_path.endswith('.gz'):
                 f = gzip.open(input_path, mode='rt', encoding=encoding)
             else:
