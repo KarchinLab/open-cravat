@@ -230,7 +230,7 @@ async def install_widgets_for_module (request):
 async def uninstall_module (request):
     global servermode
     if servermode and server_ready:
-        r = await cravatserver.is_admin_loggedin(request)
+        r = await cravat_multiuser.is_admin_loggedin(request)
         if r == False:
             response = 'failure'
             return web.json_response(response)
@@ -291,7 +291,7 @@ async def queue_install (request):
     global install_queue
     global servermode
     if servermode and server_ready:
-        r = await cravatserver.is_admin_loggedin(request)
+        r = await cravat_multiuser.is_admin_loggedin(request)
         if r == False:
             response = 'notadmin'
             return web.json_response(response)
@@ -316,7 +316,7 @@ async def get_base_modules (request):
 async def install_base_modules (request):
     global servermode
     if servermode and server_ready:
-        r = await cravatserver.is_admin_loggedin(request)
+        r = await cravat_multiuser.is_admin_loggedin(request)
         if r == False:
             response = 'failed'
             return web.json_response(response)
@@ -393,7 +393,7 @@ async def get_tag_desc (request):
 
 async def update_remote (request):
     if servermode and server_ready:
-        r = await cravatserver.is_admin_loggedin(request)
+        r = await cravat_multiuser.is_admin_loggedin(request)
         if r == False:
             response = 'notadmin'
             return web.json_response(response)
