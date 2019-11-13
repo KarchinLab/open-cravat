@@ -189,7 +189,6 @@ class MasterCravatConverter(object):
                     %converter.format_name
                 raise ExpectedException(err_msg)
         self.possible_formats = list(self.converters.keys())
-        print('possible_formats=',self.possible_formats)
 
     def _select_primary_converter(self):
         """ Choose the converter which matches the input format.
