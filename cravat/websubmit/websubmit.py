@@ -327,12 +327,13 @@ async def submit (request):
         note = ''
     run_args.append(note)
     # Forced input format
-    if 'forcedinputformat' in job_options:
+    if 'forcedinputformat' in job_options and job_options['forcedinputformat']:
         run_args.append('--forcedinputformat')
         run_args.append(job_options['forcedinputformat'])
     if servermode:
         run_args.append('--writeadmindb')
         run_args.extend(['--jobid', job_id])
+    run_args.append('--temp-files')
     global job_queue
     global run_jobs_info
     job_ids = run_jobs_info['job_ids']
