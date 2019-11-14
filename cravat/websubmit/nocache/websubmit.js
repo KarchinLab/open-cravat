@@ -47,7 +47,6 @@ function submit () {
         alert('Choose a input variant files, enter variants, or click an input example button.');
         return;
     }
-    document.querySelector('#submit-job-button').disabled = true;
     for (var i=0; i<inputFiles.length; i++) {
         formData.append('file_'+i,inputFiles[i]);
     }
@@ -70,10 +69,20 @@ function submit () {
             submitOpts.reports.push(cb.value);
         }
     }
-    submitOpts.assembly = $('#assembly-select').val();
+    var assmSelect = $('#assembly-select');
+    var assembly = assmSelect.val();
+    if (assembly !== null) {
+        submitOpts.assembly = assembly;
+    } else {
+        alert('Please select a genome version');
+        $('#assembly-select-div').css('border', '2px solid red');
+        setTimeout(()=>{$('#assembly-select-div').css('border', 'none');},2000);
+        return;
+    }
     submitOpts.forcedinputformat = $('#submit-input-format-select').val();
     var note = document.getElementById('jobnoteinput').value;
     submitOpts.note = note;
+    document.querySelector('#submit-job-button').disabled = true;
     formData.append('options',JSON.stringify(submitOpts));
     // reads number of input lines
     var lineCount = 0;
