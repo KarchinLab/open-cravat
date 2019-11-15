@@ -84,11 +84,11 @@ function submit () {
     for (var i = 0; i < inputFiles.length; i++) {
         sumInputSize += inputFiles[i].size;
     }
-    sumInputSize = (sumInputSize / 1024 / 1024).toFixed(0);
+    sumInputSize = sumInputSize / 1024 / 1024;
     if (sumInputSize > sumInputSizeCutoff) {
         var alertDiv = getEl('div');
         var span = getEl('span');
-        span.textContent = 'You are submitting input files larger than ' + sumInputSize + ' MB. Proceed?';
+        span.textContent = 'You are submitting input files larger than ' + sumInputSize.toFixed(1) + ' MB. Proceed?';
         addEl(alertDiv, span);
         addEl(alertDiv,getEl('br'));
         showYesNoDialog(alertDiv, commitSubmit, false, false);
@@ -145,7 +145,7 @@ function submit () {
                         addEl(alertDiv, span);
                         var span = getEl('span');
                         span.style.fontSize = '12px';
-                        span.textContent = 'Variant number cutoff for this message can be changed at the Settings menu at the top right corner.)';
+                        span.textContent = 'Variant number cutoff for this message can be changed at the Settings menu at the top right corner.';
                         addEl(alertDiv, span);
                         addEl(alertDiv,getEl('br'));
                         showYesNoDialog(alertDiv, commitSubmit, false, false);
@@ -1653,7 +1653,7 @@ function updateSystemConf () {
         response['content']['modules_dir'] = s.value;
         var s = document.getElementById('settings_num_input_line_warning_cutoff');
         response['content']['num_input_line_warning_cutoff'] = parseInt(s.value);
-        var s = document.getElementById('settings_num_input_size_warning_cutoff');
+        var s = document.getElementById('settings_sum_input_size_warning_cutoff');
         response['content']['sum_input_size_warning_cutoff'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_jobs');
         response['content']['max_num_concurrent_jobs'] = parseInt(s.value);
