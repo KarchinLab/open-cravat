@@ -1263,7 +1263,7 @@ def get_updatable(modules=[], strategy='consensus'):
 
 def get_last_assembly ():
     conf = get_cravat_conf()
-    last_assembly = conf.get('last_assembly', 'hg38')
+    last_assembly = conf.get('last_assembly')
     return last_assembly
 
 def get_default_assembly ():

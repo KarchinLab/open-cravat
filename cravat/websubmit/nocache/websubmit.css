@@ -816,3 +816,7 @@ input:checked + .slider:before {
     color: white;
 }
 
+#assembly-select-div {
+    width: fit-content;
+    padding: 2px;
+}

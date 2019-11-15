@@ -10,6 +10,7 @@ var GLOBALS = {
     reports: {},
     inputExamples: {},
     idToJob: {},
+    usersettings: {},
 }
 var currentTab = 'submit';
 var websubmitReportBeingGenerated = {};
@@ -47,7 +48,6 @@ function submit () {
         alert('Choose a input variant files, enter variants, or click an input example button.');
         return;
     }
-    document.querySelector('#submit-job-button').disabled = true;
     for (var i=0; i<inputFiles.length; i++) {
         formData.append('file_'+i,inputFiles[i]);
     }
@@ -70,10 +70,21 @@ function submit () {
             submitOpts.reports.push(cb.value);
         }
     }
-    submitOpts.assembly = $('#assembly-select').val();
+    var assmSelect = $('#assembly-select');
+    var assembly = assmSelect.val();
+    if (assembly !== null) {
+        submitOpts.assembly = assembly;
+    } else {
+        showYesNoDialog('Please select a genome version', ()=>{
+            $('#assembly-select-div').css('border', '2px solid red');
+            setTimeout(()=>{$('#assembly-select-div').css('border', 'none');},2000);
+        }, false, true);
+        return;
+    }
     submitOpts.forcedinputformat = $('#submit-input-format-select').val();
     var note = document.getElementById('jobnoteinput').value;
     submitOpts.note = note;
+    document.querySelector('#submit-job-button').disabled = true;
     formData.append('options',JSON.stringify(submitOpts));
     // reads number of input lines
     var lineCount = 0;
@@ -757,6 +768,7 @@ function inputExampleChangeHandler (event) {
     var elem = $(event.target);
     var format = elem.val();
     var assembly = $('#assembly-select').val();
+    assembly = assembly === null ? 'hg38' : assembly;
     var formatAssembly = format + '.' + assembly;
     var getExampleText = new Promise((resolve, reject) => {
         var cachedText = GLOBALS.inputExamples[formatAssembly];
@@ -1719,6 +1731,7 @@ function getServermode () {
 }
 
 function setupNoServerMode () {
+    setLastAssembly();
 }
 
 function setupServerMode () {
@@ -1728,6 +1741,14 @@ function setupServerMode () {
     });
     document.getElementById('settingsdiv').style.display = 'none';
     document.querySelector('.threedotsdiv').style.display = 'none';
+    $.ajax({
+        url: '/server/usersettings',
+        type: 'get',
+        success: function (response) {
+            GLOBALS.usersettings = response;
+            setLastAssembly();
+        }
+    });
 }
 
 function populatePackageVersions () {
@@ -1911,26 +1932,26 @@ function addListeners () {
 }
 
 function setLastAssembly () {
-    $.ajax({
-        url: '/submit/lastassembly',
-        ajax: true,
-        success: function (response) {
-            document.getElementById('assembly-select').value = response;
-        },
-    });
+    let sel = document.getElementById('assembly-select');
+    if (!servermode) {
+        $.ajax({
+            url: '/submit/lastassembly',
+            ajax: true,
+            success: function (response) {
+                sel.value = response;
+            },
+        });
+    } else {
+        if (GLOBALS.usersettings.hasOwnProperty('lastAssembly')) {
+            sel.value = GLOBALS.usersettings.lastAssembly;
+        } else {
+            sel.value = null;
+        }
+    }
 }
 
 function getJobById (jobId) {
     return GLOBALS.idToJob[jobId];
-    /*
-    for (var i = 0; i < GLOBALS.jobs.length; i++) {
-        var job = GLOBALS.jobs[i];
-        if (job.id == jobId) {
-            return job;
-        }
-    }
-    */
-    return null;
 }
 
 function updateRunningJobTrs (job) {
@@ -1960,7 +1981,6 @@ function websubmit_run () {
     connectWebSocket();
     checkConnection();
     populatePackageVersions();
-    setLastAssembly();
     getBaseModuleNames();
     addListeners();
     resizePage();
