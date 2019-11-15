@@ -766,6 +766,7 @@ function inputExampleChangeHandler (event) {
     var elem = $(event.target);
     var format = elem.val();
     var assembly = $('#assembly-select').val();
+    assembly = assembly === null ? 'hg38' : assembly;
     var formatAssembly = format + '.' + assembly;
     var getExampleText = new Promise((resolve, reject) => {
         var cachedText = GLOBALS.inputExamples[formatAssembly];
