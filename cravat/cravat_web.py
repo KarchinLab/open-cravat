@@ -223,8 +223,8 @@ def get_server():
             def_host = '0.0.0.0'
         else:
             def_host = 'localhost'
-        host = conf.get_cravat_conf().get('gui_host', def_host)
-        port = conf.get_cravat_conf().get('gui_port', 8060)
+        host = au.get_system_conf().get('gui_host', def_host)
+        port = au.get_system_conf().get('gui_port', 8060)
         server['host'] = host
         server['port'] = port
         return server

@@ -825,6 +825,10 @@ def get_system_conf ():
     if key not in conf:
         conf[key] = constants.default_num_input_line_warning_cutoff
         conf_modified = True
+    key = 'sum_input_size_warning_cutoff'
+    if key not in conf:
+        conf[key] = constants.default_sum_input_size_warning_cutoff
+        conf_modified = True
     key = 'max_num_concurrent_jobs'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_jobs

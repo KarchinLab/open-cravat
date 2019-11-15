@@ -277,6 +277,7 @@ module_tag_desc = {
 
 legacy_gene_level_cols_to_skip = ['base__num_variants', 'base__so', 'base__all_so']
 default_num_input_line_warning_cutoff = 25000
+default_sum_input_size_warning_cutoff = 500
 default_max_num_concurrent_jobs = 4
 default_max_num_concurrent_annotators_per_job = max(1, os.cpu_count() - 1)
 default_assembly = 'hg38'
