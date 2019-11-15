@@ -113,12 +113,13 @@ cravat_cmd_parser.add_argument('--mp',
 cravat_cmd_parser.add_argument('--forcedinputformat',
                     dest='forcedinputformat',
                     default=None,
+                    choices=au.input_formats(),
                     help='Force input format')
-cravat_cmd_parser.add_argument('--cleanup',
-    dest='cleanup',
+cravat_cmd_parser.add_argument('--temp-files',
+    dest='temp_files',
     action='store_true',
     default=False,
-    help='At the end of the run, cravat will erase intermediary files, ending with var, gen, crv, crx, crg, crs, crm, crt, or json extension, for the job created by cravat.')
+    help='Leave temporary files after run is complete.')
 cravat_cmd_parser.add_argument('--writeadmindb',
     dest='writeadmindb',
     action='store_true',
@@ -393,7 +394,7 @@ class Cravat (object):
                 self.update_status('Error')
             self.close_logger()
             self.status_writer.flush()
-            if no_problem_in_run and self.args.cleanup:
+            if no_problem_in_run and not self.args.temp_files:
                 self.clean_up_at_end()
             if self.args.writeadmindb:
                 await self.write_admin_db(runtime, self.numinput)
