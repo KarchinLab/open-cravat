@@ -1,7 +1,9 @@
 <html>
 <head>
 	<script src="/result/js/jquery-3.2.1.min.js"></script>
-	<script src='/result/nocache/js/infomgr.js?ver=1.7.0'></script>
+	<script src='/result/nocache/js/util.js?ver=1.7.0'></script>
+	<script src='/result/nocache/js/widgethelper.js?ver=1.7.0'></script>
+	<link rel='stylesheet' href='/result/nocache/css/widget.css?ver=1.7.0' />
     <title></title>
 </head>
 <body>
@@ -14,17 +16,22 @@
         <input id='input_alt' name='inputAlt' />
         <input type='button' id='input_submit' name='input_submit' value='Annotate' onclick='submitForm(this.form);' />
     </form>
-    <div id='detaildiv'></div>
+</div>
+<div id='detaildiv_variant' class='detaildiv' >
+    <div id='detailcontainerwrapdiv_variant' class='detailcontainerwrapdiv' >
+        <div id='detailcontainerdiv_variant' class='detailcontainerdiv' ></div>
+    </div>
 </div>
 
 <script>
+var annotData = null;
+
 function getInputDataFromUrl () {
     var urlParams = new URLSearchParams(window.location.search);
     var inputChrom = urlParams.get('chrom');
     var inputPos = urlParams.get('pos');
     var inputRef = urlParams.get('ref_base');
     var inputAlt = urlParams.get('alt_base');
-    console.log('@', inputChrom, inputPos, inputRef, inputAlt);
     var inputData = cleanInputData(inputChrom, inputPos, inputRef, inputAlt);
     return inputData;
 }
@@ -67,6 +74,7 @@ function submitAnnotate (inputChrom, inputPos, inputRef, inputAlt) {
         url: url,
         data: params,
         success: function (response) {
+            annotData = response;
             showAnnotation(response);
         }
     });
@@ -74,6 +82,21 @@ function submitAnnotate (inputChrom, inputPos, inputRef, inputAlt) {
 
 function showAnnotation (response) {
     console.log(response);
+    var detaildiv = document.querySelector('#detaildiv_variant');
+    var wds = getDetailWidgetDivs('variant', 'base', 'Variant Annotation');
+    addEl(detaildiv, wds[0]);
+    var data = annotData['crx'];
+    if (data == null) {
+        data = {};
+    }
+    widgetGenerators['base']['variant']['function'](wds[1], data, 'variant');
+    var wds = getDetailWidgetDivs('variant', 'clinvar', 'ClinVar');
+    addEl(detaildiv, wds[0]);
+    var data = annotData['clinvar'];
+    if (data == null) {
+        data = {};
+    }
+    widgetGenerators['clinvar']['variant']['function'](wds[1], data, 'variant');
 }
 
 function getWidgets (callback, callbackArgs) {
@@ -97,7 +120,6 @@ function getWidgets (callback, callbackArgs) {
     });
 }
 
-var infomgr = new InfoMgr();
 var widgetInfo = {};
 var widgetGenerators = {};
 

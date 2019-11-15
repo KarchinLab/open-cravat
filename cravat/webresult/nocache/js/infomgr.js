@@ -29,10 +29,6 @@ InfoMgr.prototype.count = function (dbPath, tabName, callback) {
 }
 
 InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson, fetchtype) {
-	/*fetchtype = 'job';
-	if (tabName == 'info') {
-		fetchtype = 'info';
-	}*/
 	var self = this;
 	if (fetchtype == 'job') {
 		if (jobDataLoadingDiv == null) {

@@ -1181,7 +1181,8 @@ function makeVariantGeneTab (tabName, rightDiv) {
     if (detailDiv == null) {
         detailDiv = getEl('div');
         detailDiv.id = detailDivId;
-        detailDiv.className = 'detaildiv';
+        detailDiv.classList.add('detaildiv');
+        detailDiv.classList.add('resultviewer');
         var detailContainerWrapDiv = getEl('div');
         detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
         var h = loadedHeightSettings['detail_' + tabName];
