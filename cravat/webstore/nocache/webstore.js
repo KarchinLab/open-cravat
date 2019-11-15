@@ -2180,6 +2180,9 @@ function showYesNoDialog (content, yescallback, noSpace, justOk) {
     }
     var div = getEl('div');
     div.id = 'yesnodialog';
+    if (typeof content === 'string') {
+        content = getTn(content);
+    }
     content.id = 'yesnodialog-contentdiv'
     addEl(div, content);
     addEl(div, getEl('br'));
@@ -2192,6 +2195,7 @@ function showYesNoDialog (content, yescallback, noSpace, justOk) {
             if (yescallback == undefined || yescallback == null) {
                 $('#yesnodialog').remove();
             } else {
+                $('#yesnodialog').remove();
                 yescallback();
             }
         });

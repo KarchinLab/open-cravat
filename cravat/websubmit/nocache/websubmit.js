@@ -75,9 +75,10 @@ function submit () {
     if (assembly !== null) {
         submitOpts.assembly = assembly;
     } else {
-        alert('Please select a genome version');
-        $('#assembly-select-div').css('border', '2px solid red');
-        setTimeout(()=>{$('#assembly-select-div').css('border', 'none');},2000);
+        showYesNoDialog('Please select a genome version', ()=>{
+            $('#assembly-select-div').css('border', '2px solid red');
+            setTimeout(()=>{$('#assembly-select-div').css('border', 'none');},2000);
+        }, false, true);
         return;
     }
     submitOpts.forcedinputformat = $('#submit-input-format-select').val();
