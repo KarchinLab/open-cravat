@@ -10,6 +10,7 @@ var GLOBALS = {
     reports: {},
     inputExamples: {},
     idToJob: {},
+    usersettings: {},
 }
 var currentTab = 'submit';
 var websubmitReportBeingGenerated = {};
@@ -1729,6 +1730,7 @@ function getServermode () {
 }
 
 function setupNoServerMode () {
+    setLastAssembly();
 }
 
 function setupServerMode () {
@@ -1738,6 +1740,14 @@ function setupServerMode () {
     });
     document.getElementById('settingsdiv').style.display = 'none';
     document.querySelector('.threedotsdiv').style.display = 'none';
+    $.ajax({
+        url: '/server/usersettings',
+        type: 'get',
+        success: function (response) {
+            GLOBALS.usersettings = response;
+            setLastAssembly();
+        }
+    });
 }
 
 function populatePackageVersions () {
@@ -1921,26 +1931,26 @@ function addListeners () {
 }
 
 function setLastAssembly () {
-    $.ajax({
-        url: '/submit/lastassembly',
-        ajax: true,
-        success: function (response) {
-            document.getElementById('assembly-select').value = response;
-        },
-    });
+    let sel = document.getElementById('assembly-select');
+    if (!servermode) {
+        $.ajax({
+            url: '/submit/lastassembly',
+            ajax: true,
+            success: function (response) {
+                sel.value = response;
+            },
+        });
+    } else {
+        if (GLOBALS.usersettings.hasOwnProperty('lastAssembly')) {
+            sel.value = GLOBALS.usersettings.lastAssembly;
+        } else {
+            sel.value = null;
+        }
+    }
 }
 
 function getJobById (jobId) {
     return GLOBALS.idToJob[jobId];
-    /*
-    for (var i = 0; i < GLOBALS.jobs.length; i++) {
-        var job = GLOBALS.jobs[i];
-        if (job.id == jobId) {
-            return job;
-        }
-    }
-    */
-    return null;
 }
 
 function updateRunningJobTrs (job) {
@@ -1970,7 +1980,6 @@ function websubmit_run () {
     connectWebSocket();
     checkConnection();
     populatePackageVersions();
-    setLastAssembly();
     getBaseModuleNames();
     addListeners();
     resizePage();
