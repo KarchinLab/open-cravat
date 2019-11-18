@@ -1,9 +1,13 @@
 <html>
 <head>
 	<script src="/result/js/jquery-3.2.1.min.js"></script>
+    <script src="/result/js/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+    <link rel='stylesheet' href='/result/js/jquery-ui-1.12.1.custom/jquery-ui.css' />
 	<script src='/result/nocache/js/util.js?ver=1.7.0'></script>
 	<script src='/result/nocache/js/widgethelper.js?ver=1.7.0'></script>
+	<script src='/result/js/packery.pkgd.js'></script>
 	<link rel='stylesheet' href='/result/nocache/css/widget.css?ver=1.7.0' />
+	<link rel='stylesheet' href='/result/nocache/css/variant.css?ver=1.7.0' />
     <title></title>
 </head>
 <body>
@@ -25,6 +29,7 @@
 
 <script>
 var annotData = null;
+var widgetContainerDiv = document.querySelector('#detailcontainerdiv_variant');
 
 function getInputDataFromUrl () {
     var urlParams = new URLSearchParams(window.location.search);
@@ -80,23 +85,37 @@ function submitAnnotate (inputChrom, inputPos, inputRef, inputAlt) {
     });
 }
 
+function showWidget (widgetName, moduleName) {
+    var generator = widgetGenerators[widgetName];
+    var divs = null;
+    var level = null;
+    if ('variant' in generator) {
+        divs = getDetailWidgetDivs('variant', widgetName, widgetInfo[widgetName].title);
+        level = 'variant';
+    } else if ('gene' in generator) {
+        divs = getDetailWidgetDivs('gene', widgetName, widgetInfo[widgetName].title);
+        level = 'gene';
+    }
+    addEl(widgetContainerDiv, divs[0]);
+    var data = annotData[moduleName];
+    if (data == null) {
+        data = {};
+    }
+    if (level == 'gene') {
+        data['hugo'] = annotData['crx'].hugo;
+    }
+    widgetGenerators[widgetName][level]['function'](divs[1], data, 'variant');
+}
+
 function showAnnotation (response) {
     console.log(response);
-    var detaildiv = document.querySelector('#detaildiv_variant');
-    var wds = getDetailWidgetDivs('variant', 'base', 'Variant Annotation');
-    addEl(detaildiv, wds[0]);
-    var data = annotData['crx'];
-    if (data == null) {
-        data = {};
-    }
-    widgetGenerators['base']['variant']['function'](wds[1], data, 'variant');
-    var wds = getDetailWidgetDivs('variant', 'clinvar', 'ClinVar');
-    addEl(detaildiv, wds[0]);
-    var data = annotData['clinvar'];
-    if (data == null) {
-        data = {};
-    }
-    widgetGenerators['clinvar']['variant']['function'](wds[1], data, 'variant');
+    showWidget('base', 'base');
+    showWidget('clinvar', 'clinvar');
+    showWidget('biogrid', 'biogrid');
+    $(widgetContainerDiv).packery();
+    var $widgets = $($(widgetContainerDiv).packery('getItemElements'));
+    $widgets.draggable();
+    $widgets.resizable();
 }
 
 function getWidgets (callback, callbackArgs) {
@@ -131,7 +150,14 @@ function processUrl () {
     }
 }
 
+function setSizes () {
+    var detailDiv = document.querySelector('#detaildiv_variant');
+    detailDiv.style.width = window.innerWidth;
+    detailDiv.style.height = window.innerHeight;
+}
+
 function run () {
+    setSizes();
     getWidgets(processUrl, null);
 }
 
