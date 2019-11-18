@@ -308,7 +308,11 @@ async def submit (request):
     else:
         assembly = constants.default_assembly
     run_args.append(assembly)
-    au.set_cravat_conf_prop('last_assembly', assembly)
+    if servermode and server_ready:
+        await cravat_multiuser.update_user_settings(request, {'lastAssembly':assembly})
+    else:
+        au.set_cravat_conf_prop('last_assembly', assembly)
+
     # Reports
     if 'reports' in job_options and len(job_options['reports']) > 0:
         run_args.append('-t')
@@ -327,12 +331,13 @@ async def submit (request):
         note = ''
     run_args.append(note)
     # Forced input format
-    if 'forcedinputformat' in job_options:
+    if 'forcedinputformat' in job_options and job_options['forcedinputformat']:
         run_args.append('--forcedinputformat')
         run_args.append(job_options['forcedinputformat'])
     if servermode:
         run_args.append('--writeadmindb')
         run_args.extend(['--jobid', job_id])
+    run_args.append('--temp-files')
     global job_queue
     global run_jobs_info
     job_ids = run_jobs_info['job_ids']

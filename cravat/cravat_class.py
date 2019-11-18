@@ -394,7 +394,7 @@ class Cravat (object):
                 self.update_status('Error')
             self.close_logger()
             self.status_writer.flush()
-            if no_problem_in_run and not self.args.temp_files:
+            if no_problem_in_run and not self.args.temp_files and self.aggregator_ran:
                 self.clean_up_at_end()
             if self.args.writeadmindb:
                 await self.write_admin_db(runtime, self.numinput)
