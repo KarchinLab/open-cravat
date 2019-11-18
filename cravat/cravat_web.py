@@ -223,8 +223,8 @@ def get_server():
             def_host = '0.0.0.0'
         else:
             def_host = 'localhost'
-        host = conf.get_cravat_conf().get('gui_host', def_host)
-        port = conf.get_cravat_conf().get('gui_port', 8060)
+        host = au.get_system_conf().get('gui_host', def_host)
+        port = au.get_system_conf().get('gui_port', 8060)
         server['host'] = host
         server['port'] = port
         return server
@@ -391,8 +391,8 @@ def main (url=None):
             Clean sessions periodically.
             """
             try:
-                max_age = conf.get_cravat_conf().get('max_session_age',604800) # default 1 week
-                interval = conf.get_cravat_conf().get('session_clean_interval',3600) # default 1 hr
+                max_age = au.get_system_conf().get('max_session_age',604800) # default 1 week
+                interval = au.get_system_conf().get('session_clean_interval',3600) # default 1 hr
                 while True:
                     await cravat_multiuser.admindb.clean_sessions(max_age)
                     await asyncio.sleep(interval)
@@ -401,7 +401,7 @@ def main (url=None):
                 if args.nostdoutexception == False:
                     traceback.print_exc()
         if servermode and server_ready:
-            if 'max_session_age' in conf.get_cravat_conf():
+            if 'max_session_age' in au.get_system_conf():
                 loop.create_task(clean_sessions())
         global ssl_enabled
         if ssl_enabled:

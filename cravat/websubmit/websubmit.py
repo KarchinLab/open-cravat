@@ -308,7 +308,11 @@ async def submit (request):
     else:
         assembly = constants.default_assembly
     run_args.append(assembly)
-    au.set_cravat_conf_prop('last_assembly', assembly)
+    if servermode and server_ready:
+        await cravat_multiuser.update_user_settings(request, {'lastAssembly':assembly})
+    else:
+        au.set_cravat_conf_prop('last_assembly', assembly)
+
     # Reports
     if 'reports' in job_options and len(job_options['reports']) > 0:
         run_args.append('-t')

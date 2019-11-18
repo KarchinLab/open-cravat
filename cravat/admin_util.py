@@ -820,6 +820,10 @@ def get_system_conf ():
     if key not in conf:
         conf[key] = constants.default_num_input_line_warning_cutoff
         conf_modified = True
+    key = 'sum_input_size_warning_cutoff'
+    if key not in conf:
+        conf[key] = constants.default_sum_input_size_warning_cutoff
+        conf_modified = True
     key = 'max_num_concurrent_jobs'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_jobs
@@ -1254,7 +1258,7 @@ def get_updatable(modules=[], strategy='consensus'):
 
 def get_last_assembly ():
     conf = get_cravat_conf()
-    last_assembly = conf.get('last_assembly', 'hg38')
+    last_assembly = conf.get('last_assembly')
     return last_assembly
 
 def get_default_assembly ():

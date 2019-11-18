@@ -10,6 +10,7 @@ var GLOBALS = {
     reports: {},
     inputExamples: {},
     idToJob: {},
+    usersettings: {},
 }
 var currentTab = 'submit';
 var websubmitReportBeingGenerated = {};
@@ -47,7 +48,6 @@ function submit () {
         alert('Choose a input variant files, enter variants, or click an input example button.');
         return;
     }
-    document.querySelector('#submit-job-button').disabled = true;
     for (var i=0; i<inputFiles.length; i++) {
         formData.append('file_'+i,inputFiles[i]);
     }
@@ -70,76 +70,103 @@ function submit () {
             submitOpts.reports.push(cb.value);
         }
     }
-    submitOpts.assembly = $('#assembly-select').val();
+    var assmSelect = $('#assembly-select');
+    var assembly = assmSelect.val();
+    if (assembly !== null) {
+        submitOpts.assembly = assembly;
+    } else {
+        showYesNoDialog('Please select a genome version', ()=>{
+            $('#assembly-select-div').css('border', '2px solid red');
+            setTimeout(()=>{$('#assembly-select-div').css('border', 'none');},2000);
+        }, false, true);
+        return;
+    }
     submitOpts.forcedinputformat = $('#submit-input-format-select').val();
     var note = document.getElementById('jobnoteinput').value;
     submitOpts.note = note;
+    document.querySelector('#submit-job-button').disabled = true;
     formData.append('options',JSON.stringify(submitOpts));
     // reads number of input lines
     var lineCount = 0;
     var numFileRead = 0;
     var numInputLineCutoff = parseInt(document.getElementById('settings_num_input_line_warning_cutoff').value);
+    var sumInputSizeCutoff = parseInt(document.getElementById('settings_sum_input_size_warning_cutoff').value);
+    var sumInputSize = 0;
     for (var i = 0; i < inputFiles.length; i++) {
-        var reader = new FileReader();
-        reader.onload = function (evt) {
-            var file = evt.target.result;
-            var allLines = file.split(/\r\n|\n/);
-            allLines.forEach((line) => {
-                lineCount++;
-            });
-            numFileRead++;
-            if (numFileRead == inputFiles.length) {
-                var numAnnots = submitOpts.annotators.length;
-                var mapper_vps = 1000;
-                var annot_vps = 5000;
-                var agg_vps = 8000;
-                var runtimeEst = lineCount*(1/mapper_vps + numAnnots/annot_vps + 1/agg_vps);
-                if (lineCount > numInputLineCutoff) {
-                    var sec_num = Math.ceil(runtimeEst);
-                    var hours   = Math.floor(sec_num / 3600) % 24;
-                    if (hours > 0) {
-                        hours = hours + ' hours ';
-                    } else if (hours == 1) {
-                        hours = hours + ' hour ';
+        sumInputSize += inputFiles[i].size;
+    }
+    sumInputSize = sumInputSize / 1024 / 1024;
+    if (sumInputSize > sumInputSizeCutoff) {
+        var alertDiv = getEl('div');
+        var span = getEl('span');
+        span.textContent = 'You are submitting input files larger than ' + sumInputSize.toFixed(1) + ' MB. Proceed?';
+        addEl(alertDiv, span);
+        addEl(alertDiv,getEl('br'));
+        showYesNoDialog(alertDiv, commitSubmit, false, false);
+    } else {
+        for (var i = 0; i < inputFiles.length; i++) {
+            var inputFile = inputFiles[i];
+            var reader = new FileReader();
+            reader.onload = function (evt) {
+                var file = evt.target.result;
+                var allLines = file.split(/\r\n|\n/);
+                allLines.forEach((line) => {
+                    lineCount++;
+                });
+                numFileRead++;
+                if (numFileRead == inputFiles.length) {
+                    var numAnnots = submitOpts.annotators.length;
+                    var mapper_vps = 1000;
+                    var annot_vps = 5000;
+                    var agg_vps = 8000;
+                    var runtimeEst = lineCount*(1/mapper_vps + numAnnots/annot_vps + 1/agg_vps);
+                    if (lineCount > numInputLineCutoff) {
+                        var sec_num = Math.ceil(runtimeEst);
+                        var hours   = Math.floor(sec_num / 3600) % 24;
+                        if (hours > 0) {
+                            hours = hours + ' hours ';
+                        } else if (hours == 1) {
+                            hours = hours + ' hour ';
+                        } else {
+                            hours = '';
+                        }
+                        var minutes = Math.floor(sec_num / 60) % 60;
+                        if (minutes > 1) {
+                            minutes = minutes + ' minutes ';
+                        } else if (minutes == 1) {
+                            minutes = minutes + ' minute ';
+                        } else {
+                            minutes = '';
+                        }
+                        var seconds = sec_num % 60;
+                        if (seconds <= 1) {
+                            seconds = seconds + ' second';
+                        } else {
+                            seconds = seconds + ' seconds';
+                        }
+                        var alertDiv = getEl('div');
+                        var span = getEl('span');
+                        span.textContent = 'You are submitting ' + lineCount + ' lines of input. Proceed?';
+                        addEl(alertDiv, span);
+                        addEl(alertDiv,getEl('br'));
+                        addEl(alertDiv,getEl('br'));
+                        var span = getEl('span');
+                        span.style.fontSize = '12px';
+                        span.textContent = 'Runtime estimate is ' + hours + minutes + seconds + ' on a system with a solid state drive. Systems with a hard disk will take longer. ';
+                        addEl(alertDiv, span);
+                        var span = getEl('span');
+                        span.style.fontSize = '12px';
+                        span.textContent = 'Variant number cutoff for this message can be changed at the Settings menu at the top right corner.';
+                        addEl(alertDiv, span);
+                        addEl(alertDiv,getEl('br'));
+                        showYesNoDialog(alertDiv, commitSubmit, false, false);
                     } else {
-                        hours = '';
+                        commitSubmit();
                     }
-                    var minutes = Math.floor(sec_num / 60) % 60;
-                    if (minutes > 1) {
-                        minutes = minutes + ' minutes ';
-                    } else if (minutes == 1) {
-                        minutes = minutes + ' minute ';
-                    } else {
-                        minutes = '';
-                    }
-                    var seconds = sec_num % 60;
-                    if (seconds <= 1) {
-                        seconds = seconds + ' second';
-                    } else {
-                        seconds = seconds + ' seconds';
-                    }
-                    var alertDiv = getEl('div');
-                    var span = getEl('span');
-                    span.textContent = 'You are submitting ' + lineCount + ' lines of input. Proceed?';
-                    addEl(alertDiv, span);
-                    addEl(alertDiv,getEl('br'));
-                    addEl(alertDiv,getEl('br'));
-                    var span = getEl('span');
-                    span.style.fontSize = '12px';
-                    span.textContent = 'Runtime estimate is ' + hours + minutes + seconds + ' on a system with a solid state drive. Systems with a hard disk will take longer. ';
-                    addEl(alertDiv, span);
-                    var span = getEl('span');
-                    span.style.fontSize = '12px';
-                    span.textContent = 'Variant number cutoff for this message can be changed at the Settings menu at the top right corner.)';
-                    addEl(alertDiv, span);
-                    addEl(alertDiv,getEl('br'));
-                    showYesNoDialog(alertDiv, commitSubmit, false, false);
-                } else {
-                    commitSubmit();
                 }
-            }
-        };
-        reader.readAsText(inputFiles[i]);
+            };
+            reader.readAsText(inputFiles[i]);
+        }
     }
 
     function commitSubmit (flag) {
@@ -741,6 +768,7 @@ function inputExampleChangeHandler (event) {
     var elem = $(event.target);
     var format = elem.val();
     var assembly = $('#assembly-select').val();
+    assembly = assembly === null ? 'hg38' : assembly;
     var formatAssembly = format + '.' + assembly;
     var getExampleText = new Promise((resolve, reject) => {
         var cachedText = GLOBALS.inputExamples[formatAssembly];
@@ -1612,6 +1640,9 @@ function loadSystemConf () {
         var s = document.getElementById('settings_num_input_line_warning_cutoff');
         var cutoff = parseInt(response['content']['num_input_line_warning_cutoff']);
         s.value = cutoff;
+        var s = document.getElementById('settings_sum_input_size_warning_cutoff');
+        var cutoff = parseInt(response['content']['sum_input_size_warning_cutoff']);
+        s.value = cutoff;
         var s = document.getElementById('settings_max_num_concurrent_jobs');
         s.value = parseInt(response['content']['max_num_concurrent_jobs']);
         var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
@@ -1634,6 +1665,8 @@ function updateSystemConf () {
         response['content']['modules_dir'] = s.value;
         var s = document.getElementById('settings_num_input_line_warning_cutoff');
         response['content']['num_input_line_warning_cutoff'] = parseInt(s.value);
+        var s = document.getElementById('settings_sum_input_size_warning_cutoff');
+        response['content']['sum_input_size_warning_cutoff'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_jobs');
         response['content']['max_num_concurrent_jobs'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
@@ -1698,6 +1731,7 @@ function getServermode () {
 }
 
 function setupNoServerMode () {
+    setLastAssembly();
 }
 
 function setupServerMode () {
@@ -1707,6 +1741,14 @@ function setupServerMode () {
     });
     document.getElementById('settingsdiv').style.display = 'none';
     document.querySelector('.threedotsdiv').style.display = 'none';
+    $.ajax({
+        url: '/server/usersettings',
+        type: 'get',
+        success: function (response) {
+            GLOBALS.usersettings = response;
+            setLastAssembly();
+        }
+    });
 }
 
 function populatePackageVersions () {
@@ -1890,26 +1932,26 @@ function addListeners () {
 }
 
 function setLastAssembly () {
-    $.ajax({
-        url: '/submit/lastassembly',
-        ajax: true,
-        success: function (response) {
-            document.getElementById('assembly-select').value = response;
-        },
-    });
+    let sel = document.getElementById('assembly-select');
+    if (!servermode) {
+        $.ajax({
+            url: '/submit/lastassembly',
+            ajax: true,
+            success: function (response) {
+                sel.value = response;
+            },
+        });
+    } else {
+        if (GLOBALS.usersettings.hasOwnProperty('lastAssembly')) {
+            sel.value = GLOBALS.usersettings.lastAssembly;
+        } else {
+            sel.value = null;
+        }
+    }
 }
 
 function getJobById (jobId) {
     return GLOBALS.idToJob[jobId];
-    /*
-    for (var i = 0; i < GLOBALS.jobs.length; i++) {
-        var job = GLOBALS.jobs[i];
-        if (job.id == jobId) {
-            return job;
-        }
-    }
-    */
-    return null;
 }
 
 function updateRunningJobTrs (job) {
@@ -1939,7 +1981,6 @@ function websubmit_run () {
     connectWebSocket();
     checkConnection();
     populatePackageVersions();
-    setLastAssembly();
     getBaseModuleNames();
     addListeners();
     resizePage();
