@@ -99,7 +99,7 @@ function submit () {
     if (sumInputSize > sumInputSizeCutoff) {
         var alertDiv = getEl('div');
         var span = getEl('span');
-        span.textContent = 'You are submitting input files larger than ' + sumInputSize.toFixed(1) + ' MB. Proceed?';
+        span.textContent = 'You are submitting input files larger than ' + sumInputSizeCutoff.toFixed(1) + ' MB. Proceed?';
         addEl(alertDiv, span);
         addEl(alertDiv,getEl('br'));
         showYesNoDialog(alertDiv, commitSubmit, false, false);
