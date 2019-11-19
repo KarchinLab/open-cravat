@@ -444,3 +444,15 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	return [div, detailContentDiv];
 }
 
+function getWidgetData (tabName, moduleName, row, col, self) {
+    console.log('@ self', self);
+	if (row == null) {
+		return null;
+	}
+	if (typeof(row) === 'object' && row.constructor == Object) {
+        return row[col];
+    } else {
+        return infomgr.getRowValue(tabName, row, moduleName + '__' + col);
+    }
+}
+

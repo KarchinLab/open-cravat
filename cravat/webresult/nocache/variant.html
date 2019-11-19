@@ -54,7 +54,6 @@ function cleanInputData (inputChrom, inputPos, inputRef, inputAlt) {
     if (inputAlt == '') {
         inputAlt = null;
     }
-    console.log('@@', inputChrom, inputPos, inputRef, inputAlt);
     if (inputChrom == null || inputPos == null || inputRef == null || inputAlt == null) {
         return null;
     } else {
@@ -70,16 +69,15 @@ function submitForm (form) {
 }
 
 function submitAnnotate (inputChrom, inputPos, inputRef, inputAlt) {
-    //var http = new XMLHTTPRequest();
     var url = '/submit/annotate';
     var params = {'chrom':inputChrom, 'pos':parseInt(inputPos), 'ref_base':inputRef, 'alt_base':inputAlt};
-    console.log('@ params=', params);
     $.ajax({
         type: 'POST',
         url: url,
         data: params,
         success: function (response) {
             annotData = response;
+            annotData['base'] = annotData['crx'];
             showAnnotation(response);
         }
     });
@@ -108,7 +106,6 @@ function showWidget (widgetName, moduleName) {
 }
 
 function showAnnotation (response) {
-    console.log(response);
     showWidget('base', 'base');
     showWidget('clinvar', 'clinvar');
     showWidget('biogrid', 'biogrid');
@@ -144,7 +141,6 @@ var widgetGenerators = {};
 
 function processUrl () {
     var inputData = getInputDataFromUrl();
-    console.log('@ inputData=', inputData);
     if (inputData != null) {
         submitAnnotate(inputData['chrom'], inputData['pos'], inputData['ref'], inputData['alt']);
     }
