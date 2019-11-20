@@ -34,6 +34,8 @@ import logging
 from cravat import constants
 import time
 
+SERVER_ALREADY_RUNNING = -1
+
 conf = ConfigLoader()
 sysconf = au.get_system_conf()
 log_dir = sysconf[constants.log_dir_key]
@@ -173,7 +175,11 @@ def result ():
                 print('Provide the path to a OpenCRAVAT result sqlite file or both username and job ID')
                 exit()
             url = protocol + url
-        main(url=url)
+        ret = main(url=url)
+        if ret == SERVER_ALREADY_RUNNING:
+            print('Openinig result viewer using existing OpenCRAVAT server')
+            webbrowser.open(url)
+
     except Exception as e:
         logger.exception(e)
         if args.nostdoutexception == False:
@@ -377,7 +383,8 @@ def main (url=None):
             if sr == 0:
                 logger.info('wcravat already running. Exiting from this instance of wcravat...') 
                 print('OpenCRAVAT is already running at {}{}:{}.'.format(protocol, serv.get('host'), serv.get('port')))
-                return
+                global SERVER_ALREADY_RUNNING
+                return SERVER_ALREADY_RUNNING
         except requests.exceptions.ConnectionError:
             pass
         print('OpenCRAVAT is served at {}:{}'.format(serv.get('host'), serv.get('port')))
