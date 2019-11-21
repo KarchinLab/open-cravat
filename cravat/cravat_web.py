@@ -391,6 +391,9 @@ def main (url=None):
         logger.info('Serving OpenCRAVAT server at {}:{}'.format(serv.get('host'), serv.get('port')))
         print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')
         global loop
+        if sys.platform == 'win32': # Required to use asyncio subprocesses
+            loop = asyncio.ProactorEventLoop()
+            asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
         loop.call_later(0.1, wakeup)
         async def clean_sessions():
