@@ -435,10 +435,15 @@ async def get_job (request, job_id):
                     continue
                 job.info[k] = v
     global run_jobs_info
+    global job_statuses
     if 'status' not in job.info:
-        job.info['status'] = 'Aborted'
+        if job_id in job_statuses:
+            job.info['status'] = job_statuses[job_id]
+        else:
+            job.info['status'] = 'Aborted'
     elif job.info['status'] not in ['Finished', 'Error'] and job_id not in run_jobs_info['job_ids']:
         job.info['status'] = 'Aborted'
+    job_statuses[job_id] = job.info['status']
     fns = find_files_by_ending(job_dir, '.sqlite')
     if len(fns) > 0:
         db_path = os.path.join(job_dir, fns[0])
@@ -1011,6 +1016,7 @@ live_modules = None
 include_live_modules = None
 exclude_live_modules = None
 live_mapper = None
+job_statuses = {}
 
 routes = []
 routes.append(['POST','/submit/submit',submit])
