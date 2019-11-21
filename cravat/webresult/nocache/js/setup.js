@@ -1589,13 +1589,6 @@ function drawSummaryWidgetGivenData (widgetName, widgetContentDiv, generator, da
     }
 }
 
-function getSpinner () {
-    var spinner = getEl('img');
-    spinner.src = '/result/images/spinner.gif';
-    spinner.style.width = '15px';
-    return spinner;
-}
-
 function drawSummaryWidget (widgetName) {
     var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
     emptyElement(widgetContentDiv);

@@ -1,6 +1,36 @@
+@font-face {
+	font-family: 'roboto-medium';
+    src: url('/result/fonts/roboto-medium-webfont.woff') format('woff'),
+	url('/result/fonts/roboto-medium-webfont.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'roboto-light';
+    src: url('/result/fonts/roboto-light-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-light-webfont.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'roboto-bold';
+    src: url('/result/fonts/roboto-bold-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-bold-webfont.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'sourcesanspro-bold';
+    src: url('/result/fonts/sourcesanspro-bold-webfont.woff') format('woff'),
+	url('/result/fonts/sourcesanspro-bold-webfont.woff2') format('woff2');
+}
+
+body * {
+	font-family: 'roboto-light';
+	margin: 0px;
+}
+
 .detaildiv {
 	overflow: auto;
 	position: absolute;
+    font-family: monospace;
 }
 
 .detaildiv.resultviewer {
@@ -108,5 +138,16 @@
 .detailwidgetselect {
 	font-family: roboto-light;
 	font-size: 11px;
+}
+
+.detail-info-line-header {
+    vertical-align: top;
+    min-width: 60px;
+    font-weight: bold;
+}
+
+.detail-info-line-content {
+    vertical-align: top;
+    min-width: 60px;
 }
 

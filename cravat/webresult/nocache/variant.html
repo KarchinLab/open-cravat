@@ -6,6 +6,7 @@
 	<script src='/result/nocache/js/util.js?ver=1.7.0'></script>
 	<script src='/result/nocache/js/widgethelper.js?ver=1.7.0'></script>
 	<script src='/result/js/packery.pkgd.js'></script>
+	<script src='/result/js/graphics.js'></script>
 	<link rel='stylesheet' href='/result/nocache/css/widget.css?ver=1.7.0' />
 	<link rel='stylesheet' href='/result/nocache/css/variant.css?ver=1.7.0' />
     <title></title>
@@ -28,6 +29,7 @@
 </div>
 
 <script>
+var CLOSURE_NO_DEPS = true;
 var annotData = null;
 var widgetContainerDiv = document.querySelector('#detailcontainerdiv_variant');
 
@@ -83,32 +85,50 @@ function submitAnnotate (inputChrom, inputPos, inputRef, inputAlt) {
     });
 }
 
-function showWidget (widgetName, moduleName) {
+function showWidget (widgetName, moduleNames, level) {
+    console.log('@', widgetName, level);
     var generator = widgetGenerators[widgetName];
     var divs = null;
-    var level = null;
-    if ('variant' in generator) {
-        divs = getDetailWidgetDivs('variant', widgetName, widgetInfo[widgetName].title);
-        level = 'variant';
-    } else if ('gene' in generator) {
-        divs = getDetailWidgetDivs('gene', widgetName, widgetInfo[widgetName].title);
-        level = 'gene';
+    if (level != undefined) {
+        divs = getDetailWidgetDivs(level, widgetName, widgetInfo[widgetName].title);
+    } else {
+        if ('variant' in generator) {
+            divs = getDetailWidgetDivs('variant', widgetName, widgetInfo[widgetName].title);
+            level = 'variant';
+        } else if ('gene' in generator) {
+            divs = getDetailWidgetDivs('gene', widgetName, widgetInfo[widgetName].title);
+            level = 'gene';
+        }
     }
     addEl(widgetContainerDiv, divs[0]);
-    var data = annotData[moduleName];
-    if (data == null) {
-        data = {};
+    var data = {};
+    for (var i = 0; i < moduleNames.length; i++) {
+        var moduleName = moduleNames[i];
+        var moduleData = annotData[moduleName];
+        if (moduleData == null) {
+            continue;
+        }
+        var moduleDataKeys = Object.keys(moduleData);
+        for (var j = 0; j < moduleDataKeys.length; j++) {
+            var key = moduleDataKeys[j];
+            var value = moduleData[key];
+            data[key] = value;
+        }
     }
     if (level == 'gene') {
         data['hugo'] = annotData['crx'].hugo;
     }
-    widgetGenerators[widgetName][level]['function'](divs[1], data, 'variant');
+    widgetGenerators[widgetName][level]['function'](divs[1], data, 'variant', true); // last true is to highlight if value exists.
 }
 
 function showAnnotation (response) {
-    showWidget('base', 'base');
-    showWidget('clinvar', 'clinvar');
-    showWidget('biogrid', 'biogrid');
+    showWidget('base', ['base', 'dbsnp']);
+    var generator = widgetGenerators['lollipop']['variant'];
+    generator['width'] = 880;
+    generator['height'] = 300;
+    showWidget('lollipop', ['base']);
+    showWidget('disasso', ['cgl', 'target', 'pubmed', 'clinvar', 'cgc', 'cosmic', 'grasp']);
+    showWidget('ndex', ['ndex', 'base'], 'gene');
     $(widgetContainerDiv).packery();
     var $widgets = $($(widgetContainerDiv).packery('getItemElements'));
     $widgets.draggable();

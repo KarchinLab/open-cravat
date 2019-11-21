@@ -73,7 +73,7 @@ function getWidgetTableTr (values,linkNames) {
 	return tr;
 }
 
-function addInfoLine (div, row, header, col, tabName, headerMinWidth) {
+function addInfoLine (div, row, header, col, tabName, headerMinWidth, highlightIfValue) {
     var text = null;
     if (typeof(row) != 'object') {
         text = header;
@@ -101,6 +101,9 @@ function addInfoLine (div, row, header, col, tabName, headerMinWidth) {
     t.textContent = text;
     addEl(td, t);
     addEl(tr, td);
+    if (highlightIfValue != undefined && highlightIfValue) {
+        tr.style.color = '#ff0000';
+    }
     addEl(table, tr);
 	addEl(div, table);
 }
@@ -123,7 +126,9 @@ function addInfoLineText (div, header, text) {
 }
 
 function addInfoLineLink (div, header, text, link, trimlen) {
-	addEl(div, getLineHeader(header));
+    var span = getLineHeader(header);
+    span.classList.add('detail-info-line-header');
+	addEl(div, span);
 	var spanText = null;
 	if (link == undefined || link == null) {
 		text = '';
@@ -315,6 +320,7 @@ function addGradientBarComponent (outerDiv, row, header, col, tabName, colors={'
 
 function getLineHeader (header) {
 	var spanHeader = document.createElement('span');
+    spanHeader.classList.add('detail-info-line-header');
 	spanHeader.appendChild(document.createTextNode('  ' + header + ': '));
 	return spanHeader;
 }
@@ -445,7 +451,6 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 }
 
 function getWidgetData (tabName, moduleName, row, col, self) {
-    console.log('@ self', self);
 	if (row == null) {
 		return null;
 	}
@@ -454,5 +459,12 @@ function getWidgetData (tabName, moduleName, row, col, self) {
     } else {
         return infomgr.getRowValue(tabName, row, moduleName + '__' + col);
     }
+}
+
+function getSpinner () {
+    var spinner = getEl('img');
+    spinner.src = '/result/images/spinner.gif';
+    spinner.style.width = '15px';
+    return spinner;
 }
 

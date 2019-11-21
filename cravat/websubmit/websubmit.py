@@ -968,7 +968,7 @@ async def get_live_annotation (queries):
     ref_base = queries['ref_base']
     alt_base = queries['alt_base']
     if 'uid' not in queries:
-        uid = 'noid'
+        uid = ''
     else:
         uid = queries['uid']
     input_data = {'uid': uid, 'chrom': chrom, 'pos': int(pos), 'ref_base': ref_base, 'alt_base': alt_base}
