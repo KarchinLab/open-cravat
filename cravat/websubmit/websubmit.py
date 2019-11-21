@@ -444,6 +444,8 @@ async def get_job (request, job_id):
     elif job.info['status'] not in ['Finished', 'Error'] and job_id not in run_jobs_info['job_ids']:
         job.info['status'] = 'Aborted'
     job_statuses[job_id] = job.info['status']
+    if job.info['status'] in ['Finished', 'Error', 'Aborted']:
+        del job_statuses[job_id]
     fns = find_files_by_ending(job_dir, '.sqlite')
     if len(fns) > 0:
         db_path = os.path.join(job_dir, fns[0])
