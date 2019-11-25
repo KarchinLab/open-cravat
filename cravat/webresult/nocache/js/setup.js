@@ -675,10 +675,10 @@ function makeFilterTab (rightDiv) {
 		.click(function(evt) {
 			var infoReset = resetTab['info'];
 			resetTab = {'info': infoReset};
-			drawingRetrievingDataDiv('filter');
             makeFilterJson();
             countFilterVariants().then((n) => {
                 if (n <= NUMVAR_LIMIT) {
+                    drawingRetrievingDataDiv('filter');
                     loadData(false, null);
                 }
             });
