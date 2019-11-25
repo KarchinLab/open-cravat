@@ -845,23 +845,30 @@ function showJobListPage () {
                         data: {'ids': JSON.stringify(runningJobIds)},
                         ajax: true,
                         success: function (response) {
-                            for (var i=0; i < response.length; i++) {
-                                var job = response[i];
-                                GLOBALS.idToJob[job.id] = job;
-                                /*
-                                for (var j = 0; j < GLOBALS.jobs; j++) {
-                                    if (job.id == GLOBALS.jobs[j].id) {
-                                        GLOBALS.jobs[j] = job;
-                                        break;
+                            try {
+                                for (var i=0; i < response.length; i++) {
+                                    var job = response[i];
+                                    GLOBALS.idToJob[job.id] = job;
+                                    /*
+                                    for (var j = 0; j < GLOBALS.jobs; j++) {
+                                        if (job.id == GLOBALS.jobs[j].id) {
+                                            GLOBALS.jobs[j] = job;
+                                            break;
+                                        }
+                                    }
+                                    */
+                                    updateRunningJobTrs(job);
+                                    if (job.status == 'Finished' || job.status == 'Aborted' || job.status == 'Error') {
+                                        delete jobRunning[job.id];
                                     }
                                 }
-                                */
-                                updateRunningJobTrs(job);
-                                if (job.status == 'Finished' || job.status == 'Aborted' || job.status == 'Error') {
-                                    delete jobRunning[job.id];
-                                }
+                            } catch (e) {
+                                console.error(e);
                             }
                         },
+                        error: function (e) {
+                            console.error(e);
+                        }
                     });
                 }, 1000);
             }
