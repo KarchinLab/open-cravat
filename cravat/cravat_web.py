@@ -304,10 +304,10 @@ class WebServer (object):
         self.ssl_context = ssl_context
         self.loop = loop
         self.server_started = False
-        asyncio.ensure_future(self.start(), loop=self.loop)
+        loop.create_task(self.start())
         global donotopenbrowser
         if donotopenbrowser == False and url is not None:
-            asyncio.ensure_future(self.open_url(url), loop=self.loop)
+            self.loop.create_task(self.open_url(url))
 
     async def open_url (self, url):
         while not self.server_started:
@@ -355,7 +355,7 @@ async def serve_favicon (request):
 async def heartbeat(request):
     ws = web.WebSocketResponse(timeout=60*60*24*365)
     if servermode and server_ready:
-        asyncio.get_event_loop().ensure_future(cravat_multiuser.update_last_active(request))
+        asyncio.get_event_loop().create_task(cravat_multiuser.update_last_active(request))
     await ws.prepare(request)
     async for msg in ws:
         pass
@@ -412,7 +412,7 @@ def main (url=None):
                     traceback.print_exc()
         if servermode and server_ready:
             if 'max_session_age' in au.get_system_conf():
-                loop.ensure_future(clean_sessions())
+                loop.create_task(clean_sessions())
         global ssl_enabled
         if ssl_enabled:
             global sc
