@@ -355,7 +355,7 @@ async def serve_favicon (request):
 async def heartbeat(request):
     ws = web.WebSocketResponse(timeout=60*60*24*365)
     if servermode and server_ready:
-        asyncio.get_event_loop().ensure_future(cravat_multiuser.update_last_active(request))
+        asyncio.ensure_future(cravat_multiuser.update_last_active(request))
     await ws.prepare(request)
     async for msg in ws:
         pass
@@ -412,7 +412,7 @@ def main (url=None):
                     traceback.print_exc()
         if servermode and server_ready:
             if 'max_session_age' in au.get_system_conf():
-                loop.ensure_future(clean_sessions())
+                asyncio.ensure_future(clean_sessions())
         global ssl_enabled
         if ssl_enabled:
             global sc
