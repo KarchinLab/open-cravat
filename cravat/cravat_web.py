@@ -91,12 +91,18 @@ try:
         default=False,
         help='Console echoes exceptions written to log file.')
 
+    if sys.platform == 'win32': # Required to use asyncio subprocesses
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+    else:
+        loop = asyncio.get_event_loop()
     args = parser.parse_args(sys.argv[1:])
     donotopenbrowser = args.donotopenbrowser
     servermode = args.servermode
     if servermode and importlib.util.find_spec('cravat_multiuser') is not None:
         try:
             import cravat_multiuser
+            loop.create_task(cravat_multiuser.setup_module())
             server_ready = True
         except Exception as e:
             logger.exception(e)
@@ -391,9 +397,6 @@ def main (url=None):
         logger.info('Serving OpenCRAVAT server at {}:{}'.format(serv.get('host'), serv.get('port')))
         print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')
         global loop
-        if sys.platform == 'win32': # Required to use asyncio subprocesses
-            loop = asyncio.ProactorEventLoop()
-            asyncio.set_event_loop(loop)
         loop = asyncio.get_event_loop()
         loop.call_later(0.1, wakeup)
         async def clean_sessions():
