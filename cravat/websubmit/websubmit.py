@@ -436,10 +436,17 @@ async def get_job (request, job_id):
                     continue
                 job.info[k] = v
     global run_jobs_info
+    global job_statuses
     if 'status' not in job.info:
-        job.info['status'] = 'Aborted'
+        if job_id in job_statuses:
+            job.info['status'] = job_statuses[job_id]
+        else:
+            job.info['status'] = 'Aborted'
     elif job.info['status'] not in ['Finished', 'Error'] and job_id not in run_jobs_info['job_ids']:
         job.info['status'] = 'Aborted'
+    job_statuses[job_id] = job.info['status']
+    if job.info['status'] in ['Finished', 'Error', 'Aborted']:
+        del job_statuses[job_id]
     fns = find_files_by_ending(job_dir, '.sqlite')
     if len(fns) > 0:
         db_path = os.path.join(job_dir, fns[0])
@@ -572,8 +579,8 @@ async def generate_report(request):
     run_args.extend(['--repeat', 'reporter'])
     run_args.extend(['-t', report_type])
     run_args.extend(['-l', 'hg38'])
-    p = subprocess.Popen(run_args)
-    p.wait()
+    p = await asyncio.create_subprocess_shell(' '.join(run_args))
+    await p.wait()
     return web.json_response('done')
 
 async def download_report(request):
@@ -1021,6 +1028,7 @@ live_modules = None
 include_live_modules = None
 exclude_live_modules = None
 live_mapper = None
+job_statuses = {}
 
 routes = []
 routes.append(['POST','/submit/submit',submit])

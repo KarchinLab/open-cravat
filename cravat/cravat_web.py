@@ -91,12 +91,18 @@ try:
         default=False,
         help='Console echoes exceptions written to log file.')
 
+    if sys.platform == 'win32': # Required to use asyncio subprocesses
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+    else:
+        loop = asyncio.get_event_loop()
     args = parser.parse_args(sys.argv[1:])
     donotopenbrowser = args.donotopenbrowser
     servermode = args.servermode
     if servermode and importlib.util.find_spec('cravat_multiuser') is not None:
         try:
             import cravat_multiuser
+            loop.create_task(cravat_multiuser.setup_module())
             server_ready = True
         except Exception as e:
             logger.exception(e)
@@ -304,10 +310,10 @@ class WebServer (object):
         self.ssl_context = ssl_context
         self.loop = loop
         self.server_started = False
-        asyncio.ensure_future(self.start(), loop=self.loop)
+        loop.create_task(self.start())
         global donotopenbrowser
         if donotopenbrowser == False and url is not None:
-            asyncio.ensure_future(self.open_url(url), loop=self.loop)
+            self.loop.create_task(self.open_url(url))
 
     async def open_url (self, url):
         while not self.server_started:
