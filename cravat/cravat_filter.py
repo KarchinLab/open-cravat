@@ -452,7 +452,11 @@ class CravatFilter ():
         table = level
         if level in ['variant', 'gene', 'sample', 'mapping']:
             if level == 'gene' and bypassfilter:
-                sql = 'select distinct variant.base__hugo, gene.base__note from variant inner join gene on variant.base__hugo==gene.base__hugo'
+                sql = 'pragma table_info(gene)'
+                await self.cursor.execute(sql)
+                rs = await self.cursor.fetchall()
+                colnames = ['gene.' + r[1] for r in rs if r[1] != 'base__hugo']
+                sql = 'select distinct variant.base__hugo, {} from variant inner join gene on variant.base__hugo==gene.base__hugo'.format(', '.join(colnames))
             else:
                 sql = 'select t.* from ' + table + ' as t'
                 if bypassfilter == False:
