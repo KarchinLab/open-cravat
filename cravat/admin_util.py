@@ -833,12 +833,11 @@ def get_system_conf ():
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_jobs
         conf_modified = True
+    if conf_modified:
+        write_system_conf_file(conf)
     key = 'max_num_concurrent_annotators_per_job'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_annotators_per_job
-        conf_modified = True
-    if conf_modified:
-        write_system_conf_file(conf)
     return conf
 
 def get_modules_dir():
