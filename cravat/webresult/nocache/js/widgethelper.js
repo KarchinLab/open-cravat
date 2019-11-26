@@ -161,7 +161,12 @@ function addBarComponent (outerDiv, row, header, col, tabName) {
 	};
 
 	// Value
-	var value = infomgr.getRowValue(tabName, row, col);
+    var value = null;
+	if (typeof(row) === 'object' && row.constructor == Object) {
+        value = row[col];
+    } else {
+        value = infomgr.getRowValue(tabName, row, col);
+    }
 	if (value == null) {
 		value = '';
 	} else {
@@ -232,7 +237,12 @@ function addGradientBarComponent (outerDiv, row, header, col, tabName, colors={'
 	orderedPivots.sort(function(a,b){return a-b})
 	
 	// Value
-	var value = infomgr.getRowValue(tabName, row, col);
+    var value = null;
+	if (typeof(row) === 'object' && row.constructor == Object) {
+        value = row[col];
+    } else {
+        value = infomgr.getRowValue(tabName, row, col);
+    }
 	if (value == null) {
 		value = '';
 	}
@@ -450,12 +460,12 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	return [div, detailContentDiv];
 }
 
-function getWidgetData (tabName, moduleName, row, col, self) {
+function getWidgetData (tabName, moduleName, row, col) {
 	if (row == null) {
 		return null;
 	}
 	if (typeof(row) === 'object' && row.constructor == Object) {
-        return row[col];
+        return row[moduleName + '__' + col];
     } else {
         return infomgr.getRowValue(tabName, row, moduleName + '__' + col);
     }

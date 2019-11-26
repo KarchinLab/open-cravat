@@ -2120,10 +2120,22 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             if ($headerCell.length == 0) {
                 continue;
             }
+            var desc = null;
             if (col.desc !== null) {
-                $headerCell.attr('title', col.desc).tooltip();
+                desc = col.desc;
             }
+            var colTitleLimit = 20;
+            if (col.title.length > colTitleLimit) {
+                $headerCell.text(col.title.substring(0, colTitleLimit) + '..');
+                if (col.desc != null && col.desc != col.title) {
+                    desc = col.title + ': ' + col.desc;
+                } else {
+                    desc = col.title;
+                }
+            }
+            $headerCell.attr('title', desc).tooltip();
             $headerCell.attr('col', col.col);
+            $headerCell.attr('coltitle', col.title);
             $headerCell.attr('colgroup', col.colgroup);
             $headerCell.attr('colgroupkey', col.colgroupkey);
             $headerCell.contextmenu(function (evt) {

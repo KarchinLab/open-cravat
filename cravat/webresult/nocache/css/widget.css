@@ -71,6 +71,11 @@ body * {
     padding: 0px;
 }
 
+.singlevariantpage .detailwidget {
+    margin: 10px;
+    border: 0px;
+}
+
 .detailwidgetheader {
 	font-size: 14px;
 	font-weight: bold;
@@ -89,6 +94,11 @@ body * {
 	font-size: 13px;
     height: 18px;
     margin-bottom: 6px;
+}
+
+.singlevariantpage .detailwidgettitle {
+    text-decoration: underline;
+    background: none;
 }
 
 .detailwidget-hr {
@@ -111,6 +121,10 @@ body * {
 	height: 16px;
 }
 
+.singlevariantpage .detailwidget-closebutton {
+    display: none;
+}
+
 .detailwidgetpinbutton {
 	cursor: default;
 	font-size: 12px;
@@ -131,8 +145,16 @@ body * {
 	background-color: #848484;
 }
 
+.singlevariantpage .detailwidgetpinbutton {
+    display: none;
+}
+
 .detailwidget-camerabutton {
     height: 16px;
+}
+
+.singlevariantpage .detailwidget-camerabutton {
+    display: none;
 }
 
 .detailwidgetselect {

@@ -7,6 +7,7 @@
 	<script src='/result/nocache/js/widgethelper.js?ver=1.7.0'></script>
 	<script src='/result/js/packery.pkgd.js'></script>
 	<script src='/result/js/graphics.js'></script>
+	<script src='/result/js/raphael-min.js'></script>
 	<link rel='stylesheet' href='/result/nocache/css/widget.css?ver=1.7.0' />
 	<link rel='stylesheet' href='/result/nocache/css/variant.css?ver=1.7.0' />
     <title></title>
@@ -22,7 +23,7 @@
         <input type='button' id='input_submit' name='input_submit' value='Annotate' onclick='submitForm(this.form);' />
     </form>
 </div>
-<div id='detaildiv_variant' class='detaildiv' >
+<div id='detaildiv_variant' class='detaildiv singlevariantpage' >
     <div id='detailcontainerwrapdiv_variant' class='detailcontainerwrapdiv' >
         <div id='detailcontainerdiv_variant' class='detailcontainerdiv' ></div>
     </div>
@@ -86,7 +87,6 @@ function submitAnnotate (inputChrom, inputPos, inputRef, inputAlt) {
 }
 
 function showWidget (widgetName, moduleNames, level) {
-    console.log('@', widgetName, level);
     var generator = widgetGenerators[widgetName];
     var divs = null;
     if (level != undefined) {
@@ -112,12 +112,13 @@ function showWidget (widgetName, moduleNames, level) {
         for (var j = 0; j < moduleDataKeys.length; j++) {
             var key = moduleDataKeys[j];
             var value = moduleData[key];
-            data[key] = value;
+            data[moduleName + '__' + key] = value;
         }
     }
     if (level == 'gene') {
-        data['hugo'] = annotData['crx'].hugo;
+        data['base__hugo'] = annotData['crx'].hugo;
     }
+    console.log('@', widgetName, data);
     widgetGenerators[widgetName][level]['function'](divs[1], data, 'variant', true); // last true is to highlight if value exists.
 }
 
@@ -128,7 +129,9 @@ function showAnnotation (response) {
     generator['height'] = 300;
     showWidget('lollipop', ['base']);
     showWidget('disasso', ['cgl', 'target', 'pubmed', 'clinvar', 'cgc', 'cosmic', 'grasp']);
+    showWidget('popstat', ['thousand_genomes', 'gnomad', 'esp6500']);
     showWidget('ndex', ['ndex', 'base'], 'gene');
+    showWidget('mupit2', ['base']);
     $(widgetContainerDiv).packery();
     var $widgets = $($(widgetContainerDiv).packery('getItemElements'));
     $widgets.draggable();
