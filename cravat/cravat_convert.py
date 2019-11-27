@@ -267,7 +267,7 @@ class MasterCravatConverter(object):
             self.crs_writer.add_index(index_columns)
         # Setup liftover var file
         if self.do_liftover:
-            self.crl_path = '.'.join([self.output_base_fname,self.input_assembly,'var'])
+            self.crl_path = os.path.join(self.output_dir, '.'.join([self.output_base_fname,self.input_assembly,'var']))
             self.crl_writer = CravatWriter(self.crl_path)
             assm_crl_def = copy.deepcopy(constants.crl_def)
             assm_crl_def[1]['title'] = 'Chrom'.format(self.input_assembly.title())
