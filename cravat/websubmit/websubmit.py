@@ -25,6 +25,7 @@ from queue import Empty
 from cravat import constants
 from cravat import get_live_annotator, get_live_mapper
 import signal
+import gzip
 
 cfl = ConfigLoader()
 
@@ -286,8 +287,12 @@ async def submit (request):
     input_fpaths = [os.path.join(job_dir, fn) for fn in input_fnames]
     tot_lines = 0
     for fpath in input_fpaths:
-        with open(fpath) as f:
-            tot_lines += count_lines(f)
+        if fpath.endswith('.gz'):
+            f = gzip.open(fpath,'rt')
+        else:
+            f = open(fpath)
+        tot_lines += count_lines(f)
+        f.close()
     run_args = ['cravat']
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))

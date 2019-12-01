@@ -201,7 +201,7 @@ class BaseMapper(object):
         runtime = stop_time - start_time
         self.logger.info('runtime: %6.3f' %runtime)
         if self.status_writer is not None:
-            self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.module_name))
+            self.status_writer.queue_status_update('status', 'Finished gene mapper')
 
     def _write_to_crt(self, alt_transcripts):
         for primary, alts in alt_transcripts.items():
