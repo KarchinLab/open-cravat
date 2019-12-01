@@ -106,6 +106,10 @@ function submit () {
     } else {
         for (var i = 0; i < inputFiles.length; i++) {
             var inputFile = inputFiles[i];
+            if (inputFile.name.endsWith('.gz')){
+                commitSubmit();
+                return;
+            }
             var reader = new FileReader();
             reader.onload = function (evt) {
                 var file = evt.target.result;
