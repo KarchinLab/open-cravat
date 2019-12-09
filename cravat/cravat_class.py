@@ -140,6 +140,14 @@ cravat_cmd_parser.add_argument('--separatesample',
     default=False,
     help='Separate variant results by sample')
 
+def run(cmd_args):
+    au.ready_resolution_console()
+    module = Cravat(**vars(cmd_args))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(module.main())
+
+cravat_cmd_parser.set_defaults(func=run)
+
 class MyManager (multiprocessing.managers.SyncManager):
     pass
 
