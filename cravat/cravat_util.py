@@ -10,41 +10,9 @@ import traceback
 import shutil
 import time
 
+
+
 def get_args ():
-    if len(sys.argv) == 1:
-        sys.argv.append('-h')
-    parser = argparse.ArgumentParser()
-    # converts db coordinate to hg38
-    subparsers = parser.add_subparsers(title='Commands')
-    subparser = subparsers.add_parser('converttohg38',
-        help='converts hg19 coordinates in sqlite3 database to hg38 ones.')
-    subparser.add_argument('--db',
-        nargs='?',
-        required=True,
-        help='path to sqlite3 database file')
-    subparser.add_argument('--sourcegenome',
-        required=True,
-        help='genome assembly of source database')
-    subparser.add_argument('--cols',
-        nargs='+',
-        required=True,
-        help='names of the columns to convert')
-    subparser.add_argument('--tables',
-        nargs='*',
-        help='table(s) to convert. If omitted, table name will be used as chromosome name.')
-    subparser.add_argument('--chromcol',
-        required=False,
-        help='chromosome column. If omitted, all tables will be tried to be converted.')
-    subparser.set_defaults(func=converttohg38)
-    # migrate old result db
-    parser_migrate_result = subparsers.add_parser('migrate-result',
-                                               help='migrates result db made with older versions of open-cravat')
-    parser_migrate_result.add_argument('dbpath', help='path to a result db file or a directory')
-    parser_migrate_result.add_argument('-r', dest='recursive',
-        action='store_true', default=False, help='recursive operation')
-    parser_migrate_result.add_argument('-c', dest='backup',
-        action='store_true', default=False, help='backup original copy with .bak extension')
-    parser_migrate_result.set_defaults(func=migrate_result)
     args = parser.parse_args()
     return args
 
@@ -432,6 +400,39 @@ def migrate_result (args):
         except:
             traceback.print_exc()
             print('  converting [{}] was not successful.'.format(dbpath))
+
+parser = argparse.ArgumentParser()
+# converts db coordinate to hg38
+subparsers = parser.add_subparsers(title='Commands')
+parser_convert = subparsers.add_parser('converttohg38',
+    help='converts hg19 coordinates in sqlite3 database to hg38 ones.')
+parser_convert.add_argument('--db',
+    nargs='?',
+    required=True,
+    help='path to sqlite3 database file')
+parser_convert.add_argument('--sourcegenome',
+    required=True,
+    help='genome assembly of source database')
+parser_convert.add_argument('--cols',
+    nargs='+',
+    required=True,
+    help='names of the columns to convert')
+parser_convert.add_argument('--tables',
+    nargs='*',
+    help='table(s) to convert. If omitted, table name will be used as chromosome name.')
+parser_convert.add_argument('--chromcol',
+    required=False,
+    help='chromosome column. If omitted, all tables will be tried to be converted.')
+parser_convert.set_defaults(func=converttohg38)
+# migrate old result db
+parser_migrate_result = subparsers.add_parser('migrate-result',
+    help='migrates result db made with older versions of open-cravat')
+parser_migrate_result.add_argument('dbpath', help='path to a result db file or a directory')
+parser_migrate_result.add_argument('-r', dest='recursive',
+    action='store_true', default=False, help='recursive operation')
+parser_migrate_result.add_argument('-c', dest='backup',
+    action='store_true', default=False, help='backup original copy with .bak extension')
+parser_migrate_result.set_defaults(func=migrate_result)
 
 def main ():
     args = get_args()

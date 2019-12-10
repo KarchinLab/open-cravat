@@ -3,6 +3,7 @@ from . import cravat_admin
 from .cravat_class import cravat_cmd_parser
 from .cravat_test import parser as test_parser
 from . import cravat_web
+from . import cravat_util
 
 root_p = argparse.ArgumentParser()
 root_sp = root_p.add_subparsers(title='Commands')
@@ -52,6 +53,7 @@ util_p = root_sp.add_parser('util', help='Utilities')
 util_sp = util_p.add_subparsers(title='Commands')
 util_example_input_p = util_sp.add_parser('example-input', parents=[cravat_admin.parser_make_example_input], add_help=False, help='Make example input file')
 util_test_p = util_sp.add_parser('test', parents=[test_parser], add_help=False, help='Test installed modules')
+util_update_result_p = util_sp.add_parser('update-result', parents=[cravat_util.parser_migrate_result], add_help=False, help='Update old result database to newer format')
 
 # version
 version_p = root_sp.add_parser('version', parents=[cravat_admin.parser_show_version], add_help=False, help='Show version')
