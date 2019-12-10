@@ -32,9 +32,13 @@ config_md_p = config_sp.add_parser('md', parents=[cravat_admin.parser_md], add_h
 config_system_p = config_sp.add_parser('system', parents=[cravat_admin.parser_show_system_conf], add_help=False, help='Show system config')
 config_system_p = config_sp.add_parser('cravat', parents=[cravat_admin.parser_show_cravat_conf], add_help=False, help='Show cravat config')
 
+# new
+new_p = root_sp.add_parser('new', help='Create new modules')
+new_sp = new_p.add_subparsers(title='Commands')
+new_annotator_p = new_sp.add_parser('annotator', parents=[cravat_admin.parser_new_annotator], add_help=False, help='Create new annotator')
 
 # store
-store_p = root_sp.add_parser('store')
+store_p = root_sp.add_parser('store', help='Publish modules to the store')
 store_sp = store_p.add_subparsers(title='Commands')
 store_publish_p = store_sp.add_parser('publish', parents=[cravat_admin.parser_publish], add_help=False, help='Publish a module')
 account_create_p = store_sp.add_parser('new-account', parents=[cravat_admin.parser_create_account], add_help=False, help='Create an account')
@@ -42,12 +46,6 @@ account_change_pw_p = store_sp.add_parser('change-pw', parents=[cravat_admin.par
 account_reset_pw_p = store_sp.add_parser('reset-pw', parents=[cravat_admin.parser_reset_pw], add_help=False, help='Request password reset')
 account_verify_email_p = store_sp.add_parser('verify-email', parents=[cravat_admin.parser_verify_email], add_help=False, help='Request email verification')
 account_check_login_p = store_sp.add_parser('check-login', parents=[cravat_admin.parser_check_login], add_help=False, help='Check login credentials')
-
-# new
-new_p = root_sp.add_parser('new', help='Create new modules')
-new_sp = new_p.add_subparsers(title='Commands')
-new_annotator_p = new_sp.add_parser('annotator', parents=[cravat_admin.parser_new_annotator], add_help=False, help='Create new annotator')
-
 
 # util
 util_p = root_sp.add_parser('util', help='Utilities')
