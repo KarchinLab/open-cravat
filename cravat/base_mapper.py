@@ -181,7 +181,7 @@ class BaseMapper(object):
                 cur_time = time.time()
                 if self.status_writer is not None:
                     if count % 10000 == 0 or cur_time - last_status_update_time > 3:
-                        self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, count))
+                        self.status_writer.queue_status_update('status', 'Running gene mapper: line {}'.format(count))
                         last_status_update_time = cur_time
                 crx_data, alt_transcripts = self.map(crv_data)
                 # Skip cases where there was no change. Can result if ref_base not in original input
@@ -201,7 +201,7 @@ class BaseMapper(object):
         runtime = stop_time - start_time
         self.logger.info('runtime: %6.3f' %runtime)
         if self.status_writer is not None:
-            self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.module_name))
+            self.status_writer.queue_status_update('status', 'Finished gene mapper')
 
     def _write_to_crt(self, alt_transcripts):
         for primary, alts in alt_transcripts.items():

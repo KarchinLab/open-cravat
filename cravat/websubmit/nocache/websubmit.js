@@ -99,7 +99,7 @@ function submit () {
     if (sumInputSize > sumInputSizeCutoff) {
         var alertDiv = getEl('div');
         var span = getEl('span');
-        span.textContent = 'You are submitting input files larger than ' + sumInputSize.toFixed(1) + ' MB. Proceed?';
+        span.textContent = 'You are submitting input files larger than ' + sumInputSizeCutoff.toFixed(1) + ' MB. Proceed?';
         addEl(alertDiv, span);
         addEl(alertDiv,getEl('br'));
         showYesNoDialog(alertDiv, commitSubmit, false, false);
@@ -826,8 +826,6 @@ function inputChangeHandler (event) {
     populateMultInputsMessage();
 }
 
-var JOB_IDS = []
-
 function showJobListPage () {
     var jis = GLOBALS.jobs.slice(jobsListCurStart, jobsListCurEnd);
     $.ajax({
@@ -840,35 +838,44 @@ function showJobListPage () {
                 //updateRunningJobTrs(job);
             }
             buildJobsTable();
-			setInterval(function () {
-				var runningJobIds = Object.keys(jobRunning);
-				if (runningJobIds.length == 0) {
-					return;
-				}
-				$.ajax({
-					url: '/submit/getjobs',
-					data: {'ids': JSON.stringify(runningJobIds)},
-					ajax: true,
-					success: function (response) {
-						for (var i=0; i < response.length; i++) {
-							var job = response[i];
-							GLOBALS.idToJob[job.id] = job;
-							/*
-							for (var j = 0; j < GLOBALS.jobs; j++) {
-								if (job.id == GLOBALS.jobs[j].id) {
-									GLOBALS.jobs[j] = job;
-									break;
-								}
-							}
-							*/
-							updateRunningJobTrs(job);
-							if (job.status == 'Finished' || job.status == 'Aborted' || job.status == 'Error') {
-								delete jobRunning[job.id];
-							}
-						}
-					},
-				});
-			}, 1000);
+            if (jobListUpdateIntervalFn == null) {
+                jobListUpdateIntervalFn = setInterval(function () {
+                    var runningJobIds = Object.keys(jobRunning);
+                    if (runningJobIds.length == 0) {
+                        return;
+                    }
+                    $.ajax({
+                        url: '/submit/getjobs',
+                        data: {'ids': JSON.stringify(runningJobIds)},
+                        ajax: true,
+                        success: function (response) {
+                            try {
+                                for (var i=0; i < response.length; i++) {
+                                    var job = response[i];
+                                    GLOBALS.idToJob[job.id] = job;
+                                    /*
+                                    for (var j = 0; j < GLOBALS.jobs; j++) {
+                                        if (job.id == GLOBALS.jobs[j].id) {
+                                            GLOBALS.jobs[j] = job;
+                                            break;
+                                        }
+                                    }
+                                    */
+                                    updateRunningJobTrs(job);
+                                    if (job.status == 'Finished' || job.status == 'Aborted' || job.status == 'Error') {
+                                        delete jobRunning[job.id];
+                                    }
+                                }
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        },
+                        error: function (e) {
+                            console.error(e);
+                        }
+                    });
+                }, 1000);
+            }
         }
     });
 }
@@ -1995,3 +2002,5 @@ function websubmit_run () {
     populateMultInputsMessage();
 };
 
+var JOB_IDS = []
+var jobListUpdateIntervalFn = null;

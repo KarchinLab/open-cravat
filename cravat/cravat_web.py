@@ -34,6 +34,8 @@ import logging
 from cravat import constants
 import time
 
+SERVER_ALREADY_RUNNING = -1
+
 conf = ConfigLoader()
 sysconf = au.get_system_conf()
 log_dir = sysconf[constants.log_dir_key]
@@ -89,12 +91,18 @@ try:
         default=False,
         help='Console echoes exceptions written to log file.')
 
+    if sys.platform == 'win32': # Required to use asyncio subprocesses
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+    else:
+        loop = asyncio.get_event_loop()
     args = parser.parse_args(sys.argv[1:])
     donotopenbrowser = args.donotopenbrowser
     servermode = args.servermode
     if servermode and importlib.util.find_spec('cravat_multiuser') is not None:
         try:
             import cravat_multiuser
+            loop.create_task(cravat_multiuser.setup_module())
             server_ready = True
         except Exception as e:
             logger.exception(e)
@@ -173,7 +181,11 @@ def result ():
                 print('Provide the path to a OpenCRAVAT result sqlite file or both username and job ID')
                 exit()
             url = protocol + url
-        main(url=url)
+        ret = main(url=url)
+        if ret == SERVER_ALREADY_RUNNING:
+            print('Openinig result viewer using existing OpenCRAVAT server')
+            webbrowser.open(url)
+
     except Exception as e:
         logger.exception(e)
         if args.nostdoutexception == False:
@@ -298,10 +310,10 @@ class WebServer (object):
         self.ssl_context = ssl_context
         self.loop = loop
         self.server_started = False
-        asyncio.ensure_future(self.start(), loop=self.loop)
+        loop.create_task(self.start())
         global donotopenbrowser
         if donotopenbrowser == False and url is not None:
-            asyncio.ensure_future(self.open_url(url), loop=self.loop)
+            self.loop.create_task(self.open_url(url))
 
     async def open_url (self, url):
         while not self.server_started:
@@ -377,7 +389,8 @@ def main (url=None):
             if sr == 0:
                 logger.info('wcravat already running. Exiting from this instance of wcravat...') 
                 print('OpenCRAVAT is already running at {}{}:{}.'.format(protocol, serv.get('host'), serv.get('port')))
-                return
+                global SERVER_ALREADY_RUNNING
+                return SERVER_ALREADY_RUNNING
         except requests.exceptions.ConnectionError:
             pass
         print('OpenCRAVAT is served at {}:{}'.format(serv.get('host'), serv.get('port')))

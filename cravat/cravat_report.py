@@ -653,6 +653,7 @@ class CravatReport:
         self.dbpath = parsed_args.dbpath
         self.filterpath = parsed_args.filterpath
         self.filtername = parsed_args.filtername
+        self.filterstring = parsed_args.filterstring
         self.confs = None
         if parsed_args.confs is not None:
             confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
@@ -661,7 +662,6 @@ class CravatReport:
                 self.filter = self.confs['filter']
             else:
                 self.filter = None
-        self.filterstring = parsed_args.filterstring
         self.savepath = parsed_args.savepath
         self.confpath = parsed_args.confpath
         self.conf = ConfigLoader(job_conf_path=self.confpath)

@@ -359,9 +359,13 @@ class CravatFilter ():
         return self.getcount('gene')
 
     async def getcount (self, level='variant'):
+        bypassfilter = (self.filter == {})
         level = 'variant'
         await self.make_filtered_uid_table()
-        ftable = level + '_filtered'
+        if bypassfilter:
+            ftable = level
+        else:
+            ftable = level + '_filtered'
         q = 'select count(*) from ' + ftable
         await self.cursor.execute(q)
         for row in await self.cursor.fetchone():
@@ -420,22 +424,43 @@ class CravatFilter ():
         return it
 
     async def get_filtered_iterator (self, level='variant'):
+        bypassfilter = (self.filter == {})
         if level == 'variant':
             kcol = 'base__uid'
-            ftable = 'variant_filtered'
+            if bypassfilter:
+                ftable = 'variant'
+            else:
+                ftable = 'variant_filtered'
         elif level == 'gene':
             kcol = 'base__hugo'
-            ftable = 'gene_filtered'
+            if bypassfilter:
+                ftable = 'gene'
+            else:
+                ftable = 'gene_filtered'
         elif level == 'sample':
             kcol = 'base__uid'
-            ftable = 'variant_filtered'
+            if bypassfilter:
+                ftable = 'variant'
+            else:
+                ftable = 'variant_filtered'
         elif level == 'mapping':
             kcol = 'base__uid'
-            ftable = 'variant_filtered'
+            if bypassfilter:
+                ftable = 'variant'
+            else:
+                ftable = 'variant_filtered'
         table = level
         if level in ['variant', 'gene', 'sample', 'mapping']:
-            sql = 'select t.* from ' + table + ' as t inner join ' + ftable +\
-                ' as f on t.' + kcol + '=f.' + kcol
+            if level == 'gene' and bypassfilter:
+                sql = 'pragma table_info(gene)'
+                await self.cursor.execute(sql)
+                rs = await self.cursor.fetchall()
+                colnames = ['gene.' + r[1] for r in rs if r[1] != 'base__hugo']
+                sql = 'select distinct variant.base__hugo, {} from variant inner join gene on variant.base__hugo==gene.base__hugo'.format(', '.join(colnames))
+            else:
+                sql = 'select t.* from ' + table + ' as t'
+                if bypassfilter == False:
+                    sql += ' inner join ' + ftable + ' as f on t.' + kcol + '=f.' + kcol
         await self.cursor.execute(sql)
         cols = [v[0] for v in self.cursor.description]
         rows = await self.cursor.fetchall()
@@ -464,25 +489,27 @@ class CravatFilter ():
 
     async def make_filtered_uid_table (self):
         t = time.time()
-        await self.make_filtered_sample_table()
-        await self.make_gene_list_table()
-        await self.conn.commit()
-        level = 'variant'
-        vtable = level
-        vftable = level + '_filtered'
-        q = 'drop table if exists ' + vftable
-        await self.cursor.execute(q)
-        where = self.getwhere(level)
-        q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
-        q += ' join fsample as s on t.base__uid=s.base__uid'
-        if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
-            q += ' join gene_list as gl on t.base__hugo=gl.base__hugo'
-        if 'g.' in where:
-            q += ' join gene as g on t.base__hugo=g.base__hugo'
-        q += ' '+where
-        await self.cursor.execute(q)
-        self.conn.commit()
-        t = time.time() - t
+        bypassfilter = (self.filter == {})
+        if bypassfilter == False:
+            await self.make_filtered_sample_table()
+            await self.make_gene_list_table()
+            await self.conn.commit()
+            level = 'variant'
+            vtable = level
+            vftable = level + '_filtered'
+            q = 'drop table if exists ' + vftable
+            await self.cursor.execute(q)
+            where = self.getwhere(level)
+            q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
+            q += ' join fsample as s on t.base__uid=s.base__uid'
+            if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
+                q += ' join gene_list as gl on t.base__hugo=gl.base__hugo'
+            if 'g.' in where:
+                q += ' join gene as g on t.base__hugo=g.base__hugo'
+            q += ' '+where
+            await self.cursor.execute(q)
+            self.conn.commit()
+            t = time.time() - t
     
     async def make_gene_list_table (self):
         tname = 'gene_list'
@@ -503,19 +530,21 @@ class CravatFilter ():
         await self.conn.commit()
     
     async def make_filtered_hugo_table (self):
-        await self.cursor.execute('pragma synchronous=0')
-        level = 'gene'
-        vtable = 'variant'
-        vftable = vtable + '_filtered'
-        gftable = level + '_filtered'
-        q = 'drop table if exists ' + gftable
-        await self.cursor.execute(q)
-        q = 'create table ' + gftable +\
-            ' as select distinct v.base__hugo from ' + vtable + ' as v'\
-            ' inner join ' + vftable + ' as vf on vf.base__uid=v.base__uid'\
-            ' where v.base__hugo is not null'
-        await self.cursor.execute(q)
-        await self.cursor.execute('pragma synchronous=2')
+        bypassfilter = (self.filter == {})
+        if bypassfilter == False:
+            await self.cursor.execute('pragma synchronous=0')
+            level = 'gene'
+            vtable = 'variant'
+            vftable = vtable + '_filtered'
+            gftable = level + '_filtered'
+            q = 'drop table if exists ' + gftable
+            await self.cursor.execute(q)
+            q = 'create table ' + gftable +\
+                ' as select distinct v.base__hugo from ' + vtable + ' as v'\
+                ' inner join ' + vftable + ' as vf on vf.base__uid=v.base__uid'\
+                ' where v.base__hugo is not null'
+            await self.cursor.execute(q)
+            await self.cursor.execute('pragma synchronous=2')
 
     async def savefilter (self, name=None):
         if self.cursor == None or self.filter == None:
@@ -612,8 +641,10 @@ class CravatFilter ():
     async def get_variant_iterator_filtered_uids_cols (self, cols):
         if cols[0] == 'base__uid':
             cols[0] = 'v.' + cols[0]
-        q = 'select ' + ','.join(cols) + ' from variant as v ' +\
-            'inner join variant_filtered as f on v.base__uid=f.base__uid'
+        bypassfilter = (self.filter == {})
+        q = 'select ' + ','.join(cols) + ' from variant as v'
+        if bypassfilter == False:
+            q += ' inner join variant_filtered as f on v.base__uid=f.base__uid'
         await self.cursor.execute(q)
         rows = await self.cursor.fetchall()
         for row in rows:
@@ -623,16 +654,23 @@ class CravatFilter ():
             yield d
 
     async def get_filtered_hugo_list (self):
-        q = 'select base__hugo from gene_filtered'
+        bypassfilter = (self.filter == {})
+        if bypassfilter:
+            q = 'select distinct variant.base__hugo from gene, variant where gene.base__hugo==variant.base__hugo'
+        else:
+            q = 'select base__hugo from gene_filtered'
         await self.cursor.execute(q)
         rows = await self.cursor.fetchall()
         hugos = [row[0] for row in rows]
         return hugos
 
     async def get_variant_data_for_cols (self, cols):
+        bypassfilter = (self.filter == {})
         if cols[0] == 'base__uid':
             cols[0] = 'v.base__uid'
-        q = 'select {},base__hugo from variant as v inner join variant_filtered as f on v.base__uid=f.base__uid'.format(','.join(cols))
+        q = 'select {},base__hugo from variant as v'.format(','.join(cols))
+        if bypassfilter == False:
+            q += ' inner join variant_filtered as f on v.base__uid=f.base__uid'
         if cols[0] == 'v.base__uid':
             cols[0] = 'base__uid'
         await self.cursor.execute(q)
@@ -640,9 +678,12 @@ class CravatFilter ():
         return rows
 
     async def get_variant_data_for_hugo (self, hugo, cols):
+        bypassfilter = (self.filter == {})
         if cols[0] == 'base__uid':
             cols[0] = 'v.base__uid'
-        q = 'select {} from variant as v inner join variant_filtered as f on v.base__uid=f.base__uid and v.base__hugo="{}"'.format(','.join(cols), hugo)
+        q = 'select {} from variant as v'.format(','.join(cols))
+        if bypassfilter == False:
+            q += ' inner join variant_filtered as f on v.base__uid=f.base__uid and v.base__hugo="{}"'.format(hugo)
         if cols[0] == 'v.base__uid':
             cols[0] = 'base__uid'
         await self.cursor.execute(q)
