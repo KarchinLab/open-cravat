@@ -69,13 +69,13 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'wcravat=cravat.cravat_web:submit',
-            'wcv=cravat.cravat_web:submit',
+            'wcravat=cravat.cravat_web:wcravat_entrypoint',
+            'wcv=cravat.cravat_web:wcravat_entrypoint',
             'cravat-admin=cravat.cravat_admin:main',
             'cva=cravat.cravat_admin:main',
             'cravat=cravat.runcravat:main',
             'cv=cravat.runcravat:main',
-            'cravat-view=cravat.cravat_web:result',
+            'cravat-view=cravat.cravat_web:cravat_view_entrypoint',
             'cravat-filter=cravat.cravat_filter:main',
             'cravat-report=cravat.cravat_report:main',
             'cravat-test=cravat.cravat_test:main',

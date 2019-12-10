@@ -2,12 +2,19 @@ import argparse
 from . import cravat_admin
 from .cravat_class import cravat_cmd_parser
 from .cravat_test import parser as test_parser
+from . import cravat_web
 
 root_p = argparse.ArgumentParser()
 root_sp = root_p.add_subparsers(title='Commands')
 
+# run
 run_p = root_sp.add_parser('run', parents=[cravat_cmd_parser], add_help=False, help='Run a job')
 
+# gui
+gui_p = root_sp.add_parser('gui', help='Use the GUI')
+gui_sp = gui_p.add_subparsers(title='Commands')
+gui_start_p = gui_sp.add_parser('start', parents=[cravat_web.base_parser], add_help=False, help='Start the gui')
+gui_view_p = gui_sp.add_parser('result', parents=[cravat_web.view_parser], add_help=False, help='Open the result viewer')
 
 # module
 module_p = root_sp.add_parser('module', help='Alter installed modules')
@@ -28,10 +35,11 @@ account_reset_pw_p = store_sp.add_parser('reset-pw', parents=[cravat_admin.parse
 account_verify_email_p = store_sp.add_parser('verify-email', parents=[cravat_admin.parser_verify_email], add_help=False, help='Request email verification')
 account_check_login_p = store_sp.add_parser('check-login', parents=[cravat_admin.parser_check_login], add_help=False, help='Check login credentials')
 
-#new
+# new
 new_p = root_sp.add_parser('new', help='Create new modules')
 new_sp = new_p.add_subparsers(title='Commands')
 new_annotator_p = new_sp.add_parser('annotator', parents=[cravat_admin.parser_new_annotator], add_help=False, help='Create new annotator')
+
 
 # util
 util_p = root_sp.add_parser('util', help='Utilities')
