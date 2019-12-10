@@ -17,13 +17,21 @@ gui_start_p = gui_sp.add_parser('start', parents=[cravat_web.base_parser], add_h
 gui_view_p = gui_sp.add_parser('result', parents=[cravat_web.view_parser], add_help=False, help='Open the result viewer')
 
 # module
-module_p = root_sp.add_parser('module', help='Alter installed modules')
+module_p = root_sp.add_parser('module', help='Change installed modules')
 module_sp = module_p.add_subparsers(title='Commands')
 module_ls_p = module_sp.add_parser('ls', parents=[cravat_admin.parser_ls], add_help=False, help='List modules')
 module_install_p = module_sp.add_parser('install', parents=[cravat_admin.parser_install], add_help=False, help='Install modules')
 module_uninstall_p = module_sp.add_parser('uninstall', parents=[cravat_admin.parser_uninstall], add_help=False, help='Uninstall modules')
 module_update_p = module_sp.add_parser('update', parents=[cravat_admin.parser_update], add_help=False, help='Update modules')
 module_info_base_p = module_sp.add_parser('info', parents=[cravat_admin.parser_info], add_help=False, help='Module details')
+
+# config
+config_p = root_sp.add_parser('config', help='View and change configuration settings')
+config_sp = config_p.add_subparsers(title='Commands')
+config_md_p = config_sp.add_parser('md', parents=[cravat_admin.parser_md], add_help=False, help='Change modules directory')
+config_system_p = config_sp.add_parser('system', parents=[cravat_admin.parser_show_system_conf], add_help=False, help='Show system config')
+config_system_p = config_sp.add_parser('cravat', parents=[cravat_admin.parser_show_cravat_conf], add_help=False, help='Show cravat config')
+
 
 # store
 store_p = root_sp.add_parser('store')
@@ -47,7 +55,11 @@ util_sp = util_p.add_subparsers(title='Commands')
 util_example_input_p = util_sp.add_parser('example-input', parents=[cravat_admin.parser_make_example_input], add_help=False, help='Make example input file')
 util_test_p = util_sp.add_parser('test', parents=[test_parser], add_help=False, help='Test installed modules')
 
+# version
 version_p = root_sp.add_parser('version', parents=[cravat_admin.parser_show_version], add_help=False, help='Show version')
+
+# feedback
+feedback_p = root_sp.add_parser('feedback', parents=[cravat_admin.parser_report_issue], add_help=False, help='Send feedback to the developers')
 
 def main():
     args = root_p.parse_args()
