@@ -33,10 +33,11 @@ config_md_p = config_sp.add_parser('md', parents=[cravat_admin.parser_md], add_h
 config_system_p = config_sp.add_parser('system', parents=[cravat_admin.parser_show_system_conf], add_help=False, help='Show system config')
 config_system_p = config_sp.add_parser('cravat', parents=[cravat_admin.parser_show_cravat_conf], add_help=False, help='Show cravat config')
 
-# new
-new_p = root_sp.add_parser('new', help='Create new modules')
-new_sp = new_p.add_subparsers(title='Commands')
-new_annotator_p = new_sp.add_parser('annotator', parents=[cravat_admin.parser_new_annotator], add_help=False, help='Create new annotator')
+# create
+create_p = root_sp.add_parser('create', help='Create new modules')
+create_sp = create_p.add_subparsers(title='Commands')
+create_example_input_p = create_sp.add_parser('example-input', parents=[cravat_admin.parser_make_example_input], add_help=False, help='Make example input file')
+create_annotator_p = create_sp.add_parser('annotator', parents=[cravat_admin.parser_new_annotator], add_help=False, help='Create new annotator')
 
 # store
 store_p = root_sp.add_parser('store', help='Publish modules to the store')
@@ -51,7 +52,6 @@ account_check_login_p = store_sp.add_parser('check-login', parents=[cravat_admin
 # util
 util_p = root_sp.add_parser('util', help='Utilities')
 util_sp = util_p.add_subparsers(title='Commands')
-util_example_input_p = util_sp.add_parser('example-input', parents=[cravat_admin.parser_make_example_input], add_help=False, help='Make example input file')
 util_test_p = util_sp.add_parser('test', parents=[test_parser], add_help=False, help='Test installed modules')
 util_update_result_p = util_sp.add_parser('update-result', parents=[cravat_util.parser_migrate_result], add_help=False, help='Update old result database to newer format')
 
