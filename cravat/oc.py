@@ -2,7 +2,7 @@ import argparse
 from . import cravat_admin
 from .cravat_class import cravat_cmd_parser
 from .cravat_test import parser as test_parser
-from . import cravat_web
+from .cravat_web import parser as gui_parser
 from . import cravat_util
 from .cravat_report import parser as report_parser
 
@@ -16,10 +16,7 @@ run_p = root_sp.add_parser('run', parents=[cravat_cmd_parser], add_help=False, h
 report_p = root_sp.add_parser('report', parents=[report_parser], add_help=False, help='Generate a report from a job')
 
 # gui
-gui_p = root_sp.add_parser('gui', help='Use the GUI')
-gui_sp = gui_p.add_subparsers(title='Commands')
-gui_start_p = gui_sp.add_parser('start', parents=[cravat_web.base_parser], add_help=False, help='Start the gui')
-gui_view_p = gui_sp.add_parser('result', parents=[cravat_web.view_parser], add_help=False, help='Open the result viewer')
+gui_p = root_sp.add_parser('gui', parents=[gui_parser], add_help=False, help='Start the GUI')
 
 # module
 module_p = root_sp.add_parser('module', help='Change installed modules')
