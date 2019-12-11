@@ -705,21 +705,9 @@ class CravatReport:
             ret = True
         return ret
 
-def main ():
-    if len(sys.argv) < 2:
-        print('Please provide a sqlite file path')
-        exit()
-    parser = argparse.ArgumentParser()
-    parser.add_argument('dbpath',
-                        help='Path to aggregator output')
-    parser.add_argument('-t',
-        dest='reporttypes',
-        nargs='+',
-        default=None,
-        help='report types')
-    parsed_args = parser.parse_args(sys.argv[1:])
-    dbpath = parsed_args.dbpath
-    report_types = parsed_args.reporttypes
+def run_reporter (args):
+    dbpath = args.dbpath
+    report_types = args.reporttypes
     run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
     output_dir = os.path.dirname(dbpath)
     avail_reporters = au.get_local_module_infos_of_type('reporter')
@@ -730,3 +718,19 @@ def main ():
     else:
         cmd.extend(avail_reporter_names)
     subprocess.run(cmd)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('dbpath',
+    help='Path to aggregator output'
+)
+parser.add_argument('-t',
+    dest='reporttypes',
+    nargs='+',
+    default=None,
+    help='report types'
+)
+parser.set_defaults(func=run_reporter)
+
+def cravat_report_entrypoint ():
+    parsed_args = parser.parse_args(sys.argv[1:])
+    parsed_args.func(parsed_args)

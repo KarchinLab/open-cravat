@@ -77,7 +77,7 @@ setup(
             'cv=cravat.runcravat:main',
             'cravat-view=cravat.cravat_web:cravat_view_entrypoint',
             'cravat-filter=cravat.cravat_filter:main',
-            'cravat-report=cravat.cravat_report:main',
+            'cravat-report=cravat.cravat_report:cravat_report_entrypoint',
             'cravat-test=cravat.cravat_test:main',
             'cravat-util=cravat.cravat_util:main',
             'oc=cravat.oc:main',

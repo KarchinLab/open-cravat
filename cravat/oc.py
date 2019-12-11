@@ -4,12 +4,16 @@ from .cravat_class import cravat_cmd_parser
 from .cravat_test import parser as test_parser
 from . import cravat_web
 from . import cravat_util
+from .cravat_report import parser as report_parser
 
 root_p = argparse.ArgumentParser()
 root_sp = root_p.add_subparsers(title='Commands')
 
 # run
 run_p = root_sp.add_parser('run', parents=[cravat_cmd_parser], add_help=False, help='Run a job')
+
+# report
+report_p = root_sp.add_parser('report', parents=[report_parser], add_help=False, help='Generate a report from a job')
 
 # gui
 gui_p = root_sp.add_parser('gui', help='Use the GUI')
