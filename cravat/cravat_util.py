@@ -9,8 +9,9 @@ import json
 import traceback
 import shutil
 import time
-
-
+from pathlib import Path
+import datetime
+from . import admin_util as au
 
 def get_args ():
     args = parser.parse_args()
@@ -401,6 +402,94 @@ def migrate_result (args):
             traceback.print_exc()
             print('  converting [{}] was not successful.'.format(dbpath))
 
+def result2gui(args):
+    dbpath = args.path
+    user = args.user
+    jobs_dir = Path(au.get_jobs_dir())
+    user_dir = jobs_dir/user
+    if not user_dir.is_dir():
+        exit(f'User {user} not found')
+    attempts = 0
+    while True: #TODO this will currently overwrite if called in parallel. is_dir check and creation is not atomic
+        job_id = datetime.datetime.now().strftime(r'%y%m%d-%H%M%S')
+        job_dir = user_dir/job_id
+        if not job_dir.is_dir():
+            break
+        else:
+            attempts += 1
+            time.sleep(1)
+        if attempts >= 5:
+            exit('Could not acquire a job id. Too many concurrent job submissions. Wait, or reduce submission frequency.')
+    job_dir.mkdir()
+    new_dbpath = job_dir/dbpath.name
+    shutil.copyfile(dbpath, new_dbpath)
+    log_path = dbpath.with_suffix('.log')
+    if log_path.exists():
+        shutil.copyfile(log_path, job_dir/log_path.name)
+    err_path = dbpath.with_suffix('.err')
+    if err_path.exists():
+        shutil.copyfile(err_path, job_dir/err_path.name)
+    status_path = dbpath.with_suffix('.status.json')
+    if status_path.exists():
+        shutil.copyfile(status_path, job_dir/status_path.name)
+    else:
+        statusd = status_from_db(new_dbpath)
+        new_status_path = job_dir/status_path.name
+        with new_status_path.open('w') as wf:
+            json.dump(statusd, wf, indent=2, sort_keys=True)
+
+def status_from_db(dbpath):
+    """
+    Generate a status json from a result database.
+    Currently only works well if the database is in the gui jobs area.
+    """
+    if not isinstance(dbpath, Path):
+        dbpath = Path(dbpath)
+    d = {}
+    db = sqlite3.connect(str(dbpath))
+    c = db.cursor()
+    try:
+        d['annotators'] = []
+        d['annotator_version'] = {}
+        c.execute('select name, version from gene_annotator')
+        skip_names = {'base','tagsampler','vcfinfo',''}
+        for r in c:
+            if r[0] in skip_names: continue
+            d['annotators'].append(r[0])
+            d['annotator_version'][r[0]] = r[1]
+        c.execute('select name, version from variant_annotator')
+        for r in c:
+            if r[0] in skip_names: continue
+            d['annotators'].append(r[0])
+            d['annotator_version'][r[0]] = r[1]
+        d['annotators'] = sorted(list(set(d['annotators'])))
+        c.execute('select colval from info where colkey="Input genome"')
+        d['assembly'] = c.fetchone()[0]
+        d['db_path'] = str(dbpath)
+        d['id'] = str(dbpath.parent)
+        d['id'] = str(dbpath.parent.name)
+        d['job_dir'] = str(dbpath.parent)
+        d['note'] = ''
+        d['num_error_input'] = 0
+        c.execute('select colval from info where colkey="Number of unique input variants"')
+        d['num_unique_var'] = c.fetchone()[0]
+        d['num_input_var'] = d['num_unique_var']
+        c.execute('select colval from info where colkey="open-cravat"')
+        d['open_cravat_version'] = c.fetchone()[0]
+        d['orig_input_fname'] = [str(dbpath.stem)]
+        d['orig_input_path'] = [str(dbpath.with_suffix(''))]
+        d['reports'] = []
+        d['run_name'] = str(dbpath.stem)
+        d['status'] = 'Finished'
+        d['submission_time'] = datetime.datetime.fromtimestamp(dbpath.stat().st_ctime).isoformat()
+        d['viewable'] = True
+    except:
+        raise
+    finally:
+        c.close()
+        db.close()
+    return d
+
 parser = argparse.ArgumentParser()
 # converts db coordinate to hg38
 subparsers = parser.add_subparsers(title='Commands')
@@ -433,6 +522,16 @@ parser_migrate_result.add_argument('-r', dest='recursive',
 parser_migrate_result.add_argument('-c', dest='backup',
     action='store_true', default=False, help='backup original copy with .bak extension')
 parser_migrate_result.set_defaults(func=migrate_result)
+# Make job accessible through the gui
+parser_result2gui = subparsers.add_parser('result2gui', 
+    help='Copy a command line job into the GUI submission list')
+parser_result2gui.add_argument('path', 
+    help='Path to result database', 
+    type=Path)
+parser_result2gui.add_argument('-u','--user', 
+    help='User who will own the job. Defaults to single user default user.', 
+    type=str, default='default')
+parser_result2gui.set_defaults(func=result2gui)
 
 def main ():
     args = get_args()

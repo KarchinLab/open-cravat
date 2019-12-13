@@ -55,6 +55,7 @@ util_p = root_sp.add_parser('util', help='Utilities')
 util_sp = util_p.add_subparsers(title='Commands')
 util_test_p = util_sp.add_parser('test', parents=[test_parser], add_help=False, help='Test installed modules')
 util_update_result_p = util_sp.add_parser('update-result', parents=[cravat_util.parser_migrate_result], add_help=False, help='Update old result database to newer format')
+util_result2gui_p = util_sp.add_parser('result2gui', parents=[cravat_util.parser_result2gui], add_help=False, help='Copy a command line job into the GUI submission list')
 
 # version
 version_p = root_sp.add_parser('version', parents=[cravat_admin.parser_show_version], add_help=False, help='Show version')

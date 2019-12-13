@@ -245,7 +245,7 @@ class Cravat (object):
                 annot_names.sort()
                 self.status_json['annotators'] = annot_names
                 with open(self.status_json_path,'w') as wf:
-                    wf.write(json.dumps(self.status_json))
+                    wf.write(json.dumps(self.status_json, indent=2, sort_keys=True))
         else:
             self.status_json = {}
             self.status_json['job_dir'] = self.output_dir
@@ -266,7 +266,7 @@ class Cravat (object):
             annot_names.sort()
             self.status_json['annotators'] = annot_names
             with open(self.status_json_path,'w') as wf:
-                wf.write(json.dumps(self.status_json))
+                wf.write(json.dumps(self.status_json, indent=2, sort_keys=True))
 
     def get_logger (self):
         self.logger = logging.getLogger('cravat')
@@ -1054,9 +1054,8 @@ class StatusWriter:
             self.lock = False
 
     def update_status_json (self):
-        wf = open(self.status_json_path, 'w')
-        json.dump(self.status_json, wf)
-        wf.close()
+        with open(self.status_json_path, 'w') as wf:
+            json.dump(self.status_json, wf, indent=2, sort_keys=True)
 
     def get_status_json (self):
         return self.status_json

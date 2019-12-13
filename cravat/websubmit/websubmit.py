@@ -170,7 +170,7 @@ class FileRouter(object):
                 if fn.endswith('.status.json'):
                     with open(os.path.join(job_dir, fn)) as f:
                         try:
-                            statusjson = json.loads(f.readline())
+                            statusjson = json.load(f)
                         except json.JSONDecodeError as e:
                             if job_id in self.job_statuses:
                                 statusjson = self.job_statuses[job_id]
