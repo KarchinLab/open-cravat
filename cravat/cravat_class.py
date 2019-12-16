@@ -29,92 +29,90 @@ cravat_cmd_parser = argparse.ArgumentParser(
     description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path arguments before any option or define them in a conf file (option -c).',
     epilog='* input_file_path should precede any option.')
 cravat_cmd_parser.add_argument('inputs',
-                    nargs='*',
-                    default=None,
-                    help=argparse.SUPPRESS)
+    nargs='*',
+    default=None,
+    help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument('-a',
-                    nargs="+",
-                    dest='annotators',
-                    help='annotators to run')
+    nargs="+",
+    dest='annotators',
+    help='annotators to run')
 cravat_cmd_parser.add_argument('-e',
-                    nargs='+',
-                    dest='excludes',
-                    help='annotators to exclude')
+    nargs='+',
+    dest='excludes',
+    help='annotators to exclude')
 cravat_cmd_parser.add_argument('-n',
-                    dest='run_name',
-                    help='name of cravat run')
+    dest='run_name',
+    help='name of cravat run')
 cravat_cmd_parser.add_argument('-d',
-                    dest='output_dir',
-                    default=None,
-                    help='directory for output files')
+    dest='output_dir',
+    default=None,
+    help='directory for output files')
 cravat_cmd_parser.add_argument('--startat',
-                    dest='startat',
-                    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
-                    default=None,
-                    help='starts at given stage')
+    dest='startat',
+    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
+    default=None,
+    help='starts at given stage')
 cravat_cmd_parser.add_argument('--repeat',
-                    dest='repeat',
-                    nargs='+',
-                    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
-                    default=None,
-                    help='forces re-running of given stage if it is in the run chain.')
+    dest='repeat',
+    nargs='+',
+    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
+    default=None,
+    help='forces re-running of given stage if it is in the run chain.')
 cravat_cmd_parser.add_argument('--endat',
-                    dest='endat',
-                    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
-                    default=None,
-                    help='ends after given stage.')
+    dest='endat',
+    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
+    default=None,
+    help='ends after given stage.')
 cravat_cmd_parser.add_argument('--skip',
-                    dest='skip',
-                    nargs='+',
-                    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
-                    default=None,
-                    help='skips given stage(s).')
+    dest='skip',
+    nargs='+',
+    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
+    default=None,
+    help='skips given stage(s).')
 cravat_cmd_parser.add_argument('-c',
-                    dest='conf',
-                    default=None,
-                    help='path to a conf file')
+    dest='conf',
+    default=None,
+    help='path to a conf file')
 cravat_cmd_parser.add_argument('--cs',
-                    dest='confs',
-                    default=None,
-                    help='configuration string')
+    dest='confs',
+    default=None,
+    help='configuration string')
 cravat_cmd_parser.add_argument('-v', 
-                    dest='verbose',
-                    action='store_true',
-                    default=False,
-                    help='verbose')
+    dest='verbose',
+    action='store_true',
+    default=False,
+    help='verbose')
 cravat_cmd_parser.add_argument('-t',
-                    nargs='+',
-                    dest='reports',
-                    help='report types. If omitted, default one in cravat.yml is used.')
+    nargs='+',
+    dest='reports',
+    help='report types. If omitted, default one in cravat.yml is used.')
 cravat_cmd_parser.add_argument('-l',
-                    dest='liftover',
-                    choices=constants.assembly_choices,
-                    default=None,
-                    help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
+    dest='liftover',
+    choices=constants.assembly_choices,
+    default=None,
+    help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
 cravat_cmd_parser.add_argument('-x',
-                    dest='cleandb',
-                    action='store_true',
-                    help='deletes the existing result database and ' +
-                            'creates a new one.')
+    dest='cleandb',
+    action='store_true',
+    help='deletes the existing result database and creates a new one.')
 cravat_cmd_parser.add_argument('--newlog',
-                    dest='newlog',
-                    action='store_true',
-                    default=None,
-                    help='deletes the existing log file and ' +
-                            'creates a new one.')
+    dest='newlog',
+    action='store_true',
+    default=None,
+    help='deletes the existing log file and creates a new one.')
 cravat_cmd_parser.add_argument('--note',
-                    dest='note',
-                    default=None,
-                    help='note will be written to the run status file (.status.json)')
+    dest='note',
+    default=None,
+    help='note will be written to the run status file (.status.json)')
 cravat_cmd_parser.add_argument('--mp',
-                    dest='mp',
-                    default=None,
-                    help='number of processes to use to run annotators')
+    dest='mp',
+    default=None,
+    help='number of processes to use to run annotators')
 cravat_cmd_parser.add_argument('--forcedinputformat',
-                    dest='forcedinputformat',
-                    default=None,
-                    choices=au.input_formats(),
-                    help='Force input format')
+    dest='forcedinputformat',
+    default=None,
+    choices=au.input_formats(),
+    help='Force input format')
 cravat_cmd_parser.add_argument('--temp-files',
     dest='temp_files',
     action='store_true',
