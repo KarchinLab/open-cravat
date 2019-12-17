@@ -43,28 +43,30 @@ class Aggregator (object):
     def parse_cmd_args(self, cmd_args):
         parser = argparse.ArgumentParser()
         parser.add_argument('path',
-                            help='Path to this aggregator module')
+            help='Path to this aggregator module')
         parser.add_argument('-i',
-                            dest='input_dir',
-                            required=True,
-                            help='Directory containing annotator outputs')
+            dest='input_dir',
+            required=True,
+            help='Directory containing annotator outputs')
         parser.add_argument('-l',
-                            dest='level',
-                            required= True,
-                            help='Level to aggregate')
+            dest='level',
+            required= True,
+            help='Level to aggregate')
         parser.add_argument('-n',
-                            dest='name',
-                            required=True,
-                            help='Name of run')
+            dest='name',
+            required=True,
+            help='Name of run')
         parser.add_argument('-d',
-                            dest='output_dir',
-                            help='Directory for aggregator output. '\
-                                 +'Default is input directory.')
+            dest='output_dir',
+            help='Directory for aggregator output. Default is input directory.')
         parser.add_argument('-x',
-                            dest='delete',
-                            action='store_true',
-                            help='Deletes the existing one and creates ' +\
-                                 'a new one.')
+            dest='delete',
+            action='store_true',
+            help='Force deletion of existing database')
+        parser.add_argument('-a','--append',
+            dest='append',
+            action='store_true',
+            help='Append annotators to existing database')
         parsed = parser.parse_args(cmd_args)
         self.level = parsed.level
         self.name = parsed.name
@@ -80,6 +82,7 @@ class Aggregator (object):
         if not(os.path.exists(self.output_dir)):
             os.makedirs(self.output_dir)
         self.delete = parsed.delete
+        self.append = parsed.append
 
     def _setup_logger(self):
         self.logger = logging.getLogger('cravat.aggregator')
@@ -101,33 +104,35 @@ class Aggregator (object):
         self.cursor.execute('pragma synchronous=0;')
         self.cursor.execute('pragma journal_mode=WAL;')
         n = 0
-        # Prepare insert statement
-        col_names = self.base_reader.get_column_names()
-        q = 'insert into {table} ({columns}) values ({placeholders});'.format(
-            table = self.table_name,
-            columns = ', '.join(col_names),
-            placeholders = ', '.join(['?']*len(col_names))
-        )
         # Insert rows
-        for lnum, line, rd in self.base_reader.loop_data():
-            try:
-                n += 1
-                vals = [rd.get(c) for c in col_names]
-                self.cursor.execute(q, vals)
-                if n%self.commit_threshold == 0:
-                    self.dbconn.commit()
-                cur_time = time.time()
-                if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
-                    self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format('Aggregator', self.level + ':base', lnum))
-                    last_status_update_time = cur_time
-            except Exception as e:
-                self._log_runtime_error(lnum, line, e)
+        if not self.append:
+            col_names = self.base_reader.get_column_names()
+            q = 'insert into {table} ({columns}) values ({placeholders});'.format(
+                table = self.table_name,
+                columns = ', '.join(col_names),
+                placeholders = ', '.join(['?']*len(col_names))
+            )
+            for lnum, line, rd in self.base_reader.loop_data():
+                try:
+                    n += 1
+                    vals = [rd.get(c) for c in col_names]
+                    self.cursor.execute(q, vals)
+                    if n%self.commit_threshold == 0:
+                        self.dbconn.commit()
+                    cur_time = time.time()
+                    if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
+                        self.status_writer.queue_status_update('status', 
+                            f'Running Aggregator ({self.level}:base): line {lnum}'
+                        )
+                        last_status_update_time = cur_time
+                except Exception as e:
+                    self._log_runtime_error(lnum, line, e)
         self.dbconn.commit()
         for annot_name in self.annotators:
             reader = self.readers[annot_name]
             n = 0
             ordered_cnames = [cname for cname in reader.get_column_names() if cname != self.key_name]
-            insert_template = 'update {} set {} where {}=?'.format(
+            update_template = 'update {} set {} where {}=?'.format(
                 self.table_name,
                 ', '.join([f'{cname}=?' for cname in ordered_cnames]),
                 self.base_prefix+'__'+self.key_name,
@@ -138,12 +143,14 @@ class Aggregator (object):
                     key_val = rd[self.key_name]
                     ins_vals = [rd.get(cname) for cname in ordered_cnames]
                     ins_vals.append(key_val)
-                    self.cursor.execute(insert_template, ins_vals)
+                    self.cursor.execute(update_template, ins_vals)
                     if n%self.commit_threshold == 0:
                         self.dbconn.commit()
                     cur_time = time.time()
                     if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
-                        self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format('Aggregator', self.level + ':base', lnum))
+                        self.status_writer.queue_status_update('status', 
+                            f'Running Aggregator ({self.level}:base): line {lnum}'
+                        )
                         last_status_update_time = cur_time
                 except Exception as e:
                     self._log_runtime_error(lnum, line, e)
@@ -287,15 +294,16 @@ class Aggregator (object):
 
     def _setup_table(self):
         columns = []
-        unique_names = set([])
+        unique_names = set()
         # annotator table
         annotator_table = self.level + '_annotator'
-        q = f'drop table if exists {annotator_table}'
-        self.cursor.execute(q)
-        q = f'create table {annotator_table} (name text, displayname text, version text)'
-        self.cursor.execute(q)
-        q = f'insert into {annotator_table} values ("base", "Variant Annotation", "")'
-        self.cursor.execute(q)
+        if not self.append:
+            q = f'drop table if exists {annotator_table}'
+            self.cursor.execute(q)
+            q = f'create table {annotator_table} (name text primary key, displayname text, version text)'
+            self.cursor.execute(q)
+            q = f'insert into {annotator_table} values ("base", "Variant Annotation", "")'
+            self.cursor.execute(q)
         for _, col_def in self.base_reader.get_all_col_defs().items():
             col_name = self.base_prefix + '__' + col_def.name
             col_def.name = col_name
@@ -310,7 +318,7 @@ class Aggregator (object):
             if annotator_displayname == '':
                 annotator_displayname = annotator_name.upper()
             annotator_version = reader.get_annotator_version()
-            q = f'insert into {annotator_table} values (?, ?, ?)'
+            q = f'insert or replace into {annotator_table} values (?, ?, ?)'
             self.cursor.execute(q, [annotator_name, annotator_displayname, annotator_version])
             orded_col_index = sorted(list(reader.get_all_col_defs().keys()))
             for col_index in orded_col_index:
@@ -318,71 +326,88 @@ class Aggregator (object):
                 reader_col_name = col_def.name
                 if reader_col_name == self.key_name: continue
                 col_def.name = '%s__%s' %(annot_name, reader_col_name)
-                if col_def.name in unique_names:
+                if col_def.name in unique_names and not self.append:
                     err_msg = 'Duplicate column name %s found in %s. ' \
                         %(col_def.name, reader.path)
                     sys.exit(err_msg)
                 else:
                     columns.append(col_def)
                     unique_names.add(col_def.name)
+        # data table
         col_def_strings = []
         for col_def in columns:
             name = col_def.name
             sql_type = self.cr_type_to_sql[col_def.type]
             s = name + ' ' + sql_type
             col_def_strings.append(s)
-        # data table
-        q = f'drop table if exists {self.table_name}'
-        self.cursor.execute(q)
-        q = 'create table {} ({});'.format(
-            self.table_name,
-            ', '.join(col_def_strings),
-        )
-        self.cursor.execute(q)
-        # index tables
-        index_n = 0
-        # index_columns is a list of columns to include in this index
-        for index_columns in self.base_reader.get_index_columns():
-            cols = ['base__{0}'.format(x) for x in index_columns]
-            q = 'create index {}_idx_{} on {} ({});'.format(
+        if not self.append:
+            q = f'drop table if exists {self.table_name}'
+            self.cursor.execute(q)
+            q = 'create table {} ({});'.format(
                 self.table_name,
-                index_n,
-                self.table_name,
-                ', '.join(cols),
+                ', '.join(col_def_strings),
             )
             self.cursor.execute(q)
-            index_n += 1
+            # index tables
+            index_n = 0
+            # index_columns is a list of columns to include in this index
+            for index_columns in self.base_reader.get_index_columns():
+                cols = ['base__{0}'.format(x) for x in index_columns]
+                q = 'create index {}_idx_{} on {} ({});'.format(
+                    self.table_name,
+                    index_n,
+                    self.table_name,
+                    ', '.join(cols),
+                )
+                self.cursor.execute(q)
+                index_n += 1
+        else:
+            q = f'pragma table_info({self.table_name})'
+            self.cursor.execute(q)
+            cur_cols = set([x[1] for x in self.cursor])
+            for cds in col_def_strings:
+                col_name = cds.split(' ')[0]
+                if col_name in cur_cols:
+                    if col_name.startswith('base'):
+                        continue
+                    q = f'update {self.table_name} set {col_name} = null'
+                else:
+                    q = f'alter table {self.table_name} add column {cds}'
+                self.cursor.execute(q)
         # header table
-        q = f'drop table if exists {self.header_table_name}'
-        self.cursor.execute(q)
-        q = f'create table {self.header_table_name} (col_name text, col_def text);'
-        self.cursor.execute(q)
-        insert_template = f'insert into {self.header_table_name} values (?, ?)'
+        if not self.append:
+            q = f'drop table if exists {self.header_table_name}'
+            self.cursor.execute(q)
+            q = f'create table {self.header_table_name} (col_name text primary key, col_def text);'
+            self.cursor.execute(q)
+        insert_template = f'insert or ignore into {self.header_table_name} values (?, ?)'
         for col_def in columns:
             self.cursor.execute(insert_template, [col_def.name, col_def.get_json()])
         # report substitution table
         if self.level in ['variant', 'gene']:
-            q = f'drop table if exists {self.reportsub_table_name}'
-            self.cursor.execute(q)
-            q = f'create table {self.reportsub_table_name} (module text, subdict text)'
-            self.cursor.execute(q)
-            if hasattr(self.base_reader, 'report_substitution'):
-                sub = self.base_reader.report_substitution
-                if sub:
-                    q = f'insert into {self.reportsub_table_name} values ("base", ?)'
-                    self.cursor.execute(q,[json.dumps(sub)])
+            if not self.append:
+                q = f'drop table if exists {self.reportsub_table_name}'
+                self.cursor.execute(q)
+                q = f'create table {self.reportsub_table_name} (module text primary key, subdict text)'
+                self.cursor.execute(q)
+                if hasattr(self.base_reader, 'report_substitution'):
+                    sub = self.base_reader.report_substitution
+                    if sub:
+                        q = f'insert into {self.reportsub_table_name} values ("base", ?)'
+                        self.cursor.execute(q,[json.dumps(sub)])
             for module in self.readers:
                 if hasattr(self.base_reader, 'report_substitution'):
                     sub = self.readers[module].report_substitution
                     if sub:
-                        q = f'insert into {self.reportsub_table_name} values (?, ?)'
+                        q = f'insert or replace into {self.reportsub_table_name} values (?, ?)'
                         self.cursor.execute(q, [module, json.dumps(sub)])
         self.make_reportsub()
         # filter and layout save table
-        q = 'drop table if exists viewersetup'
-        self.cursor.execute(q)
-        q = 'create table viewersetup (datatype text, name text, viewersetup text, unique (datatype, name))'
-        self.cursor.execute(q)
+        if not self.append:
+            q = 'drop table if exists viewersetup'
+            self.cursor.execute(q)
+            q = 'create table viewersetup (datatype text, name text, viewersetup text, unique (datatype, name))'
+            self.cursor.execute(q)
         self.dbconn.commit()
 
     def _setup_io(self):
