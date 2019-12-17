@@ -56,6 +56,7 @@ protocol = None
 http_only = None
 sc = None
 loop = None
+debug = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--multiuser',
@@ -92,6 +93,8 @@ def setup(args):
         headless = args.headless
         global servermode
         servermode = args.servermode
+        global debug
+        debug = args.debug
         if servermode and importlib.util.find_spec('cravat_multiuser') is not None:
             try:
                 global cravat_multiuser
@@ -147,7 +150,7 @@ def setup(args):
             protocol = 'http://'
     except Exception as e:
         logger.exception(e)
-        if args.debug:
+        if debug:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
@@ -185,7 +188,7 @@ def run(args):
         main(url=url)
     except Exception as e:
         logger.exception(e)
-        if args.debug:
+        if debug:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
@@ -216,7 +219,7 @@ def get_server():
         return server
     except Exception as e:
         logger.exception(e)
-        if args.debug:
+        if debug:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
@@ -267,7 +270,7 @@ async def middleware (request, handler):
     except Exception as e:
         logger.info('Exception occurred at request={}'.format(request))
         logger.exception(e)
-        if args.debug:
+        if debug:
             traceback.print_exc()
 
 class WebServer (object):
@@ -385,7 +388,7 @@ def main (url=None):
                     await asyncio.sleep(interval)
             except Exception as e:
                 logger.exception(e)
-                if args.debug:
+                if debug:
                     traceback.print_exc()
         if servermode and server_ready:
             if 'max_session_age' in au.get_system_conf():
@@ -402,7 +405,7 @@ def main (url=None):
             pass
     except Exception as e:
         logger.exception(e)
-        if args.debug:
+        if debug:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
