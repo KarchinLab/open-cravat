@@ -155,7 +155,8 @@ class CravatWriter(CravatFile):
     def __init__(self, path, 
                  include_definition=True, 
                  include_titles=True,
-                 titles_prefix='#'):
+                 titles_prefix='#',
+                 columns=[]):
         super().__init__(path)
         self.wf = open(self.path,'w', encoding='utf-8')
         self._ready_to_write = False
@@ -167,6 +168,7 @@ class CravatWriter(CravatFile):
         self.include_titles = include_titles
         self._titles_written = False
         self.titles_prefix = titles_prefix
+        self.add_columns(columns)
 
     def add_column(self, col_index, col_d, override=False):
         if col_index == 'append':
