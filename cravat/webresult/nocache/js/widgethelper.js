@@ -46,6 +46,7 @@ function getWidgetTableTr (values,linkNames) {
 	for (var i = 0; i < values.length; i++) {
 		var td = getEl('td');
 		var p = getEl('p');
+        p.style.wordBreak = 'break-word';
 		if (i < numBorder) {
 			td.style.borderRight = widgetTableBorderStyle;
 		}
@@ -83,6 +84,10 @@ function addInfoLine (div, row, header, col, tabName, headerMinWidth, highlightI
     } else {
         text = infomgr.getRowValue(tabName, row, col);
     }
+    var color = 'black';
+    if (text == undefined || text == '') {
+        color = '#cccccc';
+    }
     var table = getEl('table');
     table.style.fontSize = '12px';
     table.style.borderCollapse = 'collapse';
@@ -93,12 +98,14 @@ function addInfoLine (div, row, header, col, tabName, headerMinWidth, highlightI
         td.style.minWidth = headerMinWidth;
     }
     var h = getLineHeader(header);
+    h.style.color = color;
     addEl(td, h);
     addEl(tr, td);
     td = getEl('td');
     td.className = 'detail-info-line-content';
     var t = getEl('span');
     t.textContent = text;
+    t.style.color = color;
     addEl(td, t);
     addEl(tr, td);
     if (highlightIfValue != undefined && highlightIfValue) {
@@ -149,7 +156,7 @@ function addInfoLineLink (div, header, text, link, trimlen) {
 	addEl(div, getEl('br'));
 }
 
-function addBarComponent (outerDiv, row, header, col, tabName) {
+function addBarComponent (outerDiv, row, header, col, tabName, barWidth, grayIfNoValue) {
 	var cutoff = 0.01;
 	var barStyle = {
 		"top": 0,
@@ -172,11 +179,16 @@ function addBarComponent (outerDiv, row, header, col, tabName) {
 	} else {
         value = value.toFixed(3);
 	}
+    var color = 'black';
+    if (value == '') {
+        color = '#aaaaaa';
+    }
 	
 	// Div
 	var div = getEl('div');
 	div.style.display = 'inline-block';
 	div.style.margin = '2px';
+    div.style.color = color;
 
 	// Header
 	addEl(div, addEl(getEl('span'), getTn(header + ': ')));
@@ -184,7 +196,9 @@ function addBarComponent (outerDiv, row, header, col, tabName) {
 	addEl(div, getEl('br'));
 	
 	// Paper
-	var barWidth = 108;
+    if (barWidth == undefined) {
+        barWidth = 108;
+    }
 	var barHeight = 12;
 	var lineOverhang = 3;
 	var lineHeight = barHeight + (2 * lineOverhang);
@@ -205,13 +219,13 @@ function addBarComponent (outerDiv, row, header, col, tabName) {
 		c = 255;
 	}
 	box.attr('fill', 'rgb(255, ' + c + ', ' + c + ')');
-	box.attr('stroke', 'black');
+	box.attr('stroke', color);
 	
 	// Bar
 	if (value != '') {
 		var bar = paper.rect(value * barWidth, 0, 1, lineHeight, 1);
-		bar.attr('fill', 'black');
-		bar.attr('stroke', 'black');
+		bar.attr('fill', color);
+		bar.attr('stroke', color);
 	}
 	
 	addEl(outerDiv, div);
@@ -259,8 +273,16 @@ function addGradientBarComponent (outerDiv, row, header, col, tabName, colors={'
 	div.style.margin = '2px';
 
 	// Header
-	addEl(div, addEl(getEl('span'), getTn(header + ': ')));
-	addEl(div, addEl(getEl('span'), getTn(value)));
+    var span = getEl('span');
+	addEl(div, addEl(span, getTn(header + ': ')));
+    if (value == undefined || value == '') {
+        span.classList.add('nodata');
+    }
+    var span = getEl('span');
+	addEl(div, addEl(span, getTn(value)));
+    if (value == undefined || value == '') {
+        span.classList.add('nodata');
+    }
 	addEl(div, getEl('br'));
 	if(value !== ''){
 		value = parseFloat(value);
@@ -314,15 +336,20 @@ function addGradientBarComponent (outerDiv, row, header, col, tabName, colors={'
 		c = [255, 255, 255];
 	}
 	box.attr('fill', 'rgb('+c.toString()+')');
-	box.attr('stroke', 'black');
+    if (value == undefined || value == '') {
+        color = '#cccccc';
+    } else {
+        color = 'black';
+    }
+    box.attr('stroke', color);
 	
 	// Bar
 	if (value !== '' && dtype != 'string') {
 		//Convert values onto 0 to 1 scale depending on min and max val provided (defaults to 0 and 1)
 		value = (value - parseFloat(minval))/(Math.abs(parseFloat(minval)) + Math.abs(parseFloat(maxval)));
 		var bar = paper.rect(value * barWidth, 0, 1, lineHeight, 1);
-		bar.attr('fill', 'black');
-		bar.attr('stroke', 'black');
+		bar.attr('fill', color);
+		bar.attr('stroke', color);
 	}
 	
 	addEl(outerDiv, div);
@@ -335,12 +362,14 @@ function getLineHeader (header) {
 	return spanHeader;
 }
 
-function getDetailWidgetDivs (tabName, widgetName, title) {
+function getDetailWidgetDivs (tabName, widgetName, title, maxWidth, maxHeight, showTitle) {
 	var div = document.createElement('fieldset');
 	div.id = 'detailwidget_' + tabName + '_' + widgetName;
 	div.className = 'detailwidget';
 	var width = null;
 	var height = null;
+    var maxWidth = null;
+    var maxHeight = null;
 	var top = null;
 	var left = null;
 	var wordBreak = 'break-all';
@@ -350,6 +379,9 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 			if (setting['widgetkey'] == widgetName) {
                 if (setting['width'] != undefined) {
                     width = parseInt(setting['width'].replace('px', ''));
+                }
+                if (setting['max-height'] != undefined) {
+                    maxHeight = parseInt(setting['max-height'].replace('px', ''));
                 }
                 if (setting['height'] != undefined) {
                     height = parseInt(setting['height'].replace('px', ''));
@@ -365,15 +397,27 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	} else {
 		width = widgetGenerators[widgetName][tabName]['width'];
 		height = widgetGenerators[widgetName][tabName]['height'];
+		maxWidth = widgetGenerators[widgetName][tabName]['max-width'];
+		maxHeight = widgetGenerators[widgetName][tabName]['max-height'];
 		if (widgetGenerators[widgetName][tabName]['word-break'] != undefined){
 			wordBreak = widgetGenerators[widgetName][tabName]['word-break'];
 		}
 	}
-	div.clientWidth = width;
-	div.clientHeight = height;
+    var maxWidthFieldset = maxWidth;
+    if (maxWidth != undefined && maxWidth != null) {
+        div.style.maxWidth = maxWidthFieldset + 'px';
+    } else {
+        div.clientWidth = width;
+        div.style.width = width + 'px';
+    }
+    var maxHeightFieldset = maxHeight + 30;
+    if (maxHeight != undefined && maxHeight != null) {
+        div.style.maxHeight = maxHeightFieldset + 'px';
+    } else {
+        div.clientHeight = height;
+        div.style.height = height + 'px';
+    }
 	div.style.wordBreak = wordBreak;
-	div.style.width = width + 'px';
-	div.style.height = height + 'px';
 	if (top) {
 		div.style.top = top;
 	}
@@ -388,10 +432,10 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	addEl(div, header);
 
 	// Title
-	var titleDiv = getEl('legend');
-	titleDiv.className = 'detailwidgettitle';
-	titleDiv.style.cursor = 'move';
-	addEl(header, addEl(titleDiv, getTn(title)));
+    var titleDiv = getEl('legend');
+    titleDiv.className = 'detailwidgettitle';
+    titleDiv.style.cursor = 'move';
+    addEl(header, addEl(titleDiv, getTn(title)));
 
 	// Div for pin and x icons
 	var iconDiv = getEl('div');
@@ -448,6 +492,9 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
     hr.className = 'detailwidget-hr';
 	addEl(div, hr);
     */
+    if (showTitle == false) {
+        header.style.display = 'none';
+    }
 
 	// Content div
 	var detailContentDiv = getEl('div');
@@ -455,6 +502,10 @@ function getDetailWidgetDivs (tabName, widgetName, title) {
 	detailContentDiv.className = 'detailcontentdiv';
 	//detailContentDiv.style.height = 'calc(100% - 32px)';
     //detailContentDiv.style.padding = '0px';
+    if (maxHeight != undefined && maxHeight != null) {
+        detailContentDiv.style.maxHeight = maxHeight + 'px';
+        detailContentDiv.style.overflow = 'auto';
+    }
 	addEl(div, detailContentDiv);
 
 	return [div, detailContentDiv];

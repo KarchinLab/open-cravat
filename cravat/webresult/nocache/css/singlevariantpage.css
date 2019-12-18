@@ -1,0 +1,99 @@
+#inputdiv {
+    /*display: none;*/
+}
+
+.detaildiv.singlevariantpage {
+    overflow: unset;
+    position: unset;
+}
+
+.singlevariantpage .detailcontainerwrapdiv {
+    width: unset;
+    height: unset;
+    overflow: unset;
+    position: unset;
+    padding-bottom: 10px;
+}
+
+.singlevariantpage .detailcontentdiv {
+    height: unset;
+    overflow: auto;
+}
+
+.singlevariantpage .detailcontentdiv * {
+    font-size: 12px;
+}
+
+.singlevariantpage .detailcontentdiv td {
+    vertical-align: top;
+}
+
+.singlevariantpage .detailwidget {
+    margin: 0px;
+    border: 0px;
+    position: relative;
+    height: unset;
+}
+
+.singlevariantpage .detailwidget.nodata {
+    color: #cccccc;
+}
+
+.singlevariantpage .detailwidgettitle {
+    text-decoration: underline;
+    background: none;
+}
+
+.singlevariantpage .detailwidget-closebutton {
+    display: none;
+}
+
+.singlevariantpage .detailwidgetpinbutton {
+    display: none;
+}
+
+.singlevariantpage .detailwidget-camerabutton {
+    display: none;
+}
+
+.container_titlediv {
+    font-size: 20px;
+    font-weight: bold;
+    padding: 6px;
+    color: white;
+    box-shadow: inset 0 0 0 1000px #4a87bd;
+    width: 1188px;
+}
+
+.singlevariantpage.widgettitle {
+    font-size: 16px;
+    background-color: lightblue;
+    text-decoration: underline;
+}
+
+#logodiv {
+    padding-bottom: 8px;
+    position: fixed;
+    left: calc(50% - 600px);
+    background-color: white;
+    width: 1200px;
+    top: 0px;
+    padding-top: 8px;
+    z-index: 2;
+}
+
+#detaildiv_variant {
+    position: relative;
+    left: calc(50% - 600px);
+    background-color: white;
+    width: 1200px;
+}
+
+#spinnerdiv {
+    position: absolute;
+    width: calc(100% - 0px);
+    height: calc(100% - 0px);
+    z-index: 1;
+    background-color: white;
+}
+

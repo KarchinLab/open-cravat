@@ -365,6 +365,8 @@ def get_local_module_infos(types=[], names=[]):
             continue
         elif names and minfo.name not in names:
             continue
+        elif minfo.exists == False:
+            continue
         else:
             return_infos.append(minfo)
     return return_infos

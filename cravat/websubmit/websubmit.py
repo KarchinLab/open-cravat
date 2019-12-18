@@ -911,6 +911,8 @@ async def load_live_modules ():
             continue
         if len(include_live_modules) > 0 and module.name not in include_live_modules:
             continue
+        if 'secondary_inputs' in module.conf:
+            continue
         annotator = get_live_annotator(module.name)
         if annotator is None:
             continue
