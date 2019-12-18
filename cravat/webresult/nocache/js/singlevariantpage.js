@@ -176,7 +176,7 @@ function getWidgets (callback, callbackArgs) {
 function getNodataSpan () {
     var span = getEl('span');
     span.classList.add('nodata');
-    span.textContent = 'Not found';
+    span.textContent = 'No annotation available';
     return span;
 }
 
@@ -836,7 +836,7 @@ widgetGenerators['mupit2'] = {
                     addEl(div, iframe);
                 } else {
                     var sdiv = getEl('div');
-                    sdiv.textContent = 'Not found';
+                    sdiv.textContent = 'No annotation available';
                     sdiv.style.paddingLeft = '7px';
                     sdiv.style.color = '#cccccc';
                     addEl(div, sdiv);
