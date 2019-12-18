@@ -814,6 +814,38 @@ widgetGenerators['visupanel'] = {
     }
 }
 
+widgetInfo['mupit2'] = {'title': 'MuPIT'};
+widgetGenerators['mupit2'] = {
+	'variant': {
+		'width': 600, 
+		'height': 500, 
+		'function': function (div, row, tabName) {
+            var chrom = getWidgetData(tabName, 'base', row, 'chrom');
+            var pos = getWidgetData(tabName, 'base', row, 'pos');
+            var url = location.protocol + '//www.cravat.us/MuPIT_Interactive/rest/showstructure/check?pos=' + chrom + ':' + pos;
+            $.get(url).done(function (response) {
+                if (response.hit == true) {
+                    var iframe = getEl('iframe');
+                    iframe.style.position = 'absolute';
+                    iframe.style.top = '15px';
+                    iframe.style.left = '0px';
+                    iframe.style.width = '100%';
+                    iframe.style.height = 'calc(100% - 32px)';
+                    iframe.style.border = '0px';
+                    iframe.src = location.protocol + '//www.cravat.us/MuPIT_Interactive?gm=' + chrom + ':' + pos + '&embed=true';
+                    addEl(div, iframe);
+                } else {
+                    var sdiv = getEl('div');
+                    sdiv.textContent = 'Not found';
+                    sdiv.style.paddingLeft = '7px';
+                    sdiv.style.color = '#cccccc';
+                    addEl(div, sdiv);
+                    div.parentElement.style.height = '50px';
+                }
+            });
+		}
+	}
+}
 function writeToVariantArea (inputData) {
     var value = inputData['chrom'] + ':' + inputData['pos'] + ':' + inputData['ref'] + ':' + inputData['alt'];
     document.querySelector('#input_variant').value = value;
