@@ -493,7 +493,7 @@ widgetGenerators['clinpanel'] = {
             var tr = getEl('tr');
             tr.style.borderBottom = '1px dotted #cccccc';
             var td = getEl('th');
-            td.textContent = 'denovo';
+            td.textContent = 'denovo-db';
             addEl(tr, td);
             var td = getEl('td');
             if (row['denovo__PubmedId'] == undefined) {
