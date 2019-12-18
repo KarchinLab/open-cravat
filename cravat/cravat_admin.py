@@ -246,7 +246,7 @@ def print_info(args):
             print('  {}: {}'.format(col['title'], desc))
     if installed:
         print('INSTALLED')
-        if args.include_local:
+        if args.local:
             li_out = copy.deepcopy(local_info)
             del li_out.conf
             li_out.get_size()
@@ -531,8 +531,8 @@ parser_info = subparsers.add_parser('info',
                                     help='shows module information.')
 parser_info.add_argument('module',
                             help='Module to get info about')
-parser_info.add_argument('-l','--include-local',
-                            dest='include_local',
+parser_info.add_argument('-l','--local',
+                            dest='local',
                             help='Include local info',
                             action='store_true')
 parser_info.set_defaults(func=print_info)
