@@ -170,7 +170,7 @@ class FileRouter(object):
                 if fn.endswith('.status.json'):
                     with open(os.path.join(job_dir, fn)) as f:
                         try:
-                            statusjson = json.loads(f.readline())
+                            statusjson = json.load(f)
                         except json.JSONDecodeError as e:
                             if job_id in self.job_statuses:
                                 statusjson = self.job_statuses[job_id]
@@ -355,7 +355,6 @@ async def submit (request):
     if servermode and server_ready:
         await cravat_multiuser.add_job_info(request, job)
     # makes temporary status.json
-    wf = open(os.path.join(job_dir, run_name + '.status.json'), 'w')
     status_json = {}
     status_json['job_dir'] = job_dir
     status_json['id'] = job_id
@@ -372,8 +371,8 @@ async def submit (request):
     pkg_ver = au.get_current_package_version()
     status_json['open_cravat_version'] = pkg_ver
     status_json['annotators'] = annotators
-    wf.write(json.dumps(status_json))
-    wf.close()
+    with open(os.path.join(job_dir, run_name + '.status.json'), 'w') as wf:
+        json.dump(status_json, wf, indent=2, sort_keys=True)
     return web.json_response(job.get_info_dict())
 
 def count_lines(f):

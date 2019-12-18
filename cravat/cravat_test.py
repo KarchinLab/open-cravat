@@ -220,32 +220,25 @@ class Tester():
         else:
             self._report('  Test result: FAIL')
  
-
-#Read command line args.   
-def get_args(): 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d',
-                        '--rundir',
-                         help='Directory for output')
-    parser.add_argument('-m',
-                        '--modules',
-                        nargs='+',
-                        help='Name of module(s) to test. (e.g. gnomad)')
-    parser.add_argument('-t',
-                        '--mod_types',
-                        nargs='+',
-                        help='Type of module(s) to test (e.g. annotators)')
-    cmd_args = parser.parse_args()
-    if cmd_args.rundir is None:
-        cmd_args.rundir = 'cravat_test_' + str(int(round(time.time() * 1000)));
-        
-    return cmd_args;
+parser = argparse.ArgumentParser()
+parser.add_argument('-d',
+                    '--rundir',
+                        help='Directory for output')
+parser.add_argument('-m',
+                    '--modules',
+                    nargs='+',
+                    help='Name of module(s) to test. (e.g. gnomad)')
+parser.add_argument('-t',
+                    '--mod_types',
+                    nargs='+',
+                    help='Type of module(s) to test (e.g. annotators)')
 
 #Loop through installed modules.  Test each one or the ones indicated
 #by -m and -t options.
-def main ():
- 
-    cmd_args = get_args();
+def run_test (cmd_args):
+    if cmd_args.rundir is None:
+        cmd_args.rundir = 'cravat_test_' + str(int(round(time.time() * 1000)));
+
     #create run output directory
     if not os.path.exists(cmd_args.rundir):
         os.makedirs(cmd_args.rundir);
@@ -277,5 +270,12 @@ def main ():
                             modules_failed.append(mod_name)
     modules_failed.sort()
     print ('\nTests complete.  Passed: ' + str(passed) + '  Failed: ' + str(failed) + ' [' + ', '.join(modules_failed) + ']')
+
+def main ():
+    cmd_args = parser.parse_args()
+    run_test(cmd_args)
+
+parser.set_defaults(func=run_test)
+
 if __name__ == '__main__':
-    main();       
+    main();

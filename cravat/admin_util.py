@@ -131,7 +131,7 @@ class LocalModuleInfo (object):
         else:
             self.tags = []
         if 'datasource' in self.conf:
-            self.datasource = self.conf['datasource']
+            self.datasource = str(self.conf['datasource'])
         else:
             self.datasource = ''
         self.smartfilters = self.conf.get('smartfilters')
@@ -179,7 +179,7 @@ class RemoteModuleInfo(object):
             dev_dict = {}
         self.developer = get_developer_dict(**dev_dict)
         self.data_versions = kwargs.get('data_versions', {})
-        self.data_sources = kwargs.get('data_sources', {})
+        self.data_sources = {x:str(y) for x,y in kwargs.get('data_sources', {}).items()}
         self.tags = kwargs.get('tags', [])
 
     def has_version(self, version):

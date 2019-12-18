@@ -48,175 +48,152 @@ log_handler.setFormatter(log_formatter)
 logger.addHandler(log_handler)
 logger.info('Starting wcravat...')
 
-try:
-    donotopenbrowser = None
-    servermode = None
+headless = None
+servermode = None
+server_ready = None
+ssl_enabled = None
+protocol = None
+http_only = None
+sc = None
+loop = None
+debug = False
 
-    parser = argparse.ArgumentParser()
-    if os.path.basename(sys.argv[0]) == 'cravat-view':
-        parser.add_argument('dbpath',
-            nargs='?',
-            default=None,
-            help='path to a CRAVAT result SQLite file')
-        parser.add_argument('-c',
-                            dest='confpath',
-                            default=None,
-                            help='path to a CRAVAT configuration file')
-        parser.add_argument('--username',
-            dest='username',
-            default=None,
-            help='username of the job')
-        parser.add_argument('--jobid',
-            dest='job_id',
-            default=None,
-            help='ID of the job')
-    parser.add_argument('--multiuser',
-                        dest='servermode',
-                        action='store_true',
-                        default=False,
-                        help='Runs in multiuser mode')
-    parser.add_argument('--donotopenbrowser',
-                        dest='donotopenbrowser',
-                        action='store_true',
-                        default=False,
-                        help='do not open the cravat web page')
-    parser.add_argument('--nossl',
-        dest='nossl',
-        action='store_true',
-        default=False,
-        help='Force not to accept https connection')
-    parser.add_argument('--nostdoutexception',
-        dest='nostdoutexception',
-        action='store_true',
-        default=False,
-        help='Console echoes exceptions written to log file.')
+parser = argparse.ArgumentParser()
+parser.add_argument('--multiuser',
+    dest='servermode',
+    action='store_true',
+    default=False,
+    help='Runs in multiuser mode')
+parser.add_argument('--headless',
+    action='store_true',
+    default=False,
+    help='do not open the cravat web page')
+parser.add_argument('--http-only',
+    action='store_true',
+    default=False,
+    help='Force not to accept https connection')
+parser.add_argument('--debug',
+    dest='debug',
+    action='store_true',
+    default=False,
+    help='Console echoes exceptions written to log file.')
+parser.add_argument('result',
+    nargs='?',
+    help='Path to a CRAVAT result SQLite file')
 
-    if sys.platform == 'win32': # Required to use asyncio subprocesses
-        loop = asyncio.ProactorEventLoop()
-        asyncio.set_event_loop(loop)
-    else:
-        loop = asyncio.get_event_loop()
-    args = parser.parse_args(sys.argv[1:])
-    donotopenbrowser = args.donotopenbrowser
-    servermode = args.servermode
-    if servermode and importlib.util.find_spec('cravat_multiuser') is not None:
-        try:
-            import cravat_multiuser
-            loop.create_task(cravat_multiuser.setup_module())
-            server_ready = True
-        except Exception as e:
-            logger.exception(e)
-            logger.info('Exiting...')
-            print('Error occurred while loading open-cravat-multiuser.\nCheck {} for details.'.format(log_path))
-            exit()
-    else:
-        servermode = False
-        server_ready = False
-    wu.servermode = args.servermode
-    ws.servermode = args.servermode
-    wr.servermode = args.servermode
-    wu.filerouter.servermode = args.servermode
-    wu.server_ready = server_ready
-    ws.server_ready = server_ready
-    wr.server_ready = server_ready
-    wu.filerouter.server_ready = server_ready
-    wr.wu = wu
-    if server_ready:
-        cravat_multiuser.servermode = servermode
-        cravat_multiuser.server_ready = server_ready
-        cravat_multiuser.logger = logger
-        wu.cravat_multiuser = cravat_multiuser
-        ws.cravat_multiuser = cravat_multiuser
-    if servermode and server_ready == False:
-        msg = 'open-cravat-server package is required to run OpenCRAVAT Server.\nRun "pip install open-cravat-server" to get the package.'
-        logger.info(msg)
-        logger.info('Exiting...')
-        print(msg)
-        exit()
-
-    ssl_enabled = False
-    protocol = None
-    nossl = args.nossl
-    if 'conf_dir' in sysconf:
-        pem_path = os.path.join(sysconf['conf_dir'], 'cert.pem')
-        if os.path.exists(pem_path) and nossl == False:
-            ssl_enabled = True
-            sc = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-            sc.load_cert_chain(pem_path)
-    if ssl_enabled:
-        protocol = 'https://'
-    else:
-        protocol = 'http://'
-except Exception as e:
-    logger.exception(e)
-    if args.nostdoutexception == False:
-        traceback.print_exc()
-    logger.info('Exiting...')
-    print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
-    exit()
-
-def result ():
-    global args
+def setup(args):
     try:
-        dbpath = args.dbpath
-        if dbpath is not None:
-            dbpath = os.path.abspath(dbpath)
-            if dbpath is not None and os.path.exists(dbpath) == False:
-                sys.stderr.write(dbpath + ' does not exist.\n')
-                exit(-1)
-        username = args.username
-        job_id = args.job_id
-        confpath = args.confpath
-        sys.argv = sys.argv[1:]
-        global donotopenbrowser
-        if not donotopenbrowser:
-            server = get_server()
-            global protocol
-            url = '{host}:{port}/result/index.html'.format(host=server.get('host'), port=server.get('port'))
-            if dbpath is not None:
-                url = url + '?dbpath={}'.format(dbpath)
-            elif username is not None and job_id is not None:
-                url = url + '?username={}&job_id={}'.format(username, job_id)
-            else:
-                print('Provide the path to a OpenCRAVAT result sqlite file or both username and job ID')
+        global loop
+        if sys.platform == 'win32': # Required to use asyncio subprocesses
+            loop = asyncio.ProactorEventLoop()
+            asyncio.set_event_loop(loop)
+        else:
+            loop = asyncio.get_event_loop()
+        global headless
+        headless = args.headless
+        global servermode
+        servermode = args.servermode
+        global debug
+        debug = args.debug
+        if servermode and importlib.util.find_spec('cravat_multiuser') is not None:
+            try:
+                global cravat_multiuser
+                import cravat_multiuser
+                loop.create_task(cravat_multiuser.setup_module())
+                global server_ready
+                server_ready = True
+            except Exception as e:
+                logger.exception(e)
+                logger.info('Exiting...')
+                print('Error occurred while loading open-cravat-multiuser.\nCheck {} for details.'.format(log_path))
                 exit()
-            url = protocol + url
-        ret = main(url=url)
-        if ret == SERVER_ALREADY_RUNNING:
-            print('Openinig result viewer using existing OpenCRAVAT server')
-            webbrowser.open(url)
-
+        else:
+            servermode = False
+            server_ready = False
+        wu.servermode = args.servermode
+        ws.servermode = args.servermode
+        wr.servermode = args.servermode
+        wu.filerouter.servermode = args.servermode
+        wu.server_ready = server_ready
+        ws.server_ready = server_ready
+        wr.server_ready = server_ready
+        wu.filerouter.server_ready = server_ready
+        wr.wu = wu
+        if server_ready:
+            cravat_multiuser.servermode = servermode
+            cravat_multiuser.server_ready = server_ready
+            cravat_multiuser.logger = logger
+            wu.cravat_multiuser = cravat_multiuser
+            ws.cravat_multiuser = cravat_multiuser
+        if servermode and server_ready == False:
+            msg = 'open-cravat-server package is required to run OpenCRAVAT Server.\nRun "pip install open-cravat-server" to get the package.'
+            logger.info(msg)
+            logger.info('Exiting...')
+            print(msg)
+            exit()
+        global ssl_enabled
+        ssl_enabled = False
+        global protocol
+        protocol = None
+        global http_only
+        http_only = args.http_only
+        if 'conf_dir' in sysconf:
+            pem_path = os.path.join(sysconf['conf_dir'], 'cert.pem')
+            if os.path.exists(pem_path) and http_only == False:
+                ssl_enabled = True
+                global sc
+                sc = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+                sc.load_cert_chain(pem_path)
+        if ssl_enabled:
+            protocol = 'https://'
+        else:
+            protocol = 'http://'
     except Exception as e:
         logger.exception(e)
-        if args.nostdoutexception == False:
-            traceback.print_exc()
-        logger.info('Exiting...')
-        print('Error occurred while starting OpenCRAVAT result viewer.\nCheck {} for details.'.format(log_path))
-        exit()
-
-def submit ():
-    global args
-    try:
-        global donotopenbrowser
-        url = None
-        if not donotopenbrowser:
-            server = get_server()
-            global protocol
-            global server_ready
-            global servermode
-            if server_ready and servermode:
-                url = '{host}:{port}/server/nocache/login.html'.format(host=server.get('host'), port=server.get('port'))
-            else:
-                url = '{host}:{port}/submit/index.html'.format(host=server.get('host'), port=server.get('port'))
-            url = protocol + url
-        main(url=url)
-    except Exception as e:
-        logger.exception(e)
-        if args.nostdoutexception == False:
+        if debug:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
         exit()
+
+def wcravat_entrypoint ():
+    args = parser.parse_args()
+    run(args)
+
+def run(args):
+    if args.servermode:
+        args.headless = True
+    if args.result:
+        args.headless = False
+        args.result = os.path.abspath(args.result)
+    setup(args)
+    try:
+        global headless
+        url = None
+        if not headless:
+            server = get_server()
+            global server_ready
+            global servermode
+            host = server.get('host')
+            port = server.get('port')
+            if args.result:
+                url = f'{host}:{port}/result/index.html?dbpath={args.result}'
+            else:
+                if server_ready and servermode:
+                    url = f'{host}:{port}/server/nocache/login.html'
+                else:
+                    url = f'{host}:{port}/submit/index.html'
+            global protocol
+            url = protocol + url
+        main(url=url)
+    except Exception as e:
+        logger.exception(e)
+        if debug:
+            traceback.print_exc()
+        logger.info('Exiting...')
+        print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
+        exit()
+parser.set_defaults(func=run)
 
 def get_server():
     global args
@@ -242,7 +219,7 @@ def get_server():
         return server
     except Exception as e:
         logger.exception(e)
-        if args.nostdoutexception == False:
+        if debug:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
@@ -293,7 +270,7 @@ async def middleware (request, handler):
     except Exception as e:
         logger.info('Exception occurred at request={}'.format(request))
         logger.exception(e)
-        if args.nostdoutexception == False:
+        if debug:
             traceback.print_exc()
 
 class WebServer (object):
@@ -311,8 +288,8 @@ class WebServer (object):
         self.loop = loop
         self.server_started = False
         loop.create_task(self.start())
-        global donotopenbrowser
-        if donotopenbrowser == False and url is not None:
+        global headless
+        if headless == False and url is not None:
             self.loop.create_task(self.open_url(url))
 
     async def open_url (self, url):
@@ -411,7 +388,7 @@ def main (url=None):
                     await asyncio.sleep(interval)
             except Exception as e:
                 logger.exception(e)
-                if args.nostdoutexception == False:
+                if debug:
                     traceback.print_exc()
         if servermode and server_ready:
             if 'max_session_age' in au.get_system_conf():
@@ -428,7 +405,7 @@ def main (url=None):
             pass
     except Exception as e:
         logger.exception(e)
-        if args.nostdoutexception == False:
+        if debug:
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
