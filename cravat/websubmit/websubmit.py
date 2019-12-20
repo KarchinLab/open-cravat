@@ -976,6 +976,17 @@ async def get_live_annotation_get (request):
     return web.json_response(response)
 
 async def get_live_annotation (queries):
+    if servermode and server_ready:
+        global count_single_api_access
+        global time_of_log_single_api_access
+        global interval_log_single_api_access
+        count_single_api_access += 1
+        t = time.time()
+        dt = t - time_of_log_single_api_access
+        if t - time_of_log_single_api_access > interval_log_single_api_access:
+            await cravat_multiuser.admindb.write_single_api_access_count_to_db(t, count_single_api_access)
+            time_of_log_single_api_access = t
+            count_single_api_access = 0
     chrom = queries['chrom']
     pos = queries['pos']
     ref_base = queries['ref_base']
@@ -1035,6 +1046,9 @@ include_live_modules = None
 exclude_live_modules = None
 live_mapper = None
 job_statuses = {}
+count_single_api_access = 0
+time_of_log_single_api_access = time.time()
+interval_log_single_api_access = 60
 
 routes = []
 routes.append(['POST','/submit/submit',submit])
