@@ -127,9 +127,8 @@ class BasePostAggregator (object):
             col_name = col_def.name
             q = 'select distinct {} from {}'.format(col_name, self.level)
             self.cursor.execute(q)
-            rs = self.cursor.fetchall()
             col_cats = []
-            for r in rs:
+            for r in self.cursor:
                 col_cat_str = r[0] if r[0] is not None else ''
                 for col_cat in col_cat_str.split(';'):
                     if col_cat not in col_cats:
@@ -187,6 +186,7 @@ class BasePostAggregator (object):
             self.dbconn = sqlite3.connect(self.db_path)
             self.cursor = self.dbconn.cursor()
             self.cursor_w = self.dbconn.cursor()
+            self.cursor_w.execute('pragma journal_mode="wal"')
         else:
             msg = self.db_path + ' not found'
             if self.logger:
@@ -244,7 +244,7 @@ class BasePostAggregator (object):
         cursorloop = dbconnloop.cursor()
         q = 'select * from ' + self.level
         cursorloop.execute(q)
-        for row in cursorloop.fetchall():
+        for row in cursorloop:
             try:
                 input_data = {}
                 for i in range(len(row)):
@@ -254,6 +254,4 @@ class BasePostAggregator (object):
                 self._log_runtime_exception(row, e)
 
     def annotate (self, input_data):
-        sys.stdout.write('        annotate method should be implemented. ' +\
-                'Exiting ' + self.annotator_display_name + '...\n')
-        exit(-1)
+        raise NotImplementedError()
