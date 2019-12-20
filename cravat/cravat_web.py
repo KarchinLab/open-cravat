@@ -367,6 +367,8 @@ def main (url=None):
                 logger.info('wcravat already running. Exiting from this instance of wcravat...') 
                 print('OpenCRAVAT is already running at {}{}:{}.'.format(protocol, serv.get('host'), serv.get('port')))
                 global SERVER_ALREADY_RUNNING
+                if url and not headless:
+                    webbrowser.open(url)
                 return SERVER_ALREADY_RUNNING
         except requests.exceptions.ConnectionError:
             pass
