@@ -307,8 +307,6 @@ class MasterCravatConverter(object):
                     if all_wdicts is False:
                         continue
                     total_lnum += 1
-                    if all_wdicts is None:
-                        continue
                 except Exception as e:
                     num_errors += 1
                     self._log_conversion_error(read_lnum, l, e)
