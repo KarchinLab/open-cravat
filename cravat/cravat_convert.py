@@ -299,16 +299,20 @@ class MasterCravatConverter(object):
                 cur_fname = os.path.basename(f.name)
                 samp_prefix = cur_fname
                 read_lnum += 1
-                total_lnum += 1
                 try:
                     # all_wdicts is a list, since one input line can become
-                    # multiple output lines
+                    # multiple output lines. False is returned if converter
+                    # decides line is not an input line.
                     all_wdicts = self.primary_converter.convert_line(l)
+                    if all_wdicts is False:
+                        continue
+                    total_lnum += 1
                     if all_wdicts is None:
                         continue
                 except Exception as e:
                     num_errors += 1
                     self._log_conversion_error(read_lnum, l, e)
+                    traceback.print_exc()
                     continue
                 if all_wdicts:
                     UIDMap = [] 
