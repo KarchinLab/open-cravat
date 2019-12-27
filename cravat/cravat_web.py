@@ -340,7 +340,10 @@ async def heartbeat(request):
     if servermode and server_ready:
         asyncio.get_event_loop().create_task(cravat_multiuser.update_last_active(request))
     await ws.prepare(request)
-    async for msg in ws:
+    try:
+        async for msg in ws:
+            pass
+    except concurrent.futures._base.CancelledError:
         pass
     return ws
 
