@@ -340,8 +340,7 @@ class MasterCravatConverter(object):
                                     continue
                             p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
                             new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
-                            print(f'                     @ {p} {r} {a} => {new_pos} {new_ref} {new_alt}')
-                            unique, UID = self.vtracker.addVar(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])                       
+                            unique, UID = self.vtracker.addVar(wdict['chrom'], new_pos, new_ref, new_alt)
                             wdict['uid'] = UID
                             if unique:
                                 write_lnum += 1
