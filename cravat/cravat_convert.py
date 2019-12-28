@@ -338,6 +338,9 @@ class MasterCravatConverter(object):
                                     num_errors += 1
                                     self._log_conversion_error(read_lnum, l, e)
                                     continue
+                            p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
+                            new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
+                            print(f'                     @ {p} {r} {a} => {new_pos} {new_ref} {new_alt}')
                             unique, UID = self.vtracker.addVar(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])                       
                             wdict['uid'] = UID
                             if unique:
@@ -399,6 +402,55 @@ class MasterCravatConverter(object):
         self.crv_writer.close()
         self.crm_writer.close()
         self.crs_writer.close()
+
+    def standardize_pos_ref_alt (self, strand, pos, ref, alt):
+        reflen = len(ref)
+        altlen = len(alt)
+        # Returns without change if same single nucleotide for ref and alt. 
+        if reflen == 1 and altlen == 1 and ref == alt:
+            return pos, ref, alt
+        # Trimming from the start and then the end of the sequence 
+        # where the sequences overlap with the same nucleotides
+        new_ref2, new_alt2, new_pos = \
+            self.trim_input(ref, alt, pos, strand)
+        if new_ref2 == '' or new_ref2 == '.':
+            new_ref2 = '-'
+        if new_alt2 == '' or new_alt2 == '.':
+            new_alt2 = '-'
+        return new_pos, new_ref2, new_alt2
+
+    def trim_input(self, ref, alt, pos, strand):
+        pos = int(pos)
+        reflen = len(ref)
+        altlen = len(alt)
+        minlen = min(reflen, altlen)
+        new_ref = ref
+        new_alt = alt
+        new_pos = pos
+        for nt_pos in range(0, minlen): 
+            if ref[reflen - nt_pos - 1] == alt[altlen - nt_pos - 1]:
+                new_ref = ref[:reflen - nt_pos - 1]
+                new_alt = alt[:altlen - nt_pos - 1]
+            else:
+                break    
+        new_ref_len = len(new_ref)
+        new_alt_len = len(new_alt)
+        minlen = min(new_ref_len, new_alt_len)
+        new_ref2 = new_ref
+        new_alt2 = new_alt
+        for nt_pos in range(0, minlen):
+            if new_ref[nt_pos] == new_alt[nt_pos]:
+                if strand == '+':
+                    new_pos += 1
+                elif strand == '-':
+                    new_pos -= 1
+                new_ref2 = new_ref[nt_pos + 1:]
+                new_alt2 = new_alt[nt_pos + 1:]
+            else:
+                new_ref2 = new_ref[nt_pos:]
+                new_alt2 = new_alt[nt_pos:]
+                break  
+        return new_ref2, new_alt2, new_pos
 
 def main ():
     master_cravat_converter = MasterCravatConverter()
