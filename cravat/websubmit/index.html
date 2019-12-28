@@ -79,7 +79,8 @@
                         <td valign='top' class='variant-input-border-bottom' title="Upload file(s). Select multiple files using ctrl and shift keys">
                                 <br />
                             <input type="file" name="input-file" id="input-file" multiple/>
-                            <label for="input-file">Choose a file</label>
+                            <label for="input-file">Add input file(s)</label>
+                            <button id='clear_inputfilelist_button' class='butn' onclick='onClearInputFileList()' style='display: none;'>Clear file(s)</button>
                             <div id="mult-inputs-message" style="display: none">
                                 File(s):
                                 <div id="mult-inputs-list"></div>

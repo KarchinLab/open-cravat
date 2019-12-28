@@ -22,6 +22,9 @@ var jobsListCurEnd = jobsPerPageInList;
 var systemReadyObj = {};
 var formData = null;
 var adminMode = false;
+var inputFileList = [];
+var JOB_IDS = []
+var jobListUpdateIntervalFn = null;
 
 function submit () {
     if (servermode && logged == false) {
@@ -36,6 +39,7 @@ function submit () {
         var textBlob = new Blob([textVal], {type:'text/plain'})
         inputFiles.push(new File([textBlob], 'input'));
     } else {
+        /*
         var fileInputElem = $('#input-file')[0];
         var files = fileInputElem.files;
         if (files.length > 0) {
@@ -43,6 +47,8 @@ function submit () {
                 inputFiles.push(files[i]);
             }
         }
+        */
+        inputFiles = inputFileList;
     }
     if (inputFiles.length === 0) {
         alert('Choose a input variant files, enter variants, or click an input example button.');
@@ -1851,6 +1857,7 @@ function resizePage () {
     div.style.height = h + 'px';
 }
 
+/*
 function fileInputChange(event) {
     var fileInputElem = event.target;
     var files = fileInputElem.files;
@@ -1868,6 +1875,7 @@ function fileInputChange(event) {
         $('#mult-inputs-message').css('display','none');
     }
 }
+*/
 
 function populateMultInputsMessage() {
     var fileInputElem = document.getElementById('input-file');
@@ -1875,15 +1883,40 @@ function populateMultInputsMessage() {
     if (files.length >= 1) {
         $('#mult-inputs-message').css('display','block');
         var $fileListDiv = $('#mult-inputs-list');
-        $fileListDiv.empty();
+        //$fileListDiv.empty();
         for (var i=0; i<files.length; i++) {
             var file = files[i];
-            var $p = $(getEl('p'))
-                .text(file.name);
-            $fileListDiv.append($p);
+            if (inputFileList.indexOf(file.name) == -1) {
+                var sdiv = getEl('div');
+                var span = getEl('span');
+                span.textContent = file.name;
+                addEl(sdiv, span);
+                var minus = getEl('span');
+                minus.textContent = '\xa0\u2296';
+                minus.style.cursor = 'default';
+                minus.title = 'Click to remove the file.';
+                minus.addEventListener('click', function (evt) {
+                    var fileName = evt.target.previousSibling.textContent;
+                    for (var j = 0; j < inputFileList.length; j++) {
+                        if (inputFileList[j].name == fileName) {
+                            inputFileList.splice(j, 1);
+                            break;
+                        }
+                    }
+                    evt.target.parentElement.parentElement.removeChild(evt.target.parentElement);
+                });
+                addEl(sdiv, minus);
+                $fileListDiv.append($(sdiv));
+                inputFileList.push(file);
+            }
         }
+    }
+    if (inputFileList.length > 0) {
+        document.querySelector('#clear_inputfilelist_button').style.display = 'inline-block';
+        document.querySelector('#mult-inputs-message').style.display = 'block';
     } else {
-        $('#mult-inputs-message').css('display','none');
+        document.querySelector('#clear_inputfilelist_button').style.display = 'none';
+        document.querySelector('#mult-inputs-message').style.display = 'none';
     }
 }
 
@@ -2005,6 +2038,14 @@ function onSubmitClickTagBoxCheck (evt) {
     }
 }
 
+function onClearInputFileList () {
+    document.querySelector('#clear_inputfilelist_button').style.display = 'none';
+    document.querySelector('#mult-inputs-message').style.display = 'none';
+    $(document.querySelector('#mult-inputs-list')).empty();
+    document.querySelector('#input-file').value = '';
+    inputFileList = [];
+}
+
 function websubmit_run () {
     hideSpinner();
     hideUpdateRemoteSpinner();
@@ -2024,5 +2065,3 @@ function websubmit_run () {
     populateMultInputsMessage();
 };
 
-var JOB_IDS = []
-var jobListUpdateIntervalFn = null;
