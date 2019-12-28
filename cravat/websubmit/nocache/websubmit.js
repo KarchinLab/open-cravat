@@ -353,7 +353,12 @@ function populateJobTr (job) {
     } else {
         var input_fname = job.orig_input_fname;
     }
-    addEl(jobTr, addEl(getEl('td'), getTn(input_fname)));
+    var input_fname_display = input_fname;
+    var input_fname_display_limit = 30;
+    if (input_fname.length > input_fname_display_limit) {
+        input_fname_display = input_fname.substring(0, input_fname_display_limit) + '...';
+    }
+    addEl(jobTr, addEl(getEl('td'), getTn(input_fname_display)));
     // Number of annotators
     var annots = job.annotators;
     if (annots == undefined) {
@@ -596,6 +601,23 @@ function populateJobDetailTr (job) {
         addEl(tr, td);
         addEl(tbody, tr);
     }
+    // input files
+    var input_fname = job.orig_input_fname;
+    if (Array.isArray(job.orig_input_fname)) {
+        input_fname = job.orig_input_fname.join(', ');
+    }
+    var tr = getEl('tr');
+    var td = getEl('td');
+    td.textContent = 'Input file(s)';
+    addEl(tr, td);
+    var td = getEl('td');
+    var sdiv = getEl('div');
+    sdiv.style.maxHeight = '80px';
+    sdiv.style.overflow = 'auto';
+    sdiv.textContent = input_fname;
+    addEl(td, sdiv);
+    addEl(tr, td);
+    addEl(tbody, tr);
     addEl(detailTd, detailTable);
     addEl(detailTr, detailTd);
 }
