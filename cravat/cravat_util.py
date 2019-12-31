@@ -558,6 +558,9 @@ parser_result2gui.set_defaults(func=result2gui)
 
 def main ():
     args = get_args()
+    if 'func' not in args:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
     args.func(args)
 
 if __name__ == '__main__':
