@@ -125,7 +125,7 @@ def converttohg38 (args):
     newdb.commit()
 
 migrate_functions = {}
-supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2']
+supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1']
 
 def check_result_db_version (dbpath, version):
     try:
@@ -338,11 +338,11 @@ def migrate_result_152_to_153 (dbpath):
     cursor.close()
     db.close()
 
-def migrate_result_153_to_160():
+def migrate_result_153_to_160(dbpath):
     db = sqlite3.connect(dbpath)
     c.execute('update info set colval="1.6.0" where colkey="open-cravat"')
 
-def migrate_result_160_to_161():
+def migrate_result_160_to_161(dbpath):
     db = sqlite3.connect(dbpath)
     c.execute('update info set colval="1.6.1" where colkey="open-cravat"')
 
@@ -350,12 +350,12 @@ def migrate_result_161_to_170 (dbpath):
     db = sqlite3.connect(dbpath)
     c = db.cursor()
     for level in ('gene','mapping','sample','variant'):
-        c.execute(f'create unique index unq_{level}_name on {level}_annotator (name)')
-        c.execute(f'create unique index unq_{level}_col_name on {level}_header (col_name)')
+        c.execute(f'create unique index unq_{level}_annotator_name on {level}_annotator (name)')
+        c.execute(f'create unique index unq_{level}_header_col_name on {level}_header (col_name)')
         if level in ('gene','variant'):
             c.execute(f'create unique index unq_{level}_reportsub_module on {level}_reportsub (module)')
     c.execute('create unique index unq_smartfilters_name on smartfilters (name)')
-    c.execute('create unique index unq_info_colkey on info (colkey))')
+    c.execute('create unique index unq_info_colkey on info (colkey)')
     c.execute('update info set colval="1.7.0" where colkey="open-cravat"')
 
 migrate_functions['1.4.4'] = migrate_result_144_to_145
