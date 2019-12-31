@@ -338,11 +338,34 @@ def migrate_result_152_to_153 (dbpath):
     cursor.close()
     db.close()
 
+def migrate_result_153_to_160():
+    db = sqlite3.connect(dbpath)
+    c.execute('update info set colval="1.6.0" where colkey="open-cravat"')
+
+def migrate_result_160_to_161():
+    db = sqlite3.connect(dbpath)
+    c.execute('update info set colval="1.6.1" where colkey="open-cravat"')
+
+def migrate_result_161_to_170 (dbpath):
+    db = sqlite3.connect(dbpath)
+    c = db.cursor()
+    for level in ('gene','mapping','sample','variant'):
+        c.execute(f'create unique index unq_{level}_name on {level}_annotator (name)')
+        c.execute(f'create unique index unq_{level}_col_name on {level}_header (col_name)')
+        if level in ('gene','variant'):
+            c.execute(f'create unique index unq_{level}_reportsub_module on {level}_reportsub (module)')
+    c.execute('create unique index unq_smartfilters_name on smartfilters (name)')
+    c.execute('create unique index unq_info_colkey on info (colkey))')
+    c.execute('update info set colval="1.7.0" where colkey="open-cravat"')
+
 migrate_functions['1.4.4'] = migrate_result_144_to_145
 migrate_functions['1.4.5'] = migrate_result_145_to_150
 migrate_functions['1.5.0'] = migrate_result_150_to_151
 migrate_functions['1.5.1'] = migrate_result_151_to_152
 migrate_functions['1.5.2'] = migrate_result_152_to_153
+migrate_functions['1.5.3'] = migrate_result_153_to_160
+migrate_functions['1.6.0'] = migrate_result_160_to_161
+migrate_functions['1.6.1'] = migrate_result_161_to_170
 
 def migrate_result (args):
     def get_dbpaths (dbpaths, path):
