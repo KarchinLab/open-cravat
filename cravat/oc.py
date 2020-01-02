@@ -4,7 +4,7 @@ from .cravat_class import cravat_cmd_parser
 from .cravat_test import parser as test_parser
 from .cravat_web import parser as gui_parser
 from . import cravat_util
-from .cravat_report import parser as report_parser
+from cravat.cravat_report import parser as report_parser
 
 root_p = argparse.ArgumentParser()
 root_sp = root_p.add_subparsers(title='Commands')

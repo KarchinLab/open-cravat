@@ -628,6 +628,64 @@ class CravatReport:
             ret = True
         return ret
 
+def parse_cmd_args (self, parser, cmd_args):
+    parsed_args = parser.parse_args(cmd_args[1:])
+    self.parsed_args = parsed_args
+    self.dbpath = parsed_args.dbpath
+    self.filterpath = parsed_args.filterpath
+    self.filtername = parsed_args.filtername
+    self.filterstring = parsed_args.filterstring
+    self.confs = None
+    if parsed_args.confs is not None:
+        confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+        self.confs = json.loads(confs)
+        if 'filter' in self.confs:
+            self.filter = self.confs['filter']
+        else:
+            self.filter = None
+    self.savepath = parsed_args.savepath
+    self.confpath = parsed_args.confpath
+    self.conf = ConfigLoader(job_conf_path=self.confpath)
+    self.module_name = parsed_args.module_name
+    if self.conf is not None:
+        self.module_conf = self.conf.get_module_conf(self.module_name)
+    else:
+        self.module_conf = None
+    self.report_types = parsed_args.reporttypes
+    self.output_basename = os.path.basename(self.dbpath)[:-7]
+    self.output_dir = os.path.dirname(self.dbpath)
+    status_fname = '{}.status.json'.format(self.output_basename)
+    self.status_fpath = os.path.join(self.output_dir, status_fname)
+    self.nogenelevelonvariantlevel = parsed_args.nogenelevelonvariantlevel
+    self.args = parsed_args
+
+def run_reporter (args):
+    if sys.argv[0].endswith('/oc'):
+        sys.argv = sys.argv[1:]
+    global au
+    dbpath = args.dbpath
+    report_types = args.reporttypes
+    run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
+    output_dir = os.path.dirname(dbpath)
+    loop = asyncio.get_event_loop()
+    for report_type in report_types:
+        print(f'Generating {report_type} report...')
+        module_info = au.get_local_module_info(report_type + 'reporter')
+        spec = importlib.util.spec_from_file_location(module_info.name, module_info.script_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        cmd_args = sys.argv
+        cmd_args.extend(['--module-name', module_info.name, '-s', os.path.join(output_dir, run_name)])
+        reporter = module.Reporter(cmd_args)
+        loop.run_until_complete(reporter.prep())
+        loop.run_until_complete(reporter.run())
+    loop.close()
+
+def cravat_report_entrypoint ():
+    global parser
+    parsed_args = parser.parse_args(sys.argv[1:])
+    run_reporter(parsed_args)
+
 parser = argparse.ArgumentParser()
 parser.add_argument('dbpath',
                     help='Path to aggregator output')
@@ -678,59 +736,5 @@ parser.add_argument('--separatesample',
     action='store_true',
     default=False,
     help='Write each variant-sample pair on a separate line')
+parser.set_defaults(func=run_reporter)
 
-def parse_cmd_args (self, parser, cmd_args):
-    parsed_args = parser.parse_args(cmd_args[1:])
-    self.parsed_args = parsed_args
-    self.dbpath = parsed_args.dbpath
-    self.filterpath = parsed_args.filterpath
-    self.filtername = parsed_args.filtername
-    self.filterstring = parsed_args.filterstring
-    self.confs = None
-    if parsed_args.confs is not None:
-        confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
-        self.confs = json.loads(confs)
-        if 'filter' in self.confs:
-            self.filter = self.confs['filter']
-        else:
-            self.filter = None
-    self.savepath = parsed_args.savepath
-    self.confpath = parsed_args.confpath
-    self.conf = ConfigLoader(job_conf_path=self.confpath)
-    self.module_name = parsed_args.module_name
-    if self.conf is not None:
-        self.module_conf = self.conf.get_module_conf(self.module_name)
-    else:
-        self.module_conf = None
-    self.report_types = parsed_args.reporttypes
-    self.output_basename = os.path.basename(self.dbpath)[:-7]
-    self.output_dir = os.path.dirname(self.dbpath)
-    status_fname = '{}.status.json'.format(self.output_basename)
-    self.status_fpath = os.path.join(self.output_dir, status_fname)
-    self.nogenelevelonvariantlevel = parsed_args.nogenelevelonvariantlevel
-    self.args = parsed_args
-
-def run_reporter (args):
-    global au
-    dbpath = args.dbpath
-    report_types = args.reporttypes
-    run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
-    output_dir = os.path.dirname(dbpath)
-    loop = asyncio.get_event_loop()
-    for report_type in report_types:
-        print(f'Generating {report_type} report...')
-        module_info = au.get_local_module_info(report_type + 'reporter')
-        spec = importlib.util.spec_from_file_location(module_info.name, module_info.script_path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        cmd_args = sys.argv
-        cmd_args.extend(['--module-name', module_info.name, '-s', os.path.join(output_dir, run_name)])
-        reporter = module.Reporter(cmd_args)
-        loop.run_until_complete(reporter.prep())
-        loop.run_until_complete(reporter.run())
-    loop.close()
-
-def cravat_report_entrypoint ():
-    global parser
-    parsed_args = parser.parse_args(sys.argv[1:])
-    run_reporter(parsed_args)
