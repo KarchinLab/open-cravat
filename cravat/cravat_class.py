@@ -86,6 +86,7 @@ cravat_cmd_parser.add_argument('-v',
 cravat_cmd_parser.add_argument('-t',
     nargs='+',
     dest='reports',
+    choices=au.report_formats(),
     help='report types. If omitted, default one in cravat.yml is used.')
 cravat_cmd_parser.add_argument('-l',
     dest='liftover',
