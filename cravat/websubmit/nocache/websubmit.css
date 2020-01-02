@@ -338,12 +338,7 @@ div.checkbox-group-element[kind=group] span.label {
 }
 
 #submit-input-format-select {
-    font-size: 9px;
-    width: 60px;
-}
-
-#submit-input-format-select option {
-    font-size: 9px;
+    width: 85px;
 }
 
 #mult-inputs-list p {

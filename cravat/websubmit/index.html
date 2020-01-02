@@ -93,12 +93,11 @@
                             <div style='text-align: left;'>
                                 <textarea rows="1" id="input-text" style='' placeholder="Enter variants" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
-                            <span style='font-size: 9px;'>(Force format:</span>
-                            <select id='submit-input-format-select'>
-                                <option value=''></option>
-                                <option value='vcf'>VCF</option>
+                            <span>Format:</span>
+                            <select id='submit-input-format-select' disabled>
+                                <option value=''>Detect</option>
                             </select>
-                            <span style='font-size: 10px;'>)</span>
+                            <span style='font-size: 10px;'> | </span>
                             <span style='font-size: 13px;'>Example:</span>
                             <button value="vcf" class='butn input-example-button'>VCF</button>
                             <button value="cravat" class='butn input-example-button'>TSV</button>
