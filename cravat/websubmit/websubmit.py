@@ -337,7 +337,7 @@ async def submit (request):
     run_args.append(note)
     # Forced input format
     if 'forcedinputformat' in job_options and job_options['forcedinputformat']:
-        run_args.append('--forcedinputformat')
+        run_args.append('--input-format')
         run_args.append(job_options['forcedinputformat'])
     if servermode:
         run_args.append('--writeadmindb')

@@ -109,7 +109,7 @@ cravat_cmd_parser.add_argument('--mp',
     dest='mp',
     default=None,
     help='number of processes to use to run annotators')
-cravat_cmd_parser.add_argument('--forcedinputformat',
+cravat_cmd_parser.add_argument('-i','--input-format',
     dest='forcedinputformat',
     default=None,
     choices=au.input_formats(),
