@@ -1343,7 +1343,6 @@ def input_formats():
         if not format:
             format = module_info.name.split('-')[0]
         formats.add(format)
-        
     return formats
 
 """

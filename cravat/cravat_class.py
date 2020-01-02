@@ -2,28 +2,28 @@ import time
 import argparse
 import os
 import sys
-from . import admin_util as au
-from . import util
-from .config_loader import ConfigLoader
+from cravat import admin_util as au
+from cravat import util
+from cravat.config_loader import ConfigLoader
 import aiosqlite3
 import datetime
 from types import SimpleNamespace
-from . import constants
+from cravat import constants
 import json
 import logging
 import traceback
-from .mp_runners import annot_from_queue
+from cravat.mp_runners import annot_from_queue
 import multiprocessing as mp
 import multiprocessing.managers
 from logging.handlers import QueueListener
-from .aggregator import Aggregator
-from .exceptions import *
+from cravat.aggregator import Aggregator
+from cravat.exceptions import *
 import oyaml as yaml
 import cravat.cravat_util as cu
 import collections
 import asyncio
 import sqlite3
-from .inout import CravatWriter
+from cravat.inout import CravatWriter
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path_1 input_file_path_2 ...',
@@ -836,7 +836,7 @@ class Cravat (object):
                 if module is None:
                     print('        {} does not exist.'.format(module_name))
                     continue
-                print('')
+                #print('')
                 cmd = [module.script_path, 
                        '-s', os.path.join(self.output_dir, self.run_name),
                        os.path.join(self.output_dir, self.run_name + '.sqlite'),
@@ -860,7 +860,7 @@ class Cravat (object):
                 stime = time.time()
                 await reporter.run()
                 rtime = time.time() - stime
-                print('\t    finished in {0:.3f}s'.format(rtime))
+                print('finished in {0:.3f}s'.format(rtime))
             except Exception as e:
                 traceback.print_exc()
                 self.logger.exception(e)
