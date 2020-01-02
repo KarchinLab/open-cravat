@@ -711,6 +711,7 @@ parser.add_argument('-c',
 parser.add_argument('-t',
     dest='reporttypes',
     nargs='+',
+    choices=au.report_formats(),
     default=None,
     help='report types')
 parser.add_argument('--module-name',
