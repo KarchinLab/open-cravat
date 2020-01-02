@@ -1,5 +1,0 @@
-converter: converter
-genemapper: hg38
-aggregator: aggregator
-reporter: excelreporter
-gui_port: 8070

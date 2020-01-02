@@ -181,7 +181,7 @@ def run(args):
                 if server_ready and servermode:
                     url = f'{host}:{port}/server/nocache/login.html'
                 else:
-                    url = f'{host}:{port}/submit/index.html'
+                    url = f'{host}:{port}/submit/nocache/index.html'
             global protocol
             url = protocol + url
         main(url=url)
