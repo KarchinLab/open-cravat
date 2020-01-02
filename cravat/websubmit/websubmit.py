@@ -872,9 +872,9 @@ async def redirect_to_index (request):
         if r == False:
             url = '/server/nocache/login.html'
         else:
-            url = '/submit/index.html'
+            url = '/submit/nocache/index.html'
     else:
-        url = '/submit/index.html'
+        url = '/submit/nocache/index.html'
     return web.HTTPFound(url)
 
 async def load_live_modules ():
