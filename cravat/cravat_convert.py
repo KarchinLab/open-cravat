@@ -15,22 +15,26 @@ import cravat.cravat_util as cu
 from cravat.util import detect_encoding
 import json
 import gzip
+from collections import defaultdict
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
         so the crv file will not contain multiple copies of the same variant.
     """
-    def __init__(self):
-        self.var_by_chrom = {}
+    def __init__(self, deduplicate=True):
+        self.var_by_chrom = defaultdict(dict)
         self.current_UID = 1
+        self.deduplicate = deduplicate
     
     #Add a variant - Returns true if the variant is a new unique variant, false
     #if it is a duplicate.  Also returns the UID.
     def addVar(self, chrom, pos, ref, alt):
+        if not self.deduplicate:
+            self.current_UID += 1
+            return True, self.current_UID-1
+
         change = ref+":"+alt
-        if chrom not in self.var_by_chrom:
-            self.var_by_chrom[chrom] = {}
-        
+
         chr_dict = self.var_by_chrom[chrom]
         if pos not in chr_dict:
             #we have not seen this position before, add the position and change
@@ -75,37 +79,41 @@ class MasterCravatConverter(object):
         self.output_dir = None
         self.output_base_fname = None
         self.chromdict = {'chrx': 'chrX', 'chry': 'chrY', 'chrMT': 'chrM', 'chrMt': 'chrM', 'chr23': 'chrX', 'chr24': 'chrY'}
-        self.vtracker = VTracker();
         self._parse_cmd_args(args)
         self._setup_logger()
+        self.vtracker = VTracker(deduplicate=not(self.unique_variants))
 
     def _parse_cmd_args(self, args):
         """ Parse the arguments in sys.argv """
         parser = argparse.ArgumentParser()
         parser.add_argument('path',
-                            help='Path to this converter\'s python module')
+            help='Path to this converter\'s python module')
         parser.add_argument('inputs',
-                            nargs='+',
-                            help='Files to be converted to .crv')
+            nargs='+',
+            help='Files to be converted to .crv')
         parser.add_argument('-f',
-                            dest='format',
-                            help='Specify an input format')
+            dest='format',
+            help='Specify an input format')
         parser.add_argument('-n', '--name',
-                            dest='name',
-                            help='Name of job. Default is input file name.')
+            dest='name',
+            help='Name of job. Default is input file name.')
         parser.add_argument('-d', '--output-dir',
-                            dest='output_dir',
-                            help='Output directory. '\
-                                 +'Default is input file directory.')
+            dest='output_dir',
+            help='Output directory. Default is input file directory.')
         parser.add_argument('-l','--liftover',
-                            dest='liftover',
-                            choices=['hg38']+list(constants.liftover_chain_paths.keys()),
-                            default='hg38',
-                            help='Input gene assembly. Will be lifted over to hg38')
+            dest='liftover',
+            choices=['hg38']+list(constants.liftover_chain_paths.keys()),
+            default='hg38',
+            help='Input gene assembly. Will be lifted over to hg38')
         parser.add_argument('--confs',
             dest='confs',
             default='{}',
             help='Configuration string')
+        parser.add_argument('--unique-variants',
+            dest='unique_variants',
+            default=False,
+            action='store_true',
+            help=argparse.SUPPRESS)
         parsed_args = parser.parse_args(args)
         self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs]
         self.input_path_dict = {}
@@ -137,6 +145,7 @@ class MasterCravatConverter(object):
         if parsed_args.confs is not None:
             confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
             self.confs = json.loads(confs)
+        self.unique_variants = parsed_args.unique_variants
 
     def setup (self):
         """ Do necesarry pre-run tasks """

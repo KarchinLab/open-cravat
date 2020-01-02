@@ -139,6 +139,12 @@ cravat_cmd_parser.add_argument('--separatesample',
     action='store_true',
     default=False,
     help='Separate variant results by sample')
+cravat_cmd_parser.add_argument('--unique-variants',
+    dest='unique_variants',
+    action='store_true',
+    default=False,
+    help=argparse.SUPPRESS
+)
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -703,6 +709,8 @@ class Cravat (object):
                 cmd.extend(['--confs', confs])
         if self.args.forcedinputformat is not None:
             cmd.extend(['-f', self.args.forcedinputformat])
+        if self.args.unique_variants:
+            cmd.append('-u')
         self.announce_module(module)
         if self.verbose:
             print(' '.join(cmd))
