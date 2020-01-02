@@ -2046,6 +2046,21 @@ function onClearInputFileList () {
     inputFileList = [];
 }
 
+function populateInputFormats () {
+    let inputSel = $('#submit-input-format-select');
+    inputSel.prop('disabled',true);
+    for (moduleName in localModuleInfo) {
+        if (moduleName.endsWith('-converter')) {
+            let inputName = moduleName.split('-')[0];
+            let opt = $(getEl('option'))
+                .val(inputName)
+                .text(inputName);
+            inputSel.append(opt);
+        }
+    }
+    inputSel.prop('disabled',false);
+}
+
 function websubmit_run () {
     hideSpinner();
     hideUpdateRemoteSpinner();

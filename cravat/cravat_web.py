@@ -46,7 +46,6 @@ log_handler = logging.handlers.TimedRotatingFileHandler(log_path, when='d', back
 log_formatter = logging.Formatter('%(asctime)s: %(message)s', '%Y/%m/%d %H:%M:%S')
 log_handler.setFormatter(log_formatter)
 logger.addHandler(log_handler)
-logger.info('Starting wcravat...')
 
 headless = None
 servermode = None

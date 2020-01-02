@@ -6,14 +6,13 @@ import re
 import time
 import logging
 import oyaml as yaml
-from cravat.inout import CravatReader
-from cravat.inout import CravatWriter
-from cravat.inout import ColumnDefinition
+from cravat.inout import CravatReader, CravatWriter, ColumnDefinition
 import cravat.admin_util as au
 import json
 from .exceptions import BadFormatError
 import traceback
 from distutils.version import LooseVersion
+from collections import OrderedDict
 
 class Aggregator (object):
 
@@ -380,9 +379,19 @@ class Aggregator (object):
             self.cursor.execute(q)
             q = f'create table {self.header_table_name} (col_name text primary key, col_def text);'
             self.cursor.execute(q)
-        insert_template = f'insert or ignore into {self.header_table_name} values (?, ?)'
-        for col_def in columns:
-            self.cursor.execute(insert_template, [col_def.name, col_def.get_json()])
+        q = f'select col_name, col_def from {self.header_table_name}'
+        self.cursor.execute(q)
+        cdefs = OrderedDict()
+        for cname, cjson in self.cursor:
+            annot_name = cname.split('__')[0]
+            cdefs[cname] = ColumnDefinition(json.loads(cjson))
+        if cdefs:
+            self.cursor.execute(f'delete from {self.header_table_name}')
+        for cdef in columns:
+            cdefs[cdef.name] = cdef
+        insert_template = f'insert into {self.header_table_name} values (?, ?)'
+        for cdef in cdefs.values():
+            self.cursor.execute(insert_template, [cdef.name, cdef.get_json()])
         # report substitution table
         if self.level in ['variant', 'gene']:
             if not self.append:

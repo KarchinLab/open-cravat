@@ -1331,18 +1331,21 @@ def get_remote_manifest ():
     return mic.remote
 
 def input_formats():
-    converters = get_local_module_infos(types=['converter'])
+    d = os.path.join(get_modules_dir(), 'converters')
+    fns = os.listdir(d)
     formats = set()
-    for module_info in converters:
-        spec = importlib.util.spec_from_file_location(module_info.name,
-                                                          module_info.script_path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        converter = module.CravatConverter()
-        format = converter.format_name
-        if not format:
-            format = module_info.name.split('-')[0]
-        formats.add(format)
+    for fn in fns:
+        if fn.endswith('-converter'):
+            formats.add(fn.split('-')[0])
+    return formats
+
+def report_formats():
+    d = os.path.join(get_modules_dir(), 'reporters')
+    fns = os.listdir(d)
+    formats = set()
+    for fn in fns:
+        if fn.endswith('reporter'):
+            formats.add(fn.replace('reporter',''))
     return formats
 
 """

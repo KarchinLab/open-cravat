@@ -139,8 +139,9 @@ function hideSystemModulePage () {
 }
 
 function getLocal () {
-	$.get('/store/local').done(function(data){
+    $.get('/store/local').done(function(data){
         localModuleInfo = data;
+        populateInputFormats();
         $.get('/store/updates').done(function(data){
             updates = data.updates;
             updateConflicts = data.conflicts;
