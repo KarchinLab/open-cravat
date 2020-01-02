@@ -18,12 +18,16 @@ import aiosqlite3
 import types
 from distutils.version import LooseVersion
 from cravat import constants
+import asyncio
+import importlib
+import cravat.cravat_class
 
 class CravatReport:
 
-    def __init__ (self, cmd_args, status_writer):
+    def __init__ (self, cmd_args, status_writer=None):
         self.status_writer = status_writer
-        self.parse_cmd_args(cmd_args)
+        global parser
+        parse_cmd_args(self, parser, cmd_args)
         self.cursor = None
         self.cf = None
         self.filtertable = 'filter'
@@ -294,7 +298,7 @@ class CravatReport:
         start_time = time.time()
         if not (hasattr(self, 'no_log') and self.no_log):
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
-        if self.module_conf is not None:
+        if self.module_conf is not None and self.status_writer is not None:
             self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
         if self.setup() == False:
             return
@@ -313,7 +317,7 @@ class CravatReport:
             else:
                 await self.make_col_info(tab)
             await self.run_level(tab)
-        if self.module_conf is not None:
+        if self.module_conf is not None and self.status_writer is not None:
             self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
         end_time = time.time()
         if not (hasattr(self, 'no_log') and self.no_log):
@@ -597,87 +601,6 @@ class CravatReport:
                             self.column_sub_allow_partial_match[level][i] = allow_partial_match
                             new_columns[i]['reportsub'] = sub[col]
 
-    def parse_cmd_args (self, cmd_args):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('dbpath',
-                            help='Path to aggregator output')
-        parser.add_argument('-f',
-            dest='filterpath',
-            default=None,
-            help='Path to filter file')
-        parser.add_argument('-F',
-            dest='filtername',
-            default=None,
-            help='Name of filter (stored in aggregator output)')
-        parser.add_argument('--filterstring',
-            dest='filterstring',
-            default=None,
-            help='Filter in JSON')
-        parser.add_argument('-s',
-            dest='savepath',
-            default=None,
-            help='Path to save file')
-        parser.add_argument('-c',
-            dest='confpath',
-            help='path to a conf file')
-        parser.add_argument('-t',
-            dest='reporttypes',
-            nargs='+',
-            default=None,
-            help='report types')
-        parser.add_argument('--module-name',
-            dest='module_name',
-            default=None,
-            help='report module name')
-        parser.add_argument('--nogenelevelonvariantlevel',
-            dest='nogenelevelonvariantlevel',
-            action='store_true',
-            default=False,
-            help='Use this option to prevent gene level result from being added to variant level result.')
-        parser.add_argument('--confs',
-            dest='confs',
-            default='{}',
-            help='Configuration string')
-        parser.add_argument('--inputfiles',
-            nargs='+',
-            dest='inputfiles',
-            default=None,
-            help='Original input file path')
-        parser.add_argument('--separatesample',
-            dest='separatesample',
-            action='store_true',
-            default=False,
-            help='Write each variant-sample pair on a separate line')
-        parsed_args = parser.parse_args(cmd_args[1:])
-        self.parsed_args = parsed_args
-        self.dbpath = parsed_args.dbpath
-        self.filterpath = parsed_args.filterpath
-        self.filtername = parsed_args.filtername
-        self.filterstring = parsed_args.filterstring
-        self.confs = None
-        if parsed_args.confs is not None:
-            confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
-            self.confs = json.loads(confs)
-            if 'filter' in self.confs:
-                self.filter = self.confs['filter']
-            else:
-                self.filter = None
-        self.savepath = parsed_args.savepath
-        self.confpath = parsed_args.confpath
-        self.conf = ConfigLoader(job_conf_path=self.confpath)
-        self.module_name = parsed_args.module_name
-        if self.conf is not None:
-            self.module_conf = self.conf.get_module_conf(self.module_name)
-        else:
-            self.module_conf = None
-        self.report_types = parsed_args.reporttypes
-        self.output_basename = os.path.basename(self.dbpath)[:-7]
-        self.output_dir = os.path.dirname(self.dbpath)
-        status_fname = '{}.status.json'.format(self.output_basename)
-        self.status_fpath = os.path.join(self.output_dir, status_fname)
-        self.nogenelevelonvariantlevel = parsed_args.nogenelevelonvariantlevel
-        self.args = parsed_args
-
     async def connect_db (self, dbpath=None):
         if dbpath != None:
             self.dbpath = dbpath
@@ -705,32 +628,109 @@ class CravatReport:
             ret = True
         return ret
 
-def run_reporter (args):
-    dbpath = args.dbpath
-    report_types = args.reporttypes
-    run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
-    output_dir = os.path.dirname(dbpath)
-    avail_reporters = au.get_local_module_infos_of_type('reporter')
-    avail_reporter_names = [re.sub('reporter$', '', v) for v in avail_reporters.keys()]
-    cmd = ['cravat', 'dummyinput', '-n', run_name, '-d', output_dir, '--skip', 'converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', '--startat', 'reporter', '--repeat', 'reporter', '-t']
-    if report_types is not None:
-        cmd.extend(report_types)
-    else:
-        cmd.extend(avail_reporter_names)
-    subprocess.run(cmd)
-
 parser = argparse.ArgumentParser()
 parser.add_argument('dbpath',
-    help='Path to aggregator output'
-)
+                    help='Path to aggregator output')
+parser.add_argument('-f',
+    dest='filterpath',
+    default=None,
+    help='Path to filter file')
+parser.add_argument('-F',
+    dest='filtername',
+    default=None,
+    help='Name of filter (stored in aggregator output)')
+parser.add_argument('--filterstring',
+    dest='filterstring',
+    default=None,
+    help='Filter in JSON')
+parser.add_argument('-s',
+    dest='savepath',
+    default=None,
+    help='Path to save file')
+parser.add_argument('-c',
+    dest='confpath',
+    help='path to a conf file')
 parser.add_argument('-t',
     dest='reporttypes',
     nargs='+',
     default=None,
-    help='report types'
-)
-parser.set_defaults(func=run_reporter)
+    help='report types')
+parser.add_argument('--module-name',
+    dest='module_name',
+    default=None,
+    help='report module name')
+parser.add_argument('--nogenelevelonvariantlevel',
+    dest='nogenelevelonvariantlevel',
+    action='store_true',
+    default=False,
+    help='Use this option to prevent gene level result from being added to variant level result.')
+parser.add_argument('--confs',
+    dest='confs',
+    default='{}',
+    help='Configuration string')
+parser.add_argument('--inputfiles',
+    nargs='+',
+    dest='inputfiles',
+    default=None,
+    help='Original input file path')
+parser.add_argument('--separatesample',
+    dest='separatesample',
+    action='store_true',
+    default=False,
+    help='Write each variant-sample pair on a separate line')
+
+def parse_cmd_args (self, parser, cmd_args):
+    parsed_args = parser.parse_args(cmd_args[1:])
+    self.parsed_args = parsed_args
+    self.dbpath = parsed_args.dbpath
+    self.filterpath = parsed_args.filterpath
+    self.filtername = parsed_args.filtername
+    self.filterstring = parsed_args.filterstring
+    self.confs = None
+    if parsed_args.confs is not None:
+        confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+        self.confs = json.loads(confs)
+        if 'filter' in self.confs:
+            self.filter = self.confs['filter']
+        else:
+            self.filter = None
+    self.savepath = parsed_args.savepath
+    self.confpath = parsed_args.confpath
+    self.conf = ConfigLoader(job_conf_path=self.confpath)
+    self.module_name = parsed_args.module_name
+    if self.conf is not None:
+        self.module_conf = self.conf.get_module_conf(self.module_name)
+    else:
+        self.module_conf = None
+    self.report_types = parsed_args.reporttypes
+    self.output_basename = os.path.basename(self.dbpath)[:-7]
+    self.output_dir = os.path.dirname(self.dbpath)
+    status_fname = '{}.status.json'.format(self.output_basename)
+    self.status_fpath = os.path.join(self.output_dir, status_fname)
+    self.nogenelevelonvariantlevel = parsed_args.nogenelevelonvariantlevel
+    self.args = parsed_args
+
+def run_reporter (args):
+    global au
+    dbpath = args.dbpath
+    report_types = args.reporttypes
+    run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
+    output_dir = os.path.dirname(dbpath)
+    loop = asyncio.get_event_loop()
+    for report_type in report_types:
+        print(f'Generating {report_type} report...')
+        module_info = au.get_local_module_info(report_type + 'reporter')
+        spec = importlib.util.spec_from_file_location(module_info.name, module_info.script_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        cmd_args = sys.argv
+        cmd_args.extend(['--module-name', module_info.name, '-s', os.path.join(output_dir, run_name)])
+        reporter = module.Reporter(cmd_args)
+        loop.run_until_complete(reporter.prep())
+        loop.run_until_complete(reporter.run())
+    loop.close()
 
 def cravat_report_entrypoint ():
+    global parser
     parsed_args = parser.parse_args(sys.argv[1:])
-    parsed_args.func(parsed_args)
+    run_reporter(parsed_args)
