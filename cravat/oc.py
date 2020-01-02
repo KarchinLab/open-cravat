@@ -25,7 +25,9 @@ module_ls_p = module_sp.add_parser('ls', parents=[cravat_admin.parser_ls], add_h
 module_install_p = module_sp.add_parser('install', parents=[cravat_admin.parser_install], add_help=False, help='Install modules')
 module_uninstall_p = module_sp.add_parser('uninstall', parents=[cravat_admin.parser_uninstall], add_help=False, help='Uninstall modules')
 module_update_p = module_sp.add_parser('update', parents=[cravat_admin.parser_update], add_help=False, help='Update modules')
-module_info_base_p = module_sp.add_parser('info', parents=[cravat_admin.parser_info], add_help=False, help='Module details')
+module_info_p = module_sp.add_parser('info', parents=[cravat_admin.parser_info], add_help=False, help='Module details')
+module_install_base_base_p = module_sp.add_parser('install-base', parents=[cravat_admin.parser_install_base], add_help=False, help='Install base modules')
+
 
 # config
 config_p = root_sp.add_parser('config', help='View and change configuration settings')
@@ -35,10 +37,10 @@ config_system_p = config_sp.add_parser('system', parents=[cravat_admin.parser_sh
 config_system_p = config_sp.add_parser('cravat', parents=[cravat_admin.parser_show_cravat_conf], add_help=False, help='Show cravat config')
 
 # create
-create_p = root_sp.add_parser('create', help='Create new modules')
-create_sp = create_p.add_subparsers(title='Commands')
-create_example_input_p = create_sp.add_parser('example-input', parents=[cravat_admin.parser_make_example_input], add_help=False, help='Make example input file')
-create_annotator_p = create_sp.add_parser('annotator', parents=[cravat_admin.parser_new_annotator], add_help=False, help='Create new annotator')
+new_p = root_sp.add_parser('new', help='Create new modules')
+new_sp = new_p.add_subparsers(title='Commands')
+create_example_input_p = new_sp.add_parser('example-input', parents=[cravat_admin.parser_make_example_input], add_help=False, help='Make example input file')
+create_annotator_p = new_sp.add_parser('annotator', parents=[cravat_admin.parser_new_annotator], add_help=False, help='Create new annotator')
 
 # store
 store_p = root_sp.add_parser('store', help='Publish modules to the store')
