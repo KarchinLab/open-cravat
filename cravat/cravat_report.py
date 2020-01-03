@@ -27,7 +27,7 @@ class CravatReport:
     def __init__ (self, cmd_args, status_writer=None):
         self.status_writer = status_writer
         global parser
-        parse_cmd_args(self, parser, cmd_args)
+        self.parse_cmd_args(parser, cmd_args)
         self.cursor = None
         self.cf = None
         self.filtertable = 'filter'
@@ -42,6 +42,37 @@ class CravatReport:
         self.colname_conversion = {}
         self._setup_logger()
         self.warning_msgs = []
+
+    def parse_cmd_args (self, parser, cmd_args):
+        parsed_args = parser.parse_args(cmd_args[1:])
+        self.parsed_args = parsed_args
+        self.dbpath = parsed_args.dbpath
+        self.filterpath = parsed_args.filterpath
+        self.filtername = parsed_args.filtername
+        self.filterstring = parsed_args.filterstring
+        self.confs = None
+        if parsed_args.confs is not None:
+            confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+            self.confs = json.loads(confs)
+            if 'filter' in self.confs:
+                self.filter = self.confs['filter']
+            else:
+                self.filter = None
+        self.savepath = parsed_args.savepath
+        self.confpath = parsed_args.confpath
+        self.conf = ConfigLoader(job_conf_path=self.confpath)
+        self.module_name = parsed_args.module_name
+        if self.conf is not None:
+            self.module_conf = self.conf.get_module_conf(self.module_name)
+        else:
+            self.module_conf = None
+        self.report_types = parsed_args.reporttypes
+        self.output_basename = os.path.basename(self.dbpath)[:-7]
+        self.output_dir = os.path.dirname(self.dbpath)
+        status_fname = '{}.status.json'.format(self.output_basename)
+        self.status_fpath = os.path.join(self.output_dir, status_fname)
+        self.nogenelevelonvariantlevel = parsed_args.nogenelevelonvariantlevel
+        self.args = parsed_args
 
     async def prep (self):
         await self.connect_db()
@@ -627,37 +658,6 @@ class CravatReport:
         else:
             ret = True
         return ret
-
-def parse_cmd_args (self, parser, cmd_args):
-    parsed_args = parser.parse_args(cmd_args[1:])
-    self.parsed_args = parsed_args
-    self.dbpath = parsed_args.dbpath
-    self.filterpath = parsed_args.filterpath
-    self.filtername = parsed_args.filtername
-    self.filterstring = parsed_args.filterstring
-    self.confs = None
-    if parsed_args.confs is not None:
-        confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
-        self.confs = json.loads(confs)
-        if 'filter' in self.confs:
-            self.filter = self.confs['filter']
-        else:
-            self.filter = None
-    self.savepath = parsed_args.savepath
-    self.confpath = parsed_args.confpath
-    self.conf = ConfigLoader(job_conf_path=self.confpath)
-    self.module_name = parsed_args.module_name
-    if self.conf is not None:
-        self.module_conf = self.conf.get_module_conf(self.module_name)
-    else:
-        self.module_conf = None
-    self.report_types = parsed_args.reporttypes
-    self.output_basename = os.path.basename(self.dbpath)[:-7]
-    self.output_dir = os.path.dirname(self.dbpath)
-    status_fname = '{}.status.json'.format(self.output_basename)
-    self.status_fpath = os.path.join(self.output_dir, status_fname)
-    self.nogenelevelonvariantlevel = parsed_args.nogenelevelonvariantlevel
-    self.args = parsed_args
 
 def run_reporter (args):
     if sys.argv[0].endswith('/oc'):
