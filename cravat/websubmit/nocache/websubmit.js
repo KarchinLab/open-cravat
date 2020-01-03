@@ -1857,33 +1857,12 @@ function resizePage () {
     div.style.height = h + 'px';
 }
 
-/*
-function fileInputChange(event) {
-    var fileInputElem = event.target;
-    var files = fileInputElem.files;
-    if (files.length >= 1) {
-        $('#mult-inputs-message').css('display','block');
-        var $fileListDiv = $('#mult-inputs-list');
-        $fileListDiv.empty();
-        for (var i=0; i<files.length; i++) {
-            var file = files[i];
-            var $p = $(getEl('p'))
-                .text(file.name);
-            $fileListDiv.append($p);
-        }
-    } else {
-        $('#mult-inputs-message').css('display','none');
-    }
-}
-*/
-
 function populateMultInputsMessage() {
     var fileInputElem = document.getElementById('input-file');
     var files = fileInputElem.files;
     if (files.length >= 1) {
         $('#mult-inputs-message').css('display','block');
         var $fileListDiv = $('#mult-inputs-list');
-        //$fileListDiv.empty();
         for (var i=0; i<files.length; i++) {
             var file = files[i];
             if (inputFileList.indexOf(file.name) == -1) {
@@ -1891,9 +1870,9 @@ function populateMultInputsMessage() {
                 var span = getEl('span');
                 span.textContent = file.name;
                 addEl(sdiv, span);
-                var minus = getEl('span');
-                minus.textContent = '\xa0\u2296';
-                minus.style.cursor = 'default';
+                var minus = getEl('button');
+                minus.classList.add('butn');
+                minus.textContent = 'X';
                 minus.title = 'Click to remove the file.';
                 minus.addEventListener('click', function (evt) {
                     var fileName = evt.target.previousSibling.textContent;
@@ -1904,6 +1883,10 @@ function populateMultInputsMessage() {
                         }
                     }
                     evt.target.parentElement.parentElement.removeChild(evt.target.parentElement);
+                    if (inputFileList.length == 0) {
+                        document.querySelector('#mult-inputs-message').style.display = 'none';
+                        document.querySelector('#clear_inputfilelist_button').style.display = 'none';
+                    }
                 });
                 addEl(sdiv, minus);
                 $fileListDiv.append($(sdiv));
@@ -1918,6 +1901,7 @@ function populateMultInputsMessage() {
         document.querySelector('#clear_inputfilelist_button').style.display = 'none';
         document.querySelector('#mult-inputs-message').style.display = 'none';
     }
+    document.querySelector('#input-file').value = '';
 }
 
 function addListeners () {
