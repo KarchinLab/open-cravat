@@ -774,15 +774,16 @@ div.pq-select-menu>.pq-select-option-label {
 .filter-content {
 	margin: 10px;
 }
-.filter-header.inactive + .filter-content {
+.filter-header.inactive + .filter-body {
 	display: none;
 }
-
+.filter-controls {
+	position: relative;
+}
 .filter-section-clear {
-	margin-left: auto;
-	margin-right: 0px;
-	margin-top: -1px;
-	border-radius: 0px 4px 0px 0px;
+	position: absolute;
+	right: 5px;
+	bottom: 5px;
 }
 .filter-section {
 	margin: 10px;
