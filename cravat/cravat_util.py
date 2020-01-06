@@ -340,10 +340,12 @@ def migrate_result_152_to_153 (dbpath):
 
 def migrate_result_153_to_160(dbpath):
     db = sqlite3.connect(dbpath)
+    c = db.cursor()
     c.execute('update info set colval="1.6.0" where colkey="open-cravat"')
 
 def migrate_result_160_to_161(dbpath):
     db = sqlite3.connect(dbpath)
+    c = db.cursor()
     c.execute('update info set colval="1.6.1" where colkey="open-cravat"')
 
 def migrate_result_161_to_170 (dbpath):
