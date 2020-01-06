@@ -301,6 +301,7 @@ class Cravat (object):
     async def main (self):
         no_problem_in_run = True
         try:
+            self.aggregator_ran = False
             self.check_valid_modules()
             self.update_status('Started cravat')
             input_files_str = ', '.join(self.inputs)
@@ -357,7 +358,6 @@ class Cravat (object):
                 self.run_annotators_mp()
                 rtime = time.time() - stime
                 print('\tannotator(s) finished in {0:.3f}s'.format(rtime))
-            self.aggregator_ran = False
             if self.endlevel >= self.runlevels['aggregator'] and \
                     self.startlevel <= self.runlevels['aggregator'] and \
                     not 'aggregator' in self.args.skip and \
