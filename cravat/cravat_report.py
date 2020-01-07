@@ -69,7 +69,7 @@ class CravatReport:
         else:
             self.output_dir = os.path.dirname(self.dbpath)
         self.savepath = parsed_args.savepath
-        if os.path.dirname(self.savepath) == '':
+        if self.savepath is not None and os.path.dirname(self.savepath) == '':
             self.savepath = os.path.join(self.output_dir, self.savepath)
         self.confpath = parsed_args.confpath
         self.conf = ConfigLoader(job_conf_path=self.confpath)
