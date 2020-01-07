@@ -190,7 +190,7 @@ widgetGenerators['basepanel'] = {
         'height': undefined,
         'function': function (div, row, tabName) {
             var generator = widgetGenerators['base']['variant'];
-            generator['width'] = 400;
+            generator['width'] = 450;
             var divs = showWidget('base', ['base', 'dbsnp'], 'variant', div, null, 250);
             divs[0].style.position = 'absolute';
             divs[0].style.top = '0px';
@@ -200,7 +200,7 @@ widgetGenerators['basepanel'] = {
             var divs = showWidget('hgvs', ['base', 'hgvs'], 'variant', div, null, 250);
             divs[0].style.position = 'absolute';
             divs[0].style.top = '0px';
-            divs[0].style.left = '420px';
+            divs[0].style.left = '470px';
             var generator = widgetGenerators['lollipop']['variant'];
             generator['width'] = sectionWidth;
             generator['height'] = 200;
