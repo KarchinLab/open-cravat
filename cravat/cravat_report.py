@@ -714,6 +714,7 @@ parser.add_argument('-t',
     nargs='+',
     choices=au.report_formats(),
     default=None,
+    required=True,
     help='report types')
 parser.add_argument('--module-name',
     dest='module_name',
