@@ -701,7 +701,7 @@ parser.add_argument('-F',
 parser.add_argument('--filterstring',
     dest='filterstring',
     default=None,
-    help='Filter in JSON')
+    help=argparse.SUPPRESS)
 parser.add_argument('-s',
     dest='savepath',
     default=None,
