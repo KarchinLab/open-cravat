@@ -849,6 +849,7 @@ class Cravat (object):
                 cmd = [module.script_path, 
                        '-s', os.path.join(self.output_dir, self.run_name),
                        os.path.join(self.output_dir, self.run_name + '.sqlite'),
+                       '-d', self.output_dir,
                        '--module-name', module_name]
                 if self.run_conf_path is not None:
                     cmd.extend(['-c', self.run_conf_path])

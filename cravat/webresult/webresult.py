@@ -328,7 +328,6 @@ async def get_result (request):
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
     args = ['oc', 'report', dbpath, '--module-name', reporter_name]
-    args.extend(['-t', 'text']) # dummy mandatory -t option
     if confpath != None:
         args.extend(['-c', confpath])
     if filterstring != None:
@@ -547,7 +546,6 @@ async def get_colinfo (dbpath, confpath, filterstring):
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
     args = ['oc', 'report', dbpath, '--module-name', reporter_name]
-    args.extend(['-t', 'text']) # dummy mandatory -t option
     if confpath != None:
         args.extend(['-c', confpath])
     if filterstring != None:

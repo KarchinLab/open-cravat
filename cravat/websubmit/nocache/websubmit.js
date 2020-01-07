@@ -751,7 +751,7 @@ function jobReportDownloadButtonHandler (evt) {
 }
 
 function downloadReport (jobId, reportType) {
-    url = 'jobs/'+jobId+'/reports/'+reportType;
+    url = '/submit/jobs/'+jobId+'/reports/'+reportType;
     downloadFile(url);
 }
 

@@ -27,6 +27,11 @@ class CravatReport:
     def __init__ (self, cmd_args, status_writer=None):
         self.status_writer = status_writer
         global parser
+        for ag in parser._action_groups:
+            if ag.title == 'optional arguments':
+                for a in ag._actions:
+                    if '-t' in a.option_strings:
+                        ag._actions.remove(a)
         self.parse_cmd_args(parser, cmd_args)
         self.cursor = None
         self.cf = None
@@ -44,16 +49,7 @@ class CravatReport:
         self.warning_msgs = []
 
     def parse_cmd_args (self, parser, cmd_args):
-        if len(cmd_args[0]) == 0:
-            cmd_args = cmd_args[1:]
-        if cmd_args[0].endswith('oc'):
-            cmd_args = cmd_args[1:]
-            if cmd_args[0] == 'report':
-                cmd_args = cmd_args[1:]
-        elif cmd_args[0] == 'report':
-            cmd_args = cmd_args[1:]
-        elif cmd_args[0].endswith('cravat-report'):
-            cmd_args = cmd_args[1:]
+        cmd_args = clean_args(cmd_args)
         parsed_args = parser.parse_args(cmd_args)
         self.parsed_args = parsed_args
         self.dbpath = parsed_args.dbpath
@@ -68,7 +64,13 @@ class CravatReport:
                 self.filter = self.confs['filter']
             else:
                 self.filter = None
+        if parsed_args.output_dir is not None:
+            self.output_dir = parsed_args.output_dir
+        else:
+            self.output_dir = os.path.dirname(self.dbpath)
         self.savepath = parsed_args.savepath
+        if os.path.dirname(self.savepath) == '':
+            self.savepath = os.path.join(self.output_dir, self.savepath)
         self.confpath = parsed_args.confpath
         self.conf = ConfigLoader(job_conf_path=self.confpath)
         self.module_name = parsed_args.module_name
@@ -76,9 +78,9 @@ class CravatReport:
             self.module_conf = self.conf.get_module_conf(self.module_name)
         else:
             self.module_conf = None
-        self.report_types = parsed_args.reporttypes
+        if hasattr(parsed_args, 'reporttypes'):
+            self.report_types = parsed_args.reporttypes
         self.output_basename = os.path.basename(self.dbpath)[:-7]
-        self.output_dir = os.path.dirname(self.dbpath)
         status_fname = '{}.status.json'.format(self.output_basename)
         self.status_fpath = os.path.join(self.output_dir, status_fname)
         self.nogenelevelonvariantlevel = parsed_args.nogenelevelonvariantlevel
@@ -669,36 +671,68 @@ class CravatReport:
             ret = True
         return ret
 
+def clean_args (cmd_args):
+    if len(cmd_args[0]) == 0:
+        cmd_args = cmd_args[1:]
+    if cmd_args[0].endswith('oc'):
+        cmd_args = cmd_args[1:]
+        if cmd_args[0] == 'report':
+            cmd_args = cmd_args[1:]
+    elif cmd_args[0] == 'report':
+        cmd_args = cmd_args[1:]
+    elif cmd_args[0].endswith('cravat-report'):
+        cmd_args = cmd_args[1:]
+    elif cmd_args[0].endswith('.py'):
+        cmd_args = cmd_args[1:]
+    return cmd_args
+
 def run_reporter (args):
-    if sys.argv[0].endswith('/oc'):
-        sys.argv = sys.argv[1:]
     global au
     dbpath = args.dbpath
     report_types = args.reporttypes
-    run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
-    output_dir = os.path.dirname(dbpath)
+    if args.output_dir is not None:
+        output_dir = args.output_dir
+    else:
+        output_dir = os.path.dirname(dbpath)
+    if args.savepath is None:
+        run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
+        args.savepath = os.path.join(output_dir, run_name)
+    else:
+        savedir = os.path.dirname(args.savepath)
+        if savedir != '':
+            self.output_dir = savedir
     loop = asyncio.get_event_loop()
     for report_type in report_types:
-        print(f'Generating {report_type} report...')
+        print(f'Generating {report_type} report... ', end='', flush=True)
         module_info = au.get_local_module_info(report_type + 'reporter')
         spec = importlib.util.spec_from_file_location(module_info.name, module_info.script_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         cmd_args = sys.argv
-        cmd_args.extend(['--module-name', module_info.name, '-s', os.path.join(output_dir, run_name)])
+        cmd_args.extend(['--module-name', module_info.name])
+        cmd_args.extend(['-s', args.savepath])
         reporter = module.Reporter(cmd_args)
         loop.run_until_complete(reporter.prep())
         loop.run_until_complete(reporter.run())
+        print(f'report created in {os.path.abspath(output_dir)}.')
     loop.close()
 
 def cravat_report_entrypoint ():
     global parser
+    cmd_args = clean_args(sys.argv)
     parsed_args = parser.parse_args(sys.argv[1:])
     run_reporter(parsed_args)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('dbpath',
                     help='Path to aggregator output')
+parser.add_argument('-t',
+    dest='reporttypes',
+    nargs='+',
+    choices=au.report_formats(),
+    default=[],
+    required=True,
+    help='report types')
 parser.add_argument('-f',
     dest='filterpath',
     default=None,
@@ -718,13 +752,6 @@ parser.add_argument('-s',
 parser.add_argument('-c',
     dest='confpath',
     help='path to a conf file')
-parser.add_argument('-t',
-    dest='reporttypes',
-    nargs='+',
-    choices=au.report_formats(),
-    default=[],
-    required=True,
-    help='report types')
 parser.add_argument('--module-name',
     dest='module_name',
     default=None,
@@ -748,5 +775,9 @@ parser.add_argument('--separatesample',
     action='store_true',
     default=False,
     help='Write each variant-sample pair on a separate line')
+parser.add_argument('-d',
+    dest='output_dir',
+    default=None,
+    help='directory for output files')
 parser.set_defaults(func=run_reporter)
 

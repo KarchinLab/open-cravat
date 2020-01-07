@@ -578,11 +578,11 @@ async def generate_report(request):
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
     job_input = await filerouter.job_run_path(request, job_id)
-    run_args = ['cravat', job_input]
+    run_args = ['oc', 'run', job_input]
     run_args.extend(['--startat', 'reporter'])
     run_args.extend(['--repeat', 'reporter'])
     run_args.extend(['-t', report_type])
-    run_args.extend(['-l', 'hg38'])
+    run_args.extend(['-l', 'hg38']) # dummy -l option
     p = await asyncio.create_subprocess_shell(' '.join(run_args))
     await p.wait()
     return web.json_response('done')
