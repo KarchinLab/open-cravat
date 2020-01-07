@@ -44,9 +44,15 @@ class CravatReport:
         self.warning_msgs = []
 
     def parse_cmd_args (self, parser, cmd_args):
-        try:
-            cmd_args = cmd_args[cmd_args.index('report') + 1:]
-        except ValueError:
+        if len(cmd_args[0]) == 0:
+            cmd_args = cmd_args[1:]
+        if cmd_args[0].endswith('oc'):
+            cmd_args = cmd_args[1:]
+            if cmd_args[0] == 'report':
+                cmd_args = cmd_args[1:]
+        elif cmd_args[0] == 'report':
+            cmd_args = cmd_args[1:]
+        elif cmd_args[0].endswith('cravat-report'):
             cmd_args = cmd_args[1:]
         parsed_args = parser.parse_args(cmd_args)
         self.parsed_args = parsed_args
@@ -716,7 +722,7 @@ parser.add_argument('-t',
     dest='reporttypes',
     nargs='+',
     choices=au.report_formats(),
-    default=None,
+    default=[],
     required=True,
     help='report types')
 parser.add_argument('--module-name',
