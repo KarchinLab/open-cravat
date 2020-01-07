@@ -1515,7 +1515,7 @@ function grayOutWidgetSelect (widgetName, tabName) {
         'widgettogglecheckbox_' + tabName + '_' + widgetName);
     if (button != undefined) {
         button.disabled = 'disabled';
-        button.nextSibling.style.color = 'gray';
+        button.parentElement.style.color = 'gray';
     }
 }
 
