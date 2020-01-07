@@ -44,7 +44,8 @@ class CravatReport:
         self.warning_msgs = []
 
     def parse_cmd_args (self, parser, cmd_args):
-        parsed_args = parser.parse_args(cmd_args[1:])
+        cmd_args = cmd_args[cmd_args.index('report') + 1:]
+        parsed_args = parser.parse_args(cmd_args)
         self.parsed_args = parsed_args
         self.dbpath = parsed_args.dbpath
         self.filterpath = parsed_args.filterpath
