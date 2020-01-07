@@ -592,17 +592,15 @@ function populateJobDetailTr (job) {
         addEl(td, button);
         addEl(tr, td);
         addEl(tbody, tr);
+    }
+    if (job.job_dir != undefined) {
         var tr = getEl('tr');
         var td = getEl('td');
         td.textContent = 'Job Directory';
         addEl(tr, td);
         var td = getEl('td');
         var a = getEl('span');
-        var d = job.db_path.substring(0, job.db_path.lastIndexOf('/'));
-        /*
-        a.href = 'file://///' + d;
-        */
-        a.textContent = d;
+        a.textContent = job.job_dir;
         addEl(td, a);
         addEl(tr, td);
         addEl(tbody, tr);
