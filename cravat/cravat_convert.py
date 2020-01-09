@@ -326,7 +326,8 @@ class MasterCravatConverter(object):
                     traceback.print_exc()
                     continue
                 if all_wdicts:
-                    UIDMap = [] 
+                    UIDMap = []
+                    no_unique_var = 0
                     for wdict_no in range(len(all_wdicts)):
                         wdict = all_wdicts[wdict_no]
                         chrom = wdict['chrom']
@@ -361,7 +362,8 @@ class MasterCravatConverter(object):
                                 if self.do_liftover:
                                     prelift_wdict['uid'] = UID
                                     self.crl_writer.write_data(prelift_wdict)
-                                self.primary_converter.addl_operation_for_unique_variant(wdict, wdict_no)
+                                self.primary_converter.addl_operation_for_unique_variant(wdict, no_unique_var)
+                                no_unique_var += 1
                             if UID not in UIDMap: 
                                 #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
                                 self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID, 'fileno': self.input_path_dict2[f.name]})
