@@ -333,7 +333,7 @@ class Cravat (object):
                         'mapper' in self.args.repeat or
                         converter_ran
                    ):
-                print('Running gene mapper...')
+                print(f'Running gene mapper...{" "*18}',end='')
                 stime = time.time()
                 self.run_genemapper()
                 rtime = time.time() - stime
@@ -730,7 +730,6 @@ class Cravat (object):
             confs = json.dumps(self.cravat_conf[module.name])
             confs = "'" + confs.replace("'", '"') + "'"
             cmd.extend(['--confs', confs])
-        self.announce_module(module)
         if self.verbose:
             print(' '.join(cmd))
         genemapper_class = util.load_class('Mapper', module.script_path)
