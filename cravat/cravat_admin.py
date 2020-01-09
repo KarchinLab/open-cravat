@@ -12,6 +12,7 @@ import re
 import textwrap
 import math
 import copy
+from getpass import getpass
 
 class ExampleCommandsFormatter(object,):
     def __init__(self, prefix='',  cmd_indent=' '*2, desc_indent=' '*8, width=70):
@@ -373,6 +374,8 @@ def uninstall_modules (args):
         print('No modules found')
 
 def publish_module (args):
+    if args.password is None:
+        args.password = getpass()
     au.publish_module(args.module, args.user, args.password, overwrite=args.overwrite, include_data=args.data)
 
 def install_base (args):
@@ -594,7 +597,6 @@ parser_publish.add_argument('-u',
                             )
 parser_publish.add_argument('-p',
                             '--password',
-                            required=True,
                             help='password for the user.')
 parser_publish.add_argument('--force-yes',
                             default=False,
