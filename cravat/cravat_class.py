@@ -710,7 +710,7 @@ class Cravat (object):
         if self.args.forcedinputformat is not None:
             cmd.extend(['-f', self.args.forcedinputformat])
         if self.args.unique_variants:
-            cmd.append('-u')
+            cmd.append('--unique-variants')
         self.announce_module(module)
         if self.verbose:
             print(' '.join(cmd))
