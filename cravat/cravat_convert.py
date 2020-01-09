@@ -16,6 +16,7 @@ from cravat.util import detect_encoding
 import json
 import gzip
 from collections import defaultdict
+from cravat.base_converter import BaseConverter
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
@@ -60,6 +61,7 @@ class MasterCravatConverter(object):
         correct converter, and writes a crv file.
     """
     ALREADYCRV = 2
+
     def __init__(self, args=None, status_writer=None):
         args = args if args else sys.argv
         self.status_writer = status_writer
@@ -315,7 +317,7 @@ class MasterCravatConverter(object):
                     # multiple output lines. False is returned if converter
                     # decides line is not an input line.
                     all_wdicts = self.primary_converter.convert_line(l)
-                    if all_wdicts is False:
+                    if all_wdicts is BaseConverter.IGNORE:
                         continue
                     total_lnum += 1
                 except Exception as e:
@@ -365,6 +367,9 @@ class MasterCravatConverter(object):
                                 self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID, 'fileno': self.input_path_dict2[f.name]})
                                 UIDMap.append(UID)
                         self.crs_writer.write_data(wdict)
+                else:
+                    e = ExpectedException('No conversion result')
+                    self._log_conversion_error(read_lnum, l, e)
             cur_time = time.time()
             if total_lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
                 self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format('Converter', cur_fname, read_lnum))
