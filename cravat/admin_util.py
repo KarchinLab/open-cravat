@@ -1331,21 +1331,23 @@ def get_remote_manifest ():
     return mic.remote
 
 def input_formats():
-    d = os.path.join(get_modules_dir(), 'converters')
-    fns = os.listdir(d)
     formats = set()
-    for fn in fns:
-        if fn.endswith('-converter'):
-            formats.add(fn.split('-')[0])
+    d = os.path.join(get_modules_dir(), 'converters')
+    if os.path.exists(d):
+        fns = os.listdir(d)
+        for fn in fns:
+            if fn.endswith('-converter'):
+                formats.add(fn.split('-')[0])
     return formats
 
 def report_formats():
-    d = os.path.join(get_modules_dir(), 'reporters')
-    fns = os.listdir(d)
     formats = set()
-    for fn in fns:
-        if fn.endswith('reporter'):
-            formats.add(fn.replace('reporter',''))
+    d = os.path.join(get_modules_dir(), 'reporters')
+    if os.path.exists(d):
+        fns = os.listdir(d)
+        for fn in fns:
+            if fn.endswith('reporter'):
+                formats.add(fn.replace('reporter',''))
     return formats
 
 """
