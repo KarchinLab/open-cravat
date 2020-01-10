@@ -364,7 +364,8 @@ class Cravat (object):
                     (
                         self.mapper_ran or \
                         self.annotator_ran or \
-                        'aggregator' in self.args.repeat
+                        'aggregator' in self.args.repeat or \
+                        self.startlevel == self.runlevels['aggregator']
                     ):
                 print('Running aggregator...')
                 self.result_path = self.run_aggregator()
