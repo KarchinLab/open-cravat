@@ -1,9 +1,8 @@
 import argparse
-from . import cravat_admin
-from .cravat_class import cravat_cmd_parser
-from .cravat_test import parser as test_parser
-from .cravat_web import parser as gui_parser
-from . import cravat_util
+from cravat import cravat_admin, cravat_util
+from cravat.cravat_class import cravat_cmd_parser
+from cravat.cravat_test import parser as test_parser
+from cravat.cravat_web import parser as gui_parser
 from cravat.cravat_report import parser as report_parser
 import sys
 
@@ -71,6 +70,9 @@ def main():
         args = root_p.parse_args()
         if hasattr(args, 'func'):
             args.func(args)
+        else:
+            root_p.parse_args(sys.argv[1:] + ['--help'])
+
     except KeyboardInterrupt:
         sys.exit(1)
 
