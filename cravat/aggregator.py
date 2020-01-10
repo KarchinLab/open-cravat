@@ -131,6 +131,8 @@ class Aggregator (object):
             reader = self.readers[annot_name]
             n = 0
             ordered_cnames = [cname for cname in reader.get_column_names() if cname != self.key_name]
+            if len(ordered_cnames) == 0:
+                continue
             update_template = 'update {} set {} where {}=?'.format(
                 self.table_name,
                 ', '.join([f'{cname}=?' for cname in ordered_cnames]),
