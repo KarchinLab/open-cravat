@@ -378,6 +378,7 @@ class MasterCravatConverter(object):
                 last_status_update_time = cur_time
         self.logger.info('error lines: %d' %num_errors)
         self._close_files()
+        self.end()
         if self.status_writer is not None:
             self.status_writer.queue_status_update('num_input_var', total_lnum)
             self.status_writer.queue_status_update('num_unique_var', write_lnum)
@@ -419,6 +420,9 @@ class MasterCravatConverter(object):
         self.crv_writer.close()
         self.crm_writer.close()
         self.crs_writer.close()
+
+    def end (self):
+        pass
 
     def standardize_pos_ref_alt (self, strand, pos, ref, alt):
         reflen = len(ref)
