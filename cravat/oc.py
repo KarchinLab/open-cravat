@@ -5,6 +5,7 @@ from .cravat_test import parser as test_parser
 from .cravat_web import parser as gui_parser
 from . import cravat_util
 from cravat.cravat_report import parser as report_parser
+import sys
 
 root_p = argparse.ArgumentParser()
 root_sp = root_p.add_subparsers(title='Commands')
@@ -66,9 +67,12 @@ version_p = root_sp.add_parser('version', parents=[cravat_admin.parser_show_vers
 feedback_p = root_sp.add_parser('feedback', parents=[cravat_admin.parser_report_issue], add_help=False, help='Send feedback to the developers')
 
 def main():
-    args = root_p.parse_args()
-    if hasattr(args, 'func'):
-        args.func(args)
+    try:
+        args = root_p.parse_args()
+        if hasattr(args, 'func'):
+            args.func(args)
+    except KeyboardInterrupt:
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
