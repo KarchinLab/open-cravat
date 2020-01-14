@@ -241,7 +241,7 @@ div.modulegroup span.modulepanel-datasource-span {
 
 .panelinstallprogressspan {
     position: absolute;
-    top: 0px;
+    top: -4px;
     right: 0px;
     font-size: 12px;
 }
