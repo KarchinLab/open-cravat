@@ -7,11 +7,11 @@ from cravat.cravat_report import parser as report_parser
 import sys
 
 try:
-    root_p = argparse.ArgumentParser()
+    root_p = argparse.ArgumentParser(description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat')
     root_sp = root_p.add_subparsers(title='Commands')
 
     # run
-    run_p = root_sp.add_parser('run', parents=[cravat_cmd_parser], add_help=False, help='Run a job')
+    run_p = root_sp.add_parser('run', parents=[cravat_cmd_parser], add_help=False, description='Run a job', help='Run a job')
 
     # report
     report_p = root_sp.add_parser('report', parents=[report_parser], add_help=False, help='Generate a report from a job')
@@ -20,7 +20,7 @@ try:
     gui_p = root_sp.add_parser('gui', parents=[gui_parser], add_help=False, help='Start the GUI')
 
     # module
-    module_p = root_sp.add_parser('module', help='Change installed modules')
+    module_p = root_sp.add_parser('module', description='Change installed modules', help='Change installed modules')
     module_sp = module_p.add_subparsers(title='Commands')
     module_ls_p = module_sp.add_parser('ls', parents=[cravat_admin.parser_ls], add_help=False, help='List modules')
     module_install_p = module_sp.add_parser('install', parents=[cravat_admin.parser_install], add_help=False, help='Install modules')
@@ -31,20 +31,20 @@ try:
 
 
     # config
-    config_p = root_sp.add_parser('config', help='View and change configuration settings')
+    config_p = root_sp.add_parser('config', description='View and change configuration settings', help='View and change configuration settings')
     config_sp = config_p.add_subparsers(title='Commands')
     config_md_p = config_sp.add_parser('md', parents=[cravat_admin.parser_md], add_help=False, help='Change modules directory')
     config_system_p = config_sp.add_parser('system', parents=[cravat_admin.parser_show_system_conf], add_help=False, help='Show system config')
     config_system_p = config_sp.add_parser('cravat', parents=[cravat_admin.parser_show_cravat_conf], add_help=False, help='Show cravat config')
 
     # new
-    new_p = root_sp.add_parser('new', help='Create new modules')
+    new_p = root_sp.add_parser('new', description='Create new modules', help='Create new modules')
     new_sp = new_p.add_subparsers(title='Commands')
     create_example_input_p = new_sp.add_parser('example-input', parents=[cravat_admin.parser_make_example_input], add_help=False, help='Make example input file')
     create_annotator_p = new_sp.add_parser('annotator', parents=[cravat_admin.parser_new_annotator], add_help=False, help='Create new annotator')
 
     # store
-    store_p = root_sp.add_parser('store', help='Publish modules to the store')
+    store_p = root_sp.add_parser('store', description='Publish modules to the store', help='Publish modules to the store')
     store_sp = store_p.add_subparsers(title='Commands')
     store_publish_p = store_sp.add_parser('publish', parents=[cravat_admin.parser_publish], add_help=False, help='Publish a module')
     account_create_p = store_sp.add_parser('new-account', parents=[cravat_admin.parser_create_account], add_help=False, help='Create an account')
@@ -54,7 +54,7 @@ try:
     account_check_login_p = store_sp.add_parser('check-login', parents=[cravat_admin.parser_check_login], add_help=False, help='Check login credentials')
 
     # util
-    util_p = root_sp.add_parser('util', help='Utilities')
+    util_p = root_sp.add_parser('util', description='Utilities', help='Utilities')
     util_sp = util_p.add_subparsers(title='Commands')
     util_test_p = util_sp.add_parser('test', parents=[test_parser], add_help=False, help='Test installed modules')
     util_update_result_p = util_sp.add_parser('update-result', parents=[cravat_util.parser_migrate_result], add_help=False, help='Update old result database to newer format')

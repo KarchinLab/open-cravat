@@ -32,7 +32,11 @@ cravat_cmd_parser = argparse.ArgumentParser(
 cravat_cmd_parser.add_argument('inputs',
     nargs='*',
     default=None,
-    help=argparse.SUPPRESS)
+    help='Input file(s). One or more variant files in a supported format like VCF.  '+\
+         'See the -i/--input-format flag for supported formats. In the special case '+\
+         'where you want to add annotations to an existing open-cravat analysis, '+\
+         'provide the output sqlite database from the previous run as input instead of a variant input file.',
+    )
 cravat_cmd_parser.add_argument('-a',
     nargs="+",
     dest='annotators',
