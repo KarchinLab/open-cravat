@@ -323,7 +323,6 @@ class MasterCravatConverter(object):
                 except Exception as e:
                     num_errors += 1
                     self._log_conversion_error(read_lnum, l, e)
-                    traceback.print_exc()
                     continue
                 if all_wdicts:
                     UIDMap = []
