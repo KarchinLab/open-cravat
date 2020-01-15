@@ -28,7 +28,7 @@ from cravat.inout import CravatWriter
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path_1 input_file_path_2 ...',
     description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path arguments before any option or define them in a conf file (option -c).',
-    epilog='* input_file_path should precede any option.')
+    epilog='inputs should be the first option')
 cravat_cmd_parser.add_argument('inputs',
     nargs='*',
     default=None,

@@ -723,7 +723,7 @@ def cravat_report_entrypoint ():
     parsed_args = parser.parse_args(sys.argv[1:])
     run_reporter(parsed_args)
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(epilog='dbpath must be the first argument.')
 parser.add_argument('dbpath',
                     help='Path to aggregator output')
 parser.add_argument('-t',

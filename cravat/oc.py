@@ -11,10 +11,10 @@ try:
     root_sp = root_p.add_subparsers(title='Commands')
 
     # run
-    run_p = root_sp.add_parser('run', parents=[cravat_cmd_parser], add_help=False, description='Run a job', help='Run a job')
+    run_p = root_sp.add_parser('run', parents=[cravat_cmd_parser], add_help=False, description='Run a job', help='Run a job', epilog='inputs should be the first argument')
 
     # report
-    report_p = root_sp.add_parser('report', parents=[report_parser], add_help=False, help='Generate a report from a job')
+    report_p = root_sp.add_parser('report', parents=[report_parser], add_help=False, help='Generate a report from a job', epilog='dbpath must be the first argument')
 
     # gui
     gui_p = root_sp.add_parser('gui', parents=[gui_parser], add_help=False, help='Start the GUI')
