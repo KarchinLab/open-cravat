@@ -99,6 +99,7 @@ setup(
         'oyaml',
         'infi.systray',
         'intervaltree',
+        'xlsxwriter',
         ],
     python_requires='>=3.6',
 )
