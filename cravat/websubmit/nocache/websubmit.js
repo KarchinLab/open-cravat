@@ -809,6 +809,8 @@ function inputExampleChangeHandler (event) {
                 type: 'GET',
                 contentType: 'application/json',
                 success: function (data) {
+                    clearInputFiles();
+                    document.querySelector('#input-file').value = '';
                     GLOBALS.inputExamples[formatAssembly] = data;
                     resolve(data);
                 }
@@ -1853,6 +1855,13 @@ function resizePage () {
     var div = document.getElementById('jobdiv');
     var h = window.innerHeight - 85;
     div.style.height = h + 'px';
+}
+
+function clearInputFiles () {
+    inputFileList = [];
+    document.querySelector('#mult-inputs-message').style.display = 'none';
+    document.querySelector('#clear_inputfilelist_button').style.display = 'none';
+    $('#mult-inputs-list').empty();
 }
 
 function populateMultInputsMessage() {
