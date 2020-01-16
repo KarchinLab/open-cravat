@@ -341,6 +341,10 @@ div.checkbox-group-element[kind=group] span.label {
     width: 85px;
 }
 
+#mult-inputs-list {
+    margin-left: 10px;
+}
+
 #mult-inputs-list p {
     margin-top: 1px;
     margin-bottom: 1px;
@@ -815,3 +819,8 @@ input:checked + .slider:before {
     width: fit-content;
     padding: 2px;
 }
+
+.fileaddbutn {
+    font-size: 10px;
+}
+

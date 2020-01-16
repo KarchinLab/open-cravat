@@ -1870,6 +1870,7 @@ function populateMultInputsMessage() {
                 addEl(sdiv, span);
                 var minus = getEl('button');
                 minus.classList.add('butn');
+                minus.classList.add('fileaddbutn');
                 minus.textContent = 'X';
                 minus.title = 'Click to remove the file.';
                 minus.addEventListener('click', function (evt) {
