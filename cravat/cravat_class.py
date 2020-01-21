@@ -948,7 +948,7 @@ class Cravat (object):
             while assigned_mnames != all_mnames: #TODO not handling case where parent module errors out
                 finished_module = end_queue.get()
                 done_mnames.add(finished_module)
-                for mname, module in self.annotators.items():
+                for mname, module in self.run_annotators.items():
                     if mname not in assigned_mnames and set(module.secondary_module_names) <= done_mnames:
                         start_queue.put(run_args[mname])
                         assigned_mnames.add(mname)
