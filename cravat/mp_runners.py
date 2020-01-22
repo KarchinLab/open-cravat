@@ -5,6 +5,10 @@ import os
 import logging
 from logging.handlers import QueueHandler
 from queue import Empty
+import signal
+
+def init_worker():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 def annot_from_queue(start_queue, end_queue, queue_populated, status_writer):
     try:
