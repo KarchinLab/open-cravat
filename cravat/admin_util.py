@@ -105,14 +105,8 @@ class LocalModuleInfo (object):
         if 'type' not in self.conf:
             self.conf['type'] = 'unknown'
         self.type = self.conf['type']
-        if 'level' in self.conf:
-            self.level = self.conf['level']
-        else:
-            self.level = None
-        if 'input_format' in self.conf:
-            self.input_format = self.conf['input_format']
-        else:
-            self.input_format = None
+        self.level = self.conf.get('level')
+        self.input_format = self.conf.get('input_format')
         self.secondary_module_names = list(self.conf.get('secondary_inputs',{}))
         if self.type == 'annotator':
             if self.level == 'variant':
@@ -121,24 +115,12 @@ class LocalModuleInfo (object):
                 self.output_suffix = self.name + '.gen'
             else:
                 self.output_suffix = self. name + '.' + self.type
-        if 'title' in self.conf:
-            self.title = self.conf['title']
-        else:
-            self.title = self.name
+        self.title = self.conf.get('title',self.name)
         self.disk_size = None
-        if 'tags' in self.conf:
-            self.tags = self.conf['tags']
-        else:
-            self.tags = []
-        if 'datasource' in self.conf:
-            self.datasource = str(self.conf['datasource'])
-        else:
-            self.datasource = ''
+        self.tags = self.conf.get('tags',[])
+        self.datasource = str(self.conf.get('datasource',''))
         self.smartfilters = self.conf.get('smartfilters')
-        if 'groups' in self.conf:
-            self.groups = self.conf['groups']
-        else:
-            self.groups = None
+        self.groups = self.conf.get('groups')
 
     def is_valid_module(self):
         r = self.exists
