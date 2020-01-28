@@ -458,7 +458,9 @@ function updateModuleGroupInfo () {
                 if (moduleGroupMembers[group] == undefined) {
                     moduleGroupMembers[group] = [];
                 }
-                moduleGroupMembers[group].push(mn);
+                if (moduleGroupMembers[group].indexOf(mn) == -1) {
+                    moduleGroupMembers[group].push(mn);
+                }
             }
         }
     }
