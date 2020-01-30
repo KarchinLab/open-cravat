@@ -270,6 +270,7 @@ module_tag_desc = {
     'noncoding': 'modules for studying noncoding variants',
     'populations': 'modules for studying population statistics of variants',
     'protein visualization': 'modules to visualize variants on protein structures',
+    'reporters': 'modules for generating output formats',
     'variant effect prediction': 'modules to predict variant effects',
     'variants': 'modules to study variants at the variant level',
     'visualization widgets': 'modules for visualizing variants',
