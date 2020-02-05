@@ -88,16 +88,20 @@
                             
                         </td>
                     </tr><tr>
-                        <td valign='top' class='variant-input-border-bottom' style='text-align: right;'>
+                        <td valign='top' class='variant-input-border-bottom' style='text-align: left;'>
                             <br />
                             <div style='text-align: left;'>
                                 <textarea rows="1" id="input-text" style='' placeholder="Enter variants" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
+                            <!--
                             <span>Format:</span>
-                            <select id='submit-input-format-select' disabled>
+                            -->
+                            <select id='submit-input-format-select' disabled style='display: none;'>
                                 <option value=''>Detect</option>
                             </select>
+                            <!--
                             <span style='font-size: 10px;'> | </span>
+                            -->
                             <span style='font-size: 13px;'>Example:</span>
                             <button value="vcf" class='butn input-example-button'>VCF</button>
                             <button value="cravat" class='butn input-example-button'>TSV</button>
