@@ -62,6 +62,10 @@ class LocalModuleInfo (object):
         else:
             self.name = name
         self.script_path = os.path.join(self.directory, self.name+'.py')
+        if os.path.exists(self.script_path) == False:
+            pyx_path = self.script_path + 'x'
+            if os.path.exists(pyx_path):
+                self.script_path = pyx_path
         self.script_exists = os.path.exists(self.script_path)
         self.conf_path = os.path.join(self.directory, self.name+'.yml')
         self.conf_exists = os.path.exists(self.conf_path)

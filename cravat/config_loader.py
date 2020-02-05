@@ -99,7 +99,7 @@ class ConfigLoader():
     def get_cravat_conf(self):
         if 'cravat' not in self._all:
             self._load_main_conf()
-        return self._main
+        return self._all['cravat']
     
     def get_modules_conf(self):
         conf = self._all.get('modules', {})

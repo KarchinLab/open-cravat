@@ -163,11 +163,19 @@ def load_class(class_name, path):
     """Load a class from the class's name and path. (dynamic importing)"""
     path_dir = os.path.dirname(path)
     sys.path = [path_dir] + sys.path
-    spec = importlib.util.spec_from_file_location(class_name, path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    del sys.path[0]
-    return getattr(mod, class_name)
+    if path.endswith('.pyx'):
+        import pyximport
+        pyximport.install(language_level=3)
+        module_name = os.path.basename(path)[:-4]
+        mod = __import__(module_name)
+        module_class = getattr(mod, class_name)
+        return module_class
+    else:
+        spec = importlib.util.spec_from_file_location(class_name, path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        del sys.path[0]
+        return getattr(mod, class_name)
 
 def get_directory_size(start_path):
     """

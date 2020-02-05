@@ -724,8 +724,7 @@ class Cravat (object):
         self.numinput, self.converter_format = converter.run()
 
     def run_genemapper (self):
-        module = au.get_local_module_info(
-            self.cravat_conf['genemapper'])
+        module = au.get_local_module_info(self.conf.get_cravat_conf()['genemapper'])
         self.genemapper = module
         cmd = [module.script_path, 
                self.crvinput,
