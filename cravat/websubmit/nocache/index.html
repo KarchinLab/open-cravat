@@ -7,12 +7,12 @@
     <link rel='stylesheet' href='/result/js/jquery-ui-1.12.1.custom/jquery-ui.css' />
     <link rel="shortcut icon" href='#'>
     <link rel="icon" href="/submit/logo_transparent.png" />
-    <link rel="stylesheet" href="/submit/nocache/websubmit.css?ver=1.6.0">
-    <link rel="stylesheet" href="/store/nocache/webstore.css?ver=1.6.0">
-    <script type='text/javascript' src='pqselect.dev.customforsubmit.js'></script>
+    <link rel="stylesheet" href="/submit/nocache/websubmit.css?ver=1.7.0">
+    <link rel="stylesheet" href="/store/nocache/webstore.css?ver=1.7.0">
+    <script type='text/javascript' src='/submit/pqselect.dev.customforsubmit.js'></script>
     <link rel='stylesheet' href='/result/css/pqselect.min.css' />
-    <script src="/submit/nocache/websubmit.js?ver=1.6.0"></script>
-    <script src='/store/nocache/webstore.js?ver=1.6.0'></script>
+    <script src="/submit/nocache/websubmit.js?ver=1.7.0"></script>
+    <script src='/store/nocache/webstore.js?ver=1.7.0'></script>
     <script src='/submit/Chart.bundle.min.js'></script>
     <script>
         $(document).ready(function() {
@@ -44,12 +44,12 @@
 
 <div class = 'headerdiv' />
     <div style='position: absolute; left: calc(50% - 65px); top: 2px;'>
-        <img src='logo.png' class='logo' />
+        <img src='/submit/logo.png' class='logo' />
     </div>
     <a href='https://github.com/KarchinLab/open-cravat/wiki' target='_blank'><img src='/result/images/question.png' class='question-icon' onclick='mailto:support@cravat.us' /></a>
     <a href='mailto:support@cravat.us?Subject=open-cravat%20feedback'><img src='/result/images/mail.png' class='email-icon' onclick='mailto:support@cravat.us' /></a>
     <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' class='threedotsdiv'>
-        <img src='menu.png' class='threedots' />
+        <img src='/submit/menu.png' class='threedots' />
     </div>
     <div id='nointernetdiv' style='position: absolute; right: 87px; top: 6px; padding-right: 10px; display: none;'>
         <img src='/submit/nointernet.png' style='width: 19px;' />
@@ -79,25 +79,29 @@
                         <td valign='top' class='variant-input-border-bottom' title="Upload file(s). Select multiple files using ctrl and shift keys">
                                 <br />
                             <input type="file" name="input-file" id="input-file" multiple/>
-                            <label for="input-file">Choose a file</label>
-                            <div id="mult-inputs-message" style="display: none">
+                            <label for="input-file">Add input file(s)</label>
+                            <button id='clear_inputfilelist_button' class='butn' onclick='onClearInputFileList()' style='display: none;'>Clear file(s)</button>
+                            <div id="mult-inputs-message" style="display: none; margin-top: 4px;">
                                 File(s):
                                 <div id="mult-inputs-list"></div>
                             </div>
                             
                         </td>
                     </tr><tr>
-                        <td valign='top' class='variant-input-border-bottom' style='text-align: right;'>
+                        <td valign='top' class='variant-input-border-bottom' style='text-align: left;'>
                             <br />
                             <div style='text-align: left;'>
                                 <textarea rows="1" id="input-text" style='' placeholder="Enter variants" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
-                            <span style='font-size: 9px;'>(Force format:</span>
-                            <select id='submit-input-format-select'>
-                                <option value=''></option>
-                                <option value='vcf'>VCF</option>
+                            <!--
+                            <span>Format:</span>
+                            -->
+                            <select id='submit-input-format-select' disabled style='display: none;'>
+                                <option value=''>Detect</option>
                             </select>
-                            <span style='font-size: 10px;'>)</span>
+                            <!--
+                            <span style='font-size: 10px;'> | </span>
+                            -->
                             <span style='font-size: 13px;'>Example:</span>
                             <button value="vcf" class='butn input-example-button'>VCF</button>
                             <button value="cravat" class='butn input-example-button'>TSV</button>

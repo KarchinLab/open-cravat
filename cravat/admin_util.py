@@ -18,6 +18,7 @@ from types import SimpleNamespace
 from . import exceptions
 from collections.abc import MutableMapping
 import multiprocessing
+import importlib
 
 def load_yml_conf(yml_conf_path):
     """
@@ -104,14 +105,8 @@ class LocalModuleInfo (object):
         if 'type' not in self.conf:
             self.conf['type'] = 'unknown'
         self.type = self.conf['type']
-        if 'level' in self.conf:
-            self.level = self.conf['level']
-        else:
-            self.level = None
-        if 'input_format' in self.conf:
-            self.input_format = self.conf['input_format']
-        else:
-            self.input_format = None
+        self.level = self.conf.get('level')
+        self.input_format = self.conf.get('input_format')
         self.secondary_module_names = list(self.conf.get('secondary_inputs',{}))
         if self.type == 'annotator':
             if self.level == 'variant':
@@ -120,24 +115,12 @@ class LocalModuleInfo (object):
                 self.output_suffix = self.name + '.gen'
             else:
                 self.output_suffix = self. name + '.' + self.type
-        if 'title' in self.conf:
-            self.title = self.conf['title']
-        else:
-            self.title = self.name
+        self.title = self.conf.get('title',self.name)
         self.disk_size = None
-        if 'tags' in self.conf:
-            self.tags = self.conf['tags']
-        else:
-            self.tags = []
-        if 'datasource' in self.conf:
-            self.datasource = self.conf['datasource']
-        else:
-            self.datasource = ''
+        self.tags = self.conf.get('tags',[])
+        self.datasource = str(self.conf.get('datasource',''))
         self.smartfilters = self.conf.get('smartfilters')
-        if 'groups' in self.conf:
-            self.groups = self.conf['groups']
-        else:
-            self.groups = None
+        self.groups = self.conf.get('groups')
 
     def is_valid_module(self):
         r = self.exists
@@ -178,7 +161,7 @@ class RemoteModuleInfo(object):
             dev_dict = {}
         self.developer = get_developer_dict(**dev_dict)
         self.data_versions = kwargs.get('data_versions', {})
-        self.data_sources = kwargs.get('data_sources', {})
+        self.data_sources = {x:str(y) for x,y in kwargs.get('data_sources', {}).items()}
         self.tags = kwargs.get('tags', [])
 
     def has_version(self, version):
@@ -253,11 +236,12 @@ class ModuleInfoCache(object):
             return
         for mg in os.listdir(self._modules_dir):
             mg_path = os.path.join(self._modules_dir, mg)
-            if not(os.path.isdir(mg_path)):
+            basename = os.path.basename(mg_path)
+            if not(os.path.isdir(mg_path)) or basename.startswith('.') or basename.startswith('_'):
                 continue
             for module_name in os.listdir(mg_path):
                 module_dir = os.path.join(mg_path, module_name)
-                if os.path.isdir(module_dir):
+                if module_dir.startswith('.') == False and os.path.isdir(module_dir):
                     # local_info = LocalModuleInfo(module_dir)
                     # if local_info.is_valid_module():
                     #     self.local[module_name] = local_info
@@ -363,6 +347,8 @@ def get_local_module_infos(types=[], names=[]):
             continue
         elif names and minfo.name not in names:
             continue
+        elif minfo.exists == False:
+            continue
         else:
             return_infos.append(minfo)
     return return_infos
@@ -389,13 +375,6 @@ def search_local(*patterns):
         if any([re.fullmatch(pattern, module_name) for pattern in patterns]):
             matching_names.append(module_name)
     return matching_names
-
-def get_local_by_type (types):
-    modules = []
-    for module in list(mic.local.values()):
-        if module.type in types:
-            modules.append(module)
-    return modules
 
 def module_exists_local(module_name):
     """
@@ -1134,7 +1113,7 @@ def get_package_versions():
     try:
         r = requests.get('https://pypi.org/pypi/open-cravat/json', timeout=(3, None))
     except requests.exceptions.ConnectionError:
-        print('Internec connection is not available.')
+        print('Internet connection is not available.')
         return None
     if r.status_code == 200:
         d = json.loads(r.text)
@@ -1332,6 +1311,26 @@ def get_remote_manifest ():
     if len(mic.remote) == 0:
         mic.update_remote()
     return mic.remote
+
+def input_formats():
+    formats = set()
+    d = os.path.join(get_modules_dir(), 'converters')
+    if os.path.exists(d):
+        fns = os.listdir(d)
+        for fn in fns:
+            if fn.endswith('-converter'):
+                formats.add(fn.split('-')[0])
+    return formats
+
+def report_formats():
+    formats = set()
+    d = os.path.join(get_modules_dir(), 'reporters')
+    if os.path.exists(d):
+        fns = os.listdir(d)
+        for fn in fns:
+            if fn.endswith('reporter'):
+                formats.add(fn.replace('reporter',''))
+    return formats
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

@@ -1,0 +1,98 @@
+<html>
+<head>
+	<script src="/result/js/jquery-3.2.1.min.js"></script>
+    <script src="/result/js/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+    <link rel='stylesheet' href='/result/js/jquery-ui-1.12.1.custom/jquery-ui.css' />
+	<script src='/result/nocache/js/util.js?ver=1.7.0'></script>
+	<script src='/result/nocache/js/widgethelper.js?ver=1.7.0'></script>
+	<script src='/result/nocache/js/singlevariantpage.js?ver=1.7.0'></script>
+	<script src='/result/js/packery.pkgd.js'></script>
+	<script src='/result/js/graphics.js'></script>
+	<script src='/result/js/raphael-min.js'></script>
+	<link rel='stylesheet' href='/result/nocache/css/widget.css?ver=1.7.0' />
+	<link rel='stylesheet' href='/result/nocache/css/singlevariantpage.css?ver=1.7.0' />
+    <title></title>
+</head>
+<body>
+
+<div id='logodiv'>
+    <a href='/' target='_blank' style='position: relative;'>
+        <img src='/submit/logo.png' style='width: 60px;'>
+    </a>
+    <span style="font-size: 48px; position: fixed; top: 0px; left: calc(50% - 300px); width: 600px;">OpenCRAVAT Variant Report</span>
+    <img src='/result/images/search.png' style='width: 30px; position: absolute; top: 20px; right: 0px;' onclick='onClickSearch();' />
+    <a href='https://github.com/KarchinLab/open-cravat/wiki' target='_blank' style='position: absolute; top: 26px; right: 45px;'>
+        <img src='/result/images/question.png' style='width: 11px;' />
+    </a>
+    <div id='inputdiv' style='display: none; position: absolute; top: 44px; right: 22px; font-size: 12px; z-index: 3; background-color: white; padding: 20px; width: 250px; box-shadow: 4px 4px 4px gray; border: 1px dashed gray;'>
+        <span>Type a variant and enter or click the Update annotation button. The syntax of a variant is chromosome, position, reference allele, and alternate allele, concatenated with a colon. Strand is assumed to be plus. For example, chr17:39724004:C:G</span>
+        <br />
+        <input id="input_variant" name="inputVariant" size="40" style='margin-top: 8px;' />
+        <button id="input_submit" onclick="submitForm();" style='margin-top: 8px;' >Update annotation</button>
+    </div>
+</div>
+<div id='detaildiv_variant' class='detaildiv singlevariantpage' >
+    <div id='spinnerdiv'>
+        <img src='/result/images/arrow-spinner.gif' style='position: absolute; top: calc(50% - 32px); left: calc(50% - 32px);' />
+    </div>
+    <div id='screendiv' style='position: absolute; width: 100%; height: 100%; background-color: gray; display: none; z-index: 2;'></div>
+    <div class='container_titlediv' style='margin-bottom: 30px; background-color: white;' >&nbsp;</div>
+    <div class='container_titlediv'>Variant Annotations</div>
+    <div id='wrapdiv_vannot' class='detailcontainerwrapdiv' >
+        <div id='contdiv_vannot' class='detailcontainerdiv' ></div>
+    </div>
+    <div class='container_titlediv'>Cancer</div>
+    <div id='wrapdiv_cancer' class='detailcontainerwrapdiv singlevariantpage' >
+        <div id='contdiv_cancer' class='detailcontainerdiv' ></div>
+    </div>
+    <div class='container_titlediv'>Population Allele Frequencies</div>
+    <div id='wrapdiv_af' class='detailcontainerwrapdiv singlevariantpage' >
+        <div id='contdiv_af' class='detailcontainerdiv' ></div>
+    </div>
+    <div class='container_titlediv'>Clinical Relevance</div>
+    <div id='wrapdiv_clinrel' class='detailcontainerwrapdiv singlevariantpage' >
+        <div id='contdiv_clinrel' class='detailcontainerdiv' ></div>
+    </div>
+    <div class='container_titlediv'>Gene</div>
+    <div id='wrapdiv_gene' class='detailcontainerwrapdiv singlevariantpage' >
+        <div id='contdiv_gene' class='detailcontainerdiv' ></div>
+    </div>
+    <div class='container_titlediv'>Pathogenicity Prediction</div>
+    <div id='wrapdiv_patho' class='detailcontainerwrapdiv singlevariantpage' >
+        <div id='contdiv_patho' class='detailcontainerdiv' ></div>
+    </div>
+    <div class='container_titlediv'>Evolutionary Constraint</div>
+    <div id='wrapdiv_evol' class='detailcontainerwrapdiv singlevariantpage' >
+        <div id='contdiv_evol' class='detailcontainerdiv' ></div>
+    </div>
+    <!--
+    <div class='container_titlediv'>Haplotypes</div>
+    <div id='wrapdiv_haplo' class='detailcontainerwrapdiv' >
+        <div id='contdiv_haplo' class='detailcontainerdiv' ></div>
+    </div>
+    -->
+    <table style='border-collapse: collapse;' >
+        <tr>
+            <td style='width: 600px; vertical-align: top; margin-left: 0px; padding-left: 0px;'>
+                <div class='container_titlediv' style='width: 587px;'>Noncoding and Genomic Elements</div>
+                <div id='wrapdiv_noncoding' class='detailcontainerwrapdiv singlevariantpage' >
+                    <div id='contdiv_noncoding' class='detailcontainerdiv' ></div>
+                </div>
+            </td>
+            <td style='width: 600px; vertical-align: top;'>
+                <div class='container_titlediv' style='width: 587px;'>Interactions</div>
+                <div id='wrapdiv_interact' class='detailcontainerwrapdiv singlevariantpage' >
+                    <div id='contdiv_interact' class='detailcontainerdiv' ></div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <div class='container_titlediv'>Visualization</div>
+    <div id='wrapdiv_visu' class='detailcontainerwrapdiv singlevariantpage' >
+        <div id='contdiv_visu' class='detailcontainerdiv' ></div>
+    </div>
+</div>
+
+</body>
+</html>
+

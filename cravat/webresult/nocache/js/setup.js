@@ -115,15 +115,22 @@ class FilterManager {
 			.addClass('title')
 			.text(headerTitle)
         )
-        header.append($(getEl('button'))
+        let filterBody = $(getEl('div'))
+            .addClass('filter-body');
+        rootDiv.append(filterBody);
+		let filterContent = $(getEl('div'))
+            .addClass('filter-content');
+        filterBody.append(filterContent);
+        let filterControls = $(getEl('div'))
+        .addClass('filter-controls');
+        filterBody.append(filterControls);
+        filterControls.append($(getEl('button'))
             .addClass('filter-section-clear')
             .addClass('butn')
             .text('Clear')
             .click(this.sectionClearClick.bind(this))
         )
-		let sampleContent = $(getEl('div'))
-			.addClass('filter-content');
-		rootDiv.append(sampleContent);
+        
 		return rootDiv;
 	}
 
@@ -188,7 +195,7 @@ class FilterManager {
 		let sampleContent = $('#'+this.sampleSelectId).parent();
 		sampleContent.empty();
 		this.addSampleSelect(sampleContent,filter);
-		let sampleHeader = sampleContent.siblings('.filter-header');
+		let sampleHeader = sampleContent.closest('.filter-body').siblings('.filter-header');
 		if (filter.sample.require.length>0 || filter.sample.reject.length>0) {
 			sampleHeader.removeClass('inactive');
 		}
@@ -255,7 +262,7 @@ class FilterManager {
 		let geneSelect = $('#'+this.geneTextId).parent();
 		geneSelect.empty();
         this.addGeneSelect(geneSelect, filter);
-        let geneHeader = geneSelect.closest('.filter-content').siblings('.filter-header');
+        let geneHeader = geneSelect.closest('.filter-body').siblings('.filter-header');
         if (filter.genes.length > 0) {
             geneHeader.removeClass('inactive');
         }
@@ -352,7 +359,7 @@ class FilterManager {
 		let vPropCont = $('#'+this.variantContId);
 		vPropCont.empty()
         this.addVpropUI(vPropCont, filter);
-        let vpropHeader = vPropCont.siblings('.filter-header');
+        let vpropHeader = vPropCont.closest('.filter-body').siblings('.filter-header');
         if (filter.variant.rules.length > 0) {
             vpropHeader.removeClass('inactive');
         }
@@ -1181,7 +1188,8 @@ function makeVariantGeneTab (tabName, rightDiv) {
     if (detailDiv == null) {
         detailDiv = getEl('div');
         detailDiv.id = detailDivId;
-        detailDiv.className = 'detaildiv';
+        detailDiv.classList.add('detaildiv');
+        detailDiv.classList.add('resultviewer');
         var detailContainerWrapDiv = getEl('div');
         detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
         var h = loadedHeightSettings['detail_' + tabName];
@@ -1507,7 +1515,7 @@ function grayOutWidgetSelect (widgetName, tabName) {
         'widgettogglecheckbox_' + tabName + '_' + widgetName);
     if (button != undefined) {
         button.disabled = 'disabled';
-        button.nextSibling.style.color = 'gray';
+        button.parentElement.style.color = 'gray';
     }
 }
 
@@ -1586,13 +1594,6 @@ function drawSummaryWidgetGivenData (widgetName, widgetContentDiv, generator, da
     } catch (e) {
         console.log(e);
     }
-}
-
-function getSpinner () {
-    var spinner = getEl('img');
-    spinner.src = '/result/images/spinner.gif';
-    spinner.style.width = '15px';
-    return spinner;
 }
 
 function drawSummaryWidget (widgetName) {
@@ -2126,10 +2127,22 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             if ($headerCell.length == 0) {
                 continue;
             }
+            var desc = null;
             if (col.desc !== null) {
-                $headerCell.attr('title', col.desc).tooltip();
+                desc = col.desc;
             }
+            var colTitleLimit = 20;
+            if (col.title.length > colTitleLimit) {
+                $headerCell.text(col.title.substring(0, colTitleLimit) + '..');
+                if (col.desc != null && col.desc != col.title) {
+                    desc = col.title + ': ' + col.desc;
+                } else {
+                    desc = col.title;
+                }
+            }
+            $headerCell.attr('title', desc).tooltip();
             $headerCell.attr('col', col.col);
+            $headerCell.attr('coltitle', col.title);
             $headerCell.attr('colgroup', col.colgroup);
             $headerCell.attr('colgroupkey', col.colgroupkey);
             $headerCell.contextmenu(function (evt) {

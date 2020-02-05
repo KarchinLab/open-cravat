@@ -14,22 +14,28 @@ import copy
 import cravat.cravat_util as cu
 from cravat.util import detect_encoding
 import json
+import gzip
+from collections import defaultdict
+from cravat.base_converter import BaseConverter
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
         so the crv file will not contain multiple copies of the same variant.
     """
-    def __init__(self):
-        self.var_by_chrom = {}
+    def __init__(self, deduplicate=True):
+        self.var_by_chrom = defaultdict(dict)
         self.current_UID = 1
+        self.deduplicate = deduplicate
     
     #Add a variant - Returns true if the variant is a new unique variant, false
     #if it is a duplicate.  Also returns the UID.
     def addVar(self, chrom, pos, ref, alt):
+        if not self.deduplicate:
+            self.current_UID += 1
+            return True, self.current_UID-1
+
         change = ref+":"+alt
-        if chrom not in self.var_by_chrom:
-            self.var_by_chrom[chrom] = {}
-        
+
         chr_dict = self.var_by_chrom[chrom]
         if pos not in chr_dict:
             #we have not seen this position before, add the position and change
@@ -55,11 +61,10 @@ class MasterCravatConverter(object):
         correct converter, and writes a crv file.
     """
     ALREADYCRV = 2
+
     def __init__(self, args=None, status_writer=None):
         args = args if args else sys.argv
         self.status_writer = status_writer
-        # self.input_path = None
-        # self.f = None
         self.input_paths = []
         self.input_files = []
         self.input_format = None
@@ -76,37 +81,41 @@ class MasterCravatConverter(object):
         self.output_dir = None
         self.output_base_fname = None
         self.chromdict = {'chrx': 'chrX', 'chry': 'chrY', 'chrMT': 'chrM', 'chrMt': 'chrM', 'chr23': 'chrX', 'chr24': 'chrY'}
-        self.vtracker = VTracker();
         self._parse_cmd_args(args)
         self._setup_logger()
+        self.vtracker = VTracker(deduplicate=not(self.unique_variants))
 
     def _parse_cmd_args(self, args):
         """ Parse the arguments in sys.argv """
         parser = argparse.ArgumentParser()
         parser.add_argument('path',
-                            help='Path to this converter\'s python module')
+            help='Path to this converter\'s python module')
         parser.add_argument('inputs',
-                            nargs='+',
-                            help='Files to be converted to .crv')
+            nargs='+',
+            help='Files to be converted to .crv')
         parser.add_argument('-f',
-                            dest='format',
-                            help='Specify an input format')
+            dest='format',
+            help='Specify an input format')
         parser.add_argument('-n', '--name',
-                            dest='name',
-                            help='Name of job. Default is input file name.')
+            dest='name',
+            help='Name of job. Default is input file name.')
         parser.add_argument('-d', '--output-dir',
-                            dest='output_dir',
-                            help='Output directory. '\
-                                 +'Default is input file directory.')
+            dest='output_dir',
+            help='Output directory. Default is input file directory.')
         parser.add_argument('-l','--liftover',
-                            dest='liftover',
-                            choices=['hg38']+list(constants.liftover_chain_paths.keys()),
-                            default='hg38',
-                            help='Input gene assembly. Will be lifted over to hg38')
+            dest='liftover',
+            choices=['hg38']+list(constants.liftover_chain_paths.keys()),
+            default='hg38',
+            help='Input gene assembly. Will be lifted over to hg38')
         parser.add_argument('--confs',
             dest='confs',
             default='{}',
             help='Configuration string')
+        parser.add_argument('--unique-variants',
+            dest='unique_variants',
+            default=False,
+            action='store_true',
+            help=argparse.SUPPRESS)
         parsed_args = parser.parse_args(args)
         self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs]
         self.input_path_dict = {}
@@ -138,6 +147,7 @@ class MasterCravatConverter(object):
         if parsed_args.confs is not None:
             confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
             self.confs = json.loads(confs)
+        self.unique_variants = parsed_args.unique_variants
 
     def setup (self):
         """ Do necesarry pre-run tasks """
@@ -145,18 +155,15 @@ class MasterCravatConverter(object):
         # Open file handle to input path
         for input_path in self.input_paths:
             encoding = detect_encoding(input_path)
-            self.input_files.append(open(input_path, encoding=encoding))
+            if input_path.endswith('.gz'):
+                f = gzip.open(input_path, mode='rt', encoding=encoding)
+            else:
+                f = open(input_path, encoding=encoding)
+            self.input_files.append(f)
         # Read in the available converters
         self._initialize_converters()
         # Select the converter that matches the input format
         self._select_primary_converter()
-        
-        # A correct .crv file is not processed.
-        #todo handle this for multiple inputs. have to convert them so they can be merged 
-        # if self.input_format == 'crv' and \
-        #     self.input_paths[0].split('.')[-1] == 'crv':
-        #     self.logger.info('Input file is already a crv file. Exiting converter.')
-        #     exit(0)
         
         # Open the output files
         self._open_output_files()
@@ -214,8 +221,8 @@ class MasterCravatConverter(object):
                 first_file.seek(0)
                 if check_success: valid_formats.append(converter_name)
             if len(valid_formats) == 0:
-                raise ExpectedException('Input format could not be determined. ' +\
-                    'Exiting without conversion.')
+                msg = 'Input format could not be determined. Additional input format converters are available. View available converters in the store or with "oc module ls -a -t converter"'
+                raise ExpectedException(msg)
             elif len(valid_formats) > 1:
                 raise ExpectedException('Input format ambiguous in [%s]. '\
                             %', '.join(valid_formats)\
@@ -223,6 +230,8 @@ class MasterCravatConverter(object):
             else:
                 self.input_format = valid_formats[0]
         self.primary_converter = self.converters[self.input_format]
+        self.primary_converter.output_dir = self.output_dir
+        self.primary_converter.run_name = self.output_base_fname
         if len(self.input_files) > 1:
             for f in self.input_files[1:]:
                 if not self.primary_converter.check_format(f):
@@ -271,7 +280,7 @@ class MasterCravatConverter(object):
             self.crs_writer.add_index(index_columns)
         # Setup liftover var file
         if self.do_liftover:
-            self.crl_path = '.'.join([self.output_base_fname,self.input_assembly,'var'])
+            self.crl_path = os.path.join(self.output_dir, '.'.join([self.output_base_fname,self.input_assembly,'var']))
             self.crl_writer = CravatWriter(self.crl_path)
             assm_crl_def = copy.deepcopy(constants.crl_def)
             assm_crl_def[1]['title'] = 'Chrom'.format(self.input_assembly.title())
@@ -303,19 +312,21 @@ class MasterCravatConverter(object):
                 cur_fname = os.path.basename(f.name)
                 samp_prefix = cur_fname
                 read_lnum += 1
-                total_lnum += 1
                 try:
                     # all_wdicts is a list, since one input line can become
-                    # multiple output lines
+                    # multiple output lines. False is returned if converter
+                    # decides line is not an input line.
                     all_wdicts = self.primary_converter.convert_line(l)
-                    if all_wdicts is None:
+                    if all_wdicts is BaseConverter.IGNORE:
                         continue
+                    total_lnum += 1
                 except Exception as e:
                     num_errors += 1
                     self._log_conversion_error(read_lnum, l, e)
                     continue
                 if all_wdicts:
-                    UIDMap = [] 
+                    UIDMap = []
+                    no_unique_var = 0
                     for wdict_no in range(len(all_wdicts)):
                         wdict = all_wdicts[wdict_no]
                         chrom = wdict['chrom']
@@ -340,7 +351,9 @@ class MasterCravatConverter(object):
                                     num_errors += 1
                                     self._log_conversion_error(read_lnum, l, e)
                                     continue
-                            unique, UID = self.vtracker.addVar(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])                       
+                            p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
+                            new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
+                            unique, UID = self.vtracker.addVar(wdict['chrom'], new_pos, new_ref, new_alt)
                             wdict['uid'] = UID
                             if unique:
                                 write_lnum += 1
@@ -348,18 +361,23 @@ class MasterCravatConverter(object):
                                 if self.do_liftover:
                                     prelift_wdict['uid'] = UID
                                     self.crl_writer.write_data(prelift_wdict)
-                                self.primary_converter.addl_operation_for_unique_variant(wdict, wdict_no)
+                                self.primary_converter.addl_operation_for_unique_variant(wdict, no_unique_var)
+                                no_unique_var += 1
                             if UID not in UIDMap: 
                                 #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
                                 self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID, 'fileno': self.input_path_dict2[f.name]})
                                 UIDMap.append(UID)
                         self.crs_writer.write_data(wdict)
+                else:
+                    e = ExpectedException('No conversion result')
+                    self._log_conversion_error(read_lnum, l, e)
             cur_time = time.time()
             if total_lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
                 self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format('Converter', cur_fname, read_lnum))
                 last_status_update_time = cur_time
         self.logger.info('error lines: %d' %num_errors)
         self._close_files()
+        self.end()
         if self.status_writer is not None:
             self.status_writer.queue_status_update('num_input_var', total_lnum)
             self.status_writer.queue_status_update('num_unique_var', write_lnum)
@@ -401,6 +419,58 @@ class MasterCravatConverter(object):
         self.crv_writer.close()
         self.crm_writer.close()
         self.crs_writer.close()
+
+    def end (self):
+        pass
+
+    def standardize_pos_ref_alt (self, strand, pos, ref, alt):
+        reflen = len(ref)
+        altlen = len(alt)
+        # Returns without change if same single nucleotide for ref and alt. 
+        if reflen == 1 and altlen == 1 and ref == alt:
+            return pos, ref, alt
+        # Trimming from the start and then the end of the sequence 
+        # where the sequences overlap with the same nucleotides
+        new_ref2, new_alt2, new_pos = \
+            self.trim_input(ref, alt, pos, strand)
+        if new_ref2 == '' or new_ref2 == '.':
+            new_ref2 = '-'
+        if new_alt2 == '' or new_alt2 == '.':
+            new_alt2 = '-'
+        return new_pos, new_ref2, new_alt2
+
+    def trim_input(self, ref, alt, pos, strand):
+        pos = int(pos)
+        reflen = len(ref)
+        altlen = len(alt)
+        minlen = min(reflen, altlen)
+        new_ref = ref
+        new_alt = alt
+        new_pos = pos
+        for nt_pos in range(0, minlen): 
+            if ref[reflen - nt_pos - 1] == alt[altlen - nt_pos - 1]:
+                new_ref = ref[:reflen - nt_pos - 1]
+                new_alt = alt[:altlen - nt_pos - 1]
+            else:
+                break    
+        new_ref_len = len(new_ref)
+        new_alt_len = len(new_alt)
+        minlen = min(new_ref_len, new_alt_len)
+        new_ref2 = new_ref
+        new_alt2 = new_alt
+        for nt_pos in range(0, minlen):
+            if new_ref[nt_pos] == new_alt[nt_pos]:
+                if strand == '+':
+                    new_pos += 1
+                elif strand == '-':
+                    new_pos -= 1
+                new_ref2 = new_ref[nt_pos + 1:]
+                new_alt2 = new_alt[nt_pos + 1:]
+            else:
+                new_ref2 = new_ref[nt_pos:]
+                new_alt2 = new_alt[nt_pos:]
+                break  
+        return new_ref2, new_alt2, new_pos
 
 def main ():
     master_cravat_converter = MasterCravatConverter()

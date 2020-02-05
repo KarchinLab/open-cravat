@@ -283,75 +283,12 @@ div.tabContent.hide {
 	width: 30px;
 }
 
-.detaildiv {
-	overflow: auto;
-	position: absolute;
-	width: calc(100% - 8px);
-	bottom: 10px;
-	height: 350px;
-}
-
-.detailcontainerdiv {
-    /*padding-top: 8px;*/
-}
-
-.detailcontainerwrapdiv {
-	width: 100%;
-	height: 100%;
-	overflow: auto;
-	position: relative;
-}
-
 .detailsidebardiv {
 	width: 30px;
 	height: 100%;
 	position: absolute;
 	right: 0px;
 	top: 0px;
-}
-
-.detailwidget {
-	font-size: 12px;
-	border: 1px solid #d0d0d0;
-    padding: 0px;
-}
-
-.detailwidgetheader {
-	font-size: 14px;
-	font-weight: bold;
-	display: inline-block;
-	width: 100%;
-	position: relative;
-	top: 0px;
-	left: 0px;
-}
-
-.detailwidgettitle {
-	display: inline-block;
-	width: calc(100% - 4px);
-	background: #4a87bd;
-    font-family: sourcesanspro-bold;
-	font-size: 13px;
-    height: 18px;
-    margin-bottom: 6px;
-}
-
-.detailwidget-hr {
-    margin-top: 0px;
-    margin-inline-start: 0px;
-    margin-inline-end: 0px;
-}
-
-.detailcontentdiv {
-	overflow: auto;
-	height: calc(100% - 32px);
-	padding: 0px;
-    padding-left: 7px;
-    padding-right: 7px;
-}
-
-.detailcontentdiv * {
-    font-size: 11px;
 }
 
 .tablecolumnselectorpanel {
@@ -389,49 +326,6 @@ div.tabContent.hide {
 	border-radius: 5px;
 	margin: auto;
 	margin-top: 3px;
-}
-
-.detailwidgeticondiv {
-	display: inline-block;
-	width: 70px;
-	position: absolute;
-	right: 0px;
-	top: 0px;
-    text-align: right;
-}
-
-.detailwidget-closebutton {
-	width: 16px;
-	height: 16px;
-}
-
-.detailwidgetpinbutton {
-	cursor: default;
-	font-size: 12px;
-	text-align: center;
-	border: 1px solid gray;
-	width: 14px;
-	border-radius: 4px;
-	cursor: pointer;
-}
-
-.detailwidgetpinbutton.unpinned {
-	color: black;
-	background-color: white;
-}
-
-.detailwidgetpinbutton.pinned {
-	color: white;
-	background-color: #848484;
-}
-
-.detailwidget-camerabutton {
-    height: 16px;
-}
-
-.detailwidgetselect {
-	font-family: roboto-light;
-	font-size: 11px;
 }
 
 .detailHeader {
@@ -552,17 +446,6 @@ div.filter-not-toggle {
 }
 .filter-element-remove:hover {
 	font-weight: bold;
-}
-
-.detail-info-line-header {
-    vertical-align: top;
-    min-width: 60px;
-    font-weight: bold;
-}
-
-.detail-info-line-content {
-    vertical-align: top;
-    min-width: 60px;
 }
 
 .email-icon {
@@ -891,15 +774,16 @@ div.pq-select-menu>.pq-select-option-label {
 .filter-content {
 	margin: 10px;
 }
-.filter-header.inactive + .filter-content {
+.filter-header.inactive + .filter-body {
 	display: none;
 }
-
+.filter-controls {
+	position: relative;
+}
 .filter-section-clear {
-	margin-left: auto;
-	margin-right: 0px;
-	margin-top: -1px;
-	border-radius: 0px 4px 0px 0px;
+	position: absolute;
+	right: 5px;
+	bottom: 5px;
 }
 .filter-section {
 	margin: 10px;

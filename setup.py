@@ -57,7 +57,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='1.6.1',
+    version='1.7.0',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
@@ -69,17 +69,18 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'wcravat=cravat.cravat_web:submit',
-            'wcv=cravat.cravat_web:submit',
+            'wcravat=cravat.cravat_web:wcravat_entrypoint',
+            'wcv=cravat.cravat_web:wcravat_entrypoint',
             'cravat-admin=cravat.cravat_admin:main',
             'cva=cravat.cravat_admin:main',
             'cravat=cravat.runcravat:main',
             'cv=cravat.runcravat:main',
-            'cravat-view=cravat.cravat_web:result',
+            'cravat-view=cravat.cravat_web:wcravat_entrypoint',
             'cravat-filter=cravat.cravat_filter:main',
-            'cravat-report=cravat.cravat_report:main',
+            'cravat-report=cravat.cravat_report:cravat_report_entrypoint',
             'cravat-test=cravat.cravat_test:main',
             'cravat-util=cravat.cravat_util:main',
+            'oc=cravat.oc:main',
         ]
     },
     cmdclass={
@@ -98,6 +99,7 @@ setup(
         'oyaml',
         'infi.systray',
         'intervaltree',
+        'xlsxwriter',
         ],
     python_requires='>=3.6',
 )

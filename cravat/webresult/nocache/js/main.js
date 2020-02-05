@@ -83,7 +83,7 @@ function getExportContent (tabName) {
 	var rows = $grids[tabName].pqGrid('option', 'dataModel').data;
 	for (var rowNo = 0; rowNo < rows.length; rowNo++) {
 		var row = rows[rowNo];
-		content += row[0];
+		content += row[colNos[0]];
 		for (var i = 1; i < colNos.length; i++) {
 			var value = row[colNos[i]];
 			if (value == null) {
@@ -559,7 +559,7 @@ function loadData (alertFlag, finalcallback) {
 			}
 		}
 		if (resultLevels.indexOf('gene') != -1) {
-			infomgr.load(jobId, 'gene', removeSpinner, null, filterJson);
+			infomgr.load(jobId, 'gene', removeSpinner, null, filterJson, 'job');
 		} else {
             removeSpinner();
         }
@@ -573,7 +573,7 @@ function loadData (alertFlag, finalcallback) {
                 callback = removeSpinner;
 		    }
 		    if (resultLevels.indexOf('variant') != -1) {
-                infomgr.load(jobId, 'variant', callback, null, filterJson);
+                infomgr.load(jobId, 'variant', callback, null, filterJson, 'job');
 		    } else {
                 callback();
 		    }
@@ -824,7 +824,8 @@ var afterLoadDefaultWidgetSetting = function (args) {
             loadData(false, showTab('info'));
         }, 
         null, 
-        filterJson
+        filterJson,
+        'info'
     );
 }
 

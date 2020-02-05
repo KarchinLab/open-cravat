@@ -28,22 +28,9 @@ InfoMgr.prototype.count = function (dbPath, tabName, callback) {
     });
 }
 
-InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson) {
-	/*
-    if (loadKey == null) {
-		return;
-	}
-	var toks = loadKey.split('_');
-	if (toks[2] == '+' || toks[2] == '-') {
-		this.fetchtype = 'single';
-	}
-    */
-	this.fetchtype = 'job';
-	if (tabName == 'info') {
-		this.fetchtype = 'info';
-	}
+InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson, fetchtype) {
 	var self = this;
-	if (this.fetchtype == 'job') {
+	if (fetchtype == 'job') {
 		if (jobDataLoadingDiv == null) {
 			drawingRetrievingDataDiv(tabName);
 		}
@@ -79,8 +66,8 @@ InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson
                 }
 			}
 	    });
-	} else if (this.fetchtype == 'single') {
-		$.get('/result/service/query', {mutation: onemut, dbcolumn: true}).done(function (jsonResponseData) {
+	} else if (fetchtype == 'single') {
+		$.get('/submit/annotate', {mutation: onemut, dbcolumn: true}).done(function (jsonResponseData) {
 	    	self.datas[tabName] = [jsonResponseData];
 	    	self.jobinfo = {}
 	    	self.jobinfo['inputcoordinate'] = 'genomic';
@@ -88,7 +75,7 @@ InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson
 	    		callback(callbackArgs);
 	    	}
 		});
-	} else if (this.fetchtype == 'info') {
+	} else if (fetchtype == 'info') {
 		$.get('/result/service/status', {'username': username, 'job_id': jobId, dbpath: dbPath}).done(function (jsonResponseData) {
 			self.jobinfo = jsonResponseData;
 			if (callback != null) {

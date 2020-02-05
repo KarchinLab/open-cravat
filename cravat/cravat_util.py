@@ -9,42 +9,11 @@ import json
 import traceback
 import shutil
 import time
+from pathlib import Path
+import datetime
+from . import admin_util as au
 
 def get_args ():
-    if len(sys.argv) == 1:
-        sys.argv.append('-h')
-    parser = argparse.ArgumentParser()
-    # converts db coordinate to hg38
-    subparsers = parser.add_subparsers(title='Commands')
-    subparser = subparsers.add_parser('converttohg38',
-        help='converts hg19 coordinates in sqlite3 database to hg38 ones.')
-    subparser.add_argument('--db',
-        nargs='?',
-        required=True,
-        help='path to sqlite3 database file')
-    subparser.add_argument('--sourcegenome',
-        required=True,
-        help='genome assembly of source database')
-    subparser.add_argument('--cols',
-        nargs='+',
-        required=True,
-        help='names of the columns to convert')
-    subparser.add_argument('--tables',
-        nargs='*',
-        help='table(s) to convert. If omitted, table name will be used as chromosome name.')
-    subparser.add_argument('--chromcol',
-        required=False,
-        help='chromosome column. If omitted, all tables will be tried to be converted.')
-    subparser.set_defaults(func=converttohg38)
-    # migrate old result db
-    parser_migrate_result = subparsers.add_parser('migrate-result',
-                                               help='migrates result db made with older versions of open-cravat')
-    parser_migrate_result.add_argument('dbpath', help='path to a result db file or a directory')
-    parser_migrate_result.add_argument('-r', dest='recursive',
-        action='store_true', default=False, help='recursive operation')
-    parser_migrate_result.add_argument('-c', dest='backup',
-        action='store_true', default=False, help='backup original copy with .bak extension')
-    parser_migrate_result.set_defaults(func=migrate_result)
     args = parser.parse_args()
     return args
 
@@ -156,7 +125,7 @@ def converttohg38 (args):
     newdb.commit()
 
 migrate_functions = {}
-supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2']
+supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1']
 
 def check_result_db_version (dbpath, version):
     try:
@@ -369,11 +338,36 @@ def migrate_result_152_to_153 (dbpath):
     cursor.close()
     db.close()
 
+def migrate_result_153_to_160(dbpath):
+    db = sqlite3.connect(dbpath)
+    c = db.cursor()
+    c.execute('update info set colval="1.6.0" where colkey="open-cravat"')
+
+def migrate_result_160_to_161(dbpath):
+    db = sqlite3.connect(dbpath)
+    c = db.cursor()
+    c.execute('update info set colval="1.6.1" where colkey="open-cravat"')
+
+def migrate_result_161_to_170 (dbpath):
+    db = sqlite3.connect(dbpath)
+    c = db.cursor()
+    for level in ('gene','mapping','sample','variant'):
+        c.execute(f'create unique index unq_{level}_annotator_name on {level}_annotator (name)')
+        c.execute(f'create unique index unq_{level}_header_col_name on {level}_header (col_name)')
+        if level in ('gene','variant'):
+            c.execute(f'create unique index unq_{level}_reportsub_module on {level}_reportsub (module)')
+    c.execute('create unique index unq_smartfilters_name on smartfilters (name)')
+    c.execute('create unique index unq_info_colkey on info (colkey)')
+    c.execute('update info set colval="1.7.0" where colkey="open-cravat"')
+
 migrate_functions['1.4.4'] = migrate_result_144_to_145
 migrate_functions['1.4.5'] = migrate_result_145_to_150
 migrate_functions['1.5.0'] = migrate_result_150_to_151
 migrate_functions['1.5.1'] = migrate_result_151_to_152
 migrate_functions['1.5.2'] = migrate_result_152_to_153
+migrate_functions['1.5.3'] = migrate_result_153_to_160
+migrate_functions['1.6.0'] = migrate_result_160_to_161
+migrate_functions['1.6.1'] = migrate_result_161_to_170
 
 def migrate_result (args):
     def get_dbpaths (dbpaths, path):
@@ -433,8 +427,142 @@ def migrate_result (args):
             traceback.print_exc()
             print('  converting [{}] was not successful.'.format(dbpath))
 
+def result2gui(args):
+    dbpath = args.path
+    user = args.user
+    jobs_dir = Path(au.get_jobs_dir())
+    user_dir = jobs_dir/user
+    if not user_dir.is_dir():
+        exit(f'User {user} not found')
+    attempts = 0
+    while True: #TODO this will currently overwrite if called in parallel. is_dir check and creation is not atomic
+        job_id = datetime.datetime.now().strftime(r'%y%m%d-%H%M%S')
+        job_dir = user_dir/job_id
+        if not job_dir.is_dir():
+            break
+        else:
+            attempts += 1
+            time.sleep(1)
+        if attempts >= 5:
+            exit('Could not acquire a job id. Too many concurrent job submissions. Wait, or reduce submission frequency.')
+    job_dir.mkdir()
+    new_dbpath = job_dir/dbpath.name
+    shutil.copyfile(dbpath, new_dbpath)
+    log_path = dbpath.with_suffix('.log')
+    if log_path.exists():
+        shutil.copyfile(log_path, job_dir/log_path.name)
+    err_path = dbpath.with_suffix('.err')
+    if err_path.exists():
+        shutil.copyfile(err_path, job_dir/err_path.name)
+    status_path = dbpath.with_suffix('.status.json')
+    if status_path.exists():
+        shutil.copyfile(status_path, job_dir/status_path.name)
+    else:
+        statusd = status_from_db(new_dbpath)
+        new_status_path = job_dir/status_path.name
+        with new_status_path.open('w') as wf:
+            json.dump(statusd, wf, indent=2, sort_keys=True)
+
+def status_from_db(dbpath):
+    """
+    Generate a status json from a result database.
+    Currently only works well if the database is in the gui jobs area.
+    """
+    if not isinstance(dbpath, Path):
+        dbpath = Path(dbpath)
+    d = {}
+    db = sqlite3.connect(str(dbpath))
+    c = db.cursor()
+    try:
+        d['annotators'] = []
+        d['annotator_version'] = {}
+        c.execute('select name, version from gene_annotator')
+        skip_names = {'base','tagsampler','vcfinfo',''}
+        for r in c:
+            if r[0] in skip_names: continue
+            d['annotators'].append(r[0])
+            d['annotator_version'][r[0]] = r[1]
+        c.execute('select name, version from variant_annotator')
+        for r in c:
+            if r[0] in skip_names: continue
+            d['annotators'].append(r[0])
+            d['annotator_version'][r[0]] = r[1]
+        d['annotators'] = sorted(list(set(d['annotators'])))
+        c.execute('select colval from info where colkey="Input genome"')
+        d['assembly'] = c.fetchone()[0]
+        d['db_path'] = str(dbpath)
+        d['id'] = str(dbpath.parent)
+        d['id'] = str(dbpath.parent.name)
+        d['job_dir'] = str(dbpath.parent)
+        d['note'] = ''
+        d['num_error_input'] = 0
+        c.execute('select colval from info where colkey="Number of unique input variants"')
+        d['num_unique_var'] = c.fetchone()[0]
+        d['num_input_var'] = d['num_unique_var']
+        c.execute('select colval from info where colkey="open-cravat"')
+        d['open_cravat_version'] = c.fetchone()[0]
+        d['orig_input_fname'] = [str(dbpath.stem)]
+        d['orig_input_path'] = [str(dbpath.with_suffix(''))]
+        d['reports'] = []
+        d['run_name'] = str(dbpath.stem)
+        d['status'] = 'Finished'
+        d['submission_time'] = datetime.datetime.fromtimestamp(dbpath.stat().st_ctime).isoformat()
+        d['viewable'] = True
+    except:
+        raise
+    finally:
+        c.close()
+        db.close()
+    return d
+
+parser = argparse.ArgumentParser()
+# converts db coordinate to hg38
+subparsers = parser.add_subparsers(title='Commands')
+parser_convert = subparsers.add_parser('converttohg38',
+    help='converts hg19 coordinates in sqlite3 database to hg38 ones.')
+parser_convert.add_argument('--db',
+    nargs='?',
+    required=True,
+    help='path to sqlite3 database file')
+parser_convert.add_argument('--sourcegenome',
+    required=True,
+    help='genome assembly of source database')
+parser_convert.add_argument('--cols',
+    nargs='+',
+    required=True,
+    help='names of the columns to convert')
+parser_convert.add_argument('--tables',
+    nargs='*',
+    help='table(s) to convert. If omitted, table name will be used as chromosome name.')
+parser_convert.add_argument('--chromcol',
+    required=False,
+    help='chromosome column. If omitted, all tables will be tried to be converted.')
+parser_convert.set_defaults(func=converttohg38)
+# migrate old result db
+parser_migrate_result = subparsers.add_parser('migrate-result',
+    help='migrates result db made with older versions of open-cravat')
+parser_migrate_result.add_argument('dbpath', help='path to a result db file or a directory')
+parser_migrate_result.add_argument('-r', dest='recursive',
+    action='store_true', default=False, help='recursive operation')
+parser_migrate_result.add_argument('-c', dest='backup',
+    action='store_true', default=False, help='backup original copy with .bak extension')
+parser_migrate_result.set_defaults(func=migrate_result)
+# Make job accessible through the gui
+parser_result2gui = subparsers.add_parser('result2gui', 
+    help='Copy a command line job into the GUI submission list')
+parser_result2gui.add_argument('path', 
+    help='Path to result database', 
+    type=Path)
+parser_result2gui.add_argument('-u','--user', 
+    help='User who will own the job. Defaults to single user default user.', 
+    type=str, default='default')
+parser_result2gui.set_defaults(func=result2gui)
+
 def main ():
     args = get_args()
+    if 'func' not in args:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
     args.func(args)
 
 if __name__ == '__main__':

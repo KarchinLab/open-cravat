@@ -4,6 +4,7 @@ import importlib
 import sys
 import oyaml as yaml
 import chardet
+import gzip
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -187,7 +188,10 @@ def get_argument_parser_defaults(parser):
             }
 
 def detect_encoding (path):
-    f = open(path, 'rb')
+    if path.endswith('.gz'):
+        f = gzip.open(path)
+    else:
+        f = open(path, 'rb')
     detector = chardet.universaldetector.UniversalDetector()
     for line in f:
         detector.feed(line)

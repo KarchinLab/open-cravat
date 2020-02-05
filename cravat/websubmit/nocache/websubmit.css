@@ -338,12 +338,11 @@ div.checkbox-group-element[kind=group] span.label {
 }
 
 #submit-input-format-select {
-    font-size: 9px;
-    width: 60px;
+    width: 85px;
 }
 
-#submit-input-format-select option {
-    font-size: 9px;
+#mult-inputs-list {
+    margin-left: 10px;
 }
 
 #mult-inputs-list p {
@@ -820,3 +819,8 @@ input:checked + .slider:before {
     width: fit-content;
     padding: 2px;
 }
+
+.fileaddbutn {
+    font-size: 10px;
+}
+

@@ -1,4 +1,5 @@
 class BaseConverter(object):
+    IGNORE = 'converter_ignore'
     def __init__(self):
         self.format_name = None
     def check_format(self,*args,**kwargs):

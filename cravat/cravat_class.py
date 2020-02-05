@@ -2,123 +2,128 @@ import time
 import argparse
 import os
 import sys
-from . import admin_util as au
-from . import util
-from .config_loader import ConfigLoader
+from cravat import admin_util as au
+from cravat import util
+from cravat.config_loader import ConfigLoader
 import aiosqlite3
 import datetime
 from types import SimpleNamespace
-from . import constants
+from cravat import constants
 import json
 import logging
 import traceback
-from .mp_runners import annot_from_queue
+from cravat.mp_runners import init_worker, annot_from_queue
 import multiprocessing as mp
 import multiprocessing.managers
 from logging.handlers import QueueListener
-from .aggregator import Aggregator
-from .exceptions import *
+from cravat.aggregator import Aggregator
+from cravat.exceptions import *
 import oyaml as yaml
 import cravat.cravat_util as cu
 import collections
 import asyncio
 import sqlite3
+from cravat.inout import CravatWriter
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path_1 input_file_path_2 ...',
     description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path arguments before any option or define them in a conf file (option -c).',
-    epilog='* input_file_path should precede any option.')
+    epilog='inputs should be the first option')
 cravat_cmd_parser.add_argument('inputs',
-                    nargs='*',
-                    default=None,
-                    help=argparse.SUPPRESS)
+    nargs='*',
+    default=None,
+    help='Input file(s). One or more variant files in a supported format like VCF.  '+\
+         'See the -i/--input-format flag for supported formats. In the special case '+\
+         'where you want to add annotations to an existing open-cravat analysis, '+\
+         'provide the output sqlite database from the previous run as input instead of a variant input file.',
+    )
 cravat_cmd_parser.add_argument('-a',
-                    nargs="+",
-                    dest='annotators',
-                    help='annotators to run')
+    nargs="+",
+    dest='annotators',
+    help='annotators to run')
 cravat_cmd_parser.add_argument('-e',
-                    nargs='+',
-                    dest='excludes',
-                    help='annotators to exclude')
+    nargs='+',
+    dest='excludes',
+    help='annotators to exclude')
 cravat_cmd_parser.add_argument('-n',
-                    dest='run_name',
-                    help='name of cravat run')
+    dest='run_name',
+    help='name of cravat run')
 cravat_cmd_parser.add_argument('-d',
-                    dest='output_dir',
-                    default=None,
-                    help='directory for output files')
+    dest='output_dir',
+    default=None,
+    help='directory for output files')
 cravat_cmd_parser.add_argument('--startat',
-                    dest='startat',
-                    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
-                    default=None,
-                    help='starts at given stage')
+    dest='startat',
+    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
+    default=None,
+    help='starts at given stage')
 cravat_cmd_parser.add_argument('--repeat',
-                    dest='repeat',
-                    nargs='+',
-                    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
-                    default=None,
-                    help='forces re-running of given stage if it is in the run chain.')
+    dest='repeat',
+    nargs='+',
+    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
+    default=None,
+    help='forces re-running of given stage if it is in the run chain.')
 cravat_cmd_parser.add_argument('--endat',
-                    dest='endat',
-                    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
-                    default=None,
-                    help='ends after given stage.')
+    dest='endat',
+    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
+    default=None,
+    help='ends after given stage.')
 cravat_cmd_parser.add_argument('--skip',
-                    dest='skip',
-                    nargs='+',
-                    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
-                    default=None,
-                    help='skips given stage(s).')
+    dest='skip',
+    nargs='+',
+    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
+    default=None,
+    help='skips given stage(s).')
 cravat_cmd_parser.add_argument('-c',
-                    dest='conf',
-                    default=None,
-                    help='path to a conf file')
+    dest='conf',
+    default=None,
+    help='path to a conf file')
 cravat_cmd_parser.add_argument('--cs',
-                    dest='confs',
-                    default=None,
-                    help='configuration string')
+    dest='confs',
+    default=None,
+    help='configuration string')
 cravat_cmd_parser.add_argument('-v', 
-                    dest='verbose',
-                    action='store_true',
-                    default=False,
-                    help='verbose')
-cravat_cmd_parser.add_argument('-t',
-                    nargs='+',
-                    dest='reports',
-                    help='report types. If omitted, default one in cravat.yml is used.')
-cravat_cmd_parser.add_argument('-l',
-                    dest='liftover',
-                    choices=constants.assembly_choices,
-                    default=None,
-                    help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
-cravat_cmd_parser.add_argument('-x',
-                    dest='cleandb',
-                    action='store_true',
-                    help='deletes the existing result database and ' +
-                            'creates a new one.')
-cravat_cmd_parser.add_argument('--newlog',
-                    dest='newlog',
-                    action='store_true',
-                    default=None,
-                    help='deletes the existing log file and ' +
-                            'creates a new one.')
-cravat_cmd_parser.add_argument('--note',
-                    dest='note',
-                    default=None,
-                    help='note will be written to the run status file (.status.json)')
-cravat_cmd_parser.add_argument('--mp',
-                    dest='mp',
-                    default=None,
-                    help='number of processes to use to run annotators')
-cravat_cmd_parser.add_argument('--forcedinputformat',
-                    dest='forcedinputformat',
-                    default=None,
-                    help='Force input format')
-cravat_cmd_parser.add_argument('--cleanup',
-    dest='cleanup',
+    dest='verbose',
     action='store_true',
     default=False,
-    help='At the end of the run, cravat will erase intermediary files, ending with var, gen, crv, crx, crg, crs, crm, crt, or json extension, for the job created by cravat.')
+    help='verbose')
+cravat_cmd_parser.add_argument('-t',
+    nargs='+',
+    dest='reports',
+    choices=au.report_formats(),
+    help='report types. If omitted, default one in cravat.yml is used.')
+cravat_cmd_parser.add_argument('-l',
+    dest='liftover',
+    choices=constants.assembly_choices,
+    default=None,
+    help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
+cravat_cmd_parser.add_argument('-x',
+    dest='cleandb',
+    action='store_true',
+    help='deletes the existing result database and creates a new one.')
+cravat_cmd_parser.add_argument('--newlog',
+    dest='newlog',
+    action='store_true',
+    default=None,
+    help='deletes the existing log file and creates a new one.')
+cravat_cmd_parser.add_argument('--note',
+    dest='note',
+    default=None,
+    help='note will be written to the run status file (.status.json)')
+cravat_cmd_parser.add_argument('--mp',
+    dest='mp',
+    default=None,
+    help='number of processes to use to run annotators')
+cravat_cmd_parser.add_argument('-i','--input-format',
+    dest='forcedinputformat',
+    default=None,
+    choices=au.input_formats(),
+    help='Force input format')
+cravat_cmd_parser.add_argument('--temp-files',
+    dest='temp_files',
+    action='store_true',
+    default=False,
+    help='Leave temporary files after run is complete.')
 cravat_cmd_parser.add_argument('--writeadmindb',
     dest='writeadmindb',
     action='store_true',
@@ -138,6 +143,20 @@ cravat_cmd_parser.add_argument('--separatesample',
     action='store_true',
     default=False,
     help='Separate variant results by sample')
+cravat_cmd_parser.add_argument('--unique-variants',
+    dest='unique_variants',
+    action='store_true',
+    default=False,
+    help=argparse.SUPPRESS
+)
+
+def run(cmd_args):
+    au.ready_resolution_console()
+    module = Cravat(**vars(cmd_args))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(module.main())
+
+cravat_cmd_parser.set_defaults(func=run)
 
 class MyManager (multiprocessing.managers.SyncManager):
     pass
@@ -159,6 +178,7 @@ class Cravat (object):
         self.should_run_reporter = True
         self.pythonpath = sys.executable
         self.annotators = {}        
+        self.append_mode = False
         self.make_args_namespace(kwargs)
         self.get_logger()
         self.start_time = time.time()
@@ -236,7 +256,7 @@ class Cravat (object):
                 annot_names.sort()
                 self.status_json['annotators'] = annot_names
                 with open(self.status_json_path,'w') as wf:
-                    wf.write(json.dumps(self.status_json))
+                    wf.write(json.dumps(self.status_json, indent=2, sort_keys=True))
         else:
             self.status_json = {}
             self.status_json['job_dir'] = self.output_dir
@@ -257,7 +277,7 @@ class Cravat (object):
             annot_names.sort()
             self.status_json['annotators'] = annot_names
             with open(self.status_json_path,'w') as wf:
-                wf.write(json.dumps(self.status_json))
+                wf.write(json.dumps(self.status_json, indent=2, sort_keys=True))
 
     def get_logger (self):
         self.logger = logging.getLogger('cravat')
@@ -285,6 +305,7 @@ class Cravat (object):
     async def main (self):
         no_problem_in_run = True
         try:
+            self.aggregator_ran = False
             self.check_valid_modules()
             self.update_status('Started cravat')
             input_files_str = ', '.join(self.inputs)
@@ -316,7 +337,7 @@ class Cravat (object):
                         'mapper' in self.args.repeat or
                         converter_ran
                    ):
-                print('Running gene mapper...')
+                print(f'Running gene mapper...{" "*18}',end='')
                 stime = time.time()
                 self.run_genemapper()
                 rtime = time.time() - stime
@@ -341,14 +362,14 @@ class Cravat (object):
                 self.run_annotators_mp()
                 rtime = time.time() - stime
                 print('\tannotator(s) finished in {0:.3f}s'.format(rtime))
-            self.aggregator_ran = False
             if self.endlevel >= self.runlevels['aggregator'] and \
                     self.startlevel <= self.runlevels['aggregator'] and \
                     not 'aggregator' in self.args.skip and \
                     (
                         self.mapper_ran or \
                         self.annotator_ran or \
-                        'aggregator' in self.args.repeat
+                        'aggregator' in self.args.repeat or \
+                        self.startlevel == self.runlevels['aggregator']
                     ):
                 print('Running aggregator...')
                 self.result_path = self.run_aggregator()
@@ -393,7 +414,7 @@ class Cravat (object):
                 self.update_status('Error')
             self.close_logger()
             self.status_writer.flush()
-            if no_problem_in_run and self.args.cleanup:
+            if no_problem_in_run and not self.args.temp_files and self.aggregator_ran:
                 self.clean_up_at_end()
             if self.args.writeadmindb:
                 await self.write_admin_db(runtime, self.numinput)
@@ -419,9 +440,9 @@ class Cravat (object):
         dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()
-        q = 'create table if not exists smartfilters (name text, definition text)'
+        q = 'create table if not exists smartfilters (name text primary key, definition text)'
         cursor.execute(q)
-        ins_template = 'insert into smartfilters (name, definition) values (?, ?);'
+        ins_template = 'insert or replace into smartfilters (name, definition) values (?, ?);'
         for linfo in self.annotators.values():
             if linfo.smartfilters is not None:
                 mname = linfo.name
@@ -488,6 +509,10 @@ class Cravat (object):
             self.run_name = os.path.basename(self.inputs[0])
             if len(self.inputs) > 1:
                 self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
+        if self.inputs[0].endswith('.sqlite'):
+            self.append_mode = True  
+            if self.run_name.endswith('.sqlite'):
+                self.run_name = self.run_name[:-7]
         self.output_dir = self.args.output_dir
         if self.output_dir == None:
             self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
@@ -522,6 +547,8 @@ class Cravat (object):
             self.args.startat = 'aggregator'
         if 'postaggregator' in self.args.repeat and not 'aggregator' in self.args.repeat:
             self.args.repeat.append('aggregator')
+        if self.append_mode:
+            self.args.endat = 'aggregator'
         try:
             self.startlevel = self.runlevels[self.args.startat]
         except KeyError:
@@ -567,6 +594,55 @@ class Cravat (object):
             self.crg_present = True
         else:
             self.crg_present = False
+        
+        if self.append_mode:
+            self.regenerate_from_db()
+    
+    def regenerate_from_db (self):
+        dbpath = self.inputs[0]
+        db = sqlite3.connect(dbpath)
+        c = db.cursor()
+        # Variant
+        if not self.crv_present:
+            crv = CravatWriter(self.crvinput, columns=constants.crv_def)
+            crv.write_definition()
+        else:
+            crv = None
+        if not self.crx_present:
+            crx = CravatWriter(self.crxinput, columns=constants.crx_def)
+            crx.write_definition()
+        else:
+            crx = None
+        if crv or crx:
+            colnames = [x['name'] for x in constants.crx_def]
+            sel_cols = ', '.join(['base__'+x for x in colnames])
+            q = f'select {sel_cols} from variant'
+            c.execute(q)
+            for r in c:
+                rd = {x[0]:x[1] for x in zip(colnames,r)}
+                if crv:
+                    crv.write_data(rd)
+                if crx:
+                    crx.write_data(rd)
+            crv.close()
+            crx.close()
+            self.crv_present = True
+            self.crx_present = True
+        # Gene
+        if not self.crg_present:
+            crg = CravatWriter(self.crginput, columns=constants.crg_def)
+            crg.write_definition()
+            colnames = [x['name'] for x in constants.crg_def]
+            sel_cols = ', '.join(['base__'+x for x in colnames])
+            q = f'select {sel_cols} from gene'
+            c.execute(q)
+            for r in c:
+                rd = {x[0]:x[1] for x in zip(colnames,r)}
+                crg.write_data(rd)
+            crg.close()
+            self.crg_present = True
+        c.close()
+        db.close()
 
     def populate_secondary_annotators (self):
         secondaries = {}
@@ -638,6 +714,8 @@ class Cravat (object):
                 cmd.extend(['--confs', confs])
         if self.args.forcedinputformat is not None:
             cmd.extend(['-f', self.args.forcedinputformat])
+        if self.args.unique_variants:
+            cmd.append('--unique-variants')
         self.announce_module(module)
         if self.verbose:
             print(' '.join(cmd))
@@ -657,7 +735,6 @@ class Cravat (object):
             confs = json.dumps(self.cravat_conf[module.name])
             confs = "'" + confs.replace("'", '"') + "'"
             cmd.extend(['--confs', confs])
-        self.announce_module(module)
         if self.verbose:
             print(' '.join(cmd))
         genemapper_class = util.load_class('Mapper', module.script_path)
@@ -675,6 +752,8 @@ class Cravat (object):
                '-n', self.run_name]
         if self.cleandb:
             cmd.append('-x')
+        if self.append_mode:
+            cmd.append('--append')
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='variant'))
@@ -691,6 +770,8 @@ class Cravat (object):
                '-d', self.output_dir, 
                '-l', 'gene',
                '-n', self.run_name]
+        if self.append_mode:
+            cmd.append('--append')
         if self.verbose:
             print(' '.join(cmd))
         self.update_status('Running {title} ({level})'.format(title='Aggregator', level='gene'))
@@ -700,35 +781,37 @@ class Cravat (object):
         print('finished in {0:.3f}s'.format(rtime))
 
         # Sample level
-        print('\t{0:30s}\t'.format('Samples'), end='', flush=True)
-        stime = time.time()
-        cmd = ['donotremove', 
-               '-i', self.output_dir,
-               '-d', self.output_dir, 
-               '-l', 'sample',
-               '-n', self.run_name]
-        if self.verbose:
-            print(' '.join(cmd))
-        self.update_status('Running {title} ({level})'.format(title='Aggregator', level='sample'))
-        s_aggregator = Aggregator(cmd, self.status_writer)
-        s_aggregator.run()
-        rtime = time.time() - stime
-        print('finished in {0:.3f}s'.format(rtime))
+        if not self.append_mode:
+            print('\t{0:30s}\t'.format('Samples'), end='', flush=True)
+            stime = time.time()
+            cmd = ['donotremove', 
+                '-i', self.output_dir,
+                '-d', self.output_dir, 
+                '-l', 'sample',
+                '-n', self.run_name]
+            if self.verbose:
+                print(' '.join(cmd))
+            self.update_status('Running {title} ({level})'.format(title='Aggregator', level='sample'))
+            s_aggregator = Aggregator(cmd, self.status_writer)
+            s_aggregator.run()
+            rtime = time.time() - stime
+            print('finished in {0:.3f}s'.format(rtime))
 
         # Mapping level
-        print('\t{0:30s}\t'.format('Tags'), end='', flush=True)
-        cmd = ['donotremove', 
-               '-i', self.output_dir,
-               '-d', self.output_dir, 
-               '-l', 'mapping',
-               '-n', self.run_name]
-        if self.verbose:
-            print(' '.join(cmd))
-        self.update_status('Running {title} ({level})'.format(title='Aggregator', level='mapping'))
-        m_aggregator = Aggregator(cmd, self.status_writer)
-        m_aggregator.run()
-        rtime = time.time() - stime
-        print('finished in {0:.3f}s'.format(rtime))
+        if not self.append_mode:
+            print('\t{0:30s}\t'.format('Tags'), end='', flush=True)
+            cmd = ['donotremove', 
+                '-i', self.output_dir,
+                '-d', self.output_dir, 
+                '-l', 'mapping',
+                '-n', self.run_name]
+            if self.verbose:
+                print(' '.join(cmd))
+            self.update_status('Running {title} ({level})'.format(title='Aggregator', level='mapping'))
+            m_aggregator = Aggregator(cmd, self.status_writer)
+            m_aggregator.run()
+            rtime = time.time() - stime
+            print('finished in {0:.3f}s'.format(rtime))
 
         return v_aggregator.db_path
 
@@ -766,10 +849,11 @@ class Cravat (object):
                 if module is None:
                     print('        {} does not exist.'.format(module_name))
                     continue
-                print('')
+                #print('')
                 cmd = [module.script_path, 
                        '-s', os.path.join(self.output_dir, self.run_name),
                        os.path.join(self.output_dir, self.run_name + '.sqlite'),
+                       '-d', self.output_dir,
                        '--module-name', module_name]
                 if self.run_conf_path is not None:
                     cmd.extend(['-c', self.run_conf_path])
@@ -790,7 +874,7 @@ class Cravat (object):
                 stime = time.time()
                 await reporter.run()
                 rtime = time.time() - stime
-                print('\t    finished in {0:.3f}s'.format(rtime))
+                print('finished in {0:.3f}s'.format(rtime))
             except Exception as e:
                 traceback.print_exc()
                 self.logger.exception(e)
@@ -854,27 +938,28 @@ class Cravat (object):
         done_mnames = set(self.done_annotators)
         queue_populated = self.manager.Value('c_bool',False)
         pool_args = [[start_queue, end_queue, queue_populated, self.status_writer]]*num_workers
-        with mp.Pool(processes=num_workers) as pool:
-            results = pool.starmap_async(annot_from_queue, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
-            pool.close()
-            for mname, module in self.run_annotators.items():
-                if mname not in assigned_mnames and set(module.secondary_module_names) <= done_mnames:
-                    start_queue.put(run_args[mname])
-                    assigned_mnames.add(mname)
-            while assigned_mnames != all_mnames: #TODO not handling case where parent module errors out
-                finished_module = end_queue.get()
-                done_mnames.add(finished_module)
-                for mname, module in self.annotators.items():
+        with mp.Pool(num_workers, init_worker) as pool:
+            try:
+                results = pool.starmap_async(annot_from_queue, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
+                pool.close()
+                for mname, module in self.run_annotators.items():
                     if mname not in assigned_mnames and set(module.secondary_module_names) <= done_mnames:
                         start_queue.put(run_args[mname])
                         assigned_mnames.add(mname)
-            queue_populated = True
-            pool.join()
-        try:
-            for _ in results.get():
-                pass
-        except Exception as e:
-            self.handle_exception(e)
+                while assigned_mnames != all_mnames: #TODO not handling case where parent module errors out
+                    finished_module = end_queue.get()
+                    done_mnames.add(finished_module)
+                    for mname, module in self.run_annotators.items():
+                        if mname not in assigned_mnames and set(module.secondary_module_names) <= done_mnames:
+                            start_queue.put(run_args[mname])
+                            assigned_mnames.add(mname)
+                queue_populated = True
+                pool.close()
+                pool.join()
+            except KeyboardInterrupt as e:
+                pool.terminate()
+                pool.join()
+                raise
         self.log_path = os.path.join(self.output_dir, self.run_name + '.log')
         self.log_handler = logging.FileHandler(self.log_path, 'a')
         formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
@@ -896,43 +981,48 @@ class Cravat (object):
         dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
         conn = await aiosqlite3.connect(dbpath)
         cursor = await conn.cursor()
-        q = 'drop table if exists info'
-        await cursor.execute(q)
-        q = 'create table info (colkey text, colval text)'
-        await cursor.execute(q)
-        created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        q = 'insert into info values ("Result created at", "' + created + '")'
-        await cursor.execute(q)
-        q = 'insert into info values ("Input file name", "{}")'.format(';'.join(self.inputs)) #todo adapt to multiple inputs
-        await cursor.execute(q)
-        q = 'insert into info values ("Input genome", "' + self.input_assembly + '")'
-        await cursor.execute(q)
-        q = 'select count(*) from variant'
-        await cursor.execute(q)
-        r = await cursor.fetchone()
-        no_input = str(r[0])
-        q = 'insert into info values ("Number of unique input variants", "' + no_input + '")'
-        await cursor.execute(q)
-        q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
-        await cursor.execute(q)
-        if hasattr(self, 'converter_format'):
-            q = 'insert into info values ("_converter_format", "{}")'.format(self.converter_format)
+        if not self.append_mode:
+            q = 'drop table if exists info'
             await cursor.execute(q)
-        if hasattr(self, 'genemapper'):
-            version = self.genemapper.conf['version']
-            title = self.genemapper.conf['title']
-            modulename = self.genemapper.name
-            genemapper_str = '{} ({})'.format(title, version)
-            q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
+            q = 'create table info (colkey text primary key, colval text)'
             await cursor.execute(q)
-            q = 'insert into info values ("_mapper", "{}:{}")'.format(modulename, version)
+        modified = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        q = 'insert or replace into info values ("Result modified at", "' + modified + '")'
+        await cursor.execute(q)
+        if not self.append_mode:
+            created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            q = 'insert into info values ("Result created at", "' + created + '")'
             await cursor.execute(q)
-        f = open(os.path.join(self.output_dir, self.run_name + '.crm'))
-        for line in f:
-            if line.startswith('#input_paths='):
-                input_path_dict_str = '='.join(line.strip().split('=')[1:]).replace('"', "'")
-                q = 'insert into info values ("_input_paths", "{}")'.format(input_path_dict_str)
+            q = 'insert into info values ("Input file name", "{}")'.format(';'.join(self.inputs)) #todo adapt to multiple inputs
+            await cursor.execute(q)
+            q = 'insert into info values ("Input genome", "' + self.input_assembly + '")'
+            await cursor.execute(q)
+            q = 'select count(*) from variant'
+            await cursor.execute(q)
+            r = await cursor.fetchone()
+            no_input = str(r[0])
+            q = 'insert into info values ("Number of unique input variants", "' + no_input + '")'
+            await cursor.execute(q)
+            q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
+            await cursor.execute(q)
+            if hasattr(self, 'converter_format'):
+                q = 'insert into info values ("_converter_format", "{}")'.format(self.converter_format)
                 await cursor.execute(q)
+            if hasattr(self, 'genemapper'):
+                version = self.genemapper.conf['version']
+                title = self.genemapper.conf['title']
+                modulename = self.genemapper.name
+                genemapper_str = '{} ({})'.format(title, version)
+                q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
+                await cursor.execute(q)
+                q = 'insert into info values ("_mapper", "{}:{}")'.format(modulename, version)
+                await cursor.execute(q)
+            f = open(os.path.join(self.output_dir, self.run_name + '.crm'))
+            for line in f:
+                if line.startswith('#input_paths='):
+                    input_path_dict_str = '='.join(line.strip().split('=')[1:]).replace('"', "'")
+                    q = 'insert into info values ("_input_paths", "{}")'.format(input_path_dict_str)
+                    await cursor.execute(q)
         q = 'select colval from info where colkey="annotators_desc"'
         await cursor.execute(q)
         r = await cursor.fetchone()
@@ -965,12 +1055,12 @@ class Cravat (object):
             module_info = au.get_local_module_info(name)
             if module_info is not None and module_info.conf is not None:
                 annotator_desc_dict[name] = module_info.conf['description']
-        q = 'insert into info values ("_annotator_desc", "{}")'.format(json.dumps(annotator_desc_dict).replace('"', "'"))
+        q = 'insert or replace into info values ("_annotator_desc", "{}")'.format(json.dumps(annotator_desc_dict).replace('"', "'"))
         await cursor.execute(q)
         self.status_writer.queue_status_update('annotator_version', annotator_version)
-        q = 'insert into info values ("Annotators", "' + annotators_str + '")'
+        q = 'insert or replace into info values ("Annotators", "' + annotators_str + '")'
         await cursor.execute(q)
-        q = 'insert into info values ("_annotators", "{}")'.format(','.join(annotators))
+        q = 'insert or replace into info values ("_annotators", "{}")'.format(','.join(annotators))
         await cursor.execute(q)
         await conn.commit()
         await cursor.close()
@@ -1045,9 +1135,8 @@ class StatusWriter:
             self.lock = False
 
     def update_status_json (self):
-        wf = open(self.status_json_path, 'w')
-        json.dump(self.status_json, wf)
-        wf.close()
+        with open(self.status_json_path, 'w') as wf:
+            json.dump(self.status_json, wf, indent=2, sort_keys=True)
 
     def get_status_json (self):
         return self.status_json

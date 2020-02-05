@@ -22,6 +22,9 @@ var jobsListCurEnd = jobsPerPageInList;
 var systemReadyObj = {};
 var formData = null;
 var adminMode = false;
+var inputFileList = [];
+var JOB_IDS = []
+var jobListUpdateIntervalFn = null;
 
 function submit () {
     if (servermode && logged == false) {
@@ -36,6 +39,7 @@ function submit () {
         var textBlob = new Blob([textVal], {type:'text/plain'})
         inputFiles.push(new File([textBlob], 'input'));
     } else {
+        /*
         var fileInputElem = $('#input-file')[0];
         var files = fileInputElem.files;
         if (files.length > 0) {
@@ -43,6 +47,8 @@ function submit () {
                 inputFiles.push(files[i]);
             }
         }
+        */
+        inputFiles = inputFileList;
     }
     if (inputFiles.length === 0) {
         alert('Choose a input variant files, enter variants, or click an input example button.');
@@ -106,6 +112,10 @@ function submit () {
     } else {
         for (var i = 0; i < inputFiles.length; i++) {
             var inputFile = inputFiles[i];
+            if (inputFile.name.endsWith('.gz')){
+                commitSubmit();
+                return;
+            }
             var reader = new FileReader();
             reader.onload = function (evt) {
                 var file = evt.target.result;
@@ -349,7 +359,12 @@ function populateJobTr (job) {
     } else {
         var input_fname = job.orig_input_fname;
     }
-    addEl(jobTr, addEl(getEl('td'), getTn(input_fname)));
+    var input_fname_display = input_fname;
+    var input_fname_display_limit = 30;
+    if (input_fname.length > input_fname_display_limit) {
+        input_fname_display = input_fname.substring(0, input_fname_display_limit) + '...';
+    }
+    addEl(jobTr, addEl(getEl('td'), getTn(input_fname_display)));
     // Number of annotators
     var annots = job.annotators;
     if (annots == undefined) {
@@ -577,21 +592,36 @@ function populateJobDetailTr (job) {
         addEl(td, button);
         addEl(tr, td);
         addEl(tbody, tr);
+    }
+    if (job.job_dir != undefined) {
         var tr = getEl('tr');
         var td = getEl('td');
         td.textContent = 'Job Directory';
         addEl(tr, td);
         var td = getEl('td');
         var a = getEl('span');
-        var d = job.db_path.substring(0, job.db_path.lastIndexOf('/'));
-        /*
-        a.href = 'file://///' + d;
-        */
-        a.textContent = d;
+        a.textContent = job.job_dir;
         addEl(td, a);
         addEl(tr, td);
         addEl(tbody, tr);
     }
+    // input files
+    var input_fname = job.orig_input_fname;
+    if (Array.isArray(job.orig_input_fname)) {
+        input_fname = job.orig_input_fname.join(', ');
+    }
+    var tr = getEl('tr');
+    var td = getEl('td');
+    td.textContent = 'Input file(s)';
+    addEl(tr, td);
+    var td = getEl('td');
+    var sdiv = getEl('div');
+    sdiv.style.maxHeight = '80px';
+    sdiv.style.overflow = 'auto';
+    sdiv.textContent = input_fname;
+    addEl(td, sdiv);
+    addEl(tr, td);
+    addEl(tbody, tr);
     addEl(detailTd, detailTable);
     addEl(detailTr, detailTd);
 }
@@ -719,7 +749,7 @@ function jobReportDownloadButtonHandler (evt) {
 }
 
 function downloadReport (jobId, reportType) {
-    url = 'jobs/'+jobId+'/reports/'+reportType;
+    url = '/submit/jobs/'+jobId+'/reports/'+reportType;
     downloadFile(url);
 }
 
@@ -779,6 +809,8 @@ function inputExampleChangeHandler (event) {
                 type: 'GET',
                 contentType: 'application/json',
                 success: function (data) {
+                    clearInputFiles();
+                    document.querySelector('#input-file').value = '';
                     GLOBALS.inputExamples[formatAssembly] = data;
                     resolve(data);
                 }
@@ -1825,22 +1857,11 @@ function resizePage () {
     div.style.height = h + 'px';
 }
 
-function fileInputChange(event) {
-    var fileInputElem = event.target;
-    var files = fileInputElem.files;
-    if (files.length >= 1) {
-        $('#mult-inputs-message').css('display','block');
-        var $fileListDiv = $('#mult-inputs-list');
-        $fileListDiv.empty();
-        for (var i=0; i<files.length; i++) {
-            var file = files[i];
-            var $p = $(getEl('p'))
-                .text(file.name);
-            $fileListDiv.append($p);
-        }
-    } else {
-        $('#mult-inputs-message').css('display','none');
-    }
+function clearInputFiles () {
+    inputFileList = [];
+    document.querySelector('#mult-inputs-message').style.display = 'none';
+    document.querySelector('#clear_inputfilelist_button').style.display = 'none';
+    $('#mult-inputs-list').empty();
 }
 
 function populateMultInputsMessage() {
@@ -1849,16 +1870,46 @@ function populateMultInputsMessage() {
     if (files.length >= 1) {
         $('#mult-inputs-message').css('display','block');
         var $fileListDiv = $('#mult-inputs-list');
-        $fileListDiv.empty();
         for (var i=0; i<files.length; i++) {
             var file = files[i];
-            var $p = $(getEl('p'))
-                .text(file.name);
-            $fileListDiv.append($p);
+            if (inputFileList.indexOf(file.name) == -1) {
+                var sdiv = getEl('div');
+                var span = getEl('span');
+                span.textContent = file.name;
+                addEl(sdiv, span);
+                var minus = getEl('button');
+                minus.classList.add('butn');
+                minus.classList.add('fileaddbutn');
+                minus.textContent = 'X';
+                minus.title = 'Click to remove the file.';
+                minus.addEventListener('click', function (evt) {
+                    var fileName = evt.target.previousSibling.textContent;
+                    for (var j = 0; j < inputFileList.length; j++) {
+                        if (inputFileList[j].name == fileName) {
+                            inputFileList.splice(j, 1);
+                            break;
+                        }
+                    }
+                    evt.target.parentElement.parentElement.removeChild(evt.target.parentElement);
+                    if (inputFileList.length == 0) {
+                        document.querySelector('#mult-inputs-message').style.display = 'none';
+                        document.querySelector('#clear_inputfilelist_button').style.display = 'none';
+                    }
+                });
+                addEl(sdiv, minus);
+                $fileListDiv.append($(sdiv));
+                inputFileList.push(file);
+            }
         }
-    } else {
-        $('#mult-inputs-message').css('display','none');
     }
+    if (inputFileList.length > 0) {
+        document.querySelector('#clear_inputfilelist_button').style.display = 'inline-block';
+        document.querySelector('#mult-inputs-message').style.display = 'block';
+    } else {
+        document.querySelector('#clear_inputfilelist_button').style.display = 'none';
+        document.querySelector('#mult-inputs-message').style.display = 'none';
+    }
+    document.querySelector('#input-file').value = '';
 }
 
 function addListeners () {
@@ -1979,6 +2030,29 @@ function onSubmitClickTagBoxCheck (evt) {
     }
 }
 
+function onClearInputFileList () {
+    document.querySelector('#clear_inputfilelist_button').style.display = 'none';
+    document.querySelector('#mult-inputs-message').style.display = 'none';
+    $(document.querySelector('#mult-inputs-list')).empty();
+    document.querySelector('#input-file').value = '';
+    inputFileList = [];
+}
+
+function populateInputFormats () {
+    let inputSel = $('#submit-input-format-select');
+    inputSel.prop('disabled',true);
+    for (moduleName in localModuleInfo) {
+        if (moduleName.endsWith('-converter')) {
+            let inputName = moduleName.split('-')[0];
+            let opt = $(getEl('option'))
+                .val(inputName)
+                .text(inputName);
+            inputSel.append(opt);
+        }
+    }
+    inputSel.prop('disabled',false);
+}
+
 function websubmit_run () {
     hideSpinner();
     hideUpdateRemoteSpinner();
@@ -1998,5 +2072,3 @@ function websubmit_run () {
     populateMultInputsMessage();
 };
 
-var JOB_IDS = []
-var jobListUpdateIntervalFn = null;

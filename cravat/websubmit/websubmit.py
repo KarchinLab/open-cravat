@@ -25,6 +25,7 @@ from queue import Empty
 from cravat import constants
 from cravat import get_live_annotator, get_live_mapper
 import signal
+import gzip
 
 cfl = ConfigLoader()
 
@@ -169,7 +170,7 @@ class FileRouter(object):
                 if fn.endswith('.status.json'):
                     with open(os.path.join(job_dir, fn)) as f:
                         try:
-                            statusjson = json.loads(f.readline())
+                            statusjson = json.load(f)
                         except json.JSONDecodeError as e:
                             if job_id in self.job_statuses:
                                 statusjson = self.job_statuses[job_id]
@@ -286,8 +287,12 @@ async def submit (request):
     input_fpaths = [os.path.join(job_dir, fn) for fn in input_fnames]
     tot_lines = 0
     for fpath in input_fpaths:
-        with open(fpath) as f:
-            tot_lines += count_lines(f)
+        if fpath.endswith('.gz'):
+            f = gzip.open(fpath,'rt')
+        else:
+            f = open(fpath)
+        tot_lines += count_lines(f)
+        f.close()
     run_args = ['cravat']
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))
@@ -331,12 +336,13 @@ async def submit (request):
         note = ''
     run_args.append(note)
     # Forced input format
-    if 'forcedinputformat' in job_options:
-        run_args.append('--forcedinputformat')
+    if 'forcedinputformat' in job_options and job_options['forcedinputformat']:
+        run_args.append('--input-format')
         run_args.append(job_options['forcedinputformat'])
     if servermode:
         run_args.append('--writeadmindb')
         run_args.extend(['--jobid', job_id])
+    run_args.append('--temp-files')
     global job_queue
     global run_jobs_info
     job_ids = run_jobs_info['job_ids']
@@ -349,7 +355,6 @@ async def submit (request):
     if servermode and server_ready:
         await cravat_multiuser.add_job_info(request, job)
     # makes temporary status.json
-    wf = open(os.path.join(job_dir, run_name + '.status.json'), 'w')
     status_json = {}
     status_json['job_dir'] = job_dir
     status_json['id'] = job_id
@@ -366,8 +371,8 @@ async def submit (request):
     pkg_ver = au.get_current_package_version()
     status_json['open_cravat_version'] = pkg_ver
     status_json['annotators'] = annotators
-    wf.write(json.dumps(status_json))
-    wf.close()
+    with open(os.path.join(job_dir, run_name + '.status.json'), 'w') as wf:
+        json.dump(status_json, wf, indent=2, sort_keys=True)
     return web.json_response(job.get_info_dict())
 
 def count_lines(f):
@@ -573,11 +578,11 @@ async def generate_report(request):
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
     job_input = await filerouter.job_run_path(request, job_id)
-    run_args = ['cravat', job_input]
+    run_args = ['oc', 'run', job_input]
     run_args.extend(['--startat', 'reporter'])
     run_args.extend(['--repeat', 'reporter'])
     run_args.extend(['-t', report_type])
-    run_args.extend(['-l', 'hg38'])
+    run_args.extend(['-l', 'hg38']) # dummy -l option
     p = await asyncio.create_subprocess_shell(' '.join(run_args))
     await p.wait()
     return web.json_response('done')
@@ -867,9 +872,9 @@ async def redirect_to_index (request):
         if r == False:
             url = '/server/nocache/login.html'
         else:
-            url = '/submit/index.html'
+            url = '/submit/nocache/index.html'
     else:
-        url = '/submit/index.html'
+        url = '/submit/nocache/index.html'
     return web.HTTPFound(url)
 
 async def load_live_modules ():
@@ -899,11 +904,13 @@ async def load_live_modules ():
     else:
         default_mapper = 'hg38'
     live_mapper = get_live_mapper(default_mapper)
-    modules = au.get_local_by_type(['annotator'])
+    modules = au.get_local_module_infos(types=['annotator'])
     for module in modules:
         if module.name in exclude_live_modules:
             continue
         if len(include_live_modules) > 0 and module.name not in include_live_modules:
+            continue
+        if 'secondary_inputs' in module.conf:
             continue
         annotator = get_live_annotator(module.name)
         if annotator is None:
@@ -958,14 +965,34 @@ async def live_annotate (input_data, annotators):
     response['crx'] = crx_data
     return response
 
-async def get_live_annotation (request):
+async def get_live_annotation_post (request):
+    queries = await request.post()
+    response = await get_live_annotation(queries)
+    return web.json_response(response)
+
+async def get_live_annotation_get (request):
     queries = request.rel_url.query
+    response = await get_live_annotation(request)
+    return web.json_response(response)
+
+async def get_live_annotation (queries):
+    if servermode and server_ready:
+        global count_single_api_access
+        global time_of_log_single_api_access
+        global interval_log_single_api_access
+        count_single_api_access += 1
+        t = time.time()
+        dt = t - time_of_log_single_api_access
+        if t - time_of_log_single_api_access > interval_log_single_api_access:
+            await cravat_multiuser.admindb.write_single_api_access_count_to_db(t, count_single_api_access)
+            time_of_log_single_api_access = t
+            count_single_api_access = 0
     chrom = queries['chrom']
     pos = queries['pos']
     ref_base = queries['ref_base']
     alt_base = queries['alt_base']
     if 'uid' not in queries:
-        uid = 'noid'
+        uid = ''
     else:
         uid = queries['uid']
     input_data = {'uid': uid, 'chrom': chrom, 'pos': int(pos), 'ref_base': ref_base, 'alt_base': alt_base}
@@ -980,7 +1007,7 @@ async def get_live_annotation (request):
         response = await live_annotate(input_data, annotators)
     else:
         response = await live_annotate(input_data, annotators)
-    return web.json_response(response)
+    return response
 
 async def get_available_report_types (request):
     job_id = request.match_info['job_id']
@@ -1019,6 +1046,9 @@ include_live_modules = None
 exclude_live_modules = None
 live_mapper = None
 job_statuses = {}
+count_single_api_access = 0
+time_of_log_single_api_access = time.time()
+interval_log_single_api_access = 60
 
 routes = []
 routes.append(['POST','/submit/submit',submit])
@@ -1042,7 +1072,8 @@ routes.append(['GET', '/submit/packageversions', get_package_versions])
 routes.append(['GET', '/submit/openterminal', open_terminal])
 routes.append(['GET', '/submit/lastassembly', get_last_assembly])
 routes.append(['GET', '/submit/getjobs', get_jobs])
-routes.append(['GET', '/submit/annotate', get_live_annotation])
+routes.append(['GET', '/submit/annotate', get_live_annotation_get])
+routes.append(['POST', '/submit/annotate', get_live_annotation_post])
 routes.append(['GET', '/', redirect_to_index])
 routes.append(['GET', '/submit/jobs/{job_id}/status', get_job_status])
 
