@@ -163,6 +163,7 @@ class RemoteModuleInfo(object):
         self.data_versions = kwargs.get('data_versions', {})
         self.data_sources = {x:str(y) for x,y in kwargs.get('data_sources', {}).items()}
         self.tags = kwargs.get('tags', [])
+        self.publish_time = kwargs.get('publish_time')
 
     def has_version(self, version):
         return version in self.versions    
