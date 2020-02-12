@@ -5,6 +5,7 @@ import sys
 import oyaml as yaml
 import chardet
 import gzip
+import pyximport
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -164,7 +165,6 @@ def load_class(class_name, path):
     path_dir = os.path.dirname(path)
     sys.path = [path_dir] + sys.path
     if path.endswith('.pyx'):
-        import pyximport
         pyximport.install(language_level=3)
         module_name = os.path.basename(path)[:-4]
         mod = __import__(module_name)

@@ -849,6 +849,12 @@ def get_mapper_script_path (module_name):
         module_path = None
     return module_path
 
+def get_module_script_path (module_name):
+    module_path = os.path.join(get_modules_dir(), 'mappers', module_name, module_name + '.py')
+    if os.path.exists(module_path) == False:
+        module_path = None
+    return module_path
+
 def get_conf_dir ():
     conf = get_system_conf()
     conf_dir = conf[constants.conf_dir_key]
