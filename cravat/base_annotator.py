@@ -43,7 +43,9 @@ class BaseAnnotator(object):
                 self.module_name = '.'.join(main_basename.split('.')[:-1])
             else:
                 self.module_name = main_basename
+            self.annotator_name = self.module_name
             self.module_dir = os.path.dirname(main_fpath)
+            self.annotator_dir = os.path.dirname(main_fpath)
             self.data_dir = os.path.join(self.module_dir, 'data')
             self.primary_input_path = None
             self.secondary_paths = None

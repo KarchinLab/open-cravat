@@ -40,6 +40,7 @@ class BaseMapper(object):
         else:
             self.module_name = main_basename
         self.module_dir = os.path.dirname(main_fpath)
+        self.mapper_dir = os.path.dirname(main_fpath)
         self.cmd_parser = None
         self.cmd_args = None
         self.input_path = None
