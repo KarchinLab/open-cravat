@@ -100,6 +100,7 @@ setup(
         'infi.systray',
         'intervaltree',
         'xlsxwriter',
+        'cython',
         ],
     python_requires='>=3.6',
 )
