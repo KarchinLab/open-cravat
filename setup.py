@@ -101,6 +101,7 @@ setup(
         'intervaltree',
         'xlsxwriter',
         'cython',
+        'apsw',
         ],
     python_requires='>=3.6',
 )
