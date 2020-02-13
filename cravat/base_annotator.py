@@ -40,11 +40,11 @@ class BaseAnnotator(object):
             main_fpath = cmd_args[0]
             main_basename = os.path.basename(main_fpath)
             if '.' in main_basename:
-                self.annotator_name = '.'.join(main_basename.split('.')[:-1])
+                self.module_name = '.'.join(main_basename.split('.')[:-1])
             else:
-                self.annotator_name = main_basename
-            self.annotator_dir = os.path.dirname(main_fpath)
-            self.data_dir = os.path.join(self.annotator_dir, 'data')
+                self.module_name = main_basename
+            self.module_dir = os.path.dirname(main_fpath)
+            self.data_dir = os.path.join(self.module_dir, 'data')
             self.primary_input_path = None
             self.secondary_paths = None
             self.output_dir = None
@@ -55,7 +55,7 @@ class BaseAnnotator(object):
             self.parse_cmd_args(cmd_args)
             self._setup_logger()
             config_loader = ConfigLoader(self.job_conf_path)
-            self.conf = config_loader.get_module_conf(self.annotator_name)
+            self.conf = config_loader.get_module_conf(self.module_name)
             self._verify_conf()
             self._id_col_name = self.conf['output_columns'][0]['name']
             if 'logging_level' in self.conf:
@@ -63,7 +63,7 @@ class BaseAnnotator(object):
             if 'title' in self.conf:
                 self.annotator_display_name = self.conf['title']
             else:
-                self.annotator_display_name = os.path.basename(self.annotator_dir).upper()
+                self.annotator_display_name = os.path.basename(self.module_dir).upper()
             if 'version' in self.conf:
                 self.annotator_version = self.conf['version']
             else:
@@ -177,11 +177,11 @@ class BaseAnnotator(object):
     # Runs the annotator.
     def run(self):
         if self.update_status_json_flag:
-            self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.conf['title'], self.annotator_name))
+            self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.conf['title'], self.module_name))
         try:
             start_time = time.time()
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
-            print('        {}: started at {}'.format(self.annotator_name, time.asctime(time.localtime(start_time))))
+            print('        {}: started at {}'.format(self.module_name, time.asctime(time.localtime(start_time))))
             self.base_setup()
             last_status_update_time = time.time()
             for lnum, line, input_data, secondary_data in self._get_input():
@@ -189,7 +189,7 @@ class BaseAnnotator(object):
                     if self.update_status_json_flag:
                         cur_time = time.time()
                         if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
-                            self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.annotator_name, lnum))
+                            self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, lnum))
                             last_status_update_time = cur_time
                     if secondary_data == {}:
                         output_dict = self.annotate(input_data)
@@ -213,13 +213,13 @@ class BaseAnnotator(object):
             self.base_cleanup()
             end_time = time.time()
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
-            print('        {}: finished at {}'.format(self.annotator_name, time.asctime(time.localtime(end_time))))
+            print('        {}: finished at {}'.format(self.module_name, time.asctime(time.localtime(end_time))))
             run_time = end_time - start_time
             self.logger.info('runtime: {0:0.3f}s'.format(run_time))
-            print('        {}: runtime {:0.3f}s'.format(self.annotator_name, run_time))
+            print('        {}: runtime {:0.3f}s'.format(self.module_name, run_time))
             if self.update_status_json_flag:
                 version = self.conf.get('version', 'unknown')
-                self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.annotator_name))
+                self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.module_name))
         except Exception as e:
             self._log_exception(e)
         if hasattr(self, 'log_handler'):
@@ -233,10 +233,10 @@ class BaseAnnotator(object):
         pass
 
     async def get_gene_summary_data (self, cf):
-        print('            {}: getting gene summary data'.format(self.annotator_name))
+        print('            {}: getting gene summary data'.format(self.module_name))
         t = time.time()
         hugos = await cf.get_filtered_hugo_list()
-        cols = [self.annotator_name + '__' + coldef['name'] \
+        cols = [self.module_name + '__' + coldef['name'] \
             for coldef in self.conf['output_columns'] \
             if coldef['name'] != 'uid']
         data = {}
@@ -257,7 +257,7 @@ class BaseAnnotator(object):
                 input_data[cols[i].split('__')[1]] = [row[i] for row in rows]
             out = self.summarize_by_gene(hugo, input_data)
             data[hugo] = out
-        print('            {}: finished getting gene summary data in {:0.3f}s'.format(self.annotator_name, time.time() - t))
+        print('            {}: finished getting gene summary data in {:0.3f}s'.format(self.module_name, time.time() - t))
         return data
 
     def _log_runtime_exception (self, lnum, line, input_data, e):
@@ -355,12 +355,12 @@ class BaseAnnotator(object):
             self.output_path = os.path.join(
                 self.output_dir, 
                 '.'.join([self.output_basename, 
-                self.annotator_name,
+                self.module_name,
                 output_suffix]))
             self.invalid_path = os.path.join(
                 self.output_dir, 
                 '.'.join([self.output_basename, 
-                self.annotator_name,
+                self.module_name,
                 'err']))
             if self.plain_output:
                 self.output_writer = CravatWriter(self.output_path, 
@@ -370,7 +370,7 @@ class BaseAnnotator(object):
             else:
                 self.output_writer = CravatWriter(self.output_path)
                 self.output_writer.write_meta_line('name',
-                                                   self.annotator_name)
+                                                   self.module_name)
                 self.output_writer.write_meta_line('displayname',
                                                    self.annotator_display_name)
                 self.output_writer.write_meta_line('version',
@@ -392,7 +392,7 @@ class BaseAnnotator(object):
                    os.path.join('/ext', 'resource', 'newarch')]
         db_path = None
         for db_dir in db_dirs:
-            db_path = os.path.join(db_dir, self.annotator_name + '.sqlite')
+            db_path = os.path.join(db_dir, self.module_name + '.sqlite')
             if os.path.exists(db_path):
                 self.dbconn = sqlite3.connect(db_path)
                 self.cursor = self.dbconn.cursor()
@@ -434,7 +434,7 @@ class BaseAnnotator(object):
     # Setup the logging utility
     def _setup_logger(self):
         try:
-            self.logger = logging.getLogger('cravat.' + self.annotator_name)
+            self.logger = logging.getLogger('cravat.' + self.module_name)
             if self.output_basename != '__dummy__':
                 self.log_path = os.path.join(self.output_dir, self.output_basename + '.log')
                 log_handler = logging.FileHandler(self.log_path, 'a')
@@ -443,7 +443,7 @@ class BaseAnnotator(object):
             formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
             log_handler.setFormatter(formatter)
             self.logger.addHandler(log_handler)
-            self.error_logger = logging.getLogger('error.' + self.annotator_name)
+            self.error_logger = logging.getLogger('error.' + self.module_name)
             if self.output_basename != '__dummy__':
                 error_log_path = os.path.join(self.output_dir, self.output_basename + '.err')
                 error_log_handler = logging.FileHandler(error_log_path, 'a')
@@ -468,10 +468,10 @@ class BaseAnnotator(object):
                     input_data[mapping_parser_name] = \
                         AllMappingsParser(input_data[all_mappings_col_name])
                 secondary_data = {}
-                for annotator_name, fetcher in self.secondary_readers.items():
-                    input_key_col = self.conf['secondary_inputs'][annotator_name].get('match_columns',{}).get('primary','uid')
+                for module_name, fetcher in self.secondary_readers.items():
+                    input_key_col = self.conf['secondary_inputs'][module_name].get('match_columns',{}).get('primary','uid')
                     input_key_data = input_data[input_key_col]
-                    secondary_data[annotator_name] = fetcher.get(input_key_data)
+                    secondary_data[module_name] = fetcher.get(input_key_data)
                 yield lnum, line, input_data, secondary_data
             except Exception as e:
                 self._log_runtime_error(lnum, e)

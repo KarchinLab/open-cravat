@@ -1,10 +1,6 @@
 class BaseCommonModule(object):
-    def __init__(self, cmd_args, status_writer, live=False):
-        try:
-            if live:
-                return
-        except Exception as e:
-            self._log_exception(e)
+    def __init__(self):
+        pass
 
     def _log_exception(self, e, halt=True):
         if halt:

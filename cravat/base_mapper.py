@@ -39,7 +39,7 @@ class BaseMapper(object):
             self.module_name = '.'.join(main_basename.split('.')[:-1])
         else:
             self.module_name = main_basename
-        self.mapper_dir = os.path.dirname(main_fpath)
+        self.module_dir = os.path.dirname(main_fpath)
         self.cmd_parser = None
         self.cmd_args = None
         self.input_path = None

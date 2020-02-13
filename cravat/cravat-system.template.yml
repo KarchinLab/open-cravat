@@ -22,4 +22,4 @@ base_modules:
 - wgsosummary
 - wgnote
 - wgvcfinfo
-
+- hg38wgs

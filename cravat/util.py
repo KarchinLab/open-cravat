@@ -6,6 +6,7 @@ import oyaml as yaml
 import chardet
 import gzip
 import pyximport
+import types
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -176,6 +177,28 @@ def load_class(class_name, path):
         spec.loader.exec_module(mod)
         del sys.path[0]
         return getattr(mod, class_name)
+
+def get_cravat_class (path):
+    """Load a class from the class's name and path. (dynamic importing)"""
+    import inspect
+    path_dir = os.path.dirname(path)
+    sys.path = [path_dir] + sys.path
+    if path.endswith('.pyx'):
+        pyximport.install(language_level=3)
+    bn = os.path.basename(path)
+    if bn.endswith('pyx'):
+        module_name = bn[:-4]
+    elif bn.endswith('py'):
+        module_name = bn[:-3]
+    mod = __import__(module_name)
+    module_class = None
+    for n in dir(mod):
+        if n.startswith('Cravat') or n == 'Mapper' or n == 'Reporter':
+            c = getattr(mod, n)
+            if inspect.isclass(c):
+                module_class = c
+                break
+    return module_class
 
 def get_directory_size(start_path):
     """

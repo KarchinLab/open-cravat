@@ -18,55 +18,60 @@ except KeyboardInterrupt:
     import sys
     sys.exit(1)
 
+wgs = None
+
 def get_live_annotator (module_name):
-    import os
-    config_loader = ConfigLoader()
-    script_path = admin_util.get_annotator_script_path(module_name)
-    ModuleClass = util.load_class('CravatAnnotator', script_path)
-    module = ModuleClass(None, None, live=True)
     try:
-        module.annotator_name = module_name
-        module.annotator_dir = os.path.dirname(script_path)
-        module.data_dir = os.path.join(module.annotator_dir, 'data')
+        ModuleClass = get_module(module_name)
+        module = ModuleClass(None, None, live=True)
+        module.module_name = module_name
+        module.module_dir = os.path.dirname(script_path)
+        module.data_dir = os.path.join(module.module_dir, 'data')
         module._open_db_connection()
         module.conf = config_loader.get_module_conf(module_name)
         module.setup()
     except:
-        print('    module loading error: {}'.format(module.annotator_name))
+        print('    module loading error: {}'.format(module.module_name))
+        import traceback
+        traceback.print_exc()
         return None
     return module
 
 def get_live_mapper (module_name):
-    import os
-    config_loader = ConfigLoader()
-    script_path = admin_util.get_mapper_script_path(module_name)
-    ModuleClass = util.load_class('Mapper', script_path)
-    module = ModuleClass(None, None, live=True)
     try:
-        module.module_name = module_name
-        module.mapper_dir = os.path.dirname(script_path)
-        module.data_dir = os.path.join(module.mapper_dir, 'data')
-        module.conf = config_loader.get_module_conf(module_name)
-        module.setup()
-    except Exception as e:
-        print('    module loading error: {}'.format(module_name))
-        return None
-    return module
-
-def get_common_module (module_name):
-    import os
-    config_loader = ConfigLoader()
-    module_info = admin_util.get_local_module_info(module_name)
-    script_path = module_info.script_path
-    ModuleClass = util.load_class('CravatCommonModule', script_path)
-    module = ModuleClass(None, None, live=True)
-    try:
+        ModuleClass = get_module(module_name)
+        module = ModuleClass(None, None, live=True)
         module.module_name = module_name
         module.module_dir = os.path.dirname(script_path)
         module.data_dir = os.path.join(module.module_dir, 'data')
         module.conf = config_loader.get_module_conf(module_name)
         module.setup()
-    except:
-        print('    module loading error: {}'.format(module.module_name))
+    except Exception as e:
+        print('    module loading error: {}'.format(module_name))
+        import traceback
+        traceback.print_exc()
         return None
     return module
+
+def get_module (module_name):
+    try:
+        import os
+        config_loader = ConfigLoader()
+        module_info = admin_util.get_local_module_info(module_name)
+        script_path = module_info.script_path
+        ModuleClass = util.get_cravat_class(script_path)
+        return ModuleClass
+    except Exception as e:
+        print('    module loading error: {}'.format(module.module_name))
+        import traceback
+        traceback.print_exc()
+        return None
+
+def get_wgs_reader (assembly='hg38'):
+    ModuleClass = get_module(assembly + 'wgs')
+    if ModuleClass is None:
+        wgs = None
+    else:
+        wgs = ModuleClass()
+        wgs.setup()
+    return wgs
