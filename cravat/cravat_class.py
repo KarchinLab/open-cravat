@@ -493,7 +493,7 @@ class Cravat (object):
                 self.args.__dict__[arg_key] = self.run_conf[arg_key]
         self.annotator_names = self.args.annotators
         if self.annotator_names == None:
-            self.annotators = au.get_local_module_infos_of_type('annotator')
+            self.annotators = au.get_local_module_infos_of_type('annotator', update=False)
         else:
             self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
         self.excludes = self.args.excludes
@@ -730,6 +730,7 @@ class Cravat (object):
                self.crvinput,
                '-n', self.run_name,
                '-d', self.output_dir]
+        self.logger.info(f'mapper module is {module.name}')
         if module.name in self.cravat_conf:
             confs = json.dumps(self.cravat_conf[module.name])
             confs = "'" + confs.replace("'", '"') + "'"
@@ -815,7 +816,7 @@ class Cravat (object):
         return v_aggregator.db_path
 
     def run_postaggregators (self):
-        modules = au.get_local_module_infos_of_type('postaggregator')
+        modules = au.get_local_module_infos_of_type('postaggregator', update=False)
         for module_name in modules:
             module = modules[module_name]
             self.announce_module(module)

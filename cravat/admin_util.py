@@ -62,7 +62,7 @@ class LocalModuleInfo (object):
         else:
             self.name = name
         self.script_path = os.path.join(self.directory, self.name+'.py')
-        if os.path.exists(self.script_path) == False:
+        if importlib.util.find_spec('cython') is not None:
             pyx_path = self.script_path + 'x'
             if os.path.exists(pyx_path):
                 self.script_path = pyx_path
@@ -752,9 +752,10 @@ def get_local_module_types():
             types.append(mic.local[module].type)
     return types
 
-def get_local_module_infos_of_type (t):
+def get_local_module_infos_of_type (t, update=True):
     modules = {}
-    mic.update_local()
+    if update:
+        mic.update_local()
     for module_name in mic.local:
         if mic.local[module_name].type == t:
             modules[module_name] = mic.local[module_name] 

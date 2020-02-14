@@ -5,7 +5,9 @@ import sys
 import oyaml as yaml
 import chardet
 import gzip
-import pyximport
+CYTHON_INSTALLED = importlib.util.find_spec('cython') is not None
+if CYTHON_INSTALLED:
+    import pyximport
 import types
 
 def get_ucsc_bins (start, stop=None):

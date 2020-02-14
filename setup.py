@@ -100,8 +100,7 @@ setup(
         'infi.systray',
         'intervaltree',
         'xlsxwriter',
-        'cython',
-        'apsw',
+        'twobitreader',
         ],
     python_requires='>=3.6',
 )
