@@ -1,4 +1,5 @@
 try:
+    import os
     from .base_converter import BaseConverter
     from .base_annotator import BaseAnnotator
     from .base_mapper import BaseMapper
@@ -59,7 +60,6 @@ def get_live_mapper (module_name):
 
 def get_module (module_name):
     try:
-        import os
         config_loader = ConfigLoader()
         module_info = admin_util.get_local_module_info(module_name)
         script_path = module_info.script_path
