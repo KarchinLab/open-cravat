@@ -180,7 +180,7 @@ def load_class(class_name, path):
         del sys.path[0]
         return getattr(mod, class_name)
 
-def get_cravat_class (path):
+def get_cravat_module_class (path):
     """Load a class from the class's name and path. (dynamic importing)"""
     import inspect
     path_dir = os.path.dirname(path)

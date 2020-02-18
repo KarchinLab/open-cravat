@@ -337,7 +337,7 @@ class Cravat (object):
                         'mapper' in self.args.repeat or
                         converter_ran
                    ):
-                print(f'Running gene mapper...{" "*18}',end='')
+                print(f'Running gene mapper...{" "*18}',end='', flush=True)
                 stime = time.time()
                 self.run_genemapper()
                 rtime = time.time() - stime

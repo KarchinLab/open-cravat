@@ -115,6 +115,9 @@ class BaseMapper(object):
     def setup(self):
         raise NotImplementedError('Mapper must have a setup() method.')
 
+    def end (self):
+        pass
+
     def _setup_logger(self):
         self.logger = logging.getLogger('cravat.mapper')
         self.logger.info('input file: %s' %self.input_path)
@@ -203,6 +206,7 @@ class BaseMapper(object):
         self.logger.info('runtime: %6.3f' %runtime)
         if self.status_writer is not None:
             self.status_writer.queue_status_update('status', 'Finished gene mapper')
+        self.end()
 
     def _write_to_crt(self, alt_transcripts):
         for primary, alts in alt_transcripts.items():

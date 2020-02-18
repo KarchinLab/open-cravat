@@ -321,7 +321,10 @@ class CrxMapping(object):
 class AllMappingsParser (object):
 
     def __init__(self, s):
-        self._d = json.loads(s,object_pairs_hook=OrderedDict)
+        if type(s) == str:
+            self._d = json.loads(s,object_pairs_hook=OrderedDict)
+        else:
+            self._d = s
         self._protein_index = 0
         self._achange_index = 1
         self._so_index = 2
