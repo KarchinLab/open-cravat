@@ -101,6 +101,7 @@ setup(
         'intervaltree',
         'xlsxwriter',
         'twobitreader',
+        'supersqlite',
         ],
     python_requires='>=3.6',
 )
