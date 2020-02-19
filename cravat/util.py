@@ -5,10 +5,8 @@ import sys
 import oyaml as yaml
 import chardet
 import gzip
-CYTHON_INSTALLED = importlib.util.find_spec('cython') is not None
-if CYTHON_INSTALLED:
-    import pyximport
 import types
+import inspect
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -163,43 +161,33 @@ def get_caller_name (path):
         module_name = basename
     return module_name
 
-def load_class(class_name, path):
+def load_class (path, class_name=None):
     """Load a class from the class's name and path. (dynamic importing)"""
     path_dir = os.path.dirname(path)
     sys.path = [path_dir] + sys.path
-    if path.endswith('.pyx'):
-        pyximport.install(language_level=3)
-        module_name = os.path.basename(path)[:-4]
-        mod = __import__(module_name)
-        module_class = getattr(mod, class_name)
-        return module_class
-    else:
-        spec = importlib.util.spec_from_file_location(class_name, path)
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        del sys.path[0]
-        return getattr(mod, class_name)
-
-def get_cravat_module_class (path):
-    """Load a class from the class's name and path. (dynamic importing)"""
-    import inspect
-    path_dir = os.path.dirname(path)
-    sys.path = [path_dir] + sys.path
-    if path.endswith('.pyx'):
-        pyximport.install(language_level=3)
-    bn = os.path.basename(path)
-    if bn.endswith('pyx'):
-        module_name = bn[:-4]
-    elif bn.endswith('py'):
-        module_name = bn[:-3]
-    mod = __import__(module_name)
+    module = None
     module_class = None
-    for n in dir(mod):
-        if n.startswith('Cravat') or n == 'Mapper' or n == 'Reporter':
-            c = getattr(mod, n)
-            if inspect.isclass(c):
-                module_class = c
-                break
+    module_name = os.path.basename(path).split('.')[0]
+    try:
+        module = __import__(module_name)
+    except:
+        try:
+            spec = importlib.util.spec_from_file_location(class_name, path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        except:
+            print(f'{module_name} is not found')
+    if module is not None:
+        if class_name is not None:
+            module_class = getattr(module, class_name)
+        else:
+            for n in dir(module):
+                if n.startswith('Cravat') or n == 'Mapper' or n == 'Reporter':
+                    c = getattr(module, n)
+                    if inspect.isclass(c):
+                        module_class = c
+                        break
+    del sys.path[0]
     return module_class
 
 def get_directory_size(start_path):

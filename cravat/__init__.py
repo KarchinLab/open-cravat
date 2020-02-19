@@ -63,8 +63,7 @@ def get_module (module_name):
         config_loader = ConfigLoader()
         module_info = admin_util.get_local_module_info(module_name)
         script_path = module_info.script_path
-        print(f'@ script_path={script_path}')
-        ModuleClass = util.get_cravat_module_class(script_path)
+        ModuleClass = util.load_class(script_path)
         ModuleClass.script_path = script_path
         ModuleClass.module_name = module_name
         ModuleClass.module_dir = os.path.dirname(script_path)

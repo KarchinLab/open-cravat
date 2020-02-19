@@ -719,7 +719,7 @@ class Cravat (object):
         self.announce_module(module)
         if self.verbose:
             print(' '.join(cmd))
-        converter_class = util.load_class('MasterCravatConverter', module.script_path)
+        converter_class = util.load_class(module.script_path, 'MasterCravatConverter')
         converter = converter_class(cmd, self.status_writer)
         self.numinput, self.converter_format = converter.run()
 
@@ -737,7 +737,7 @@ class Cravat (object):
             cmd.extend(['--confs', confs])
         if self.verbose:
             print(' '.join(cmd))
-        genemapper_class = util.load_class('Mapper', module.script_path)
+        genemapper_class = util.load_class(module.script_path, 'Mapper')
         genemapper = genemapper_class(cmd, self.status_writer)
         genemapper.run()
 
@@ -829,7 +829,7 @@ class Cravat (object):
                 cmd.extend(['--confs', confs])
             if self.verbose:
                 print(' '.join(cmd))
-            post_agg_cls = util.load_class('CravatPostAggregator', module.script_path)
+            post_agg_cls = util.load_class(module.script_path, 'CravatPostAggregator')
             post_agg = post_agg_cls(cmd, self.status_writer)
             stime = time.time()
             post_agg.run()
@@ -868,7 +868,7 @@ class Cravat (object):
                     cmd.append('--separatesample')
                 if self.verbose:
                     print(' '.join(cmd))
-                Reporter = util.load_class('Reporter', module.script_path)
+                Reporter = util.load_class(module.script_path, 'Reporter')
                 reporter = Reporter(cmd, self.status_writer)
                 await reporter.prep()
                 stime = time.time()
@@ -1079,7 +1079,7 @@ class Cravat (object):
             cmd.extend(['-d', self.output_dir])
         if self.verbose:
             print(' '.join(cmd))
-        summarizer_cls = util.load_class('', module.script_path)
+        summarizer_cls = util.load_class(module.script_path, '')
         summarizer = summarizer_cls(cmd)
         summarizer.run()
 

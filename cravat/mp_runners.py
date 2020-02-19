@@ -21,7 +21,7 @@ def annot_from_queue(start_queue, end_queue, queue_populated, status_writer):
                 else:
                     continue
             module, cmd = task
-            annotator_class = util.load_class("CravatAnnotator", module.script_path)
+            annotator_class = util.load_class(module.script_path, "CravatAnnotator")
             annotator = annotator_class(cmd, status_writer)
             annotator.run()
             end_queue.put(module.name)
