@@ -167,6 +167,7 @@ class RemoteModuleInfo(object):
         self.data_versions = kwargs.get('data_versions', {})
         self.data_sources = {x:str(y) for x,y in kwargs.get('data_sources', {}).items()}
         self.tags = kwargs.get('tags', [])
+        self.publish_time = kwargs.get('publish_time')
 
     def has_version(self, version):
         return version in self.versions    
@@ -546,7 +547,13 @@ def install_widgets_for_module (module_name):
     widget_name = 'wg' + module_name
     install_module(widget_name)
 
-def install_module (module_name, version=None, force_data=False, stage_handler=None, **kwargs):
+def install_module (
+        module_name, 
+        version=None, 
+        force_data=False, 
+        skip_data=False,
+        stage_handler=None, 
+        **kwargs):
     """
     Installs a module.
     version=None will install the latest version.
@@ -622,7 +629,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         if install_state:
             if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
                 raise exceptions.KillInstallException
-        if (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
+        if not(skip_data) and (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
             data_url = store_path_builder.module_data(module_name, remote_data_version)
             data_fname = '.'.join([module_name,'data','zip'])
             data_path = os.path.join(module_dir, data_fname)

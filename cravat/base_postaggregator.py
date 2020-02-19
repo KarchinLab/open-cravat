@@ -89,6 +89,7 @@ class BasePostAggregator (object):
 
     def run(self):
         if not self.should_run_annotate:
+            self.base_cleanup()
             return
         start_time = time.time()
         self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.conf['title'], self.module_name))

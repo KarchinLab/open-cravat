@@ -270,6 +270,7 @@ module_tag_desc = {
     'noncoding': 'modules for studying noncoding variants',
     'populations': 'modules for studying population statistics of variants',
     'protein visualization': 'modules to visualize variants on protein structures',
+    'reporters': 'modules for generating output formats',
     'variant effect prediction': 'modules to predict variant effects',
     'variants': 'modules to study variants at the variant level',
     'visualization widgets': 'modules for visualizing variants',
@@ -283,3 +284,4 @@ default_max_num_concurrent_annotators_per_job = max(1, os.cpu_count() - 1)
 default_assembly = 'hg38'
 default_assembly_key = 'default_assembly'
 assembly_choices = ['hg38', 'hg19', 'hg18']
+publish_time_fmt = '%Y-%m-%dT%H:%M:%S.%f%z'
