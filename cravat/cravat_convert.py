@@ -221,7 +221,8 @@ class MasterCravatConverter(object):
                 first_file.seek(0)
                 if check_success: valid_formats.append(converter_name)
             if len(valid_formats) == 0:
-                msg = 'Input format could not be determined. Additional input format converters are available. View available converters in the store or with "oc module ls -a -t converter"'
+                fn = os.path.basename(first_file.name)
+                msg = f'Input format could not be determined for file {fn}. Additional input format converters are available. View available converters in the store or with "oc module ls -a -t converter"'
                 raise ExpectedException(msg)
             elif len(valid_formats) > 1:
                 raise ExpectedException('Input format ambiguous in [%s]. '\
