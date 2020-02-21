@@ -546,9 +546,9 @@ class CravatReport:
                 mi = local_modules[module_name]
                 sys.path = sys.path + [os.path.dirname(mi.script_path)]
                 if module_name in done_var_annotators:
-                    annot_cls = util.load_class('CravatAnnotator', mi.script_path)
+                    annot_cls = util.load_class(mi.script_path, 'CravatAnnotator')
                 elif module_name == self.mapper_name:
-                    annot_cls = util.load_class('Mapper', mi.script_path)
+                    annot_cls = util.load_class(mi.script_path, 'Mapper')
                 annot = annot_cls([mi.script_path, '__dummy__', '-d', self.output_dir], {})
                 '''
                 cols = conf['gene_summary_output_columns']

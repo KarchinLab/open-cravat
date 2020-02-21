@@ -10,6 +10,7 @@ from io import StringIO
 from cravat.util import detect_encoding
 import sys
 from json.decoder import JSONDecodeError
+import multiprocessing as mp
 
 csv.register_dialect('cravat', delimiter=',', quotechar='@')
 
@@ -31,8 +32,11 @@ class CravatFile(object):
         return self.columns
 
 class CravatReader (CravatFile):
-    def __init__(self, path):
+    def __init__(self, path, seekpos=None, chunksize=None):
         super().__init__(path)
+        self.seekpos = seekpos
+        self.chunksize = chunksize
+        self.encoding = detect_encoding(self.path)
         self.annotator_name = ''
         self.annotator_displayname = ''
         self.annotator_version = ''
@@ -96,6 +100,25 @@ class CravatReader (CravatFile):
     def get_no_aggregate_columns (self):
         return self.no_aggregate_cols
 
+    def get_lines (self, seekpos, chunksize):
+        self.f.seek(seekpos)
+        return self.f.readlines(chunksize)
+
+    def _get_chunk_poss (self, chunksize):
+        f = open(self.path)
+        num_lines = 0
+        poss = [(0, 0)]
+        while True:
+            line = f.readline()
+            if line == '':
+                break
+            num_lines += 1
+            if num_lines % chunksize == 0:
+                poss.append((f.tell(), num_lines))
+        f.close()
+        len_poss = len(poss)
+        return poss, len_poss
+
     def loop_data(self):
         for lnum, l in self._loop_data():
             toks = l.split('\t')
@@ -103,8 +126,7 @@ class CravatReader (CravatFile):
             if len(toks) < len(self.columns):
                 err_msg = 'Too few columns. Received %s. Expected %s. data was [%s]' \
                     %(len(toks),len(self.columns), l)
-                yield None, BadFormatError(err_msg)
-                continue
+                return BadFormatError(err_msg)
             for col_index, col_def in self.columns.items():
                 col_name = col_def.name
                 col_type = col_def.type
@@ -123,15 +145,19 @@ class CravatReader (CravatFile):
                         else:
                             out[col_name] = float(tok)
             yield lnum, l, out
-   
+
+    def _open_file (self):
+        self.f = open(self.path, 'rb')
+
+    def _close_file (self):
+        self.f.close()
+
     def get_data(self):
         all_data = [d for _, _, d in self.loop_data()]
         return all_data
 
     def _loop_definition(self):
-        encoding = detect_encoding(self.path)
-        #sys.stderr.write('loop definition [' + self.path + ']. encoding=' + str(encoding) + '\n')
-        f = open(self.path, encoding=encoding)
+        f = open(self.path, encoding=self.encoding)
         for l in f:
             l = l.rstrip().lstrip()
             if l.startswith('#'):
@@ -141,18 +167,23 @@ class CravatReader (CravatFile):
         f.close()
 
     def _loop_data(self):
-        encoding = detect_encoding(self.path)
-        #sys.stderr.write('loop data [' + self.path + ']. encoding=' + str(encoding) + '\n')
+        print(f'@ entered _loop_data. seekpos={self.seekpos}')
         f = open(self.path, 'rb')
+        if self.seekpos is not None:
+            print(f'@ seek started')
+            f.seek(self.seekpos)
+            print(f'@ seek finished')
         lnum = 0
         for l in f:
-            l = l.decode(encoding)
+            l = l.decode(self.encoding)
             lnum += 1
             l = l.rstrip('\r\n')
             if l.startswith('#'):
                 continue
             else:
                 yield lnum, l
+            if self.chunksize is not None and lnum == self.chunksize:
+                break
         f.close()
 
 class CravatWriter(CravatFile):

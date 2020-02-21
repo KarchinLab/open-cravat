@@ -12,7 +12,7 @@ from cravat import constants
 import json
 import logging
 import traceback
-from cravat.mp_runners import init_worker, annot_from_queue
+from cravat.mp_runners import init_worker, annot_from_queue, mapper_runner
 import multiprocessing as mp
 import multiprocessing.managers
 from logging.handlers import QueueListener
@@ -24,6 +24,7 @@ import collections
 import asyncio
 import sqlite3
 from cravat.inout import CravatWriter
+from cravat.inout import CravatReader
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path_1 input_file_path_2 ...',
@@ -724,22 +725,25 @@ class Cravat (object):
         self.numinput, self.converter_format = converter.run()
 
     def run_genemapper (self):
-        module = au.get_local_module_info(self.conf.get_cravat_conf()['genemapper'])
-        self.genemapper = module
-        cmd = [module.script_path, 
-               self.crvinput,
-               '-n', self.run_name,
-               '-d', self.output_dir]
-        self.logger.info(f'mapper module is {module.name}')
-        if module.name in self.cravat_conf:
-            confs = json.dumps(self.cravat_conf[module.name])
-            confs = "'" + confs.replace("'", '"') + "'"
-            cmd.extend(['--confs', confs])
-        if self.verbose:
-            print(' '.join(cmd))
-        genemapper_class = util.load_class(module.script_path, 'Mapper')
-        genemapper = genemapper_class(cmd, self.status_writer)
-        genemapper.run()
+        chunksize = 10000
+        reader = CravatReader(self.crvinput)
+        chunk_poss, len_chunk_poss = reader._get_chunk_poss(chunksize)
+        max_num_core = au.get_system_conf()['max_num_concurrent_annotators_per_job']
+        mapper_name = self.conf.get_cravat_conf()['genemapper']
+        pool = mp.Pool(max_num_core)
+        pos_no = 0
+        while pos_no < len_chunk_poss:
+            jobs = []
+            for i in range(max_num_core):
+                if pos_no == len_chunk_poss:
+                    break
+                (seekpos, num_lines) = chunk_poss[pos_no]
+                job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, chunksize, self.run_name, self.output_dir, self.status_writer, mapper_name))
+                jobs.append(job)
+                pos_no += 1
+            print(f'@ jobs={jobs}')
+            for job in jobs:
+                job.get()
 
     def run_aggregator (self):
         # Variant level

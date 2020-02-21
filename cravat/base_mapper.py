@@ -13,6 +13,8 @@ import pkg_resources
 import json
 import cravat.cravat_util as cu
 from types import SimpleNamespace
+import multiprocessing as mp
+import cravat.admin_util as au
 
 class BaseMapper(object):
     """
@@ -23,6 +25,7 @@ class BaseMapper(object):
     mapping process.
     """
     def __init__(self, cmd_args, status_writer, live=False):
+        print(f'@ mapper __init__ entered')
         if live:
             self.live = live
             self.cmd_args = SimpleNamespace()
@@ -84,6 +87,14 @@ class BaseMapper(object):
             dest='confs',
             default='{}',
             help='Configuration string')
+        self.cmd_parser.add_argument('--seekpos',
+            dest='seekpos',
+            default=None,
+            help=argparse.SUPPRESS)
+        self.cmd_parser.add_argument('--chunksize',
+            dest='chunksize',
+            default=None,
+            help=argparse.SUPPRESS)
 
     def _define_additional_cmd_args(self):
         """This method allows sub-classes to override and provide addittional command line args"""
@@ -127,12 +138,14 @@ class BaseMapper(object):
     def _setup_io(self):
         """
         Open input and output files
-
         Open CravatReader for crv input. Open  CravatWriters for crx, and crg
         output. Open plain file for err output.
         """
         # Reader
-        self.reader = CravatReader(self.input_path)
+        if self.cmd_args.seekpos is not None and self.cmd_args.chunksize is not None:
+            self.reader = CravatReader(self.input_path, seekpos=int(self.cmd_args.seekpos), chunksize=int(self.cmd_args.chunksize))
+        else:
+            self.reader = CravatReader(self.input_path)
         # Various output files
         output_base_path = os.path.join(self.output_dir,
                                         self.output_base_fname)
@@ -169,6 +182,7 @@ class BaseMapper(object):
         Read crv file and use map() function to convert to crx dict. Write the
         crx dict to the crx file and add information in crx dict to gene_info
         """
+        print(f'@ mapper run entered')
         self.base_setup()
         start_time = time.time()
         self.logger.info('started: %s' \
