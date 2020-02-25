@@ -121,7 +121,6 @@ class CravatReader (CravatFile):
         num_lines = 0
         while True:
             line = f.readline()
-            print(f'@ {line}')
             if line == '':
                 break
             if line.startswith('#'):
@@ -131,7 +130,6 @@ class CravatReader (CravatFile):
                 poss.append((f.tell(), num_lines))
         f.close()
         len_poss = len(poss)
-        print(poss)
         return num_lines, chunksize, poss, len_poss
 
     def loop_data(self):
@@ -188,12 +186,12 @@ class CravatReader (CravatFile):
         lnum = 0
         for l in f:
             l = l.decode(self.encoding)
-            lnum += 1
             l = l.rstrip('\r\n')
             if l.startswith('#'):
                 continue
             else:
                 yield lnum, l
+            lnum += 1
             if self.chunksize is not None and lnum == self.chunksize:
                 break
         f.close()

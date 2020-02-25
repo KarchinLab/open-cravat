@@ -765,7 +765,7 @@ class Cravat (object):
                 job.get()
         crx_path = os.path.join(self.output_dir, f'{self.run_name}.crx')
         wf = open(crx_path, 'w')
-        fns = glob.glob(crx_path + '.*')
+        fns = glob.glob(crx_path + '[.]*')
         fn = fns[0]
         f = open(fn)
         for line in f:
