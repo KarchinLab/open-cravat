@@ -15,6 +15,7 @@ import cravat.cravat_util as cu
 from types import SimpleNamespace
 import multiprocessing as mp
 import cravat.admin_util as au
+import time
 
 class BaseMapper(object):
     """
@@ -25,7 +26,7 @@ class BaseMapper(object):
     mapping process.
     """
     def __init__(self, cmd_args, status_writer, live=False):
-        print(f'@ mapper __init__ entered')
+        self.t = time.time()
         if live:
             self.live = live
             self.cmd_args = SimpleNamespace()
@@ -95,6 +96,15 @@ class BaseMapper(object):
             dest='chunksize',
             default=None,
             help=argparse.SUPPRESS)
+        self.cmd_parser.add_argument('--slavemode',
+            dest='slavemode',
+            action='store_true',
+            default=False,
+            help=argparse.SUPPRESS)
+        self.cmd_parser.add_argument('--postfix',
+            dest='postfix',
+            default='',
+            help=argparse.SUPPRESS)
 
     def _define_additional_cmd_args(self):
         """This method allows sub-classes to override and provide addittional command line args"""
@@ -118,6 +128,8 @@ class BaseMapper(object):
         if self.cmd_args.confs is not None:
             confs = self.cmd_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
             self.confs = json.loads(confs)
+        self.slavemode = self.cmd_args.slavemode
+        self.postfix = self.cmd_args.postfix
 
     def base_setup(self):
         self._setup_io()
@@ -155,6 +167,8 @@ class BaseMapper(object):
         # .crx
         crx_fname = '.'.join(output_toks) + '.crx'
         self.crx_path = os.path.join(self.output_dir, crx_fname)
+        if self.slavemode:
+            self.crx_path += self.postfix
         self.crx_writer = CravatWriter(self.crx_path)
         self.crx_writer.add_columns(crx_def)
         self.crx_writer.write_definition(self.conf)
@@ -163,6 +177,8 @@ class BaseMapper(object):
         # .crg
         crg_fname = '.'.join(output_toks) + '.crg'
         self.crg_path = os.path.join(self.output_dir, crg_fname)
+        if self.slavemode:
+            self.crx_path += self.postfix
         self.crg_writer = CravatWriter(self.crg_path)
         self.crg_writer.add_columns(crg_def)
         self.crg_writer.write_definition(self.conf)
@@ -171,6 +187,8 @@ class BaseMapper(object):
         #.crt
         crt_fname = '.'.join(output_toks) + '.crt'
         self.crt_path = os.path.join(self.output_dir, crt_fname)
+        if self.slavemode:
+            self.crx_path += self.postfix
         self.crt_writer = CravatWriter(self.crt_path)
         self.crt_writer.add_columns(crt_def)
         self.crt_writer.write_definition()
@@ -182,11 +200,58 @@ class BaseMapper(object):
         Read crv file and use map() function to convert to crx dict. Write the
         crx dict to the crx file and add information in crx dict to gene_info
         """
-        print(f'@ mapper run entered')
         self.base_setup()
         start_time = time.time()
         self.logger.info('started: %s' \
                          %time.asctime(time.localtime(start_time)))
+        if self.status_writer is not None:
+            self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.conf['title'], self.module_name))
+        count = 0
+        last_status_update_time = time.time()
+        crx_data = None
+        alt_transcripts = None
+        output = {}
+        for ln, line, crv_data in self.reader.loop_data():
+            crx_data = None
+            try:
+                count += 1
+                cur_time = time.time()
+                if self.status_writer is not None:
+                    if count % 10000 == 0 or cur_time - last_status_update_time > 3:
+                        self.status_writer.queue_status_update('status', 'Running gene mapper: line {}'.format(count))
+                        last_status_update_time = cur_time
+                crx_data, alt_transcripts = self.map(crv_data)
+                # Skip cases where there was no change. Can result if ref_base not in original input
+                if crx_data['ref_base'] == crx_data['alt_base']:
+                    continue
+            except Exception as e:
+                self._log_runtime_error(ln, line, e)
+                continue
+            if crx_data is not None:
+                self.crx_writer.write_data(crx_data)
+                self._add_crx_to_gene_info(crx_data)
+            if alt_transcripts is not None:
+                self._write_to_crt(alt_transcripts)
+        self._write_crg()
+        stop_time = time.time()
+        self.logger.info('finished: %s' \
+                         %time.asctime(time.localtime(stop_time)))
+        runtime = stop_time - start_time
+        self.logger.info('runtime: %6.3f' %runtime)
+        if self.status_writer is not None:
+            self.status_writer.queue_status_update('status', 'Finished gene mapper')
+        self.end()
+        return output
+
+    def run_as_slave (self, pos_no):
+        """
+        Read crv file and use map() function to convert to crx dict. Write the
+        crx dict to the crx file and add information in crx dict to gene_info
+        """
+        self.base_setup()
+        start_time = time.time()
+        tstamp = time.asctime(time.localtime(start_time))
+        self.logger.info(f'started: {tstamp} | {self.cmd_args.seekpos}')
         if self.status_writer is not None:
             self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.conf['title'], self.module_name))
         count = 0
@@ -210,16 +275,11 @@ class BaseMapper(object):
             if crx_data is not None:
                 self.crx_writer.write_data(crx_data)
                 self._add_crx_to_gene_info(crx_data)
-            if alt_transcripts is not None:
-                self._write_to_crt(alt_transcripts)
-        self._write_crg()
         stop_time = time.time()
-        self.logger.info('finished: %s' \
-                         %time.asctime(time.localtime(stop_time)))
+        tstamp = time.asctime(time.localtime(stop_time))
+        self.logger.info(f'finished: {tstamp} | {self.cmd_args.seekpos}')
         runtime = stop_time - start_time
         self.logger.info('runtime: %6.3f' %runtime)
-        if self.status_writer is not None:
-            self.status_writer.queue_status_update('status', 'Finished gene mapper')
         self.end()
 
     def _write_to_crt(self, alt_transcripts):

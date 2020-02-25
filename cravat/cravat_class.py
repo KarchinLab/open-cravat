@@ -25,6 +25,7 @@ import asyncio
 import sqlite3
 from cravat.inout import CravatWriter
 from cravat.inout import CravatReader
+import glob
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path_1 input_file_path_2 ...',
@@ -186,15 +187,6 @@ class Cravat (object):
         self.logger.info('started: {0}'.format(time.asctime(time.localtime(self.start_time))))
         if self.run_conf_path != '':
             self.logger.info('conf file: {}'.format(self.run_conf_path))
-        if self.args.confs != None:
-            conf_bak = self.conf
-            try:
-                confs_conf = json.loads(self.args.confs.replace("'", '"'))
-                self.conf.override_all_conf(confs_conf)
-            except Exception as e:
-                self.logger.exception(e)
-                self.logger.info('Error in processing cs option. --cs option was not applied.')
-                self.conf = conf_bak
         self.modules_conf = self.conf.get_modules_conf()
         self.write_initial_status_json()
         self.unique_logs = {}
@@ -340,7 +332,8 @@ class Cravat (object):
                    ):
                 print(f'Running gene mapper...{" "*18}',end='', flush=True)
                 stime = time.time()
-                self.run_genemapper()
+                self.run_genemapper_mp()
+                #self.run_genemapper()
                 rtime = time.time() - stime
                 print('finished in {0:.3f}s'.format(rtime))
                 self.mapper_ran = True
@@ -468,13 +461,22 @@ class Cravat (object):
     def make_args_namespace(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
         full_args.update(supplied_args)
+        self.args = SimpleNamespace(**full_args)
         self.run_conf_path = ''
         if 'conf' in full_args: 
             self.run_conf_path = full_args['conf']
         self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
+        if self.args.confs != None:
+            conf_bak = self.conf
+            try:
+                confs_conf = json.loads(self.args.confs.replace("'", '"'))
+                self.conf.override_all_conf(confs_conf)
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.info('Error in processing cs option. --cs option was not applied.')
+                self.conf = conf_bak
         self.cravat_conf = self.conf.get_cravat_conf()
         self.run_conf = self.conf.get_run_conf()
-        self.args = SimpleNamespace(**full_args)
         if self.args.show_version:
             au.show_cravat_version()
             exit()
@@ -725,25 +727,60 @@ class Cravat (object):
         self.numinput, self.converter_format = converter.run()
 
     def run_genemapper (self):
-        chunksize = 10000
-        reader = CravatReader(self.crvinput)
-        chunk_poss, len_chunk_poss = reader._get_chunk_poss(chunksize)
-        max_num_core = au.get_system_conf()['max_num_concurrent_annotators_per_job']
+        module = au.get_local_module_info(
+            self.cravat_conf['genemapper'])
+        self.genemapper = module
+        cmd = [module.script_path, 
+               self.crvinput,
+               '-n', self.run_name,
+               '-d', self.output_dir]
+        if module.name in self.cravat_conf:
+            confs = json.dumps(self.cravat_conf[module.name])
+            confs = "'" + confs.replace("'", '"') + "'"
+            cmd.extend(['--confs', confs])
+        if self.verbose:
+            print(' '.join(cmd))
+        genemapper_class = util.load_class(module.script_path, 'Mapper')
+        genemapper = genemapper_class(cmd, self.status_writer)
+        genemapper.run()
+
+    def run_genemapper_mp (self):
+        num_core = au.get_system_conf()['max_num_concurrent_annotators_per_job']
         mapper_name = self.conf.get_cravat_conf()['genemapper']
-        pool = mp.Pool(max_num_core)
+        reader = CravatReader(self.crvinput)
+        num_lines, chunksize, poss, len_poss = reader.get_chunksize(num_core)
+        self.logger.info(f'input line chunksize={chunksize} total number of input lines={num_lines} number of chunks={len_poss}')
+        pool = mp.Pool(num_core)
         pos_no = 0
-        while pos_no < len_chunk_poss:
+        while pos_no < len_poss:
             jobs = []
-            for i in range(max_num_core):
-                if pos_no == len_chunk_poss:
+            for i in range(num_core):
+                if pos_no == len_poss:
                     break
-                (seekpos, num_lines) = chunk_poss[pos_no]
-                job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, chunksize, self.run_name, self.output_dir, self.status_writer, mapper_name))
+                (seekpos, num_lines) = poss[pos_no]
+                job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, chunksize, self.run_name, self.output_dir, self.status_writer, mapper_name, pos_no))
                 jobs.append(job)
                 pos_no += 1
-            print(f'@ jobs={jobs}')
             for job in jobs:
                 job.get()
+        crx_path = os.path.join(self.output_dir, f'{self.run_name}.crx')
+        wf = open(crx_path, 'w')
+        fns = glob.glob(crx_path + '.*')
+        fn = fns[0]
+        f = open(fn)
+        for line in f:
+            wf.write(line)
+        f.close()
+        os.remove(fn)
+        for fn in fns[1:]:
+            f = open(fn)
+            for line in f:
+                if line[0] == '#':
+                    continue
+                wf.write(line)
+            f.close()
+            os.remove(fn)
+        wf.close()
 
     def run_aggregator (self):
         # Variant level

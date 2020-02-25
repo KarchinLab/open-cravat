@@ -104,20 +104,35 @@ class CravatReader (CravatFile):
         self.f.seek(seekpos)
         return self.f.readlines(chunksize)
 
-    def _get_chunk_poss (self, chunksize):
+    def get_chunksize (self, num_core):
         f = open(self.path)
         num_lines = 0
-        poss = [(0, 0)]
         while True:
             line = f.readline()
             if line == '':
                 break
+            if line.startswith('#'):
+                continue
+            num_lines += 1
+        f.close()
+        chunksize = max(int(num_lines / num_core), 1)
+        f = open(self.path)
+        poss = [(0, 0)]
+        num_lines = 0
+        while True:
+            line = f.readline()
+            print(f'@ {line}')
+            if line == '':
+                break
+            if line.startswith('#'):
+                continue
             num_lines += 1
             if num_lines % chunksize == 0:
                 poss.append((f.tell(), num_lines))
         f.close()
         len_poss = len(poss)
-        return poss, len_poss
+        print(poss)
+        return num_lines, chunksize, poss, len_poss
 
     def loop_data(self):
         for lnum, l in self._loop_data():
@@ -167,12 +182,9 @@ class CravatReader (CravatFile):
         f.close()
 
     def _loop_data(self):
-        print(f'@ entered _loop_data. seekpos={self.seekpos}')
         f = open(self.path, 'rb')
         if self.seekpos is not None:
-            print(f'@ seek started')
             f.seek(self.seekpos)
-            print(f'@ seek finished')
         lnum = 0
         for l in f:
             l = l.decode(self.encoding)
@@ -193,7 +205,7 @@ class CravatWriter(CravatFile):
                  titles_prefix='#',
                  columns=[]):
         super().__init__(path)
-        self.wf = open(self.path,'w', encoding='utf-8')
+        self.wf = open(self.path, 'w', encoding='utf-8')
         self._ready_to_write = False
         self.ordered_columns = []
         self.name_to_col_index = {}
