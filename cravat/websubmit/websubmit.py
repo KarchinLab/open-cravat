@@ -974,7 +974,7 @@ async def get_live_annotation_post (request):
 
 async def get_live_annotation_get (request):
     queries = request.rel_url.query
-    response = await get_live_annotation(request)
+    response = await get_live_annotation(queries)
     return web.json_response(response)
 
 async def get_live_annotation (queries):
