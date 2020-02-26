@@ -28,7 +28,7 @@ def get_live_annotator (module_name):
         #module.module_name = module_name
         module.annotator_name = module_name
         #module.module_dir = os.path.dirname(script_path)
-        module.annotator_dir = os.path.dirname(script_path)
+        module.annotator_dir = os.path.dirname(module.script_path)
         module.data_dir = os.path.join(module.module_dir, 'data')
         module._open_db_connection()
         #module.conf = config_loader.get_module_conf(module_name)
