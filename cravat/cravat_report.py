@@ -532,7 +532,7 @@ class CravatReport:
             local_modules.update(au.get_local_module_infos_of_type('postaggregator', update=False))
             summarizer_module_names = []
             for module_name in done_var_annotators:
-                if module_name in ['base', 'hg19', 'hg18', 'extra_vcf_info']:
+                if module_name in ['base', 'hg19', 'hg18', 'extra_vcf_info', 'extra_variant_info']:
                     continue
                 if module_name not in local_modules:
                     print('            [{}] module does not exist in the system. Gene level summary for this module is skipped.'.format(module_name))
