@@ -106,16 +106,16 @@ class CravatReader (CravatFile):
 
     def get_chunksize (self, num_core):
         f = open(self.path)
-        num_lines = 0
+        max_num_lines = 0
         while True:
             line = f.readline()
             if line == '':
                 break
             if line.startswith('#'):
                 continue
-            num_lines += 1
+            max_num_lines += 1
         f.close()
-        chunksize = max(int(num_lines / num_core), 1)
+        chunksize = max(int(max_num_lines / num_core), 1)
         f = open(self.path)
         poss = [(0, 0)]
         num_lines = 0
@@ -126,7 +126,7 @@ class CravatReader (CravatFile):
             if line.startswith('#'):
                 continue
             num_lines += 1
-            if num_lines % chunksize == 0:
+            if num_lines % chunksize == 0 and len(poss) < num_core:
                 poss.append((f.tell(), num_lines))
         f.close()
         len_poss = len(poss)
