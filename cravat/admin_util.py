@@ -97,7 +97,9 @@ class LocalModuleInfo (object):
         self.helphtml_exists = os.path.exists(self.helphtml_path)
         self.conf = {}
         if self.conf_exists:
-            self.conf = load_yml_conf(self.conf_path) # THIS SHOULD NOT BE KEPT HERE, USE CONFIG LOADER
+            from cravat.config_loader import ConfigLoader
+            conf = ConfigLoader()
+            self.conf = conf.get_module_conf(self.name)
         self.type = self.conf.get('type')
         self.version = self.conf.get('version')
         self.description = self.conf.get('description')
@@ -824,11 +826,11 @@ def get_system_conf ():
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_jobs
         conf_modified = True
-    if conf_modified:
-        write_system_conf_file(conf)
     key = 'max_num_concurrent_annotators_per_job'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_annotators_per_job
+    if conf_modified:
+        write_system_conf_file(conf)
     return conf
 
 def get_modules_dir():
@@ -839,6 +841,26 @@ def get_modules_dir():
     modules_dir = conf[constants.modules_dir_key]
     return modules_dir
 
+def get_module_conf_path (module_name):
+    modules_dir = get_modules_dir()
+    typefns = os.listdir(modules_dir)
+    conf_path = None
+    for typefn in typefns:
+        typepath = os.path.join(modules_dir, typefn)
+        if os.path.isdir(typepath):
+            modulefns = os.listdir(typepath)
+            for modulefn in modulefns:
+                if os.path.basename(modulefn) == module_name:
+                    modulepath = os.path.join(typepath, modulefn)
+                    if os.path.isdir(modulepath):
+                        path = os.path.join(modulepath, module_name + '.yml')
+                        if os.path.exists(path):
+                            conf_path = path
+                            break
+            if conf_path is not None:
+                break
+    return conf_path
+    
 def get_annotator_dir (module_name):
     module_dir = os.path.join(get_modules_dir(), 'annotators', module_name)
     if os.path.exists(module_dir) == False:
@@ -852,12 +874,6 @@ def get_annotator_script_path (module_name):
     return module_path
 
 def get_mapper_script_path (module_name):
-    module_path = os.path.join(get_modules_dir(), 'mappers', module_name, module_name + '.py')
-    if os.path.exists(module_path) == False:
-        module_path = None
-    return module_path
-
-def get_module_script_path (module_name):
     module_path = os.path.join(get_modules_dir(), 'mappers', module_name, module_name + '.py')
     if os.path.exists(module_path) == False:
         module_path = None
@@ -1089,11 +1105,10 @@ def get_system_conf_info (json=False):
     return system_conf_info
 
 def get_cravat_conf ():
+    from cravat.config_loader import ConfigLoader
     confpath = get_main_conf_path()
-    if os.path.exists(confpath):
-        cravat_conf = load_yml_conf(confpath)
-    else:
-        cravat_conf = {}
+    conf = ConfigLoader()
+    cravat_conf = self.conf.get_cravat_conf()
     return cravat_conf
 
 def write_cravat_conf (cravat_conf):

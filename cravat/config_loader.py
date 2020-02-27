@@ -23,6 +23,13 @@ class ConfigLoader():
         if os.path.exists(self.main_conf_path) == False:
             shutil.copy(os.path.join(constants.packagedir, 'cravat.yml'), self.main_conf_path)
         self._main = au.load_yml_conf(self.main_conf_path)
+        conf_modified = False
+        k = 'multicore_mapper_mode'
+        if k not in self._main:
+            self._main[k] = constants.default_multicore_mapper_mode
+            conf_modified = True
+        if conf_modified:
+            au.write_cravat_conf(self._main)
         if build_all:
             self._build_all()
         
@@ -38,9 +45,9 @@ class ConfigLoader():
             self._build_all()
     
     def _load_module_conf(self, module_name, build_all=True):
-        module_info = au.get_local_module_info(module_name)
-        if module_info is not None:
-            self._modules[module_name] = au.load_yml_conf(module_info.conf_path)
+        conf_path = au.get_module_conf_path(module_name)
+        if conf_path is not None:
+            self._modules[module_name] = au.load_yml_conf(conf_path)
         if build_all:
             self._build_all()
             

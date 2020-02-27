@@ -332,18 +332,21 @@ class Cravat (object):
                    ):
                 print(f'Running gene mapper...{" "*18}',end='', flush=True)
                 stime = time.time()
-                self.run_genemapper_mp()
-                #self.run_genemapper()
+                multicore_mapper_mode = self.conf.get_cravat_conf()['multicore_mapper_mode']
+                if multicore_mapper_mode:
+                    self.run_genemapper_mp()
+                else:
+                    self.run_genemapper()
                 rtime = time.time() - stime
                 print('finished in {0:.3f}s'.format(rtime))
                 self.mapper_ran = True
-            self.populate_secondary_annotators()
+            self.annotator_ran = False
             self.done_annotators = {}
+            self.populate_secondary_annotators()
             for mname, module in self.annotators.items():
                 if self.check_module_output(module) is not None:
                     self.done_annotators[mname] = module
             self.run_annotators = {aname: self.annotators[aname] for aname in set(self.annotators) - set(self.done_annotators)}
-            self.annotator_ran = False
             if self.endlevel >= self.runlevels['annotator'] and \
                     self.startlevel <= self.runlevels['annotator'] and \
                     not 'annotator' in self.args.skip and \
