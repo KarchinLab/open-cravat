@@ -1,5 +1,4 @@
 try:
-    import os
     from .base_converter import BaseConverter
     from .base_annotator import BaseAnnotator
     from .base_mapper import BaseMapper
@@ -12,7 +11,7 @@ try:
     from .config_loader import ConfigLoader
     from . import constants
     from .cravat_filter import CravatFilter
-    from .cravat_class import Cravat
+    from .cravat_class import Cravat, run_cravat_job
     from .util import get_ucsc_bins, reverse_complement, translate_codon, more_severe_so, switch_strand
     from .constants import crx_def
 except KeyboardInterrupt:
@@ -23,6 +22,7 @@ wgs = None
 
 def get_live_annotator (module_name):
     try:
+        import os
         ModuleClass = get_module(module_name)
         module = ModuleClass(None, None, live=True)
         #module.module_name = module_name
@@ -42,6 +42,7 @@ def get_live_annotator (module_name):
 
 def get_live_mapper (module_name):
     try:
+        import os
         ModuleClass = get_module(module_name)
         module = ModuleClass(None, None, live=True)
         #module.module_name = module_name
@@ -60,6 +61,7 @@ def get_live_mapper (module_name):
 
 def get_module (module_name):
     try:
+        import os
         config_loader = ConfigLoader()
         module_info = admin_util.get_local_module_info(module_name)
         script_path = module_info.script_path

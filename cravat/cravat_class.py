@@ -158,6 +158,11 @@ def run(cmd_args):
     loop = asyncio.get_event_loop()
     loop.run_until_complete(module.main())
 
+def run_cravat_job(**kwargs):
+    module = Cravat(**kwargs)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(module.main())
+
 cravat_cmd_parser.set_defaults(func=run)
 
 class MyManager (multiprocessing.managers.SyncManager):
@@ -294,6 +299,11 @@ class Cravat (object):
 
     def update_status (self, status):
         self.status_writer.queue_status_update('status', status)
+
+    def run (self):
+        import asyncio
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.main())
 
     async def main (self):
         no_problem_in_run = True
@@ -483,16 +493,41 @@ class Cravat (object):
         if self.args.show_version:
             au.show_cravat_version()
             exit()
-        if len(self.args.inputs) == 0 and \
+        if self.args.inputs is not None and len(self.args.inputs) == 0 and \
                 'inputs' in self.run_conf:
             if type(self.run_conf['inputs']) == list:
                 self.args.inputs = self.run_conf['inputs']
             else:
                 print('inputs in conf file is invalid')
-        if len(self.args.inputs) == 0:
+        if self.args.inputs is not None and len(self.args.inputs) == 0:
             cravat_cmd_parser.print_help()
             print('\nNo input file was given.')
             exit()
+        if self.args.inputs is not None:
+            self.inputs = [os.path.abspath(x) for x in self.args.inputs]
+        else:
+            self.inputs = []
+        num_input = len(self.inputs)
+        self.run_name = self.args.run_name
+        if self.run_name == None:
+            if num_input == 0:
+                self.run_name = 'cravat_run'
+            if num_input == 1:
+                self.run_name = os.path.basename(self.inputs[0])
+            if num_input > 1:
+                self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
+        if num_input > 0 and self.inputs[0].endswith('.sqlite'):
+            self.append_mode = True  
+            if self.run_name.endswith('.sqlite'):
+                self.run_name = self.run_name[:-7]
+        self.output_dir = self.args.output_dir
+        if self.output_dir == None:
+            if num_input == 0:
+                self.output_dir = os.getcwd()
+            else:
+                self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
+        else:
+            self.output_dir = os.path.abspath(self.output_dir)
         args_keys = self.args.__dict__.keys()
         for arg_key in args_keys:
             if self.args.__dict__[arg_key] is None and arg_key in self.run_conf:
@@ -509,21 +544,6 @@ class Cravat (object):
             for m in self.excludes:
                 if m in self.annotators:
                     del self.annotators[m]
-        self.inputs = [os.path.abspath(x) for x in self.args.inputs]
-        self.run_name = self.args.run_name
-        if self.run_name == None:
-            self.run_name = os.path.basename(self.inputs[0])
-            if len(self.inputs) > 1:
-                self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
-        if self.inputs[0].endswith('.sqlite'):
-            self.append_mode = True  
-            if self.run_name.endswith('.sqlite'):
-                self.run_name = self.run_name[:-7]
-        self.output_dir = self.args.output_dir
-        if self.output_dir == None:
-            self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
-        else:
-            self.output_dir = os.path.abspath(self.output_dir)
         if os.path.exists(self.output_dir) == False:
             os.mkdir(self.output_dir)
         if self.args.verbose == True:
@@ -570,6 +590,11 @@ class Cravat (object):
             self.logmode = 'a'
         if self.args.note == None:
             self.args.note = ''
+        self.mapper_name = self.conf.get_cravat_conf()['genemapper']
+
+    def set_annotators (self, annotator_names):
+        self.annotator_names = annotator_names
+        self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
 
     def set_and_check_input_files (self):
         self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
@@ -749,7 +774,6 @@ class Cravat (object):
 
     def run_genemapper_mp (self):
         num_core = au.get_system_conf()['max_num_concurrent_annotators_per_job']
-        mapper_name = self.conf.get_cravat_conf()['genemapper']
         reader = CravatReader(self.crvinput)
         num_lines, chunksize, poss, len_poss = reader.get_chunksize(num_core)
         self.logger.info(f'input line chunksize={chunksize} total number of input lines={num_lines} number of chunks={len_poss}')
@@ -761,7 +785,7 @@ class Cravat (object):
                 if pos_no == len_poss:
                     break
                 (seekpos, num_lines) = poss[pos_no]
-                job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, chunksize, self.run_name, self.output_dir, self.status_writer, mapper_name, pos_no))
+                job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, chunksize, self.run_name, self.output_dir, self.status_writer, self.mapper_name, pos_no))
                 jobs.append(job)
                 pos_no += 1
             for job in jobs:
@@ -1141,11 +1165,6 @@ class Cravat (object):
                 fn_end = fn.split('.')[-1]
                 if fn_end in ['var', 'gen', 'crv', 'crx', 'crg', 'crs', 'crm', 'crt', 'json']:
                     os.remove(os.path.join(self.output_dir, fn))
-
-def run_cravat_job(**kwargs):
-    module = Cravat(**kwargs)
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(module.main())
 
 class StatusWriter:
     def __init__ (self, status_json_path):

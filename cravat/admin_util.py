@@ -1108,7 +1108,7 @@ def get_cravat_conf ():
     from cravat.config_loader import ConfigLoader
     confpath = get_main_conf_path()
     conf = ConfigLoader()
-    cravat_conf = self.conf.get_cravat_conf()
+    cravat_conf = conf.get_cravat_conf()
     return cravat_conf
 
 def write_cravat_conf (cravat_conf):
