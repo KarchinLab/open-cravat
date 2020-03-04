@@ -57,7 +57,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='1.7.0',
+    version='1.7.1',
     description='Open-CRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
