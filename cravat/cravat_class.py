@@ -925,8 +925,8 @@ class Cravat (object):
                        '--module-name', module_name]
                 if self.run_conf_path is not None:
                     cmd.extend(['-c', self.run_conf_path])
-                if module_name in self.cravat_conf:
-                    confs = json.dumps(self.cravat_conf[module_name])
+                if module_name in self.run_conf:
+                    confs = json.dumps(self.run_conf[module_name])
                     confs = "'" + confs.replace("'", '"') + "'"
                     cmd.extend(['--confs', confs])
                 cmd.append('--inputfiles')
