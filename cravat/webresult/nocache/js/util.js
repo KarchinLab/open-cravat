@@ -120,6 +120,29 @@ function deleteFilterSetting (name) {
 	})
 }
 
+function saveLayoutSettingAs (evt) {
+    hideAllMenu3();
+    evt.stopPropagation();
+       $.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+        var quickSaveNameIdx = response.indexOf(quickSaveName);
+        if (quickSaveNameIdx >= 0) {
+            response.splice(quickSaveNameIdx, 1);
+        }
+               var names = response.join(', ');
+               var msg = 'Please enter layout name to save.';
+               if (names != '') {
+                       msg = msg + ' Saved layout names are: ' + names;
+               }
+        if (lastUsedLayoutName == quickSaveName) {
+            lastUsedLayoutName = '';
+        }
+               var name = prompt(msg, lastUsedLayoutName);
+               if (name != null) {
+                       saveLayoutSetting(name);
+               }
+       });
+}
+
 function saveFilterSettingAs () {
 	return new Promise((resolve, reject) => {
 		$.get('/result/service/getfiltersavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
