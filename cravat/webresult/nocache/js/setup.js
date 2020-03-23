@@ -81,8 +81,8 @@ class FilterManager {
         this.sampleContId = 'filter-cont-sample';
         this.geneContId = 'filter-cont-gene';
         this.variantContId = 'filter-cont-variant'
-
         this.sampleSelectId = 'sample-select-cont';
+        this.sampleFileId = 'sample-list-file';
 		this.geneTextId = 'gene-list-text';
 		this.geneFileId = 'gene-list-file';
 		this.vpropSelectId = 'vprop-sel';
@@ -186,9 +186,37 @@ class FilterManager {
 				sampleBox.removeClass('sample-neutral');
 				sampleBox.addClass('sample-reject');
 			}
-		}
+        }
+        let sampListDiv = $(getEl('div'));
+        outerDiv.append(sampListDiv);
+        let sampListInput = $(getEl('input'))
+            .attr('id', this.sampleFileId)
+            .attr('type', 'file')
+            .change(this.onSampleListFileChange.bind(this))
+            .css('display','none');
+        sampListDiv.append(sampListInput);
+        let sampListBtn = $(getEl('button'))
+            .text('Sample list')
+            .addClass('butn')
+            .click(()=>{
+                $('#'+this.sampleFileId).click();
+            });
+        sampListDiv.append(sampListBtn);
 		return outerDiv;
-	}
+    }
+    
+    onSampleListFileChange (event) {
+        let fileInput = $(event.target);
+        let fr = new FileReader();
+        var that = this;
+        fr.onloadend = function(e) { //Not an arrow function so that this=FileReader
+            let text = this.result;
+            let samples = text.split(/\r?\n/g);
+            let filter = {sample:{require:samples, reject:[]}}
+            that.updateSampleSelect(filter);
+        }
+        fr.readAsText(fileInput.prop('files')[0])
+    }
 
 	updateSampleSelect (filter) {
         filter = new CravatFilter(filter);
