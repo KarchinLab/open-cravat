@@ -128,6 +128,7 @@ crx_def = crv_def + \
                    'STG', 
                    'FSD', 
                    'FSI'], 'filterable': True},
+           {'name':'cchange', 'title': 'cDNA change', 'type': 'string', 'width': 70, 'filterable': False},
            {'name':'achange', 'title':'Protein Change', 'type':'string', 'width': 55, 'filterable': False},
            {'name':'all_mappings', 'title':'All Mappings', 'type':'string', 'width': 100, 'hidden':True, 'filterable': False},
            ]
