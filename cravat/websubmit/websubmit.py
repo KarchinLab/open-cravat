@@ -666,7 +666,9 @@ async def get_package_versions(request):
     cur_ver = au.get_current_package_version()
     lat_ver = au.get_latest_package_version()
     if lat_ver is not None:
-        update = LooseVersion(lat_ver) > LooseVersion(cur_ver)
+        cur_drop_patch = '.'.join(cur_ver.split('.')[:-1])
+        lat_drop_patch = '.'.join(lat_ver.split('.')[:-1])
+        update = LooseVersion(lat_drop_patch) > LooseVersion(cur_drop_patch)
     else:
         update = False
     d = {
