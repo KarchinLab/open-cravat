@@ -108,7 +108,7 @@ def print_tabular_lines(l, *kwargs):
     for line in yield_tabular_lines(l, *kwargs):
         print(line)
 
-def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False, humanize=False):
+def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False, raw_bytes=False):
     if quiet:
         all_toks = []
     else:
@@ -130,14 +130,14 @@ def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], q
         else:
             size = module_info.get_size()
             toks = [module_name, module_info.title, module_info.type, module_info.version, module_info.datasource]
-            if humanize:
-                toks.append(humanize_bytes(size))
-            else:
+            if raw_bytes:
                 toks.append(size)
+            else:
+                toks.append(humanize_bytes(size))
         all_toks.append(toks)
     print_tabular_lines(all_toks)
 
-def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False, humanize=False):
+def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False, raw_bytes=False):
     if quiet:
         all_toks = []
     else:
@@ -183,18 +183,18 @@ def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[
                 local_version,
                 local_datasource,
             ]
-            if humanize:
-                toks.append(humanize_bytes(remote_info.size))
-            else:
+            if raw_bytes:
                 toks.append(remote_info.size)
+            else:
+                toks.append(humanize_bytes(remote_info.size))
         all_toks.append(toks)
     print_tabular_lines(all_toks)
 
 def list_modules(args):
     if args.available:
-        list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet, humanize=args.humanize)
+        list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet, raw_bytes=args.raw_bytes)
     else:
-        list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet, humanize=args.humanize)
+        list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet, raw_bytes=args.raw_bytes)
 
 def yaml_string(x):
     s = yaml.dump(x, default_flow_style = False)
@@ -582,9 +582,10 @@ parser_ls.add_argument('--tags',
 parser_ls.add_argument('-q','--quiet',
                         action='store_true',
                         help='Only list module names')
-parser_ls.add_argument('--humanize',
+parser_ls.add_argument('--bytes',
     action='store_true',
-    help='Human friendly data sizes'
+    dest='raw_bytes',
+    help='Machine readable data sizes'
     )
 parser_ls.set_defaults(func=list_modules)
 
