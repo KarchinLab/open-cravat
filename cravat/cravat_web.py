@@ -43,10 +43,6 @@ try:
     log_path = os.path.join(log_dir, 'wcravat.log')
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    log_handler = logging.handlers.TimedRotatingFileHandler(log_path, when='d', backupCount=30)
-    log_formatter = logging.Formatter('%(asctime)s: %(message)s', '%Y/%m/%d %H:%M:%S')
-    log_handler.setFormatter(log_formatter)
-    logger.addHandler(log_handler)
 
     headless = None
     servermode = None
@@ -164,6 +160,10 @@ def wcravat_entrypoint ():
     run(args)
 
 def run(args):
+    log_handler = logging.handlers.TimedRotatingFileHandler(log_path, when='d', backupCount=30)
+    log_formatter = logging.Formatter('%(asctime)s: %(message)s', '%Y/%m/%d %H:%M:%S')
+    log_handler.setFormatter(log_formatter)
+    logger.addHandler(log_handler)
     if args.servermode:
         args.headless = True
     if args.result:
