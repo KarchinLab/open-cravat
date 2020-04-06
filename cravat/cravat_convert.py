@@ -338,21 +338,26 @@ class MasterCravatConverter(object):
                                     wdict['sample_id'] = '__'.join([samp_prefix, wdict['sample_id']])
                                 else:
                                     wdict['sample_id'] = samp_prefix
-                            if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
-                                num_errors += 1
-                                e = BadFormatError('Reference base required for non SNV')
-                                self._log_conversion_error(read_lnum, l, e)
-                                continue
-                            if self.do_liftover:
-                                prelift_wdict = copy.copy(wdict)
-                                try:
-                                    wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
-                                except LiftoverFailure as e:
+                            if wdict['alt_base'] == '*':
+                                new_pos = wdict['pos']
+                                new_ref = wdict['ref_base']
+                                new_alt = wdict['alt_base']
+                            else:
+                                if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
                                     num_errors += 1
+                                    e = BadFormatError('Reference base required for non SNV')
                                     self._log_conversion_error(read_lnum, l, e)
                                     continue
-                            p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
-                            new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
+                                if self.do_liftover:
+                                    prelift_wdict = copy.copy(wdict)
+                                    try:
+                                        wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
+                                    except LiftoverFailure as e:
+                                        num_errors += 1
+                                        self._log_conversion_error(read_lnum, l, e)
+                                        continue
+                                p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
+                                new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
                             unique, UID = self.vtracker.addVar(wdict['chrom'], new_pos, new_ref, new_alt)
                             wdict['uid'] = UID
                             if unique:
