@@ -120,6 +120,7 @@ so_severity = ['',
                'UT5',
                'INT',
                'UNK',
+               'MRT',
                'SYN',
                'MIS',
                'CSS',
@@ -135,7 +136,8 @@ so_severity = ['',
                'FSD',
                'FI1',
                'FI2',
-               'FSI'
+               'FSI',
+               'MLO',
                ]
 
 def valid_so(so):
