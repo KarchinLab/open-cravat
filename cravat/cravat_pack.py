@@ -20,7 +20,7 @@ def main ():
         print(confpath + ' does not exists')
         exit()
     with open(confpath) as f:
-        conf = yaml.load(f)
+        conf = yaml.safe_load(f)
     if 'version' not in conf:
         print('Version is not in ' + confpath)
         exit()

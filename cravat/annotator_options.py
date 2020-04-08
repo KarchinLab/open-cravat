@@ -35,7 +35,7 @@ class AnnotatorOptions(object):
     # Parse a generic conf file.
     # Apply special parsing rules to certain conf keys
     def parse_conf_file(self, conf_path):
-        d = yaml.load(open(conf_path))
+        d = yaml.safe_load(open(conf_path))
         for k in self.required_conf_keys:
             if k not in d:
                 err_msg = 'Required key "%s" not found in configuration' %k

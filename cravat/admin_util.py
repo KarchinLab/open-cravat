@@ -26,7 +26,7 @@ def load_yml_conf(yml_conf_path):
     empty.
     """
     with open(yml_conf_path) as f:
-        conf = yaml.load(f)
+        conf = yaml.safe_load(f)
     if conf == None:
         conf = {}
     return conf
@@ -234,7 +234,7 @@ class ModuleInfoCache(object):
             counts_url = self._store_path_builder.download_counts()
             counts_str = su.get_file_to_string(counts_url)
             if counts_str != '':
-                self.download_counts = yaml.load(counts_str).get('modules',{})
+                self.download_counts = yaml.safe_load(counts_str).get('modules',{})
             self._counts_fetched = True
 
     def update_local(self):
@@ -267,7 +267,7 @@ class ModuleInfoCache(object):
                 manifest_str = su.get_file_to_string(self._remote_url)
             self.remote = {}
             if manifest_str != '':
-                self.remote = yaml.load(manifest_str)
+                self.remote = yaml.safe_load(manifest_str)
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
@@ -302,7 +302,7 @@ class ModuleInfoCache(object):
             return config
         except LookupError:
             config_url = self._store_path_builder.module_conf(module_name, version)
-            config = yaml.load(su.get_file_to_string(config_url))
+            config = yaml.safe_load(su.get_file_to_string(config_url))
             # add to cache
             if module_name not in self.remote_config:
                 self.remote_config[module_name] = {}
@@ -624,7 +624,7 @@ def install_module (
                 raise exceptions.KillInstallException
         stage_handler.stage_start('verify_code')
         code_manifest_url = store_path_builder.module_code_manifest(module_name, version)
-        code_manifest = yaml.load(su.get_file_to_string(code_manifest_url))
+        code_manifest = yaml.safe_load(su.get_file_to_string(code_manifest_url))
         su.verify_against_manifest(module_dir, code_manifest)
         os.remove(zipfile_path)
         local_info = LocalModuleInfo(module_dir)
@@ -652,7 +652,7 @@ def install_module (
                         raise exceptions.KillInstallException
                 stage_handler.stage_start('verify_data')
                 data_manifest_url = store_path_builder.module_data_manifest(module_name, remote_data_version)
-                data_manifest = yaml.load(su.get_file_to_string(data_manifest_url))
+                data_manifest = yaml.safe_load(su.get_file_to_string(data_manifest_url))
                 su.verify_against_manifest(module_dir, data_manifest)
                 os.remove(data_path)
                 if install_state:
@@ -911,7 +911,7 @@ def update_system_conf_file(d):
 
 def read_system_conf_template ():
     with open(constants.system_conf_template_path) as f:
-        d = yaml.load(f)
+        d = yaml.safe_load(f)
         return d
     return None
 

@@ -87,7 +87,7 @@ setup(
               'install':InstallCommand,
               },
     install_requires=[
-        'pyyaml<5.1',
+        'pyyaml',
         'requests',
         'requests_toolbelt',
         'pyliftover',
