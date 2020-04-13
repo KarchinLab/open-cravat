@@ -327,7 +327,7 @@ class CravatFilter ():
             with open(self.filterpath) as f:
                 ftype = self.filterpath.split('.')[-1]
                 if ftype in ['yml','yaml']:
-                    self.filter = yaml.load(f)
+                    self.filter = yaml.safe_load(f)
                 elif ftype in ['json']:
                     self.filter = json.load(f)
         if self.filter is None:
