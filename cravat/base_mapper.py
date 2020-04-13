@@ -178,7 +178,7 @@ class BaseMapper(object):
         crg_fname = '.'.join(output_toks) + '.crg'
         self.crg_path = os.path.join(self.output_dir, crg_fname)
         if self.slavemode:
-            self.crx_path += self.postfix
+            self.crg_path += self.postfix
         self.crg_writer = CravatWriter(self.crg_path)
         self.crg_writer.add_columns(crg_def)
         self.crg_writer.write_definition(self.conf)
@@ -188,7 +188,7 @@ class BaseMapper(object):
         crt_fname = '.'.join(output_toks) + '.crt'
         self.crt_path = os.path.join(self.output_dir, crt_fname)
         if self.slavemode:
-            self.crx_path += self.postfix
+            self.crt_path += self.postfix
         self.crt_writer = CravatWriter(self.crt_path)
         self.crt_writer.add_columns(crt_def)
         self.crt_writer.write_definition()

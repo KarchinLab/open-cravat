@@ -130,7 +130,7 @@ class CravatReader (CravatFile):
                 poss.append((f.tell(), num_lines))
         f.close()
         len_poss = len(poss)
-        return num_lines, chunksize, poss, len_poss
+        return num_lines, chunksize, poss, len_poss, max_num_lines
 
     def loop_data(self):
         for lnum, l in self._loop_data():

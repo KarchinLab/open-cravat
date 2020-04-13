@@ -775,7 +775,7 @@ class Cravat (object):
     def run_genemapper_mp (self):
         num_core = au.get_system_conf()['max_num_concurrent_annotators_per_job']
         reader = CravatReader(self.crvinput)
-        num_lines, chunksize, poss, len_poss = reader.get_chunksize(num_core)
+        num_lines, chunksize, poss, len_poss, max_num_lines = reader.get_chunksize(num_core)
         self.logger.info(f'input line chunksize={chunksize} total number of input lines={num_lines} number of chunks={len_poss}')
         pool = mp.Pool(num_core)
         pos_no = 0
@@ -785,14 +785,56 @@ class Cravat (object):
                 if pos_no == len_poss:
                     break
                 (seekpos, num_lines) = poss[pos_no]
-                job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, chunksize, self.run_name, self.output_dir, self.status_writer, self.mapper_name, pos_no))
+                if pos_no == len_poss - 1:
+                    job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, max_num_lines - num_lines, self.run_name, self.output_dir, self.status_writer, self.mapper_name, pos_no))
+                else:
+                    job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, chunksize, self.run_name, self.output_dir, self.status_writer, self.mapper_name, pos_no))
                 jobs.append(job)
                 pos_no += 1
             for job in jobs:
                 job.get()
+        # collects crx.
         crx_path = os.path.join(self.output_dir, f'{self.run_name}.crx')
         wf = open(crx_path, 'w')
         fns = glob.glob(crx_path + '[.]*')
+        fn = fns[0]
+        f = open(fn)
+        for line in f:
+            wf.write(line)
+        f.close()
+        os.remove(fn)
+        for fn in fns[1:]:
+            f = open(fn)
+            for line in f:
+                if line[0] == '#':
+                    continue
+                wf.write(line)
+            f.close()
+            os.remove(fn)
+        wf.close()
+        # collects crg.
+        crg_path = os.path.join(self.output_dir, f'{self.run_name}.crg')
+        wf = open(crg_path, 'w')
+        fns = glob.glob(crg_path + '[.]*')
+        fn = fns[0]
+        f = open(fn)
+        for line in f:
+            wf.write(line)
+        f.close()
+        os.remove(fn)
+        for fn in fns[1:]:
+            f = open(fn)
+            for line in f:
+                if line[0] == '#':
+                    continue
+                wf.write(line)
+            f.close()
+            os.remove(fn)
+        wf.close()
+        # collects crt.
+        crt_path = os.path.join(self.output_dir, f'{self.run_name}.crt')
+        wf = open(crt_path, 'w')
+        fns = glob.glob(crt_path + '[.]*')
         fn = fns[0]
         f = open(fn)
         for line in f:

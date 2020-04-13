@@ -7,6 +7,7 @@ import chardet
 import gzip
 import types
 import inspect
+import logging
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -178,6 +179,8 @@ def load_class (path, class_name=None):
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
         except:
+            logger = logging.getLogger('cravat')
+            logger.exception(f'{module_name} could not be loaded.')
             print(f'{module_name} is not found')
     if module is not None:
         if class_name is not None:
