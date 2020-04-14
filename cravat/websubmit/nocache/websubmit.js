@@ -215,7 +215,7 @@ function submit () {
                 h3.textContent = 'Upload Failure';
                 addEl(alertDiv, h3);
                 var span = getEl('span');
-                span.textContent = 'This is often caused by improper input files. Check that your input is in a OpenCRAVAT accepts.'
+                span.textContent = 'This is often caused by improper input files. Check that your input is in a form OpenCRAVAT accepts.'
                 addEl(alertDiv, span);
                 addEl(alertDiv,getEl('br'));
                 addEl(alertDiv,getEl('br'));
