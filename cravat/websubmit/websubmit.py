@@ -244,6 +244,10 @@ def get_next_job_id():
 async def submit (request):
     global filerouter
     global servermode
+    sysconf = au.get_system_conf()
+    size_cutoff = sysconf['sum_input_size_warning_cutoff']
+    if request.content_length > size_cutoff * 1024 * 1024:
+        return web.json_response({'status': 'fail', 'msg': f'Input is too big. Limit is {size_cutoff}MB.'})
     if servermode and server_ready:
         r = await cravat_multiuser.is_loggedin(request)
         if r == False:

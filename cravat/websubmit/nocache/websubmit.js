@@ -39,15 +39,6 @@ function submit () {
         var textBlob = new Blob([textVal], {type:'text/plain'})
         inputFiles.push(new File([textBlob], 'input'));
     } else {
-        /*
-        var fileInputElem = $('#input-file')[0];
-        var files = fileInputElem.files;
-        if (files.length > 0) {
-            for (var i=0; i<files.length; i++) {
-                inputFiles.push(files[i]);
-            }
-        }
-        */
         inputFiles = inputFileList;
     }
     if (inputFiles.length === 0) {
@@ -92,10 +83,7 @@ function submit () {
     submitOpts.note = note;
     document.querySelector('#submit-job-button').disabled = true;
     formData.append('options',JSON.stringify(submitOpts));
-    // reads number of input lines
-    var lineCount = 0;
     var numFileRead = 0;
-    var numInputLineCutoff = parseInt(document.getElementById('settings_num_input_line_warning_cutoff').value);
     var sumInputSizeCutoff = parseInt(document.getElementById('settings_sum_input_size_warning_cutoff').value);
     var sumInputSize = 0;
     for (var i = 0; i < inputFiles.length; i++) {
@@ -105,78 +93,21 @@ function submit () {
     if (sumInputSize > sumInputSizeCutoff) {
         var alertDiv = getEl('div');
         var span = getEl('span');
-        span.textContent = 'You are submitting input files larger than ' + sumInputSizeCutoff.toFixed(1) + ' MB. Proceed?';
+        span.textContent = 'Input files are limited to ' + sumInputSizeCutoff.toFixed(1) + ' MB.';
         addEl(alertDiv, span);
         addEl(alertDiv,getEl('br'));
-        showYesNoDialog(alertDiv, commitSubmit, false, false);
+        addEl(alertDiv,getEl('br'));
+        var span = getEl('span');
+        span.textContent = 'The limit can be changed at the settings menu.';
+        addEl(alertDiv, span);
+        addEl(alertDiv,getEl('br'));
+        showYesNoDialog(alertDiv, enableSubmitButton, false, true);
     } else {
-        for (var i = 0; i < inputFiles.length; i++) {
-            var inputFile = inputFiles[i];
-            if (inputFile.name.endsWith('.gz')){
-                commitSubmit();
-                return;
-            }
-            var reader = new FileReader();
-            reader.onload = function (evt) {
-                var file = evt.target.result;
-                var allLines = file.split(/\r\n|\n/);
-                allLines.forEach((line) => {
-                    lineCount++;
-                });
-                numFileRead++;
-                if (numFileRead == inputFiles.length) {
-                    var numAnnots = submitOpts.annotators.length;
-                    var mapper_vps = 1000;
-                    var annot_vps = 5000;
-                    var agg_vps = 8000;
-                    var runtimeEst = lineCount*(1/mapper_vps + numAnnots/annot_vps + 1/agg_vps);
-                    if (lineCount > numInputLineCutoff) {
-                        var sec_num = Math.ceil(runtimeEst);
-                        var hours   = Math.floor(sec_num / 3600) % 24;
-                        if (hours > 0) {
-                            hours = hours + ' hours ';
-                        } else if (hours == 1) {
-                            hours = hours + ' hour ';
-                        } else {
-                            hours = '';
-                        }
-                        var minutes = Math.floor(sec_num / 60) % 60;
-                        if (minutes > 1) {
-                            minutes = minutes + ' minutes ';
-                        } else if (minutes == 1) {
-                            minutes = minutes + ' minute ';
-                        } else {
-                            minutes = '';
-                        }
-                        var seconds = sec_num % 60;
-                        if (seconds <= 1) {
-                            seconds = seconds + ' second';
-                        } else {
-                            seconds = seconds + ' seconds';
-                        }
-                        var alertDiv = getEl('div');
-                        var span = getEl('span');
-                        span.textContent = 'You are submitting ' + lineCount + ' lines of input. Proceed?';
-                        addEl(alertDiv, span);
-                        addEl(alertDiv,getEl('br'));
-                        addEl(alertDiv,getEl('br'));
-                        var span = getEl('span');
-                        span.style.fontSize = '12px';
-                        span.textContent = 'Runtime estimate is ' + hours + minutes + seconds + ' on a system with a solid state drive. Systems with a hard disk will take longer. ';
-                        addEl(alertDiv, span);
-                        var span = getEl('span');
-                        span.style.fontSize = '12px';
-                        span.textContent = 'Variant number cutoff for this message can be changed at the Settings menu at the top right corner.';
-                        addEl(alertDiv, span);
-                        addEl(alertDiv,getEl('br'));
-                        showYesNoDialog(alertDiv, commitSubmit, false, false);
-                    } else {
-                        commitSubmit();
-                    }
-                }
-            };
-            reader.readAsText(inputFiles[i]);
-        }
+        commitSubmit();
+    }
+
+    function enableSubmitButton () {
+        document.querySelector('#submit-job-button').disabled = false;
     }
 
     function commitSubmit (flag) {
@@ -1676,9 +1607,6 @@ function loadSystemConf () {
         }
         var s = document.getElementById('settings_modules_dir_input');
         s.value = response['content']['modules_dir'];
-        var s = document.getElementById('settings_num_input_line_warning_cutoff');
-        var cutoff = parseInt(response['content']['num_input_line_warning_cutoff']);
-        s.value = cutoff;
         var s = document.getElementById('settings_sum_input_size_warning_cutoff');
         var cutoff = parseInt(response['content']['sum_input_size_warning_cutoff']);
         s.value = cutoff;
@@ -1702,8 +1630,6 @@ function updateSystemConf () {
         response['content']['jobs_dir'] = s.value;
         var s = document.getElementById('settings_modules_dir_input');
         response['content']['modules_dir'] = s.value;
-        var s = document.getElementById('settings_num_input_line_warning_cutoff');
-        response['content']['num_input_line_warning_cutoff'] = parseInt(s.value);
         var s = document.getElementById('settings_sum_input_size_warning_cutoff');
         response['content']['sum_input_size_warning_cutoff'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_jobs');
