@@ -127,17 +127,49 @@ function submit () {
         req.onload = function (evt) {
             document.querySelector('#submit-job-button').disabled = false;
             hideSpinner();
-            var response = JSON.parse(evt.currentTarget.response);
-            if (response['status']['status'] == 'Submitted') {
-                submittedJobs.push(response);
-                addJob(response, true);
-                //sortJobs();
-                buildJobsTable();
+            const status = evt.currentTarget.status;
+            if (status === 200) {
+                var response = JSON.parse(evt.currentTarget.response);
+                if (response['status']['status'] == 'Submitted') {
+                    submittedJobs.push(response);
+                    addJob(response, true);
+                    //sortJobs();
+                    buildJobsTable();
+                }
+                if (response.expected_runtime > 0) {
+                }
+                jobRunning[response['id']] = true;
+            } else if (status === 500) {
+                var response = JSON.parse(evt.currentTarget.response);
+                var alertDiv = getEl('div');
+                var h3 = getEl('h3');
+                h3.textContent = 'Upload Failure';
+                addEl(alertDiv, h3);
+                var span = getEl('span');
+                span.textContent = 'This is often caused by improper input files. Check that your input is in a form OpenCRAVAT accepts.'
+                addEl(alertDiv, span);
+                addEl(alertDiv,getEl('br'));
+                addEl(alertDiv,getEl('br'));
+                var span = getEl('span');
+                span.innerHTML = 'If you think this was caused by an error, <a href="mailto:support@cravat.us">let us know</a>'
+                addEl(alertDiv,span);
+                addEl(alertDiv,getEl('br'));
+                addEl(alertDiv,getEl('br'));
+                var span = getEl('span');
+                span.innerText = 'Details: '+response.message;
+                addEl(alertDiv,span);
+                showYesNoDialog(alertDiv, null, false, true);
+
             }
-            if (response.expected_runtime > 0) {
-            }
-            jobRunning[response['id']] = true;
         };
+        req.onerror = function (evt) {
+            document.querySelector('#submit-job-button').disabled = false;
+            hideSpinner();
+        }
+        req.onabort = function (evt) {
+            document.querySelector('#submit-job-button').disabled = false;
+            hideSpinner();
+        }
         req.send(formData);
     }
 };
