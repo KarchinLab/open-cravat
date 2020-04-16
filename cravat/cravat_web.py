@@ -275,7 +275,7 @@ async def middleware (request, handler):
         logger.exception(e)
         if debug:
             traceback.print_exc()
-        return web.HTTPInternalServerError(text=json.dumps({'status':'error','message':str(e)}))
+        return web.HTTPInternalServerError(text=json.dumps({'status':'error','msg':str(e)}))
 
 class WebServer (object):
     def __init__ (self, host=None, port=None, loop=None, ssl_context=None, url=None):

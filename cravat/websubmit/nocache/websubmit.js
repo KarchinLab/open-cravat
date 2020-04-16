@@ -83,17 +83,16 @@ function submit () {
     submitOpts.note = note;
     document.querySelector('#submit-job-button').disabled = true;
     formData.append('options',JSON.stringify(submitOpts));
-    var numFileRead = 0;
-    var sumInputSizeCutoff = parseInt(document.getElementById('settings_sum_input_size_warning_cutoff').value);
+    var guiInputSizeLimit = parseInt(document.getElementById('settings_gui_input_size_limit').value);
     var sumInputSize = 0;
     for (var i = 0; i < inputFiles.length; i++) {
         sumInputSize += inputFiles[i].size;
     }
     sumInputSize = sumInputSize / 1024 / 1024;
-    if (sumInputSize > sumInputSizeCutoff) {
+    if (sumInputSize > guiInputSizeLimit) {
         var alertDiv = getEl('div');
         var span = getEl('span');
-        span.textContent = 'Input files are limited to ' + sumInputSizeCutoff.toFixed(1) + ' MB.';
+        span.textContent = 'Input files are limited to ' + guiInputSizeLimit.toFixed(1) + ' MB.';
         addEl(alertDiv, span);
         addEl(alertDiv,getEl('br'));
         addEl(alertDiv,getEl('br'));
@@ -105,7 +104,7 @@ function submit () {
     } else {
         commitSubmit();
     }
-
+    commitSubmit();
     function enableSubmitButton () {
         document.querySelector('#submit-job-button').disabled = false;
     }
@@ -139,7 +138,7 @@ function submit () {
                 if (response.expected_runtime > 0) {
                 }
                 jobRunning[response['id']] = true;
-            } else if (status === 500) {
+            } else if (status>=400 && status<600) {
                 var response = JSON.parse(evt.currentTarget.response);
                 var alertDiv = getEl('div');
                 var h3 = getEl('h3');
@@ -156,7 +155,7 @@ function submit () {
                 addEl(alertDiv,getEl('br'));
                 addEl(alertDiv,getEl('br'));
                 var span = getEl('span');
-                span.innerText = 'Details: '+response.message;
+                span.innerText = 'Details: '+response.msg;
                 addEl(alertDiv,span);
                 showYesNoDialog(alertDiv, null, false, true);
 
@@ -1639,8 +1638,8 @@ function loadSystemConf () {
         }
         var s = document.getElementById('settings_modules_dir_input');
         s.value = response['content']['modules_dir'];
-        var s = document.getElementById('settings_sum_input_size_warning_cutoff');
-        var cutoff = parseInt(response['content']['sum_input_size_warning_cutoff']);
+        var s = document.getElementById('settings_gui_input_size_limit');
+        var cutoff = parseInt(response['content']['gui_input_size_limit']);
         s.value = cutoff;
         var s = document.getElementById('settings_max_num_concurrent_jobs');
         s.value = parseInt(response['content']['max_num_concurrent_jobs']);
@@ -1662,8 +1661,8 @@ function updateSystemConf () {
         response['content']['jobs_dir'] = s.value;
         var s = document.getElementById('settings_modules_dir_input');
         response['content']['modules_dir'] = s.value;
-        var s = document.getElementById('settings_sum_input_size_warning_cutoff');
-        response['content']['sum_input_size_warning_cutoff'] = parseInt(s.value);
+        var s = document.getElementById('settings_gui_input_size_limit');
+        response['content']['gui_input_size_limit'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_jobs');
         response['content']['max_num_concurrent_jobs'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
