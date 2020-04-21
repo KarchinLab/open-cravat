@@ -386,7 +386,9 @@ class AllMappingsParser (object):
     def get_uniq_sos (self):
         sos = {}
         for mapping in self.mappings:
-            sos[mapping.so] = True
+            #sos[mapping.so] = True
+            for so in mapping.so.split(','):
+                sos[so] = True
         sos = list(sos.keys())
         return sos
 
@@ -394,7 +396,9 @@ class AllMappingsParser (object):
         sos = {}
         for mapping in self.mappings:
             if mapping.gene in genes:
-                sos[mapping.so] = True
+                #sos[mapping.so] = True
+                for so in mapping.so.split(','):
+                    sos[so] = True
         sos = list(sos.keys())
         return sos
 
