@@ -806,50 +806,79 @@ class Cravat (object):
         for fn in fns[1:]:
             f = open(fn)
             for line in f:
-                if line[0] == '#':
-                    continue
-                wf.write(line)
+                if line[0] != '#':
+                    wf.write(line)
             f.close()
             os.remove(fn)
         wf.close()
         # collects crg.
         crg_path = os.path.join(self.output_dir, f'{self.run_name}.crg')
         wf = open(crg_path, 'w')
+        unique_hugos = {}
         fns = glob.glob(crg_path + '[.]*')
         fn = fns[0]
         f = open(fn)
         for line in f:
-            wf.write(line)
+            if line[0] != '#':
+                hugo = line.split()[0]
+                if hugo not in unique_hugos:
+                    wf.write(line)
+                    unique_hugos[hugo] = True
+            else:
+                wf.write(line)
         f.close()
         os.remove(fn)
         for fn in fns[1:]:
             f = open(fn)
             for line in f:
-                if line[0] == '#':
-                    continue
-                wf.write(line)
+                if line[0] != '#':
+                    hugo = line.split()[0]
+                    if hugo not in unique_hugos:
+                        wf.write(line)
+                        unique_hugos[hugo] = True
             f.close()
             os.remove(fn)
         wf.close()
+        del unique_hugos
         # collects crt.
         crt_path = os.path.join(self.output_dir, f'{self.run_name}.crt')
+        '''
         wf = open(crt_path, 'w')
+        '''
+        unique_trs = {}
         fns = glob.glob(crt_path + '[.]*')
         fn = fns[0]
+        '''
         f = open(fn)
         for line in f:
-            wf.write(line)
+            if line[0] != '#':
+                [tr, alt] = line.split()[:1]
+                if tr not in unique_trs:
+                    unique_trs[tr] = {}
+                if alt not in unique_trs[tr]:
+                    unique_trs[tr][alt] = True
+                    wf.write(line)
+            else:
+                wf.write(line)
         f.close()
+        '''
         os.remove(fn)
         for fn in fns[1:]:
+            '''
             f = open(fn)
             for line in f:
-                if line[0] == '#':
-                    continue
-                wf.write(line)
+                if line[0] != '#':
+                    [tr, alt] = line.split()[:1]
+                    if tr not in unique_trs:
+                        unique_trs[tr] = {}
+                    if alt not in unique_trs[tr]:
+                        unique_trs[tr][alt] = True
+                        wf.write(line)
             f.close()
+            '''
             os.remove(fn)
         wf.close()
+        del unique_trs
 
     def run_aggregator (self):
         # Variant level
