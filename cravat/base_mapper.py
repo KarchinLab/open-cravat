@@ -275,6 +275,7 @@ class BaseMapper(object):
             if crx_data is not None:
                 self.crx_writer.write_data(crx_data)
                 self._add_crx_to_gene_info(crx_data)
+        self._write_crg()
         stop_time = time.time()
         tstamp = time.asctime(time.localtime(stop_time))
         self.logger.info(f'finished: {tstamp} | {self.cmd_args.seekpos}')

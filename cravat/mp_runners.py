@@ -39,13 +39,6 @@ def mapper_runner (crv_path, seekpos, chunksize, run_name, output_dir, status_wr
            '--slavemode',
            '--postfix', f'.{pos_no:010.0f}',
            '-d', output_dir]
-    #self.logger.info(f'mapper module is {module.name}')
-    #if module.name in self.cravat_conf:
-    #    confs = json.dumps(self.cravat_conf[module.name])
-    #    confs = "'" + confs.replace("'", '"') + "'"
-    #    cmd.extend(['--confs', confs])
-    #if self.verbose:
-    #    print(' '.join(cmd))
     genemapper_class = util.load_class(module.script_path, 'Mapper')
     genemapper = genemapper_class(cmd, status_writer)
     output = genemapper.run_as_slave(pos_no)
