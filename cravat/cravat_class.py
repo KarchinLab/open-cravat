@@ -822,8 +822,8 @@ class Cravat (object):
             if line[0] != '#':
                 hugo = line.split()[0]
                 if hugo not in unique_hugos:
-                    wf.write(line)
-                    unique_hugos[hugo] = True
+                    #wf.write(line)
+                    unique_hugos[hugo] = line
             else:
                 wf.write(line)
         f.close()
@@ -834,12 +834,17 @@ class Cravat (object):
                 if line[0] != '#':
                     hugo = line.split()[0]
                     if hugo not in unique_hugos:
-                        wf.write(line)
-                        unique_hugos[hugo] = True
+                        #wf.write(line)
+                        unique_hugos[hugo] = line
             f.close()
             os.remove(fn)
+        hugos = list(unique_hugos.keys())
+        hugos.sort()
+        for hugo in hugos:
+            wf.write(unique_hugos[hugo])
         wf.close()
         del unique_hugos
+        del hugos
         # collects crt.
         crt_path = os.path.join(self.output_dir, f'{self.run_name}.crt')
         '''
