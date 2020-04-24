@@ -512,10 +512,10 @@ class Cravat (object):
         if self.run_name == None:
             if num_input == 0:
                 self.run_name = 'cravat_run'
-            if num_input == 1:
+            else:
                 self.run_name = os.path.basename(self.inputs[0])
-            if num_input > 1:
-                self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
+                if num_input > 1:
+                    self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
         if num_input > 0 and self.inputs[0].endswith('.sqlite'):
             self.append_mode = True  
             if self.run_name.endswith('.sqlite'):
