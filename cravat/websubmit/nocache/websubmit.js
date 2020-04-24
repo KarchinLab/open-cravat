@@ -104,7 +104,7 @@ function submit () {
     } else {
         commitSubmit();
     }
-    commitSubmit();
+
     function enableSubmitButton () {
         document.querySelector('#submit-job-button').disabled = false;
     }
