@@ -1121,6 +1121,37 @@ class Cravat (object):
         else:
             return True
 
+    async def get_converter_format_from_crv (self):
+        converter_format = None
+        fn = os.path.join(self.output_dir, self.run_name + '.crv')
+        if os.path.exists(fn):
+            f = open(fn)
+            for line in f:
+                if line.startswith('#input_format='):
+                    converter_format = line.strip().split('=')[1]
+                    break
+            f.close()
+        return converter_format
+
+    async def get_mapper_info_from_crx (self):
+        title = None
+        version = None
+        modulename = None
+        fn = os.path.join(self.output_dir, self.run_name + '.crx')
+        if os.path.exists(fn):
+            f = open(fn)
+            for line in f:
+                if line.startswith('#title='):
+                    title = line.strip().split('=')[1]
+                elif line.startswith('#version='):
+                    version = line.strip().split('=')[1]
+                elif line.startswith('#modulename='):
+                    modulename = line.strip().split('=')[1]
+                elif line.startswith('#') == False:
+                    break
+            f.close()
+        return title, version, modulename
+
     async def write_job_info (self):
         dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
         conn = await aiosqlite3.connect(dbpath)
@@ -1149,18 +1180,14 @@ class Cravat (object):
             await cursor.execute(q)
             q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
             await cursor.execute(q)
-            if hasattr(self, 'converter_format'):
-                q = 'insert into info values ("_converter_format", "{}")'.format(self.converter_format)
-                await cursor.execute(q)
-            if hasattr(self, 'genemapper'):
-                version = self.genemapper.conf['version']
-                title = self.genemapper.conf['title']
-                modulename = self.genemapper.name
-                genemapper_str = '{} ({})'.format(title, version)
-                q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
-                await cursor.execute(q)
-                q = 'insert into info values ("_mapper", "{}:{}")'.format(modulename, version)
-                await cursor.execute(q)
+            q = 'insert into info values ("_converter_format", "{}")'.format(await self.get_converter_format_from_crv())
+            await cursor.execute(q)
+            mapper_title, mapper_version, mapper_modulename = await self.get_mapper_info_from_crx()
+            genemapper_str = '{} ({})'.format(mapper_title, mapper_version)
+            q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
+            await cursor.execute(q)
+            q = 'insert into info values ("_mapper", "{}:{}")'.format(mapper_modulename, mapper_version)
+            await cursor.execute(q)
             f = open(os.path.join(self.output_dir, self.run_name + '.crm'))
             for line in f:
                 if line.startswith('#input_paths='):
