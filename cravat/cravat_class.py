@@ -512,10 +512,10 @@ class Cravat (object):
         if self.run_name == None:
             if num_input == 0:
                 self.run_name = 'cravat_run'
-            if num_input == 1:
+            else:
                 self.run_name = os.path.basename(self.inputs[0])
-            if num_input > 1:
-                self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
+                if num_input > 1:
+                    self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
         if num_input > 0 and self.inputs[0].endswith('.sqlite'):
             self.append_mode = True  
             if self.run_name.endswith('.sqlite'):
@@ -806,50 +806,84 @@ class Cravat (object):
         for fn in fns[1:]:
             f = open(fn)
             for line in f:
-                if line[0] == '#':
-                    continue
-                wf.write(line)
+                if line[0] != '#':
+                    wf.write(line)
             f.close()
             os.remove(fn)
         wf.close()
         # collects crg.
         crg_path = os.path.join(self.output_dir, f'{self.run_name}.crg')
         wf = open(crg_path, 'w')
+        unique_hugos = {}
         fns = glob.glob(crg_path + '[.]*')
         fn = fns[0]
         f = open(fn)
         for line in f:
-            wf.write(line)
+            if line[0] != '#':
+                hugo = line.split()[0]
+                if hugo not in unique_hugos:
+                    #wf.write(line)
+                    unique_hugos[hugo] = line
+            else:
+                wf.write(line)
         f.close()
         os.remove(fn)
         for fn in fns[1:]:
             f = open(fn)
             for line in f:
-                if line[0] == '#':
-                    continue
-                wf.write(line)
+                if line[0] != '#':
+                    hugo = line.split()[0]
+                    if hugo not in unique_hugos:
+                        #wf.write(line)
+                        unique_hugos[hugo] = line
             f.close()
             os.remove(fn)
+        hugos = list(unique_hugos.keys())
+        hugos.sort()
+        for hugo in hugos:
+            wf.write(unique_hugos[hugo])
         wf.close()
+        del unique_hugos
+        del hugos
         # collects crt.
         crt_path = os.path.join(self.output_dir, f'{self.run_name}.crt')
+        '''
         wf = open(crt_path, 'w')
+        '''
+        unique_trs = {}
         fns = glob.glob(crt_path + '[.]*')
         fn = fns[0]
+        '''
         f = open(fn)
         for line in f:
-            wf.write(line)
+            if line[0] != '#':
+                [tr, alt] = line.split()[:1]
+                if tr not in unique_trs:
+                    unique_trs[tr] = {}
+                if alt not in unique_trs[tr]:
+                    unique_trs[tr][alt] = True
+                    wf.write(line)
+            else:
+                wf.write(line)
         f.close()
+        '''
         os.remove(fn)
         for fn in fns[1:]:
+            '''
             f = open(fn)
             for line in f:
-                if line[0] == '#':
-                    continue
-                wf.write(line)
+                if line[0] != '#':
+                    [tr, alt] = line.split()[:1]
+                    if tr not in unique_trs:
+                        unique_trs[tr] = {}
+                    if alt not in unique_trs[tr]:
+                        unique_trs[tr][alt] = True
+                        wf.write(line)
             f.close()
+            '''
             os.remove(fn)
         wf.close()
+        del unique_trs
 
     def run_aggregator (self):
         # Variant level
@@ -1087,6 +1121,37 @@ class Cravat (object):
         else:
             return True
 
+    async def get_converter_format_from_crv (self):
+        converter_format = None
+        fn = os.path.join(self.output_dir, self.run_name + '.crv')
+        if os.path.exists(fn):
+            f = open(fn)
+            for line in f:
+                if line.startswith('#input_format='):
+                    converter_format = line.strip().split('=')[1]
+                    break
+            f.close()
+        return converter_format
+
+    async def get_mapper_info_from_crx (self):
+        title = None
+        version = None
+        modulename = None
+        fn = os.path.join(self.output_dir, self.run_name + '.crx')
+        if os.path.exists(fn):
+            f = open(fn)
+            for line in f:
+                if line.startswith('#title='):
+                    title = line.strip().split('=')[1]
+                elif line.startswith('#version='):
+                    version = line.strip().split('=')[1]
+                elif line.startswith('#modulename='):
+                    modulename = line.strip().split('=')[1]
+                elif line.startswith('#') == False:
+                    break
+            f.close()
+        return title, version, modulename
+
     async def write_job_info (self):
         dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
         conn = await aiosqlite3.connect(dbpath)
@@ -1115,18 +1180,14 @@ class Cravat (object):
             await cursor.execute(q)
             q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
             await cursor.execute(q)
-            if hasattr(self, 'converter_format'):
-                q = 'insert into info values ("_converter_format", "{}")'.format(self.converter_format)
-                await cursor.execute(q)
-            if hasattr(self, 'genemapper'):
-                version = self.genemapper.conf['version']
-                title = self.genemapper.conf['title']
-                modulename = self.genemapper.name
-                genemapper_str = '{} ({})'.format(title, version)
-                q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
-                await cursor.execute(q)
-                q = 'insert into info values ("_mapper", "{}:{}")'.format(modulename, version)
-                await cursor.execute(q)
+            q = 'insert into info values ("_converter_format", "{}")'.format(await self.get_converter_format_from_crv())
+            await cursor.execute(q)
+            mapper_title, mapper_version, mapper_modulename = await self.get_mapper_info_from_crx()
+            genemapper_str = '{} ({})'.format(mapper_title, mapper_version)
+            q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
+            await cursor.execute(q)
+            q = 'insert into info values ("_mapper", "{}:{}")'.format(mapper_modulename, mapper_version)
+            await cursor.execute(q)
             f = open(os.path.join(self.output_dir, self.run_name + '.crm'))
             for line in f:
                 if line.startswith('#input_paths='):

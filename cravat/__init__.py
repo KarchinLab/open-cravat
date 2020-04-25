@@ -72,7 +72,7 @@ def get_module (module_name):
         ModuleClass.conf = config_loader.get_module_conf(module_name)
         return ModuleClass
     except Exception as e:
-        print('    module loading error: {}'.format(module.module_name))
+        print('    module loading error: {}'.format(module_name))
         import traceback
         traceback.print_exc()
         return None

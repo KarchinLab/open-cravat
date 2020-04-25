@@ -174,6 +174,9 @@ class BaseMapper(object):
         self.crx_writer.write_definition(self.conf)
         for index_columns in crx_idx:
             self.crx_writer.add_index(index_columns)
+        self.crx_writer.write_meta_line('title', self.conf['title'])
+        self.crx_writer.write_meta_line('version', self.conf['version'])
+        self.crx_writer.write_meta_line('modulename', self.module_name)
         # .crg
         crg_fname = '.'.join(output_toks) + '.crg'
         self.crg_path = os.path.join(self.output_dir, crg_fname)
@@ -267,6 +270,8 @@ class BaseMapper(object):
                         self.status_writer.queue_status_update('status', 'Running gene mapper: line {}'.format(count))
                         last_status_update_time = cur_time
                 crx_data, alt_transcripts = self.map(crv_data)
+                if crx_data is None:
+                    continue
                 # Skip cases where there was no change. Can result if ref_base not in original input
                 if crx_data['ref_base'] == crx_data['alt_base']:
                     continue
@@ -275,6 +280,8 @@ class BaseMapper(object):
             if crx_data is not None:
                 self.crx_writer.write_data(crx_data)
                 self._add_crx_to_gene_info(crx_data)
+            if alt_transcripts is not None:
+                self._write_to_crt(alt_transcripts)
         self._write_crg()
         stop_time = time.time()
         tstamp = time.asctime(time.localtime(stop_time))
