@@ -13,6 +13,7 @@ import textwrap
 import math
 import copy
 from getpass import getpass
+from distutils.version import LooseVersion
 
 class ExampleCommandsFormatter(object,):
     def __init__(self, prefix='',  cmd_indent=' '*2, desc_indent=' '*8, width=70):
@@ -287,6 +288,13 @@ def install_modules(args):
     for module_name in matching_names:
         remote_info = au.get_remote_module_info(module_name)
         if args.version is None:
+            local_info = au.get_local_module_info(module_name)
+            if local_info is not None:
+                local_ver = local_info.version
+                remote_ver = remote_info.latest_version
+                if LooseVersion(local_ver) >= LooseVersion(remote_ver):
+                    print(f'{module_name}: latest is already installed. ({local_ver})')
+                    continue
             selected_install[module_name] = remote_info.latest_version
         elif remote_info.has_version(args.version):
             selected_install[module_name] = args.version

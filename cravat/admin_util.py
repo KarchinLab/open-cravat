@@ -1290,10 +1290,12 @@ class ReadyState(object):
 
     READY = 0
     MISSING_MD = 1
+    UPDATE_NEEDED = 2
 
     messages = {
         0: '',
         1: 'Modules directory not found',
+        2: 'Update on system modules needed. Run "oc module install-base"'
     }
 
     def __init__(self, code=READY):
