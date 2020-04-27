@@ -508,7 +508,7 @@ widgetGenerators['clinpanel'] = {
             var tr = getEl('tr');
             tr.style.borderBottom = '1px dotted #cccccc';
             var td = getEl('th');
-            td.textContent = 'GWAS Catolog';
+            td.textContent = 'GWAS Catalog';
             addEl(tr, td);
             var td = getEl('td');
             if (row['gwas_catalog__risk_allele'] == undefined) {

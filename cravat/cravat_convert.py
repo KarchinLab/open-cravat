@@ -186,7 +186,7 @@ class MasterCravatConverter(object):
             python modules. Initializes the CravatConverter class from that
             module and places them in a dict keyed by their input format
         """
-        for module_info in au.get_local_module_infos_of_type('converter').values():
+        for module_info in au.get_local_module_infos_of_type('converter', update=False).values():
             # path based import from https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
             spec = importlib.util.spec_from_file_location(module_info.name,
                                                           module_info.script_path)
@@ -221,7 +221,8 @@ class MasterCravatConverter(object):
                 first_file.seek(0)
                 if check_success: valid_formats.append(converter_name)
             if len(valid_formats) == 0:
-                msg = 'Input format could not be determined. Additional input format converters are available. View available converters in the store or with "oc module ls -a -t converter"'
+                fn = os.path.basename(first_file.name)
+                msg = f'Input format could not be determined for file {fn}. Additional input format converters are available. View available converters in the store or with "oc module ls -a -t converter"'
                 raise ExpectedException(msg)
             elif len(valid_formats) > 1:
                 raise ExpectedException('Input format ambiguous in [%s]. '\

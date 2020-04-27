@@ -12,7 +12,7 @@ from cravat import constants
 import json
 import logging
 import traceback
-from cravat.mp_runners import init_worker, annot_from_queue
+from cravat.mp_runners import init_worker, annot_from_queue, mapper_runner
 import multiprocessing as mp
 import multiprocessing.managers
 from logging.handlers import QueueListener
@@ -24,6 +24,8 @@ import collections
 import asyncio
 import sqlite3
 from cravat.inout import CravatWriter
+from cravat.inout import CravatReader
+import glob
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path_1 input_file_path_2 ...',
@@ -156,6 +158,11 @@ def run(cmd_args):
     loop = asyncio.get_event_loop()
     loop.run_until_complete(module.main())
 
+def run_cravat_job(**kwargs):
+    module = Cravat(**kwargs)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(module.main())
+
 cravat_cmd_parser.set_defaults(func=run)
 
 class MyManager (multiprocessing.managers.SyncManager):
@@ -185,15 +192,6 @@ class Cravat (object):
         self.logger.info('started: {0}'.format(time.asctime(time.localtime(self.start_time))))
         if self.run_conf_path != '':
             self.logger.info('conf file: {}'.format(self.run_conf_path))
-        if self.args.confs != None:
-            conf_bak = self.conf
-            try:
-                confs_conf = json.loads(self.args.confs.replace("'", '"'))
-                self.conf.override_all_conf(confs_conf)
-            except Exception as e:
-                self.logger.exception(e)
-                self.logger.info('Error in processing cs option. --cs option was not applied.')
-                self.conf = conf_bak
         self.modules_conf = self.conf.get_modules_conf()
         self.write_initial_status_json()
         self.unique_logs = {}
@@ -302,6 +300,11 @@ class Cravat (object):
     def update_status (self, status):
         self.status_writer.queue_status_update('status', status)
 
+    def run (self):
+        import asyncio
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.main())
+
     async def main (self):
         no_problem_in_run = True
         try:
@@ -337,19 +340,23 @@ class Cravat (object):
                         'mapper' in self.args.repeat or
                         converter_ran
                    ):
-                print(f'Running gene mapper...{" "*18}',end='')
+                print(f'Running gene mapper...{" "*18}',end='', flush=True)
                 stime = time.time()
-                self.run_genemapper()
+                multicore_mapper_mode = self.conf.get_cravat_conf()['multicore_mapper_mode']
+                if multicore_mapper_mode:
+                    self.run_genemapper_mp()
+                else:
+                    self.run_genemapper()
                 rtime = time.time() - stime
                 print('finished in {0:.3f}s'.format(rtime))
                 self.mapper_ran = True
-            self.populate_secondary_annotators()
+            self.annotator_ran = False
             self.done_annotators = {}
+            self.populate_secondary_annotators()
             for mname, module in self.annotators.items():
                 if self.check_module_output(module) is not None:
                     self.done_annotators[mname] = module
             self.run_annotators = {aname: self.annotators[aname] for aname in set(self.annotators) - set(self.done_annotators)}
-            self.annotator_ran = False
             if self.endlevel >= self.runlevels['annotator'] and \
                     self.startlevel <= self.runlevels['annotator'] and \
                     not 'annotator' in self.args.skip and \
@@ -467,33 +474,67 @@ class Cravat (object):
     def make_args_namespace(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
         full_args.update(supplied_args)
+        self.args = SimpleNamespace(**full_args)
         self.run_conf_path = ''
         if 'conf' in full_args: 
             self.run_conf_path = full_args['conf']
         self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
+        if self.args.confs != None:
+            conf_bak = self.conf
+            try:
+                confs_conf = json.loads(self.args.confs.replace("'", '"'))
+                self.conf.override_all_conf(confs_conf)
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.info('Error in processing cs option. --cs option was not applied.')
+                self.conf = conf_bak
         self.cravat_conf = self.conf.get_cravat_conf()
         self.run_conf = self.conf.get_run_conf()
-        self.args = SimpleNamespace(**full_args)
         if self.args.show_version:
             au.show_cravat_version()
             exit()
-        if len(self.args.inputs) == 0 and \
+        if self.args.inputs is not None and len(self.args.inputs) == 0 and \
                 'inputs' in self.run_conf:
             if type(self.run_conf['inputs']) == list:
                 self.args.inputs = self.run_conf['inputs']
             else:
                 print('inputs in conf file is invalid')
-        if len(self.args.inputs) == 0:
+        if self.args.inputs is not None and len(self.args.inputs) == 0:
             cravat_cmd_parser.print_help()
             print('\nNo input file was given.')
             exit()
+        if self.args.inputs is not None:
+            self.inputs = [os.path.abspath(x) for x in self.args.inputs]
+        else:
+            self.inputs = []
+        num_input = len(self.inputs)
+        self.run_name = self.args.run_name
+        if self.run_name == None:
+            if num_input == 0:
+                self.run_name = 'cravat_run'
+            else:
+                self.run_name = os.path.basename(self.inputs[0])
+                if num_input > 1:
+                    self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
+        if num_input > 0 and self.inputs[0].endswith('.sqlite'):
+            self.append_mode = True  
+            if self.run_name.endswith('.sqlite'):
+                self.run_name = self.run_name[:-7]
+        self.output_dir = self.args.output_dir
+        if self.output_dir == None:
+            if num_input == 0:
+                self.output_dir = os.getcwd()
+            else:
+                self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
+        else:
+            self.output_dir = os.path.abspath(self.output_dir)
         args_keys = self.args.__dict__.keys()
         for arg_key in args_keys:
             if self.args.__dict__[arg_key] is None and arg_key in self.run_conf:
                 self.args.__dict__[arg_key] = self.run_conf[arg_key]
         self.annotator_names = self.args.annotators
         if self.annotator_names == None:
-            self.annotators = au.get_local_module_infos_of_type('annotator')
+            self.annotators = au.get_local_module_infos_of_type('annotator', update=False)
         else:
             self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
         self.excludes = self.args.excludes
@@ -503,21 +544,6 @@ class Cravat (object):
             for m in self.excludes:
                 if m in self.annotators:
                     del self.annotators[m]
-        self.inputs = [os.path.abspath(x) for x in self.args.inputs]
-        self.run_name = self.args.run_name
-        if self.run_name == None:
-            self.run_name = os.path.basename(self.inputs[0])
-            if len(self.inputs) > 1:
-                self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
-        if self.inputs[0].endswith('.sqlite'):
-            self.append_mode = True  
-            if self.run_name.endswith('.sqlite'):
-                self.run_name = self.run_name[:-7]
-        self.output_dir = self.args.output_dir
-        if self.output_dir == None:
-            self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
-        else:
-            self.output_dir = os.path.abspath(self.output_dir)
         if os.path.exists(self.output_dir) == False:
             os.mkdir(self.output_dir)
         if self.args.verbose == True:
@@ -564,6 +590,11 @@ class Cravat (object):
             self.logmode = 'a'
         if self.args.note == None:
             self.args.note = ''
+        self.mapper_name = self.conf.get_cravat_conf()['genemapper']
+
+    def set_annotators (self, annotator_names):
+        self.annotator_names = annotator_names
+        self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
 
     def set_and_check_input_files (self):
         self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
@@ -719,7 +750,7 @@ class Cravat (object):
         self.announce_module(module)
         if self.verbose:
             print(' '.join(cmd))
-        converter_class = util.load_class('MasterCravatConverter', module.script_path)
+        converter_class = util.load_class(module.script_path, 'MasterCravatConverter')
         converter = converter_class(cmd, self.status_writer)
         self.numinput, self.converter_format = converter.run()
 
@@ -737,9 +768,122 @@ class Cravat (object):
             cmd.extend(['--confs', confs])
         if self.verbose:
             print(' '.join(cmd))
-        genemapper_class = util.load_class('Mapper', module.script_path)
+        genemapper_class = util.load_class(module.script_path, 'Mapper')
         genemapper = genemapper_class(cmd, self.status_writer)
         genemapper.run()
+
+    def run_genemapper_mp (self):
+        num_core = au.get_system_conf()['max_num_concurrent_annotators_per_job']
+        reader = CravatReader(self.crvinput)
+        num_lines, chunksize, poss, len_poss, max_num_lines = reader.get_chunksize(num_core)
+        self.logger.info(f'input line chunksize={chunksize} total number of input lines={num_lines} number of chunks={len_poss}')
+        pool = mp.Pool(num_core)
+        pos_no = 0
+        while pos_no < len_poss:
+            jobs = []
+            for i in range(num_core):
+                if pos_no == len_poss:
+                    break
+                (seekpos, num_lines) = poss[pos_no]
+                if pos_no == len_poss - 1:
+                    job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, max_num_lines - num_lines, self.run_name, self.output_dir, self.status_writer, self.mapper_name, pos_no))
+                else:
+                    job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, chunksize, self.run_name, self.output_dir, self.status_writer, self.mapper_name, pos_no))
+                jobs.append(job)
+                pos_no += 1
+            for job in jobs:
+                job.get()
+        # collects crx.
+        crx_path = os.path.join(self.output_dir, f'{self.run_name}.crx')
+        wf = open(crx_path, 'w')
+        fns = glob.glob(crx_path + '[.]*')
+        fn = fns[0]
+        f = open(fn)
+        for line in f:
+            wf.write(line)
+        f.close()
+        os.remove(fn)
+        for fn in fns[1:]:
+            f = open(fn)
+            for line in f:
+                if line[0] != '#':
+                    wf.write(line)
+            f.close()
+            os.remove(fn)
+        wf.close()
+        # collects crg.
+        crg_path = os.path.join(self.output_dir, f'{self.run_name}.crg')
+        wf = open(crg_path, 'w')
+        unique_hugos = {}
+        fns = glob.glob(crg_path + '[.]*')
+        fn = fns[0]
+        f = open(fn)
+        for line in f:
+            if line[0] != '#':
+                hugo = line.split()[0]
+                if hugo not in unique_hugos:
+                    #wf.write(line)
+                    unique_hugos[hugo] = line
+            else:
+                wf.write(line)
+        f.close()
+        os.remove(fn)
+        for fn in fns[1:]:
+            f = open(fn)
+            for line in f:
+                if line[0] != '#':
+                    hugo = line.split()[0]
+                    if hugo not in unique_hugos:
+                        #wf.write(line)
+                        unique_hugos[hugo] = line
+            f.close()
+            os.remove(fn)
+        hugos = list(unique_hugos.keys())
+        hugos.sort()
+        for hugo in hugos:
+            wf.write(unique_hugos[hugo])
+        wf.close()
+        del unique_hugos
+        del hugos
+        # collects crt.
+        crt_path = os.path.join(self.output_dir, f'{self.run_name}.crt')
+        '''
+        wf = open(crt_path, 'w')
+        '''
+        unique_trs = {}
+        fns = glob.glob(crt_path + '[.]*')
+        fn = fns[0]
+        '''
+        f = open(fn)
+        for line in f:
+            if line[0] != '#':
+                [tr, alt] = line.split()[:1]
+                if tr not in unique_trs:
+                    unique_trs[tr] = {}
+                if alt not in unique_trs[tr]:
+                    unique_trs[tr][alt] = True
+                    wf.write(line)
+            else:
+                wf.write(line)
+        f.close()
+        '''
+        os.remove(fn)
+        for fn in fns[1:]:
+            '''
+            f = open(fn)
+            for line in f:
+                if line[0] != '#':
+                    [tr, alt] = line.split()[:1]
+                    if tr not in unique_trs:
+                        unique_trs[tr] = {}
+                    if alt not in unique_trs[tr]:
+                        unique_trs[tr][alt] = True
+                        wf.write(line)
+            f.close()
+            '''
+            os.remove(fn)
+        wf.close()
+        del unique_trs
 
     def run_aggregator (self):
         # Variant level
@@ -816,7 +960,7 @@ class Cravat (object):
         return v_aggregator.db_path
 
     def run_postaggregators (self):
-        modules = au.get_local_module_infos_of_type('postaggregator')
+        modules = au.get_local_module_infos_of_type('postaggregator', update=False)
         for module_name in modules:
             module = modules[module_name]
             self.announce_module(module)
@@ -829,7 +973,7 @@ class Cravat (object):
                 cmd.extend(['--confs', confs])
             if self.verbose:
                 print(' '.join(cmd))
-            post_agg_cls = util.load_class('CravatPostAggregator', module.script_path)
+            post_agg_cls = util.load_class(module.script_path, 'CravatPostAggregator')
             post_agg = post_agg_cls(cmd, self.status_writer)
             stime = time.time()
             post_agg.run()
@@ -857,8 +1001,8 @@ class Cravat (object):
                        '--module-name', module_name]
                 if self.run_conf_path is not None:
                     cmd.extend(['-c', self.run_conf_path])
-                if module_name in self.cravat_conf:
-                    confs = json.dumps(self.cravat_conf[module_name])
+                if module_name in self.run_conf:
+                    confs = json.dumps(self.run_conf[module_name])
                     confs = "'" + confs.replace("'", '"') + "'"
                     cmd.extend(['--confs', confs])
                 cmd.append('--inputfiles')
@@ -868,7 +1012,7 @@ class Cravat (object):
                     cmd.append('--separatesample')
                 if self.verbose:
                     print(' '.join(cmd))
-                Reporter = util.load_class('Reporter', module.script_path)
+                Reporter = util.load_class(module.script_path, 'Reporter')
                 reporter = Reporter(cmd, self.status_writer)
                 await reporter.prep()
                 stime = time.time()
@@ -977,6 +1121,37 @@ class Cravat (object):
         else:
             return True
 
+    async def get_converter_format_from_crv (self):
+        converter_format = None
+        fn = os.path.join(self.output_dir, self.run_name + '.crv')
+        if os.path.exists(fn):
+            f = open(fn)
+            for line in f:
+                if line.startswith('#input_format='):
+                    converter_format = line.strip().split('=')[1]
+                    break
+            f.close()
+        return converter_format
+
+    async def get_mapper_info_from_crx (self):
+        title = None
+        version = None
+        modulename = None
+        fn = os.path.join(self.output_dir, self.run_name + '.crx')
+        if os.path.exists(fn):
+            f = open(fn)
+            for line in f:
+                if line.startswith('#title='):
+                    title = line.strip().split('=')[1]
+                elif line.startswith('#version='):
+                    version = line.strip().split('=')[1]
+                elif line.startswith('#modulename='):
+                    modulename = line.strip().split('=')[1]
+                elif line.startswith('#') == False:
+                    break
+            f.close()
+        return title, version, modulename
+
     async def write_job_info (self):
         dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
         conn = await aiosqlite3.connect(dbpath)
@@ -1005,18 +1180,14 @@ class Cravat (object):
             await cursor.execute(q)
             q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
             await cursor.execute(q)
-            if hasattr(self, 'converter_format'):
-                q = 'insert into info values ("_converter_format", "{}")'.format(self.converter_format)
-                await cursor.execute(q)
-            if hasattr(self, 'genemapper'):
-                version = self.genemapper.conf['version']
-                title = self.genemapper.conf['title']
-                modulename = self.genemapper.name
-                genemapper_str = '{} ({})'.format(title, version)
-                q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
-                await cursor.execute(q)
-                q = 'insert into info values ("_mapper", "{}:{}")'.format(modulename, version)
-                await cursor.execute(q)
+            q = 'insert into info values ("_converter_format", "{}")'.format(await self.get_converter_format_from_crv())
+            await cursor.execute(q)
+            mapper_title, mapper_version, mapper_modulename = await self.get_mapper_info_from_crx()
+            genemapper_str = '{} ({})'.format(mapper_title, mapper_version)
+            q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
+            await cursor.execute(q)
+            q = 'insert into info values ("_mapper", "{}:{}")'.format(mapper_modulename, mapper_version)
+            await cursor.execute(q)
             f = open(os.path.join(self.output_dir, self.run_name + '.crm'))
             for line in f:
                 if line.startswith('#input_paths='):
@@ -1079,7 +1250,7 @@ class Cravat (object):
             cmd.extend(['-d', self.output_dir])
         if self.verbose:
             print(' '.join(cmd))
-        summarizer_cls = util.load_class('', module.script_path)
+        summarizer_cls = util.load_class(module.script_path, '')
         summarizer = summarizer_cls(cmd)
         summarizer.run()
 
@@ -1097,11 +1268,6 @@ class Cravat (object):
                 fn_end = fn.split('.')[-1]
                 if fn_end in ['var', 'gen', 'crv', 'crx', 'crg', 'crs', 'crm', 'crt', 'json']:
                     os.remove(os.path.join(self.output_dir, fn))
-
-def run_cravat_job(**kwargs):
-    module = Cravat(**kwargs)
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(module.main())
 
 class StatusWriter:
     def __init__ (self, status_json_path):

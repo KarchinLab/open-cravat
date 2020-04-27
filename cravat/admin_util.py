@@ -26,7 +26,7 @@ def load_yml_conf(yml_conf_path):
     empty.
     """
     with open(yml_conf_path) as f:
-        conf = yaml.load(f)
+        conf = yaml.safe_load(f)
     if conf == None:
         conf = {}
     return conf
@@ -62,6 +62,10 @@ class LocalModuleInfo (object):
         else:
             self.name = name
         self.script_path = os.path.join(self.directory, self.name+'.py')
+        #if importlib.util.find_spec('cython') is not None:
+        #    pyx_path = self.script_path + 'x'
+        #    if os.path.exists(pyx_path):
+        #        self.script_path = pyx_path
         self.script_exists = os.path.exists(self.script_path)
         self.conf_path = os.path.join(self.directory, self.name+'.yml')
         self.conf_exists = os.path.exists(self.conf_path)
@@ -93,7 +97,9 @@ class LocalModuleInfo (object):
         self.helphtml_exists = os.path.exists(self.helphtml_path)
         self.conf = {}
         if self.conf_exists:
-            self.conf = load_yml_conf(self.conf_path) # THIS SHOULD NOT BE KEPT HERE, USE CONFIG LOADER
+            from cravat.config_loader import ConfigLoader
+            conf = ConfigLoader()
+            self.conf = conf.get_module_conf(self.name)
         self.type = self.conf.get('type')
         self.version = self.conf.get('version')
         self.description = self.conf.get('description')
@@ -163,6 +169,7 @@ class RemoteModuleInfo(object):
         self.data_versions = kwargs.get('data_versions', {})
         self.data_sources = {x:str(y) for x,y in kwargs.get('data_sources', {}).items()}
         self.tags = kwargs.get('tags', [])
+        self.publish_time = kwargs.get('publish_time')
 
     def has_version(self, version):
         return version in self.versions    
@@ -227,7 +234,7 @@ class ModuleInfoCache(object):
             counts_url = self._store_path_builder.download_counts()
             counts_str = su.get_file_to_string(counts_url)
             if counts_str != '':
-                self.download_counts = yaml.load(counts_str).get('modules',{})
+                self.download_counts = yaml.safe_load(counts_str).get('modules',{})
             self._counts_fetched = True
 
     def update_local(self):
@@ -260,7 +267,7 @@ class ModuleInfoCache(object):
                 manifest_str = su.get_file_to_string(self._remote_url)
             self.remote = {}
             if manifest_str != '':
-                self.remote = yaml.load(manifest_str)
+                self.remote = yaml.safe_load(manifest_str)
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
@@ -295,7 +302,7 @@ class ModuleInfoCache(object):
             return config
         except LookupError:
             config_url = self._store_path_builder.module_conf(module_name, version)
-            config = yaml.load(su.get_file_to_string(config_url))
+            config = yaml.safe_load(su.get_file_to_string(config_url))
             # add to cache
             if module_name not in self.remote_config:
                 self.remote_config[module_name] = {}
@@ -542,7 +549,13 @@ def install_widgets_for_module (module_name):
     widget_name = 'wg' + module_name
     install_module(widget_name)
 
-def install_module (module_name, version=None, force_data=False, stage_handler=None, **kwargs):
+def install_module (
+        module_name, 
+        version=None, 
+        force_data=False, 
+        skip_data=False,
+        stage_handler=None, 
+        **kwargs):
     """
     Installs a module.
     version=None will install the latest version.
@@ -611,14 +624,14 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                 raise exceptions.KillInstallException
         stage_handler.stage_start('verify_code')
         code_manifest_url = store_path_builder.module_code_manifest(module_name, version)
-        code_manifest = yaml.load(su.get_file_to_string(code_manifest_url))
+        code_manifest = yaml.safe_load(su.get_file_to_string(code_manifest_url))
         su.verify_against_manifest(module_dir, code_manifest)
         os.remove(zipfile_path)
         local_info = LocalModuleInfo(module_dir)
         if install_state:
             if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
                 raise exceptions.KillInstallException
-        if (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
+        if not(skip_data) and (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
             data_url = store_path_builder.module_data(module_name, remote_data_version)
             data_fname = '.'.join([module_name,'data','zip'])
             data_path = os.path.join(module_dir, data_fname)
@@ -639,7 +652,7 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                         raise exceptions.KillInstallException
                 stage_handler.stage_start('verify_data')
                 data_manifest_url = store_path_builder.module_data_manifest(module_name, remote_data_version)
-                data_manifest = yaml.load(su.get_file_to_string(data_manifest_url))
+                data_manifest = yaml.safe_load(su.get_file_to_string(data_manifest_url))
                 su.verify_against_manifest(module_dir, data_manifest)
                 os.remove(data_path)
                 if install_state:
@@ -748,9 +761,10 @@ def get_local_module_types():
             types.append(mic.local[module].type)
     return types
 
-def get_local_module_infos_of_type (t):
+def get_local_module_infos_of_type (t, update=True):
     modules = {}
-    mic.update_local()
+    if update:
+        mic.update_local()
     for module_name in mic.local:
         if mic.local[module_name].type == t:
             modules[module_name] = mic.local[module_name] 
@@ -804,19 +818,19 @@ def get_system_conf ():
     if key not in conf:
         conf[key] = constants.default_num_input_line_warning_cutoff
         conf_modified = True
-    key = 'sum_input_size_warning_cutoff'
+    key = 'gui_input_size_limit'
     if key not in conf:
-        conf[key] = constants.default_sum_input_size_warning_cutoff
+        conf[key] = constants.default_settings_gui_input_size_limit
         conf_modified = True
     key = 'max_num_concurrent_jobs'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_jobs
         conf_modified = True
-    if conf_modified:
-        write_system_conf_file(conf)
     key = 'max_num_concurrent_annotators_per_job'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_annotators_per_job
+    if conf_modified:
+        write_system_conf_file(conf)
     return conf
 
 def get_modules_dir():
@@ -827,6 +841,26 @@ def get_modules_dir():
     modules_dir = conf[constants.modules_dir_key]
     return modules_dir
 
+def get_module_conf_path (module_name):
+    modules_dir = get_modules_dir()
+    typefns = os.listdir(modules_dir)
+    conf_path = None
+    for typefn in typefns:
+        typepath = os.path.join(modules_dir, typefn)
+        if os.path.isdir(typepath):
+            modulefns = os.listdir(typepath)
+            for modulefn in modulefns:
+                if os.path.basename(modulefn) == module_name:
+                    modulepath = os.path.join(typepath, modulefn)
+                    if os.path.isdir(modulepath):
+                        path = os.path.join(modulepath, module_name + '.yml')
+                        if os.path.exists(path):
+                            conf_path = path
+                            break
+            if conf_path is not None:
+                break
+    return conf_path
+    
 def get_annotator_dir (module_name):
     module_dir = os.path.join(get_modules_dir(), 'annotators', module_name)
     if os.path.exists(module_dir) == False:
@@ -877,7 +911,7 @@ def update_system_conf_file(d):
 
 def read_system_conf_template ():
     with open(constants.system_conf_template_path) as f:
-        d = yaml.load(f)
+        d = yaml.safe_load(f)
         return d
     return None
 
@@ -1071,11 +1105,10 @@ def get_system_conf_info (json=False):
     return system_conf_info
 
 def get_cravat_conf ():
+    from cravat.config_loader import ConfigLoader
     confpath = get_main_conf_path()
-    if os.path.exists(confpath):
-        cravat_conf = load_yml_conf(confpath)
-    else:
-        cravat_conf = {}
+    conf = ConfigLoader()
+    cravat_conf = conf.get_cravat_conf()
     return cravat_conf
 
 def write_cravat_conf (cravat_conf):
@@ -1257,10 +1290,12 @@ class ReadyState(object):
 
     READY = 0
     MISSING_MD = 1
+    UPDATE_NEEDED = 2
 
     messages = {
         0: '',
         1: 'Modules directory not found',
+        2: 'Update on system modules needed. Run "oc module install-base"'
     }
 
     def __init__(self, code=READY):

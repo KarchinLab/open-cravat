@@ -13,6 +13,7 @@ import textwrap
 import math
 import copy
 from getpass import getpass
+from distutils.version import LooseVersion
 
 class ExampleCommandsFormatter(object,):
     def __init__(self, prefix='',  cmd_indent=' '*2, desc_indent=' '*8, width=70):
@@ -108,7 +109,7 @@ def print_tabular_lines(l, *kwargs):
     for line in yield_tabular_lines(l, *kwargs):
         print(line)
 
-def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False):
+def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False, raw_bytes=False):
     if quiet:
         all_toks = []
     else:
@@ -125,15 +126,19 @@ def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], q
                 continue
         if module_info.hidden and not include_hidden:
             continue
-        size = module_info.get_size()
         if quiet:
             toks = [module_name]
         else:
-            toks = [module_name, module_info.title, module_info.type, module_info.version, module_info.datasource, humanize_bytes(size)]
+            size = module_info.get_size()
+            toks = [module_name, module_info.title, module_info.type, module_info.version, module_info.datasource]
+            if raw_bytes:
+                toks.append(size)
+            else:
+                toks.append(humanize_bytes(size))
         all_toks.append(toks)
     print_tabular_lines(all_toks)
 
-def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False):
+def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False, raw_bytes=False):
     if quiet:
         all_toks = []
     else:
@@ -168,24 +173,29 @@ def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[
         if quiet:
             toks = [module_name]
         else:
-            toks = [module_name,
-                    remote_info.title,
-                    remote_info.type,
-                    installed,
-                    up_to_date,
-                    remote_info.latest_version,
-                    remote_info.datasource,
-                    local_version,
-                    local_datasource,
-                    humanize_bytes(remote_info.size)]
+            toks = [
+                module_name,
+                remote_info.title,
+                remote_info.type,
+                installed,
+                up_to_date,
+                remote_info.latest_version,
+                remote_info.datasource,
+                local_version,
+                local_datasource,
+            ]
+            if raw_bytes:
+                toks.append(remote_info.size)
+            else:
+                toks.append(humanize_bytes(remote_info.size))
         all_toks.append(toks)
     print_tabular_lines(all_toks)
 
 def list_modules(args):
     if args.available:
-        list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet)
+        list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet, raw_bytes=args.raw_bytes)
     else:
-        list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet)
+        list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet, raw_bytes=args.raw_bytes)
 
 def yaml_string(x):
     s = yaml.dump(x, default_flow_style = False)
@@ -278,6 +288,13 @@ def install_modules(args):
     for module_name in matching_names:
         remote_info = au.get_remote_module_info(module_name)
         if args.version is None:
+            local_info = au.get_local_module_info(module_name)
+            if local_info is not None:
+                local_ver = local_info.version
+                remote_ver = remote_info.latest_version
+                if LooseVersion(local_ver) >= LooseVersion(remote_ver):
+                    print(f'{module_name}: latest is already installed. ({local_ver})')
+                    continue
             selected_install[module_name] = remote_info.latest_version
         elif remote_info.has_version(args.version):
             selected_install[module_name] = args.version
@@ -573,6 +590,11 @@ parser_ls.add_argument('--tags',
 parser_ls.add_argument('-q','--quiet',
                         action='store_true',
                         help='Only list module names')
+parser_ls.add_argument('--bytes',
+    action='store_true',
+    dest='raw_bytes',
+    help='Machine readable data sizes'
+    )
 parser_ls.set_defaults(func=list_modules)
 
 # publish

@@ -32,7 +32,7 @@ if os.path.exists(system_conf_path) == False:
     shutil.copyfile(system_conf_template_path, system_conf_path)
 # conf
 f = open(system_conf_path)
-conf = yaml.load(f)
+conf = yaml.safe_load(f)
 f.close()
 # modules dir
 modules_dir_key = 'modules_dir'
@@ -128,6 +128,7 @@ crx_def = crv_def + \
                    'STG', 
                    'FSD', 
                    'FSI'], 'filterable': True},
+           #{'name':'cchange', 'title': 'cDNA change', 'type': 'string', 'width': 70, 'filterable': False},
            {'name':'achange', 'title':'Protein Change', 'type':'string', 'width': 55, 'filterable': False},
            {'name':'all_mappings', 'title':'All Mappings', 'type':'string', 'width': 100, 'hidden':True, 'filterable': False},
            ]
@@ -278,9 +279,11 @@ module_tag_desc = {
 
 legacy_gene_level_cols_to_skip = ['base__num_variants', 'base__so', 'base__all_so']
 default_num_input_line_warning_cutoff = 25000
-default_sum_input_size_warning_cutoff = 500
+default_settings_gui_input_size_limit = 500
 default_max_num_concurrent_jobs = 4
 default_max_num_concurrent_annotators_per_job = max(1, os.cpu_count() - 1)
+default_multicore_mapper_mode = True
 default_assembly = 'hg38'
 default_assembly_key = 'default_assembly'
 assembly_choices = ['hg38', 'hg19', 'hg18']
+publish_time_fmt = '%Y-%m-%dT%H:%M:%S.%f%z'

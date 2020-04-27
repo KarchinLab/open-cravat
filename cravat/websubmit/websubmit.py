@@ -179,7 +179,7 @@ class FileRouter(object):
                         break
                 elif fn.endswith('.info.yaml'):
                     with open(os.path.join(job_dir, fn)) as f:
-                        statusjson = yaml.load(f)
+                        statusjson = yaml.safe_load(f)
                         break
             if statusjson != {}:
                 self.job_statuses[job_id] = statusjson
@@ -225,7 +225,7 @@ class WebJob(object):
             info_dict = {'status': 'Error'}
         else:
             with open(self.job_status_fpath) as f:
-                info_dict = yaml.load(f)
+                info_dict = yaml.safe_load(f)
         if info_dict != None:
             self.set_values(**info_dict)
 
@@ -244,6 +244,20 @@ def get_next_job_id():
 async def submit (request):
     global filerouter
     global servermode
+    sysconf = au.get_system_conf()
+    size_cutoff = sysconf['gui_input_size_limit']
+    if request.content_length is None:
+        return web.HTTPLengthRequired(
+            text=json.dumps({
+                'status': 'fail', 
+                'msg': 'Content-Length header required'
+        }))
+    if request.content_length > size_cutoff * 1024 * 1024:
+        return web.HTTPRequestEntityTooLarge(
+            text=json.dumps({
+                'status': 'fail', 
+                'msg': f'Input is too big. Limit is {size_cutoff}MB.'
+        }))
     if servermode and server_ready:
         r = await cravat_multiuser.is_loggedin(request)
         if r == False:
@@ -426,7 +440,7 @@ async def get_job (request, job_id):
     if len(fns) > 0:
         info_fpath = os.path.join(job_dir, fns[0])
         with open (info_fpath) as f:
-            info_json = yaml.load('\n'.join(f.readlines()))
+            info_json = yaml.safe_load('\n'.join(f.readlines()))
             for k, v in info_json.items():
                 if k == 'status' and 'status' in job.info:
                     continue
@@ -531,7 +545,7 @@ async def get_job_status (request):
     job_id = request.match_info['job_id']
     status_path = await filerouter.job_status_path(request, job_id)
     f = open(status_path)
-    status = yaml.load(f)
+    status = yaml.safe_load(f)
     f.close()
     return web.json_response(status)
 

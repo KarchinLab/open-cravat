@@ -308,6 +308,7 @@ async def get_count (request):
     return web.json_response(content)
 
 async def get_result (request):
+    print(f'request={request}')
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
     dbname = os.path.basename(dbpath)

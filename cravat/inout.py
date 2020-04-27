@@ -10,6 +10,7 @@ from io import StringIO
 from cravat.util import detect_encoding
 import sys
 from json.decoder import JSONDecodeError
+import multiprocessing as mp
 
 csv.register_dialect('cravat', delimiter=',', quotechar='@')
 
@@ -31,8 +32,11 @@ class CravatFile(object):
         return self.columns
 
 class CravatReader (CravatFile):
-    def __init__(self, path):
+    def __init__(self, path, seekpos=None, chunksize=None):
         super().__init__(path)
+        self.seekpos = seekpos
+        self.chunksize = chunksize
+        self.encoding = detect_encoding(self.path)
         self.annotator_name = ''
         self.annotator_displayname = ''
         self.annotator_version = ''
@@ -96,6 +100,38 @@ class CravatReader (CravatFile):
     def get_no_aggregate_columns (self):
         return self.no_aggregate_cols
 
+    def get_lines (self, seekpos, chunksize):
+        self.f.seek(seekpos)
+        return self.f.readlines(chunksize)
+
+    def get_chunksize (self, num_core):
+        f = open(self.path)
+        max_num_lines = 0
+        while True:
+            line = f.readline()
+            if line == '':
+                break
+            if line.startswith('#'):
+                continue
+            max_num_lines += 1
+        f.close()
+        chunksize = max(int(max_num_lines / num_core), 1)
+        f = open(self.path)
+        poss = [(0, 0)]
+        num_lines = 0
+        while True:
+            line = f.readline()
+            if line == '':
+                break
+            if line.startswith('#'):
+                continue
+            num_lines += 1
+            if num_lines % chunksize == 0 and len(poss) < num_core:
+                poss.append((f.tell(), num_lines))
+        f.close()
+        len_poss = len(poss)
+        return num_lines, chunksize, poss, len_poss, max_num_lines
+
     def loop_data(self):
         for lnum, l in self._loop_data():
             toks = l.split('\t')
@@ -103,8 +139,7 @@ class CravatReader (CravatFile):
             if len(toks) < len(self.columns):
                 err_msg = 'Too few columns. Received %s. Expected %s. data was [%s]' \
                     %(len(toks),len(self.columns), l)
-                yield None, BadFormatError(err_msg)
-                continue
+                return BadFormatError(err_msg)
             for col_index, col_def in self.columns.items():
                 col_name = col_def.name
                 col_type = col_def.type
@@ -117,17 +152,25 @@ class CravatReader (CravatFile):
                     elif col_type == 'int':
                         out[col_name] = int(tok)
                     elif col_type == 'float':
-                        out[col_name] = float(tok)
+                        tok = json.loads(tok)
+                        if (type(tok) == list):
+                            out[col_name] = ','.join([str(v) for v in tok])
+                        else:
+                            out[col_name] = float(tok)
             yield lnum, l, out
-   
+
+    def _open_file (self):
+        self.f = open(self.path, 'rb')
+
+    def _close_file (self):
+        self.f.close()
+
     def get_data(self):
         all_data = [d for _, _, d in self.loop_data()]
         return all_data
 
     def _loop_definition(self):
-        encoding = detect_encoding(self.path)
-        #sys.stderr.write('loop definition [' + self.path + ']. encoding=' + str(encoding) + '\n')
-        f = open(self.path, encoding=encoding)
+        f = open(self.path, encoding=self.encoding)
         for l in f:
             l = l.rstrip().lstrip()
             if l.startswith('#'):
@@ -137,18 +180,20 @@ class CravatReader (CravatFile):
         f.close()
 
     def _loop_data(self):
-        encoding = detect_encoding(self.path)
-        #sys.stderr.write('loop data [' + self.path + ']. encoding=' + str(encoding) + '\n')
         f = open(self.path, 'rb')
+        if self.seekpos is not None:
+            f.seek(self.seekpos)
         lnum = 0
         for l in f:
-            l = l.decode(encoding)
-            lnum += 1
+            l = l.decode(self.encoding)
             l = l.rstrip('\r\n')
             if l.startswith('#'):
                 continue
             else:
                 yield lnum, l
+            lnum += 1
+            if self.chunksize is not None and lnum == self.chunksize:
+                break
         f.close()
 
 class CravatWriter(CravatFile):
@@ -158,7 +203,7 @@ class CravatWriter(CravatFile):
                  titles_prefix='#',
                  columns=[]):
         super().__init__(path)
-        self.wf = open(self.path,'w', encoding='utf-8')
+        self.wf = open(self.path, 'w', encoding='utf-8')
         self._ready_to_write = False
         self.ordered_columns = []
         self.name_to_col_index = {}
@@ -321,7 +366,10 @@ class CrxMapping(object):
 class AllMappingsParser (object):
 
     def __init__(self, s):
-        self._d = json.loads(s,object_pairs_hook=OrderedDict)
+        if type(s) == str:
+            self._d = json.loads(s,object_pairs_hook=OrderedDict)
+        else:
+            self._d = s
         self._protein_index = 0
         self._achange_index = 1
         self._so_index = 2

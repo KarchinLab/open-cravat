@@ -7,6 +7,7 @@ import aiosqlite3
 import json
 import re
 import time
+import asyncio
 
 class FilterColumn(object):
 
@@ -188,18 +189,18 @@ class CravatFilter ():
             self.filter = filter
         elif (self.filtername != None or self.filterpath != None or 
             self.filterstring != None) and self.filter == None:
-            self.loadfilter()
+            await self.loadfilter()
 
         ret = None
-        if self.cursor != None and self.filter != None:
-            if self.cmd == 'uidpipe':
-                ret = self.run_level_based_func(self.getuiditerator)
-            elif self.cmd == 'count':
-                ret = self.run_level_based_func(self.getcount)
+        if self.cursor != None: # and self.filter != None:
+            #if self.cmd == 'uidpipe':
+            #    ret = await self.run_level_based_func(self.getuiditerator)
+            if self.cmd == 'count':
+                ret = await self.run_level_based_func(self.getcount)
             elif self.cmd == 'rows':
-                ret = self.run_level_based_func(self.getrows)
+                ret = await self.run_level_based_func(self.getrows)
             elif self.cmd == 'pipe':
-                ret = self.run_level_based_func(self.getiterator)
+                ret = await self.run_level_based_func(self.getiterator)
         elif self.cursor != None and self.cmd == 'list':
             ret = self.listfilter()
 
@@ -210,15 +211,15 @@ class CravatFilter ():
 
         return ret
 
-    def run_level_based_func (self, cmd):
+    async def run_level_based_func (self, cmd):
         ret = {}
         if self.level != None:
-            ret[self.level] = cmd(level=self.level)
+            ret[self.level] = await cmd(level=self.level)
         else:
             levels = ['variant', 'gene']
             ret = {}
             for level in levels:
-                ret_onelevel = cmd(level=level)
+                ret_onelevel = await cmd(level=level)
                 ret[level] = ret_onelevel
         return ret
 
@@ -326,7 +327,7 @@ class CravatFilter ():
             with open(self.filterpath) as f:
                 ftype = self.filterpath.split('.')[-1]
                 if ftype in ['yml','yaml']:
-                    self.filter = yaml.load(f)
+                    self.filter = yaml.safe_load(f)
                 elif ftype in ['json']:
                     self.filter = json.load(f)
         if self.filter is None:
@@ -382,8 +383,17 @@ class CravatFilter ():
         return self.getrows('gene')
 
     async def getrows (self, level='variant'):
-        (sample_needed, tag_needed, include_where, exclude_where) = self.getwhere(level)
-        q = 'select *  from ' + level + include_where + ' except select * from ' + level + exclude_where
+        if level != 'variant':
+            return
+        where = self.getwhere(level)
+        await self.make_filtered_sample_table()
+        await self.make_gene_list_table()
+        await self.conn.commit()
+        q = f'select t.* from variant as t join fsample as s on t.base__uid=s.base__uid'
+        if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
+            q += ' join gene_list as gl on t.base__hugo=gl.base__hugo'
+        if 'g.' in where:
+            q += ' join gene as g on t.base__hugo=g.base__hugo'
         await self.cursor.execute(q)
         ret = [list(v) for v in await self.cursor.fetchall()]
         if self.stdout == True:
@@ -469,10 +479,16 @@ class CravatFilter ():
     async def make_filtered_sample_table (self):
         q = 'drop table if exists fsample'
         await self.cursor.execute(q)
-        try: #TODO: always have these fields
-            req = self.filter['sample']['require']
-            rej = self.filter['sample']['reject']
-        except:
+        if 'sample' in self.filter:
+            if 'require' in self.filter['sample']:
+                req = self.filter['sample']['require']
+            else:
+                req = []
+            if 'reject' in self.filter['sample']:
+                rej = self.filter['sample']['reject']
+            else:
+                req = []
+        else:
             req = []
             rej = []
         q = 'create table fsample as select distinct base__uid from sample'
@@ -705,5 +721,6 @@ def regexp (y, x, search=re.search):
     return 1 if search(y, x) else 0
 
 def main ():
-    cv = CravatFilter.create(mode='main')
-    cv.run(args=sys.argv[1:])
+    loop = asyncio.new_event_loop()
+    cv = loop.run_until_complete(CravatFilter.create(mode='main'))
+    loop.run_until_complete(cv.run(args=sys.argv[1:]))

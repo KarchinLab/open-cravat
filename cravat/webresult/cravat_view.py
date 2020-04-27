@@ -390,7 +390,7 @@ def get_webviewerconf ():
             'webviewer',
             'webviewer.yml')
     with open(conf_path) as f:
-        conf = yaml.load(f)
+        conf = yaml.safe_load(f)
     return conf
 
 def get_summary_widget_names (queries):

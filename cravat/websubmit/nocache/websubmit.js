@@ -39,15 +39,6 @@ function submit () {
         var textBlob = new Blob([textVal], {type:'text/plain'})
         inputFiles.push(new File([textBlob], 'input'));
     } else {
-        /*
-        var fileInputElem = $('#input-file')[0];
-        var files = fileInputElem.files;
-        if (files.length > 0) {
-            for (var i=0; i<files.length; i++) {
-                inputFiles.push(files[i]);
-            }
-        }
-        */
         inputFiles = inputFileList;
     }
     if (inputFiles.length === 0) {
@@ -92,23 +83,30 @@ function submit () {
     submitOpts.note = note;
     document.querySelector('#submit-job-button').disabled = true;
     formData.append('options',JSON.stringify(submitOpts));
-    // reads number of input lines
-    var numFileRead = 0;
-    var sumInputSizeCutoff = parseInt(document.getElementById('settings_sum_input_size_warning_cutoff').value);
+    var guiInputSizeLimit = parseInt(document.getElementById('settings_gui_input_size_limit').value);
     var sumInputSize = 0;
     for (var i = 0; i < inputFiles.length; i++) {
         sumInputSize += inputFiles[i].size;
     }
     sumInputSize = sumInputSize / 1024 / 1024;
-    if (sumInputSize > sumInputSizeCutoff) {
+    if (sumInputSize > guiInputSizeLimit) {
         var alertDiv = getEl('div');
         var span = getEl('span');
-        span.textContent = 'You are submitting input files larger than ' + sumInputSizeCutoff.toFixed(1) + ' MB. Proceed?';
+        span.textContent = 'Input files are limited to ' + guiInputSizeLimit.toFixed(1) + ' MB.';
         addEl(alertDiv, span);
         addEl(alertDiv,getEl('br'));
-        showYesNoDialog(alertDiv, commitSubmit, false, false);
+        addEl(alertDiv,getEl('br'));
+        var span = getEl('span');
+        span.textContent = 'The limit can be changed at the settings menu.';
+        addEl(alertDiv, span);
+        addEl(alertDiv,getEl('br'));
+        showYesNoDialog(alertDiv, enableSubmitButton, false, true);
     } else {
         commitSubmit();
+    }
+
+    function enableSubmitButton () {
+        document.querySelector('#submit-job-button').disabled = false;
     }
 
     function commitSubmit (flag) {
@@ -128,17 +126,49 @@ function submit () {
         req.onload = function (evt) {
             document.querySelector('#submit-job-button').disabled = false;
             hideSpinner();
-            var response = JSON.parse(evt.currentTarget.response);
-            if (response['status']['status'] == 'Submitted') {
-                submittedJobs.push(response);
-                addJob(response, true);
-                //sortJobs();
-                buildJobsTable();
+            const status = evt.currentTarget.status;
+            if (status === 200) {
+                var response = JSON.parse(evt.currentTarget.response);
+                if (response['status']['status'] == 'Submitted') {
+                    submittedJobs.push(response);
+                    addJob(response, true);
+                    //sortJobs();
+                    buildJobsTable();
+                }
+                if (response.expected_runtime > 0) {
+                }
+                jobRunning[response['id']] = true;
+            } else if (status>=400 && status<600) {
+                var response = JSON.parse(evt.currentTarget.response);
+                var alertDiv = getEl('div');
+                var h3 = getEl('h3');
+                h3.textContent = 'Upload Failure';
+                addEl(alertDiv, h3);
+                var span = getEl('span');
+                span.textContent = 'This is often caused by improper input files. Check that your input is in a form OpenCRAVAT accepts.'
+                addEl(alertDiv, span);
+                addEl(alertDiv,getEl('br'));
+                addEl(alertDiv,getEl('br'));
+                var span = getEl('span');
+                span.innerHTML = 'If you think this was caused by an error, <a href="mailto:support@cravat.us">let us know</a>'
+                addEl(alertDiv,span);
+                addEl(alertDiv,getEl('br'));
+                addEl(alertDiv,getEl('br'));
+                var span = getEl('span');
+                span.innerText = 'Details: '+response.msg;
+                addEl(alertDiv,span);
+                showYesNoDialog(alertDiv, null, false, true);
+
             }
-            if (response.expected_runtime > 0) {
-            }
-            jobRunning[response['id']] = true;
         };
+        req.onerror = function (evt) {
+            document.querySelector('#submit-job-button').disabled = false;
+            hideSpinner();
+        }
+        req.onabort = function (evt) {
+            document.querySelector('#submit-job-button').disabled = false;
+            hideSpinner();
+        }
         req.send(formData);
     }
 };
@@ -1608,8 +1638,8 @@ function loadSystemConf () {
         }
         var s = document.getElementById('settings_modules_dir_input');
         s.value = response['content']['modules_dir'];
-        var s = document.getElementById('settings_sum_input_size_warning_cutoff');
-        var cutoff = parseInt(response['content']['sum_input_size_warning_cutoff']);
+        var s = document.getElementById('settings_gui_input_size_limit');
+        var cutoff = parseInt(response['content']['gui_input_size_limit']);
         s.value = cutoff;
         var s = document.getElementById('settings_max_num_concurrent_jobs');
         s.value = parseInt(response['content']['max_num_concurrent_jobs']);
@@ -1631,8 +1661,8 @@ function updateSystemConf () {
         response['content']['jobs_dir'] = s.value;
         var s = document.getElementById('settings_modules_dir_input');
         response['content']['modules_dir'] = s.value;
-        var s = document.getElementById('settings_sum_input_size_warning_cutoff');
-        response['content']['sum_input_size_warning_cutoff'] = parseInt(s.value);
+        var s = document.getElementById('settings_gui_input_size_limit');
+        response['content']['gui_input_size_limit'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_jobs');
         response['content']['max_num_concurrent_jobs'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');

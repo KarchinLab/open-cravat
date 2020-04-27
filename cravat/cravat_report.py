@@ -222,7 +222,8 @@ class CravatReport:
                     if 'category' in col and col['category'] in ['single', 'multi']:
                         for i in range(len(self.colinfo[level]['columns'])):
                             colinfo_col = self.colinfo[level]['columns'][i]
-                            if mi.name in ['hg38', 'tagsampler']:
+                            # TODO: remove hg38ng
+                            if mi.name in ['hg38', 'hg38ng', 'tagsampler']:
                                 grp_name = 'base'
                             else:
                                 grp_name = mi.name
@@ -409,7 +410,8 @@ class CravatReport:
         if 'report_module_order' in cravat_conf:
             priority_colgroupnames = cravat_conf['report_module_order']
         else:
-            priority_colgroupnames = ['base', 'hg38', 'hg19', 'hg18', 'tagsampler']
+            # TODO: remove hg38ng
+            priority_colgroupnames = ['base', 'hg38', 'hg38ng', 'hg19', 'hg18', 'tagsampler']
         # level-specific column groups
         self.columngroups[level] = []
         sql = 'select name, displayname from ' + level + '_annotator'
@@ -526,11 +528,11 @@ class CravatReport:
             await self.cursor.execute(q)
             done_var_annotators = [v[0] for v in await self.cursor.fetchall()]
             self.summarizing_modules = []
-            local_modules = au.get_local_module_infos_of_type('annotator')
-            local_modules.update(au.get_local_module_infos_of_type('postaggregator'))
+            local_modules = au.get_local_module_infos_of_type('annotator', update=False)
+            local_modules.update(au.get_local_module_infos_of_type('postaggregator', update=False))
             summarizer_module_names = []
             for module_name in done_var_annotators:
-                if module_name in ['base', 'hg19', 'hg18', 'extra_vcf_info']:
+                if module_name in ['base', 'hg19', 'hg18', 'extra_vcf_info', 'extra_variant_info']:
                     continue
                 if module_name not in local_modules:
                     print('            [{}] module does not exist in the system. Gene level summary for this module is skipped.'.format(module_name))
@@ -542,18 +544,25 @@ class CravatReport:
             summarizer_module_names = [self.mapper_name] + summarizer_module_names
             for module_name in summarizer_module_names:
                 mi = local_modules[module_name]
-                conf = mi.conf
                 sys.path = sys.path + [os.path.dirname(mi.script_path)]
                 if module_name in done_var_annotators:
-                    annot_cls = util.load_class('CravatAnnotator', mi.script_path)
+                    annot_cls = util.load_class(mi.script_path, 'CravatAnnotator')
                 elif module_name == self.mapper_name:
-                    annot_cls = util.load_class('Mapper', mi.script_path)
+                    annot_cls = util.load_class(mi.script_path, 'Mapper')
                 annot = annot_cls([mi.script_path, '__dummy__', '-d', self.output_dir], {})
+                '''
                 cols = conf['gene_summary_output_columns']
                 columngroup = {}
-                columngroup['name'] = os.path.basename(mi.script_path).rstrip('.py')
+                columngroup['name'] = os.path.basename(mi.script_path).split('.')[0]
                 columngroup['displayname'] = conf['title']
                 columngroup['count'] = len(cols)
+                '''
+                cols = mi.conf['gene_summary_output_columns']
+                columngroup = {
+                    'name': mi.name,
+                    'displayname': mi.title,
+                    'count': len(cols),
+                }
                 self.columngroups[level].append(columngroup)
                 for col in cols:
                     coldef = ColumnDefinition(col)

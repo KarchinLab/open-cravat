@@ -5,6 +5,9 @@ import sys
 import oyaml as yaml
 import chardet
 import gzip
+import types
+import inspect
+import logging
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -118,6 +121,7 @@ so_severity = ['',
                'UT5',
                'INT',
                'UNK',
+               'MRT',
                'SYN',
                'MIS',
                'CSS',
@@ -133,7 +137,8 @@ so_severity = ['',
                'FSD',
                'FI1',
                'FI2',
-               'FSI'
+               'FSI',
+               'MLO',
                ]
 
 def valid_so(so):
@@ -159,15 +164,36 @@ def get_caller_name (path):
         module_name = basename
     return module_name
 
-def load_class(class_name, path):
+def load_class (path, class_name=None):
     """Load a class from the class's name and path. (dynamic importing)"""
     path_dir = os.path.dirname(path)
     sys.path = [path_dir] + sys.path
-    spec = importlib.util.spec_from_file_location(class_name, path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    module = None
+    module_class = None
+    module_name = os.path.basename(path).split('.')[0]
+    try:
+        module = __import__(module_name)
+    except:
+        try:
+            spec = importlib.util.spec_from_file_location(class_name, path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        except:
+            logger = logging.getLogger('cravat')
+            logger.exception(f'{module_name} could not be loaded.')
+            print(f'{module_name} is not found')
+    if module is not None:
+        if class_name is not None:
+            module_class = getattr(module, class_name)
+        else:
+            for n in dir(module):
+                if n.startswith('Cravat') or n == 'Mapper' or n == 'Reporter':
+                    c = getattr(module, n)
+                    if inspect.isclass(c):
+                        module_class = c
+                        break
     del sys.path[0]
-    return getattr(mod, class_name)
+    return module_class
 
 def get_directory_size(start_path):
     """
