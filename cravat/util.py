@@ -140,6 +140,7 @@ so_severity = ['',
                'FI1',
                'FI2',
                'FSI',
+               'EXL',
                'MLO',
                ]
 
