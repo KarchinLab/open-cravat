@@ -683,7 +683,7 @@ class CravatReport:
 def clean_args (cmd_args):
     if len(cmd_args[0]) == 0:
         cmd_args = cmd_args[1:]
-    if cmd_args[0].endswith('oc'):
+    if cmd_args[0].endswith('oc') or cmd_args[0].endswith('oc.py'):
         cmd_args = cmd_args[1:]
         if cmd_args[0] == 'report':
             cmd_args = cmd_args[1:]
