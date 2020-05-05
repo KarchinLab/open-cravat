@@ -528,8 +528,8 @@ class CravatReport:
             await self.cursor.execute(q)
             done_var_annotators = [v[0] for v in await self.cursor.fetchall()]
             self.summarizing_modules = []
-            local_modules = au.get_local_module_infos_of_type('annotator', update=False)
-            local_modules.update(au.get_local_module_infos_of_type('postaggregator', update=False))
+            local_modules = au.get_local_module_infos_of_type('annotator')
+            local_modules.update(au.get_local_module_infos_of_type('postaggregator'))
             summarizer_module_names = []
             for module_name in done_var_annotators:
                 if module_name in ['base', 'hg19', 'hg18', 'extra_vcf_info', 'extra_variant_info']:

@@ -23,10 +23,12 @@ import concurrent.futures
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
+install_manager = None
 install_queue = None
 install_state = None
 install_worker = None
 install_ws = None
+local_modules_changed = None
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -83,7 +85,7 @@ class InstallProgressMpDict(au.InstallProgressHandler):
         self.install_state['total_size'] = total_size
         self.install_state['update_time'] = time.time()
 
-def fetch_install_queue (install_queue, install_state):
+def fetch_install_queue (install_queue, install_state, local_modules_changed):
     while True:
         try:
             data = install_queue.get()
@@ -94,8 +96,10 @@ def fetch_install_queue (install_queue, install_state):
             stage_handler = InstallProgressMpDict(module_name, module_version, install_state)
             au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
             au.mic.update_local()
+            local_modules_changed.set()
             time.sleep(1)
         except:
+            traceback.print_exc()
             sys.exit()
 
 ###################### start from store_handler #####################
@@ -135,8 +139,6 @@ async def get_remote_module_config (request):
     return web.json_response(response)
 
 async def get_local_manifest (request):
-    #au.refresh_cache()
-    au.mic.update_local()
     content = {}
     for k, v in au.mic.local.items():
         content[k] = v.serialize()
@@ -237,6 +239,7 @@ async def uninstall_module (request):
     queries = request.rel_url.query
     module_name = queries['name']
     au.uninstall_module(module_name)
+    au.mic.update_local()
     response = 'uninstalled ' + module_name
     return web.json_response(response)
 
@@ -244,10 +247,14 @@ def start_worker ():
     global install_worker
     global install_queue
     global install_state
-    install_queue = Queue()
-    install_state = Manager().dict()
+    global install_manager
+    global local_modules_changed
+    install_manager = Manager()
+    install_queue = install_manager.Queue()
+    install_state = install_manager.dict()
+    local_modules_changed = install_manager.Event()
     if install_worker == None:
-        install_worker = Process(target=fetch_install_queue, args=(install_queue, install_state,))
+        install_worker = Process(target=fetch_install_queue, args=(install_queue, install_state, local_modules_changed))
         install_worker.start()
 
 async def send_socket_msg ():

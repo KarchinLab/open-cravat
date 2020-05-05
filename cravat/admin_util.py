@@ -19,6 +19,7 @@ from . import exceptions
 from collections.abc import MutableMapping
 import multiprocessing
 import importlib
+import traceback
 
 def load_yml_conf(yml_conf_path):
     """
@@ -761,7 +762,8 @@ def get_local_module_types():
             types.append(mic.local[module].type)
     return types
 
-def get_local_module_infos_of_type (t, update=True):
+def get_local_module_infos_of_type (t, update=False):
+    print(f'update={update}')
     modules = {}
     if update:
         mic.update_local()

@@ -361,8 +361,16 @@ def main (url=None):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1)
         def wakeup ():
-            global loop
             loop.call_later(0.1, wakeup)
+        def check_local_update(interval):
+            try:
+                if ws.local_modules_changed and ws.local_modules_changed.is_set():
+                    au.mic.update_local()
+                    ws.local_modules_changed.clear()
+            except:
+                traceback.print_exc()
+            finally:
+                loop.call_later(interval, check_local_update, interval)
         serv = get_server()
         global protocol
         host = serv.get('host')
@@ -385,6 +393,7 @@ def main (url=None):
         global loop
         loop = asyncio.get_event_loop()
         loop.call_later(0.1, wakeup)
+        loop.call_later(1, check_local_update, 5)
         async def clean_sessions():
             """
             Clean sessions periodically.
