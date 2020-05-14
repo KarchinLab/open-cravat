@@ -763,7 +763,6 @@ def get_local_module_types():
     return types
 
 def get_local_module_infos_of_type (t, update=False):
-    print(f'update={update}')
     modules = {}
     if update:
         mic.update_local()
