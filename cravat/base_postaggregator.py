@@ -201,7 +201,7 @@ class BasePostAggregator (object):
 
     def _alter_tables (self):
         # annotator table
-        q = 'insert into {:} values ("{:}", "{:}", "{}")'.format(
+        q = 'insert or replace into {:} values ("{:}", "{:}", "{}")'.format(
             self.level + '_annotator', self.module_name, self.conf['title'], self.conf['version'])
         self.cursor_w.execute(q)
         # data table and header table
@@ -211,12 +211,15 @@ class BasePostAggregator (object):
             colname = col_def.name
             coltype = col_def.type
             # data table
-            q = 'alter table ' + self.level + ' add column ' +\
-                colname + ' ' + self.cr_type_to_sql[coltype]
-            self.cursor_w.execute(q)
+            try:
+                self.cursor.execute(f'select {colname} from {self.level} limit 1')
+            except:
+                q = 'alter table ' + self.level + ' add column ' +\
+                    colname + ' ' + self.cr_type_to_sql[coltype]
+                self.cursor_w.execute(q)
             # header table
             # use prepared statement to allow " characters in colcats and coldesc
-            q = 'insert into {} values (?, ?)'.format(header_table_name)
+            q = 'insert or replace into {} values (?, ?)'.format(header_table_name)
             self.cursor_w.execute(q,[colname, col_def.get_json()])
         self.dbconn.commit()
 

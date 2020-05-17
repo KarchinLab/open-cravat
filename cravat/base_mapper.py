@@ -32,7 +32,7 @@ class BaseMapper(object):
             self.cmd_args = SimpleNamespace()
             self.cmd_args.include_sources = []
             self.cmd_args.exclude_sources = []
-            self.cmd_args.primary_source = 'EnsemblT'
+            #self.cmd_args.primary_source = 'EnsemblT'
             self.input_path = ''
             self._setup_logger()
             return
@@ -59,9 +59,9 @@ class BaseMapper(object):
         self.crg_writer = None
         self.crt_writer = None
         self.gene_sources = []
-        self.primary_gene_source = None
+        #self.primary_gene_source = None
         self.gene_info = {}
-        self.written_primary_transc = set([])
+        #self.written_primary_transc = set([])
         self._define_main_cmd_args()
         self._define_additional_cmd_args()
         self._parse_cmd_args(cmd_args)
@@ -105,6 +105,11 @@ class BaseMapper(object):
             dest='postfix',
             default='',
             help=argparse.SUPPRESS)
+        self.cmd_parser.add_argument('--primary-transcript',
+            dest='primary_transcript',
+            nargs='*',
+            default=['mane'],
+            help='"mane" for MANE transcripts as primary transcripts, or a path to a file of primary transcripts. MANE is default.')
 
     def _define_additional_cmd_args(self):
         """This method allows sub-classes to override and provide addittional command line args"""
@@ -130,6 +135,7 @@ class BaseMapper(object):
             self.confs = json.loads(confs)
         self.slavemode = self.cmd_args.slavemode
         self.postfix = self.cmd_args.postfix
+        self.primary_transcript_paths = self.cmd_args.primary_transcript
 
     def base_setup(self):
         self._setup_io()
@@ -177,6 +183,10 @@ class BaseMapper(object):
         self.crx_writer.write_meta_line('title', self.conf['title'])
         self.crx_writer.write_meta_line('version', self.conf['version'])
         self.crx_writer.write_meta_line('modulename', self.module_name)
+        if self.primary_transcript_paths is None:
+            self.crx_writer.write_meta_line('primary_transcript_paths', '')
+        else:
+            self.crx_writer.write_meta_line('primary_transcript_paths', ','.join(self.primary_transcript_paths))
         # .crg
         crg_fname = '.'.join(output_toks) + '.crg'
         self.crg_path = os.path.join(self.output_dir, crg_fname)
@@ -212,7 +222,6 @@ class BaseMapper(object):
         count = 0
         last_status_update_time = time.time()
         crx_data = None
-        alt_transcripts = None
         output = {}
         for ln, line, crv_data in self.reader.loop_data():
             crx_data = None
@@ -223,7 +232,7 @@ class BaseMapper(object):
                     if count % 10000 == 0 or cur_time - last_status_update_time > 3:
                         self.status_writer.queue_status_update('status', 'Running gene mapper: line {}'.format(count))
                         last_status_update_time = cur_time
-                crx_data, alt_transcripts = self.map(crv_data)
+                crx_data = self.map(crv_data)
                 # Skip cases where there was no change. Can result if ref_base not in original input
                 if crx_data['ref_base'] == crx_data['alt_base']:
                     continue
@@ -233,8 +242,6 @@ class BaseMapper(object):
             if crx_data is not None:
                 self.crx_writer.write_data(crx_data)
                 self._add_crx_to_gene_info(crx_data)
-            if alt_transcripts is not None:
-                self._write_to_crt(alt_transcripts)
         self._write_crg()
         stop_time = time.time()
         self.logger.info('finished: %s' \
@@ -260,7 +267,6 @@ class BaseMapper(object):
         count = 0
         last_status_update_time = time.time()
         crx_data = None
-        alt_transcripts = None
         for ln, line, crv_data in self.reader.loop_data():
             try:
                 count += 1
@@ -269,7 +275,7 @@ class BaseMapper(object):
                     if count % 10000 == 0 or cur_time - last_status_update_time > 3:
                         self.status_writer.queue_status_update('status', 'Running gene mapper: line {}'.format(count))
                         last_status_update_time = cur_time
-                crx_data, alt_transcripts = self.map(crv_data)
+                crx_data = self.map(crv_data)
                 if crx_data is None:
                     continue
                 # Skip cases where there was no change. Can result if ref_base not in original input
@@ -280,8 +286,6 @@ class BaseMapper(object):
             if crx_data is not None:
                 self.crx_writer.write_data(crx_data)
                 self._add_crx_to_gene_info(crx_data)
-            if alt_transcripts is not None:
-                self._write_to_crt(alt_transcripts)
         self._write_crg()
         stop_time = time.time()
         tstamp = time.asctime(time.localtime(stop_time))
@@ -309,6 +313,8 @@ class BaseMapper(object):
             return
         tmap_parser = AllMappingsParser(tmap_json)
         for hugo in tmap_parser.get_genes():
+            self.gene_info[hugo] = True
+            '''
             sos = tmap_parser.get_uniq_sos_for_gene(genes=[hugo])
             for so in gene_level_so_exclude:
                 if so in sos:
@@ -327,6 +333,7 @@ class BaseMapper(object):
                 self.gene_info[hugo]['so_counts'][so] += 1
             except KeyError:
                 self.gene_info[hugo]['so_counts'][so] = 1
+            '''
 
     def _write_crg(self):
         """
@@ -338,6 +345,7 @@ class BaseMapper(object):
             gene = self.gene_info[hugo]
             crg_data = {x['name']:'' for x in crg_def}
             crg_data['hugo'] = hugo
+            '''
             crg_data['num_variants'] = gene['variant_count']
             so_count_toks = []
             worst_so = ''
@@ -352,6 +360,7 @@ class BaseMapper(object):
                 so_count_toks.append('%s(%d)' %(so, so_count))
             crg_data['so'] = worst_so
             crg_data['all_so'] = ','.join(so_count_toks)
+            '''
             self.crg_writer.write_data(crg_data)
 
     def _log_runtime_error(self, ln, line, e):

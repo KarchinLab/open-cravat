@@ -151,6 +151,11 @@ cravat_cmd_parser.add_argument('--unique-variants',
     default=False,
     help=argparse.SUPPRESS
 )
+cravat_cmd_parser.add_argument('--primary-transcript',
+    dest='primary_transcript',
+    nargs='*',
+    default=['mane'],
+    help='"mane" for MANE transcripts as primary transcripts, or a path to a file of primary transcripts. MANE is default.')
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -318,6 +323,7 @@ class Cravat (object):
             self.logger.info('input assembly: {}'.format(self.input_assembly))
             self.set_and_check_input_files()
             converter_ran = False
+            print(f'@ startlevel={self.startlevel} runlevels={self.runlevels}')
             if self.endlevel >= self.runlevels['converter'] and \
                     self.startlevel <= self.runlevels['converter'] and \
                     not 'converter' in self.args.skip and \
@@ -383,13 +389,14 @@ class Cravat (object):
                 await self.write_job_info()
                 self.write_smartfilters()
                 self.aggregator_ran = True
+            print(f'@ skip={self.args.skip} aggregator_ran={self.aggregator_ran}')
             if self.endlevel >= self.runlevels['postaggregator'] and \
                     self.startlevel <= self.runlevels['postaggregator'] and \
-                    not 'postaggregator' in self.args.skip and \
-                    (
-                        self.aggregator_ran or \
-                        'postaggregator' in self.args.repeat
-                    ):
+                    not 'postaggregator' in self.args.skip: # and \
+                    #(
+                        #self.aggregator_ran or \
+                        #'postaggregator' in self.args.repeat
+                    #):
                 print('Running postaggregators...')
                 self.run_postaggregators()
             if self.endlevel >= self.runlevels['reporter'] and \
@@ -569,10 +576,10 @@ class Cravat (object):
             self.args.repeat = []
         if self.args.skip is None:
             self.args.skip = []
-        if self.args.startat == 'postaggregator':
-            self.args.startat = 'aggregator'
-        if 'postaggregator' in self.args.repeat and not 'aggregator' in self.args.repeat:
-            self.args.repeat.append('aggregator')
+        #if self.args.startat == 'postaggregator':
+        #    self.args.startat = 'aggregator'
+        #if 'postaggregator' in self.args.repeat and not 'aggregator' in self.args.repeat:
+        #    self.args.repeat.append('aggregator')
         if self.append_mode:
             self.args.endat = 'aggregator'
         try:
@@ -761,7 +768,11 @@ class Cravat (object):
         cmd = [module.script_path, 
                self.crvinput,
                '-n', self.run_name,
-               '-d', self.output_dir]
+               '-d', self.output_dir,
+               ]
+        if self.args.primary_transcript is not None:
+            cmd.extend(['--primary-transcript'])
+            cmd.extend(self.args.primary_transcript)
         if module.name in self.cravat_conf:
             confs = json.dumps(self.cravat_conf[module.name])
             confs = "'" + confs.replace("'", '"') + "'"
@@ -786,9 +797,26 @@ class Cravat (object):
                     break
                 (seekpos, num_lines) = poss[pos_no]
                 if pos_no == len_poss - 1:
-                    job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, max_num_lines - num_lines, self.run_name, self.output_dir, self.status_writer, self.mapper_name, pos_no))
+                    job = pool.apply_async(mapper_runner, (
+                        self.crvinput, 
+                        seekpos, 
+                        max_num_lines - num_lines, 
+                        self.run_name, 
+                        self.output_dir, 
+                        self.status_writer, 
+                        self.mapper_name, 
+                        pos_no, 
+                        ';'.join(self.args.primary_transcript)))
                 else:
-                    job = pool.apply_async(mapper_runner, (self.crvinput, seekpos, chunksize, self.run_name, self.output_dir, self.status_writer, self.mapper_name, pos_no))
+                    job = pool.apply_async(mapper_runner, (
+                        self.crvinput, 
+                        seekpos, 
+                        chunksize, 
+                        self.run_name, 
+                        self.output_dir, 
+                        self.status_writer, 
+                        self.mapper_name, pos_no,
+                        ';'.join(self.args.primary_transcript)))
                 jobs.append(job)
                 pos_no += 1
             for job in jobs:
@@ -1194,6 +1222,8 @@ class Cravat (object):
                     input_path_dict_str = '='.join(line.strip().split('=')[1:]).replace('"', "'")
                     q = 'insert into info values ("_input_paths", "{}")'.format(input_path_dict_str)
                     await cursor.execute(q)
+            q = f'insert into info values ("primary_transcript", "{",".join(self.args.primary_transcript)}")'
+            await cursor.execute(q)
         q = 'select colval from info where colkey="annotators_desc"'
         await cursor.execute(q)
         r = await cursor.fetchone()
