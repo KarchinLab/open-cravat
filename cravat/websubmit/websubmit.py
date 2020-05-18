@@ -299,14 +299,6 @@ async def submit (request):
                         )
     # Subprocess arguments
     input_fpaths = [os.path.join(job_dir, fn) for fn in input_fnames]
-    tot_lines = 0
-    for fpath in input_fpaths:
-        if fpath.endswith('.gz'):
-            f = gzip.open(fpath,'rt')
-        else:
-            f = open(fpath)
-        tot_lines += count_lines(f)
-        f.close()
     run_args = ['cravat']
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))

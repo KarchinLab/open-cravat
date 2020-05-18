@@ -19,6 +19,7 @@ from . import exceptions
 from collections.abc import MutableMapping
 import multiprocessing
 import importlib
+import traceback
 
 def load_yml_conf(yml_conf_path):
     """
@@ -761,7 +762,7 @@ def get_local_module_types():
             types.append(mic.local[module].type)
     return types
 
-def get_local_module_infos_of_type (t, update=True):
+def get_local_module_infos_of_type (t, update=False):
     modules = {}
     if update:
         mic.update_local()
@@ -1290,10 +1291,12 @@ class ReadyState(object):
 
     READY = 0
     MISSING_MD = 1
+    UPDATE_NEEDED = 2
 
     messages = {
         0: '',
         1: 'Modules directory not found',
+        2: 'Update on system modules needed. Run "oc module install-base"'
     }
 
     def __init__(self, code=READY):

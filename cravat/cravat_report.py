@@ -123,9 +123,9 @@ class CravatReport:
                 column_sub = column_sub_dict[colno]
                 value = row[colno]
                 if value is not None:
-                    if column_sub_allow_partial_match[colno] == True:
-                        for target in column_sub:
-                            value = re.sub('\\b' + target + '\\b', column_sub[target], value)
+                    if column_sub_allow_partial_match[colno]:
+                        for target, substitution in column_sub.items():
+                            value = target.sub(substitution, value)
                     else:
                         if value in column_sub:
                             value = column_sub[value]
@@ -528,8 +528,8 @@ class CravatReport:
             await self.cursor.execute(q)
             done_var_annotators = [v[0] for v in await self.cursor.fetchall()]
             self.summarizing_modules = []
-            local_modules = au.get_local_module_infos_of_type('annotator', update=False)
-            local_modules.update(au.get_local_module_infos_of_type('postaggregator', update=False))
+            local_modules = au.get_local_module_infos_of_type('annotator')
+            local_modules.update(au.get_local_module_infos_of_type('postaggregator'))
             summarizer_module_names = []
             for module_name in done_var_annotators:
                 if module_name in ['base', 'hg19', 'hg18', 'extra_vcf_info', 'extra_variant_info']:
@@ -645,11 +645,15 @@ class CravatReport:
                     if module in self.report_substitution:
                         sub = self.report_substitution[module]
                         if col in sub:
-                            self.column_subs[level][i] = sub[col]
                             if module in ['base', self.mapper_name] and col in ['all_mappings', 'all_so']:
                                 allow_partial_match = True
+                                self.column_subs[level][i] = {
+                                    re.compile(fr'\b{key}\b') : val
+                                    for key, val in sub[col].items()
+                                }
                             else:
                                 allow_partial_match = False
+                                self.column_subs[level][i] = sub[col]
                             self.column_sub_allow_partial_match[level][i] = allow_partial_match
                             new_columns[i]['reportsub'] = sub[col]
 
@@ -683,7 +687,7 @@ class CravatReport:
 def clean_args (cmd_args):
     if len(cmd_args[0]) == 0:
         cmd_args = cmd_args[1:]
-    if cmd_args[0].endswith('oc'):
+    if cmd_args[0].endswith('oc') or cmd_args[0].endswith('oc.py'):
         cmd_args = cmd_args[1:]
         if cmd_args[0] == 'report':
             cmd_args = cmd_args[1:]

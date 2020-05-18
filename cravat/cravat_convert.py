@@ -186,7 +186,7 @@ class MasterCravatConverter(object):
             python modules. Initializes the CravatConverter class from that
             module and places them in a dict keyed by their input format
         """
-        for module_info in au.get_local_module_infos_of_type('converter', update=False).values():
+        for module_info in au.get_local_module_infos_of_type('converter').values():
             # path based import from https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
             spec = importlib.util.spec_from_file_location(module_info.name,
                                                           module_info.script_path)
