@@ -323,7 +323,6 @@ class Cravat (object):
             self.logger.info('input assembly: {}'.format(self.input_assembly))
             self.set_and_check_input_files()
             converter_ran = False
-            print(f'@ startlevel={self.startlevel} runlevels={self.runlevels}')
             if self.endlevel >= self.runlevels['converter'] and \
                     self.startlevel <= self.runlevels['converter'] and \
                     not 'converter' in self.args.skip and \
@@ -389,7 +388,6 @@ class Cravat (object):
                 await self.write_job_info()
                 self.write_smartfilters()
                 self.aggregator_ran = True
-            print(f'@ skip={self.args.skip} aggregator_ran={self.aggregator_ran}')
             if self.endlevel >= self.runlevels['postaggregator'] and \
                     self.startlevel <= self.runlevels['postaggregator'] and \
                     not 'postaggregator' in self.args.skip: # and \
