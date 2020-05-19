@@ -360,8 +360,8 @@ class BaseMapper(object):
             self.unique_excs.append(err_str)
             self.logger.error(err_str)
         self.error_logger.error('\nLINE:{:d}\nINPUT:{}\nERROR:{}\n#'.format(ln, line[:-1], str(e)))
-        if not(isinstance(e, InvalidData)):
-            raise e
+        # if not(isinstance(e, InvalidData)):
+        #     raise e
 
     async def get_gene_summary_data (self, cf):
         #print('            {}: started getting gene summary data'.format(self.module_name))
