@@ -123,6 +123,8 @@ so_severity = ['',
                'UNK',
                'MRT',
                'SYN',
+               'MRT',
+               'STR',
                'MIS',
                'CSS',
                'IND',
@@ -138,6 +140,7 @@ so_severity = ['',
                'FI1',
                'FI2',
                'FSI',
+               'EXL',
                'MLO',
                ]
 
@@ -179,6 +182,7 @@ def load_class (path, class_name=None):
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
         except:
+            raise
             logger = logging.getLogger('cravat')
             logger.exception(f'{module_name} could not be loaded.')
             print(f'{module_name} is not found')
