@@ -156,6 +156,11 @@ cravat_cmd_parser.add_argument('--primary-transcript',
     nargs='*',
     default=['mane'],
     help='"mane" for MANE transcripts as primary transcripts, or a path to a file of primary transcripts. MANE is default.')
+cravat_cmd_parser.add_argument('--cleanrun',
+    dest='clean_run',
+    action='store_true',
+    default=False,
+    help='Deletes all previous output files for the job and generate new ones.')
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -166,7 +171,10 @@ def run(cmd_args):
 def run_cravat_job(**kwargs):
     module = Cravat(**kwargs)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(module.main())
+    if loop.is_running():
+        loop.create_task(module.main())
+    else:
+        loop.run_until_complete(module.main())
 
 cravat_cmd_parser.set_defaults(func=run)
 
@@ -192,6 +200,9 @@ class Cravat (object):
         self.annotators = {}        
         self.append_mode = False
         self.make_args_namespace(kwargs)
+        if self.args.clean_run:
+            print('Deleting previous output files...')
+            self.delete_output_files()
         self.get_logger()
         self.start_time = time.time()
         self.logger.info('started: {0}'.format(time.asctime(time.localtime(self.start_time))))
@@ -309,6 +320,12 @@ class Cravat (object):
         import asyncio
         loop = asyncio.new_event_loop()
         loop.run_until_complete(self.main())
+
+    def delete_output_files (self):
+        fns = glob.glob(os.path.join(self.output_dir, self.run_name + '.*'))
+        for fn in fns:
+            print(f'  Removing {fn}')
+            os.remove(fn)
 
     async def main (self):
         no_problem_in_run = True
