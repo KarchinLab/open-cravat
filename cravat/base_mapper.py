@@ -20,22 +20,24 @@ import time
 class BaseMapper(object):
     """
     BaseMapper is the parent class for Cravat Mapper objects.
-    It recieves a crv file and writes crx and crg files based on it's child
+    It receives a crv file and writes crx and crg files based on it's child
     mapper's map() function.
     It handles command line arguments, option parsing and file io for the
     mapping process.
     """
     def __init__(self, cmd_args, status_writer, live=False):
+        self.live = live
         self.t = time.time()
+        '''
         if live:
             self.live = live
             self.cmd_args = SimpleNamespace()
             self.cmd_args.include_sources = []
             self.cmd_args.exclude_sources = []
-            #self.cmd_args.primary_source = 'EnsemblT'
             self.input_path = ''
             self._setup_logger()
             return
+        '''
         self.status_writer = status_writer
         main_fpath = cmd_args[0]
         main_basename = os.path.basename(main_fpath)
@@ -138,7 +140,8 @@ class BaseMapper(object):
         self.primary_transcript_paths = self.cmd_args.primary_transcript
 
     def base_setup(self):
-        self._setup_io()
+        if self.live == False:
+            self._setup_io()
         self.setup()
 
     def setup(self):

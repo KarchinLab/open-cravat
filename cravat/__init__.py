@@ -45,14 +45,14 @@ def get_live_mapper (module_name):
     try:
         import os
         ModuleClass = get_module(module_name)
-        module = ModuleClass(None, None, live=True)
+        module = ModuleClass([os.path.abspath(ModuleClass.script_path), ''], None, live=True)
         #module.module_name = module_name
-        module.mapper_name = module_name
+        #module.mapper_name = module_name
         #module.module_dir = os.path.dirname(module.script_path)
-        module.mapper_dir = os.path.dirname(module.script_path)
-        module.data_dir = os.path.join(module.module_dir, 'data')
+        #module.mapper_dir = os.path.dirname(module.script_path)
+        #module.data_dir = os.path.join(module.module_dir, 'data')
         #module.conf = config_loader.get_module_conf(module_name)
-        module.setup()
+        module.base_setup()
     except Exception as e:
         print('    module loading error: {}'.format(module_name))
         import traceback
