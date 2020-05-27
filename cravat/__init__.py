@@ -86,3 +86,67 @@ def get_wgs_reader (assembly='hg38'):
         wgs = ModuleClass()
         wgs.setup()
     return wgs
+
+class LiveAnnotator:
+    def __init__ (self, mapper='hg38', annotators=[]):
+        self.live_annotators = {}
+        self.load_live_modules(mapper, annotators)
+        self.variant_uid = 1
+
+    def load_live_modules (self, mapper, annotator_names):
+        self.live_mapper = get_live_mapper(mapper)
+        modules = admin_util.get_local_module_infos(types=['annotator'])
+        for module in modules:
+            if module.name in annotator_names:
+                if 'secondary_inputs' in module.conf:
+                    continue
+                annotator = get_live_annotator(module.name)
+                if annotator is None:
+                    continue
+                self.live_annotators[module.name] = annotator
+
+    def clean_annot_dict (self, d):
+        keys = d.keys()
+        for key in keys:
+            value = d[key]
+            if value == '' or value == {}:
+                d[key] = None
+            elif type(value) is dict:
+                d[key] = self.clean_annot_dict(value)
+        if type(d) is dict:
+            all_none = True
+            for key in keys:
+                if d[key] is not None:
+                    all_none = False
+                    break
+            if all_none:
+                d = None
+        return d
+
+    def annotate (self, crv):
+        from .inout import AllMappingsParser
+        from cravat.constants import all_mappings_col_name
+        if 'uid' not in crv:
+            crv['uid'] = self.variant_uid
+            self.variant_uid += 1
+        response = {}
+        crx_data = self.live_mapper.map(crv)
+        crx_data = self.live_mapper.live_report_substitute(crx_data)
+        crx_data['tmp_mapper'] = AllMappingsParser(crx_data[all_mappings_col_name])
+        for k, v in self.live_annotators.items():
+            try:
+                annot_data = v.annotate(input_data=crx_data)
+                annot_data = v.live_report_substitute(annot_data)
+                if annot_data == '' or annot_data == {}:
+                    annot_data = None
+                elif type(annot_data) is dict:
+                    annot_data = self.clean_annot_dict(annot_data)
+                response[k] = annot_data
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                response[k] = None
+        del crx_data['tmp_mapper']
+        response['base'] = crx_data
+        return response
+

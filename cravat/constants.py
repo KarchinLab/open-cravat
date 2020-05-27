@@ -109,7 +109,7 @@ crx_def = crv_def + \
           [{'name':'coding', 'title':'Coding', 'type':'string', 'width': 50, 'category': 'single',
                'categories': ['Y']},
            {'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70, 'filterable': True},
-           {'name':'transcript', 'title':'Transcript', 'type':'string', 'width': 135, 'hidden':True, 'filterable': False},
+           {'name':'transcript', 'title':'Transcript', 'type':'string', 'width': 135, 'hidden':False, 'filterable': False},
            {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 120, 'category': 'single',
                'categories': [
                    '2KD',
