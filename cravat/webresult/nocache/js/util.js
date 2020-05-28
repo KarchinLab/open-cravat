@@ -123,7 +123,7 @@ function deleteFilterSetting (name) {
 function saveLayoutSettingAs (evt) {
     hideAllMenu3();
     evt.stopPropagation();
-       $.get('/result/service/getlayoutsavenames', {'dbpath': dbPath}).done(function (response) {
+       $.get('/result/service/getlayoutsavenames', {'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
         var quickSaveNameIdx = response.indexOf(quickSaveName);
         if (quickSaveNameIdx >= 0) {
             response.splice(quickSaveNameIdx, 1);
