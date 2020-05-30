@@ -191,6 +191,7 @@ class Cravat (object):
             'aggregator': 4, 
             'postaggregator': 5, 
             'reporter': 6}
+        self.pipeinput = sys.stdin.isatty() == False
         self.should_run_converter = False
         self.should_run_genemapper = False
         self.should_run_annotators = True
@@ -333,7 +334,10 @@ class Cravat (object):
             self.aggregator_ran = False
             self.check_valid_modules()
             self.update_status('Started cravat')
-            input_files_str = ', '.join(self.inputs)
+            if self.pipeinput == False:
+                input_files_str = ', '.join(self.inputs)
+            else:
+                input_files_str = 'stdin'
             print('Input file(s): {}'.format(input_files_str))
             print('Genome assembly: {}'.format(self.input_assembly))
             self.logger.info('input files: {}'.format(input_files_str))
@@ -521,7 +525,7 @@ class Cravat (object):
                 self.args.inputs = self.run_conf['inputs']
             else:
                 print('inputs in conf file is invalid')
-        if self.args.inputs is not None and len(self.args.inputs) == 0:
+        if self.args.inputs is not None and len(self.args.inputs) == 0 and sys.stdin.isatty() == True:
             cravat_cmd_parser.print_help()
             print('\nNo input file was given.')
             exit()
@@ -1048,9 +1052,10 @@ class Cravat (object):
                     confs = json.dumps(self.run_conf[module_name])
                     confs = "'" + confs.replace("'", '"') + "'"
                     cmd.extend(['--confs', confs])
-                cmd.append('--inputfiles')
-                for input_file in self.inputs:
-                    cmd.append(input_file)
+                if self.pipeinput == False:
+                    cmd.append('--inputfiles')
+                    for input_file in self.inputs:
+                        cmd.append(input_file)
                 if self.args.separatesample:
                     cmd.append('--separatesample')
                 if self.verbose:

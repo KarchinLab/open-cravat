@@ -17,6 +17,7 @@ import json
 import gzip
 from collections import defaultdict
 from cravat.base_converter import BaseConverter
+STDIN = 'stdin'
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
@@ -64,6 +65,7 @@ class MasterCravatConverter(object):
 
     def __init__(self, args=None, status_writer=None):
         args = args if args else sys.argv
+        self.pipeinput = sys.stdin.isatty() == False
         self.status_writer = status_writer
         self.input_paths = []
         self.input_files = []
@@ -91,10 +93,12 @@ class MasterCravatConverter(object):
         parser.add_argument('path',
             help='Path to this converter\'s python module')
         parser.add_argument('inputs',
-            nargs='+',
+            nargs='*',
+            default=None,
             help='Files to be converted to .crv')
         parser.add_argument('-f',
             dest='format',
+            default=None,
             help='Specify an input format')
         parser.add_argument('-n', '--name',
             dest='name',
@@ -117,15 +121,24 @@ class MasterCravatConverter(object):
             action='store_true',
             help=argparse.SUPPRESS)
         parsed_args = parser.parse_args(args)
-        self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs]
-        self.input_path_dict = {}
-        self.input_path_dict2 = {}
-        for i in range(len(self.input_paths)):
-            self.input_path_dict[i] = self.input_paths[i]
-            self.input_path_dict2[self.input_paths[i]] = i
         if parsed_args.format:
             self.input_format = parsed_args.format
+        if parsed_args.inputs is None and self.pipeinput == False:
+            raise ExpectedException('Input files are not given.')
+        if self.pipeinput == False:
+            self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs]
+        else:
+            self.input_paths = [f'./{STDIN}']
         self.input_dir = os.path.dirname(self.input_paths[0])
+        self.input_path_dict = {}
+        self.input_path_dict2 = {}
+        if self.pipeinput == False:
+            for i in range(len(self.input_paths)):
+                self.input_path_dict[i] = self.input_paths[i]
+                self.input_path_dict2[self.input_paths[i]] = i
+        else:
+            self.input_path_dict[0] = self.input_paths[0]
+            self.input_path_dict2[STDIN] = 0
         if parsed_args.output_dir:
             self.output_dir = parsed_args.output_dir
         else:
@@ -153,13 +166,16 @@ class MasterCravatConverter(object):
         """ Do necesarry pre-run tasks """
         if self.ready_to_convert: return
         # Open file handle to input path
-        for input_path in self.input_paths:
-            encoding = detect_encoding(input_path)
-            if input_path.endswith('.gz'):
-                f = gzip.open(input_path, mode='rt', encoding=encoding)
-            else:
-                f = open(input_path, encoding=encoding)
-            self.input_files.append(f)
+        if self.pipeinput == False:
+            for input_path in self.input_paths:
+                encoding = detect_encoding(input_path)
+                if input_path.endswith('.gz'):
+                    f = gzip.open(input_path, mode='rt', encoding=encoding)
+                else:
+                    f = open(input_path, encoding=encoding)
+                self.input_files.append(f)
+        else:
+            self.input_files = [sys.stdin]
         # Read in the available converters
         self._initialize_converters()
         # Select the converter that matches the input format
@@ -173,7 +189,10 @@ class MasterCravatConverter(object):
         """ Open a log file and set up log handler """
         self.logger = logging.getLogger('cravat.converter')
         self.logger.info('started: %s' %time.asctime())
-        self.logger.info('input files: %s' %', '.join(self.input_paths))
+        if self.pipeinput == False:
+            self.logger.info('Input file(s): %s' %', '.join(self.input_paths))
+        else:
+            self.logger.info(f'Input file(s): {STDIN}')
         if self.do_liftover:
             self.logger.info('liftover from %s' %self.input_assembly)
         self.error_logger = logging.getLogger('error.converter')
@@ -213,32 +232,39 @@ class MasterCravatConverter(object):
                 raise ExpectedException ('Invalid input format. Please select from [%s]' \
                          %', '.join(self.possible_formats))
         else:
-            valid_formats = []
-            first_file = self.input_files[0]
-            first_file.seek(0)
-            for converter_name, converter in self.converters.items():
-                check_success = converter.check_format(first_file)
+            if self.pipeinput == False:
+                valid_formats = []
+                first_file = self.input_files[0]
                 first_file.seek(0)
-                if check_success: valid_formats.append(converter_name)
-            if len(valid_formats) == 0:
-                fn = os.path.basename(first_file.name)
-                msg = f'Input format could not be determined for file {fn}. Additional input format converters are available. View available converters in the store or with "oc module ls -a -t converter"'
-                raise ExpectedException(msg)
-            elif len(valid_formats) > 1:
-                raise ExpectedException('Input format ambiguous in [%s]. '\
-                            %', '.join(valid_formats)\
-                         +'Please specify an input format.')
+                for converter_name, converter in self.converters.items():
+                    check_success = converter.check_format(first_file)
+                    first_file.seek(0)
+                    if check_success: valid_formats.append(converter_name)
+                if len(valid_formats) == 0:
+                    fn = os.path.basename(first_file.name)
+                    msg = f'Input format could not be determined for file {fn}. Additional input format converters are available. View available converters in the store or with "oc module ls -a -t converter"'
+                    raise ExpectedException(msg)
+                elif len(valid_formats) > 1:
+                    raise ExpectedException('Input format ambiguous in [%s]. '\
+                                %', '.join(valid_formats)\
+                             +'Please specify an input format.')
+                else:
+                    self.input_format = valid_formats[0]
             else:
-                self.input_format = valid_formats[0]
+                if self.input_format is None:
+                    msg = 'Input should be specified with --input-format option when input is given through pipe'
+                    print(f'\n{msg}')
+                    raise ExpectedException(msg)
         self.primary_converter = self.converters[self.input_format]
         self.primary_converter.output_dir = self.output_dir
         self.primary_converter.run_name = self.output_base_fname
-        if len(self.input_files) > 1:
-            for f in self.input_files[1:]:
-                if not self.primary_converter.check_format(f):
-                    raise ExpectedException('Inconsistent file types')
-                else:
-                    f.seek(0)
+        if self.pipeinput == False:
+            if len(self.input_files) > 1:
+                for f in self.input_files[1:]:
+                    if not self.primary_converter.check_format(f):
+                        raise ExpectedException('Inconsistent file types')
+                    else:
+                        f.seek(0)
         self.logger.info('input format: %s' %self.input_format)
 
     def _open_output_files (self):
@@ -303,9 +329,14 @@ class MasterCravatConverter(object):
         fileno = 0
         total_lnum = 0
         for f in self.input_files:
+            if self.pipeinput == True:
+                fname = STDIN
+            else:
+                fname = f.name
             fileno += 1
             self.primary_converter.setup(f)
-            f.seek(0)
+            if self.pipeinput == False:
+                f.seek(0)
             read_lnum = 0
             write_lnum = 0
             num_errors = 0
@@ -366,7 +397,7 @@ class MasterCravatConverter(object):
                                 no_unique_var += 1
                             if UID not in UIDMap: 
                                 #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
-                                self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID, 'fileno': self.input_path_dict2[f.name]})
+                                self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID, 'fileno': self.input_path_dict2[fname]})
                                 UIDMap.append(UID)
                         self.crs_writer.write_data(wdict)
                 else:
