@@ -589,6 +589,7 @@ async def generate_report(request):
     run_args.extend(['--repeat', 'reporter'])
     run_args.extend(['-t', report_type])
     run_args.extend(['-l', 'hg38']) # dummy -l option
+    run_args.extend(['--do-not-change-status'])
     p = await asyncio.create_subprocess_shell(' '.join(run_args))
     await p.wait()
     return web.json_response('done')

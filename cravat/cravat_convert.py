@@ -341,7 +341,10 @@ class MasterCravatConverter(object):
             write_lnum = 0
             num_errors = 0
             for l in f:
-                cur_fname = os.path.basename(f.name)
+                if self.pipeinput:
+                    cur_fname = STDIN
+                else:
+                    cur_fname = os.path.basename(f.name)
                 samp_prefix = cur_fname
                 read_lnum += 1
                 try:

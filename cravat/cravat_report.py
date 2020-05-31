@@ -343,7 +343,8 @@ class CravatReport:
         if not (hasattr(self, 'no_log') and self.no_log):
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
         if self.module_conf is not None and self.status_writer is not None:
-            self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
+            if self.parsed_args.do_not_change_status == False:
+                self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
         if self.setup() == False:
             return
         if tab == 'all':
@@ -362,7 +363,8 @@ class CravatReport:
                 await self.make_col_info(tab)
             await self.run_level(tab)
         if self.module_conf is not None and self.status_writer is not None:
-            self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
+            if self.parsed_args.do_not_change_status == False:
+                self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
         end_time = time.time()
         if not (hasattr(self, 'no_log') and self.no_log):
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
@@ -724,6 +726,7 @@ def run_reporter (args):
         cmd_args = sys.argv
         cmd_args.extend(['--module-name', module_info.name])
         cmd_args.extend(['-s', args.savepath])
+        cmd_args.extend(['--do-not-change-status'])
         reporter = module.Reporter(cmd_args)
         loop.run_until_complete(reporter.prep())
         loop.run_until_complete(reporter.run())
@@ -792,5 +795,10 @@ parser.add_argument('-d',
     dest='output_dir',
     default=None,
     help='directory for output files')
+parser.add_argument('--do-not-change-status',
+    dest='do_not_change_status',
+    action='store_true',
+    default=False,
+    help='Job status in status.json will not be changed')
 parser.set_defaults(func=run_reporter)
 

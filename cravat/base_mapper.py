@@ -266,7 +266,10 @@ class BaseMapper(object):
         tstamp = time.asctime(time.localtime(start_time))
         self.logger.info(f'started: {tstamp} | {self.cmd_args.seekpos}')
         if self.status_writer is not None:
-            self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.conf['title'], self.module_name))
+            self.status_writer.queue_status_update(
+                'status', 
+                'Started {} ({})'.format(self.conf['title'], 
+                self.module_name))
         count = 0
         last_status_update_time = time.time()
         crx_data = None
