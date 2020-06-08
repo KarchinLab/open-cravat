@@ -19,6 +19,7 @@ import sqlite3
 import json
 import cravat.cravat_util as cu
 import cravat.admin_util as au
+import re
 
 class BaseAnnotator(object):
 
@@ -153,7 +154,7 @@ class BaseAnnotator(object):
             self.secondary_paths = {}
             if parsed_args.secondary_inputs:
                 for secondary_def in parsed_args.secondary_inputs:
-                    sec_name, sec_path = secondary_def.split('@')
+                    sec_name, sec_path = re.split(r'(?<!\\)=', secondary_def)
                     self.secondary_paths[sec_name] = os.path.abspath(sec_path)
             self.output_dir = os.path.dirname(self.primary_input_path)
             if parsed_args.output_dir:
