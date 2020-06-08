@@ -1062,7 +1062,7 @@ class Cravat (object):
                     secondary_opts.extend([
                         '-s', 
                         secondary_module.name.replace('=',r'\=') + '=' +\
-                            os.path.join(self.output_dir, secondary_output_path)]).replace('=',r'\=')
+                            os.path.join(self.output_dir, secondary_output_path).replace('=',r'\=')])
             cmd = [module.script_path, inputpath]
             cmd.extend(secondary_opts)
             if self.run_name != None:
