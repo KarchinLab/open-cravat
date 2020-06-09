@@ -235,6 +235,7 @@ class FilterManager {
             .text('Sample list')
             .addClass('butn')
             .click(()=>{
+                $('#'+this.sampleFileId).val(null);
                 $('#'+this.sampleFileId).click();
             });
         sampListDiv.append(sampListBtn);
