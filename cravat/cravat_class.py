@@ -1053,7 +1053,6 @@ class Cravat (object):
                 if module is None:
                     print('        {} does not exist.'.format(module_name))
                     continue
-                #print('')
                 cmd = [module.script_path, 
                        '-s', os.path.join(self.output_dir, self.run_name),
                        os.path.join(self.output_dir, self.run_name + '.sqlite'),
