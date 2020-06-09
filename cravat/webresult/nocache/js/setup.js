@@ -911,16 +911,10 @@ function displayFilterCount(n) {
 function makeFilterJson () {
 	let fjs = {}
 	// Samples
-	let sampleSelectors = $('#'+filterMgr.sampleSelectId).children();
-	fjs.sample = {'require':[],'reject':[]}
-	for (let i=0; i<sampleSelectors.length; i++) {
-		let sel = $(sampleSelectors[i]);
-		if (sel.hasClass('sample-require')) {
-			fjs.sample.require.push(sel.text());
-		} else if (sel.hasClass('sample-reject')) {
-			fjs.sample.reject.push(sel.text());
-		}
-	}
+	fjs.sample = {
+        'require':[...filterMgr.requireSamples],
+        'reject':[...filterMgr.rejectSamples]
+    }
 	// Gene list
 	let geneListString = $('#'+filterMgr.geneTextId).val();
 	let geneList = geneListString.split('\n')
