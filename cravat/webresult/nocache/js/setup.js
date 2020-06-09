@@ -82,17 +82,25 @@ class FilterManager {
         this.geneContId = 'filter-cont-gene';
         this.variantContId = 'filter-cont-variant'
 
+        this.sampleFilterId = 'sample-select-filt';
+        this.sampleFileId = 'sample-list-file';
         this.sampleSelectId = 'sample-select-cont';
+        this.sampleReqCountId = 'sample-req-count';
+        this.sampleRejCountId = 'sample-rej-count';
+        this.sampleRuleCountId = 'sample-rule-count';
 		this.geneTextId = 'gene-list-text';
 		this.geneFileId = 'gene-list-file';
 		this.vpropSelectId = 'vprop-sel';
 		this.vpropSfId = 'vprop-sf';
 		this.vpropQbId = 'vprop-qb';
-		this.qbRootId = 'qb-root';
+        this.qbRootId = 'qb-root';
 		this.qbBannedColumns = [
 			'base__numsample',
 			'base__samples',
-		]
+        ];
+        this.allSamples = [];
+        this.requireSamples = new Set();
+        this.rejectSamples = new Set();
 	}
 
 	getFilterSection (headerTitle, active) {
@@ -150,21 +158,107 @@ class FilterManager {
         }
         event.stopPropagation();
     }
-
+    
 	addSampleSelect (outerDiv, filter) {
         filter = new CravatFilter(filter);
+        filter.sample.require.forEach(this.requireSamples.add, this.requireSamples);
+        filter.sample.reject.forEach(this.rejectSamples.add, this.rejectSamples);
+        const sampleIds = getFilterCol('base__samples').categories;
+        this.allSamples = sampleIds;
+        
         outerDiv.attr('id', this.sampleContId);
 		outerDiv.append($(getEl('div'))
-			.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
-		)
-		let sampleSelDiv = $(getEl('div'))
+			.text('Click IDs once to include, twice to exclude.')
+        )
+        
+        // Filter down the show samples
+        outerDiv.append($(getEl('input'))
+            .attr('id', this.sampleFilterId)
+            .on('input',event=>{
+                const q = event.target.value;
+                if (q) {
+                    this.drawSamples(this.matchingSamples(q));
+                } else {
+                    this.drawSamples(this.allSamples);
+                }
+            }
+        ));
+
+        // Show all
+        outerDiv.append($(getEl('button'))
+            .click(this.sampleShowAll)
+            .text(`Total: ${this.allSamples.length}`)
+            .addClass('butn')
+        );
+
+        // Show selected
+        outerDiv.append($(getEl('button'))
+            .attr('id', this.sampleReqCountId)
+            .text('Include: 0')
+            .click(this.sampleShowRequire)
+        );
+        outerDiv.append($(getEl('button'))
+            .attr('id', this.sampleRejCountId)
+            .text('Exclude: 0')
+            .click(this.sampleShowReject)
+        );
+        outerDiv.append($(getEl('button'))
+            .attr('id', this.sampleRuleCountId)
+            .text('Has rule: 0')
+            .click(this.sampleShowRule)
+        );
+
+        // Pick shown
+        outerDiv.append($(getEl('button'))
+            .text('Include shown')
+            .click(()=>this.samplePickShown('require'))
+        );
+        outerDiv.append($(getEl('button'))
+            .text('Exclude shown')
+            .click(()=>this.samplePickShown('reject'))
+        );
+        outerDiv.append($(getEl('button'))
+            .text('Clear shown')
+            .click(()=>this.samplePickShown('neutral'))
+        );
+        
+        // File filter
+        let sampListDiv = $(getEl('div'));
+        outerDiv.append(sampListDiv);
+        let sampListInput = $(getEl('input'))
+            .attr('id', this.sampleFileId)
+            .attr('type', 'file')
+            .on('input',this.sampleListFile)
+            .css('display','none');
+        sampListDiv.append(sampListInput);
+        let sampListBtn = $(getEl('button'))
+            .text('Sample list')
+            .addClass('butn')
+            .click(()=>{
+                $('#'+this.sampleFileId).click();
+            });
+        sampListDiv.append(sampListBtn);
+
+		const sampleSelDiv = $(getEl('div'))
 			.attr('id', this.sampleSelectId);
 		outerDiv.append(sampleSelDiv);
-		let sampleIds = getFilterCol('base__samples').categories;
 		if (sampleIds.length==0 || (sampleIds.length==1 && !sampleIds[0])) {
 			outerDiv.closest('.filter-section').css('display','none');
 		}
-		for (let i=0; i<sampleIds.length; i++) {
+		this.drawSamples(this.allSamples, sampleSelDiv);
+		return outerDiv;
+    }
+
+    drawSamples(sampleIds, sampleSelDiv) {
+        sampleIds = sampleIds==undefined ? 
+            this.allSamples : sampleIds;
+        sampleIds = sampleIds
+            .filter(sid=>this.allSamples.indexOf(sid)>=0)
+            .sort();
+        sampleSelDiv = sampleSelDiv==undefined ? 
+            $('#'+this.sampleSelectId) : sampleSelDiv;
+        sampleSelDiv.empty();
+        for (let i=0; i<sampleIds.length; i++) {
 			let sid = sampleIds[i];
 			let sampleBox = $(getEl('div'))
 				.addClass('sample-selector')
@@ -179,16 +273,52 @@ class FilterManager {
 				.text(sid)
 				.addClass('sample-selector-label')
 			)
-			if (filter.sample.require.indexOf(sid) >= 0) {
+			if (this.requireSamples.has(sid)) {
 				sampleBox.removeClass('sample-neutral');
 				sampleBox.addClass('sample-require');
-			} else if (filter.sample.reject.indexOf(sid) >= 0) {
+			} else if (this.rejectSamples.has(sid)) {
 				sampleBox.removeClass('sample-neutral');
 				sampleBox.addClass('sample-reject');
 			}
-		}
-		return outerDiv;
-	}
+        }
+    }
+
+    sampleSelChange() {
+        const nReq = this.requireSamples.size;
+        const nRej = this.rejectSamples.size;
+        const nRule = nReq+nRej;
+        $('#'+this.sampleReqCountId).text(`Include: ${nReq}`);
+        $('#'+this.sampleRejCountId).text(`Exclude: ${nRej}`);
+        $('#'+this.sampleRuleCountId).text(`Has rule: ${nRule}`);
+    }
+
+    matchingSamples(q) {
+        return this.allSamples.filter(sid=>sid.includes(q));
+    }
+
+    sampleShowRequire = () => {
+        this.drawSamples([...this.requireSamples]);
+    }
+
+    sampleShowReject= () =>  {
+        this.drawSamples([...this.rejectSamples]);
+    }
+
+    sampleShowRule = () => {
+        this.drawSamples([...this.requireSamples].concat([...this.rejectSamples]));
+    }
+
+    sampleShowAll = () => {
+        this.drawSamples(this.allSamples);
+    }
+
+    samplePickShown = (state) => {
+        const selectors = $('#'+this.sampleSelectId).children('.sample-selector');
+        for (let sbox of selectors) {
+            this.setSampleSelector($(sbox),state);
+        }
+        this.sampleSelChange();
+    }
 
 	updateSampleSelect (filter) {
         filter = new CravatFilter(filter);
@@ -199,25 +329,57 @@ class FilterManager {
 		if (filter.sample.require.length>0 || filter.sample.reject.length>0) {
 			sampleHeader.removeClass('inactive');
 		}
-	}
-
-	onSampleSelectorClick(event) {
-		let sbox = $(this);
-		let sid = sbox.text();
-		if (sbox.hasClass('sample-neutral')) { // Set to require
-			sbox.removeClass('sample-neutral');
+    }
+    
+    setSampleSelector(sbox, state) {
+        const sid = sbox.text();
+        if (state==='require') { // Set to require
 			sbox.addClass('sample-require');
-			sbox.attr('title',`${sid}\nVariants MUST be in this sample`);
-		} else if (sbox.hasClass('sample-require')) { // Set to reject
+            sbox.removeClass('sample-reject');
+            sbox.removeClass('sample-neutral');
+            sbox.attr('title',`${sid}\nVariants MUST be in this sample`);
+            this.requireSamples.add(sid);
+            this.rejectSamples.delete(sid);
+		} else if (state==='reject') { // Set to reject
 			sbox.removeClass('sample-require');
-			sbox.addClass('sample-reject');
-			sbox.attr('title',`${sid}\nVariants MUST NOT be in this sample`);
+            sbox.addClass('sample-reject');
+			sbox.removeClass('sample-neutral');
+            sbox.attr('title',`${sid}\nVariants MUST NOT be in this sample`);
+            this.requireSamples.delete(sid);
+            this.rejectSamples.add(sid);
+		} else if (state==='neutral') { // Set to neutral
+			sbox.removeClass('sample-require');
+            sbox.removeClass('sample-reject');
+            sbox.addClass('sample-neutral');
+            sbox.attr('title',sid);
+            this.requireSamples.delete(sid);
+            this.rejectSamples.delete(sid);
+        }
+    }
+
+	onSampleSelectorClick = (event) => {
+        let sbox = $(event.currentTarget);
+		if (sbox.hasClass('sample-neutral')) { // Set to require
+			this.setSampleSelector(sbox,'require');
+		} else if (sbox.hasClass('sample-require')) { // Set to reject
+			this.setSampleSelector(sbox,'reject');
 		} else if (sbox.hasClass('sample-reject')) { // Set to neutral
-			sbox.removeClass('sample-reject');
-			sbox.addClass('sample-neutral');
-			sbox.attr('title',sid);
-		}
-	}
+			this.setSampleSelector(sbox,'neutral');
+        }
+        this.sampleSelChange();
+    }
+    
+    sampleListFile = (event) => {
+        let fileInput = $(event.target);
+        let fr = new FileReader();
+        var that = this;
+        fr.onloadend = function(e) { //Not an arrow function so that this=FileReader
+            let text = this.result;
+            let samples = text.split(/\r?\n/g);
+            that.drawSamples(samples);
+        }
+        fr.readAsText(fileInput.prop('files')[0])
+    }
 
 	addGeneSelect (outerDiv, filter) {
         filter = new CravatFilter(filter);
