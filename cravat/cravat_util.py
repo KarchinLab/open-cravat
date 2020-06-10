@@ -125,7 +125,7 @@ def converttohg38 (args):
     newdb.commit()
 
 migrate_functions = {}
-supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1']
+supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.8.0']
 
 def check_result_db_version (dbpath, version):
     try:
@@ -360,6 +360,116 @@ def migrate_result_161_to_170 (dbpath):
     c.execute('create unique index unq_info_colkey on info (colkey)')
     c.execute('update info set colval="1.7.0" where colkey="open-cravat"')
 
+def migrate_result_170_to_180 (dbpath):
+    db = sqlite3.connect(dbpath)
+    c = db.cursor()
+    c.execute('update info set colval="1.8.0" where colkey="open-cravat"')
+
+def migrate_result_180_to_181 (dbpath):
+    db = sqlite3.connect(dbpath)
+    c = db.cursor()
+    try:
+        c.execute('alter table variant add column base__cchange text')
+    except:
+        print(f'  base__cchange column already exists. Not created anew.')
+    c.execute('update variant set base__cchange=""')
+    c.execute('insert or replace into variant_header values ("base__cchange", \'{"index": 10, "name": "base__cchange", "title": "cDNA change", "type": "string", "categories": [], "width": 70, "desc": null, "hidden": false, "category": null, "filterable": false, "link_format": null, "genesummary": false}\')')
+    c.execute('update variant_header set col_def=\'{"index": 11, "name": "base__achange", "title": "Protein Change", "type": "string", "categories": [], "width": 55, "desc": null, "hidden": false, "category": null, "filterable": false, "link_format": null, "genesummary": false}\' where col_name="base__achange"')
+    c.execute('update variant_header set col_def=\'{"index": 12, "name": "base__all_mappings", "title": "All Mappings", "type": "string", "categories": [], "width": 100, "desc": null, "hidden": true, "category": null, "filterable": false, "link_format": null, "genesummary": false}\' where col_name="base__all_mappings"')
+    c.execute('update variant_header set col_def=\'{"index": null, "name": "tagsampler__numsample", "title": "Sample Count", "type": "int", "categories": [], "width": 55, "desc": "Number of samples which contain the variant.", "hidden": true, "category": null, "filterable": false, "link_format": null, "genesummary": false}\' where col_name="tagsampler__numsample"')
+    c.execute('update variant_header set col_def=\'{"index": null, "name": "tagsampler__samples", "title": "Samples", "type": "string", "categories": ["s0", "s1", "s2", "s3", "s4"], "width": 65, "desc": "Samples which contain the variant.", "hidden": false, "category": "multi", "filterable": true, "link_format": null, "genesummary": false}\' where col_name="tagsampler__samples"')
+    c.execute('update variant_header set col_def=\'{"index": null, "name": "tagsampler__tags", "title": "Tags", "type": "string", "categories": [], "width": 65, "desc": "Variant tags from the input file.", "hidden": true, "category": null, "filterable": true, "link_format": null, "genesummary": false}\' where col_name="tagsampler__tags"')
+    c.execute(('update variant_reportsub set subdict='
+               '\'{"so": {"PTR": "processed_transcript", "TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", '
+               '"MIR": "miRNA", "LNC": "lnc_RNA", "PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", '
+               '"RTI": "retained_intron", "NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", '
+               '"PSE": "pseudogene", "TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", '
+               '"PRR": "pseudogene_rRNA", "UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", '
+               '"RIB": "ribozyme", "SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", '
+               '"TCG": "TR_C_gene", "TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", '
+               '"IJP": "IG_J_pseudogene", "IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", '
+               '"SCR": "scRNA", "VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", '
+               '"2KD": "2kb_downstream_variant", "2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", '
+               '"INT": "intron_variant", "UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", "STG": "stop_gained", '
+               '"FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", "IND": "inframe_deletion", '
+               '"MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, "all_so": {"PTR": "processed_transcript", '
+               '"TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", "MIR": "miRNA", "LNC": "lnc_RNA", '
+               '"PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", "RTI": "retained_intron", '
+               '"NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", "PSE": "pseudogene", '
+               '"TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", "PRR": "pseudogene_rRNA", '
+               '"UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", "RIB": "ribozyme", '
+               '"SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", "TCG": "TR_C_gene", '
+               '"TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", "IJP": "IG_J_pseudogene", '
+               '"IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", "SCR": "scRNA", '
+               '"VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", "2KD": "2kb_downstream_variant", '
+               '"2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", "INT": "intron_variant", '
+               '"UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", "STG": "stop_gained", '
+               '"FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", "IND": "inframe_deletion", '
+               '"MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
+               '"all_mappings": {"PTR": "processed_transcript", "TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", '
+               '"MIR": "miRNA", "LNC": "lnc_RNA", "PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", '
+               '"RTI": "retained_intron", "NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", "PSE": "pseudogene", '
+               '"TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", "PRR": "pseudogene_rRNA", '
+               '"UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", "RIB": "ribozyme", '
+               '"SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", "TCG": "TR_C_gene", '
+               '"TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", "IJP": "IG_J_pseudogene", '
+               '"IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", "SCR": "scRNA", '
+               '"VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", "2KD": "2kb_downstream_variant", '
+               '"2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", "INT": "intron_variant", '
+               '"UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", '
+               '"STG": "stop_gained", "FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", '
+               '"IND": "inframe_deletion", "MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
+               '"coding": {"Y": "Yes"}}\' where module="base"'))
+    c.execute(('update gene_reportsub set subdict='
+               '\'{"so": {"PTR": "processed_transcript", "TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", '
+               '"MIR": "miRNA", "LNC": "lnc_RNA", "PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", '
+               '"RTI": "retained_intron", "NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", '
+               '"PSE": "pseudogene", "TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", '
+               '"PRR": "pseudogene_rRNA", "UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", '
+               '"RIB": "ribozyme", "SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", '
+               '"TCG": "TR_C_gene", "TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", '
+               '"IJP": "IG_J_pseudogene", "IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", '
+               '"SCR": "scRNA", "VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", '
+               '"2KD": "2kb_downstream_variant", "2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", '
+               '"INT": "intron_variant", "UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", "STG": "stop_gained", '
+               '"FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", "IND": "inframe_deletion", '
+               '"MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, "all_so": {"PTR": "processed_transcript", '
+               '"TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", "MIR": "miRNA", "LNC": "lnc_RNA", '
+               '"PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", "RTI": "retained_intron", '
+               '"NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", "PSE": "pseudogene", '
+               '"TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", "PRR": "pseudogene_rRNA", '
+               '"UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", "RIB": "ribozyme", '
+               '"SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", "TCG": "TR_C_gene", '
+               '"TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", "IJP": "IG_J_pseudogene", '
+               '"IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", "SCR": "scRNA", '
+               '"VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", "2KD": "2kb_downstream_variant", '
+               '"2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", "INT": "intron_variant", '
+               '"UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", "STG": "stop_gained", '
+               '"FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", "IND": "inframe_deletion", '
+               '"MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
+               '"all_mappings": {"PTR": "processed_transcript", "TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", '
+               '"MIR": "miRNA", "LNC": "lnc_RNA", "PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", '
+               '"RTI": "retained_intron", "NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", "PSE": "pseudogene", '
+               '"TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", "PRR": "pseudogene_rRNA", '
+               '"UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", "RIB": "ribozyme", '
+               '"SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", "TCG": "TR_C_gene", '
+               '"TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", "IJP": "IG_J_pseudogene", '
+               '"IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", "SCR": "scRNA", '
+               '"VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", "2KD": "2kb_downstream_variant", '
+               '"2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", "INT": "intron_variant", '
+               '"UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", '
+               '"STG": "stop_gained", "FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", '
+               '"IND": "inframe_deletion", "MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
+               '"coding": {"Y": "Yes"}}\' where module="base"'))
+    c.execute('update info set colval="1.8.1" where colkey="open-cravat"')
+    db.commit()
+
 migrate_functions['1.4.4'] = migrate_result_144_to_145
 migrate_functions['1.4.5'] = migrate_result_145_to_150
 migrate_functions['1.5.0'] = migrate_result_150_to_151
@@ -368,6 +478,8 @@ migrate_functions['1.5.2'] = migrate_result_152_to_153
 migrate_functions['1.5.3'] = migrate_result_153_to_160
 migrate_functions['1.6.0'] = migrate_result_160_to_161
 migrate_functions['1.6.1'] = migrate_result_161_to_170
+migrate_functions['1.7.0'] = migrate_result_170_to_180
+migrate_functions['1.8.0'] = migrate_result_180_to_181
 
 def migrate_result (args):
     def get_dbpaths (dbpaths, path):

@@ -91,7 +91,7 @@ class FileRouter(object):
                 job_dir = os.path.join(jobs_dirs[0], job_id)
         return job_dir
 
-    async def job_input(self, request, job_id):
+    async def job_input (self, request, job_id):
         job_dir, statusjson = await self.job_status(request, job_id)
         orig_input_fname = None
         if 'orig_input_fname' in statusjson:
@@ -103,7 +103,7 @@ class FileRouter(object):
                     orig_input_fname = fn[:-4]
                     break
         if orig_input_fname is not None:
-            orig_input_path = os.path.join(job_dir, orig_input_fname)
+            orig_input_path = [os.path.join(job_dir, v) for v in orig_input_fname]
         else:
             orig_input_path = None
         return orig_input_path
@@ -583,8 +583,10 @@ async def generate_report(request):
     global filerouter
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
-    job_input = await filerouter.job_run_path(request, job_id)
-    run_args = ['oc', 'run', job_input]
+    job_input_paths = await filerouter.job_input(request, job_id)
+    run_args = ['oc', 'run']
+    for job_input_path in job_input_paths:
+        run_args.append(job_input_path)
     run_args.extend(['--startat', 'reporter'])
     run_args.extend(['--repeat', 'reporter'])
     run_args.extend(['-t', report_type])
