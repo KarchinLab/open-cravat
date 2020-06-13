@@ -915,6 +915,36 @@ div.pq-select-menu>.pq-select-option-label {
 	margin-left: 10px;
 }
 
+.filter-sample-hasrule-span {
+	cursor: pointer;
+	margin: 0.25em;
+	text-decoration: underline;
+}
+.filter-sample-hasrule-span:hover {
+	font-weight: bold;
+}
+#sample-req-count {
+	color: green;
+}
+#sample-rej-count {
+	color: red;
+}
+.sample-rd::before {
+	font-size: 20px;
+	content: "\2610";
+	color: #d1d3d4;
+}
+input:checked + .sample-rd-req::before {
+	content: "\2611";
+	color: green;
+}
+input:checked + .sample-rd-rej::before {
+	content: "\2612";
+	color: red;
+}
+#sample-shown-count {
+	margin-right: 1em;
+}
 
 .pq-grid-cell, .pq-grid-number-cell {
     padding: 0px;

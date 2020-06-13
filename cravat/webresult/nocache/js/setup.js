@@ -87,7 +87,9 @@ class FilterManager {
         this.sampleSelectId = 'sample-select-cont';
         this.sampleReqCountId = 'sample-req-count';
         this.sampleRejCountId = 'sample-rej-count';
-        this.sampleRuleCountId = 'sample-rule-count';
+        this.sampleInFilterCountId = 'sample-infiliter-count'
+        this.sampleRuleClass = 'filter-sample-hasrule-span'
+        this.sampleShownCount = 'sample-shown-count'
 		this.geneTextId = 'gene-list-text';
 		this.geneFileId = 'gene-list-file';
 		this.vpropSelectId = 'vprop-sel';
@@ -167,12 +169,20 @@ class FilterManager {
         this.allSamples = sampleIds;
         
         outerDiv.attr('id', this.sampleContId);
-		outerDiv.append($(getEl('div'))
-			.text('Click IDs once to include, twice to exclude.')
-        )
+
+        const controlsL1 = $(getEl('div'));
+        outerDiv.append(controlsL1);
         
+        // Show all
+        
+        controlsL1.append($(getEl('button'))
+            .click(this.sampleShowAll)
+            .text(`Show all`)
+            .addClass('butn')
+        );
+
         // Filter down the show samples
-        outerDiv.append($(getEl('input'))
+        controlsL1.append($(getEl('input'))
             .attr('id', this.sampleFilterId)
             .on('input',event=>{
                 const q = event.target.value;
@@ -183,52 +193,14 @@ class FilterManager {
                 }
             }
         ));
-
-        // Show all
-        outerDiv.append($(getEl('button'))
-            .click(this.sampleShowAll)
-            .text(`Total: ${this.allSamples.length}`)
-            .addClass('butn')
-        );
-
-        // Show selected
-        outerDiv.append($(getEl('button'))
-            .attr('id', this.sampleReqCountId)
-            .text('Include: 0')
-            .click(this.sampleShowRequire)
-        );
-        outerDiv.append($(getEl('button'))
-            .attr('id', this.sampleRejCountId)
-            .text('Exclude: 0')
-            .click(this.sampleShowReject)
-        );
-        outerDiv.append($(getEl('button'))
-            .attr('id', this.sampleRuleCountId)
-            .text('Has rule: 0')
-            .click(this.sampleShowRule)
-        );
-
-        // Pick shown
-        outerDiv.append($(getEl('button'))
-            .text('Include shown')
-            .click(()=>this.samplePickShown('require'))
-        );
-        outerDiv.append($(getEl('button'))
-            .text('Exclude shown')
-            .click(()=>this.samplePickShown('reject'))
-        );
-        outerDiv.append($(getEl('button'))
-            .text('Clear shown')
-            .click(()=>this.samplePickShown('neutral'))
-        );
         
         // File filter
-        let sampListDiv = $(getEl('div'));
-        outerDiv.append(sampListDiv);
+        let sampListDiv = $(getEl('span'));
+        controlsL1.append(sampListDiv);
         let sampListInput = $(getEl('input'))
             .attr('id', this.sampleFileId)
             .attr('type', 'file')
-            .on('input',this.sampleListFile)
+            .on('input', this.sampleListFile)
             .css('display','none');
         sampListDiv.append(sampListInput);
         let sampListBtn = $(getEl('button'))
@@ -237,8 +209,92 @@ class FilterManager {
             .click(()=>{
                 $('#'+this.sampleFileId).val(null);
                 $('#'+this.sampleFileId).click();
-            });
+            }
+        );
         sampListDiv.append(sampListBtn);
+        
+        // Show in filter
+        const interactedSpan = $(getEl('span'));
+        controlsL1.append(interactedSpan);
+        interactedSpan.append($(getEl('span'))
+            .attr('id', this.sampleInFilterCountId)
+            .addClass(this.sampleRuleClass)
+            .text('In filter: 0')
+            .click(this.sampleShowRule)
+            // .addClass('butn')
+        );
+        interactedSpan.append($(getEl('span'))
+            .attr('id', this.sampleReqCountId)
+            .addClass(this.sampleRuleClass)
+            .text('Include: 0')
+            .click(this.sampleShowRequire)
+            // .addClass('butn')
+        );
+        interactedSpan.append($(getEl('span'))
+            .attr('id', this.sampleRejCountId)
+            .addClass(this.sampleRuleClass)
+            .text('Exclude: 0')
+            .click(this.sampleShowReject)
+            // .addClass('butn')
+        );
+        
+        const controlsL2 = $(getEl('div'));
+        outerDiv.append(controlsL2);
+        
+        // Count shown
+        controlsL2.append($(getEl('span'))
+            .attr('id',this.sampleShownCount)
+            .text(`${this.allSamples.length}/${this.allSamples.length}`)
+        );
+        
+        const allChange = event => {
+            const target = $(event.target);
+            if (target.prop('checked')) {
+                this.samplePickShown(target.val());
+            }
+        }
+        const reqRejClick = event => {
+            const rd = $(event.target).prev('input:radio');
+            let toClick;
+            if (rd.prop('checked')) {
+                toClick = $('input[name="sample-sel-all"][value="neutral"]')
+            } else {
+                toClick = rd
+            }
+            toClick.prop('checked',true).trigger('change')
+        }
+        controlsL2.append($(getEl('input'))
+            .attr('type','radio')
+            .attr('name','sample-sel-all')
+            .val('neutral')
+            .change(allChange)
+            .attr('hidden',true)
+        )
+        controlsL2.append($(getEl('input'))
+            .attr('type','radio')
+            .attr('name','sample-sel-all')
+            .val('require')
+            .change(allChange)
+            .attr('hidden',true)
+        )
+        controlsL2.append($(getEl('span'))
+            .addClass('sample-rd')
+            .addClass('sample-rd-req')
+            .click(reqRejClick)
+        )
+        controlsL2.append($(getEl('input'))
+            .attr('type','radio')
+            .attr('name','sample-sel-all')
+            .val('reject')
+            .change(allChange)
+            .attr('hidden',true)
+        )
+        controlsL2.append($(getEl('span'))
+            .addClass('sample-rd')
+            .addClass('sample-rd-rej')
+            .click(reqRejClick)
+        ) 
+        
 
 		const sampleSelDiv = $(getEl('div'))
 			.attr('id', this.sampleSelectId);
@@ -282,6 +338,10 @@ class FilterManager {
 				sampleBox.addClass('sample-reject');
 			}
         }
+        $('#'+this.sampleShownCount).text(
+            `${sampleIds.length}/${this.allSamples.length}`
+        );
+        $('input[name="sample-sel-all"][value="neutral"]').prop('checked',true);
     }
 
     sampleSelChange() {
@@ -290,7 +350,7 @@ class FilterManager {
         const nRule = nReq+nRej;
         $('#'+this.sampleReqCountId).text(`Include: ${nReq}`);
         $('#'+this.sampleRejCountId).text(`Exclude: ${nRej}`);
-        $('#'+this.sampleRuleCountId).text(`Has rule: ${nRule}`);
+        $('#'+this.sampleInFilterCountId).text(`In filter: ${nRule}`);
     }
 
     matchingSamples(q) {
