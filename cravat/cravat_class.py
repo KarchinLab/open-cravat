@@ -94,8 +94,8 @@ cravat_cmd_parser.add_argument('-t',
     dest='reports',
     choices=au.report_formats(),
     help='report types. If omitted, default one in cravat.yml is used.')
-cravat_cmd_parser.add_argument('-l',
-    dest='liftover',
+cravat_cmd_parser.add_argument('-l','--liftover',
+    dest='genome',
     choices=constants.assembly_choices,
     default=None,
     help='reference genome of input. CRAVAT will lift over to hg38 if needed.')
@@ -588,7 +588,7 @@ class Cravat (object):
         self.reports = self.args.reports
         if self.reports is None:
             self.reports = ['excel']
-        if self.args.liftover is None:
+        if self.args.genome is None:
             if constants.default_assembly_key in self.cravat_conf:
                 self.input_assembly = self.cravat_conf[constants.default_assembly_key]
             else:
@@ -599,7 +599,7 @@ class Cravat (object):
                 print(msg)
                 exit()
         else:
-            self.input_assembly = self.args.liftover
+            self.input_assembly = self.args.genome
         if self.args.repeat is None:
             self.args.repeat = []
         if self.args.skip is None:
