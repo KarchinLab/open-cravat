@@ -102,7 +102,7 @@ def fetch_install_queue (install_queue, install_state, local_modules_changed):
             sys.exit()
         except:
             traceback.print_exc()
-            sys.exit()
+            local_modules_changed.set()
 
 ###################### start from store_handler #####################
 
@@ -141,6 +141,7 @@ async def get_remote_module_config (request):
     return web.json_response(response)
 
 async def get_local_manifest (request):
+    handle_modules_changed()
     content = {}
     for k, v in au.mic.local.items():
         content[k] = v.serialize()
@@ -340,6 +341,7 @@ async def get_md (request):
     return web.Response(text=modules_dir)
 
 async def get_module_updates (request):
+    handle_modules_changed()
     queries = request.rel_url.query
     smodules = queries.get('modules','')
     if smodules:
@@ -408,6 +410,11 @@ async def update_remote (request):
             return web.json_response(response)
     au.mic.update_remote(force=True)
     return web.json_response('done')
+
+def handle_modules_changed():
+    if local_modules_changed and local_modules_changed.is_set():
+        au.mic.update_local()
+        local_modules_changed.clear()
 
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
