@@ -926,6 +926,18 @@ div.pq-select-menu>.pq-select-option-label {
 .sample-control {
 	display: flex;
 }
+#sample-select-filt {
+	margin-left: 1ch;
+	margin-right: 1ch;
+}
+#sample-list-file-display{
+	margin-left: 0.5ch;
+	margin-right: 0.25ch;
+
+}
+:empty + #sample-list-file-clear {
+	display: none;
+}
 .sample-interacted-cont {
 	margin-left: auto;
 }

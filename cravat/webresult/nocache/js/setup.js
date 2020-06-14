@@ -85,6 +85,8 @@ class FilterManager {
         this.sampleControlClass = 'sample-control'
         this.sampleFilterId = 'sample-select-filt';
         this.sampleFileId = 'sample-list-file';
+        this.sampleFileDisplayId = 'sample-list-file-display';
+        this.sampleFileClearId = 'sample-list-file-clear';
         this.sampleSelectId = 'sample-select-cont';
         this.sampleReqCountId = 'sample-req-count';
         this.sampleRejCountId = 'sample-rej-count';
@@ -187,6 +189,7 @@ class FilterManager {
         // Filter down the show samples
         controlsL1.append($(getEl('input'))
             .attr('id', this.sampleFilterId)
+            .attr('placeholder', 'Show matching')
             .on('input',event=>{
                 const q = event.target.value;
                 if (q) {
@@ -198,23 +201,39 @@ class FilterManager {
         ));
         
         // File filter
-        let sampListDiv = $(getEl('span'));
-        controlsL1.append(sampListDiv);
-        let sampListInput = $(getEl('input'))
+        controlsL1.append($(getEl('input'))
             .attr('id', this.sampleFileId)
             .attr('type', 'file')
             .on('input', this.sampleListFile)
-            .css('display','none');
-        sampListDiv.append(sampListInput);
-        let sampListBtn = $(getEl('button'))
-            .text('Sample list')
+            .css('display','none')
+        );
+        controlsL1.append($(getEl('button'))
+            .text('From file')
             .addClass('butn')
             .click(()=>{
-                $('#'+this.sampleFileId).val(null);
-                $('#'+this.sampleFileId).click();
+                const fileInput = $('#'+this.sampleFileId);
+                if (fileInput.prop('files').length) {
+                    fileInput.trigger('input');
+                } else {
+                    fileInput.click();
+                }
+                // .val(null);
+                // $('#'+this.sampleFileId).click();
             }
+        ));
+        controlsL1.append($(getEl('span'))
+            .attr('id',this.sampleFileDisplayId)
         );
-        sampListDiv.append(sampListBtn);
+        controlsL1.append($(getEl('button'))
+            .attr('id',this.sampleFileClearId)
+            .text('X')
+            .click(()=>{
+                $('#'+this.sampleFileId)
+                    .val(null)
+                    .trigger('input')
+            })
+            .addClass('butn')
+        );        
         
         // Show in filter
         const interactedSpan = $(getEl('span'))
@@ -436,15 +455,22 @@ class FilterManager {
     }
     
     sampleListFile = (event) => {
-        let fileInput = $(event.target);
-        let fr = new FileReader();
-        var that = this;
-        fr.onloadend = function(e) { //Not an arrow function so that this=FileReader
-            let text = this.result;
-            let samples = text.split(/\r?\n/g);
-            that.drawSamples(samples);
+        const fileInput = $(event.target);
+        const nameDisplay = $('#'+this.sampleFileDisplayId);
+        const files = fileInput.prop('files');
+        if (files.length) {
+            const file = files[0];
+            const fr = new FileReader();
+            fr.onloadend = (loadEnd) => {
+                const text = loadEnd.target.result;
+                const samples = text.split(/\r?\n/g);
+                this.drawSamples(samples);
+            }
+            fr.readAsText(file);
+            nameDisplay.text(file.name);
+        } else {
+            nameDisplay.text(null);
         }
-        fr.readAsText(fileInput.prop('files')[0])
     }
 
 	addGeneSelect (outerDiv, filter) {
