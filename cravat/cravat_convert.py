@@ -355,57 +355,58 @@ class MasterCravatConverter(object):
                     if all_wdicts is BaseConverter.IGNORE:
                         continue
                     total_lnum += 1
+                    if all_wdicts:
+                        UIDMap = []
+                        no_unique_var = 0
+                        for wdict_no in range(len(all_wdicts)):
+                            wdict = all_wdicts[wdict_no]
+                            chrom = wdict['chrom']
+                            if chrom is not None:
+                                if not chrom.startswith('chr'):
+                                    chrom = 'chr' + chrom
+                                wdict['chrom'] = self.chromdict.get(chrom, chrom)
+                                if multiple_files:
+                                    if wdict['sample_id']:
+                                        wdict['sample_id'] = '__'.join([samp_prefix, wdict['sample_id']])
+                                    else:
+                                        wdict['sample_id'] = samp_prefix
+                                if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
+                                    raise BadFormatError('Reference base required for non SNV')
+                                if self.do_liftover:
+                                    prelift_wdict = copy.copy(wdict)
+                                    wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
+                                p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
+                                new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
+                                unique, UID = self.vtracker.addVar(wdict['chrom'], new_pos, new_ref, new_alt)
+                                wdict['uid'] = UID
+                                if unique:
+                                    write_lnum += 1
+                                    self.crv_writer.write_data(wdict)
+                                    if self.do_liftover:
+                                        prelift_wdict['uid'] = UID
+                                        self.crl_writer.write_data(prelift_wdict)
+                                    # addl_operation errors shouldnt prevent variant from writing
+                                    try:
+                                        self.primary_converter.addl_operation_for_unique_variant(wdict, no_unique_var)
+                                    except Exception as e:
+                                        self._log_conversion_error(read_lnum, l, e)
+                                    no_unique_var += 1
+                                if UID not in UIDMap: 
+                                    #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
+                                    self.crm_writer.write_data({
+                                        'original_line': read_lnum, 
+                                        'tags': wdict['tags'], 
+                                        'uid': UID, 
+                                        'fileno': self.input_path_dict2[fname]
+                                    })
+                                    UIDMap.append(UID)
+                            self.crs_writer.write_data(wdict)
+                    else:
+                        raise ExpectedException('No conversion result')
                 except Exception as e:
                     num_errors += 1
                     self._log_conversion_error(read_lnum, l, e)
                     continue
-                if all_wdicts:
-                    UIDMap = []
-                    no_unique_var = 0
-                    for wdict_no in range(len(all_wdicts)):
-                        wdict = all_wdicts[wdict_no]
-                        chrom = wdict['chrom']
-                        if chrom is not None:
-                            if not chrom.startswith('chr'): chrom = 'chr' + chrom
-                            wdict['chrom'] = self.chromdict.get(chrom, chrom)
-                            if multiple_files:
-                                if wdict['sample_id']:
-                                    wdict['sample_id'] = '__'.join([samp_prefix, wdict['sample_id']])
-                                else:
-                                    wdict['sample_id'] = samp_prefix
-                            if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
-                                num_errors += 1
-                                e = BadFormatError('Reference base required for non SNV')
-                                self._log_conversion_error(read_lnum, l, e)
-                                continue
-                            if self.do_liftover:
-                                prelift_wdict = copy.copy(wdict)
-                                try:
-                                    wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
-                                except LiftoverFailure as e:
-                                    num_errors += 1
-                                    self._log_conversion_error(read_lnum, l, e)
-                                    continue
-                            p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
-                            new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
-                            unique, UID = self.vtracker.addVar(wdict['chrom'], new_pos, new_ref, new_alt)
-                            wdict['uid'] = UID
-                            if unique:
-                                write_lnum += 1
-                                self.crv_writer.write_data(wdict)
-                                if self.do_liftover:
-                                    prelift_wdict['uid'] = UID
-                                    self.crl_writer.write_data(prelift_wdict)
-                                self.primary_converter.addl_operation_for_unique_variant(wdict, no_unique_var)
-                                no_unique_var += 1
-                            if UID not in UIDMap: 
-                                #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
-                                self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID, 'fileno': self.input_path_dict2[fname]})
-                                UIDMap.append(UID)
-                        self.crs_writer.write_data(wdict)
-                else:
-                    e = ExpectedException('No conversion result')
-                    self._log_conversion_error(read_lnum, l, e)
             cur_time = time.time()
             if total_lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
                 self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format('Converter', cur_fname, read_lnum))
