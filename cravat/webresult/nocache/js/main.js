@@ -663,11 +663,10 @@ function unlockTabs () {
 
 function notifyToUseFilter () {
 	var div = document.getElementById('infonoticediv');
-	div.style.background = 'red';
-	div.textContent = 
-		'Number of variants exceeds viewer limit (' + NUMVAR_LIMIT + ').' +
-		'Use the filter tab to reduce the number of ' +
-		'variants to ' + NUMVAR_LIMIT + ' or less, and click Update to load filtered variants.';
+    div.style.background = 'red';
+    div.textContent = 
+         `The OpenCRAVAT viewer cannot display more than ${NUMVAR_LIMIT} variants. `
+        +`Use the filter tab to load at most ${NUMVAR_LIMIT} variants.`;
 	showInfonoticediv();
     document.getElementById('tabhead_filter').style.pointerEvents = 'auto';
 }
