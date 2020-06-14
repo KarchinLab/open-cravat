@@ -167,6 +167,8 @@ class FilterManager {
     
 	addSampleSelect (outerDiv, filter) {
         filter = new CravatFilter(filter);
+        this.requireSamples.clear();
+        this.rejectSamples.clear();
         filter.sample.require.forEach(this.requireSamples.add, this.requireSamples);
         filter.sample.reject.forEach(this.rejectSamples.add, this.rejectSamples);
         const sampleIds = getFilterCol('base__samples').categories;
