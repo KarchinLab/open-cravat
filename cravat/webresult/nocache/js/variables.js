@@ -40,7 +40,7 @@ var spinner = null;
 
 var shouldResizeScreen = {};
 
-var NUMVAR_LIMIT = 100000;
+var NUMVAR_LIMIT = 1000;
 
 var firstLoad = true;
 

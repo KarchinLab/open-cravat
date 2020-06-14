@@ -136,7 +136,7 @@ class FilterManager {
             .addClass('filter-content');
         filterBody.append(filterContent);
         let filterControls = $(getEl('div'))
-        .addClass('filter-controls');
+            .addClass('filter-controls');
         filterBody.append(filterControls);
         filterControls.append($(getEl('button'))
             .addClass('filter-section-clear')
@@ -191,7 +191,7 @@ class FilterManager {
         // Filter down the show samples
         controlsL1.append($(getEl('input'))
             .attr('id', this.sampleFilterId)
-            .attr('placeholder', 'Show matching')
+            .attr('placeholder', 'Search samples')
             .on('input',event=>{
                 const q = event.target.value;
                 if (q) {
@@ -214,17 +214,20 @@ class FilterManager {
             .addClass('butn')
             .click(()=>{
                 const fileInput = $('#'+this.sampleFileId);
-                if (fileInput.prop('files').length) {
-                    fileInput.trigger('input');
-                } else {
-                    fileInput.click();
-                }
-                // .val(null);
-                // $('#'+this.sampleFileId).click();
+                // if (fileInput.prop('files').length) {
+                //     fileInput.trigger('input');
+                // } else {
+                //     fileInput.click();
+                // }
+                fileInput.val(null);
+                $('#'+this.sampleFileId).click();
             }
         ));
         controlsL1.append($(getEl('span'))
             .attr('id',this.sampleFileDisplayId)
+            .click(event=>{
+                $('#'+this.sampleFileId).trigger('input');
+            })
         );
         controlsL1.append($(getEl('button'))
             .attr('id',this.sampleFileClearId)
@@ -246,23 +249,31 @@ class FilterManager {
             .addClass(this.sampleRuleClass)
             .text('In filter: 0')
             .click(this.sampleShowRule)
-            // .addClass('butn')
         );
         interactedSpan.append($(getEl('span'))
             .attr('id', this.sampleReqCountId)
             .addClass(this.sampleRuleClass)
             .text('Include: 0')
             .click(this.sampleShowRequire)
-            // .addClass('butn')
         );
         interactedSpan.append($(getEl('span'))
             .attr('id', this.sampleRejCountId)
             .addClass(this.sampleRuleClass)
             .text('Exclude: 0')
             .click(this.sampleShowReject)
-            // .addClass('butn')
         );
+
+        // Clear selection
+        controlsL1.append($(getEl('button'))
+            .addClass('butn')
+            .click(event=>{
+                this.sampleSelectionClear();
+                this.drawSamples();
+            })
+            .text('Clear')
+        )
         
+        // Line 2
         const controlsL2 = $(getEl('div'))
             .addClass(this.sampleControlClass);
         outerDiv.append(controlsL2);
@@ -314,7 +325,7 @@ class FilterManager {
         .addClass('sample-rd')
         .addClass('sample-rd-rej')
         .click(reqRejClick)
-        ) 
+        )
         
         // Count shown
         controlsL2.append($(getEl('span'))
@@ -336,7 +347,7 @@ class FilterManager {
     drawSamples(sampleIds, sampleSelDiv) {
         sampleIds = sampleIds==undefined ? 
             this.allSamples : sampleIds;
-            sampleIds = sampleIds
+        sampleIds = sampleIds
             .filter(sid=>this.allSamples.indexOf(sid)>=0)
             .sort();
         sampleSelDiv = sampleSelDiv==undefined ? 
@@ -365,6 +376,9 @@ class FilterManager {
 				sampleBox.addClass('sample-reject');
 			}
         }
+        if (sampleIds.length===0) {
+            sampleSelDiv.text('No samples to show');
+        }
         $('#'+this.sampleShownCount).text(
             `${sampleIds.length}/${this.allSamples.length}`
         );
@@ -378,6 +392,12 @@ class FilterManager {
         $('#'+this.sampleReqCountId).text(`Include: ${nReq}`);
         $('#'+this.sampleRejCountId).text(`Exclude: ${nRej}`);
         $('#'+this.sampleInFilterCountId).text(`In filter: ${nRule}`);
+    }
+
+    sampleSelectionClear () {
+        this.rejectSamples.clear();
+        this.requireSamples.clear();
+        this.sampleSelChange();
     }
 
     matchingSamples(q) {
@@ -892,7 +912,10 @@ function makeFilterTab (rightDiv) {
 	
 	// Sample selector
 	let sampleSection = filterMgr.getFilterSection('Samples',false);
-	rightPanel.append(sampleSection);
+    rightPanel.append(sampleSection);
+    // Sample has it's own clear button
+    sampleSection.find('.filter-controls')
+        .css('display','none');
 	let sampleContent = sampleSection.find('.filter-content');
 	filterMgr.addSampleSelect(sampleContent);
 
