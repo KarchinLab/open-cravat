@@ -208,7 +208,7 @@ class FilterManager {
             .css('display','none')
         );
         controlsL1.append($(getEl('button'))
-            .text('From file')
+            .text('Sample list')
             .addClass('butn')
             .click(()=>{
                 const fileInput = $('#'+this.sampleFileId);
