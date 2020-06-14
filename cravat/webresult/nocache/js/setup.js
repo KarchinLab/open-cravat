@@ -82,14 +82,16 @@ class FilterManager {
         this.geneContId = 'filter-cont-gene';
         this.variantContId = 'filter-cont-variant'
 
+        this.sampleControlClass = 'sample-control'
         this.sampleFilterId = 'sample-select-filt';
         this.sampleFileId = 'sample-list-file';
         this.sampleSelectId = 'sample-select-cont';
         this.sampleReqCountId = 'sample-req-count';
         this.sampleRejCountId = 'sample-rej-count';
-        this.sampleInFilterCountId = 'sample-infiliter-count'
-        this.sampleRuleClass = 'filter-sample-hasrule-span'
-        this.sampleShownCount = 'sample-shown-count'
+        this.sampleInFilterCountId = 'sample-infiliter-count';
+        this.sampleRuleClass = 'filter-sample-hasrule-span';
+        this.sampleShownCount = 'sample-shown-count';
+        this.sampleInteractedSpan = 'sample-interacted-cont';
 		this.geneTextId = 'gene-list-text';
 		this.geneFileId = 'gene-list-file';
 		this.vpropSelectId = 'vprop-sel';
@@ -170,7 +172,8 @@ class FilterManager {
         
         outerDiv.attr('id', this.sampleContId);
 
-        const controlsL1 = $(getEl('div'));
+        const controlsL1 = $(getEl('div'))
+            .addClass(this.sampleControlClass);
         outerDiv.append(controlsL1);
         
         // Show all
@@ -214,7 +217,8 @@ class FilterManager {
         sampListDiv.append(sampListBtn);
         
         // Show in filter
-        const interactedSpan = $(getEl('span'));
+        const interactedSpan = $(getEl('span'))
+            .addClass(this.sampleInteractedSpan);
         controlsL1.append(interactedSpan);
         interactedSpan.append($(getEl('span'))
             .attr('id', this.sampleInFilterCountId)
@@ -238,14 +242,10 @@ class FilterManager {
             // .addClass('butn')
         );
         
-        const controlsL2 = $(getEl('div'));
+        const controlsL2 = $(getEl('div'))
+            .addClass(this.sampleControlClass);
         outerDiv.append(controlsL2);
         
-        // Count shown
-        controlsL2.append($(getEl('span'))
-            .attr('id',this.sampleShownCount)
-            .text(`${this.allSamples.length}/${this.allSamples.length}`)
-        );
         
         const allChange = event => {
             const target = $(event.target);
@@ -264,20 +264,20 @@ class FilterManager {
             toClick.prop('checked',true).trigger('change')
         }
         controlsL2.append($(getEl('input'))
-            .attr('type','radio')
-            .attr('name','sample-sel-all')
-            .val('neutral')
-            .change(allChange)
+        .attr('type','radio')
+        .attr('name','sample-sel-all')
+        .val('neutral')
+        .change(allChange)
             .attr('hidden',true)
         )
         controlsL2.append($(getEl('input'))
-            .attr('type','radio')
+        .attr('type','radio')
             .attr('name','sample-sel-all')
             .val('require')
             .change(allChange)
             .attr('hidden',true)
-        )
-        controlsL2.append($(getEl('span'))
+            )
+            controlsL2.append($(getEl('span'))
             .addClass('sample-rd')
             .addClass('sample-rd-req')
             .click(reqRejClick)
@@ -288,28 +288,33 @@ class FilterManager {
             .val('reject')
             .change(allChange)
             .attr('hidden',true)
-        )
+            )
         controlsL2.append($(getEl('span'))
-            .addClass('sample-rd')
-            .addClass('sample-rd-rej')
-            .click(reqRejClick)
+        .addClass('sample-rd')
+        .addClass('sample-rd-rej')
+        .click(reqRejClick)
         ) 
         
+        // Count shown
+        controlsL2.append($(getEl('span'))
+            .attr('id',this.sampleShownCount)
+            .text(`${this.allSamples.length}/${this.allSamples.length}`)
+        );
 
 		const sampleSelDiv = $(getEl('div'))
-			.attr('id', this.sampleSelectId);
+            .attr('id', this.sampleSelectId);
 		outerDiv.append(sampleSelDiv);
 		if (sampleIds.length==0 || (sampleIds.length==1 && !sampleIds[0])) {
-			outerDiv.closest('.filter-section').css('display','none');
+            outerDiv.closest('.filter-section').css('display','none');
 		}
 		this.drawSamples(this.allSamples, sampleSelDiv);
 		return outerDiv;
     }
-
+    
     drawSamples(sampleIds, sampleSelDiv) {
         sampleIds = sampleIds==undefined ? 
             this.allSamples : sampleIds;
-        sampleIds = sampleIds
+            sampleIds = sampleIds
             .filter(sid=>this.allSamples.indexOf(sid)>=0)
             .sort();
         sampleSelDiv = sampleSelDiv==undefined ? 
