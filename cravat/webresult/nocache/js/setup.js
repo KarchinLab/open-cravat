@@ -326,7 +326,8 @@ class FilterManager {
 		if (sampleIds.length==0 || (sampleIds.length==1 && !sampleIds[0])) {
             outerDiv.closest('.filter-section').css('display','none');
 		}
-		this.drawSamples(this.allSamples, sampleSelDiv);
+        this.drawSamples(this.allSamples, sampleSelDiv);
+        this.sampleSelChange();
 		return outerDiv;
     }
     
