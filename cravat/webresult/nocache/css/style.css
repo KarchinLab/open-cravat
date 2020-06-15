@@ -882,7 +882,7 @@ div.pq-select-menu>.pq-select-option-label {
 	max-width: 1100px;
 	float: left;
 	height: 100%;
-	width: 75%;
+	width: 95%;
 }
 #saved-filter-header {
 	font-size: 24px;
@@ -915,9 +915,63 @@ div.pq-select-menu>.pq-select-option-label {
 	margin-left: 10px;
 }
 
-
+.filter-sample-hasrule-span {
+	cursor: pointer;
+	margin: 0.25em;
+	text-decoration: underline;
+}
+.filter-sample-hasrule-span:hover {
+	font-weight: bold;
+}
+.sample-control {
+	display: flex;
+}
+#sample-select-filt {
+	margin-left: 1ch;
+	margin-right: 1ch;
+}
+#sample-list-file-display{
+	text-decoration: underline;
+	cursor: pointer;
+	margin: auto 0.25ch auto 0.5ch;
+}
+#sample-list-file-display:hover{
+	font-weight: bold;
+}
+:empty + #sample-list-file-clear {
+	display: none;
+}
+.sample-interacted-cont {
+	margin-left: auto;
+}
+#sample-req-count {
+	color: green;
+}
+#sample-rej-count {
+	color: red;
+}
+.sample-rd::before {
+	font-size: 20px;
+	color: #d1d3d4;
+	cursor: pointer;
+}
+.sample-rd-req::before {
+	content: "\2611";
+}
+.sample-rd-rej::before {
+	content: "\2612";
+}
+input:checked + .sample-rd-req::before {
+	color: green;
+}
+input:checked + .sample-rd-rej::before {
+	color: red;
+}
+#sample-shown-count {
+	margin: auto auto auto 1ch;
+}
 .pq-grid-cell, .pq-grid-number-cell {
-    padding: 0px;
+	padding: 0px;
 }
 
 .title {

@@ -364,9 +364,7 @@ def main (url=None):
             loop.call_later(0.1, wakeup)
         def check_local_update(interval):
             try:
-                if ws.local_modules_changed and ws.local_modules_changed.is_set():
-                    au.mic.update_local()
-                    ws.local_modules_changed.clear()
+                ws.handle_modules_changed()
             except:
                 traceback.print_exc()
             finally:
