@@ -84,6 +84,18 @@ class CravatReport:
         status_fname = '{}.status.json'.format(self.output_basename)
         self.status_fpath = os.path.join(self.output_dir, status_fname)
         self.nogenelevelonvariantlevel = parsed_args.nogenelevelonvariantlevel
+        if parsed_args.inputfiles is None and parsed_args.dbpath is not None:
+            db = sqlite3.connect(parsed_args.dbpath)
+            c = db.cursor()
+            q = 'select colval from info where colkey="_input_paths"'
+            c.execute(q)
+            r = c.fetchone()
+            if r is not None:
+                parsed_args.inputfiles = []
+                s = json.loads(r[0].replace("'", '"'))
+                for k in s:
+                    input_path = s[k]
+                    parsed_args.inputfiles.append(input_path)
         self.args = parsed_args
 
     async def prep (self):
