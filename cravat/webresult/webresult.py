@@ -390,6 +390,7 @@ async def get_result_levels (request):
     return web.json_response(content)
 
 async def get_jobid_dbpath (request):
+    global servermode
     method = request.method
     if method == 'GET':
         queries = request.rel_url.query

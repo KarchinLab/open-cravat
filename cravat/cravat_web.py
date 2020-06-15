@@ -404,6 +404,8 @@ def main (url=None):
                 while True:
                     await cravat_multiuser.admindb.clean_sessions(max_age)
                     await asyncio.sleep(interval)
+            except KeyboardInterrupt:
+                pass
             except Exception as e:
                 logger.exception(e)
                 if debug:

@@ -125,7 +125,7 @@ def converttohg38 (args):
     newdb.commit()
 
 migrate_functions = {}
-supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.8.0']
+supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.7.0', '1.8.0']
 
 def check_result_db_version (dbpath, version):
     try:
