@@ -5,7 +5,6 @@ import logging
 import time
 from .inout import CravatReader, CravatWriter, AllMappingsParser
 from .constants import crx_def, crx_idx, crg_def, crg_idx, crt_def, crt_idx, gene_level_so_exclude
-from .util import most_severe_so, so_severity
 from .exceptions import InvalidData
 from cravat.config_loader import ConfigLoader
 import sys
@@ -320,26 +319,6 @@ class BaseMapper(object):
         tmap_parser = AllMappingsParser(tmap_json)
         for hugo in tmap_parser.get_genes():
             self.gene_info[hugo] = True
-            '''
-            sos = tmap_parser.get_uniq_sos_for_gene(genes=[hugo])
-            for so in gene_level_so_exclude:
-                if so in sos:
-                    sos.remove(so)
-            if len(sos) == 0:
-                tmap_parser.delete_gene(hugo)
-                continue
-            so = most_severe_so(tmap_parser.get_uniq_sos_for_gene(genes=[hugo]))
-            try:
-                self.gene_info[hugo]['variant_count'] += 1
-            except KeyError:
-                self.gene_info[hugo] = {'hugo': hugo,
-                                        'variant_count': 1,
-                                        'so_counts': {}}
-            try:
-                self.gene_info[hugo]['so_counts'][so] += 1
-            except KeyError:
-                self.gene_info[hugo]['so_counts'][so] = 1
-            '''
 
     def _write_crg(self):
         """
@@ -351,22 +330,6 @@ class BaseMapper(object):
             gene = self.gene_info[hugo]
             crg_data = {x['name']:'' for x in crg_def}
             crg_data['hugo'] = hugo
-            '''
-            crg_data['num_variants'] = gene['variant_count']
-            so_count_toks = []
-            worst_so = ''
-            try:
-                worst_so = most_severe_so((gene['so_counts'].keys()))
-            except:
-                pass
-            sorted_counts = list(gene['so_counts'].items())
-            # Sort by SO occurence, descending
-            sorted_counts.sort(key=lambda l: so_severity.index(l[0]), reverse=True)
-            for so, so_count in sorted_counts:
-                so_count_toks.append('%s(%d)' %(so, so_count))
-            crg_data['so'] = worst_so
-            crg_data['all_so'] = ','.join(so_count_toks)
-            '''
             self.crg_writer.write_data(crg_data)
 
     def _log_runtime_error(self, ln, line, e):

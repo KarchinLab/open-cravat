@@ -13,7 +13,7 @@ try:
     from .cravat_filter import CravatFilter
     from .cravat_class import Cravat
     from .cravat_class import run_cravat_job as run
-    from .util import get_ucsc_bins, reverse_complement, translate_codon, more_severe_so, switch_strand
+    from .util import get_ucsc_bins, reverse_complement, translate_codon, switch_strand
     from .constants import crx_def
 except KeyboardInterrupt:
     import sys

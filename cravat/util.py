@@ -114,49 +114,8 @@ def translate_codon(bases, fallback=None):
     else:
         return codon_table[bases]
 
-so_severity = ['',
-               '2KD',
-               '2KU',
-               'UT3',
-               'UT5',
-               'INT',
-               'UNK',
-               'MRT',
-               'SYN',
-               'MRT',
-               'STR',
-               'MIS',
-               'CSS',
-               'IND',
-               'IDV',
-               'INI',
-               'IIV',
-               'STL',
-               'SPL',
-               'STG',
-               'FD1',
-               'FD2',
-               'FSD',
-               'FI1',
-               'FI2',
-               'FSI',
-               'EXL',
-               'MLO',
-               ]
-
 def valid_so(so):
     return so in so_severity
-
-def most_severe_so(so_list):
-    return sort_so_severity(so_list)[-1]
-        
-def sort_so_severity(so_list, reverse=False):
-    return sorted(so_list,key=so_severity.index)
-
-def more_severe_so (so1, so2):
-    soi1 = so_severity.index(so1)
-    soi2 = so_severity.index(so2)
-    return soi1 > soi2
 
 def get_caller_name (path):
     path = os.path.abspath(path)
