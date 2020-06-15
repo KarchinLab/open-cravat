@@ -27,9 +27,6 @@ class ConfigLoader():
         k = 'multicore_mapper_mode'
         if k not in self._main:
             self._main[k] = constants.default_multicore_mapper_mode
-            conf_modified = True
-        if conf_modified:
-            au.write_cravat_conf(self._main)
         if build_all:
             self._build_all()
         

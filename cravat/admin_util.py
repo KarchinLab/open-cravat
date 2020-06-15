@@ -799,39 +799,26 @@ def get_system_conf ():
     Get the system config. Fill in the default modules dir if not set.
     """
     conf = load_yml_conf(constants.system_conf_path)
-    '''
-    if os.path.exists(constants.system_conf_path):
-        conf = load_yml_conf(constants.system_conf_path)
-    else:
-        conf = load_yml_conf(constants.system_conf_template_path)
-    '''
-    conf_modified = False
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
-        conf_modified = True
     if constants.conf_dir_key not in conf:
         conf[constants.conf_dir_key] = constants.default_conf_dir
-        conf_modified = True
     if constants.jobs_dir_key not in conf:
         conf[constants.jobs_dir_key] = constants.default_jobs_dir
-        conf_modified = True
+    if constants.log_dir_key not in conf:
+        conf[constants.log_dir_key] = constants.default_log_dir
     key = 'num_input_line_warning_cutoff'
     if key not in conf:
         conf[key] = constants.default_num_input_line_warning_cutoff
-        conf_modified = True
     key = 'gui_input_size_limit'
     if key not in conf:
         conf[key] = constants.default_settings_gui_input_size_limit
-        conf_modified = True
     key = 'max_num_concurrent_jobs'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_jobs
-        conf_modified = True
     key = 'max_num_concurrent_annotators_per_job'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_annotators_per_job
-    if conf_modified:
-        write_system_conf_file(conf)
     return conf
 
 def get_modules_dir():
