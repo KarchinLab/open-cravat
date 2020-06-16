@@ -494,13 +494,13 @@ function populateJobDetailTr (job) {
     td.textContent = annotVerStr;
     addEl(tr, td);
     addEl(tbody, tr);
-    if (job.num_input_var != undefined) {
+    if (job.num_unique_var != undefined) {
         var tr = getEl('tr');
         var td = getEl('td');
-        td.textContent = '# input variants';
+        td.textContent = '# unique input variants';
         addEl(tr, td);
         var td = getEl('td');
-        td.textContent = job.num_input_var;
+        td.textContent = job.num_unique_var;
         addEl(tr, td);
         addEl(tbody, tr);
     }
