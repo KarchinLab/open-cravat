@@ -158,6 +158,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 					val = '';
 				}
 				var content = '' + val;
+                content = content.replace(/>/g, '&gt;');
 				var title = content;
 				if (ui.column.link_format !== null) {
 					var linkFormat = ui.column.link_format;
