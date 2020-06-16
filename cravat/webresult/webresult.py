@@ -307,7 +307,7 @@ async def get_count (request):
 
 async def get_result (request):
     print(f'request={request}')
-    queries = request.rel_url.query
+    queries = await request.post()
     job_id, dbpath = await get_jobid_dbpath(request)
     dbname = os.path.basename(dbpath)
     tab = queries['tab']
@@ -664,7 +664,7 @@ routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
 routes.append(['GET', '/result/service/getsummarywidgetnames', get_summary_widget_names])
 routes.append(['GET', '/result/service/getresulttablelevels', get_result_levels])
-routes.append(['GET', '/result/service/result', get_result])
+routes.append(['POST', '/result/service/result', get_result])
 routes.append(['POST', '/result/service/count', get_count])
 routes.append(['GET', '/result/service/widgetlist', get_widgetlist])
 routes.append(['GET', '/result/service/status', get_status])
