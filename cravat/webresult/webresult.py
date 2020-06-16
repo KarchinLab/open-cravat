@@ -256,7 +256,6 @@ async def delete_filter_setting (request):
     return web.json_response(content)
 
 async def get_status (request):
-    queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
     conn = await aiosqlite3.connect(dbpath)
     cursor = await conn.cursor()
@@ -270,7 +269,6 @@ async def get_status (request):
     return web.json_response(content)
 
 def get_widgetlist (request):
-    queries = request.rel_url.query
     content = []
     modules = au.get_local_module_infos_of_type('webviewerwidget')
     for module_name in modules:
@@ -288,8 +286,8 @@ def get_widgetlist (request):
     return web.json_response(content)
 
 async def get_count (request):
-    queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
+    queries = await request.post()
     tab = queries['tab']
     if 'filter' in queries:
         filterstring = queries['filter']
@@ -346,12 +344,8 @@ async def get_result (request):
         args.append('--separatesample')
     reporter = m.Reporter(args, None)
     await reporter.prep()
-    #print('  getting result [{}] from {} for viewer...'.format(tab, dbname))
-    #t = time.time()
     data = await reporter.run(tab=tab)
     data['modules_info'] = await get_modules_info(request)
-    #t = round(time.time() - start_time, 3)
-    #print('  result [{}] obtained from {} in {}s. packing...'.format(tab, dbname, t))
     content = {}
     content['stat'] = {'rowsreturned': True, 
                    'wherestr':'', 
@@ -671,7 +665,7 @@ routes.append(['GET', '/result/service/variantcols', get_variant_cols])
 routes.append(['GET', '/result/service/getsummarywidgetnames', get_summary_widget_names])
 routes.append(['GET', '/result/service/getresulttablelevels', get_result_levels])
 routes.append(['GET', '/result/service/result', get_result])
-routes.append(['GET', '/result/service/count', get_count])
+routes.append(['POST', '/result/service/count', get_count])
 routes.append(['GET', '/result/service/widgetlist', get_widgetlist])
 routes.append(['GET', '/result/service/status', get_status])
 routes.append(['GET', '/result/service/savefiltersetting', save_filter_setting])
