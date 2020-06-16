@@ -12,7 +12,6 @@ try:
     import imp
     import oyaml as yaml
     import re
-    from cravat import ConfigLoader
     from cravat import admin_util as au
     from cravat import CravatFilter
     from cravat.webresult import webresult as wr
@@ -37,7 +36,6 @@ try:
 
     SERVER_ALREADY_RUNNING = -1
 
-    conf = ConfigLoader()
     sysconf = au.get_system_conf()
     log_dir = sysconf[constants.log_dir_key]
     log_path = os.path.join(log_dir, 'wcravat.log')
@@ -202,7 +200,6 @@ def get_server():
     global args
     try:
         server = {}
-        conf = ConfigLoader()
         pl = platform.platform()
         if pl.startswith('Windows'):
             def_host = 'localhost'
@@ -215,8 +212,22 @@ def get_server():
             def_host = '0.0.0.0'
         else:
             def_host = 'localhost'
-        host = au.get_system_conf().get('gui_host', def_host)
-        port = au.get_system_conf().get('gui_port', 8060)
+        if ssl_enabled:
+            if 'gui_host_ssl' in sysconf:
+                host = sysconf['gui_host_ssl']
+            elif 'gui_host' in sysconf:
+                host = sysconf['gui_host']
+            else:
+                host = def_host
+            if 'gui_port_ssl' in sysconf:
+                port = sysconf['gui_port_ssl']
+            elif 'gui_port' in sysconf:
+                port = sysconf['gui_port']
+            else:
+                port = 8443
+        else:
+            host = au.get_system_conf().get('gui_host', def_host)
+            port = au.get_system_conf().get('gui_port', 8080)
         server['host'] = host
         server['port'] = port
         return server
