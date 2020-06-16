@@ -315,6 +315,8 @@ function populateJobTr (job) {
         addEl(td, getTn(job.username));
         addEl(jobTr, td);
     }
+    // Job ID
+    addEl(jobTr, addEl(getEl('td'), getTn(job.id)));
     // Input file name
     if (Array.isArray(job.orig_input_fname)) {
         input_fname = job.orig_input_fname.join(', ');
@@ -468,14 +470,6 @@ function populateJobDetailTr (job) {
     var tbody = getEl('tbody');
     addEl(detailTable, tbody);
     var tr = getEl('tr');
-    var td = getEl('td');
-    td.style.width = '150px';
-    td.textContent = 'Job ID';
-    addEl(tr, td);
-    var td = getEl('td');
-    td.textContent = ji;
-    addEl(tr, td);
-    addEl(tbody, tr);
     if (job.open_cravat_version != undefined) {
         var tr = getEl('tr');
         var td = getEl('td');
@@ -488,6 +482,7 @@ function populateJobDetailTr (job) {
     }
     var tr = getEl('tr');
     var td = getEl('td');
+    td.style.width = '160px';
     td.textContent = 'Annotators';
     addEl(tr, td);
     var td = getEl('td');
