@@ -211,6 +211,7 @@ class Cravat (object):
             self.delete_output_files()
         self.get_logger()
         self.start_time = time.time()
+        self.logger.info(f'{" ".join(sys.argv)}')
         self.logger.info('started: {0}'.format(time.asctime(time.localtime(self.start_time))))
         if self.run_conf_path != '':
             self.logger.info('conf file: {}'.format(self.run_conf_path))
