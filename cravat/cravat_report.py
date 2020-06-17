@@ -234,8 +234,7 @@ class CravatReport:
                     if 'category' in col and col['category'] in ['single', 'multi']:
                         for i in range(len(self.colinfo[level]['columns'])):
                             colinfo_col = self.colinfo[level]['columns'][i]
-                            # TODO: remove hg38ng
-                            if mi.name in ['hg38', 'hg38ng', 'tagsampler']:
+                            if mi.name in ['hg38', 'tagsampler']:
                                 grp_name = 'base'
                             else:
                                 grp_name = mi.name
@@ -424,8 +423,7 @@ class CravatReport:
         if 'report_module_order' in cravat_conf:
             priority_colgroupnames = cravat_conf['report_module_order']
         else:
-            # TODO: remove hg38ng
-            priority_colgroupnames = ['base', 'hg38', 'hg38ng', 'hg19', 'hg18', 'tagsampler']
+            priority_colgroupnames = ['base', 'hg38', 'hg19', 'hg18', 'tagsampler']
         # level-specific column groups
         self.columngroups[level] = []
         sql = 'select name, displayname from ' + level + '_annotator'
