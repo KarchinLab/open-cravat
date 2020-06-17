@@ -212,13 +212,9 @@ class FilterManager {
         controlsL1.append($(getEl('button'))
             .text('Sample list')
             .addClass('butn')
+            .attr('title','Upload a list of sample IDs. One per line.')
             .click(()=>{
                 const fileInput = $('#'+this.sampleFileId);
-                // if (fileInput.prop('files').length) {
-                //     fileInput.trigger('input');
-                // } else {
-                //     fileInput.click();
-                // }
                 fileInput.val(null);
                 $('#'+this.sampleFileId).click();
             }
@@ -1421,14 +1417,6 @@ function makeVariantGeneTab (tabName, rightDiv) {
         input.id = 'cellvaluetext_' + tabName;
         input.setAttribute('readonly', 'true');
         input.rows = '1';
-        /*
-        $(cellValueDiv).resizable({
-            resize: function(event, ui) {
-                ui.size.width = ui.originalSize.width;
-                resizesTheWindow();
-            },
-        });
-        */
         addEl(cellValueDiv, input);
         var button = getEl('button');
         button.textContent = '+';

@@ -20,12 +20,18 @@ InfoMgr.prototype.getStatus = function (jobId) {
 	self.jobId = jobId;
 }
 
-
 InfoMgr.prototype.count = function (dbPath, tabName, callback) {
-	$.get('/result/service/count', {'username': username, 'job_id': jobId, tab: tabName, dbpath: dbPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
+	const data = {
+		username: username, 
+		job_id: jobId, 
+		tab: tabName, 
+		dbpath: dbPath,
+		filter: JSON.stringify(filterJson),
+	};
+	$.post('/result/service/count', data).done(function (jsonResponseData) {
 		var msg = jsonResponseData['n'] + ' variants meet the criteria';
 		callback(msg, jsonResponseData);
-    });
+	});	
 }
 
 InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson, fetchtype) {
@@ -39,7 +45,7 @@ InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson
 		}
 		$.ajax({
 			url: '/result/service/result', 
-			type: 'get',
+			type: 'post',
 			async: true,
 			data: {'username': username, job_id: jobId, tab: tabName, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson), separatesample: separateSample},
 			success: function (jsonResponseData) {
