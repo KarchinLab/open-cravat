@@ -194,7 +194,9 @@ class BaseAnnotator(object):
                         if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
                             self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, lnum))
                             last_status_update_time = cur_time
-                    if secondary_data == {}:
+                    if input_data['alt_base'] == '*': # VCF format * allele gets empty annotation.
+                        output_dict = {}
+                    elif secondary_data == {}:
                         output_dict = self.annotate(input_data)
                     else:
                         output_dict = self.annotate(input_data, secondary_data)

@@ -234,7 +234,12 @@ class BaseMapper(object):
                     if count % 10000 == 0 or cur_time - last_status_update_time > 3:
                         self.status_writer.queue_status_update('status', 'Running gene mapper: line {}'.format(count))
                         last_status_update_time = cur_time
-                crx_data = self.map(crv_data)
+                if crv_data['alt_base'] == '*':
+                    crx_data = crv_data
+                    crx_data['all_mappings'] = '{}'
+                    alt_transcripts = {}
+                else:
+                    crx_data, alt_transcripts = self.map(crv_data)
                 # Skip cases where there was no change. Can result if ref_base not in original input
                 if crx_data['ref_base'] == crx_data['alt_base']:
                     continue
