@@ -138,6 +138,9 @@ class BasePostAggregator (object):
             col_def.categories = col_cats
             q = 'update {}_header set col_def=? where col_name=?'.format(self.level)
             self.cursor.execute(q, [col_def.get_json(), col_def.name])
+        # Below is to prevent an exception from db.commit() when no single/multi category exists.
+        q = 'select * from variant limit 1'
+        self.cursor.execute(q)
         self.dbconn.commit()
 
     def write_output (self, input_data, output_dict):

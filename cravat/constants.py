@@ -89,7 +89,7 @@ crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'widt
     ]
 crm_idx = [['uid'],['tags']]
 crs_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
-           {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90, 'category': 'multi'}]
+           {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90}]
 crs_idx = [['uid'], ['sample_id']]
 crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 60, 'hidden':True, 'filterable': False},
            {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 50, 'category': 'single', 'filterable': True},
