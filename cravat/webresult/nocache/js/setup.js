@@ -171,8 +171,7 @@ class FilterManager {
         this.rejectSamples.clear();
         filter.sample.require.forEach(this.requireSamples.add, this.requireSamples);
         filter.sample.reject.forEach(this.rejectSamples.add, this.rejectSamples);
-        const sampleIds = getFilterCol('base__samples').categories;
-        this.allSamples = sampleIds;
+        this.allSamples = allSamples;
         
         outerDiv.attr('id', this.sampleContId);
 
@@ -332,7 +331,7 @@ class FilterManager {
 		const sampleSelDiv = $(getEl('div'))
             .attr('id', this.sampleSelectId);
 		outerDiv.append(sampleSelDiv);
-		if (sampleIds.length==0 || (sampleIds.length==1 && !sampleIds[0])) {
+		if (this.allSamples.length==0 || (this.allSamples.length==1 && !this.allSamples[0])) {
             outerDiv.closest('.filter-section').css('display','none');
 		}
         this.drawSamples(this.allSamples, sampleSelDiv);

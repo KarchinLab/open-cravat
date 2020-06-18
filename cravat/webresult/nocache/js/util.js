@@ -563,14 +563,14 @@ function loadFilterSetting (name, callback, doNotCount) {
 				smartFilters[source] = refac;
 			}
 		}
-		setupTab('filter');
+		$.get('/result/service/samples', {username:username, job_id:jobId, dbpath:dbPath}).done(response=>{
+			allSamples = response;
+			setupTab('filter');
+		})
 		$.get('/result/service/loadfiltersetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name}).done(function (response) {
 			writeLogDiv('Filter setting loaded');
 			var data = response;
 			filterJson = data['filterSet'];
-			// var filterWrapDiv = document.getElementById('filterwrapdiv');
-			// $(filterWrapDiv).empty();
-			// populateFilterWrapDiv(filterWrapDiv); //TODO delete this
 			if (! doNotCount) {
 				infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
 			}
