@@ -70,3 +70,5 @@ var geneRows = {};
 var colgroupkeysWithMissingCols = [];
 
 var separateSample = false;
+
+var allSamples;

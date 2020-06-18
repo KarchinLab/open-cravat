@@ -660,6 +660,19 @@ async def load_smartfilters (request):
             sfs[mname] = json.loads(definitions)
     return web.json_response(sfs)
 
+async def get_samples (request):
+    _, dbpath = await get_jobid_dbpath(request)
+    conn = await aiosqlite3.connect(dbpath)
+    cursor = await conn.cursor()
+    sample_table = 'sample'
+    samples = []
+    if await table_exists(cursor, sample_table):
+        q = f'select distinct base__sample_id from {sample_table};'
+        await cursor.execute(q)
+        rows = await cursor.fetchall()
+        samples = [r[0] for r in rows]
+    return web.json_response(samples)
+
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
 routes.append(['GET', '/result/service/getsummarywidgetnames', get_summary_widget_names])
@@ -682,4 +695,5 @@ routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])
 routes.append(['POST', '/result/runwidget/{module}', serve_runwidget_post])
 routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
 routes.append(['GET', '/result/service/smartfilters', load_smartfilters])
+routes.append(['GET', '/result/service/samples', get_samples])
 
