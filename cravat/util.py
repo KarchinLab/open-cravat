@@ -8,6 +8,10 @@ import gzip
 import types
 import inspect
 import logging
+from distutils.version import LooseVersion
+from cravat.cravat_util import supported_oc_ver as migration_available_oc_ver
+import sqlite3
+import pkg_resources
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -189,3 +193,23 @@ def detect_encoding (path):
     detector.close()
     f.close()
     return detector.result['encoding']
+
+def is_compatible_version (dbpath):
+    db = sqlite3.connect(dbpath)
+    c = db.cursor()
+    max_version_supported_for_migration = max([LooseVersion(ver) for ver in migration_available_oc_ver])
+    oc_version = LooseVersion(pkg_resources.get_distribution('open-cravat').version)
+    sql = 'select colval from info where colkey="open-cravat"'
+    c.execute(sql)
+    r = c.fetchone()
+    compatible = None
+    if r is None:
+        compatible = False
+    else:
+        db_version = LooseVersion(r[0])
+        if db_version < oc_version and db_version <= max_version_supported_for_migration:
+            compatible = False
+        else:
+            compatible = True
+    return compatible, db_version, oc_version
+

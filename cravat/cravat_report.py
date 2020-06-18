@@ -12,11 +12,9 @@ import subprocess
 import re
 import logging
 import time
-import cravat.cravat_util as cu
 import re
 import aiosqlite3
 import types
-from distutils.version import LooseVersion
 from cravat import constants
 import asyncio
 import importlib
@@ -410,14 +408,6 @@ class CravatReport:
         pass
 
     async def make_col_info (self, level):
-        # Pull the database version
-        sql = 'select colval from info where colkey="open-cravat"'
-        await self.cursor.execute(sql)
-        r = await self.cursor.fetchone()
-        if r:
-            self.db_version = LooseVersion(r[0])
-        else:
-            self.db_version = None #TODO figure out highest version that lacks this info
         await self.store_mapper()
         cravat_conf = self.conf.get_cravat_conf()
         if 'report_module_order' in cravat_conf:
@@ -437,32 +427,13 @@ class CravatReport:
         # level-specific column names
         header_table = level+'_header'
         coldefs = []
-        if self.db_version >= LooseVersion('1.5.0'):
-            sql = 'select col_def from '+header_table
-            await self.cursor.execute(sql)
-            for row in await self.cursor.fetchall():
-                coljson = row[0]
-                coldef = ColumnDefinition({})
-                coldef.from_json(coljson)
-                coldefs.append(coldef)
-        else:
-            sql = 'pragma table_info("{}")'.format(header_table)
-            await self.cursor.execute(sql)
-            # excluding static gene level aggregation columns for open-cravat < 1.5.0.
-            header_cols = [row[1] for row in await self.cursor.fetchall()]
-            select_order = [cname for cname in ColumnDefinition.db_order if cname in header_cols]
-            sql = 'select {} from {}'.format(
-                ', '.join(select_order),
-                header_table
-            )
-            await self.cursor.execute(sql)
-            column_headers = await self.cursor.fetchall()
-            for column_header in column_headers:
-                if column_header[0] in constants.legacy_gene_level_cols_to_skip:
-                    continue
-                coldef = ColumnDefinition({})
-                coldef.from_row(column_header, order=select_order)
-                coldefs.append(coldef)
+        sql = 'select col_def from '+header_table
+        await self.cursor.execute(sql)
+        for row in await self.cursor.fetchall():
+            coljson = row[0]
+            coldef = ColumnDefinition({})
+            coldef.from_json(coljson)
+            coldefs.append(coldef)
         columns = []
         self.colnos[level] = {}
         colcount = 0
@@ -493,28 +464,13 @@ class CravatReport:
                 if not module in gene_annotators:
                     continue
                 cols = []
-                if self.db_version >= LooseVersion('1.5.0'):
-                    q = 'select col_def from gene_header where col_name like "{}__%"'.format(module)
-                    await self.cursor.execute(q)
-                    rs = await self.cursor.fetchall()
-                    for r in rs:
-                        cd = ColumnDefinition({})
-                        cd.from_json(r[0])
-                        cols.append(cd)
-                else:
-                    q = 'pragma table_info("gene_header")'
-                    await self.cursor.execute(q)
-                    header_cols = [row[1] for row in await self.cursor.fetchall()]
-                    select_order = [cname for cname in ColumnDefinition.db_order if cname in header_cols]
-                    q = 'select {} from gene_header where col_name like "{}__%'.format(
-                        ', '.join(select_order),
-                        module,
-                    )
-                    await self.cursor.execute(q)
-                    for column_header in await self.cursor.fetchall():
-                        cd = ColumnDefinition({})
-                        cd.from_row(column_header, order=select_order)
-                        cols.append(coldef)
+                q = 'select col_def from gene_header where col_name like "{}__%"'.format(module)
+                await self.cursor.execute(q)
+                rs = await self.cursor.fetchall()
+                for r in rs:
+                    cd = ColumnDefinition({})
+                    cd.from_json(r[0])
+                    cols.append(cd)
                 q = 'select displayname from gene_annotator where name="{}"'.format(module)
                 await self.cursor.execute(q)
                 r = await self.cursor.fetchone()
@@ -714,6 +670,11 @@ def clean_args (cmd_args):
 def run_reporter (args):
     global au
     dbpath = args.dbpath
+    compatible_version, db_version, oc_version = util.is_compatible_version(dbpath)
+    if not compatible_version:
+        print(f'DB version {db_version} of {dbpath} is not compatible with the current OpenCRAVAT ({oc_version}).')
+        print(f'Consider running "oc util update-result {dbpath}" and running "oc gui {dbpath}" again.')
+        return
     report_types = args.reporttypes
     if args.output_dir is not None:
         output_dir = args.output_dir

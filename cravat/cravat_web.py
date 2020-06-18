@@ -33,6 +33,7 @@ try:
     import logging
     from cravat import constants
     import time
+    import cravat.util
 
     SERVER_ALREADY_RUNNING = -1
 
@@ -178,7 +179,14 @@ def run(args):
             host = server.get('host')
             port = server.get('port')
             if args.result:
-                url = f'{host}:{port}/result/index.html?dbpath={args.result}'
+                dbpath = args.result
+                compatible_version, db_version, oc_version = cravat.util.is_compatible_version(dbpath)
+                if not compatible_version:
+                    print(f'DB version {db_version} of {dbpath} is not compatible with the current OpenCRAVAT ({oc_version}).')
+                    print(f'Consider running "oc util update-result {dbpath}" and running "oc gui {dbpath}" again.')
+                    return
+                else:
+                    url = f'{host}:{port}/result/index.html?dbpath={args.result}'
             else:
                 if server_ready and servermode:
                     url = f'{host}:{port}/server/nocache/login.html'
