@@ -166,6 +166,10 @@ cravat_cmd_parser.add_argument('--do-not-change-status',
     action='store_true',
     default=False,
     help='Job status in status.json will not be changed')
+cravat_cmd_parser.add_argument('--module-option',
+    dest='module_option',
+    nargs='*',
+    help='Module-specific option in module_name.key=value syntax. For example, --module-option vcfreporter.type=separate')
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -524,6 +528,21 @@ class Cravat (object):
                 self.logger.exception(e)
                 self.logger.info('Error in processing cs option. --cs option was not applied.')
                 self.conf = conf_bak
+        if self.args.module_option is not None:
+            for opt_str in self.args.module_option:
+                toks = opt_str.split('=')
+                if len(toks) != 2:
+                    print('Ignoring invalid module option {opt_str}. module-option should be module_name.key=value.')
+                    continue
+                k = toks[0]
+                if k.count('.') != 1:
+                    print('Ignoring invalid module option {opt_str}. module-option should be module_name.key=value.')
+                    continue
+                [module_name, key] = k.split('.')
+                if module_name not in self.conf._all:
+                    self.conf._all[module_name] = {}
+                v = toks[1]
+                self.conf._all[module_name][key] = v
         self.cravat_conf = self.conf.get_cravat_conf()
         self.run_conf = self.conf.get_run_conf()
         if self.args.show_version:
@@ -1061,8 +1080,8 @@ class Cravat (object):
                        '--module-name', module_name]
                 if self.run_conf_path is not None:
                     cmd.extend(['-c', self.run_conf_path])
-                if module_name in self.run_conf:
-                    confs = json.dumps(self.run_conf[module_name])
+                if module_name in self.conf._all:
+                    confs = json.dumps(self.conf._all[module_name])
                     confs = "'" + confs.replace("'", '"') + "'"
                     cmd.extend(['--confs', confs])
                 if self.pipeinput == False:
