@@ -27,7 +27,7 @@ function getExportContent (tabName) {
                 continue;
             }
             colExist = true;
-            colNos.push(colNo);
+            colNos.push(col.dataIndx);
             numCols++;
 			colTitles.push(col.title.replace(' ', '_'));
 			var filter = col.filter;
