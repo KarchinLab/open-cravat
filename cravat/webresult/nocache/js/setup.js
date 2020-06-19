@@ -2011,7 +2011,7 @@ function makeGrid (columns, data, tabName) {
         var tsvContent = getExportContent(tabName);
         a.href = window.URL.createObjectURL(
                 new Blob([tsvContent], {type: 'text/tsv'}));
-        a.download = jobId + '_' + tabName + '.tsv';
+        a.download = jobId + '_export_' + tabName + '.tsv';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

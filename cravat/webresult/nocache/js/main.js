@@ -1045,6 +1045,7 @@ function webresult_run () {
     } else if (dbPath != null) {
         var toks = dbPath.split('/');
         document.title = 'CRAVAT: ' + toks[toks.length - 1];
+        jobId = toks[toks.length - 1];
     }
     var resizeTimeout = null;
     $(window).resize(function(event) {
