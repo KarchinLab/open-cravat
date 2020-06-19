@@ -359,16 +359,38 @@ function populateJobTr (job) {
     var viewTd = getEl('td');
     viewTd.style.textAlign  = 'center';
     if (statusC == 'Finished') {
-        var a = getEl('a');
-        a.setAttribute('href', '/result/index.html?job_id=' + job.id)
-        a.setAttribute('target', '_blank');
-        var button = getEl('button');
-        addEl(button, getTn('Open Result Viewer'));
-        button.classList.add('butn');
-        button.classList.add('launch-button');
-        button.disabled = !job.viewable;
-        addEl(a, button);
-        addEl(viewTd, a);
+        if (job.result_available) {
+            var a = getEl('a');
+            a.setAttribute('href', '/result/index.html?job_id=' + job.id)
+            a.setAttribute('target', '_blank');
+            var button = getEl('button');
+            addEl(button, getTn('Open Result Viewer'));
+            button.classList.add('butn');
+            button.classList.add('launch-button');
+            button.disabled = !job.viewable;
+            addEl(a, button);
+            addEl(viewTd, a);
+        } else {
+            var button = getEl('button');
+            addEl(button, getTn('Update to View'));
+            button.classList.add('butn');
+            button.classList.add('launch-button');
+            button.disabled = !job.viewable;
+            button.setAttribute('job_id', job.id);
+            button.addEventListener('click', function (evt) {
+                var jobId = this.getAttribute('job_id');
+                $.ajax({
+                    url: '/submit/updateresultdb',
+                    type: 'GET',
+                    data: {job_id: jobId},
+                    success: function (response) {
+                        showJobListPage();
+                    }
+                });
+
+            });
+            addEl(viewTd, button);
+        }
     } else {
         viewTd.textContent = statusC;
     }

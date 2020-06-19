@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 import datetime
 from . import admin_util as au
+from distutils.version import LooseVersion
 
 def get_args ():
     args = parser.parse_args()
@@ -126,6 +127,7 @@ def converttohg38 (args):
 
 migrate_functions = {}
 supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.7.0', '1.8.0']
+max_version_supported_for_migration = max([LooseVersion(ver) for ver in supported_oc_ver])
 
 def check_result_db_version (dbpath, version):
     try:

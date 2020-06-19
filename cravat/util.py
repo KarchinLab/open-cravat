@@ -9,7 +9,7 @@ import types
 import inspect
 import logging
 from distutils.version import LooseVersion
-from cravat.cravat_util import supported_oc_ver as migration_available_oc_ver
+from cravat.cravat_util import max_version_supported_for_migration
 import sqlite3
 import pkg_resources
 
@@ -197,7 +197,6 @@ def detect_encoding (path):
 def is_compatible_version (dbpath):
     db = sqlite3.connect(dbpath)
     c = db.cursor()
-    max_version_supported_for_migration = max([LooseVersion(ver) for ver in migration_available_oc_ver])
     oc_version = LooseVersion(pkg_resources.get_distribution('open-cravat').version)
     sql = 'select colval from info where colkey="open-cravat"'
     c.execute(sql)
@@ -207,7 +206,7 @@ def is_compatible_version (dbpath):
         compatible = False
     else:
         db_version = LooseVersion(r[0])
-        if db_version < oc_version and db_version <= max_version_supported_for_migration:
+        if db_version <= max_version_supported_for_migration:
             compatible = False
         else:
             compatible = True
