@@ -174,7 +174,7 @@ cravat_cmd_parser.add_argument('--silent',
     dest='silent',
     action='store_true',
     default=False,
-    help='Module-specific option in module_name.key=value syntax. For example, --module-option vcfreporter.type=separate')
+    help='Runs silently.')
 
 def run(cmd_args):
     au.ready_resolution_console()
