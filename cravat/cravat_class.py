@@ -170,6 +170,11 @@ cravat_cmd_parser.add_argument('--module-option',
     dest='module_option',
     nargs='*',
     help='Module-specific option in module_name.key=value syntax. For example, --module-option vcfreporter.type=separate')
+cravat_cmd_parser.add_argument('--silent',
+    dest='silent',
+    action='store_true',
+    default=False,
+    help='Module-specific option in module_name.key=value syntax. For example, --module-option vcfreporter.type=separate')
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -211,7 +216,8 @@ class Cravat (object):
         self.append_mode = False
         self.make_args_namespace(kwargs)
         if self.args.clean_run:
-            print('Deleting previous output files...')
+            if not self.args.silent:
+                print('Deleting previous output files...')
             self.delete_output_files()
         self.get_logger()
         self.start_time = time.time()
@@ -241,14 +247,16 @@ class Cravat (object):
         if len(absent_modules) > 0:
             msg = 'Invalid module(s): {}'.format(','.join(absent_modules))
             self.logger.info(msg)
-            print(msg)
+            if not self.args.silent:
+                print(msg)
             raise InvalidReporter
         for mname, linfo in self.annotators.items():
             for sec_name in linfo.secondary_module_names:
                 if not au.module_exists_local(sec_name):
                     msg = f'Invalid secondary annotator {sec_name} requested by {mname}'
                     self.logger.info(msg)
-                    print(msg)
+                    if not self.args.silent:
+                        print(msg)
                     raise InvalidReporter
                 
 
@@ -335,7 +343,8 @@ class Cravat (object):
     def delete_output_files (self):
         fns = glob.glob(os.path.join(self.output_dir, self.run_name + '.*'))
         for fn in fns:
-            print(f'  Removing {fn}')
+            if not self.args.silent:
+                print(f'  Removing {fn}')
             os.remove(fn)
 
     async def main (self):
@@ -349,8 +358,9 @@ class Cravat (object):
                 input_files_str = ', '.join(self.inputs)
             else:
                 input_files_str = 'stdin'
-            print('Input file(s): {}'.format(input_files_str))
-            print('Genome assembly: {}'.format(self.input_assembly))
+            if not self.args.silent:
+                print('Input file(s): {}'.format(input_files_str))
+                print('Genome assembly: {}'.format(self.input_assembly))
             self.logger.info('input files: {}'.format(input_files_str))
             self.logger.info('input assembly: {}'.format(self.input_assembly))
             self.set_and_check_input_files()
@@ -362,11 +372,13 @@ class Cravat (object):
                         self.crv_present == False or
                         'converter' in self.args.repeat
                     ):
-                print('Running converter...')
+                if not self.args.silent:
+                    print('Running converter...')
                 stime = time.time()
                 self.run_converter()
                 rtime = time.time() - stime
-                print('finished in {0:.3f}s'.format(rtime))
+                if not self.args.silent:
+                    print('finished in {0:.3f}s'.format(rtime))
                 converter_ran = True
             self.mapper_ran = False
             if self.endlevel >= self.runlevels['mapper'] and \
@@ -377,7 +389,8 @@ class Cravat (object):
                         'mapper' in self.args.repeat or
                         converter_ran
                    ):
-                print(f'Running gene mapper...{" "*18}',end='', flush=True)
+                if not self.args.silent:
+                    print(f'Running gene mapper...{" "*18}',end='', flush=True)
                 stime = time.time()
                 multicore_mapper_mode = self.conf.get_cravat_conf()['multicore_mapper_mode']
                 if multicore_mapper_mode:
@@ -385,7 +398,8 @@ class Cravat (object):
                 else:
                     self.run_genemapper()
                 rtime = time.time() - stime
-                print('finished in {0:.3f}s'.format(rtime))
+                if not self.args.silent:
+                    print('finished in {0:.3f}s'.format(rtime))
                 self.mapper_ran = True
             self.annotator_ran = False
             self.done_annotators = {}
@@ -401,11 +415,13 @@ class Cravat (object):
                         self.mapper_ran or \
                         len(self.run_annotators) > 0
                     ):
-                print('Running annotators...')
+                if not self.args.silent:
+                    print('Running annotators...')
                 stime = time.time()
                 self.run_annotators_mp()
                 rtime = time.time() - stime
-                print('\tannotator(s) finished in {0:.3f}s'.format(rtime))
+                if not self.args.silent:
+                    print('\tannotator(s) finished in {0:.3f}s'.format(rtime))
             if self.endlevel >= self.runlevels['aggregator'] and \
                     self.startlevel <= self.runlevels['aggregator'] and \
                     not 'aggregator' in self.args.skip and \
@@ -415,7 +431,8 @@ class Cravat (object):
                         'aggregator' in self.args.repeat or \
                         self.startlevel == self.runlevels['aggregator']
                     ):
-                print('Running aggregator...')
+                if not self.args.silent:
+                    print('Running aggregator...')
                 self.result_path = self.run_aggregator()
                 await self.write_job_info()
                 self.write_smartfilters()
@@ -427,7 +444,8 @@ class Cravat (object):
                         #self.aggregator_ran or \
                         #'postaggregator' in self.args.repeat
                     #):
-                print('Running postaggregators...')
+                if not self.args.silent:
+                    print('Running postaggregators...')
                 self.run_postaggregators()
             if self.endlevel >= self.runlevels['reporter'] and \
                     self.startlevel <= self.runlevels['reporter'] and \
@@ -436,7 +454,8 @@ class Cravat (object):
                         self.aggregator_ran or \
                         len(self.reports) > 0
                     ):
-                print('Running reporter...')
+                if not self.args.silent:
+                    print('Running reporter...')
                 no_problem_in_run = await self.run_reporter()
             if self.args.do_not_change_status == False:
                 self.update_status('Finished')
@@ -450,12 +469,14 @@ class Cravat (object):
             if no_problem_in_run:
                 self.logger.info('finished: {0}'.format(display_time))
                 self.logger.info('runtime: {0:0.3f}s'.format(runtime))
-                print('Finished normally. Runtime: {0:0.3f}s'.format(runtime))
+                if not self.args.silent:
+                    print('Finished normally. Runtime: {0:0.3f}s'.format(runtime))
             else:
                 self.logger.info('finished with an exception: {0}'.format(display_time))
                 self.logger.info('runtime: {0:0.3f}s'.format(runtime))
-                print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
-                print('Check {}'.format(self.log_path))
+                if not self.args.silent:
+                    print('Finished with an exception. Runtime: {0:0.3f}s'.format(runtime))
+                    print('Check {}'.format(self.log_path))
                 if self.args.do_not_change_status == False:
                     self.update_status('Error')
             self.close_logger()
@@ -472,7 +493,8 @@ class Cravat (object):
         if os.path.exists(constants.admindb_path) == False:
             s = '{} does not exist.'.format(constants.admindb_path)
             self.logger.info(s)
-            print(s)
+            if not self.args.silent:
+                print(s)
             return
         db = await aiosqlite3.connect(constants.admindb_path)
         cursor = await db.cursor()
@@ -509,7 +531,8 @@ class Cravat (object):
             self.logger.error(e)
         else:
             self.logger.exception('An unexpected exception occurred.')
-            print(exc_str)
+            if not self.args.silent:
+                print(exc_str)
 
     def make_args_namespace(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
@@ -532,11 +555,13 @@ class Cravat (object):
             for opt_str in self.args.module_option:
                 toks = opt_str.split('=')
                 if len(toks) != 2:
-                    print('Ignoring invalid module option {opt_str}. module-option should be module_name.key=value.')
+                    if not self.args.silent:
+                        print('Ignoring invalid module option {opt_str}. module-option should be module_name.key=value.')
                     continue
                 k = toks[0]
                 if k.count('.') != 1:
-                    print('Ignoring invalid module option {opt_str}. module-option should be module_name.key=value.')
+                    if not self.args.silent:
+                        print('Ignoring invalid module option {opt_str}. module-option should be module_name.key=value.')
                     continue
                 [module_name, key] = k.split('.')
                 if module_name not in self.conf._all:
@@ -553,7 +578,8 @@ class Cravat (object):
             if type(self.run_conf['inputs']) == list:
                 self.args.inputs = self.run_conf['inputs']
             else:
-                print('inputs in conf file is invalid')
+                if not self.args.silent:
+                    print('inputs in conf file is invalid')
         if self.args.inputs is not None and len(self.args.inputs) == 0 and sys.stdin.isatty() == True:
             cravat_cmd_parser.print_help()
             print('\nNo input file was given.')
@@ -804,7 +830,8 @@ class Cravat (object):
             cmd.append('--unique-variants')
         self.announce_module(module)
         if self.verbose:
-            print(' '.join(cmd))
+            if not self.args.silent:
+                print(' '.join(cmd))
         converter_class = util.load_class(module.script_path, 'MasterCravatConverter')
         converter = converter_class(cmd, self.status_writer)
         self.numinput, self.converter_format = converter.run()
@@ -826,7 +853,8 @@ class Cravat (object):
             confs = "'" + confs.replace("'", '"') + "'"
             cmd.extend(['--confs', confs])
         if self.verbose:
-            print(' '.join(cmd))
+            if not self.args.silent:
+                print(' '.join(cmd))
         genemapper_class = util.load_class(module.script_path, 'Mapper')
         genemapper = genemapper_class(cmd, self.status_writer)
         genemapper.run()
@@ -963,7 +991,8 @@ class Cravat (object):
 
     def run_aggregator (self):
         # Variant level
-        print('\t{0:30s}\t'.format('Variants'), end='', flush=True)
+        if not self.args.silent:
+            print('\t{0:30s}\t'.format('Variants'), end='', flush=True)
         stime = time.time()
         cmd = ['donotremove',
                '-i', self.output_dir,
@@ -975,16 +1004,19 @@ class Cravat (object):
         if self.append_mode:
             cmd.append('--append')
         if self.verbose:
-            print(' '.join(cmd))
+            if not self.args.silent:
+                print(' '.join(cmd))
         if self.args.do_not_change_status == False:
             self.update_status('Running {title} ({level})'.format(title='Aggregator', level='variant'))
         v_aggregator = Aggregator(cmd, self.status_writer)
         v_aggregator.run()
         rtime = time.time() - stime
-        print('finished in {0:.3f}s'.format(rtime)) 
+        if not self.args.silent:
+            print('finished in {0:.3f}s'.format(rtime)) 
 
         # Gene level
-        print('\t{0:30s}\t'.format('Genes'), end='', flush=True)
+        if not self.args.silent:
+            print('\t{0:30s}\t'.format('Genes'), end='', flush=True)
         stime = time.time()
         cmd = ['donotremove', 
                '-i', self.output_dir,
@@ -994,17 +1026,20 @@ class Cravat (object):
         if self.append_mode:
             cmd.append('--append')
         if self.verbose:
-            print(' '.join(cmd))
+            if not self.args.silent:
+                print(' '.join(cmd))
         if self.args.do_not_change_status == False:
             self.update_status('Running {title} ({level})'.format(title='Aggregator', level='gene'))
         g_aggregator = Aggregator(cmd, self.status_writer)
         g_aggregator.run()
         rtime = time.time() - stime
-        print('finished in {0:.3f}s'.format(rtime))
+        if not self.args.silent:
+            print('finished in {0:.3f}s'.format(rtime))
 
         # Sample level
         if not self.append_mode:
-            print('\t{0:30s}\t'.format('Samples'), end='', flush=True)
+            if not self.args.silent:
+                print('\t{0:30s}\t'.format('Samples'), end='', flush=True)
             stime = time.time()
             cmd = ['donotremove', 
                 '-i', self.output_dir,
@@ -1012,30 +1047,35 @@ class Cravat (object):
                 '-l', 'sample',
                 '-n', self.run_name]
             if self.verbose:
-                print(' '.join(cmd))
+                if not self.args.silent:
+                    print(' '.join(cmd))
             if self.args.do_not_change_status == False:
                 self.update_status('Running {title} ({level})'.format(title='Aggregator', level='sample'))
             s_aggregator = Aggregator(cmd, self.status_writer)
             s_aggregator.run()
             rtime = time.time() - stime
-            print('finished in {0:.3f}s'.format(rtime))
+            if not self.args.silent:
+                print('finished in {0:.3f}s'.format(rtime))
 
         # Mapping level
         if not self.append_mode:
-            print('\t{0:30s}\t'.format('Tags'), end='', flush=True)
+            if not self.args.silent:
+                print('\t{0:30s}\t'.format('Tags'), end='', flush=True)
             cmd = ['donotremove', 
                 '-i', self.output_dir,
                 '-d', self.output_dir, 
                 '-l', 'mapping',
                 '-n', self.run_name]
             if self.verbose:
-                print(' '.join(cmd))
+                if not self.args.silent:
+                    print(' '.join(cmd))
             if self.args.do_not_change_status == False:
                 self.update_status('Running {title} ({level})'.format(title='Aggregator', level='mapping'))
             m_aggregator = Aggregator(cmd, self.status_writer)
             m_aggregator.run()
             rtime = time.time() - stime
-            print('finished in {0:.3f}s'.format(rtime))
+            if not self.args.silent:
+                print('finished in {0:.3f}s'.format(rtime))
 
         return v_aggregator.db_path
 
@@ -1052,13 +1092,15 @@ class Cravat (object):
                 confs = "'" + confs.replace("'", '"') + "'"
                 cmd.extend(['--confs', confs])
             if self.verbose:
-                print(' '.join(cmd))
+                if not self.args.silent:
+                    print(' '.join(cmd))
             post_agg_cls = util.load_class(module.script_path, 'CravatPostAggregator')
             post_agg = post_agg_cls(cmd, self.status_writer)
             stime = time.time()
             post_agg.run()
             rtime = time.time() - stime
-            print('finished in {0:.3f}s'.format(rtime))
+            if not self.args.silent:
+                print('finished in {0:.3f}s'.format(rtime))
 
     async def run_reporter (self):
         if self.reports != None:
@@ -1071,7 +1113,8 @@ class Cravat (object):
                 module = au.get_local_module_info(module_name)
                 self.announce_module(module)
                 if module is None:
-                    print('        {} does not exist.'.format(module_name))
+                    if not self.args.silent:
+                        print('        {} does not exist.'.format(module_name))
                     continue
                 cmd = [module.script_path, 
                        '-s', os.path.join(self.output_dir, self.run_name),
@@ -1091,14 +1134,16 @@ class Cravat (object):
                 if self.args.separatesample:
                     cmd.append('--separatesample')
                 if self.verbose:
-                    print(' '.join(cmd))
+                    if not self.args.silent:
+                        print(' '.join(cmd))
                 Reporter = util.load_class(module.script_path, 'Reporter')
                 reporter = Reporter(cmd, self.status_writer)
                 await reporter.prep()
                 stime = time.time()
                 await reporter.run()
                 rtime = time.time() - stime
-                print('finished in {0:.3f}s'.format(rtime))
+                if not self.args.silent:
+                    print('finished in {0:.3f}s'.format(rtime))
             except Exception as e:
                 traceback.print_exc()
                 self.logger.exception(e)
@@ -1332,13 +1377,15 @@ class Cravat (object):
         if self.output_dir != None:
             cmd.extend(['-d', self.output_dir])
         if self.verbose:
-            print(' '.join(cmd))
+            if not self.args.silent:
+                print(' '.join(cmd))
         summarizer_cls = util.load_class(module.script_path, '')
         summarizer = summarizer_cls(cmd)
         summarizer.run()
 
     def announce_module (self, module):
-        print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
+        if not self.args.silent:
+            print('\t{0:30s}\t'.format(module.title + ' (' + module.name + ')'), end='', flush=True)
         if self.args.do_not_change_status == False:
             self.update_status('Running {title} ({name})'.format(title=module.title, name=module.name))
 
