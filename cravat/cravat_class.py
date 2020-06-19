@@ -1130,7 +1130,7 @@ class Cravat (object):
                 if self.pipeinput == False:
                     cmd.append('--inputfiles')
                     for input_file in self.inputs:
-                        cmd.append(input_file)
+                        cmd.append(f'"{input_file}"')
                 if self.args.separatesample:
                     cmd.append('--separatesample')
                 if self.verbose:
@@ -1293,7 +1293,7 @@ class Cravat (object):
             created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             q = 'insert into info values ("Result created at", "' + created + '")'
             await cursor.execute(q)
-            q = 'insert into info values ("Input file name", "{}")'.format(';'.join(self.inputs)) #todo adapt to multiple inputs
+            q = 'insert into info values ("Input file name", "{}")'.format(';'.join(self.inputs))
             await cursor.execute(q)
             q = 'insert into info values ("Input genome", "' + self.input_assembly + '")'
             await cursor.execute(q)
