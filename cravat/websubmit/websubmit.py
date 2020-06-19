@@ -962,7 +962,7 @@ async def live_annotate (input_data, annotators):
     global live_modules
     global live_mapper
     response = {}
-    crx_data, alt_transcripts = live_mapper.map(input_data)
+    crx_data = live_mapper.map(input_data)
     crx_data = live_mapper.live_report_substitute(crx_data)
     crx_data[mapping_parser_name] = AllMappingsParser(crx_data[all_mappings_col_name])
     for k, v in live_modules.items():

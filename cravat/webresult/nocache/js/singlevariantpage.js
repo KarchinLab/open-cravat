@@ -775,6 +775,7 @@ widgetGenerators['visupanel'] = {
         'width': sectionWidth,
         'height': 'unset',
         'function': function (div, row, tabName) {
+            div.style.overflow = 'unset';
             var table = getEl('table');
             var tr = getEl('tr');
             var td = getEl('td');
@@ -823,18 +824,19 @@ widgetGenerators['mupit2'] = {
             var chrom = getWidgetData(tabName, 'base', row, 'chrom');
             var pos = getWidgetData(tabName, 'base', row, 'pos');
             var url = location.protocol + '//www.cravat.us/MuPIT_Interactive/rest/showstructure/check?pos=' + chrom + ':' + pos;
+            var iframe = getEl('iframe');
+            iframe.style.position = 'absolute';
+            iframe.style.top = '15px';
+            iframe.style.left = '0px';
+            iframe.style.width = '100%';
+            iframe.style.height = '500px';
+            iframe.style.border = '0px';
+            addEl(div, iframe);
             $.get(url).done(function (response) {
                 if (response.hit == true) {
-                    var iframe = getEl('iframe');
-                    iframe.style.position = 'absolute';
-                    iframe.style.top = '15px';
-                    iframe.style.left = '0px';
-                    iframe.style.width = '100%';
-                    iframe.style.height = 'calc(100% - 32px)';
-                    iframe.style.border = '0px';
                     iframe.src = location.protocol + '//www.cravat.us/MuPIT_Interactive?gm=' + chrom + ':' + pos + '&embed=true';
-                    addEl(div, iframe);
                 } else {
+                    iframe.parentElement.removeChild(iframe);
                     var sdiv = getEl('div');
                     sdiv.textContent = 'No annotation available';
                     sdiv.style.paddingLeft = '7px';
