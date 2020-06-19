@@ -336,7 +336,7 @@ function addGeneLevelToVariantLevel () {
         for (var j = i + 1; j < vcm.length; j++) {
             var cmi = vcm[i];
             var cmj = vcm[j];
-            if (cmi.name == 'base' || cmi.name == 'tagsampler' || cmi.name.startsWith('hg')) {
+            if (cmi.name == 'base' || cmi.name == 'tagsampler') {
                 continue;
             }
             if (cmi.title.toLowerCase() > cmj.title.toLowerCase()) {
