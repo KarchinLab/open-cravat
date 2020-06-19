@@ -372,12 +372,13 @@ function populateJobTr (job) {
             addEl(viewTd, a);
         } else {
             var button = getEl('button');
-            addEl(button, getTn('Update to View'));
+            button.textContent = 'Update to View';
             button.classList.add('butn');
             button.classList.add('launch-button');
             button.disabled = !job.viewable;
             button.setAttribute('job_id', job.id);
             button.addEventListener('click', function (evt) {
+                this.textContent = 'Updating DB...';
                 var jobId = this.getAttribute('job_id');
                 $.ajax({
                     url: '/submit/updateresultdb',
