@@ -548,8 +548,8 @@ class Cravat (object):
                 confs_conf = json.loads(self.args.confs.replace("'", '"'))
                 self.conf.override_all_conf(confs_conf)
             except Exception as e:
-                self.logger.exception(e)
-                self.logger.info('Error in processing cs option. --cs option was not applied.')
+                if not self.args.silent:
+                    print('Error in processing cs option. --cs option was not applied.')
                 self.conf = conf_bak
         if self.args.module_option is not None:
             for opt_str in self.args.module_option:
@@ -584,8 +584,31 @@ class Cravat (object):
             cravat_cmd_parser.print_help()
             print('\nNo input file was given.')
             exit()
+        first_non_url_input = None
         if self.args.inputs is not None:
-            self.inputs = [os.path.abspath(x) for x in self.args.inputs]
+            self.inputs = [os.path.abspath(x) if not util.is_url(x) else x for x in self.args.inputs]
+            for ip in self.inputs:
+                for input_no in range(len(self.inputs)):
+                    ip = self.inputs[input_no]
+                    if util.is_url(ip):
+                        import requests
+                        if not self.args.silent:
+                            print(f'Fetching {ip}... ', end='', flush=True)
+                        try:
+                            r = requests.get(ip, timeout=3)
+                            fn = os.path.basename(ip)
+                            fpath = fn
+                            wf = open(fpath, 'w')
+                            wf.write(r.text)
+                            wf.close()
+                            self.inputs[input_no] = os.path.abspath(fpath)
+                        except:
+                            print(f'unsuccessful. exiting.')
+                            exit()
+                        if not self.args.silent:
+                            print(f'done')
+                    elif first_non_url_input is not None:
+                        first_non_url_input = ip
         else:
             self.inputs = []
         num_input = len(self.inputs)
@@ -603,10 +626,10 @@ class Cravat (object):
                 self.run_name = self.run_name[:-7]
         self.output_dir = self.args.output_dir
         if self.output_dir == None:
-            if num_input == 0:
+            if num_input == 0 or first_non_url_input is None:
                 self.output_dir = os.getcwd()
             else:
-                self.output_dir = os.path.dirname(os.path.abspath(self.inputs[0]))
+                self.output_dir = os.path.dirname(os.path.abspath(first_non_url_input))
         else:
             self.output_dir = os.path.abspath(self.output_dir)
         args_keys = self.args.__dict__.keys()

@@ -214,3 +214,9 @@ def is_compatible_version (dbpath):
             compatible = True
     return compatible, db_version, oc_version
 
+def is_url (s):
+    if s.startswith('http://') or s.startswith('https://'):
+        return True
+    else:
+        return False
+
