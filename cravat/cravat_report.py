@@ -90,7 +90,8 @@ class CravatReport:
             r = c.fetchone()
             if r is not None:
                 parsed_args.inputfiles = []
-                s = json.loads(r[0].replace("'", '"'))
+                if ' ' in s:
+                    s = json.loads(r[0].replace("'", '"'))
                 for k in s:
                     input_path = s[k]
                     parsed_args.inputfiles.append(input_path)

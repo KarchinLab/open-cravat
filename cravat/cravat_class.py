@@ -1130,7 +1130,7 @@ class Cravat (object):
                 if self.pipeinput == False:
                     cmd.append('--inputfiles')
                     for input_file in self.inputs:
-                        cmd.append(f'"{input_file}"')
+                        cmd.append(f'{input_file}')
                 if self.args.separatesample:
                     cmd.append('--separatesample')
                 if self.verbose:

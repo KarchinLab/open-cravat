@@ -181,6 +181,8 @@ def get_argument_parser_defaults(parser):
             }
 
 def detect_encoding (path):
+    if ' ' not in path:
+        path = path.strip('"')
     if path.endswith('.gz'):
         f = gzip.open(path)
     else:
