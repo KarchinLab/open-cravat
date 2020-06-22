@@ -524,25 +524,25 @@ class InstallProgressHandler(object):
         if stage is None or stage=='':
             return ''
         elif stage=='start':
-            return 'Start install of %s' %self.display_name
+            return f'[{util.get_current_time_str()}] Starting to install {self.display_name}...'
         elif stage=='download_code':
-            return 'Downloading %s code archive' %self.display_name
+            return f'[{util.get_current_time_str()}] Downloading code archive of {self.display_name}...'
         elif stage=='extract_code':
-            return 'Extracting %s code archive' %self.display_name
+            return f'[{util.get_current_time_str()}] Extracting code archive of {self.display_name}...'
         elif stage=='verify_code':
-            return 'Verifying %s code integrity' %self.display_name
+            return f'[{util.get_current_time_str()}] Verifying code integrity of {self.display_name}...'
         elif stage=='download_data':
-            return 'Downloading %s data' %self.display_name
+            return f'[{util.get_current_time_str()}] Downloading data of {self.display_name}...'
         elif stage=='extract_data':
-            return 'Extracting %s data' %self.display_name
+            return f'[{util.get_current_time_str()}] Extracting data of {self.display_name}...'
         elif stage=='verify_data':
-            return 'Verifying %s data integrity' %self.display_name
+            return f'[{util.get_current_time_str()}] Verifying data integrity of {self.display_name}...'
         elif stage=='finish':
-            return 'Finished installation of %s' %self.display_name
+            return f'[{util.get_current_time_str()}] Finished installation of {self.display_name}'
         elif stage == 'killed':
-            return 'Aborted {} installation'.format(self.display_name)
+            return f'[{util.get_current_time_str()}] Aborted installation of {self.display_name}'
         elif stage == 'Unqueued':
-            return 'Unqueued {} from installation'.format(self.display_name)
+            return f'Unqueued {self.display_name} from installation'
         else:
             raise ValueError(stage)
 

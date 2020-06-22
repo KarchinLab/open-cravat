@@ -12,6 +12,7 @@ from distutils.version import LooseVersion
 from cravat.cravat_util import max_version_supported_for_migration
 import sqlite3
 import pkg_resources
+import datetime
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -219,4 +220,8 @@ def is_url (s):
         return True
     else:
         return False
+
+def get_current_time_str ():
+    t = datetime.datetime.now()
+    return t.strftime('%Y:%m:%d %H:%M:%S')
 

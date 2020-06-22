@@ -316,7 +316,7 @@ def install_modules(args):
     to_install = selected_install
     to_install.update(dep_install)
     if len(to_install) == 0:
-        print('No modules found')
+        print('No modules to install found')
     else:
         print('Installing: {:}'\
                 .format(', '.join([name+':'+version for name, version in sorted(to_install.items())]))
@@ -388,7 +388,7 @@ def uninstall_modules (args):
             au.uninstall_module(module_name)
             print('Uninstalled %s' %module_name)
     else:
-        print('No modules found')
+        print('No modules to uninstall found')
 
 def publish_module (args):
     if args.password is None:
