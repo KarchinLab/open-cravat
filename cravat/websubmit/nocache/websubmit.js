@@ -329,6 +329,15 @@ function populateJobTr (job) {
         input_fname_display = input_fname.substring(0, input_fname_display_limit) + '...';
     }
     addEl(jobTr, addEl(getEl('td'), getTn(input_fname_display)));
+    // Number of unique variants
+    var td = getEl('td');
+    td.style.textAlign = 'center';
+    var num = '';
+    if (job.num_unique_var != undefined) {
+        num = '' + job.num_unique_var;
+    }
+    td.textContent = num;
+    addEl(jobTr, td);
     // Number of annotators
     var annots = job.annotators;
     if (annots == undefined) {
