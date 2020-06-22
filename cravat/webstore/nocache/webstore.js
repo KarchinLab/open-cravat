@@ -432,6 +432,7 @@ function getMostDownloadedModuleNames () {
 }
 
 function updateModuleGroupInfo () {
+    moduleGroupMembers = {};
     for (var mn in remoteModuleInfo) {
         var groups = remoteModuleInfo[mn]['groups'];
         if (groups != undefined && groups.length > 0) {
