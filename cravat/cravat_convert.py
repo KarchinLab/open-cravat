@@ -382,7 +382,6 @@ class MasterCravatConverter(object):
                                         raise BadFormatError('Reference base required for non SNV')
                                     elif ref_base is None or ref_base == '':
                                         wdict['ref_base'] = self.wgsreader.get_bases(chrom, pos)
-                                        print(f'@ filling in ref {wdict["ref_base"]}')
                                 if self.do_liftover:
                                     prelift_wdict = copy.copy(wdict)
                                     wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
