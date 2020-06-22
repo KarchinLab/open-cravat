@@ -17,6 +17,8 @@ import json
 import gzip
 from collections import defaultdict
 from cravat.base_converter import BaseConverter
+import cravat
+
 STDIN = 'stdin'
 
 class VTracker:
@@ -86,6 +88,7 @@ class MasterCravatConverter(object):
         self._parse_cmd_args(args)
         self._setup_logger()
         self.vtracker = VTracker(deduplicate=not(self.unique_variants))
+        self.wgsreader = cravat.get_wgs_reader(assembly='hg38')
 
     def _parse_cmd_args(self, args):
         """ Parse the arguments in sys.argv """
@@ -361,6 +364,7 @@ class MasterCravatConverter(object):
                         for wdict_no in range(len(all_wdicts)):
                             wdict = all_wdicts[wdict_no]
                             chrom = wdict['chrom']
+                            pos = wdict['pos']
                             if chrom is not None:
                                 if not chrom.startswith('chr'):
                                     chrom = 'chr' + chrom
@@ -370,8 +374,15 @@ class MasterCravatConverter(object):
                                         wdict['sample_id'] = '__'.join([samp_prefix, wdict['sample_id']])
                                     else:
                                         wdict['sample_id'] = samp_prefix
-                                if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
-                                    raise BadFormatError('Reference base required for non SNV')
+                                if 'ref_base' not in wdict:
+                                    wdict['ref_base'] = self.wgsreader.get_bases(chrom, pos)
+                                else:
+                                    ref_base = wdict['ref_base']
+                                    if ref_base == '' and wdict['alt_base'] not in ['A','T','C','G']:
+                                        raise BadFormatError('Reference base required for non SNV')
+                                    elif ref_base is None or ref_base == '':
+                                        wdict['ref_base'] = self.wgsreader.get_bases(chrom, pos)
+                                        print(f'@ filling in ref {wdict["ref_base"]}')
                                 if self.do_liftover:
                                     prelift_wdict = copy.copy(wdict)
                                     wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
