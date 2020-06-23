@@ -157,6 +157,20 @@ base_smartfilters = [
                     'operator': 'or',
                     'rules': [
                         {
+                            'column': 'gnomad3__af', 
+                            'test': 'lessThanEq',
+                            'value': '${value}'
+                        },
+                        {
+                            'column': 'gnomad3__af', 
+                            'test': 'noData'
+                        },
+                    ]
+                },
+                {
+                    'operator': 'or',
+                    'rules': [
+                        {
                             'column': 'gnomad__af', 
                             'test': 'lessThanEq',
                             'value': '${value}'
@@ -164,7 +178,7 @@ base_smartfilters = [
                         {
                             'column': 'gnomad__af', 
                             'test': 'noData'
-                        }
+                        },
                     ]
                 },
                 {
