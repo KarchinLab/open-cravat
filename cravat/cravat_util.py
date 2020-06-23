@@ -470,6 +470,7 @@ def migrate_result_180_to_181 (dbpath):
                '"IND": "inframe_deletion", "MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
                '"coding": {"Y": "Yes"}}\' where module="base"'))
     c.execute('update info set colval="1.8.1" where colkey="open-cravat"')
+    c.execute('create index sample_idx_2 on sample (base__sample_id, base__uid;')
     db.commit()
 
 migrate_functions['1.4.4'] = migrate_result_144_to_145
