@@ -90,7 +90,7 @@ crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'widt
 crm_idx = [['uid'],['tags']]
 crs_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
            {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90}]
-crs_idx = [['uid'], ['sample_id']]
+crs_idx = [['uid'], ['sample_id'],['sample_id','uid']]
 crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 60, 'hidden':True, 'filterable': False},
            {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 50, 'category': 'single', 'filterable': True},
            {'name':'pos', 'title':'Position', 'type':'int', 'width': 80, 'filterable': True},
@@ -157,6 +157,20 @@ base_smartfilters = [
                     'operator': 'or',
                     'rules': [
                         {
+                            'column': 'gnomad3__af', 
+                            'test': 'lessThanEq',
+                            'value': '${value}'
+                        },
+                        {
+                            'column': 'gnomad3__af', 
+                            'test': 'noData'
+                        },
+                    ]
+                },
+                {
+                    'operator': 'or',
+                    'rules': [
+                        {
                             'column': 'gnomad__af', 
                             'test': 'lessThanEq',
                             'value': '${value}'
@@ -164,7 +178,7 @@ base_smartfilters = [
                         {
                             'column': 'gnomad__af', 
                             'test': 'noData'
-                        }
+                        },
                     ]
                 },
                 {

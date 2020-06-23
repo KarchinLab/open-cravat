@@ -59,12 +59,6 @@ cravat_cmd_parser.add_argument('--startat',
     choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
     default=None,
     help='starts at given stage')
-cravat_cmd_parser.add_argument('--repeat',
-    dest='repeat',
-    nargs='+',
-    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
-    default=None,
-    help='forces re-running of given stage if it is in the run chain.')
 cravat_cmd_parser.add_argument('--endat',
     dest='endat',
     choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
@@ -316,6 +310,8 @@ class Cravat (object):
         self.logger = logging.getLogger('cravat')
         self.logger.setLevel('INFO')
         self.log_path = os.path.join(self.output_dir, self.run_name + '.log')
+        if os.path.exists(self.log_path):
+            os.remove(self.log_path)
         self.log_handler = logging.FileHandler(self.log_path, mode=self.logmode)
         formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
         self.log_handler.setFormatter(formatter)
@@ -324,6 +320,8 @@ class Cravat (object):
         self.error_logger = logging.getLogger('error')
         self.error_logger.setLevel('INFO')
         error_log_path = os.path.join(self.output_dir, self.run_name + '.err')
+        if os.path.exists(error_log_path):
+            os.remove(error_log_path)
         error_log_handler = logging.FileHandler(error_log_path, mode=self.logmode)
         formatter = logging.Formatter('SOURCE:%(name)-20s %(message)s')
         error_log_handler.setFormatter(formatter)
@@ -367,11 +365,7 @@ class Cravat (object):
             converter_ran = False
             if self.endlevel >= self.runlevels['converter'] and \
                     self.startlevel <= self.runlevels['converter'] and \
-                    not 'converter' in self.args.skip and \
-                    (
-                        self.crv_present == False or
-                        'converter' in self.args.repeat
-                    ):
+                    not 'converter' in self.args.skip:
                 if not self.args.silent:
                     print('Running converter...')
                 stime = time.time()
@@ -383,12 +377,7 @@ class Cravat (object):
             self.mapper_ran = False
             if self.endlevel >= self.runlevels['mapper'] and \
                     self.startlevel <= self.runlevels['mapper'] and \
-                    not 'mapper' in self.args.skip and \
-                    (
-                        self.crx_present == False or
-                        'mapper' in self.args.repeat or
-                        converter_ran
-                   ):
+                    not 'mapper' in self.args.skip:
                 if not self.args.silent:
                     print(f'Running gene mapper...{" "*18}',end='', flush=True)
                 stime = time.time()
@@ -428,7 +417,6 @@ class Cravat (object):
                     (
                         self.mapper_ran or \
                         self.annotator_ran or \
-                        'aggregator' in self.args.repeat or \
                         self.startlevel == self.runlevels['aggregator']
                     ):
                 if not self.args.silent:
@@ -439,11 +427,7 @@ class Cravat (object):
                 self.aggregator_ran = True
             if self.endlevel >= self.runlevels['postaggregator'] and \
                     self.startlevel <= self.runlevels['postaggregator'] and \
-                    not 'postaggregator' in self.args.skip: # and \
-                    #(
-                        #self.aggregator_ran or \
-                        #'postaggregator' in self.args.repeat
-                    #):
+                    not 'postaggregator' in self.args.skip:
                 if not self.args.silent:
                     print('Running postaggregators...')
                 self.run_postaggregators()
@@ -669,14 +653,8 @@ class Cravat (object):
                 exit()
         else:
             self.input_assembly = self.args.genome
-        if self.args.repeat is None:
-            self.args.repeat = []
         if self.args.skip is None:
             self.args.skip = []
-        #if self.args.startat == 'postaggregator':
-        #    self.args.startat = 'aggregator'
-        #if 'postaggregator' in self.args.repeat and not 'aggregator' in self.args.repeat:
-        #    self.args.repeat.append('aggregator')
         if self.append_mode:
             self.args.endat = 'aggregator'
         try:
