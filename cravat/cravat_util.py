@@ -375,7 +375,7 @@ def migrate_result_180_to_181 (dbpath):
         c.execute('alter table variant add column base__cchange text')
     except:
         print(f'  base__cchange column already exists. Not created anew.')
-    c.execute('update variant set base__cchange=""')
+    c.execute('update variant set base__cchange=null')
     c.execute('insert or replace into variant_header values ("base__cchange", \'{"index": 10, "name": "base__cchange", "title": "cDNA change", "type": "string", "categories": [], "width": 70, "desc": null, "hidden": false, "category": null, "filterable": false, "link_format": null, "genesummary": false}\')')
     c.execute('update variant_header set col_def=\'{"index": 11, "name": "base__achange", "title": "Protein Change", "type": "string", "categories": [], "width": 55, "desc": null, "hidden": false, "category": null, "filterable": false, "link_format": null, "genesummary": false}\' where col_name="base__achange"')
     c.execute('update variant_header set col_def=\'{"index": 12, "name": "base__all_mappings", "title": "All Mappings", "type": "string", "categories": [], "width": 100, "desc": null, "hidden": true, "category": null, "filterable": false, "link_format": null, "genesummary": false}\' where col_name="base__all_mappings"')
