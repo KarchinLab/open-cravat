@@ -292,7 +292,7 @@ def install_modules(args):
             if local_info is not None:
                 local_ver = local_info.version
                 remote_ver = remote_info.latest_version
-                if LooseVersion(local_ver) >= LooseVersion(remote_ver):
+                if not args.force and LooseVersion(local_ver) >= LooseVersion(remote_ver):
                     print(f'{module_name}: latest is already installed. ({local_ver})')
                     continue
             selected_install[module_name] = remote_info.latest_version
@@ -300,11 +300,11 @@ def install_modules(args):
             selected_install[module_name] = args.version
         else:
             continue
-    if args.include_private:
+    if args.private:
         if args.version is None:
             sys.exit('--include-private cannot be used without specifying a version using -v/--version')
         for module_name in args.modules:
-            if au.module_exists_remote(module_name, version=args.version, include_private=True):
+            if au.module_exists_remote(module_name, version=args.version, private=True):
                 selected_install[module_name] = args.version
     # Add dependencies of selected modules
     dep_install = {}
@@ -336,7 +336,8 @@ def install_modules(args):
             au.install_module(module_name,
                                 version=module_version,
                                 force_data=args.force_data,
-                                stage_handler=stage_handler
+                                stage_handler=stage_handler,
+                                force=args.force,
                                 )
 
 def update_modules(args):
@@ -367,7 +368,7 @@ def update_modules(args):
         args.force_data = False
         args.version = update_info.version
         args.yes = True
-        args.include_private = False
+        args.private = False
         args.skip_dependencies = False
         install_modules(args)
 
@@ -403,7 +404,7 @@ def install_base (args):
                             skip_installed=True,
                             version=None,
                             yes=True,
-                            include_private=False,
+                            private=False,
                             skip_dependencies=False,
                             )
     install_modules(args)
@@ -484,26 +485,36 @@ parser_install = subparsers.add_parser('install',
                                         help='installs modules.',
                                         description='installs modules.')
 parser_install.add_argument('modules',
-                            nargs='+',
-                            help='Modules to install. May be regular expressions.')
+    nargs='+',
+    help='Modules to install. May be regular expressions.'
+)
 parser_install.add_argument('-v','--version',
-                            help='Version to install. Will apply to all modules. Default is latest version for each module')
-parser_install.add_argument('-d',
-                            '--force-data',
-                            action='store_true',
-                            help='Force download new data even if not needed.')
+    help='Install a specific version'
+)
+parser_install.add_argument('-f','--force',
+    action='store_true',
+    help='Install module even if latest version is already installed',
+)
+parser_install.add_argument('-d', '--force-data',
+    action='store_true',
+    help='Force download new data even if not needed.'
+)
 parser_install.add_argument('--skip-installed',
-                            action='store_true',
-                            help='skips already installed modules.')
+    action='store_true',
+    help='skips already installed modules.'
+)
 parser_install.add_argument('-y','--yes',
-                            action='store_true',
-                            help='Proceed without prompt')
+    action='store_true',
+    help='Proceed without prompt'
+)
 parser_install.add_argument('--skip-dependencies',
-                            action='store_true',
-                            help='Skip installing dependencies of selected modules')
-parser_install.add_argument('-p','--include-private',
-                            action='store_true',
-                            help='Include private modules when checking for module existence')
+    action='store_true',
+    help='Skip installing dependencies of selected modules'
+)
+parser_install.add_argument('-p','--private',
+    action='store_true',
+    help='Install a private module'
+)
 parser_install.set_defaults(func=install_modules)
 
 # update
