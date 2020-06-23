@@ -1856,6 +1856,14 @@ function populateMultInputsMessage() {
         var $fileListDiv = $('#mult-inputs-list');
         for (var i=0; i<files.length; i++) {
             var file = files[i];
+            if (file.name.indexOf(' ') > -1) {
+                var alertDiv = getEl('div');
+                var span = getEl('span');
+                span.textContent = 'Space in file names is not allowed.';
+                addEl(alertDiv, span);
+                showYesNoDialog(alertDiv, null, false, true);
+                return;
+            }
             if (inputFileList.indexOf(file.name) == -1) {
                 var sdiv = getEl('div');
                 var span = getEl('span');

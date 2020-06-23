@@ -572,6 +572,9 @@ class Cravat (object):
         if self.args.inputs is not None:
             self.inputs = [os.path.abspath(x) if not util.is_url(x) else x for x in self.args.inputs]
             for ip in self.inputs:
+                if ' ' in ip:
+                    print(f'Space is not allowed in input file paths ({ip})')
+                    exit()
                 for input_no in range(len(self.inputs)):
                     ip = self.inputs[input_no]
                     if util.is_url(ip):
