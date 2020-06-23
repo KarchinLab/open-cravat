@@ -126,7 +126,8 @@ def converttohg38 (args):
     newdb.commit()
 
 migrate_functions = {}
-supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.7.0', '1.8.0']
+#supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.7.0', '1.8.0']
+supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.7.0']
 max_version_supported_for_migration = max([LooseVersion(ver) for ver in supported_oc_ver])
 
 def check_result_db_version (dbpath, version):
@@ -470,7 +471,7 @@ def migrate_result_180_to_181 (dbpath):
                '"IND": "inframe_deletion", "MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
                '"coding": {"Y": "Yes"}}\' where module="base"'))
     c.execute('update info set colval="1.8.1" where colkey="open-cravat"')
-    c.execute('create index sample_idx_2 on sample (base__sample_id, base__uid;')
+    c.execute('create index sample_idx_2 on sample (base__sample_id, base__uid)')
     db.commit()
 
 migrate_functions['1.4.4'] = migrate_result_144_to_145

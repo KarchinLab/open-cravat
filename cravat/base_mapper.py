@@ -353,8 +353,10 @@ class BaseMapper(object):
         #print('            {}: started getting gene summary data'.format(self.module_name))
         t = time.time()
         hugos = await cf.get_filtered_hugo_list()
+        # Below is to fix opening oc 1.8.0 jobs with oc 1.8.1.
+        # TODO: Remove it after a while and add 1.8.0 to the db update chain in cravat_util.
         cols = ['base__' + coldef['name'] \
-                for coldef in crx_def]
+                for coldef in crx_def if coldef['name'] != 'cchange']
         cols.extend(['tagsampler__numsample'])
         data = {}
         t = time.time()
