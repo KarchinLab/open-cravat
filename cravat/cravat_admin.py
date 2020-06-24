@@ -370,6 +370,7 @@ def update_modules(args):
         args.yes = True
         args.private = False
         args.skip_dependencies = False
+        args.force = False
         install_modules(args)
 
 def uninstall_modules (args):
