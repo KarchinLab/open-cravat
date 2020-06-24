@@ -390,7 +390,7 @@ def module_exists_local(module_name):
     """
     return module_name in mic.local
 
-def module_exists_remote(module_name, version=None, include_private=False):
+def module_exists_remote(module_name, version=None, private=False):
     """
     Returns true if a module (optionally versioned) exists in remote
     """
@@ -401,7 +401,7 @@ def module_exists_remote(module_name, version=None, include_private=False):
             found = True
         else:
             found = version in mic.remote[module_name]['versions']
-    if include_private and not found:
+    if private and not found:
         sys_conf = get_system_conf()
         path_builder = su.PathBuilder(sys_conf['store_url'], 'url')
         if version is None:
