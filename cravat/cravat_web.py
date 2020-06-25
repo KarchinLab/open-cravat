@@ -235,7 +235,7 @@ def get_server():
                 port = 8443
         else:
             host = au.get_system_conf().get('gui_host', def_host)
-            port = au.get_system_conf().get('gui_port', 8080)
+            port = au.get_system_conf().get('gui_port', 8060)
         server['host'] = host
         server['port'] = port
         return server
@@ -258,7 +258,7 @@ class TCPSitePatched (web_runner.BaseSite):
             host = '0.0.0.0'
         self._host = host
         if port is None:
-            port = 8443 if self._ssl_context else 8080
+            port = 8443 if self._ssl_context else 8060
         self._port = port
         self._reuse_address = reuse_address
         self._reuse_port = reuse_port
