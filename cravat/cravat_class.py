@@ -594,7 +594,7 @@ class Cravat (object):
                             exit()
                         if not self.args.silent:
                             print(f'done')
-                    elif first_non_url_input is not None:
+                    elif first_non_url_input is None:
                         first_non_url_input = ip
         else:
             self.inputs = []
