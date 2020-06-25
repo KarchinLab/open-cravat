@@ -650,7 +650,7 @@ class Cravat (object):
             else:
                 msg = 'Genome assembly should be given (as one of {}) with -l option or a default genome assembly should be defined in {} as default_assembly.'.format(
                     ', '.join(constants.assembly_choices), 
-                    constants.cravat_conf_path,
+                    constants.main_conf_path,
                 )
                 print(msg)
                 exit()
