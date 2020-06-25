@@ -583,6 +583,7 @@ class Cravat (object):
                             print(f'Fetching {ip}... ', end='', flush=True)
                         try:
                             r = requests.get(ip, timeout=3)
+                            r.raise_for_status()
                             fn = os.path.basename(ip)
                             fpath = fn
                             wf = open(fpath, 'w')
