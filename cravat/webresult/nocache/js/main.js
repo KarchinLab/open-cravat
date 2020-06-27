@@ -83,7 +83,11 @@ function getExportContent (tabName) {
 	var rows = $grids[tabName].pqGrid('option', 'dataModel').data;
 	for (var rowNo = 0; rowNo < rows.length; rowNo++) {
 		var row = rows[rowNo];
-		content += row[colNos[0]];
+        var value = row[colNos[0]];
+        if (value == null) {
+            value = '';
+        }
+		content += value;
 		for (var i = 1; i < colNos.length; i++) {
 			var value = row[colNos[i]];
 			if (value == null) {
