@@ -489,6 +489,9 @@ async def get_job (request, job_id):
         job.info['result_available'] = False
     else:
         job.info['result_available'] = True
+    for annot_to_del in ['extra_vcf_info', 'extra_variant_info']:
+        if annot_to_del in job.info['annotators']:
+            job.info['annotators'].remove(annot_to_del)
     return job
 
 async def get_jobs (request):
