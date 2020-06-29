@@ -301,7 +301,7 @@ async def submit (request):
                         )
     # Subprocess arguments
     input_fpaths = [os.path.join(job_dir, fn) for fn in input_fnames]
-    run_args = ['cravat']
+    run_args = ['oc', 'run']
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))
     # Annotators
@@ -335,14 +335,8 @@ async def submit (request):
     # Note
     if 'note' in job_options:
         note = job_options['note']
-    else:
-        note = ''
-    run_args.append('--note')
-    if 'note' in job_options:
-        note = job_options['note']
-    else:
-        note = ''
-    run_args.append(note)
+        run_args.append('--note')
+        run_args.append(note)
     # Forced input format
     if 'forcedinputformat' in job_options and job_options['forcedinputformat']:
         run_args.append('--input-format')
