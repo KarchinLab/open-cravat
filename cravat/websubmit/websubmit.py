@@ -335,6 +335,8 @@ async def submit (request):
     # Note
     if 'note' in job_options:
         note = job_options['note']
+        if note == '':
+            note = '""'
         run_args.append('--note')
         run_args.append(note)
     # Forced input format
