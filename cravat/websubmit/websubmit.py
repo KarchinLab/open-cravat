@@ -301,11 +301,11 @@ async def submit (request):
                         )
     # Subprocess arguments
     input_fpaths = [os.path.join(job_dir, fn) for fn in input_fnames]
-    run_args = ['cravat']
+    run_args = ['oc', 'run']
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))
     # Annotators
-    if 'annotators' in job_options and len(job_options['annotators']) > 0:
+    if 'annotators' in job_options and len(job_options['annotators']) > 0 and job_options['annotators'][0] != '':
         annotators = job_options['annotators']
         annotators.sort()
         run_args.append('-a')
@@ -325,7 +325,6 @@ async def submit (request):
         await cravat_multiuser.update_user_settings(request, {'lastAssembly':assembly})
     else:
         au.set_cravat_conf_prop('last_assembly', assembly)
-
     # Reports
     if 'reports' in job_options and len(job_options['reports']) > 0:
         run_args.append('-t')
@@ -335,14 +334,9 @@ async def submit (request):
     # Note
     if 'note' in job_options:
         note = job_options['note']
-    else:
-        note = ''
-    run_args.append('--note')
-    if 'note' in job_options:
-        note = job_options['note']
-    else:
-        note = ''
-    run_args.append(note)
+        if note != '':
+            run_args.append('--note')
+            run_args.append(note)
     # Forced input format
     if 'forcedinputformat' in job_options and job_options['forcedinputformat']:
         run_args.append('--input-format')
@@ -489,6 +483,9 @@ async def get_job (request, job_id):
         job.info['result_available'] = False
     else:
         job.info['result_available'] = True
+    for annot_to_del in ['extra_vcf_info', 'extra_variant_info']:
+        if annot_to_del in job.info['annotators']:
+            job.info['annotators'].remove(annot_to_del)
     return job
 
 async def get_jobs (request):
