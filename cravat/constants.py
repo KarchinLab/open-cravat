@@ -102,7 +102,7 @@ crv_idx = [['uid']]
 crx_def = crv_def + \
           [{'name':'coding', 'title':'Coding', 'type':'string', 'width': 50, 'category': 'single',
                'categories': ['Y']},
-           {'name':'hugo', 'title':'Hugo Gene Symbol', 'type':'string', 'width': 70, 'filterable': True},
+           {'name':'hugo', 'title':'Gene', 'type':'string', 'width': 70, 'filterable': True},
            {'name':'transcript', 'title':'Transcript', 'type':'string', 'width': 135, 'hidden':False, 'filterable': False},
            {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 120, 'category': 'single', 'filterable': True},
            {'name':'cchange', 'title': 'cDNA change', 'type': 'string', 'width': 70, 'filterable': False},
@@ -110,7 +110,7 @@ crx_def = crv_def + \
            {'name':'all_mappings', 'title':'All Mappings', 'type':'string', 'width': 100, 'hidden':True, 'filterable': False},
            ]
 crx_idx = [['uid']]
-crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70, 'filterable': True},
+crg_def = [{'name':'hugo', 'title':'Gene', 'type':'string', 'width': 70, 'filterable': True},
            {'name': 'note', 'title': 'Note', 'type': 'string', 'width': 50},
           ]
 crg_idx = [['hugo']]
