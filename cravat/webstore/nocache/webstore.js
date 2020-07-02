@@ -2154,7 +2154,7 @@ function connectWebSocket () {
             sdiv.style.color = 'black';
             sdiv.textContent = msg;
         }
-        if (msg.startsWith('Finished installation of')) {
+        if (msg.search('Finished installation of')>0) {
             delete installInfo[module];
             //installQueue = installQueue.filter(e => e != module);
             unqueue(module);
@@ -2164,11 +2164,11 @@ function connectWebSocket () {
                 var module = installQueue.shift();
                 installInfo[module] = {'msg': 'installing'};
             }
-        } else if (msg.startsWith('Aborted ')) {
+        } else if (msg.search('Aborted')>0) {
             delete installInfo[module];
             unqueue(module);
             setModuleTileInstallButton (module);
-        } else if (msg.startsWith('Unqueued')) {
+        } else if (msg.search('Unqueued')>0) {
             delete installInfo[module];
             unqueue(module);
             setModuleTileInstallButton (module);
