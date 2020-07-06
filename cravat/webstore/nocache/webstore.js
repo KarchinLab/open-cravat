@@ -480,6 +480,9 @@ function updateModuleGroupInfo () {
         for (var j = 0; j < mns.length; j++) {
             var mn = mns[j];
             var m = remoteModuleInfo[mn];
+            if (m===undefined) { // Work if no internet
+                continue;
+            }
             var d1 = new Date(group.publish_time);
             var d2 = new Date(m.publish_time);
             if (d1 < d2) {
