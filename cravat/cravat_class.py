@@ -207,6 +207,7 @@ class Cravat (object):
         self.pythonpath = sys.executable
         self.annotators = {}        
         self.append_mode = False
+        self.pipeinput = False
         self.make_args_namespace(kwargs)
         if self.args.clean_run:
             if not self.args.silent:
@@ -568,7 +569,6 @@ class Cravat (object):
                 print('\nNo input file was given.')
                 exit()
         first_non_url_input = None
-        self.pipeinput = False
         if self.args.inputs is not None and len(self.args.inputs) == 1 and self.args.inputs[0] == '-':
             self.pipeinput = True
         if self.args.inputs is not None:

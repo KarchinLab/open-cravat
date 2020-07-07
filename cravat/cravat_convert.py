@@ -83,6 +83,7 @@ class MasterCravatConverter(object):
         self.cmd_args = None
         self.output_dir = None
         self.output_base_fname = None
+        self.pipeinput = False
         self.chromdict = {'chrx': 'chrX', 'chry': 'chrY', 'chrMT': 'chrM', 'chrMt': 'chrM', 'chr23': 'chrX', 'chr24': 'chrY'}
         self._parse_cmd_args(args)
         self._setup_logger()
