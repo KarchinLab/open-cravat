@@ -588,15 +588,9 @@ async def generate_report(request):
     global filerouter
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
-    job_input_paths = await filerouter.job_input(request, job_id)
-    run_args = ['oc', 'run']
-    for job_input_path in job_input_paths:
-        run_args.append(job_input_path)
-    run_args.extend(['--startat', 'reporter'])
-    run_args.extend(['--repeat', 'reporter'])
+    job_db_path = await filerouter.job_db(request, job_id)
+    run_args = ['oc', 'report', job_db_path]
     run_args.extend(['-t', report_type])
-    run_args.extend(['-l', 'hg38']) # dummy -l option
-    run_args.extend(['--do-not-change-status'])
     p = await asyncio.create_subprocess_shell(' '.join(run_args))
     await p.wait()
     return web.json_response('done')

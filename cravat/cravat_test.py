@@ -46,7 +46,6 @@ class Tester():
         self.start_time = time.time()
         python_exc = sys.executable
         cmd_list = [python_exc, self.cravat_run, self.input_path, '-d', self.out_dir, '-t', 'text']
-        cmd_list.extend(['--repeat', 'reporter'])
         if (self.module.type == 'annotator'):
             cmd_list.extend(['-a', self.module.name])
         else:

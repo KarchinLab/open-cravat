@@ -235,7 +235,7 @@ def get_server():
                 port = 8443
         else:
             host = au.get_system_conf().get('gui_host', def_host)
-            port = au.get_system_conf().get('gui_port', 8060)
+            port = au.get_system_conf().get('gui_port', 8080)
         server['host'] = host
         server['port'] = port
         return server

@@ -182,7 +182,7 @@ class FilterManager {
         // Show all
         
         controlsL1.append($(getEl('button'))
-            .click(this.sampleShowAll)
+            .click(()=>{this.drawSamples(this.allSamples)})
             .text(`Show all`)
             .addClass('butn')
         );
@@ -205,7 +205,7 @@ class FilterManager {
         controlsL1.append($(getEl('input'))
             .attr('id', this.sampleFileId)
             .attr('type', 'file')
-            .on('input', this.sampleListFile)
+            .on('input', this.sampleListFile.bind(this))
             .css('display','none')
         );
         controlsL1.append($(getEl('button'))
@@ -243,19 +243,21 @@ class FilterManager {
             .attr('id', this.sampleInFilterCountId)
             .addClass(this.sampleRuleClass)
             .text('In filter: 0')
-            .click(this.sampleShowRule)
+            .click(()=>{
+                this.drawSamples([...this.requireSamples].concat([...this.rejectSamples]));
+            })
         );
         interactedSpan.append($(getEl('span'))
             .attr('id', this.sampleReqCountId)
             .addClass(this.sampleRuleClass)
             .text('Include: 0')
-            .click(this.sampleShowRequire)
+            .click(()=>{this.drawSamples([...this.requireSamples])})
         );
         interactedSpan.append($(getEl('span'))
             .attr('id', this.sampleRejCountId)
             .addClass(this.sampleRuleClass)
             .text('Exclude: 0')
-            .click(this.sampleShowReject)
+            .click(()=>{this.drawSamples([...this.rejectSamples])})
         );
 
         // Clear selection
@@ -352,7 +354,7 @@ class FilterManager {
 			let sid = sampleIds[i];
 			let sampleBox = $(getEl('div'))
 				.addClass('sample-selector')
-				.click(this.onSampleSelectorClick)
+				.click(this.onSampleSelectorClick.bind(this))
 				.addClass('sample-neutral')
 				.attr('title', sid);
 			sampleSelDiv.append(sampleBox);
@@ -399,23 +401,7 @@ class FilterManager {
         return this.allSamples.filter(sid=>sid.includes(q));
     }
 
-    sampleShowRequire = () => {
-        this.drawSamples([...this.requireSamples]);
-    }
-
-    sampleShowReject= () =>  {
-        this.drawSamples([...this.rejectSamples]);
-    }
-
-    sampleShowRule = () => {
-        this.drawSamples([...this.requireSamples].concat([...this.rejectSamples]));
-    }
-
-    sampleShowAll = () => {
-        this.drawSamples(this.allSamples);
-    }
-
-    samplePickShown = (state) => {
+    samplePickShown (state) {
         const selectors = $('#'+this.sampleSelectId).children('.sample-selector');
         for (let sbox of selectors) {
             this.setSampleSelector($(sbox),state);
@@ -460,7 +446,7 @@ class FilterManager {
         }
     }
 
-	onSampleSelectorClick = (event) => {
+	onSampleSelectorClick (event) {
         let sbox = $(event.currentTarget);
 		if (sbox.hasClass('sample-neutral')) { // Set to require
 			this.setSampleSelector(sbox,'require');
@@ -472,7 +458,7 @@ class FilterManager {
         this.sampleSelChange();
     }
     
-    sampleListFile = (event) => {
+    sampleListFile (event) {
         const fileInput = $(event.target);
         const nameDisplay = $('#'+this.sampleFileDisplayId);
         const files = fileInput.prop('files');
