@@ -67,7 +67,6 @@ class MasterCravatConverter(object):
 
     def __init__(self, args=None, status_writer=None):
         args = args if args else sys.argv
-        self.pipeinput = sys.stdin.isatty() == False
         self.status_writer = status_writer
         self.input_paths = []
         self.input_files = []
@@ -126,10 +125,12 @@ class MasterCravatConverter(object):
         parsed_args = parser.parse_args(args)
         if parsed_args.format:
             self.input_format = parsed_args.format
-        if parsed_args.inputs is None and self.pipeinput == False:
+        if parsed_args.inputs is None:
             raise ExpectedException('Input files are not given.')
+        if parsed_args.inputs is not None and len(parsed_args.inputs) == 1 and parsed_args.inputs[0] == '-':
+            self.pipeinput = True
         if self.pipeinput == False:
-            self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs]
+            self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs if x != '-']
         else:
             self.input_paths = [f'./{STDIN}']
         self.input_dir = os.path.dirname(self.input_paths[0])
