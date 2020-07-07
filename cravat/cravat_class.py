@@ -199,7 +199,6 @@ class Cravat (object):
             'aggregator': 4, 
             'postaggregator': 5, 
             'reporter': 6}
-        self.pipeinput = sys.stdin.isatty() == False
         self.should_run_converter = False
         self.should_run_genemapper = False
         self.should_run_annotators = True
@@ -557,20 +556,22 @@ class Cravat (object):
         if self.args.show_version:
             au.show_cravat_version()
             exit()
-        if self.args.inputs is not None and len(self.args.inputs) == 0 and \
-                'inputs' in self.run_conf:
-            if type(self.run_conf['inputs']) == list:
-                self.args.inputs = self.run_conf['inputs']
+        if self.args.inputs is not None and len(self.args.inputs) == 0:
+            if 'inputs' in self.run_conf:
+                if type(self.run_conf['inputs']) == list:
+                    self.args.inputs = self.run_conf['inputs']
+                else:
+                    if not self.args.silent:
+                        print('inputs in conf file is invalid')
             else:
-                if not self.args.silent:
-                    print('inputs in conf file is invalid')
-        if self.args.inputs is not None and len(self.args.inputs) == 0 and sys.stdin.isatty() == True:
-            cravat_cmd_parser.print_help()
-            print('\nNo input file was given.')
-            exit()
+                cravat_cmd_parser.print_help()
+                print('\nNo input file was given.')
+                exit()
         first_non_url_input = None
+        if self.args.inputs is not None and len(self.args.inputs) == 1 and self.args.inputs[0] == '-':
+            self.pipeinput = True
         if self.args.inputs is not None:
-            self.inputs = [os.path.abspath(x) if not util.is_url(x) else x for x in self.args.inputs]
+            self.inputs = [os.path.abspath(x) if not util.is_url(x) and x != '-' else x for x in self.args.inputs]
             for ip in self.inputs:
                 if ' ' in ip:
                     print(f'Space is not allowed in input file paths ({ip})')
@@ -602,7 +603,7 @@ class Cravat (object):
         num_input = len(self.inputs)
         self.run_name = self.args.run_name
         if self.run_name == None:
-            if num_input == 0:
+            if num_input == 0 or self.pipeinput:
                 self.run_name = 'cravat_run'
             else:
                 self.run_name = os.path.basename(self.inputs[0])
