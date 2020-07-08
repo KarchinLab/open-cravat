@@ -269,6 +269,9 @@ class ModuleInfoCache(object):
             self.remote = {}
             if manifest_str != '':
                 self.remote = yaml.safe_load(manifest_str)
+            else:
+                msg = f'WARNING: Could not list modules from {self._remote_url}. Check internet connection.'
+                print(msg, file=sys.stderr)
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
