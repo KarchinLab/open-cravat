@@ -853,6 +853,8 @@ class Cravat (object):
                '-d', self.output_dir,
                ]
         if self.args.primary_transcript is not None:
+            if 'mane' not in self.args.primary_transcript:
+                self.args.primary_transcript.append('mane')
             cmd.extend(['--primary-transcript'])
             cmd.extend(self.args.primary_transcript)
         if module.name in self.cravat_conf:
