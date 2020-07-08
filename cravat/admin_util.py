@@ -248,12 +248,12 @@ class ModuleInfoCache(object):
             if not(os.path.isdir(mg_path)) or basename.startswith('.') or basename.startswith('_'):
                 continue
             for module_name in os.listdir(mg_path):
+                if module_name == 'hgvs': # deprecate hgvs
+                    continue
                 module_dir = os.path.join(mg_path, module_name)
                 if module_dir.startswith('.') == False and os.path.isdir(module_dir):
-                    # local_info = LocalModuleInfo(module_dir)
-                    # if local_info.is_valid_module():
-                    #     self.local[module_name] = local_info
                     self.local[module_name] = module_dir
+        
 
     def update_remote(self, force=False):
         if force or not(self._remote_fetched):
@@ -269,6 +269,7 @@ class ModuleInfoCache(object):
             self.remote = {}
             if manifest_str != '':
                 self.remote = yaml.safe_load(manifest_str)
+                self.remote.pop('hgvs',None) # deprecate hgvs annotator
             else:
                 msg = f'WARNING: Could not list modules from {self._remote_url}. Check internet connection.'
                 print(msg, file=sys.stderr)
