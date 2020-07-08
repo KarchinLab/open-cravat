@@ -82,6 +82,10 @@ h1 {
     height: 24px;
 }
 
+.modulepanel-update-button:focus {
+    outline: none; !important;
+}
+
 .modulepanel-uninstall-button {
     position: absolute;
     bottom: 3px;
@@ -90,6 +94,10 @@ h1 {
     background-color: #e6e7e8;
     color: #414042;
     height: 24px;
+}
+
+.modulepanel-uninstall-button:focus {
+    outline: none; !important;
 }
 
 .modulepanel-install-button-div {
@@ -105,6 +113,10 @@ h1 {
     background-color: #d1d3d4;
     color: #414042;
     height: 24px;
+}
+
+.modulepanel-install-button:focus {
+    outline: none; !important;
 }
 
 .modulepanel-install-button:before {
@@ -133,6 +145,10 @@ h1 {
     background-color: #414042;
     color: #ffffff;
     height: 24px;
+}
+
+.modulepanel-unqueueinstall-button:focus {
+    outline: none; !important;
 }
 
 .moduletile {
