@@ -79,6 +79,7 @@ class Tester():
         for idx, header in enumerate(headers):
             if col in header:
                 return idx
+        return -1    
     
     #The ID of a result row is used to match key and output.  The ID
     #differs depending on which section of the output is being checked.         
@@ -91,7 +92,10 @@ class Tester():
                  columns[self.getColPos(headers, 'Alt Base')] + ' ' + \
                  columns[self.getColPos(headers, 'Tags')];
         if (level == 'gene'):
-            Id = columns[self.getColPos(headers, 'Hugo')];
+            pos = self.getColPos(headers, 'Hugo')
+            if pos == -1:
+                pos = self.getColPos(headers, 'Gene')
+            Id = columns[pos];
         if (level == 'sample'):
             Id = columns[self.getColPos(headers, 'UID')] + ' ' + \
                  columns[self.getColPos(headers, 'Sample')];    
