@@ -27,6 +27,23 @@ from cravat.inout import CravatWriter
 from cravat.inout import CravatReader
 import glob
 
+# Custom system conf
+pre_parser = argparse.ArgumentParser()
+pre_parser.add_argument('--system-option', dest='system_option', nargs='*', default=None)
+args, unknown_args = pre_parser.parse_known_args(sys.argv[1:])
+custom_system_conf = {}
+if args.system_option is not None:
+    for kv in args.system_option:
+        if '=' not in kv:
+            continue
+        toks = kv.split('=')
+        if len(toks) != 2:
+            continue
+        [k, v] = toks
+        custom_system_conf[k] = v
+au.custom_system_conf = custom_system_conf
+au.update_mic()
+
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path_1 input_file_path_2 ...',
     description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat. Use input_file_path arguments before any option or define them in a conf file (option -c).',
@@ -164,6 +181,10 @@ cravat_cmd_parser.add_argument('--module-option',
     dest='module_option',
     nargs='*',
     help='Module-specific option in module_name.key=value syntax. For example, --module-option vcfreporter.type=separate')
+cravat_cmd_parser.add_argument('--system-option',
+    dest='system_option',
+    nargs='*',
+    help='System option in key=value syntax. For example, --system-option modules_dir=/home/user/open-cravat/modules')
 cravat_cmd_parser.add_argument('--silent',
     dest='silent',
     action='store_true',
