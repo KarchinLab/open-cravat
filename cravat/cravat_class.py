@@ -928,7 +928,7 @@ class Cravat (object):
         crg_path = os.path.join(self.output_dir, f'{self.run_name}.crg')
         wf = open(crg_path, 'w')
         unique_hugos = {}
-        fns = glob.glob(crg_path + '[.]*')
+        fns = sorted(glob.glob(crg_path + '[.]*'))
         fn = fns[0]
         f = open(fn)
         for line in f:
@@ -964,7 +964,7 @@ class Cravat (object):
         wf = open(crt_path, 'w')
         '''
         unique_trs = {}
-        fns = glob.glob(crt_path + '[.]*')
+        fns = sorted(glob.glob(crt_path + '[.]*'))
         fn = fns[0]
         '''
         f = open(fn)
