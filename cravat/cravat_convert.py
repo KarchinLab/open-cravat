@@ -18,6 +18,7 @@ import gzip
 from collections import defaultdict
 from cravat.base_converter import BaseConverter
 import cravat
+import re
 
 STDIN = 'stdin'
 
@@ -333,6 +334,7 @@ class MasterCravatConverter(object):
         multiple_files = len(self.input_files) > 1
         fileno = 0
         total_lnum = 0
+        base_re = re.compile('^[ATGC]+|[-]+$')
         for f in self.input_files:
             if self.pipeinput == True:
                 fname = STDIN
@@ -387,6 +389,10 @@ class MasterCravatConverter(object):
                                 if self.do_liftover:
                                     prelift_wdict = copy.copy(wdict)
                                     wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
+                                if base_re.fullmatch(wdict['ref_base']) is None:
+                                    raise BadFormatError('Invalid reference base')
+                                if base_re.fullmatch(wdict['alt_base']) is None:
+                                    raise BadFormatError('Invalid alternate base')
                                 p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
                                 new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
                                 unique, UID = self.vtracker.addVar(wdict['chrom'], new_pos, new_ref, new_alt)
