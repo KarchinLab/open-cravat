@@ -909,7 +909,8 @@ class Cravat (object):
         # collects crx.
         crx_path = os.path.join(self.output_dir, f'{self.run_name}.crx')
         wf = open(crx_path, 'w')
-        fns = glob.glob(crx_path + '[.]*')
+        fns = sorted(glob.glob(crx_path + '[.]*'))
+        print(fns)
         fn = fns[0]
         f = open(fn)
         for line in f:
