@@ -40,6 +40,10 @@ if args.system_option is not None:
         if len(toks) != 2:
             continue
         [k, v] = toks
+        try:
+            v = int(v)
+        except ValueError:
+            pass
         custom_system_conf[k] = v
     au.custom_system_conf = custom_system_conf
     au.update_mic()
