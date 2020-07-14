@@ -31,8 +31,8 @@ import glob
 pre_parser = argparse.ArgumentParser()
 pre_parser.add_argument('--system-option', dest='system_option', nargs='*', default=None)
 args, unknown_args = pre_parser.parse_known_args(sys.argv[1:])
-custom_system_conf = {}
 if args.system_option is not None:
+    custom_system_conf = {}
     for kv in args.system_option:
         if '=' not in kv:
             continue
@@ -41,8 +41,10 @@ if args.system_option is not None:
             continue
         [k, v] = toks
         custom_system_conf[k] = v
-au.custom_system_conf = custom_system_conf
-au.update_mic()
+    au.custom_system_conf = custom_system_conf
+    au.update_mic()
+else:
+    au.custom_system_conf = {}
 
 cravat_cmd_parser = argparse.ArgumentParser(
     prog='cravat input_file_path_1 input_file_path_2 ...',
