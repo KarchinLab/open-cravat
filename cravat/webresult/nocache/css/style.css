@@ -792,10 +792,10 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .sf-selector {
-	flex: 0 1 70%;
+	flex: 0 1 50%;
 }
 .sf-title {
-	flex: 0 1 30%;
+	flex: 0 1 50%;
 	padding-right: 10px;
 }
 .sf-title > .checkbox-container {
@@ -827,7 +827,7 @@ div.pq-select-menu>.pq-select-option-label {
 	content: "\25b7";
 }
 #vprop-sf {
-	max-width: 800px;
+	max-width: 500px;
 }
 .smartfilter-checkbox {
 	width: 15px;

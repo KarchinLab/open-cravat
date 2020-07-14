@@ -527,6 +527,8 @@ async def get_all_jobs (request):
         direntries = [de for de in dir_it]
         de_names = []
         for it in direntries:
+            if it.name.startswith('.'):
+                continue
             de_names.append(it.name)
         all_jobs.extend(de_names)
     all_jobs.sort(reverse=True)
