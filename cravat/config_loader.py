@@ -10,14 +10,21 @@ class ConfigLoader():
     def __init__(self, job_conf_path = None):
         self.job_conf_path = job_conf_path
         self.main_conf_path = au.get_main_conf_path()
+        self._system = {}
         self._main = {}
         self._job = {}
         self._modules = {}
         self._all = {}
+        self._load_system_conf(build_all=False)
         self._load_main_conf(build_all=False)
         self._load_job_conf(build_all=False)
         self._build_all()
         
+    def _load_system_conf (self, build_all=True):
+        self._system = au.get_system_conf()
+        if build_all:
+            self._build_all()
+
     def _load_main_conf(self, build_all=True):
         self._main = {}
         if os.path.exists(self.main_conf_path) == False:
@@ -54,6 +61,8 @@ class ConfigLoader():
             self._all['modules'] = copy.deepcopy(self._modules)
         if self._main:
             self._all['cravat'] = copy.deepcopy(self._main)
+        if self._system:
+            self._all['system'] = copy.deepcopy(self._system)
         self._all = au.recursive_update(self._all, self._job)
         if 'run' not in self._all:
             self._all['run'] = {}
@@ -105,6 +114,11 @@ class ConfigLoader():
             self._load_main_conf()
         return self._all['cravat']
     
+    def get_system_conf (self):
+        if 'system' not in self._all:
+            self._load_system_conf()
+        return self._all['system']
+
     def get_modules_conf(self):
         conf = self._all.get('modules', {})
         return conf
