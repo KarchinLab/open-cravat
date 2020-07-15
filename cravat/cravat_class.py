@@ -174,15 +174,17 @@ def run(cmd_args):
     au.ready_resolution_console()
     module = Cravat(**vars(cmd_args))
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(module.main())
+    response = loop.run_until_complete(module.main())
+    return response
 
 def run_cravat_job(**kwargs):
     module = Cravat(**kwargs)
     loop = asyncio.get_event_loop()
     if loop.is_running():
-        loop.create_task(module.main())
+        response = loop.create_task(module.main())
     else:
-        loop.run_until_complete(module.main())
+        response = loop.run_until_complete(module.main())
+    return response
 
 cravat_cmd_parser.set_defaults(func=run)
 
@@ -336,7 +338,8 @@ class Cravat (object):
     def run (self):
         import asyncio
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.main())
+        response = loop.run_until_complete(self.main())
+        return response
 
     def delete_output_files (self):
         fns = glob.glob(os.path.join(self.output_dir, self.run_name + '.*'))
@@ -347,6 +350,7 @@ class Cravat (object):
 
     async def main (self):
         no_problem_in_run = True
+        report_response = None
         try:
             self.aggregator_ran = False
             self.check_valid_modules()
@@ -440,7 +444,7 @@ class Cravat (object):
                     ):
                 if not self.args.silent:
                     print('Running reporter...')
-                no_problem_in_run = await self.run_reporter()
+                no_problem_in_run, report_response = await self.run_reporter()
             if self.args.do_not_change_status == False:
                 self.update_status('Finished')
         except Exception as e:
@@ -470,6 +474,7 @@ class Cravat (object):
                 self.clean_up_at_end()
             if self.args.writeadmindb:
                 await self.write_admin_db(runtime, self.numinput)
+            return report_response
 
     async def write_admin_db (self, runtime, numinput):
         if runtime is None or numinput is None:
@@ -1117,6 +1122,7 @@ class Cravat (object):
         else:
             module_names = [self.cravat_conf['reporter']]
         all_reporters_ran_well = True
+        response = None
         for module_name in module_names:
             try:
                 module = au.get_local_module_info(module_name)
@@ -1149,7 +1155,7 @@ class Cravat (object):
                 reporter = Reporter(cmd, self.status_writer)
                 await reporter.prep()
                 stime = time.time()
-                await reporter.run()
+                response = await reporter.run()
                 rtime = time.time() - stime
                 if not self.args.silent:
                     print('finished in {0:.3f}s'.format(rtime))
@@ -1157,7 +1163,7 @@ class Cravat (object):
                 traceback.print_exc()
                 self.logger.exception(e)
                 all_reporters_ran_well = False
-        return all_reporters_ran_well
+        return all_reporters_ran_well, response
 
     def run_annotators_mp (self):
         num_workers = au.get_max_num_concurrent_annotators_per_job()
