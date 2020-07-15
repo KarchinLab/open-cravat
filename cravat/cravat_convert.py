@@ -382,7 +382,7 @@ class MasterCravatConverter(object):
                                     prelift_wdict = copy.copy(wdict)
                                     wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
                                 if 'ref_base' not in wdict or wdict['ref_base'] == '':
-                                    wdict['ref_base'] = self.wgsreader.get_bases(chrom, wdict['pos'])
+                                    wdict['ref_base'] = self.wgsreader.get_bases(chrom, int(wdict['pos']))
                                 else:
                                     ref_base = wdict['ref_base']
                                     if ref_base == '' and wdict['alt_base'] not in ['A','T','C','G']:
