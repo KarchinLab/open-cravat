@@ -1433,7 +1433,9 @@ class Cravat (object):
                 continue
             if fn.startswith(self.run_name):
                 fn_end = fn.split('.')[-1]
-                if fn_end in ['var', 'gen', 'crv', 'crx', 'crg', 'crs', 'crm', 'crt', 'json']:
+                if fn_end in ['var', 'gen', 'crv', 'crx', 'crg', 'crs', 'crm', 'crt']:
+                    os.remove(os.path.join(self.output_dir, fn))
+                if fn.split('.')[-2:] == ['status','json']:
                     os.remove(os.path.join(self.output_dir, fn))
 
 class StatusWriter:
