@@ -28,7 +28,7 @@ from cravat.inout import CravatReader
 import glob
 
 # Custom system conf
-pre_parser = argparse.ArgumentParser()
+pre_parser = argparse.ArgumentParser(add_help=False)
 pre_parser.add_argument('--system-option', dest='system_option', nargs='*', default=None)
 args, unknown_args = pre_parser.parse_known_args(sys.argv[1:])
 if args.system_option is not None:
