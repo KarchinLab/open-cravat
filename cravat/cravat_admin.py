@@ -407,6 +407,7 @@ def install_base (args):
                             yes=True,
                             private=False,
                             skip_dependencies=False,
+                            force=args.force,
                             )
     install_modules(args)
 
@@ -477,8 +478,13 @@ parser_md.set_defaults(func=set_modules_dir)
 
 # install-base
 parser_install_base = subparsers.add_parser('install-base',
-                                            help='installs base modules.',
-                                            description='installs base modules.')
+    help='installs base modules.',
+    description='installs base modules.'
+)
+parser_install_base.add_argument('-f','--force',
+    action='store_true',
+    help='Overwrite existing moduels',
+)
 parser_install_base.set_defaults(func=install_base)
 
 # install
