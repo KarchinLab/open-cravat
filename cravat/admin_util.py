@@ -823,6 +823,10 @@ def get_system_conf ():
     key = 'max_num_concurrent_annotators_per_job'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_annotators_per_job
+    if 'custom_system_conf' in globals():
+        global custom_system_conf
+        for k, v in custom_system_conf.items():
+            conf[k] = v
     return conf
 
 def get_modules_dir():
@@ -1358,6 +1362,11 @@ def report_formats():
             if fn.endswith('reporter'):
                 formats.add(fn.replace('reporter',''))
     return formats
+
+def update_mic ():
+    global mic
+    global custom_system_conf
+    mic = ModuleInfoCache()
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

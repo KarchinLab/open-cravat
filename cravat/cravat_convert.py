@@ -378,17 +378,17 @@ class MasterCravatConverter(object):
                                         wdict['sample_id'] = '__'.join([samp_prefix, wdict['sample_id']])
                                     else:
                                         wdict['sample_id'] = samp_prefix
-                                if 'ref_base' not in wdict:
-                                    wdict['ref_base'] = self.wgsreader.get_bases(chrom, pos)
+                                if self.do_liftover:
+                                    prelift_wdict = copy.copy(wdict)
+                                    wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
+                                if 'ref_base' not in wdict or wdict['ref_base'] == '':
+                                    wdict['ref_base'] = self.wgsreader.get_bases(chrom, int(wdict['pos']))
                                 else:
                                     ref_base = wdict['ref_base']
                                     if ref_base == '' and wdict['alt_base'] not in ['A','T','C','G']:
                                         raise BadFormatError('Reference base required for non SNV')
                                     elif ref_base is None or ref_base == '':
                                         wdict['ref_base'] = self.wgsreader.get_bases(chrom, int(pos))
-                                if self.do_liftover:
-                                    prelift_wdict = copy.copy(wdict)
-                                    wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
                                 if base_re.fullmatch(wdict['ref_base']) is None:
                                     raise BadFormatError('Invalid reference base')
                                 if base_re.fullmatch(wdict['alt_base']) is None:
