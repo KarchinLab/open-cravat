@@ -1169,6 +1169,10 @@ class Cravat (object):
                     confs = json.dumps(self.conf._all[module_name])
                     confs = "'" + confs.replace("'", '"') + "'"
                     cmd.extend(['--confs', confs])
+                elif 'run' in self.conf._all and module_name in self.conf._all['run']:
+                    confs = self.conf._all['run'][module_name]
+                    confs = "'" + json.dumps(confs) + "'"
+                    cmd.extend(['--confs', confs])
                 if self.pipeinput == False:
                     cmd.append('--inputfiles')
                     for input_file in self.inputs:
