@@ -4,7 +4,7 @@ try:
     from .base_mapper import BaseMapper
     from .base_postaggregator import BasePostAggregator
     from .base_commonmodule import BaseCommonModule
-    from .cravat_report import CravatReport
+    from .cravat_report import CravatReport, run_reporter
     from .exceptions import *
     from . import util
     from . import admin_util

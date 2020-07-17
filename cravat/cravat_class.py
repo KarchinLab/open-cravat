@@ -26,6 +26,8 @@ import sqlite3
 from cravat.inout import CravatWriter
 from cravat.inout import CravatReader
 import glob
+import nest_asyncio
+nest_asyncio.apply()
 
 # Custom system conf
 pre_parser = argparse.ArgumentParser(add_help=False)
@@ -207,10 +209,7 @@ def run(cmd_args):
 def run_cravat_job(**kwargs):
     module = Cravat(**kwargs)
     loop = asyncio.get_event_loop()
-    if loop.is_running():
-        response = loop.create_task(module.main())
-    else:
-        response = loop.run_until_complete(module.main())
+    response = loop.run_until_complete(module.main())
     return response
 
 cravat_cmd_parser.set_defaults(func=run)

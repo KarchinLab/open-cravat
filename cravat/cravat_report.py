@@ -19,10 +19,13 @@ from cravat import constants
 import asyncio
 import importlib
 import cravat.cravat_class
+from types import SimpleNamespace
+import nest_asyncio
+nest_asyncio.apply()
 
 class CravatReport:
 
-    def __init__ (self, cmd_args, status_writer=None):
+    def __init__ (self, kwargs, status_writer=None):
         self.status_writer = status_writer
         global parser
         for ag in parser._action_groups:
@@ -30,7 +33,7 @@ class CravatReport:
                 for a in ag._actions:
                     if '-t' in a.option_strings:
                         ag._actions.remove(a)
-        self.parse_cmd_args(parser, cmd_args)
+        self.parse_cmd_args(kwargs)
         self.cursor = None
         self.cf = None
         self.filtertable = 'filter'
@@ -46,9 +49,8 @@ class CravatReport:
         self._setup_logger()
         self.warning_msgs = []
 
-    def parse_cmd_args (self, parser, cmd_args):
-        cmd_args = clean_args(cmd_args)
-        parsed_args = parser.parse_args(cmd_args)
+    def parse_cmd_args (self, kwargs):
+        parsed_args = SimpleNamespace(**kwargs)
         self.parsed_args = parsed_args
         self.dbpath = parsed_args.dbpath
         self.filterpath = parsed_args.filterpath
@@ -226,7 +228,8 @@ class CravatReport:
                 if hasattr(o, 'build_gene_collection'):
                     msg = 'Obsolete module [{}] for gene level summarization. Update the module to get correct gene level summarization.'.format(mi.name)
                     self.warning_msgs.append(msg)
-                    print('===Warning: {}'.format(msg))
+                    if self.args.silent == False:
+                        print('===Warning: {}'.format(msg))
                     gene_summary_data = {}
                 else:
                     gene_summary_data = await o.get_gene_summary_data(self.cf)
@@ -506,7 +509,8 @@ class CravatReport:
                 if module_name in ['base', 'hg19', 'hg18', 'extra_vcf_info', 'extra_variant_info']:
                     continue
                 if module_name not in local_modules:
-                    print('            [{}] module does not exist in the system. Gene level summary for this module is skipped.'.format(module_name))
+                    if self.args.silent == False:
+                        print('            [{}] module does not exist in the system. Gene level summary for this module is skipped.'.format(module_name))
                     continue
                 module = local_modules[module_name]
                 if 'can_summarize_by_gene' in module.conf:
@@ -670,42 +674,55 @@ def clean_args (cmd_args):
         cmd_args = cmd_args[1:]
     return cmd_args
 
-def run_reporter (args):
+def run_reporter (*inargs, **inkwargs):
+    if len(inargs) > 0 and type(inargs[0]) == argparse.Namespace:
+        args = inargs[0]
+        kwargs = vars(args)
+    elif len(inkwargs) > 0:
+        dbpath = inkwargs.get('dbpath', None)
+        reporttypes = inkwargs.get('reporttypes', None)
+        if dbpath is None or reporttypes is None:
+            raise
+        cmd = [dbpath, '-t', ' '.join(reporttypes)]
+        args = parser.parse_args(cmd)
+        kwargs = vars(args)
+        kwargs.update(**inkwargs)
     global au
-    dbpath = args.dbpath
+    dbpath = kwargs['dbpath']
     compatible_version, db_version, oc_version = util.is_compatible_version(dbpath)
     if not compatible_version:
-        print(f'DB version {db_version} of {dbpath} is not compatible with the current OpenCRAVAT ({oc_version}).')
-        print(f'Consider running "oc util update-result {dbpath}" and running "oc gui {dbpath}" again.')
+        if kwargs['silent'] == False:
+            print(f'DB version {db_version} of {dbpath} is not compatible with the current OpenCRAVAT ({oc_version}).')
+            print(f'Consider running "oc util update-result {dbpath}" and running "oc gui {dbpath}" again.')
         return
-    report_types = args.reporttypes
-    if args.output_dir is not None:
-        output_dir = args.output_dir
+    report_types = kwargs['reporttypes']
+    if kwargs['output_dir'] is not None:
+        output_dir = kwargs['output_dir']
     else:
         output_dir = os.path.dirname(dbpath)
-    if args.savepath is None:
+    if kwargs['savepath'] is None:
         run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
-        args.savepath = os.path.join(output_dir, run_name)
+        kwargs['savepath'] = os.path.join(output_dir, run_name)
     else:
-        savedir = os.path.dirname(args.savepath)
+        savedir = os.path.dirname(kwargs['savepath'])
         if savedir != '':
             self.output_dir = savedir
     loop = asyncio.get_event_loop()
     for report_type in report_types:
-        print(f'Generating {report_type} report... ', end='', flush=True)
+        if kwargs['silent'] == False:
+            print(f'Generating {report_type} report... ', end='', flush=True)
         module_info = au.get_local_module_info(report_type + 'reporter')
         spec = importlib.util.spec_from_file_location(module_info.name, module_info.script_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        cmd_args = sys.argv
-        cmd_args.extend(['--module-name', module_info.name])
-        cmd_args.extend(['-s', args.savepath])
-        cmd_args.extend(['--do-not-change-status'])
-        reporter = module.Reporter(cmd_args)
+        kwargs['module_name'] = module_info.name
+        kwargs['do_not_change_status'] = True
+        reporter = module.Reporter(kwargs)
         loop.run_until_complete(reporter.prep())
-        loop.run_until_complete(reporter.run())
-        print(f'report created in {os.path.abspath(output_dir)}.')
-    loop.close()
+        response = loop.run_until_complete(reporter.run())
+        if kwargs['silent'] == False:
+            print(f'report created in {os.path.abspath(output_dir)}.')
+    return response
 
 def cravat_report_entrypoint ():
     global parser
@@ -774,5 +791,10 @@ parser.add_argument('--do-not-change-status',
     action='store_true',
     default=False,
     help='Job status in status.json will not be changed')
+parser.add_argument('--silent',
+    dest='silent',
+    action='store_true',
+    default=False,
+    help='Suppress output to STDOUT')
 parser.set_defaults(func=run_reporter)
 
