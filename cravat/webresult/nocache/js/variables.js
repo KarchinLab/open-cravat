@@ -71,4 +71,6 @@ var colgroupkeysWithMissingCols = [];
 
 var separateSample = false;
 
-var allSamples;
+var allSamples = [];
+
+var smartFilters = {};

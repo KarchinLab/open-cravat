@@ -577,14 +577,17 @@ class FilterManager {
 	}
 
 	addSfUI (outerDiv, filter) {
-		filter = new CravatFilter(filter);
-		outerDiv.append($(getEl('div'))
-			.text('Click a filter to apply it.')
-		)
-		let orderedSources = Object.keys(smartFilters);
+        filter = new CravatFilter(filter);
+        let orderedSources = Object.keys(smartFilters);
+        if (orderedSources.length===0){
+            return;
+        }
 		orderedSources.splice(orderedSources.indexOf('base'), 1);
 		orderedSources.sort();
 		orderedSources = ['base'].concat(orderedSources)
+        outerDiv.append($(getEl('div'))
+            .text('Click a filter to apply it.')
+        )
 		for (let i=0; i<orderedSources.length; i++){
 			let sfSource = orderedSources[i];
 			let sfGroup = smartFilters[sfSource];
@@ -867,10 +870,8 @@ function filterDeleteIconClick(event) {
 
 
 function makeFilterTab (rightDiv) {
-	if (smartFilters === undefined) { 
-		return;
-	}
-	rightDiv = $(rightDiv);
+    rightDiv = $(rightDiv);
+    rightDiv.empty();
 
 	// Left panel
 	let leftPanel =$(getEl('div'))
@@ -962,7 +963,8 @@ function makeFilterTab (rightDiv) {
 				populateFilterSaveNames();
 			})
 		});
-    loadControls.append(saveIcon)
+    loadControls.append(saveIcon);
+    displayFilterCount();
 }
 
 function countFilterVariants() {
@@ -995,7 +997,8 @@ function countFilterVariants() {
 }
 
 function displayFilterCount(n) {
-	let t = infomgr.jobinfo['Number of unique input variants'];
+    let t = infomgr.jobinfo['Number of unique input variants'];
+    n = n===undefined ? t : n;
 	let countDisplay = $('#filter-count-display');
 	countDisplay.text(`${n}/${t} variants`);
     var warnDiv = document.getElementById('filter-tab-count-warning');
