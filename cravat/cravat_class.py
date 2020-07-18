@@ -1157,32 +1157,27 @@ class Cravat (object):
                     if not self.args.silent:
                         print('        {} does not exist.'.format(module_name))
                     continue
-                cmd = [module.script_path, 
-                       '-s', os.path.join(self.output_dir, self.run_name),
-                       os.path.join(self.output_dir, self.run_name + '.sqlite'),
-                       '-d', self.output_dir,
-                       '--module-name', module_name]
+                kwargs = {'script_path': module.script_path, 
+                    'dbpath': os.path.join(self.output_dir, self.run_name + '.sqlite'), 
+                    'savepath': os.path.join(self.output_dir, self.run_name), 'output_dir': self.output_dir, 'module_name': module_name}
                 if self.run_conf_path is not None:
-                    cmd.extend(['-c', self.run_conf_path])
+                    kwargs['confpath'] = self.run_conf_path
                 if module_name in self.conf._all:
-                    confs = json.dumps(self.conf._all[module_name])
-                    confs = "'" + confs.replace("'", '"') + "'"
-                    cmd.extend(['--confs', confs])
+                    kwargs['conf'] = self.conf._all[module_name]
                 elif 'run' in self.conf._all and module_name in self.conf._all['run']:
-                    confs = self.conf._all['run'][module_name]
-                    confs = "'" + json.dumps(confs) + "'"
-                    cmd.extend(['--confs', confs])
+                    kwargs['conf'] = self.conf._all['run'][module_name]
                 if self.pipeinput == False:
-                    cmd.append('--inputfiles')
+                    kwargs['inputfiles'] = []
                     for input_file in self.inputs:
-                        cmd.append(f'{input_file}')
+                        kwargs['inputfiles'].append(f'{input_file}')
                 if self.args.separatesample:
-                    cmd.append('--separatesample')
+                    kwargs['separatesample'] = True
                 if self.verbose:
                     if not self.args.silent:
-                        print(' '.join(cmd))
+                        print(' '.join(kwargs))
+                kwargs['status_writer'] = self.status_writer
                 Reporter = util.load_class(module.script_path, 'Reporter')
-                reporter = Reporter(cmd, self.status_writer)
+                reporter = Reporter(kwargs)
                 await reporter.prep()
                 stime = time.time()
                 response = await reporter.run()
@@ -1222,28 +1217,23 @@ class Cravat (object):
                     inputpath = self.crvinput
             elif module.level == 'gene':
                 inputpath = self.crginput
-            secondary_opts = []
+            #secondary_opts = []
+            secondary_inputs = []
             if 'secondary_inputs' in module.conf:
                 secondary_module_names = module.conf['secondary_inputs']
                 for secondary_module_name in secondary_module_names:
                     secondary_module = self.annotators[secondary_module_name]
                     secondary_output_path =\
                         self.get_module_output_path(secondary_module)
-                    secondary_opts.extend([
-                        '-s', 
-                        secondary_module.name.replace('=',r'\=') + '=' +\
-                            os.path.join(self.output_dir, secondary_output_path).replace('=',r'\=')])
-            cmd = [module.script_path, inputpath]
-            cmd.extend(secondary_opts)
+                    secondary_inputs.append(secondary_module.name.replace('=',r'\=') + '=' + os.path.join(self.output_dir, secondary_output_path).replace('=',r'\='))
+            kwargs = {'script_path': module.script_path, 'input_file': inputpath, 'secondary_inputs': secondary_inputs, 'silent': self.args.silent}
             if self.run_name != None:
-                cmd.extend(['-n', self.run_name])
+                kwargs['run_name'] = self.run_name
             if self.output_dir != None:
-                cmd.extend(['-d', self.output_dir])
+                kwargs['output_dir'] = self.output_dir
             if module.name in self.cravat_conf:
-                confs = json.dumps(self.cravat_conf[module.name])
-                confs = "'" + confs.replace("'", '"') + "'"
-                cmd.extend(['--confs', confs])
-            run_args[module.name] = (module, cmd)
+                kwargs['conf'] = self.cravat_conf[module.name]
+            run_args[module.name] = (module, kwargs)
         self.logger.removeHandler(self.log_handler)
         start_queue = self.manager.Queue()
         end_queue = self.manager.Queue()

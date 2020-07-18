@@ -24,30 +24,8 @@ class BaseMapper(object):
     It handles command line arguments, option parsing and file io for the
     mapping process.
     """
-    def __init__(self, cmd_args, status_writer, live=False):
-        self.live = live
-        self.t = time.time()
-        '''
-        if live:
-            self.live = live
-            self.cmd_args = SimpleNamespace()
-            self.cmd_args.include_sources = []
-            self.cmd_args.exclude_sources = []
-            self.input_path = ''
-            self._setup_logger()
-            return
-        '''
-        self.status_writer = status_writer
-        main_fpath = cmd_args[0]
-        main_basename = os.path.basename(main_fpath)
-        if '.' in main_basename:
-            self.module_name = '.'.join(main_basename.split('.')[:-1])
-        else:
-            self.module_name = main_basename
-        self.module_dir = os.path.dirname(main_fpath)
-        self.mapper_dir = os.path.dirname(main_fpath)
+    def __init__(self, *inargs, **inkwargs):
         self.cmd_parser = None
-        self.cmd_args = None
         self.input_path = None
         self.input_dir = None
         self.reader = None
@@ -59,13 +37,32 @@ class BaseMapper(object):
         self.crx_writer = None
         self.crg_writer = None
         self.crt_writer = None
+        self._define_main_cmd_args()
+        self._define_additional_cmd_args()
+        self._parse_cmd_args(inargs, inkwargs)
+        if hasattr(self.args, 'status_writer') == False:
+            status_writer = None
+        else:
+            status_writer = self.args.status_writer
+        if hasattr(self.args, 'live') == False:
+            live = False
+        else:
+            live = self.args.live
+        self.live = live
+        self.t = time.time()
+        self.status_writer = status_writer
+        main_fpath = self.args.script_path
+        main_basename = os.path.basename(main_fpath)
+        if '.' in main_basename:
+            self.module_name = '.'.join(main_basename.split('.')[:-1])
+        else:
+            self.module_name = main_basename
+        self.module_dir = os.path.dirname(main_fpath)
+        self.mapper_dir = os.path.dirname(main_fpath)
         self.gene_sources = []
         #self.primary_gene_source = None
         self.gene_info = {}
         #self.written_primary_transc = set([])
-        self._define_main_cmd_args()
-        self._define_additional_cmd_args()
-        self._parse_cmd_args(cmd_args)
         self._setup_logger()
         config_loader = ConfigLoader()
         self.conf = config_loader.get_module_conf(self.module_name)
@@ -75,7 +72,7 @@ class BaseMapper(object):
         self.cmd_parser = argparse.ArgumentParser()
         self.cmd_parser.add_argument('path',
                                     help='Path to this mapper\'s python module')
-        self.cmd_parser.add_argument('input',
+        self.cmd_parser.add_argument('input_file',
                                      help='Input crv file')
         self.cmd_parser.add_argument('-n',
                                      dest='name',
@@ -116,27 +113,36 @@ class BaseMapper(object):
         """This method allows sub-classes to override and provide addittional command line args"""
         pass
 
-    def _parse_cmd_args(self, args):
-        self.cmd_args = self.cmd_parser.parse_args(args)
-        self.input_path = os.path.abspath(self.cmd_args.input)
+    def _parse_cmd_args(self, inargs, inkwargs):
+        if len(inargs) > 0:
+            inargs = inargs[0]
+            if type(inargs) == argparse.Namespace:
+                inkwargs = vars(inargs)
+            elif type(inargs) == dict:
+                inkwargs = inargs
+        args = self.cmd_parser.parse_args(['__dummry__', '__dummy__'])
+        kwargs = vars(args)
+        kwargs.update(**inkwargs)
+        self.input_path = os.path.abspath(kwargs['input_file'])
         self.input_dir, self.input_fname = os.path.split(self.input_path)
-        if self.cmd_args.output_dir:
-            self.output_dir = self.cmd_args.output_dir
+        if kwargs['output_dir']:
+            self.output_dir = kwargs['output_dir']
         else:
             self.output_dir = self.input_dir
         if not(os.path.exists(self.output_dir)):
             os.makedirs(self.output_dir)
-        if self.cmd_args.name:
-            self.output_base_fname = self.cmd_args.name
+        if 'run_name' in kwargs:
+            self.output_base_fname = kwargs['run_name']
         else:
             self.output_base_fname = self.input_fname
         self.confs = None
-        if self.cmd_args.confs is not None:
-            confs = self.cmd_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+        if kwargs['confs'] is not None:
+            confs = kwargs['confs'].lstrip('\'').rstrip('\'').replace("'", '"')
             self.confs = json.loads(confs)
-        self.slavemode = self.cmd_args.slavemode
-        self.postfix = self.cmd_args.postfix
-        self.primary_transcript_paths = self.cmd_args.primary_transcript
+        self.slavemode = kwargs['slavemode']
+        self.postfix = kwargs['postfix']
+        self.primary_transcript_paths = kwargs['primary_transcript']
+        self.args = SimpleNamespace(**kwargs)
 
     def base_setup(self):
         if self.live == False:
@@ -162,8 +168,8 @@ class BaseMapper(object):
         output. Open plain file for err output.
         """
         # Reader
-        if self.cmd_args.seekpos is not None and self.cmd_args.chunksize is not None:
-            self.reader = CravatReader(self.input_path, seekpos=int(self.cmd_args.seekpos), chunksize=int(self.cmd_args.chunksize))
+        if self.args.seekpos is not None and self.args.chunksize is not None:
+            self.reader = CravatReader(self.input_path, seekpos=int(self.args.seekpos), chunksize=int(self.args.chunksize))
         else:
             self.reader = CravatReader(self.input_path)
         # Various output files
@@ -267,7 +273,7 @@ class BaseMapper(object):
         self.base_setup()
         start_time = time.time()
         tstamp = time.asctime(time.localtime(start_time))
-        self.logger.info(f'started: {tstamp} | {self.cmd_args.seekpos}')
+        self.logger.info(f'started: {tstamp} | {self.args.seekpos}')
         if self.status_writer is not None:
             self.status_writer.queue_status_update(
                 'status', 
@@ -302,7 +308,7 @@ class BaseMapper(object):
         self._write_crg()
         stop_time = time.time()
         tstamp = time.asctime(time.localtime(stop_time))
-        self.logger.info(f'finished: {tstamp} | {self.cmd_args.seekpos}')
+        self.logger.info(f'finished: {tstamp} | {self.args.seekpos}')
         runtime = stop_time - start_time
         self.logger.info('runtime: %6.3f' %runtime)
         self.end()

@@ -20,6 +20,7 @@ import json
 import cravat.cravat_util as cu
 import cravat.admin_util as au
 import re
+from types import SimpleNamespace
 
 class BaseAnnotator(object):
 
@@ -32,13 +33,27 @@ class BaseAnnotator(object):
                              'crg':[x['name'] for x in crg_def]}
     required_conf_keys = ['level', 'output_columns']
 
-    def __init__(self, cmd_args, status_writer, live=False):
+    def __init__(self, *inargs, **inkwargs):
         try:
+            self.primary_input_path = None
+            self.secondary_paths = None
+            self.output_dir = None
+            self.output_basename = None
+            self.plain_output = None
+            self.job_conf_path = None
+            self.logger = None
+            self.dbconn = None
+            self.cursor = None
+            self.parse_cmd_args(inargs, inkwargs)
+            if hasattr(self.args, 'status_writer') == False:
+                self.status_writer = None
+            else:
+                self.status_writer = self.args.status_writer
+            if hasattr(self.args, 'live') == False:
+                live = False
             if live:
                 return
-            self.status_writer = status_writer
-            self.logger = None
-            main_fpath = cmd_args[0]
+            main_fpath = self.args.script_path
             main_basename = os.path.basename(main_fpath)
             if '.' in main_basename:
                 self.module_name = '.'.join(main_basename.split('.')[:-1])
@@ -48,14 +63,7 @@ class BaseAnnotator(object):
             self.module_dir = os.path.dirname(main_fpath)
             self.annotator_dir = os.path.dirname(main_fpath)
             self.data_dir = os.path.join(self.module_dir, 'data')
-            self.primary_input_path = None
-            self.secondary_paths = None
-            self.output_dir = None
-            self.output_basename = None
-            self.plain_output = None
-            self.job_conf_path = None
             # Load command line opts
-            self.parse_cmd_args(cmd_args)
             self._setup_logger()
             config_loader = ConfigLoader(self.job_conf_path)
             self.conf = config_loader.get_module_conf(self.module_name)
@@ -71,8 +79,6 @@ class BaseAnnotator(object):
                 self.annotator_version = self.conf['version']
             else:
                 self.annotator_version = ''
-            self.dbconn = None
-            self.cursor = None
         except Exception as e:
             self._log_exception(e)
 
@@ -141,39 +147,51 @@ class BaseAnnotator(object):
                 dest='confs',
                 default='{}',
                 help='Configuration string')
+            parser.add_argument('--silent',
+                dest='silent',
+                default=False,
+                help='Silent operation')
             self.cmd_arg_parser = parser
         except Exception as e:
             self._log_exception(e)
 
     # Parse the command line arguments
-    def parse_cmd_args(self, cmd_args):
+    def parse_cmd_args(self, inargs, inkwargs):
         try:
             self._define_cmd_parser()
-            parsed_args = self.cmd_arg_parser.parse_args(cmd_args[1:])
-            self.primary_input_path = os.path.abspath(parsed_args.input_file)
+            if len(inargs) > 0:
+                inargs = inargs[0]
+                if type(inargs) == argparse.Namespace:
+                    inkwargs = vars(inargs)
+                elif type(inargs) == dict:
+                    inkwargs = inargs
+            args = self.cmd_arg_parser.parse_args(['__dummy__'])
+            kwargs = vars(args)
+            kwargs.update(**inkwargs)
+            self.primary_input_path = os.path.abspath(kwargs['input_file'])
             self.secondary_paths = {}
-            if parsed_args.secondary_inputs:
-                for secondary_def in parsed_args.secondary_inputs:
+            if kwargs['secondary_inputs']:
+                for secondary_def in kwargs['secondary_inputs']:
                     sec_name, sec_path = re.split(r'(?<!\\)=', secondary_def)
                     self.secondary_paths[sec_name] = os.path.abspath(sec_path)
             self.output_dir = os.path.dirname(self.primary_input_path)
-            if parsed_args.output_dir:
-                self.output_dir = parsed_args.output_dir
-
-            self.plain_output = parsed_args.plainoutput
+            if kwargs['output_dir']:
+                self.output_dir = kwargs['output_dir']
+            self.plain_output = kwargs['plainoutput']
             self.output_basename = os.path.basename(self.primary_input_path)
-            if parsed_args.name:
-                self.output_basename = parsed_args.name
+            if 'run_name' in kwargs:
+                self.output_basename = kwargs['run_name']
             if self.output_basename != '__dummy__':
                 self.update_status_json_flag = True
             else:
                 self.update_status_json_flag = False
-            if parsed_args.conf:
-                self.job_conf_path = parsed_args.conf
+            if 'conf' in kwargs:
+                self.job_conf_path = kwargs['conf']
             self.confs = None
-            if parsed_args.confs is not None:
-                confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+            if kwargs.get('confs', None) is not None:
+                confs = kwargs['confs'].lstrip('\'').rstrip('\'').replace("'", '"')
                 self.confs = json.loads(confs)
+            self.args = SimpleNamespace(**kwargs)
         except Exception as e:
             self._log_exception(e)
 
@@ -184,7 +202,8 @@ class BaseAnnotator(object):
         try:
             start_time = time.time()
             self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
-            print('        {}: started at {}'.format(self.module_name, time.asctime(time.localtime(start_time))))
+            if self.args.silent == False:
+                print('        {}: started at {}'.format(self.module_name, time.asctime(time.localtime(start_time))))
             self.base_setup()
             last_status_update_time = time.time()
             for lnum, line, input_data, secondary_data in self._get_input():

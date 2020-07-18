@@ -326,12 +326,12 @@ async def get_result (request):
         reporter_name, 
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
-    args = ['oc', 'report', dbpath, '--module-name', reporter_name]
+    kwargs = {'dbpath': dbpath, 'module_name': reporter_name}
     if confpath != None:
-        args.extend(['-c', confpath])
+        kwargs['confpath'] = confpath
     if filterstring != None:
-        args.extend(['--filterstring', filterstring])
-    args.append('--nogenelevelonvariantlevel')
+        kwargs['filterstring'] = filterstring
+    kwargs['nogenelevelonvariantlevel'] = True
     if 'separatesample' in queries:
         separatesample = queries['separatesample']
         if separatesample == 'true':
@@ -341,8 +341,9 @@ async def get_result (request):
     else:
         separatesample = False
     if separatesample:
-        args.append('--separatesample')
-    reporter = m.Reporter(args, None)
+        kwargs['separatesample'] = True
+    kwargs['reporttypes'] = ['json']
+    reporter = m.Reporter(kwargs)
     await reporter.prep()
     data = await reporter.run(tab=tab)
     data['modules_info'] = await get_modules_info(request)
@@ -541,12 +542,13 @@ async def get_colinfo (dbpath, confpath, filterstring):
         reporter_name, 
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
-    args = ['oc', 'report', dbpath, '--module-name', reporter_name]
+    kwargs = {'dbpath': dbpath, 'module_name': reporter_name}
     if confpath != None:
-        args.extend(['-c', confpath])
+        kwargs['confpath'] = confpath
     if filterstring != None:
-        args.extend(['--filterstring', filterstring])
-    reporter = m.Reporter(args, None)
+        kwargs['filterstring'] = filterstring
+    kwargs['reporttypes'] = ['json']
+    reporter = m.Reporter(kwargs)
     await reporter.prep()
     colinfo = await reporter.get_variant_colinfo()
     return colinfo

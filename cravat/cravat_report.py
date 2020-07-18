@@ -25,15 +25,7 @@ nest_asyncio.apply()
 
 class CravatReport:
 
-    def __init__ (self, kwargs, status_writer=None):
-        self.status_writer = status_writer
-        global parser
-        for ag in parser._action_groups:
-            if ag.title == 'optional arguments':
-                for a in ag._actions:
-                    if '-t' in a.option_strings:
-                        ag._actions.remove(a)
-        self.parse_cmd_args(kwargs)
+    def __init__ (self, *inargs, **inkwargs):
         self.cursor = None
         self.cf = None
         self.filtertable = 'filter'
@@ -46,10 +38,33 @@ class CravatReport:
         self.column_subs = {}
         self.column_sub_allow_partial_match = {}
         self.colname_conversion = {}
-        self._setup_logger()
         self.warning_msgs = []
+        if 'status_writer' not in inkwargs:
+            self.status_writer = None
+        else:
+            self.status_writer = status_writer
+        global parser
+        for ag in parser._action_groups:
+            if ag.title == 'optional arguments':
+                for a in ag._actions:
+                    if '-t' in a.option_strings:
+                        ag._actions.remove(a)
+        self.parse_cmd_args(inargs, inkwargs)
+        self._setup_logger()
 
-    def parse_cmd_args (self, kwargs):
+    def parse_cmd_args (self, inargs, inkwargs):
+        if len(inargs) > 0:
+            inargs = inargs[0]
+            if type(inargs) == argparse.Namespace:
+                inkwargs = vars(inargs)
+            elif type(inargs) == dict:
+                inkwargs = inargs
+        dbpath = inkwargs.get('dbpath', None)
+        reporttypes = inkwargs.get('reporttypes', None)
+        cmd = [dbpath]
+        args = parser.parse_args(cmd)
+        kwargs = vars(args)
+        kwargs.update(**inkwargs)
         parsed_args = SimpleNamespace(**kwargs)
         self.parsed_args = parsed_args
         self.dbpath = parsed_args.dbpath
@@ -524,14 +539,8 @@ class CravatReport:
                     annot_cls = util.load_class(mi.script_path, 'CravatAnnotator')
                 elif module_name == self.mapper_name:
                     annot_cls = util.load_class(mi.script_path, 'Mapper')
-                annot = annot_cls([mi.script_path, '__dummy__', '-d', self.output_dir], {})
-                '''
-                cols = conf['gene_summary_output_columns']
-                columngroup = {}
-                columngroup['name'] = os.path.basename(mi.script_path).split('.')[0]
-                columngroup['displayname'] = conf['title']
-                columngroup['count'] = len(cols)
-                '''
+                cmd = {'script_path': mi.script_path, 'input_file': '__dummy__', 'output_dir': self.output_dir}
+                annot = annot_cls(cmd)
                 cols = mi.conf['gene_summary_output_columns']
                 columngroup = {
                     'name': mi.name,
@@ -589,8 +598,6 @@ class CravatReport:
                     col['col_name'] = newcolname
                     new_columns.append(col)
                     self.newcolnos[level][newcolname] = newcolno
-                    #self.colnos[level][newcolname] = colno
-                    #del self.colnos[level][oldcolname]
                 elif grpname == colgrpname:
                     new_columns.append(col)
                     self.newcolnos[level][colname] = newcolno
@@ -683,7 +690,8 @@ def run_reporter (*inargs, **inkwargs):
         reporttypes = inkwargs.get('reporttypes', None)
         if dbpath is None or reporttypes is None:
             raise
-        cmd = [dbpath, '-t', ' '.join(reporttypes)]
+        cmd = [dbpath, '-t']
+        cmd.extend(reporttypes)
         args = parser.parse_args(cmd)
         kwargs = vars(args)
         kwargs.update(**inkwargs)
