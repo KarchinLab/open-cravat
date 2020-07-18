@@ -1157,27 +1157,28 @@ class Cravat (object):
                     if not self.args.silent:
                         print('        {} does not exist.'.format(module_name))
                     continue
-                kwargs = {'script_path': module.script_path, 
+                arg_dict = {'script_path': module.script_path, 
                     'dbpath': os.path.join(self.output_dir, self.run_name + '.sqlite'), 
                     'savepath': os.path.join(self.output_dir, self.run_name), 'output_dir': self.output_dir, 'module_name': module_name}
                 if self.run_conf_path is not None:
-                    kwargs['confpath'] = self.run_conf_path
+                    arg_dict['confpath'] = self.run_conf_path
                 if module_name in self.conf._all:
-                    kwargs['conf'] = self.conf._all[module_name]
+                    arg_dict['conf'] = self.conf._all[module_name]
                 elif 'run' in self.conf._all and module_name in self.conf._all['run']:
-                    kwargs['conf'] = self.conf._all['run'][module_name]
+                    arg_dict['conf'] = self.conf._all['run'][module_name]
                 if self.pipeinput == False:
-                    kwargs['inputfiles'] = []
+                    arg_dict['inputfiles'] = []
                     for input_file in self.inputs:
-                        kwargs['inputfiles'].append(f'{input_file}')
+                        arg_dict['inputfiles'].append(f'{input_file}')
                 if self.args.separatesample:
-                    kwargs['separatesample'] = True
+                    arg_dict['separatesample'] = True
                 if self.verbose:
                     if not self.args.silent:
-                        print(' '.join(kwargs))
-                kwargs['status_writer'] = self.status_writer
+                        print(' '.join(arg_dict))
+                arg_dict['status_writer'] = self.status_writer
+                arg_dict['reporttypes'] = [module_name.replace('reporter', '')]
                 Reporter = util.load_class(module.script_path, 'Reporter')
-                reporter = Reporter(kwargs)
+                reporter = Reporter(arg_dict)
                 await reporter.prep()
                 stime = time.time()
                 response = await reporter.run()

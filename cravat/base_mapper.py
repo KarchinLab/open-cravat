@@ -15,6 +15,7 @@ from types import SimpleNamespace
 import multiprocessing as mp
 import cravat.admin_util as au
 import time
+import cravat.util
 
 class BaseMapper(object):
     """
@@ -70,8 +71,8 @@ class BaseMapper(object):
 
     def _define_main_cmd_args(self):
         self.cmd_parser = argparse.ArgumentParser()
-        self.cmd_parser.add_argument('path',
-                                    help='Path to this mapper\'s python module')
+        #self.cmd_parser.add_argument('path',
+        #                            help='Path to this mapper\'s python module')
         self.cmd_parser.add_argument('input_file',
                                      help='Input crv file')
         self.cmd_parser.add_argument('-n',
@@ -114,35 +115,27 @@ class BaseMapper(object):
         pass
 
     def _parse_cmd_args(self, inargs, inkwargs):
-        if len(inargs) > 0:
-            inargs = inargs[0]
-            if type(inargs) == argparse.Namespace:
-                inkwargs = vars(inargs)
-            elif type(inargs) == dict:
-                inkwargs = inargs
-        args = self.cmd_parser.parse_args(['__dummry__', '__dummy__'])
-        kwargs = vars(args)
-        kwargs.update(**inkwargs)
-        self.input_path = os.path.abspath(kwargs['input_file'])
+        args = cravat.util.get_args(self.cmd_parser, inargs, inkwargs)
+        self.input_path = os.path.abspath(args.input_file)
         self.input_dir, self.input_fname = os.path.split(self.input_path)
-        if kwargs['output_dir']:
-            self.output_dir = kwargs['output_dir']
+        if args.output_dir:
+            self.output_dir = args.output_dir
         else:
             self.output_dir = self.input_dir
         if not(os.path.exists(self.output_dir)):
             os.makedirs(self.output_dir)
-        if 'run_name' in kwargs:
-            self.output_base_fname = kwargs['run_name']
+        if hasattr(args, 'run_name'):
+            self.output_base_fname = args.run_name
         else:
             self.output_base_fname = self.input_fname
         self.confs = None
-        if kwargs['confs'] is not None:
-            confs = kwargs['confs'].lstrip('\'').rstrip('\'').replace("'", '"')
+        if args.confs is not None:
+            confs = args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
             self.confs = json.loads(confs)
-        self.slavemode = kwargs['slavemode']
-        self.postfix = kwargs['postfix']
-        self.primary_transcript_paths = kwargs['primary_transcript']
-        self.args = SimpleNamespace(**kwargs)
+        self.slavemode = args.slavemode
+        self.postfix = args.postfix
+        self.primary_transcript_paths = args.primary_transcript
+        self.args = args
 
     def base_setup(self):
         if self.live == False:

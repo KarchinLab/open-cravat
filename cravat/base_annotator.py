@@ -21,6 +21,7 @@ import cravat.cravat_util as cu
 import cravat.admin_util as au
 import re
 from types import SimpleNamespace
+import cravat.util
 
 class BaseAnnotator(object):
 
@@ -44,6 +45,8 @@ class BaseAnnotator(object):
             self.logger = None
             self.dbconn = None
             self.cursor = None
+            self._define_cmd_parser()
+            self.args = cravat.util.get_args(self.cmd_arg_parser, inargs, inkwargs)
             self.parse_cmd_args(inargs, inkwargs)
             if hasattr(self.args, 'status_writer') == False:
                 self.status_writer = None
@@ -160,40 +163,31 @@ class BaseAnnotator(object):
     # Parse the command line arguments
     def parse_cmd_args(self, inargs, inkwargs):
         try:
-            self._define_cmd_parser()
-            if len(inargs) > 0:
-                inargs = inargs[0]
-                if type(inargs) == argparse.Namespace:
-                    inkwargs = vars(inargs)
-                elif type(inargs) == dict:
-                    inkwargs = inargs
-            args = self.cmd_arg_parser.parse_args(['__dummy__'])
-            kwargs = vars(args)
-            kwargs.update(**inkwargs)
-            self.primary_input_path = os.path.abspath(kwargs['input_file'])
+            args = cravat.util.get_args(self.cmd_arg_parser, inargs, inkwargs)
+            self.primary_input_path = os.path.abspath(args.input_file)
             self.secondary_paths = {}
-            if kwargs['secondary_inputs']:
-                for secondary_def in kwargs['secondary_inputs']:
+            if args.secondary_inputs:
+                for secondary_def in args.secondary_inputs:
                     sec_name, sec_path = re.split(r'(?<!\\)=', secondary_def)
                     self.secondary_paths[sec_name] = os.path.abspath(sec_path)
             self.output_dir = os.path.dirname(self.primary_input_path)
-            if kwargs['output_dir']:
-                self.output_dir = kwargs['output_dir']
-            self.plain_output = kwargs['plainoutput']
+            if args.output_dir:
+                self.output_dir = args.output_dir
+            self.plain_output = args.plainoutput
             self.output_basename = os.path.basename(self.primary_input_path)
-            if 'run_name' in kwargs:
-                self.output_basename = kwargs['run_name']
+            if hasattr(args, 'run_name'):
+                self.output_basename = args.run_name
             if self.output_basename != '__dummy__':
                 self.update_status_json_flag = True
             else:
                 self.update_status_json_flag = False
-            if 'conf' in kwargs:
-                self.job_conf_path = kwargs['conf']
+            if hasattr(args, 'conf'):
+                self.job_conf_path = args.conf
             self.confs = None
-            if kwargs.get('confs', None) is not None:
-                confs = kwargs['confs'].lstrip('\'').rstrip('\'').replace("'", '"')
+            if hasattr(args, 'confs') and args.confs is not None:
+                confs = args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
                 self.confs = json.loads(confs)
-            self.args = SimpleNamespace(**kwargs)
+            self.args = args
         except Exception as e:
             self._log_exception(e)
 

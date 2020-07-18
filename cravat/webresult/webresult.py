@@ -306,7 +306,6 @@ async def get_count (request):
     return web.json_response(content)
 
 async def get_result (request):
-    print(f'request={request}')
     queries = await request.post()
     job_id, dbpath = await get_jobid_dbpath(request)
     dbname = os.path.basename(dbpath)
@@ -326,12 +325,12 @@ async def get_result (request):
         reporter_name, 
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
-    kwargs = {'dbpath': dbpath, 'module_name': reporter_name}
+    arg_dict = {'dbpath': dbpath, 'module_name': reporter_name}
     if confpath != None:
-        kwargs['confpath'] = confpath
+        arg_dict['confpath'] = confpath
     if filterstring != None:
-        kwargs['filterstring'] = filterstring
-    kwargs['nogenelevelonvariantlevel'] = True
+        arg_dict['filterstring'] = filterstring
+    arg_dict['nogenelevelonvariantlevel'] = True
     if 'separatesample' in queries:
         separatesample = queries['separatesample']
         if separatesample == 'true':
@@ -341,9 +340,9 @@ async def get_result (request):
     else:
         separatesample = False
     if separatesample:
-        kwargs['separatesample'] = True
-    kwargs['reporttypes'] = ['json']
-    reporter = m.Reporter(kwargs)
+        arg_dict['separatesample'] = True
+    arg_dict['reporttypes'] = ['text']
+    reporter = m.Reporter(arg_dict)
     await reporter.prep()
     data = await reporter.run(tab=tab)
     data['modules_info'] = await get_modules_info(request)
@@ -542,13 +541,13 @@ async def get_colinfo (dbpath, confpath, filterstring):
         reporter_name, 
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
-    kwargs = {'dbpath': dbpath, 'module_name': reporter_name}
+    arg_dict = {'dbpath': dbpath, 'module_name': reporter_name}
     if confpath != None:
-        kwargs['confpath'] = confpath
+        arg_dict['confpath'] = confpath
     if filterstring != None:
-        kwargs['filterstring'] = filterstring
-    kwargs['reporttypes'] = ['json']
-    reporter = m.Reporter(kwargs)
+        arg_dict['filterstring'] = filterstring
+    arg_dict['reporttypes'] = ['text']
+    reporter = m.Reporter(arg_dict)
     await reporter.prep()
     colinfo = await reporter.get_variant_colinfo()
     return colinfo

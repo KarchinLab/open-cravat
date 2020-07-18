@@ -39,6 +39,7 @@ class CravatReport:
         self.column_sub_allow_partial_match = {}
         self.colname_conversion = {}
         self.warning_msgs = []
+        self.parse_cmd_args(inargs, inkwargs)
         if 'status_writer' not in inkwargs:
             self.status_writer = None
         else:
@@ -49,36 +50,28 @@ class CravatReport:
                 for a in ag._actions:
                     if '-t' in a.option_strings:
                         ag._actions.remove(a)
-        self.parse_cmd_args(inargs, inkwargs)
         self._setup_logger()
 
     def parse_cmd_args (self, inargs, inkwargs):
-        if len(inargs) > 0:
-            inargs = inargs[0]
-            if type(inargs) == argparse.Namespace:
-                inkwargs = vars(inargs)
-            elif type(inargs) == dict:
-                inkwargs = inargs
-        dbpath = inkwargs.get('dbpath', None)
-        reporttypes = inkwargs.get('reporttypes', None)
-        cmd = [dbpath]
-        args = parser.parse_args(cmd)
-        kwargs = vars(args)
-        kwargs.update(**inkwargs)
-        parsed_args = SimpleNamespace(**kwargs)
+        parsed_args = cravat.util.get_args(parser, inargs, inkwargs)
         self.parsed_args = parsed_args
         self.dbpath = parsed_args.dbpath
         self.filterpath = parsed_args.filterpath
         self.filtername = parsed_args.filtername
         self.filterstring = parsed_args.filterstring
         self.confs = None
+        if hasattr(parsed_args, 'conf') and parsed_args.conf is not None:
+            self.confs = parsed_args.conf
         if parsed_args.confs is not None:
             confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
-            self.confs = json.loads(confs)
-            if 'filter' in self.confs:
-                self.filter = self.confs['filter']
+            if self.confs is None:
+                self.confs = json.loads(confs)
             else:
-                self.filter = None
+                self.confs.update(json.loads(confs))
+        if self.confs is not None and 'filter' in self.confs:
+            self.filter = self.confs['filter']
+        else:
+            self.filter = None
         if parsed_args.output_dir is not None:
             self.output_dir = parsed_args.output_dir
         else:
@@ -682,53 +675,41 @@ def clean_args (cmd_args):
     return cmd_args
 
 def run_reporter (*inargs, **inkwargs):
-    if len(inargs) > 0 and type(inargs[0]) == argparse.Namespace:
-        args = inargs[0]
-        kwargs = vars(args)
-    elif len(inkwargs) > 0:
-        dbpath = inkwargs.get('dbpath', None)
-        reporttypes = inkwargs.get('reporttypes', None)
-        if dbpath is None or reporttypes is None:
-            raise
-        cmd = [dbpath, '-t']
-        cmd.extend(reporttypes)
-        args = parser.parse_args(cmd)
-        kwargs = vars(args)
-        kwargs.update(**inkwargs)
+    args = cravat.util.get_args(parser, inargs, inkwargs)
     global au
-    dbpath = kwargs['dbpath']
+    dbpath = args.dbpath
     compatible_version, db_version, oc_version = util.is_compatible_version(dbpath)
     if not compatible_version:
-        if kwargs['silent'] == False:
+        if args.silent == False:
             print(f'DB version {db_version} of {dbpath} is not compatible with the current OpenCRAVAT ({oc_version}).')
             print(f'Consider running "oc util update-result {dbpath}" and running "oc gui {dbpath}" again.')
         return
-    report_types = kwargs['reporttypes']
-    if kwargs['output_dir'] is not None:
-        output_dir = kwargs['output_dir']
+    report_types = args.reporttypes
+    if hasattr(args, 'output_dir') and args.output_dir is not None:
+        output_dir = args.output_dir
     else:
         output_dir = os.path.dirname(dbpath)
-    if kwargs['savepath'] is None:
+    if hasattr(args, 'savepath') and args.savepath is None:
         run_name = os.path.basename(dbpath).rstrip('sqlite').rstrip('.')
-        kwargs['savepath'] = os.path.join(output_dir, run_name)
+        args.savepath = os.path.join(output_dir, run_name)
     else:
-        savedir = os.path.dirname(kwargs['savepath'])
+        savedir = os.path.dirname(args.savepath)
         if savedir != '':
             self.output_dir = savedir
     loop = asyncio.get_event_loop()
     for report_type in report_types:
-        if kwargs['silent'] == False:
+        if args.silent == False:
             print(f'Generating {report_type} report... ', end='', flush=True)
         module_info = au.get_local_module_info(report_type + 'reporter')
         spec = importlib.util.spec_from_file_location(module_info.name, module_info.script_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        kwargs['module_name'] = module_info.name
-        kwargs['do_not_change_status'] = True
-        reporter = module.Reporter(kwargs)
+        args.module_name = module_info.name
+        args.do_not_change_status = True
+        reporter = module.Reporter(args)
         loop.run_until_complete(reporter.prep())
         response = loop.run_until_complete(reporter.run())
-        if kwargs['silent'] == False:
+        if args.silent == False:
             print(f'report created in {os.path.abspath(output_dir)}.')
     return response
 
