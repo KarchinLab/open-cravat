@@ -25,7 +25,7 @@ def get_live_annotator (module_name):
     try:
         import os
         ModuleClass = get_module(module_name)
-        module = ModuleClass(None, None, live=True)
+        module = ModuleClass(live=True)
         #module.module_name = module_name
         module.annotator_name = module_name
         #module.module_dir = os.path.dirname(script_path)
@@ -45,7 +45,7 @@ def get_live_mapper (module_name):
     try:
         import os
         ModuleClass = get_module(module_name)
-        module = ModuleClass([os.path.abspath(ModuleClass.script_path), ''], None, live=True)
+        module = ModuleClass({'script_path': os.path.abspath(ModuleClass.script_path), 'input_file': '', 'live': True})
         #module.module_name = module_name
         #module.mapper_name = module_name
         #module.module_dir = os.path.dirname(module.script_path)

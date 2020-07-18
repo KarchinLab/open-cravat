@@ -51,6 +51,8 @@ class BaseAnnotator(object):
                 self.status_writer = self.args.status_writer
             if hasattr(self.args, 'live') == False:
                 live = False
+            else:
+                live = self.args.live
             if live:
                 return
             main_fpath = self.args.script_path
