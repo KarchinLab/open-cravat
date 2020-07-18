@@ -1000,6 +1000,8 @@ function afterGetResultLevels () {
         }
         changeMenu();
     });
+    // Must setup filter tab early. Elements in it are used by request callbacks whose timing varies
+    setupTab('filter');
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
     $.get('/result/service/variantcols', {job_id: jobId, username: username, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
         filterCols = jsonResponseData['columns']['variant'];
