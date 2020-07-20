@@ -36,6 +36,7 @@ class BaseAnnotator(object):
 
     def __init__(self, *inargs, **inkwargs):
         try:
+            main_fpath = os.path.abspath(sys.modules[self.__module__].__file__)
             self.primary_input_path = None
             self.secondary_paths = None
             self.output_dir = None
@@ -58,7 +59,6 @@ class BaseAnnotator(object):
                 live = self.args.live
             if live:
                 return
-            main_fpath = self.args.script_path
             main_basename = os.path.basename(main_fpath)
             if '.' in main_basename:
                 self.module_name = '.'.join(main_basename.split('.')[:-1])
@@ -193,7 +193,7 @@ class BaseAnnotator(object):
 
     # Runs the annotator.
     def run(self):
-        if self.update_status_json_flag:
+        if self.update_status_json_flag and self.status_writer is not None:
             self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.conf['title'], self.module_name))
         try:
             start_time = time.time()
@@ -204,7 +204,7 @@ class BaseAnnotator(object):
             last_status_update_time = time.time()
             for lnum, line, input_data, secondary_data in self._get_input():
                 try:
-                    if self.update_status_json_flag:
+                    if self.update_status_json_flag and self.status_writer is not None:
                         cur_time = time.time()
                         if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
                             self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, lnum))
@@ -237,7 +237,7 @@ class BaseAnnotator(object):
             run_time = end_time - start_time
             self.logger.info('runtime: {0:0.3f}s'.format(run_time))
             print('        {}: runtime {:0.3f}s'.format(self.module_name, run_time))
-            if self.update_status_json_flag:
+            if self.update_status_json_flag and self.status_writer is not None:
                 version = self.conf.get('version', 'unknown')
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.module_name))
         except Exception as e:

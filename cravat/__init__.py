@@ -25,7 +25,7 @@ def get_live_annotator (module_name):
     try:
         import os
         ModuleClass = get_module(module_name)
-        module = ModuleClass(live=True)
+        module = ModuleClass(input_file='__dummy__', live=True)
         #module.module_name = module_name
         module.annotator_name = module_name
         #module.module_dir = os.path.dirname(script_path)
@@ -45,13 +45,7 @@ def get_live_mapper (module_name):
     try:
         import os
         ModuleClass = get_module(module_name)
-        module = ModuleClass({'script_path': os.path.abspath(ModuleClass.script_path), 'input_file': '', 'live': True})
-        #module.module_name = module_name
-        #module.mapper_name = module_name
-        #module.module_dir = os.path.dirname(module.script_path)
-        #module.mapper_dir = os.path.dirname(module.script_path)
-        #module.data_dir = os.path.join(module.module_dir, 'data')
-        #module.conf = config_loader.get_module_conf(module_name)
+        module = ModuleClass({'script_path': os.path.abspath(ModuleClass.script_path), 'input_file': '__dummy__', 'live': True})
         module.base_setup()
     except Exception as e:
         print('    module loading error: {}'.format(module_name))
@@ -95,9 +89,9 @@ class LiveAnnotator:
 
     def load_live_modules (self, mapper, annotator_names):
         self.live_mapper = get_live_mapper(mapper)
-        modules = admin_util.get_local_module_infos(types=['annotator'])
-        for module in modules:
-            if module.name in annotator_names:
+        for module_name in admin_util.mic.local.keys():
+            if module_name in annotator_names:
+                module = admin_util.mic.local[module_name]
                 if 'secondary_inputs' in module.conf:
                     continue
                 annotator = get_live_annotator(module.name)

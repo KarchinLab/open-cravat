@@ -253,7 +253,6 @@ class ModuleInfoCache(object):
                 module_dir = os.path.join(mg_path, module_name)
                 if module_dir.startswith('.') == False and os.path.isdir(module_dir):
                     self.local[module_name] = module_dir
-        
 
     def update_remote(self, force=False):
         if force or not(self._remote_fetched):

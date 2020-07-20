@@ -233,6 +233,8 @@ def get_args (parser, inargs, inkwargs):
     for inarg in inargs:
         t = type(inarg)
         if t == list: # ['-t', 'text']
+            if inarg[0].endswith('.py'):
+                inarg = inarg[1:]
             inarg_dict.update(**vars(parser.parse_args(inarg)))
         elif t == argparse.Namespace: # already parsed by a parser.
             inarg_dict.update(**vars(inarg))

@@ -78,6 +78,8 @@ class CravatReader (CravatFile):
     def override_column(self, index, name, title=None, data_type='string', cats=[], category=None):
         if title == None:
             title = ' '.join(x.title() for x in name.split('_'))
+        if index not in self.columns:
+            self.columns[index] = ColumnDefinition({})
         self.columns[index].title= title
         self.columns[index].name = name
         self.columns[index].type = data_type
