@@ -243,30 +243,8 @@ def get_args (parser, inargs, inkwargs):
         elif t == dict: # {'output_dir': '/rt'}
             inarg_dict.update(inarg)
     inarg_dict.update(inkwargs)
-    # Gets default values from parser definition.
-    cmd_args = [] # ['-t', 'text']
-    for action in parser._actions:
-        dest = action.dest
-        if dest == 'help':
-            continue
-        if dest in inarg_dict:
-            opts = action.option_strings
-            val = inarg_dict[dest]
-            if val is None or val == '' or (type(val) == list and len(val) == 0):
-                continue
-            if len(opts) > 0:
-                cmd_args.append(opts[0])
-            if type(action) == argparse._StoreTrueAction:
-                continue
-            else:
-                if type(val) == list:
-                    cmd_args.extend(val)
-                else:
-                    cmd_args.append(f'{val}')
-    parsed_args = parser.parse_args(cmd_args)
-    arg_dict = vars(parsed_args)
+    arg_dict = get_argument_parser_defaults(parser)
     arg_dict.update(inarg_dict)
-    # Final product is SimpleNamespace with argument names and values.
     args = SimpleNamespace(**arg_dict)
     return args
 
