@@ -135,7 +135,7 @@ class BaseAnnotator(object):
                                 help='Secondary inputs. '\
                                      +'Format as <module_name>:<path>')
             parser.add_argument('-n',
-                                dest='name',
+                                dest='run_name',
                                 help='Name of job. Default is input file name.')
             parser.add_argument('-d',
                                 dest='output_dir',
@@ -174,9 +174,12 @@ class BaseAnnotator(object):
             if args.output_dir:
                 self.output_dir = args.output_dir
             self.plain_output = args.plainoutput
-            self.output_basename = os.path.basename(self.primary_input_path)
-            if hasattr(args, 'run_name'):
+            if hasattr(args, 'run_name') and args.run_name is not None:
                 self.output_basename = args.run_name
+            else:
+                self.output_basename = os.path.basename(self.primary_input_path)
+                if self.output_basename.endswith('.crx'):
+                    self.output_basename = self.output_basename[:-4]
             if self.output_basename != '__dummy__':
                 self.update_status_json_flag = True
             else:
