@@ -826,3 +826,16 @@ function checkConnection(failures) {
     ws.onmessage = function (evt) {
     }
 }
+
+function sfRound(n) {
+	if (n==null){
+		return '';
+	} else if (n>1e4) {
+        return n.toExponential(3);
+    } else if (n>=1e-4) {
+		let rnd = Math.round((n+Number.EPSILON)*1e4)/1e4;
+        return rnd.toString();
+    } else {
+        return n.toExponential(3);
+    }
+}

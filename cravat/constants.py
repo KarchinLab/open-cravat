@@ -136,8 +136,6 @@ VARIANT = 0
 GENE = 1
 LEVELS = {'variant': VARIANT, 'gene': GENE}
 
-viewer_effective_digits = 3
-
 gene_level_so_exclude = ['2KU', '2KD']
 
 base_smartfilters = [

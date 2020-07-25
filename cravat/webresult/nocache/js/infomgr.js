@@ -160,10 +160,20 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 				};
 			column['render'] = function (ui) {
 				var val = ui.rowData[ui.dataIndx];
-				if (val == null) {
-					val = '';
+				var content;
+				if (ui.column.type==="float") {
+					if (val==null){
+						val = '';
+						content = '';
+					} else {
+						content = sfRound(val);
+					}
+				} else {
+					if (val == null) {
+						val = '';
+					}
+					content = '' + val;
 				}
-				var content = '' + val;
                 content = content.replace(/>/g, '&gt;');
 				var title = content;
 				if (ui.column.link_format !== null) {
