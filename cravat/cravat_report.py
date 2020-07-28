@@ -139,19 +139,25 @@ class CravatReport:
             return json.dumps(row) 
 
     def substitute_val (self, level, row):
+        if level == 'gene': # FIXME not working on all_so column in gene tab
+            return row
         if level in self.column_subs:
             column_sub_dict = self.column_subs[level]
             column_sub_allow_partial_match = self.column_sub_allow_partial_match[level]
             for colno in column_sub_dict:
                 column_sub = column_sub_dict[colno]
                 value = row[colno]
-                if value is not None:
+                if value:
                     if column_sub_allow_partial_match[colno]:
-                        for target, substitution in column_sub.items():
-                            value = target.sub(substitution, value)
+                        d = json.loads(value)
+                        for gene in d:
+                            for i in range(len(d[gene])):
+                                sos = d[gene][i][2].split(',')
+                                sos = [column_sub.get(so,so) for so in sos]
+                                d[gene][i][2] = ','.join(sos)
+                        value = json.dumps(d)
                     else:
-                        if value in column_sub:
-                            value = column_sub[value]
+                        value = column_sub.get(value,value)
                     row[colno] = value
         return row
 
@@ -623,7 +629,7 @@ class CravatReport:
                             if module in ['base', self.mapper_name] and col in ['all_mappings', 'all_so']:
                                 allow_partial_match = True
                                 self.column_subs[level][i] = {
-                                    re.compile(fr'\b{key}\b') : val
+                                    key : val
                                     for key, val in sub[col].items()
                                 }
                             else:
