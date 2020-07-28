@@ -139,8 +139,6 @@ class CravatReport:
             return json.dumps(row) 
 
     def substitute_val (self, level, row):
-        if level == 'gene': # FIXME not working on all_so column in gene tab
-            return row
         if level in self.column_subs:
             column_sub_dict = self.column_subs[level]
             column_sub_allow_partial_match = self.column_sub_allow_partial_match[level]
@@ -149,13 +147,22 @@ class CravatReport:
                 value = row[colno]
                 if value:
                     if column_sub_allow_partial_match[colno]:
-                        d = json.loads(value)
-                        for gene in d:
-                            for i in range(len(d[gene])):
-                                sos = d[gene][i][2].split(',')
-                                sos = [column_sub.get(so,so) for so in sos]
-                                d[gene][i][2] = ','.join(sos)
-                        value = json.dumps(d)
+                        if level == 'variant':
+                            d = json.loads(value)
+                            for gene in d:
+                                for i in range(len(d[gene])):
+                                    sos = d[gene][i][2].split(',')
+                                    sos = [column_sub.get(so,so) for so in sos]
+                                    d[gene][i][2] = ','.join(sos)
+                            value = json.dumps(d)
+                        elif level == 'gene':
+                            newvals = []
+                            for i,so_count in enumerate(value.split(',')):
+                                so = so_count[:3]
+                                so = column_sub.get(so,so)
+                                so_count = so+so_count[3:]
+                                newvals.append(so_count)
+                            value = ','.join(newvals)
                     else:
                         value = column_sub.get(value,value)
                     row[colno] = value
