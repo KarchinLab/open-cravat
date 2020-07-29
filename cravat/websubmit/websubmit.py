@@ -11,7 +11,6 @@ import sys
 import traceback
 import shutil
 from aiohttp import web
-import aiosqlite3
 import hashlib
 from distutils.version import LooseVersion
 import glob

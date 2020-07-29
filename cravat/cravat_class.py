@@ -5,7 +5,7 @@ import sys
 from cravat import admin_util as au
 from cravat import util
 from cravat.config_loader import ConfigLoader
-import aiosqlite3
+import aiosqlite
 import datetime
 from types import SimpleNamespace
 from cravat import constants
@@ -512,7 +512,7 @@ class Cravat (object):
             if not self.args.silent:
                 print(s)
             return
-        db = await aiosqlite3.connect(constants.admindb_path)
+        db = await aiosqlite.connect(constants.admindb_path)
         cursor = await db.cursor()
         q = 'update jobs set runtime={}, numinput={} where jobid="{}"'.format(runtime, numinput, self.args.jobid)
         await cursor.execute(q)
@@ -1316,7 +1316,7 @@ class Cravat (object):
 
     async def write_job_info (self):
         dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
-        conn = await aiosqlite3.connect(dbpath)
+        conn = await aiosqlite.connect(dbpath)
         cursor = await conn.cursor()
         if not self.append_mode:
             q = 'drop table if exists info'

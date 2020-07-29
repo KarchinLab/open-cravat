@@ -3,7 +3,7 @@ import argparse
 import os
 import sys
 import oyaml as yaml
-import aiosqlite3
+import aiosqlite
 import json
 import re
 import time
@@ -265,9 +265,9 @@ class CravatFilter ():
     async def connect_db (self, dbpath=None):
         if dbpath != None:
             self.dbpath = dbpath
-        self.conn = await aiosqlite3.connect(self.dbpath)
+        self.conn = await aiosqlite.connect(self.dbpath)
         self.cursor = await self.conn.cursor()
-        self.conn.create_function('regexp', 2, regexp)
+        await self.conn.create_function('regexp', 2, regexp)
         await self.set_aliases()
 
     async def set_aliases (self):

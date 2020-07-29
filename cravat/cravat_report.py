@@ -13,7 +13,7 @@ import re
 import logging
 import time
 import re
-import aiosqlite3
+import aiosqlite
 import types
 from cravat import constants
 import asyncio
@@ -641,7 +641,7 @@ class CravatReport:
         if os.path.exists(self.dbpath) == False:
             sys.stderr.write(self.dbpath + ' does not exist.')
             exit()
-        self.conn = await aiosqlite3.connect(self.dbpath)
+        self.conn = await aiosqlite.connect(self.dbpath)
         self.cursor = await self.conn.cursor()
 
     async def load_filter (self):
