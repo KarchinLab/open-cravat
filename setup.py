@@ -89,7 +89,7 @@ setup(
     install_requires=[
         'pyyaml',
         'requests',
-        'requests_toolbelt',
+        'requests-toolbelt',
         'pyliftover',
         'websockets',
         'markdown',

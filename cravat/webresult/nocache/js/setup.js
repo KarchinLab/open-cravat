@@ -2381,7 +2381,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             if (col.desc !== null) {
                 desc = col.desc;
             }
-            var colTitleLimit = 20;
+            var colTitleLimit = 30;
             if (col.title.length > colTitleLimit) {
                 $headerCell.text(col.title.substring(0, colTitleLimit) + '..');
                 if (col.desc != null && col.desc != col.title) {
