@@ -410,7 +410,7 @@ function populateJobTr (job) {
     // Reports
     for (var i = 0; i < GLOBALS.reports.valid.length; i++) {
         var reportType = GLOBALS.reports.valid[i];
-        if (reportType == 'text') {
+        if (reportType == 'text' || reportType == 'pandas' || reportType == 'stdout') {
             continue;
         }
         var btn = getEl('button');
