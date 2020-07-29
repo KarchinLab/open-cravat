@@ -289,7 +289,7 @@ class CravatFilter ():
             return
         sql = 'create table ' + self.filtertable + ' (name text, criteria text)'
         await self.cursor.execute(sql)
-        self.conn.commit()
+        await self.conn.commit()
 
     async def filtertable_exists (self):
         sql = 'select name from sqlite_master where ' +\
@@ -339,7 +339,7 @@ class CravatFilter ():
         await self.cursor.execute(q)
         q = 'drop table if exists gene_filtered'
         await self.cursor.execute(q)
-        self.conn.commit()
+        await self.conn.commit()
         await self.cursor.execute('pragma synchronous=2')
 
     def getwhere (self, level):
@@ -524,7 +524,7 @@ class CravatFilter ():
                 q += ' join gene as g on t.base__hugo=g.base__hugo'
             q += ' '+where
             await self.cursor.execute(q)
-            self.conn.commit()
+            await self.conn.commit()
             t = time.time() - t
     
     async def make_gene_list_table (self):
@@ -585,7 +585,7 @@ class CravatFilter ():
         sql = 'insert or replace into ' + self.filtertable +\
             ' values ("' + name + '", \'' + filterstr + '\')'
         await self.cursor.execute(sql)
-        self.conn.commit()
+        await self.conn.commit()
 
     async def listfilter (self, name=None):
         if name == None:
