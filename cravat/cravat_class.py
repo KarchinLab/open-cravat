@@ -28,6 +28,7 @@ from cravat.inout import CravatReader
 import glob
 import nest_asyncio
 nest_asyncio.apply()
+import re
 
 # Custom system conf
 pre_parser = argparse.ArgumentParser(add_help=False)
@@ -1148,7 +1149,7 @@ class Cravat (object):
         else:
             module_names = [self.cravat_conf['reporter']]
         all_reporters_ran_well = True
-        response = None
+        response = {}
         for module_name in module_names:
             try:
                 module = au.get_local_module_info(module_name)
@@ -1181,7 +1182,7 @@ class Cravat (object):
                 reporter = Reporter(arg_dict)
                 await reporter.prep()
                 stime = time.time()
-                response = await reporter.run()
+                response[re.sub('reporter$', '', module_name)] = await reporter.run()
                 rtime = time.time() - stime
                 if not self.args.silent:
                     print('finished in {0:.3f}s'.format(rtime))
