@@ -697,6 +697,7 @@ def run_reporter (*inargs, **inkwargs):
         if savedir != '':
             self.output_dir = savedir
     loop = asyncio.get_event_loop()
+    response = {}
     for report_type in report_types:
         if args.silent == False:
             print(f'Generating {report_type} report... ', end='', flush=True)
@@ -708,7 +709,8 @@ def run_reporter (*inargs, **inkwargs):
         args.do_not_change_status = True
         reporter = module.Reporter(args)
         loop.run_until_complete(reporter.prep())
-        response = loop.run_until_complete(reporter.run())
+        response_t = loop.run_until_complete(reporter.run())
+        response[report_type] = response_t
         if args.silent == False:
             print(f'report created in {os.path.abspath(output_dir)}.')
     return response
