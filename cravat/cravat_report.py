@@ -385,6 +385,8 @@ class CravatReport:
             else:
                 await self.make_col_info(tab)
             await self.run_level(tab)
+        await self.cursor.close()
+        await self.conn.close()
         if self.module_conf is not None and self.status_writer is not None:
             if self.parsed_args.do_not_change_status == False:
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
@@ -711,6 +713,7 @@ def run_reporter (*inargs, **inkwargs):
         response = loop.run_until_complete(reporter.run())
         if args.silent == False:
             print(f'report created in {os.path.abspath(output_dir)}.')
+    loop.close()
     return response
 
 def cravat_report_entrypoint ():
