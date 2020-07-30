@@ -282,7 +282,7 @@ class CravatFilter ():
 
     async def close_db (self):
         await self.cursor.close()
-        self.conn.close()
+        await self.conn.close()
 
     async def create_filtertable (self):
         if self.cursor == None:
@@ -724,3 +724,4 @@ def main ():
     loop = asyncio.new_event_loop()
     cv = loop.run_until_complete(CravatFilter.create(mode='main'))
     loop.run_until_complete(cv.run(args=sys.argv[1:]))
+    loop.close()

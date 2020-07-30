@@ -176,6 +176,7 @@ class CravatReport:
                     datarow.extend([None for i in range(len(self.var_added_cols))])
                 else:
                     datarow.extend([generow[self.colnos['gene'][colname]] for colname in self.var_added_cols])
+                loop.close()
         elif level == 'gene':
             # adds summary data to gene level.
             hugo = datarow[0]
@@ -385,8 +386,8 @@ class CravatReport:
             else:
                 await self.make_col_info(tab)
             await self.run_level(tab)
-        await self.cursor.close()
-        await self.conn.close()
+        await self.cf.close_db()
+        await self.close_db()
         if self.module_conf is not None and self.status_writer is not None:
             if self.parsed_args.do_not_change_status == False:
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
@@ -645,6 +646,10 @@ class CravatReport:
             exit()
         self.conn = await aiosqlite.connect(self.dbpath)
         self.cursor = await self.conn.cursor()
+
+    async def close_db (self):
+        await self.cursor.close()
+        await self.conn.close()
 
     async def load_filter (self):
         self.cf = await CravatFilter.create(dbpath=self.dbpath)

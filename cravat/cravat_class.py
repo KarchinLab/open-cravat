@@ -205,9 +205,7 @@ def run(cmd_args):
     module = Cravat(**vars(cmd_args))
     loop = asyncio.get_event_loop()
     response = loop.run_until_complete(module.main())
-    print(f'@ out of loop. response={response}. loop={loop} loop.is_closed={loop.is_closed()}')
     loop.close()
-    print(f'@ after loop close loop={loop}')
     return response
 
 def run_cravat_job(**kwargs):
@@ -504,7 +502,6 @@ class Cravat (object):
                 self.clean_up_at_end()
             if self.args.writeadmindb:
                 await self.write_admin_db(runtime, self.numinput)
-            print(f'@ end of main')
             return report_response
 
     async def write_admin_db (self, runtime, numinput):
