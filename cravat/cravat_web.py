@@ -203,6 +203,9 @@ def run(args):
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
+    finally:
+        print(f'@ exiting run. loop={loop}')
+        loop.close()
         exit()
 parser.set_defaults(func=run)
 
@@ -442,7 +445,8 @@ def main (url=None):
             loop.run_forever()
         except KeyboardInterrupt:
             loop.close()
-            pass
+            print(f'@@@ keyboard interrupt of main loop={loop}')
+            exit()
     except Exception as e:
         logger.exception(e)
         if debug:
