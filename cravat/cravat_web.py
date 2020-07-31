@@ -4,7 +4,6 @@ try:
     import os
     import webbrowser
     import multiprocessing
-    import sqlite3
     import urllib.parse
     import json
     import sys
@@ -104,6 +103,7 @@ def setup(args):
                 logger.exception(e)
                 logger.info('Exiting...')
                 print('Error occurred while loading open-cravat-multiuser.\nCheck {} for details.'.format(log_path))
+                loop.close()
                 exit()
         else:
             servermode = False
@@ -128,6 +128,7 @@ def setup(args):
             logger.info(msg)
             logger.info('Exiting...')
             print(msg)
+            loop.close()
             exit()
         global ssl_enabled
         ssl_enabled = False
@@ -152,6 +153,7 @@ def setup(args):
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
+        loop.close()
         exit()
 
 def wcravat_entrypoint ():
@@ -377,6 +379,7 @@ loop = None
 def main (url=None):
     global args
     try:
+        global loop
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1)
         def wakeup ():
@@ -407,7 +410,6 @@ def main (url=None):
         print('OpenCRAVAT is served at {}:{}'.format(serv.get('host'), serv.get('port')))
         logger.info('Serving OpenCRAVAT server at {}:{}'.format(serv.get('host'), serv.get('port')))
         print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')
-        global loop
         loop = asyncio.get_event_loop()
         loop.call_later(0.1, wakeup)
         loop.call_later(1, check_local_update, 5)
@@ -439,6 +441,7 @@ def main (url=None):
         try:
             loop.run_forever()
         except KeyboardInterrupt:
+            loop.close()
             pass
     except Exception as e:
         logger.exception(e)
@@ -446,6 +449,8 @@ def main (url=None):
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
+        if loop is not None:
+            loop.close()
         exit()
 
 if __name__ == '__main__':

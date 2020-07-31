@@ -594,6 +594,7 @@ async def generate_report(request):
     run_args.extend(['-t', report_type])
     p = await asyncio.create_subprocess_shell(' '.join(run_args))
     await p.wait()
+    await p.terminate()
     return web.json_response('done')
 
 async def download_report(request):
@@ -874,6 +875,9 @@ def fetch_job_queue (job_queue, run_jobs_info):
         main_loop.run_until_complete(job_worker_main())
     except KeyboardInterrupt:
         pass
+    finally:
+        job_tracker.loop.close()
+        main_loop.close()
 
 async def redirect_to_index (request):
     global servermode
