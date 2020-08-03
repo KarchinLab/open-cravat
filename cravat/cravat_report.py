@@ -139,33 +139,29 @@ class CravatReport:
             return json.dumps(row) 
 
     def substitute_val (self, level, row):
-        if level in self.column_subs:
-            column_sub_dict = self.column_subs[level]
-            column_sub_allow_partial_match = self.column_sub_allow_partial_match[level]
-            for colno in column_sub_dict:
-                column_sub = column_sub_dict[colno]
-                value = row[colno]
-                if value:
-                    if column_sub_allow_partial_match[colno]:
-                        if level == 'variant':
-                            d = json.loads(value)
-                            for gene in d:
-                                for i in range(len(d[gene])):
-                                    sos = d[gene][i][2].split(',')
-                                    sos = [column_sub.get(so,so) for so in sos]
-                                    d[gene][i][2] = ','.join(sos)
-                            value = json.dumps(d)
-                        elif level == 'gene':
-                            newvals = []
-                            for i,so_count in enumerate(value.split(',')):
-                                so = so_count[:3]
-                                so = column_sub.get(so,so)
-                                so_count = so+so_count[3:]
-                                newvals.append(so_count)
-                            value = ','.join(newvals)
-                    else:
-                        value = column_sub.get(value,value)
-                    row[colno] = value
+        for sub in self.column_subs.get(level,[]):
+            value = row[sub.index]
+            if value is None or value=='':
+                continue
+            if level=='variant' and sub.module=='base' and sub.col=='all_mappings':
+                mappings = json.loads(row[sub.index])
+                for gene in mappings:
+                    for i in range(len(mappings[gene])):
+                        sos = mappings[gene][i][2].split(',')
+                        sos = [sub.subs.get(so,so) for so in sos]
+                        mappings[gene][i][2] = ','.join(sos)
+                value = json.dumps(mappings)
+            elif level=='gene' and sub.module=='base' and sub.col=='all_so':
+                vals = []
+                for i,so_count in enumerate(value.split(',')):
+                    so = so_count[:3]
+                    so = sub.subs.get(so,so)
+                    so_count = so+so_count[3:]
+                    vals.append(so_count)
+                value = ','.join(vals)
+            else:
+                value = sub.subs.get(value,value)
+            row[sub.index] = value
         return row
 
     def process_datarow (self, args):
@@ -292,7 +288,6 @@ class CravatReport:
         else:
             write_variant_sample_separately = False
         colnos = self.colnos[level]
-        newcolnos = self.newcolnos[level]
         all_mappings_newcolno = self.newcolnos['variant']['base__all_mappings']
         for datarow in datarows:
             if datarow is None:
@@ -474,7 +469,7 @@ class CravatReport:
                 rs = await self.cursor.fetchall()
                 for r in rs:
                     coldef.categories.append(r[0])
-            [colgrpname, colonlyname] = coldef.name.split('__')
+            [colgrpname, _] = coldef.name.split('__')
             column = coldef.get_colinfo()
             columns.append(column)
             for columngroup in self.columngroups[level]:
@@ -597,7 +592,7 @@ class CravatReport:
             colgrpname = colgrp['name']
             for col in columns:
                 colname = col['col_name']
-                [grpname, oricolname] = colname.split('__')
+                [grpname, _] = colname.split('__')
                 if colgrpname == 'base' and grpname in [self.mapper_name, 'tagsampler']:
                     newcolname = 'base__' + colname.split('__')[1]
                     self.colname_conversion[level][newcolname] = colname
@@ -617,33 +612,20 @@ class CravatReport:
             if await self.table_exists(reportsubtable):
                 q = 'select * from {}'.format(reportsubtable)
                 await self.cursor.execute(q)
-                rs = await self.cursor.fetchall()
-                self.report_substitution = {}
-                for r in rs:
-                    module = r[0]
-                    sub = json.loads(r[1])
-                    self.report_substitution[module] = sub
-                self.column_subs[level] = {}
-                self.column_sub_allow_partial_match[level] = {}
-                for i in range(len(new_columns)):
-                    column = new_columns[i]
-                    [module, col] = column['col_name'].split('__')
-                    if module in [self.mapper_name]:
+                reportsub = {r[0]:json.loads(r[1]) for r in await self.cursor.fetchall()}
+                self.column_subs[level] = []
+                for i, column in enumerate(new_columns):
+                    module, col = column['col_name'].split('__')
+                    if module == self.mapper_name:
                         module = 'base'
-                    if module in self.report_substitution:
-                        sub = self.report_substitution[module]
-                        if col in sub:
-                            if module in ['base', self.mapper_name] and col in ['all_mappings', 'all_so']:
-                                allow_partial_match = True
-                                self.column_subs[level][i] = {
-                                    key : val
-                                    for key, val in sub[col].items()
-                                }
-                            else:
-                                allow_partial_match = False
-                                self.column_subs[level][i] = sub[col]
-                            self.column_sub_allow_partial_match[level][i] = allow_partial_match
-                            new_columns[i]['reportsub'] = sub[col]
+                    if module in reportsub and col in reportsub[module]:
+                        self.column_subs[level].append(SimpleNamespace(
+                            module = module,
+                            col = col,
+                            index = i,
+                            subs = reportsub[module][col],
+                        ))
+                        new_columns[i]['reportsub'] = reportsub[module][col]
 
     async def connect_db (self, dbpath=None):
         if dbpath != None:
@@ -708,7 +690,7 @@ def run_reporter (*inargs, **inkwargs):
     else:
         savedir = os.path.dirname(args.savepath)
         if savedir != '':
-            self.output_dir = savedir
+            output_dir = savedir
     loop = asyncio.get_event_loop()
     response = {}
     for report_type in report_types:
@@ -730,7 +712,7 @@ def run_reporter (*inargs, **inkwargs):
 
 def cravat_report_entrypoint ():
     global parser
-    cmd_args = clean_args(sys.argv)
+    clean_args(sys.argv) # Unclear what this does. Does it edit sys.argv?
     parsed_args = parser.parse_args(sys.argv[1:])
     run_reporter(parsed_args)
 
