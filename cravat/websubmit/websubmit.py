@@ -757,7 +757,6 @@ def start_worker ():
     if job_worker == None:
         job_worker = Process(target=fetch_job_queue, args=(job_queue, run_jobs_info))
         job_worker.start()
-        print(f'@ done job_worker start')
 
 def fetch_job_queue (job_queue, run_jobs_info):
     class JobTracker (object):
@@ -877,11 +876,8 @@ def fetch_job_queue (job_queue, run_jobs_info):
     except KeyboardInterrupt:
         pass
     finally:
-        print(f'@ closing websubmit job_tracker main_loop')
         job_tracker.loop.close()
         main_loop.close()
-        print(f'@ {job_tracker.loop} {main_loop}')
-        print(f'@ done')
 
 async def redirect_to_index (request):
     global servermode

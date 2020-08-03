@@ -103,7 +103,6 @@ def setup(args):
                 logger.exception(e)
                 logger.info('Exiting...')
                 print('Error occurred while loading open-cravat-multiuser.\nCheck {} for details.'.format(log_path))
-                loop.close()
                 exit()
         else:
             servermode = False
@@ -128,7 +127,6 @@ def setup(args):
             logger.info(msg)
             logger.info('Exiting...')
             print(msg)
-            loop.close()
             exit()
         global ssl_enabled
         ssl_enabled = False
@@ -153,7 +151,6 @@ def setup(args):
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
-        loop.close()
         exit()
 
 def wcravat_entrypoint ():
@@ -204,9 +201,10 @@ def run(args):
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
     finally:
-        print(f'@ exiting run. loop={loop}')
-        loop.close()
-        exit()
+        for handler in logger.handlers:
+            handler.close()
+            logger.removeHandler(handler)
+
 parser.set_defaults(func=run)
 
 def get_server():
@@ -444,8 +442,6 @@ def main (url=None):
         try:
             loop.run_forever()
         except KeyboardInterrupt:
-            loop.close()
-            print(f'@@@ keyboard interrupt of main loop={loop}')
             exit()
     except Exception as e:
         logger.exception(e)
@@ -453,8 +449,6 @@ def main (url=None):
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
-        if loop is not None:
-            loop.close()
         exit()
 
 if __name__ == '__main__':
