@@ -13,7 +13,8 @@ import re
 import logging
 import time
 import re
-import aiosqlite
+import aiosqlite3 as aiosqlite
+#import aiosqlite
 import types
 from cravat import constants
 import asyncio
@@ -648,6 +649,7 @@ class CravatReport:
     async def load_filter (self):
         self.cf = await CravatFilter.create(dbpath=self.dbpath)
         await self.cf.loadfilter(filter=self.filter, filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
+        #await self.cf.close_db()
 
     async def table_exists (self, tablename):
         sql = 'select name from sqlite_master where ' + \

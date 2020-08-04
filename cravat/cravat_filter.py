@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import oyaml as yaml
+#import aiosqlite3 as aiosqlite
 import aiosqlite
 import json
 import re
@@ -153,7 +154,7 @@ class CravatFilter ():
         self.filtername = None
         self.filterstring = None
         self.conn = None
-        self.cursor = None
+        #self.cursor = None
         if filter != None:
             self.filter = filter
         else:
@@ -178,11 +179,11 @@ class CravatFilter ():
         if cmd != None:
             self.cmd = cmd
 
-        if dbpath != None:
+        if dbpath is not None:
             self.dbpath = dbpath
-            await self.connect_db()
-        elif self.dbpath != None and self.cursor == None:
-            await self.connect_db()
+        #    await self.connect_db()
+        #elif self.dbpath is not None and self.conn is None:
+        #    await self.connect_db()
 
         # Loads filter.
         if filter != None:
@@ -192,7 +193,8 @@ class CravatFilter ():
             await self.loadfilter()
 
         ret = None
-        if self.cursor != None: # and self.filter != None:
+        #if self.cursor != None: # and self.filter != None:
+        if self.conn is not None: # and self.filter != None:
             #if self.cmd == 'uidpipe':
             #    ret = await self.run_level_based_func(self.getuiditerator)
             if self.cmd == 'count':
@@ -201,7 +203,8 @@ class CravatFilter ():
                 ret = await self.run_level_based_func(self.getrows)
             elif self.cmd == 'pipe':
                 ret = await self.run_level_based_func(self.getiterator)
-        elif self.cursor != None and self.cmd == 'list':
+        #elif self.cursor != None and self.cmd == 'list':
+        elif self.conn is not None and self.cmd == 'list':
             ret = self.listfilter()
 
         # Saves filter.
@@ -262,44 +265,68 @@ class CravatFilter ():
         self.filtername = parsed_args.filtername
         self.filterstring = parsed_args.filterstring
 
+    async def get_db_conn (self):
+        if self.conn is not None:
+            return self.conn
+        if self.dbpath is None:
+            return None
+        conn = await aiosqlite.connect(self.dbpath)
+        return conn
+
     async def connect_db (self, dbpath=None):
         if dbpath != None:
             self.dbpath = dbpath
-        self.conn = await aiosqlite.connect(self.dbpath)
-        self.cursor = await self.conn.cursor()
-        await self.conn.create_function('regexp', 2, regexp)
+        conn = await self.get_db_conn()
+        #self.cursor = await self.conn.cursor()
+        await conn.create_function('regexp', 2, regexp)
         await self.set_aliases()
+        await conn.close()
 
     async def set_aliases (self):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         self.table_aliases = {'variant':'t','gene':'g'}
         self.column_prefixes = {}
         q = 'pragma table_info(variant)'
-        await self.cursor.execute(q)
-        self.column_prefixes.update({row[1]:self.table_aliases['variant'] for row in await self.cursor.fetchall()})
+        await cursor.execute(q)
+        self.column_prefixes.update({row[1]:self.table_aliases['variant'] for row in await cursor.fetchall()})
         q = 'pragma table_info(gene)'
-        await self.cursor.execute(q)
-        self.column_prefixes.update({row[1]:self.table_aliases['gene'] for row in await self.cursor.fetchall()})
+        await cursor.execute(q)
+        self.column_prefixes.update({row[1]:self.table_aliases['gene'] for row in await cursor.fetchall()})
+        await cursor.close()
+        await conn.close()
 
     async def close_db (self):
-        await self.cursor.close()
-        await self.conn.close()
+        #await self.cursor.close()
+        if self.conn is not None:
+            await self.conn.close()
 
     async def create_filtertable (self):
-        if self.cursor == None:
+        #if self.cursor == None:
+        #    return
+        conn = await self.get_db_conn()
+        if conn is None:
             return
+        cursor = await conn.cursor()
         sql = 'create table ' + self.filtertable + ' (name text, criteria text)'
-        await self.cursor.execute(sql)
-        await self.conn.commit()
+        await cursor.execute(sql)
+        await conn.commit()
+        await cursor.close()
+        await conn.close()
 
     async def filtertable_exists (self):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         sql = 'select name from sqlite_master where ' +\
             'type="table" and name="' + self.filtertable + '"'
-        await self.cursor.execute(sql)
-        for row in await self.cursor.fetchone():
+        await cursor.execute(sql)
+        for row in await cursor.fetchone():
             if row == None:
                 ret = False
             else:
                 ret = True
+        await cursor.close()
+        await conn.close()
         return ret
 
     async def loadfilter (self, filterpath=None, filtername=None, 
@@ -318,11 +345,19 @@ class CravatFilter ():
             self.filterstring = self.filterstring.replace("'", '"')
             self.filter = json.loads(self.filterstring)
         elif self.filtername is not None and self.filtertable_exists():
-            await self.cursor.execute('select criteria from ' + self.filtertable +
+            #if self.conn is None:
+            #    await self.connect_db()
+            #if self.cursor is None:
+            #    self.cursor = await self.conn.cursor()
+            conn = await self.get_db_conn()
+            cursor = await conn.cursor()
+            await cursor.execute('select criteria from ' + self.filtertable +
                 ' where name="' + self.filtername + '"')
-            criteria = await self.cursor.fetchone()
+            criteria = await cursor.fetchone()
             if criteria != None:
                 self.filter = json.loads(criteria[0])
+            await cursor.close()
+            await conn.close()
         elif self.filterpath is not None and os.path.exists(self.filterpath):
             with open(self.filterpath) as f:
                 ftype = self.filterpath.split('.')[-1]
@@ -334,13 +369,17 @@ class CravatFilter ():
             self.filter = {}
 
     async def delete_filtered_uid_table (self):
-        await self.cursor.execute('pragma synchronous=0')
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
+        await cursor.execute('pragma synchronous=0')
         q = 'drop table if exists variant_filtered'
-        await self.cursor.execute(q)
+        await cursor.execute(q)
         q = 'drop table if exists gene_filtered'
-        await self.cursor.execute(q)
-        await self.conn.commit()
-        await self.cursor.execute('pragma synchronous=2')
+        await cursor.execute(q)
+        await conn.commit()
+        await cursor.execute('pragma synchronous=2')
+        await cursor.close()
+        await conn.close()
 
     def getwhere (self, level):
         where = ''
@@ -360,6 +399,8 @@ class CravatFilter ():
         return self.getcount('gene')
 
     async def getcount (self, level='variant'):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         bypassfilter = (self.filter == {})
         level = 'variant'
         await self.make_filtered_uid_table()
@@ -368,12 +409,14 @@ class CravatFilter ():
         else:
             ftable = level + '_filtered'
         q = 'select count(*) from ' + ftable
-        await self.cursor.execute(q)
-        for row in await self.cursor.fetchone():
+        await cursor.execute(q)
+        for row in await cursor.fetchone():
             n = row
         if self.stdout == True:
             print('#' + level)
             print(str(n))
+        await cursor.close()
+        await conn.close()
         return n
 
     def getvariantrows (self):
@@ -385,32 +428,40 @@ class CravatFilter ():
     async def getrows (self, level='variant'):
         if level != 'variant':
             return
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         where = self.getwhere(level)
         await self.make_filtered_sample_table()
         await self.make_gene_list_table()
-        await self.conn.commit()
+        await conn.commit()
         q = f'select t.* from variant as t join fsample as s on t.base__uid=s.base__uid'
         if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
             q += ' join gene_list as gl on t.base__hugo=gl.base__hugo'
         if 'g.' in where:
             q += ' join gene as g on t.base__hugo=g.base__hugo'
-        await self.cursor.execute(q)
-        ret = [list(v) for v in await self.cursor.fetchall()]
+        await cursor.execute(q)
+        ret = [list(v) for v in await cursor.fetchall()]
         if self.stdout == True:
             print('#' + level)
             for row in ret:
                 print('\t'.join([str(v) for v in row]))
+        await cursor.close()
+        await conn.close()
         return ret
 
     async def make_generows (self):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         t = time.time()
         q = 'select * from gene'
-        await self.cursor.execute(q)
-        rows = await self.cursor.fetchall()
+        await cursor.execute(q)
+        rows = await cursor.fetchall()
         self.generows = {}
         for row in rows:
             hugo = row[0]
             self.generows[hugo] = row
+        await cursor.close()
+        await conn.close()
 
     async def get_gene_row (self, hugo):
         if hugo is None:
@@ -427,13 +478,19 @@ class CravatFilter ():
         return self.getiterator('gene')
 
     async def getiterator (self, level='variant'):
+        conn = await self.get_db_conn()
+        cursor = conn.close()
         (sample_needed, tag_needed, include_where, exclude_where) = self.getwhere(level)
         sql = 'select *  from ' + level + include_where + ' except select * from ' + level + exclude_where
-        await self.cursor.execute(sql)
-        it = await self.cursor.fetchall()
+        await cursor.execute(sql)
+        it = await cursor.fetchall()
+        await cursor.close()
+        await conn.close()
         return it
 
     async def get_filtered_iterator (self, level='variant'):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         bypassfilter = (self.filter == {})
         if level == 'variant':
             kcol = 'base__uid'
@@ -463,22 +520,26 @@ class CravatFilter ():
         if level in ['variant', 'gene', 'sample', 'mapping']:
             if level == 'gene' and bypassfilter:
                 sql = 'pragma table_info(gene)'
-                await self.cursor.execute(sql)
-                rs = await self.cursor.fetchall()
+                await cursor.execute(sql)
+                rs = await cursor.fetchall()
                 colnames = ['gene.' + r[1] for r in rs if r[1] != 'base__hugo']
                 sql = 'select distinct variant.base__hugo, {} from variant inner join gene on variant.base__hugo==gene.base__hugo'.format(', '.join(colnames))
             else:
                 sql = 'select t.* from ' + table + ' as t'
                 if bypassfilter == False:
                     sql += ' inner join ' + ftable + ' as f on t.' + kcol + '=f.' + kcol
-        await self.cursor.execute(sql)
-        cols = [v[0] for v in self.cursor.description]
-        rows = await self.cursor.fetchall()
+        await cursor.execute(sql)
+        cols = [v[0] for v in cursor.description]
+        rows = await cursor.fetchall()
+        await cursor.close()
+        await conn.close()
         return cols, rows
 
     async def make_filtered_sample_table (self):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         q = 'drop table if exists fsample'
-        await self.cursor.execute(q)
+        await cursor.execute(q)
         if 'sample' in self.filter:
             if 'require' in self.filter['sample']:
                 req = self.filter['sample']['require']
@@ -500,21 +561,25 @@ class CravatFilter ():
         #     q += ' union select base__uid from sample where base__sample_id="{}"'.format(s)
         for s in rej:
            q += ' except select base__uid from sample where base__sample_id="{}"'.format(s)
-        await self.cursor.execute(q)
-        await self.conn.commit()
+        await cursor.execute(q)
+        await conn.commit()
+        await cursor.close()
+        await conn.close()
 
     async def make_filtered_uid_table (self):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         t = time.time()
         bypassfilter = (self.filter == {})
         if bypassfilter == False:
             await self.make_filtered_sample_table()
             await self.make_gene_list_table()
-            await self.conn.commit()
+            await conn.commit()
             level = 'variant'
             vtable = level
             vftable = level + '_filtered'
             q = 'drop table if exists ' + vftable
-            await self.cursor.execute(q)
+            await cursor.execute(q)
             where = self.getwhere(level)
             q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
             q += ' join fsample as s on t.base__uid=s.base__uid'
@@ -523,69 +588,81 @@ class CravatFilter ():
             if 'g.' in where:
                 q += ' join gene as g on t.base__hugo=g.base__hugo'
             q += ' '+where
-            await self.cursor.execute(q)
-            await self.conn.commit()
+            await cursor.execute(q)
+            await conn.commit()
             t = time.time() - t
-    
+        await cursor.close()
+        await conn.close()
+
     async def make_gene_list_table (self):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         tname = 'gene_list'
         q = 'drop table if exists {}'.format(tname)
-        await self.cursor.execute(q)
+        await cursor.execute(q)
         q = 'create table {} (base__hugo text)'.format(tname)
-        await self.cursor.execute(q)
+        await cursor.execute(q)
         if isinstance(self.filter,dict) and 'genes' in self.filter:
             tdata = [(hugo,) for hugo in self.filter['genes']]
         else:
             tdata = []
         if tdata:
             q = 'insert into {} (base__hugo) values (?)'.format(tname)
-            await self.cursor.executemany(q, tdata)
+            await cursor.executemany(q, tdata)
         else:
             q = 'insert into {} select base__hugo from gene'.format(tname)
-            await self.cursor.execute(q)
-        await self.conn.commit()
-    
+            await cursor.execute(q)
+        await conn.commit()
+        await cursor.close()
+        await conn.close()
+
     async def make_filtered_hugo_table (self):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         bypassfilter = (self.filter == {})
         if bypassfilter == False:
-            await self.cursor.execute('pragma synchronous=0')
+            await cursor.execute('pragma synchronous=0')
             level = 'gene'
             vtable = 'variant'
             vftable = vtable + '_filtered'
             gftable = level + '_filtered'
             q = 'drop table if exists ' + gftable
-            await self.cursor.execute(q)
+            await cursor.execute(q)
             q = 'create table ' + gftable +\
                 ' as select distinct v.base__hugo from ' + vtable + ' as v'\
                 ' inner join ' + vftable + ' as vf on vf.base__uid=v.base__uid'\
                 ' where v.base__hugo is not null'
-            await self.cursor.execute(q)
-            await self.cursor.execute('pragma synchronous=2')
+            await cursor.execute(q)
+            await cursor.execute('pragma synchronous=2')
+        await cursor.close()
+        await conn.close()
 
     async def savefilter (self, name=None):
-        if self.cursor == None or self.filter == None:
+        #if self.cursor == None or self.filter == None:
+        conn = await self.get_db_conn()
+        if conn is None or self.filter is None:
             return
-
         if name == None:
             if self.savefiltername != None:
                 name = self.savefiltername
             else:
                 name = 'default'
-
         # Creates filter save table if not exists.
-        await self.cursor.execute('select name from sqlite_master where ' +
+        cursor = await conn.cursor()
+        await cursor.execute('select name from sqlite_master where ' +
             'type="table" and name="' + self.filtertable + '"')
-        for ret in await self.cursor.fetchone():
+        for ret in await cursor.fetchone():
             if ret == None:
-                await self.cursor.execute('create table ' + self.filtertable +
+                await cursor.execute('create table ' + self.filtertable +
                     ' (name text unique, criteria text)')
-
         # Saves the filter.
         filterstr = json.dumps(self.filter)
         sql = 'insert or replace into ' + self.filtertable +\
             ' values ("' + name + '", \'' + filterstr + '\')'
-        await self.cursor.execute(sql)
-        await self.conn.commit()
+        await cursor.execute(sql)
+        await conn.commit()
+        await cursor.close()
+        await conn.close()
 
     async def listfilter (self, name=None):
         if name == None:
@@ -593,19 +670,19 @@ class CravatFilter ():
                 name = self.savefiltername
             else:
                 name = 'default'
-
         # Creates filter save table if not exists.
-        await self.cursor.execute('select name from sqlite_master where ' +
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
+        await cursor.execute('select name from sqlite_master where ' +
             'type="table" and name="' + self.filtertable + '"')
-        for ret in await self.cursor.fetchone():
+        for ret in await cursor.fetchone():
             if ret == None:
-                await self.cursor.execute('create table ' + self.filtertable +
+                await cursor.execute('create table ' + self.filtertable +
                     ' (name text, criteria text)')
-
         sql = 'select name, criteria from ' + self.filtertable
-        await self.cursor.execute(sql)
+        await cursor.execute(sql)
         ret = {}
-        for row in await self.cursor.fetchall():
+        for row in await cursor.fetchall():
             name = row[0]
             criteria = json.loads(row[1])
             ret[name] = criteria
@@ -616,7 +693,8 @@ class CravatFilter ():
                     for column in criteria[level]:
                         print('        ' + column + ': ' + 
                               criteria[level][column])
-
+        await cursor.close()
+        await conn.close()
         return ret
 
     def addvariantfilter (self, column, condition):
@@ -645,42 +723,58 @@ class CravatFilter ():
             del self.filter[level][column]
 
     async def table_exists (self, table):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         sql = 'select name from sqlite_master where type="table" and ' +\
             'name="' + table + '"'
-        await self.cursor.execute(sql)
-        for row in await self.cursor.fetchone():
+        await cursor.execute(sql)
+        for row in await cursor.fetchone():
             if row == None:
+                await cursor.close()
+                await conn.close()
                 return False
             else:
+                await cursor.close()
+                await conn.close()
                 return True
 
     async def get_variant_iterator_filtered_uids_cols (self, cols):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         if cols[0] == 'base__uid':
             cols[0] = 'v.' + cols[0]
         bypassfilter = (self.filter == {})
         q = 'select ' + ','.join(cols) + ' from variant as v'
         if bypassfilter == False:
             q += ' inner join variant_filtered as f on v.base__uid=f.base__uid'
-        await self.cursor.execute(q)
-        rows = await self.cursor.fetchall()
+        await cursor.execute(q)
+        rows = await cursor.fetchall()
         for row in rows:
             d = {}
             for i in range(len(row)):
                 d[cols[i].split('__')[1]] = row[i]
             yield d
+        await cursor.close()
+        await conn.close()
 
     async def get_filtered_hugo_list (self):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         bypassfilter = (self.filter == {})
         if bypassfilter:
             q = 'select distinct variant.base__hugo from gene, variant where gene.base__hugo==variant.base__hugo'
         else:
             q = 'select base__hugo from gene_filtered'
-        await self.cursor.execute(q)
-        rows = await self.cursor.fetchall()
+        await cursor.execute(q)
+        rows = await cursor.fetchall()
         hugos = [row[0] for row in rows]
+        await cursor.close()
+        await conn.close()
         return hugos
 
     async def get_variant_data_for_cols (self, cols):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         bypassfilter = (self.filter == {})
         if cols[0] == 'base__uid':
             cols[0] = 'v.base__uid'
@@ -689,11 +783,15 @@ class CravatFilter ():
             q += ' inner join variant_filtered as f on v.base__uid=f.base__uid'
         if cols[0] == 'v.base__uid':
             cols[0] = 'base__uid'
-        await self.cursor.execute(q)
-        rows = await self.cursor.fetchall()
+        await cursor.execute(q)
+        rows = await cursor.fetchall()
+        await cursor.close()
+        await conn.close()
         return rows
 
     async def get_variant_data_for_hugo (self, hugo, cols):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         bypassfilter = (self.filter == {})
         if cols[0] == 'base__uid':
             cols[0] = 'v.base__uid'
@@ -702,17 +800,23 @@ class CravatFilter ():
             q += ' inner join variant_filtered as f on v.base__uid=f.base__uid and v.base__hugo="{}"'.format(hugo)
         if cols[0] == 'v.base__uid':
             cols[0] = 'base__uid'
-        await self.cursor.execute(q)
-        rows = await self.cursor.fetchall()
+        await cursor.execute(q)
+        rows = await cursor.fetchall()
+        await cursor.close()
+        await conn.close()
         return rows
 
     async def get_result_levels (self):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         q = 'select name from sqlite_master where type="table" and ' +\
             'name like "%_header"'
-        await self.cursor.execute(q)
+        await cursor.execute(q)
         table_names = []
-        for row in await self.cursor.fetchall():
+        for row in await cursor.fetchall():
             table_names.append(row[0].replace('_header', ''))
+        await cursor.close()
+        await conn.close()
         return table_names
 
 def regexp (y, x, search=re.search):

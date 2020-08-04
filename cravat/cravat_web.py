@@ -157,7 +157,7 @@ def wcravat_entrypoint ():
     args = parser.parse_args()
     run(args)
 
-def run(args):
+def run (args):
     log_handler = logging.handlers.TimedRotatingFileHandler(log_path, when='d', backupCount=30)
     log_formatter = logging.Formatter('%(asctime)s: %(message)s', '%Y/%m/%d %H:%M:%S')
     log_handler.setFormatter(log_formatter)
@@ -442,7 +442,9 @@ def main (url=None):
         try:
             loop.run_forever()
         except KeyboardInterrupt:
-            exit()
+            for handler in logger.handlers:
+                handler.close()
+                logger.removeHandler(handler)
     except Exception as e:
         logger.exception(e)
         if debug:

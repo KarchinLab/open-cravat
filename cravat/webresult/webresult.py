@@ -1,7 +1,8 @@
 import os
 import webbrowser
 import multiprocessing
-import aiosqlite
+import aiosqlite3 as aiosqlite
+#import aiosqlite
 import urllib.parse
 import json
 import sys
@@ -303,6 +304,7 @@ async def get_count (request):
     t = round(time.time() - t, 3)
     print('count obtained from {} in {}s'.format(dbbasename, t))
     content = {'n': n}        
+    cf.close_db()
     return web.json_response(content)
 
 async def get_result (request):
@@ -343,8 +345,14 @@ async def get_result (request):
         arg_dict['separatesample'] = True
     arg_dict['reporttypes'] = ['text']
     reporter = m.Reporter(arg_dict)
-    await reporter.prep()
-    data = await reporter.run(tab=tab)
+    try:
+        await reporter.prep()
+        data = await reporter.run(tab=tab)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if reporter.cf is not None:
+            await reporter.cf.close_db()
     data['modules_info'] = await get_modules_info(request)
     content = {}
     content['stat'] = {'rowsreturned': True, 
@@ -644,6 +652,8 @@ async def get_modules_info (request):
             v = t2[1].strip().strip("'").replace("'", "\'")
             d[k] = v
         content = d
+    cursor.close()
+    conn.close()
     return content
 
 async def load_smartfilters (request):
@@ -659,6 +669,8 @@ async def load_smartfilters (request):
         r = await cursor.fetchall()
         for mname, definitions in r:
             sfs[mname] = json.loads(definitions)
+    cursor.close()
+    conn.close()
     return web.json_response(sfs)
 
 async def get_samples (request):
@@ -672,6 +684,8 @@ async def get_samples (request):
         await cursor.execute(q)
         rows = await cursor.fetchall()
         samples = [r[0] for r in rows]
+    cursor.close()
+    conn.close()
     return web.json_response(samples)
 
 routes = []

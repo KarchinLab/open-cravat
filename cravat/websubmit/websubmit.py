@@ -594,7 +594,7 @@ async def generate_report(request):
     run_args.extend(['-t', report_type])
     p = await asyncio.create_subprocess_shell(' '.join(run_args))
     await p.wait()
-    await p.terminate()
+    #await p.terminate()
     return web.json_response('done')
 
 async def download_report(request):
