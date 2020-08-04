@@ -631,7 +631,8 @@ div.pq-select-menu>.pq-select-option-label {
 }
 
 .pq-grid-cell {
-    height: 25px;
+	height: 25px;
+	padding: 0px 3px;
 }
 
 #widgethelpdiv {
@@ -970,10 +971,6 @@ input:checked + .sample-rd-rej::before {
 #sample-shown-count {
 	margin: auto auto auto 1ch;
 }
-.pq-grid-cell, .pq-grid-number-cell {
-	padding: 0px;
-}
-
 .title {
 	font-family: sourcesanspro-bold;
 }
