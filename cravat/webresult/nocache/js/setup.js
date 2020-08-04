@@ -2401,6 +2401,9 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             $headerCell.attr('coltitle', col.title);
             $headerCell.attr('colgroup', col.colgroup);
             $headerCell.attr('colgroupkey', col.colgroupkey);
+            $headerCell[0].classList.remove('pq-align-right');
+            $headerCell[0].classList.remove('pq-align-left');
+            $headerCell[0].classList.add('pq-align-center');
             $headerCell.contextmenu(function (evt) {
                 var headerCell = evt.target;
                 if (headerCell.classList.contains('pq-td-div')) {
