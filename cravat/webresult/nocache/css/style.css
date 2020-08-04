@@ -632,8 +632,7 @@ div.pq-select-menu>.pq-select-option-label {
 
 .pq-grid-cell {
 	height: 25px;
-	padding-left: 3px;
-	padding-right: 3px;
+	padding: 0px 3px;
 }
 
 #widgethelpdiv {
