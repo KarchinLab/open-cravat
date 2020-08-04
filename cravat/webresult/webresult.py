@@ -490,6 +490,7 @@ def get_colmodel (tab, colinfo):
                 'link_format': d.get('link_format'),
                 }
             if d['col_type'] == 'string':
+                column['align'] = 'left'
                 if d['col_ctg'] == 'single':
                     column['filter'] = {
                         'type': 'select',
@@ -519,6 +520,7 @@ def get_colmodel (tab, colinfo):
                     column['retfilttype'] = 'regexp'
                     column['multiseloptions'] = []
             elif d['col_type'] == 'float' or d['col_type'] == 'int':
+                column['align'] = 'right'
                 column['filter'] = {
                     "type":"textbox",
                     "condition":"between",
