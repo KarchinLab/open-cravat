@@ -191,13 +191,21 @@ def detect_encoding (path):
     else:
         f = open(path, 'rb')
     detector = chardet.universaldetector.UniversalDetector()
-    for line in f:
+    for n,line in enumerate(f):
+        if n>100:
+            break
         detector.feed(line)
         if detector.done:
             break
     detector.close()
     f.close()
-    return detector.result['encoding']
+    encoding = detector.result['encoding']
+    # utf-8 is superset of ascii that may include chars
+    # not in the first 100 lines
+    if encoding == 'ascii':
+        return 'utf-8'
+    else:
+        return encoding
 
 def is_compatible_version (dbpath):
     db = sqlite3.connect(dbpath)
@@ -248,3 +256,11 @@ def get_args (parser, inargs, inkwargs):
     args = SimpleNamespace(**arg_dict)
     return args
 
+def filter_affected_cols(filter):
+    cols = set()
+    if 'column' in filter:
+        cols.add(filter['column'])
+    else:
+        for rule in filter['rules']:
+            cols.update(filter_affected_cols(rule))
+    return cols

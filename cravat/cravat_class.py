@@ -523,17 +523,46 @@ class Cravat (object):
 
 
     def write_smartfilters (self):
+        if not self.args.silent:
+            print('Indexing')
         dbpath = os.path.join(self.output_dir, self.run_name + '.sqlite')
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()
         q = 'create table if not exists smartfilters (name text primary key, definition text)'
         cursor.execute(q)
         ins_template = 'insert or replace into smartfilters (name, definition) values (?, ?);'
+        cols_to_index = set()
+        for sf in constants.base_smartfilters:
+            cols_to_index |= util.filter_affected_cols(sf['filter'])
         for linfo in self.annotators.values():
             if linfo.smartfilters is not None:
+                for sf in linfo.smartfilters:
+                    cols_to_index |= util.filter_affected_cols(sf['filter'])
                 mname = linfo.name
                 json_info = json.dumps(linfo.smartfilters)
                 cursor.execute(ins_template, (mname, json_info))
+        cursor.execute('pragma table_info(variant)')
+        variant_cols = {row[1] for row in cursor}
+        cursor.execute('pragma table_info(gene)')
+        gene_cols = {row[1] for row in cursor}
+        for col in cols_to_index:
+            if col in variant_cols:
+                q = f'create index sf_variant_{col} on variant ({col})'
+                if not self.args.silent:
+                    print(f'\tvariant {col}',end='',flush=True)
+                st = time.time()
+                cursor.execute(q)
+                if not self.args.silent:
+                    print(f'\tfinished in {time.time()-st:.3f}s')
+            if col in gene_cols:
+                q = f'create index sf_gene_{col} on gene ({col})'
+                if not self.args.silent:
+                    print(f'\tIndexing gene {col}',end='',flush=True)
+                st = time.time()
+                cursor.execute(q)
+                if not self.args.silent:
+                    print(f'\tfinished in {time.time()-st:.3f}s')
+
         conn.commit()
         cursor.close()
         conn.close()

@@ -565,6 +565,7 @@ function loadFilterSetting (name, callback, doNotCount) {
 		}
 		$.get('/result/service/samples', {username:username, job_id:jobId, dbpath:dbPath}).done(response=>{
 			allSamples = response;
+			showFilterTabContent = true;
 			setupTab('filter');
 		})
 		$.get('/result/service/loadfiltersetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name}).done(function (response) {

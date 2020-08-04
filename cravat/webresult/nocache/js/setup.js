@@ -887,11 +887,17 @@ function makeFilterTab (rightDiv) {
 	leftPanel.append(savedList);
 	populateFilterSaveNames();
 	
-	// Right panel
+    // Right panel
 	let rightPanel = $(getEl('div'))
-		.attr('id','filter-right-panel');
-	rightDiv.append(rightPanel);
-	
+        .attr('id','filter-right-panel');
+    if (showFilterTabContent) {
+        rightPanel.css('visibility','');
+    } else {
+        rightDiv.append($(getEl('div')).text('Loading...'));
+        rightPanel.css('visibility','hidden');
+    }
+    rightDiv.append(rightPanel);
+
 	// Sample selector
 	let sampleSection = filterMgr.getFilterSection('Samples',false);
     rightPanel.append(sampleSection);
