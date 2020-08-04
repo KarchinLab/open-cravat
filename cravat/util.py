@@ -256,3 +256,11 @@ def get_args (parser, inargs, inkwargs):
     args = SimpleNamespace(**arg_dict)
     return args
 
+def filter_affected_cols(filter):
+    cols = set()
+    if 'column' in filter:
+        cols.add(filter['column'])
+    else:
+        for rule in filter['rules']:
+            cols.update(filter_affected_cols(rule))
+    return cols
