@@ -185,7 +185,6 @@ class CravatReport:
                     datarow.extend([None for i in range(len(self.var_added_cols))])
                 else:
                     datarow.extend([generow[self.colnos['gene'][colname]] for colname in self.var_added_cols])
-                loop.close()
         elif level == 'gene':
             # adds summary data to gene level.
             hugo = datarow[0]
@@ -715,7 +714,6 @@ def run_reporter (*inargs, **inkwargs):
         response[report_type] = response_t
         if args.silent == False:
             print(f'report created in {os.path.abspath(output_dir)}.')
-    loop.close()
     return response
 
 def cravat_report_entrypoint ():
