@@ -3,7 +3,6 @@ import argparse
 import os
 import sys
 import oyaml as yaml
-#import aiosqlite3 as aiosqlite
 import aiosqlite
 import json
 import re
@@ -153,8 +152,6 @@ class CravatFilter ():
         self.savefiltername = None
         self.filtername = None
         self.filterstring = None
-        self.conn = None
-        #self.cursor = None
         if filter != None:
             self.filter = filter
         else:
@@ -179,11 +176,8 @@ class CravatFilter ():
         if cmd != None:
             self.cmd = cmd
 
-        if dbpath is not None:
+        if dbpath != None:
             self.dbpath = dbpath
-        #    await self.connect_db()
-        #elif self.dbpath is not None and self.conn is None:
-        #    await self.connect_db()
 
         # Loads filter.
         if filter != None:
@@ -193,18 +187,14 @@ class CravatFilter ():
             await self.loadfilter()
 
         ret = None
-        #if self.cursor != None: # and self.filter != None:
-        if self.conn is not None: # and self.filter != None:
-            #if self.cmd == 'uidpipe':
-            #    ret = await self.run_level_based_func(self.getuiditerator)
+        if self.dbpath is not None:
             if self.cmd == 'count':
                 ret = await self.run_level_based_func(self.getcount)
             elif self.cmd == 'rows':
                 ret = await self.run_level_based_func(self.getrows)
             elif self.cmd == 'pipe':
                 ret = await self.run_level_based_func(self.getiterator)
-        #elif self.cursor != None and self.cmd == 'list':
-        elif self.conn is not None and self.cmd == 'list':
+        elif self.dbpath is not None and self.cmd == 'list':
             ret = self.listfilter()
 
         # Saves filter.
@@ -266,8 +256,6 @@ class CravatFilter ():
         self.filterstring = parsed_args.filterstring
 
     async def get_db_conn (self):
-        if self.conn is not None:
-            return self.conn
         if self.dbpath is None:
             return None
         conn = await aiosqlite.connect(self.dbpath)
@@ -277,10 +265,9 @@ class CravatFilter ():
         if dbpath != None:
             self.dbpath = dbpath
         conn = await self.get_db_conn()
-        #self.cursor = await self.conn.cursor()
         await conn.create_function('regexp', 2, regexp)
-        await self.set_aliases()
         await conn.close()
+        await self.set_aliases()
 
     async def set_aliases (self):
         conn = await self.get_db_conn()
@@ -297,13 +284,9 @@ class CravatFilter ():
         await conn.close()
 
     async def close_db (self):
-        #await self.cursor.close()
-        if self.conn is not None:
-            await self.conn.close()
+        pass
 
     async def create_filtertable (self):
-        #if self.cursor == None:
-        #    return
         conn = await self.get_db_conn()
         if conn is None:
             return
@@ -345,10 +328,6 @@ class CravatFilter ():
             self.filterstring = self.filterstring.replace("'", '"')
             self.filter = json.loads(self.filterstring)
         elif self.filtername is not None and self.filtertable_exists():
-            #if self.conn is None:
-            #    await self.connect_db()
-            #if self.cursor is None:
-            #    self.cursor = await self.conn.cursor()
             conn = await self.get_db_conn()
             cursor = await conn.cursor()
             await cursor.execute('select criteria from ' + self.filtertable +
@@ -557,8 +536,6 @@ class CravatFilter ():
             q += ' where base__sample_id in ({})'.format(
                 ', '.join(['"{}"'.format(sid) for sid in req])
             )
-        # for s in req:
-        #     q += ' union select base__uid from sample where base__sample_id="{}"'.format(s)
         for s in rej:
            q += ' except select base__uid from sample where base__sample_id="{}"'.format(s)
         await cursor.execute(q)
@@ -638,7 +615,6 @@ class CravatFilter ():
         await conn.close()
 
     async def savefilter (self, name=None):
-        #if self.cursor == None or self.filter == None:
         conn = await self.get_db_conn()
         if conn is None or self.filter is None:
             return

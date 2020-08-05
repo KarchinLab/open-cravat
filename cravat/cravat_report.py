@@ -13,7 +13,6 @@ import re
 import logging
 import time
 import re
-#import aiosqlite3 as aiosqlite
 import aiosqlite
 import types
 from cravat import constants
@@ -27,7 +26,6 @@ nest_asyncio.apply()
 class CravatReport:
 
     def __init__ (self, *inargs, **inkwargs):
-        self.conn = None
         self.cf = None
         self.filtertable = 'filter'
         self.colinfo = {}
@@ -414,6 +412,8 @@ class CravatReport:
             run_time = end_time - start_time
             self.logger.info('runtime: {0:0.3f}'.format(run_time))
         ret = self.end()
+        await self.cf.close_db()
+        self.cf = None
         return ret
 
     async def get_variant_colinfo (self):
@@ -652,14 +652,8 @@ class CravatReport:
         if os.path.exists(self.dbpath) == False:
             sys.stderr.write(self.dbpath + ' does not exist.')
             exit()
-        #self.conn = await aiosqlite.connect(self.dbpath)
-        #self.cursor = await self.conn.cursor()
 
     async def close_db (self):
-        #await self.cursor.close()
-        #await self.conn.close()
-        #if self.cf is not None:
-        #    await self.cf.close_db()
         pass
 
     async def load_filter (self):

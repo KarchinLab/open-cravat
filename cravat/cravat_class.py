@@ -205,7 +205,6 @@ def run(cmd_args):
     module = Cravat(**vars(cmd_args))
     loop = asyncio.get_event_loop()
     response = loop.run_until_complete(module.main())
-    #loop.close()
     return response
 
 def run_cravat_job(**kwargs):
