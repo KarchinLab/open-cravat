@@ -13,8 +13,8 @@ import re
 import logging
 import time
 import re
-import aiosqlite3 as aiosqlite
-#import aiosqlite
+#import aiosqlite3 as aiosqlite
+import aiosqlite
 import types
 from cravat import constants
 import asyncio
@@ -27,7 +27,7 @@ nest_asyncio.apply()
 class CravatReport:
 
     def __init__ (self, *inargs, **inkwargs):
-        self.cursor = None
+        self.conn = None
         self.cf = None
         self.filtertable = 'filter'
         self.colinfo = {}
@@ -361,14 +361,24 @@ class CravatReport:
             else:
                 self.write_table_row(new_datarow)
 
+    async def get_db_conn (self):
+        if self.dbpath is None:
+            return None
+        conn = await aiosqlite.connect(self.dbpath)
+        return conn
+
     async def store_mapper (self):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         q = 'select colval from info where colkey="_mapper"'
-        await self.cursor.execute(q)
-        r = await self.cursor.fetchone()
+        await cursor.execute(q)
+        r = await cursor.fetchone()
         if r is None:
             self.mapper_name = 'hg38'
         else:
             self.mapper_name = r[0].split(':')[0]
+        await cursor.close()
+        await conn.close()
 
     async def run (self, tab='all'):
         start_time = time.time()
@@ -394,7 +404,6 @@ class CravatReport:
             else:
                 await self.make_col_info(tab)
             await self.run_level(tab)
-        await self.cf.close_db()
         await self.close_db()
         if self.module_conf is not None and self.status_writer is not None:
             if self.parsed_args.do_not_change_status == False:
@@ -433,6 +442,8 @@ class CravatReport:
         pass
 
     async def make_col_info (self, level):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         await self.store_mapper()
         cravat_conf = self.conf.get_cravat_conf()
         if 'report_module_order' in cravat_conf:
@@ -442,8 +453,8 @@ class CravatReport:
         # level-specific column groups
         self.columngroups[level] = []
         sql = 'select name, displayname from ' + level + '_annotator'
-        await self.cursor.execute(sql)
-        rows = await self.cursor.fetchall()
+        await cursor.execute(sql)
+        rows = await cursor.fetchall()
         for row in rows:
             (name, displayname) = row
             self.columngroups[level].append(
@@ -453,8 +464,8 @@ class CravatReport:
         header_table = level+'_header'
         coldefs = []
         sql = 'select col_def from '+header_table
-        await self.cursor.execute(sql)
-        for row in await self.cursor.fetchall():
+        await cursor.execute(sql)
+        for row in await cursor.fetchall():
             coljson = row[0]
             coldef = ColumnDefinition({})
             coldef.from_json(coljson)
@@ -468,8 +479,8 @@ class CravatReport:
             colcount += 1
             if coldef.category in ['single', 'multi'] and len(coldef.categories) == 0:
                 sql = 'select distinct {} from {}'.format(coldef.name, level)
-                await self.cursor.execute(sql)
-                rs = await self.cursor.fetchall()
+                await cursor.execute(sql)
+                rs = await cursor.fetchall()
                 for r in rs:
                     coldef.categories.append(r[0])
             [colgrpname, _] = coldef.name.split('__')
@@ -482,23 +493,23 @@ class CravatReport:
         if self.nogenelevelonvariantlevel == False and level == 'variant' and await self.table_exists('gene'):
             modules_to_add = []
             q = 'select name from gene_annotator'
-            await self.cursor.execute(q)
-            gene_annotators = [v[0] for v in await self.cursor.fetchall()]
+            await cursor.execute(q)
+            gene_annotators = [v[0] for v in await cursor.fetchall()]
             modules_to_add = [m for m in gene_annotators if m != 'base']
             for module in modules_to_add:
                 if not module in gene_annotators:
                     continue
                 cols = []
                 q = 'select col_def from gene_header where col_name like "{}__%"'.format(module)
-                await self.cursor.execute(q)
-                rs = await self.cursor.fetchall()
+                await cursor.execute(q)
+                rs = await cursor.fetchall()
                 for r in rs:
                     cd = ColumnDefinition({})
                     cd.from_json(r[0])
                     cols.append(cd)
                 q = 'select displayname from gene_annotator where name="{}"'.format(module)
-                await self.cursor.execute(q)
-                r = await self.cursor.fetchone()
+                await cursor.execute(q)
+                r = await cursor.fetchone()
                 displayname = r[0]
                 self.columngroups[level].append({'name': module,
                                      'displayname': displayname,
@@ -508,8 +519,8 @@ class CravatReport:
                     colcount += 1
                     if coldef.category in ['category', 'multicategory'] and len(coldef.categories) == 0:
                         sql = 'select distinct {} from {}'.format(coldef.name, level)
-                        await self.cursor.execute(sql)
-                        rs = await self.cursor.fetchall()
+                        await cursor.execute(sql)
+                        rs = await cursor.fetchall()
                         for r in rs:
                             coldef.categories.append(r[0])
                     column = coldef.get_colinfo()
@@ -518,8 +529,8 @@ class CravatReport:
         # Gene level summary columns
         if level == 'gene':
             q = 'select name from variant_annotator'
-            await self.cursor.execute(q)
-            done_var_annotators = [v[0] for v in await self.cursor.fetchall()]
+            await cursor.execute(q)
+            done_var_annotators = [v[0] for v in await cursor.fetchall()]
             self.summarizing_modules = []
             local_modules = au.get_local_module_infos_of_type('annotator')
             local_modules.update(au.get_local_module_infos_of_type('postaggregator'))
@@ -614,8 +625,8 @@ class CravatReport:
             reportsubtable = level + '_reportsub'
             if await self.table_exists(reportsubtable):
                 q = 'select * from {}'.format(reportsubtable)
-                await self.cursor.execute(q)
-                reportsub = {r[0]:json.loads(r[1]) for r in await self.cursor.fetchall()}
+                await cursor.execute(q)
+                reportsub = {r[0]:json.loads(r[1]) for r in await cursor.fetchall()}
                 self.column_subs[level] = []
                 for i, column in enumerate(new_columns):
                     module, col = column['col_name'].split('__')
@@ -629,6 +640,8 @@ class CravatReport:
                             subs = reportsub[module][col],
                         ))
                         new_columns[i]['reportsub'] = reportsub[module][col]
+        await cursor.close()
+        await conn.close()
 
     async def connect_db (self, dbpath=None):
         if dbpath != None:
@@ -639,27 +652,34 @@ class CravatReport:
         if os.path.exists(self.dbpath) == False:
             sys.stderr.write(self.dbpath + ' does not exist.')
             exit()
-        self.conn = await aiosqlite.connect(self.dbpath)
-        self.cursor = await self.conn.cursor()
+        #self.conn = await aiosqlite.connect(self.dbpath)
+        #self.cursor = await self.conn.cursor()
 
     async def close_db (self):
-        await self.cursor.close()
-        await self.conn.close()
+        #await self.cursor.close()
+        #await self.conn.close()
+        #if self.cf is not None:
+        #    await self.cf.close_db()
+        pass
 
     async def load_filter (self):
         self.cf = await CravatFilter.create(dbpath=self.dbpath)
         await self.cf.loadfilter(filter=self.filter, filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
-        #await self.cf.close_db()
+        await self.cf.close_db()
 
     async def table_exists (self, tablename):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
         sql = 'select name from sqlite_master where ' + \
             'type="table" and name="' + tablename + '"'
-        await self.cursor.execute(sql)
-        row = await self.cursor.fetchone()
+        await cursor.execute(sql)
+        row = await cursor.fetchone()
         if row == None:
             ret = False
         else:
             ret = True
+        await cursor.close()
+        await conn.close()
         return ret
 
 def clean_args (cmd_args):

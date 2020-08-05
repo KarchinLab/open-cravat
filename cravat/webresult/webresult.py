@@ -1,8 +1,8 @@
 import os
 import webbrowser
 import multiprocessing
-import aiosqlite3 as aiosqlite
-#import aiosqlite
+#import aiosqlite3 as aiosqlite
+import aiosqlite
 import urllib.parse
 import json
 import sys
@@ -74,20 +74,25 @@ async def get_filter_save_names (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
     conn = await aiosqlite.connect(dbpath)
-    cursor = await conn.cursor()
-    table = 'viewersetup'
-    content = []
-    r = await table_exists(cursor, table)
-    if r == False:
-        pass
-    else:
-        q = 'select distinct name from ' + table + ' where datatype="filter"'
-        await cursor.execute(q)
-        rs = await cursor.fetchall()
-        for r in rs:
-            content.append(r[0])
-    await cursor.close()
-    await conn.close()
+    try:
+        cursor = await conn.cursor()
+        table = 'viewersetup'
+        content = []
+        r = await table_exists(cursor, table)
+        if r == False:
+            pass
+        else:
+            q = 'select distinct name from ' + table + ' where datatype="filter"'
+            await cursor.execute(q)
+            rs = await cursor.fetchall()
+            for r in rs:
+                content.append(r[0])
+        await cursor.close()
+        await conn.close()
+    except:
+        await cursor.close()
+        await conn.close()
+        raise
     return web.json_response(content)
 
 async def get_layout_save_names (request):
@@ -205,7 +210,7 @@ async def save_layout_setting (request):
     await cursor.execute(q)
     await conn.commit()
     await cursor.close()
-    conn.close()
+    await conn.close()
     content = 'saved'
     return web.json_response(content)
 
@@ -375,20 +380,24 @@ async def get_result_levels (request):
     job_id, dbpath = await get_jobid_dbpath(request)
     conn = await aiosqlite.connect(dbpath)
     cursor = await conn.cursor()
-    sql = 'select name from sqlite_master where type="table" and ' +\
-        'name like "%_header"'
-    await cursor.execute(sql)
-    ret = await cursor.fetchall()
-    if len(ret) > 0:
-        content = [v[0].split('_')[0] for v in ret]
-        content.insert(0, 'info')
-        content.insert(1,'filter')
-    else:
-        content = []
-    content.remove('sample')
-    content.remove('mapping')
-    await cursor.close()
-    await conn.close()
+    try:
+        sql = 'select name from sqlite_master where type="table" and ' +\
+            'name like "%_header"'
+        await cursor.execute(sql)
+        ret = await cursor.fetchall()
+        if len(ret) > 0:
+            content = [v[0].split('_')[0] for v in ret]
+            content.insert(0, 'info')
+            content.insert(1,'filter')
+        else:
+            content = []
+        content.remove('sample')
+        content.remove('mapping')
+        await cursor.close()
+        await conn.close()
+    except KeyboardInterrupt:
+        await cursor.close()
+        await conn.close()
     return web.json_response(content)
 
 async def get_jobid_dbpath (request):
@@ -558,8 +567,12 @@ async def get_colinfo (dbpath, confpath, filterstring):
         arg_dict['filterstring'] = filterstring
     arg_dict['reporttypes'] = ['text']
     reporter = m.Reporter(arg_dict)
-    await reporter.prep()
-    colinfo = await reporter.get_variant_colinfo()
+    try:
+        await reporter.prep()
+        colinfo = await reporter.get_variant_colinfo()
+    except:
+        await reporter.close_db()
+        raise
     return colinfo
 
 async def table_exists (cursor, table):
@@ -654,8 +667,8 @@ async def get_modules_info (request):
             v = t2[1].strip().strip("'").replace("'", "\'")
             d[k] = v
         content = d
-    cursor.close()
-    conn.close()
+    await cursor.close()
+    await conn.close()
     return content
 
 async def load_smartfilters (request):
@@ -671,8 +684,8 @@ async def load_smartfilters (request):
         r = await cursor.fetchall()
         for mname, definitions in r:
             sfs[mname] = json.loads(definitions)
-    cursor.close()
-    conn.close()
+    await cursor.close()
+    await conn.close()
     return web.json_response(sfs)
 
 async def get_samples (request):
@@ -686,8 +699,8 @@ async def get_samples (request):
         await cursor.execute(q)
         rows = await cursor.fetchall()
         samples = [r[0] for r in rows]
-    cursor.close()
-    conn.close()
+    await cursor.close()
+    await conn.close()
     return web.json_response(samples)
 
 routes = []

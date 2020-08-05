@@ -367,6 +367,7 @@ def migrate_result_170_to_180 (dbpath):
     db = sqlite3.connect(dbpath)
     c = db.cursor()
     c.execute('update info set colval="1.8.0" where colkey="open-cravat"')
+    db.commit()
 
 def migrate_result_180_to_181 (dbpath):
     db = sqlite3.connect(dbpath)
