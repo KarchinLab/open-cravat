@@ -23,13 +23,16 @@ function setupTab (tabName) {
 	
 	// Populates the right panel.
 	if (tabName == 'info') {
-		makeInfoTab(rightDiv);
+        makeInfoTab(rightDiv);
+        resetTab[tabName] = false;
 	} else if (tabName == 'variant' || tabName == 'gene') {
-		makeVariantGeneTab(tabName, rightDiv);
+        makeVariantGeneTab(tabName, rightDiv);
+        resetTab[tabName] = false;
 	} else if (tabName == 'sample' || tabName == 'mapping') {
-		makeSampleMappingTab(tabName, rightDiv);
+        makeSampleMappingTab(tabName, rightDiv);
+        resetTab[tabName] = false;
 	} else if (tabName == 'filter') {
-		makeFilterTab(rightDiv);
+        resetTab[tabName] = !makeFilterTab(rightDiv);
 	}
 	addEl(tabDiv, rightDiv);
 	
@@ -52,9 +55,7 @@ function setupTab (tabName) {
                 selectedRowNos[tabName] = 0;
 			}
 		}
-	}
-	
-	resetTab[tabName] = false;
+    }
 	
 	placeDragNSBar(tabName);
 	placeCellValueDiv(tabName);
@@ -872,6 +873,16 @@ function filterDeleteIconClick(event) {
 function makeFilterTab (rightDiv) {
     rightDiv = $(rightDiv);
     rightDiv.empty();
+    if (!showFilterTabContent) {
+        rightDiv.css('display','grid');
+        rightDiv.append($(getEl('img'))
+            .attr('src','images/bigSpinner.gif')
+            .css('margin','auto')
+        );
+        return false;
+    } else {
+        rightDiv.css('display','');
+    }
 
 	// Left panel
 	let leftPanel =$(getEl('div'))
@@ -890,12 +901,6 @@ function makeFilterTab (rightDiv) {
     // Right panel
 	let rightPanel = $(getEl('div'))
         .attr('id','filter-right-panel');
-    if (showFilterTabContent) {
-        rightPanel.css('visibility','');
-    } else {
-        rightDiv.append($(getEl('div')).text('Loading...'));
-        rightPanel.css('visibility','hidden');
-    }
     rightDiv.append(rightPanel);
 
 	// Sample selector
@@ -971,6 +976,7 @@ function makeFilterTab (rightDiv) {
 		});
     loadControls.append(saveIcon);
     displayFilterCount();
+    return true;
 }
 
 function countFilterVariants() {
@@ -1007,11 +1013,11 @@ function displayFilterCount(n) {
     n = n===undefined ? t : n;
 	let countDisplay = $('#filter-count-display');
 	countDisplay.text(`${n}/${t} variants`);
-    var warnDiv = document.getElementById('filter-tab-count-warning');
+    var warnDiv = $('#filter-tab-count-warning');
     if (n > NUMVAR_LIMIT) {
-        warnDiv.style.display = null;
+        warnDiv.css('display','');
     } else {
-        warnDiv.style.display = 'none';
+        warnDiv.css('display','none');
     }
 }
 
