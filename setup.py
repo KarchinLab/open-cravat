@@ -97,7 +97,6 @@ setup(
         'chardet>=3.0.4',
         'aiosqlite3',
         'oyaml',
-        'infi.systray',
         'intervaltree',
         'xlsxwriter',
         'twobitreader',
