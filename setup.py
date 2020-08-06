@@ -95,7 +95,7 @@ setup(
         'markdown',
         'aiohttp',
         'chardet>=3.0.4',
-        'aiosqlite3',
+        'aiosqlite',
         'oyaml',
         'intervaltree',
         'xlsxwriter',
