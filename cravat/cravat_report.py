@@ -106,6 +106,8 @@ class CravatReport:
                 for k in s:
                     input_path = s[k]
                     parsed_args.inputfiles.append(input_path)
+            c.close()
+            db.close()
         self.args = parsed_args
 
     async def prep (self):
