@@ -351,12 +351,16 @@ class Cravat (object):
         error_log_path = os.path.join(self.output_dir, self.run_name + '.err')
         if os.path.exists(error_log_path):
             os.remove(error_log_path)
-        error_log_handler = logging.FileHandler(error_log_path, mode=self.logmode)
+        self.error_log_handler = logging.FileHandler(error_log_path, mode=self.logmode)
         formatter = logging.Formatter('SOURCE:%(name)-20s %(message)s')
-        error_log_handler.setFormatter(formatter)
-        self.error_logger.addHandler(error_log_handler)
+        self.error_log_handler.setFormatter(formatter)
+        self.error_logger.addHandler(self.error_log_handler)
 
     def close_logger (self):
+        self.log_handler.close()
+        self.logger.removeHandler(self.log_handler)
+        self.error_log_handler.close()
+        self.error_logger.removeHandler(self.error_log_handler)
         logging.shutdown()
 
     def update_status (self, status):
@@ -366,6 +370,7 @@ class Cravat (object):
         import asyncio
         loop = asyncio.new_event_loop()
         response = loop.run_until_complete(self.main())
+        loop.close()
         return response
 
     def delete_output_files (self):
