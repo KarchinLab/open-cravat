@@ -445,6 +445,8 @@ def main (url=None):
             for handler in logger.handlers:
                 handler.close()
                 logger.removeHandler(handler)
+            if server_ready:
+                cravat_multiuser.admindb.close_db()
     except Exception as e:
         logger.exception(e)
         if debug:

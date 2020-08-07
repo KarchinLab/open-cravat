@@ -388,6 +388,8 @@ class CravatReport:
             if self.parsed_args.do_not_change_status == False:
                 self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
         if self.setup() == False:
+            await self.close_db()
+            await self.cf.close_db()
             return
         if tab == 'all':
             for level in await self.cf.get_result_levels():
@@ -405,6 +407,8 @@ class CravatReport:
                 await self.make_col_info(tab)
             await self.run_level(tab)
         await self.close_db()
+        await self.cf.close_db()
+        self.cf = None
         if self.module_conf is not None and self.status_writer is not None:
             if self.parsed_args.do_not_change_status == False:
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
@@ -414,8 +418,6 @@ class CravatReport:
             run_time = end_time - start_time
             self.logger.info('runtime: {0:0.3f}'.format(run_time))
         ret = self.end()
-        await self.cf.close_db()
-        self.cf = None
         return ret
 
     async def get_variant_colinfo (self):
