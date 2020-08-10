@@ -314,7 +314,7 @@ async def get_count (request):
     t = round(time.time() - t, 3)
     print('count obtained from {} in {}s'.format(dbbasename, t))
     content = {'n': n}        
-    cf.close_db()
+    await cf.close_db()
     return web.json_response(content)
 
 async def get_result (request):
