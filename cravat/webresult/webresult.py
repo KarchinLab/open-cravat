@@ -354,13 +354,8 @@ async def get_result (request):
         arg_dict['separatesample'] = True
     arg_dict['reporttypes'] = ['text']
     reporter = m.Reporter(arg_dict)
-    try:
-        await reporter.prep()
-        data = await reporter.run(tab=tab)
-    except KeyboardInterrupt:
-        exit()
-    except:
-        raise
+    await reporter.prep()
+    data = await reporter.run(tab=tab)
     data['modules_info'] = await get_modules_info(request)
     content = {}
     content['stat'] = {'rowsreturned': True, 
@@ -383,24 +378,20 @@ async def get_result_levels (request):
     job_id, dbpath = await get_jobid_dbpath(request)
     conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
-    try:
-        sql = 'select name from sqlite_master where type="table" and ' +\
-            'name like "%_header"'
-        await cursor.execute(sql)
-        ret = await cursor.fetchall()
-        if len(ret) > 0:
-            content = [v[0].split('_')[0] for v in ret]
-            content.insert(0, 'info')
-            content.insert(1,'filter')
-        else:
-            content = []
-        content.remove('sample')
-        content.remove('mapping')
-        await cursor.close()
-        await conn.close()
-    except KeyboardInterrupt:
-        await cursor.close()
-        await conn.close()
+    sql = 'select name from sqlite_master where type="table" and ' +\
+        'name like "%_header"'
+    await cursor.execute(sql)
+    ret = await cursor.fetchall()
+    if len(ret) > 0:
+        content = [v[0].split('_')[0] for v in ret]
+        content.insert(0, 'info')
+        content.insert(1,'filter')
+    else:
+        content = []
+    content.remove('sample')
+    content.remove('mapping')
+    await cursor.close()
+    await conn.close()
     return web.json_response(content)
 
 async def get_jobid_dbpath (request):
