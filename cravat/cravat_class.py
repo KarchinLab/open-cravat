@@ -204,7 +204,6 @@ def run(cmd_args):
     au.ready_resolution_console()
     module = Cravat(**vars(cmd_args))
     loop = asyncio.get_event_loop()
-    print(f'@ in run. pid={os.getpid()}')
     response = loop.run_until_complete(module.main())
     return response
 
@@ -940,7 +939,7 @@ class Cravat (object):
         reader = CravatReader(self.crvinput)
         num_lines, chunksize, poss, len_poss, max_num_lines = reader.get_chunksize(num_core)
         self.logger.info(f'input line chunksize={chunksize} total number of input lines={num_lines} number of chunks={len_poss}')
-        pool = mp.Pool(num_core)
+        pool = mp.Pool(num_core, init_worker)
         pos_no = 0
         while pos_no < len_poss:
             jobs = []
@@ -1280,10 +1279,7 @@ class Cravat (object):
         done_mnames = set(self.done_annotators)
         queue_populated = self.manager.Value('c_bool',False)
         pool_args = [[start_queue, end_queue, queue_populated, self.status_writer]]*num_workers
-        print(f'@ before pool. in cravat_class. pid={os.getpid()} ppid={os.getppid()}')
         with mp.Pool(num_workers, init_worker) as pool:
-            print(f'@ pool={pool}')
-            #try:
             results = pool.starmap_async(annot_from_queue, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
             pool.close()
             for mname, module in self.run_annotators.items():
@@ -1299,11 +1295,6 @@ class Cravat (object):
                         assigned_mnames.add(mname)
             queue_populated = True
             pool.join()
-            #except KeyboardInterrupt as e:
-            #    print(f'@ ctrl-c inside pool loop')
-            #    pool.terminate()
-            #    pool.join()
-            #    raise
         self.log_path = os.path.join(self.output_dir, self.run_name + '.log')
         self.log_handler = logging.FileHandler(self.log_path, 'a')
         formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')

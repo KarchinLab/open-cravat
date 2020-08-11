@@ -174,31 +174,11 @@ class CravatFilter ():
         cursor = await conn.cursor()
         conn_hash = conn.__hash__()
         self.open_conns[conn_hash] = conn
-        #print(f'@ exec_db. {func.__name__}')
-        #print(f'@          created conn={conn}')
-        #print(f'@          open_conns={self.open_conns}')
-        #try:
         ret = await func(*args, conn=conn, cursor=cursor, **kwargs)
         await cursor.close()
         await conn.close()
         del self.open_conns[conn_hash]
-        #print(f'@              closed conn={conn} normally')
-        #print(f'@              open_conns={self.open_conns}')
         return ret
-        #except KeyboardInterrupt:
-        #    await cursor.close()
-        #    await conn.close()
-        #    await self.close_conns()
-        #    print(f'@              closed conn={conn} ctrl-c')
-        #    print(f'@              open_conns={self.open_conns}')
-        #    raise SystemExit
-        #except:
-        #    await cursor.close()
-        #    await conn.close()
-        #    await self.close_conns()
-        #    print(f'@              closed conn={conn} exception')
-        #    print(f'@              open_conns={self.open_conns}')
-        #    raise
 
     async def second_init (self):
         if self.mode == 'sub':
@@ -557,7 +537,6 @@ class CravatFilter ():
             vtable = level
             vftable = level + '_filtered'
             q = 'drop table if exists ' + vftable
-            print(f'@ {q}')
             await cursor.execute(q)
             where = self.getwhere(level)
             q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
@@ -567,13 +546,9 @@ class CravatFilter ():
             if 'g.' in where:
                 q += ' join gene as g on t.base__hugo=g.base__hugo'
             q += ' '+where
-            print(f'@ {q}')
             await cursor.execute(q)
-            print(f'@ done execute')
             await conn.commit()
-            print(f'@ done commit')
             t = time.time() - t
-        print(f'@ end of make_filtered_uid_table')
 
     async def make_gene_list_table (self, conn=None, cursor=None):
         tname = 'gene_list'
@@ -592,7 +567,6 @@ class CravatFilter ():
             q = 'insert into {} select base__hugo from gene'.format(tname)
             await cursor.execute(q)
         await conn.commit()
-        print(f'@ end of make_gene_list_table')
 
     async def make_filtered_hugo_table (self, conn=None, cursor=None):
         bypassfilter = (self.filter == {})

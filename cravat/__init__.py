@@ -23,15 +23,12 @@ def raise_break (signal_number, stack_frame):
     import os
     import platform
     import psutil
-    #print(f'@ stackframe={stack_frame}')
     pl = platform.platform()
     if pl.startswith('Windows'):
         pid = os.getpid()
         ppid = os.getppid()
-        #print(f'@ ctrl-c pid={os.getpid()} ppid={ppid}')
         for child in psutil.Process(pid).children(recursive=True):
             try:
-                #print(f'@ child={child}')
                 child.kill()
             except psutil.NoSuchProcess:
                 pass
@@ -39,11 +36,8 @@ def raise_break (signal_number, stack_frame):
     elif pl.startswith('Linux'):
         pid = os.getpid()
         ppid = os.getppid()
-        #print(f'@ ctrl-c pid={os.getpid()} ppid={ppid}')
         for child in psutil.Process(pid).children(recursive=True):
-            #print(f'@ child={child}')
             try:
-                #print(f'@ child={child}')
                 child.kill()
             except psutil.NoSuchProcess:
                 pass
@@ -51,11 +45,8 @@ def raise_break (signal_number, stack_frame):
     elif pl.startswith('Darwin') or pl.startswith('macOS'):
         pid = os.getpid()
         ppid = os.getppid()
-        #print(f'@ ctrl-c pid={os.getpid()} ppid={ppid}')
         for child in psutil.Process(pid).children(recursive=True):
-            #print(f'@ child={child}')
             try:
-                #print(f'@ child={child}')
                 child.kill()
             except psutil.NoSuchProcess:
                 pass

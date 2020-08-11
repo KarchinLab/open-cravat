@@ -12,8 +12,6 @@ def init_worker():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 def annot_from_queue(start_queue, end_queue, queue_populated, status_writer):
-    print(f'@ start of annot_from_queue pid={os.getpid()} ppid={os.getppid()}')
-    #try:
     while True:
         try:
             task = start_queue.get(True, 1)
@@ -23,15 +21,11 @@ def annot_from_queue(start_queue, end_queue, queue_populated, status_writer):
             else:
                 continue
         module, kwargs = task
-        print(f'@ inside of annot_from_queue while. module={module.name}')
         kwargs['status_writer'] = status_writer
         annotator_class = util.load_class(module.script_path, "CravatAnnotator")
         annotator = annotator_class(kwargs)
         annotator.run()
         end_queue.put(module.name)
-    #except:
-    #    traceback.print_exc()
-    #    raise
 
 def mapper_runner (crv_path, seekpos, chunksize, run_name, output_dir, status_writer, module_name, pos_no, primary_transcript):
     module = au.get_local_module_info(module_name)
