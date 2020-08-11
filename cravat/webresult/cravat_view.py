@@ -307,7 +307,7 @@ def get_count (queries):
     cf = CravatFilter(dbpath=dbpath, 
                       mode='sub', 
                       filterstring=filterstring)
-    n = cf.getcount(level=tab)
+    n = cf.exec_db(cf.getcount, level=tab)
     content = {'n': n}        
     return content   
 

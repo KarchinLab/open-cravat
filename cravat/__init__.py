@@ -19,6 +19,51 @@ except KeyboardInterrupt:
     import sys
     sys.exit(1)
 
+def raise_break (signal_number, stack_frame):
+    import os
+    import platform
+    import psutil
+    #print(f'@ stackframe={stack_frame}')
+    pl = platform.platform()
+    if pl.startswith('Windows'):
+        pid = os.getpid()
+        ppid = os.getppid()
+        #print(f'@ ctrl-c pid={os.getpid()} ppid={ppid}')
+        for child in psutil.Process(pid).children(recursive=True):
+            try:
+                #print(f'@ child={child}')
+                child.kill()
+            except psutil.NoSuchProcess:
+                pass
+        os.kill(pid, signal.SIGTERM)
+    elif pl.startswith('Linux'):
+        pid = os.getpid()
+        ppid = os.getppid()
+        #print(f'@ ctrl-c pid={os.getpid()} ppid={ppid}')
+        for child in psutil.Process(pid).children(recursive=True):
+            #print(f'@ child={child}')
+            try:
+                #print(f'@ child={child}')
+                child.kill()
+            except psutil.NoSuchProcess:
+                pass
+        os.kill(pid, signal.SIGTERM)
+    elif pl.startswith('Darwin') or pl.startswith('macOS'):
+        pid = os.getpid()
+        ppid = os.getppid()
+        #print(f'@ ctrl-c pid={os.getpid()} ppid={ppid}')
+        for child in psutil.Process(pid).children(recursive=True):
+            #print(f'@ child={child}')
+            try:
+                #print(f'@ child={child}')
+                child.kill()
+            except psutil.NoSuchProcess:
+                pass
+        os.kill(pid, signal.SIGTERM)
+
+import signal
+signal.signal(signal.SIGINT, raise_break)
+
 wgs = None
 
 def get_live_annotator (module_name):

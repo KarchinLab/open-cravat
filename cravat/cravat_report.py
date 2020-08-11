@@ -135,7 +135,7 @@ class CravatReport:
         ret = None
         if await self.table_exists(level) == False:
             return ret
-        for row in await self.cf.getiterator(level):
+        for row in await self.cf.exec_db(self.cf.getiterator, level):
             row = self.substitute_val(level, row)
             return json.dumps(row) 
 
@@ -239,9 +239,9 @@ class CravatReport:
             return
         gene_summary_datas = {}
         if level == 'variant':
-            await self.cf.make_filtered_uid_table()
+            await self.cf.exec_db(self.cf.make_filtered_uid_table)
         elif level == 'gene':
-            await self.cf.make_filtered_hugo_table()
+            await self.cf.exec_db(self.cf.make_filtered_hugo_table)
             for mi, o, cols in self.summarizing_modules:
                 if hasattr(o, 'build_gene_collection'):
                     msg = 'Obsolete module [{}] for gene level summarization. Update the module to get correct gene level summarization.'.format(mi.name)
@@ -275,7 +275,7 @@ class CravatReport:
         self.write_header(level)
         if level == 'variant':
             hugo_present = 'base__hugo' in self.colnos['variant']
-        datacols, datarows = await self.cf.get_filtered_iterator(level)
+        datacols, datarows = await self.cf.exec_db(self.cf.get_filtered_iterator, level)
         num_total_cols = len(datacols)
         colnos_to_skip = []
         if level == 'gene':
@@ -389,13 +389,12 @@ class CravatReport:
                 self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
         if self.setup() == False:
             await self.close_db()
-            await self.cf.close_db()
             return
         if tab == 'all':
-            for level in await self.cf.get_result_levels():
+            for level in await self.cf.exec_db(self.cf.get_result_levels):
                 if await self.table_exists(level):
                     await self.make_col_info(level)
-            for level in await self.cf.get_result_levels():
+            for level in await self.cf.exec_db(self.cf.get_result_levels):
                 if await self.table_exists(level):
                     await self.run_level(level)
         else:
@@ -407,7 +406,6 @@ class CravatReport:
                 await self.make_col_info(tab)
             await self.run_level(tab)
         await self.close_db()
-        await self.cf.close_db()
         self.cf = None
         if self.module_conf is not None and self.status_writer is not None:
             if self.parsed_args.do_not_change_status == False:
@@ -662,8 +660,7 @@ class CravatReport:
 
     async def load_filter (self):
         self.cf = await CravatFilter.create(dbpath=self.dbpath)
-        await self.cf.loadfilter(filter=self.filter, filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
-        await self.cf.close_db()
+        await self.cf.exec_db(self.cf.loadfilter, filter=self.filter, filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
 
     async def table_exists (self, tablename):
         conn = await self.get_db_conn()

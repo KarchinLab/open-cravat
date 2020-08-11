@@ -310,11 +310,10 @@ async def get_count (request):
     dbbasename = os.path.basename(dbpath)
     print('calling count for {}'.format(dbbasename))
     t = time.time()
-    n = await cf.getcount(level=tab)
+    n = await cf.exec_db(cf.getcount, level=tab)
     t = round(time.time() - t, 3)
     print('count obtained from {} in {}s'.format(dbbasename, t))
     content = {'n': n}        
-    await cf.close_db()
     return web.json_response(content)
 
 async def get_result (request):
@@ -358,15 +357,9 @@ async def get_result (request):
     try:
         await reporter.prep()
         data = await reporter.run(tab=tab)
-        if reporter.cf is not None:
-            await reporter.cf.close_db()
     except KeyboardInterrupt:
-        if reporter.cf is not None:
-            await reporter.cf.close_db()
         exit()
     except:
-        if reporter.cf is not None:
-            await reporter.cf.close_db()
         raise
     data['modules_info'] = await get_modules_info(request)
     content = {}

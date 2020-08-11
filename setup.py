@@ -101,6 +101,7 @@ setup(
         'xlsxwriter',
         'twobitreader',
         'nest-asyncio',
+        'psutil',
         ],
     python_requires='>=3.6',
 )

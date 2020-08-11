@@ -204,6 +204,7 @@ def run(cmd_args):
     au.ready_resolution_console()
     module = Cravat(**vars(cmd_args))
     loop = asyncio.get_event_loop()
+    print(f'@ in run. pid={os.getpid()}')
     response = loop.run_until_complete(module.main())
     return response
 
@@ -1279,28 +1280,30 @@ class Cravat (object):
         done_mnames = set(self.done_annotators)
         queue_populated = self.manager.Value('c_bool',False)
         pool_args = [[start_queue, end_queue, queue_populated, self.status_writer]]*num_workers
+        print(f'@ before pool. in cravat_class. pid={os.getpid()} ppid={os.getppid()}')
         with mp.Pool(num_workers, init_worker) as pool:
-            try:
-                results = pool.starmap_async(annot_from_queue, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
-                pool.close()
+            print(f'@ pool={pool}')
+            #try:
+            results = pool.starmap_async(annot_from_queue, pool_args, error_callback=lambda e, mp_pool=pool: mp_pool.terminate())
+            pool.close()
+            for mname, module in self.run_annotators.items():
+                if mname not in assigned_mnames and set(module.secondary_module_names) <= done_mnames:
+                    start_queue.put(run_args[mname])
+                    assigned_mnames.add(mname)
+            while assigned_mnames != all_mnames: #TODO not handling case where parent module errors out
+                finished_module = end_queue.get()
+                done_mnames.add(finished_module)
                 for mname, module in self.run_annotators.items():
                     if mname not in assigned_mnames and set(module.secondary_module_names) <= done_mnames:
                         start_queue.put(run_args[mname])
                         assigned_mnames.add(mname)
-                while assigned_mnames != all_mnames: #TODO not handling case where parent module errors out
-                    finished_module = end_queue.get()
-                    done_mnames.add(finished_module)
-                    for mname, module in self.run_annotators.items():
-                        if mname not in assigned_mnames and set(module.secondary_module_names) <= done_mnames:
-                            start_queue.put(run_args[mname])
-                            assigned_mnames.add(mname)
-                queue_populated = True
-                pool.close()
-                pool.join()
-            except KeyboardInterrupt as e:
-                pool.terminate()
-                pool.join()
-                raise
+            queue_populated = True
+            pool.join()
+            #except KeyboardInterrupt as e:
+            #    print(f'@ ctrl-c inside pool loop')
+            #    pool.terminate()
+            #    pool.join()
+            #    raise
         self.log_path = os.path.join(self.output_dir, self.run_name + '.log')
         self.log_handler = logging.FileHandler(self.log_path, 'a')
         formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')

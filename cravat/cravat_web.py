@@ -1,82 +1,82 @@
-try:
-    from http.server import HTTPServer, CGIHTTPRequestHandler
-    from socketserver import TCPServer
-    import os
-    import webbrowser
-    import multiprocessing
-    import urllib.parse
-    import json
-    import sys
-    import argparse
-    import imp
-    import oyaml as yaml
-    import re
-    from cravat import admin_util as au
-    from cravat import CravatFilter
-    from cravat.webresult import webresult as wr
-    from cravat.webstore import webstore as ws
-    from cravat.websubmit import websubmit as wu
-    import websockets
-    from aiohttp import web, web_runner
-    import socket
-    import hashlib
-    import platform
-    import asyncio
-    import datetime as dt
-    import requests
-    import traceback
-    import ssl
-    import importlib
-    import socket
-    import concurrent
-    import logging
-    from cravat import constants
-    import time
-    import cravat.util
+#try:
+from http.server import HTTPServer, CGIHTTPRequestHandler
+from socketserver import TCPServer
+import os
+import webbrowser
+import multiprocessing
+import urllib.parse
+import json
+import sys
+import argparse
+import imp
+import oyaml as yaml
+import re
+from cravat import admin_util as au
+from cravat import CravatFilter
+from cravat.webresult import webresult as wr
+from cravat.webstore import webstore as ws
+from cravat.websubmit import websubmit as wu
+import websockets
+from aiohttp import web, web_runner
+import socket
+import hashlib
+import platform
+import asyncio
+import datetime as dt
+import requests
+import traceback
+import ssl
+import importlib
+import socket
+import concurrent
+import logging
+from cravat import constants
+import time
+import cravat.util
 
-    SERVER_ALREADY_RUNNING = -1
+SERVER_ALREADY_RUNNING = -1
 
-    sysconf = au.get_system_conf()
-    log_dir = sysconf[constants.log_dir_key]
-    log_path = os.path.join(log_dir, 'wcravat.log')
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+sysconf = au.get_system_conf()
+log_dir = sysconf[constants.log_dir_key]
+log_path = os.path.join(log_dir, 'wcravat.log')
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
-    headless = None
-    servermode = None
-    server_ready = None
-    ssl_enabled = None
-    protocol = None
-    http_only = None
-    sc = None
-    loop = None
-    debug = False
+headless = None
+servermode = None
+server_ready = None
+ssl_enabled = None
+protocol = None
+http_only = None
+sc = None
+loop = None
+debug = False
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--multiuser',
-        dest='servermode',
-        action='store_true',
-        default=False,
-        help='Runs in multiuser mode')
-    parser.add_argument('--headless',
-        action='store_true',
-        default=False,
-        help='do not open the cravat web page')
-    parser.add_argument('--http-only',
-        action='store_true',
-        default=False,
-        help='Force not to accept https connection')
-    parser.add_argument('--debug',
-        dest='debug',
-        action='store_true',
-        default=False,
-        help='Console echoes exceptions written to log file.')
-    parser.add_argument('result',
-        nargs='?',
-        help='Path to a CRAVAT result SQLite file')
-except KeyboardInterrupt:
-    import sys
-    sys.exit(1)
+parser = argparse.ArgumentParser()
+parser.add_argument('--multiuser',
+    dest='servermode',
+    action='store_true',
+    default=False,
+    help='Runs in multiuser mode')
+parser.add_argument('--headless',
+    action='store_true',
+    default=False,
+    help='do not open the cravat web page')
+parser.add_argument('--http-only',
+    action='store_true',
+    default=False,
+    help='Force not to accept https connection')
+parser.add_argument('--debug',
+    dest='debug',
+    action='store_true',
+    default=False,
+    help='Console echoes exceptions written to log file.')
+parser.add_argument('result',
+    nargs='?',
+    help='Path to a CRAVAT result SQLite file')
+#except KeyboardInterrupt:
+#    import sys
+#    sys.exit(1)
 
 def setup(args):
     try:
@@ -424,8 +424,8 @@ def main (url=None):
                 while True:
                     await cravat_multiuser.admindb.clean_sessions(max_age)
                     await asyncio.sleep(interval)
-            except KeyboardInterrupt:
-                pass
+            #except KeyboardInterrupt:
+            #    pass
             except Exception as e:
                 logger.exception(e)
                 if debug:
@@ -439,14 +439,14 @@ def main (url=None):
             server = WebServer(loop=loop, ssl_context=sc, url=url)
         else:
             server = WebServer(loop=loop, url=url)
-        try:
-            loop.run_forever()
-        except KeyboardInterrupt:
-            for handler in logger.handlers:
-                handler.close()
-                logger.removeHandler(handler)
-            if server_ready:
-                cravat_multiuser.admindb.close_db()
+        #try:
+        loop.run_forever()
+        #except KeyboardInterrupt:
+        #    for handler in logger.handlers:
+        #        handler.close()
+        #        logger.removeHandler(handler)
+        #    if server_ready:
+        #        cravat_multiuser.admindb.close_db()
     except Exception as e:
         logger.exception(e)
         if debug:

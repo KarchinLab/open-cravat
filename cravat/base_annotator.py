@@ -258,13 +258,13 @@ class BaseAnnotator(object):
     async def get_gene_summary_data (self, cf):
         #print('            {}: getting gene summary data'.format(self.module_name))
         t = time.time()
-        hugos = await cf.get_filtered_hugo_list()
+        hugos = await cf.exec_db(cf.get_filtered_hugo_list)
         cols = [self.module_name + '__' + coldef['name'] \
             for coldef in self.conf['output_columns'] \
             if coldef['name'] != 'uid']
         data = {}
         t = time.time()
-        rows = await cf.get_variant_data_for_cols(cols)
+        rows = await cf.exec_db(cf.get_variant_data_for_cols, cols)
         rows_by_hugo = {}
         t = time.time()
         for row in rows:
