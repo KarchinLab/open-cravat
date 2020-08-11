@@ -74,9 +74,6 @@ parser.add_argument('--debug',
 parser.add_argument('result',
     nargs='?',
     help='Path to a CRAVAT result SQLite file')
-#except KeyboardInterrupt:
-#    import sys
-#    sys.exit(1)
 
 def setup(args):
     try:
@@ -424,8 +421,6 @@ def main (url=None):
                 while True:
                     await cravat_multiuser.admindb.clean_sessions(max_age)
                     await asyncio.sleep(interval)
-            #except KeyboardInterrupt:
-            #    pass
             except Exception as e:
                 logger.exception(e)
                 if debug:
@@ -439,14 +434,7 @@ def main (url=None):
             server = WebServer(loop=loop, ssl_context=sc, url=url)
         else:
             server = WebServer(loop=loop, url=url)
-        #try:
         loop.run_forever()
-        #except KeyboardInterrupt:
-        #    for handler in logger.handlers:
-        #        handler.close()
-        #        logger.removeHandler(handler)
-        #    if server_ready:
-        #        cravat_multiuser.admindb.close_db()
     except Exception as e:
         logger.exception(e)
         if debug:

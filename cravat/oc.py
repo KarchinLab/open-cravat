@@ -6,7 +6,6 @@ from cravat.cravat_web import parser as gui_parser
 from cravat.cravat_report import parser as report_parser
 import sys
 
-#try:
 root_p = argparse.ArgumentParser(description='Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat')
 root_sp = root_p.add_subparsers(title='Commands')
 
@@ -65,19 +64,13 @@ version_p = root_sp.add_parser('version', parents=[cravat_admin.parser_show_vers
 
 # feedback
 feedback_p = root_sp.add_parser('feedback', parents=[cravat_admin.parser_report_issue], add_help=False, help='Send feedback to the developers')
-#except KeyboardInterrupt:
-#    import sys
-#    sys.exit(1)
 
 def main():
-    #try:
     args = root_p.parse_args()
     if hasattr(args, 'func'):
         args.func(args)
     else:
         root_p.parse_args(sys.argv[1:] + ['--help'])
-    #except KeyboardInterrupt:
-    #    sys.exit(1)
 
 if __name__ == '__main__':
     main()
