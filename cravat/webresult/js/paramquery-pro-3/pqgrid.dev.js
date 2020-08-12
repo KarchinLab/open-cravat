@@ -15930,15 +15930,10 @@
 	cFilterData.convert = function(cd, dataType) {
 		cd = (cd == null) ? "" : cd;
 		if (dataType == "string") {
-            if (Array.isArray(cd) && cd.length > 0) {
-                var cds = cd[0].toUpperCase();
-                for (var vali = 1; vali < cd.length; vali++) {
-                    cds = cds + '@' + cd[vali].toUpperCase();
-                }
-                cd = cds;
-            } else {
-                cd = $.trim(cd).toUpperCase()
+            if (typeof(cd) != "string") {
+                cd = JSON.stringify(cd);
             }
+            cd = $.trim(cd).toUpperCase();
 		} else {
 			if (dataType == "date") {
 				cd = Date.parse(cd)

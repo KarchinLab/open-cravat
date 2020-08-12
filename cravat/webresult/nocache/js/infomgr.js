@@ -219,7 +219,10 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                         if (select == '' || select == null) {
                             return true;
                         }
-                        var selects = select.split('@');
+                        var selects = JSON.parse(select);
+                        if (Array.isArray(selects) && selects.length == 0) {
+                            return true;
+                        }
                         if (selects.indexOf(val) >= 0) {
                             return true;
                         } else {
@@ -231,7 +234,10 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                         if (selects == null) {
                             return true;
                         }
-                        selects = selects.split('@');
+                        var selects = JSON.parse(select);
+                        if (Array.isArray(selects) && selects.length == 0) {
+                            return true;
+                        }
                         for (var i = 0; i < selects.length; i++) {
                             var select = selects[i];
                             if (val.indexOf(select) >= 0) {
