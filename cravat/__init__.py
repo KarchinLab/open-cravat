@@ -1,24 +1,3 @@
-try:
-    from .base_converter import BaseConverter
-    from .base_annotator import BaseAnnotator
-    from .base_mapper import BaseMapper
-    from .base_postaggregator import BasePostAggregator
-    from .base_commonmodule import BaseCommonModule
-    from .cravat_report import CravatReport, run_reporter
-    from .exceptions import *
-    from . import util
-    from . import admin_util
-    from .config_loader import ConfigLoader
-    from . import constants
-    from .cravat_filter import CravatFilter
-    from .cravat_class import Cravat
-    from .cravat_class import run_cravat_job as run
-    from .util import get_ucsc_bins, reverse_complement, translate_codon, switch_strand
-    from .constants import crx_def
-except KeyboardInterrupt:
-    import sys
-    sys.exit(1)
-
 def raise_break (signal_number, stack_frame):
     import os
     import platform
@@ -54,6 +33,23 @@ def raise_break (signal_number, stack_frame):
 
 import signal
 signal.signal(signal.SIGINT, raise_break)
+
+from .base_converter import BaseConverter
+from .base_annotator import BaseAnnotator
+from .base_mapper import BaseMapper
+from .base_postaggregator import BasePostAggregator
+from .base_commonmodule import BaseCommonModule
+from .cravat_report import CravatReport, run_reporter
+from .exceptions import *
+from . import util
+from . import admin_util
+from .config_loader import ConfigLoader
+from . import constants
+from .cravat_filter import CravatFilter
+from .cravat_class import Cravat
+from .cravat_class import run_cravat_job as run
+from .util import get_ucsc_bins, reverse_complement, translate_codon, switch_strand
+from .constants import crx_def
 
 wgs = None
 
