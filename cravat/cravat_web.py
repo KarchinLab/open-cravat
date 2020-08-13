@@ -12,7 +12,6 @@ import imp
 import oyaml as yaml
 import re
 from cravat import admin_util as au
-from cravat import CravatFilter
 from cravat.webresult import webresult as wr
 from cravat.webstore import webstore as ws
 from cravat.websubmit import websubmit as wu

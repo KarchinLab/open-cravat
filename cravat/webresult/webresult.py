@@ -311,6 +311,7 @@ async def get_count (request):
     print('calling count for {}'.format(dbbasename))
     t = time.time()
     n = await cf.exec_db(cf.getcount, level=tab)
+    await cf.close_db()
     t = round(time.time() - t, 3)
     print('count obtained from {} in {}s'.format(dbbasename, t))
     content = {'n': n}        

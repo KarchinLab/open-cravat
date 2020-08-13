@@ -145,6 +145,7 @@ class CravatFilter ():
         else:
             self.stdout = False
         self.dbpath = dbpath
+        self.conn = None
         self.filterpath = None
         self.cmd = None
         self.level = None
@@ -163,21 +164,21 @@ class CravatFilter ():
                 self.filterpath = filterpath
         self.filtertable = 'filter'
         self.generows = {}
-        self.open_conns = {}
+        #self.open_conns = {}
 
-    async def close_conns (self):
-        for conn in self.open_conns.values():
-            await conn.close()
+    #async def close_conns (self):
+    #    for conn in self.open_conns.values():
+    #        await conn.close()
 
     async def exec_db (self, func, *args, **kwargs):
         conn = await self.get_db_conn()
         cursor = await conn.cursor()
-        conn_hash = conn.__hash__()
-        self.open_conns[conn_hash] = conn
+        #conn_hash = conn.__hash__()
+        #self.open_conns[conn_hash] = conn
         ret = await func(*args, conn=conn, cursor=cursor, **kwargs)
-        await cursor.close()
-        await conn.close()
-        del self.open_conns[conn_hash]
+        #await cursor.close()
+        #await conn.close()
+        #del self.open_conns[conn_hash]
         return ret
 
     async def second_init (self):
@@ -274,15 +275,16 @@ class CravatFilter ():
     async def get_db_conn (self):
         if self.dbpath is None:
             return None
-        conn = await aiosqlite.connect(self.dbpath)
-        return conn
+        if self.conn is None:
+            self.conn = await aiosqlite.connect(self.dbpath)
+        return self.conn
 
     async def connect_db (self, dbpath=None):
         if dbpath != None:
             self.dbpath = dbpath
         conn = await self.get_db_conn()
         await conn.create_function('regexp', 2, regexp)
-        await conn.close()
+        #await conn.close()
         await self.exec_db(self.set_aliases)
 
     async def set_aliases (self, conn=None, cursor=None):
@@ -296,7 +298,8 @@ class CravatFilter ():
         self.column_prefixes.update({row[1]:self.table_aliases['gene'] for row in await cursor.fetchall()})
 
     async def close_db (self):
-        pass
+        if self.conn is not None:
+            await self.conn.close()
 
     async def create_filtertable (self, conn=None, cursor=None):
         if conn is None:
@@ -594,7 +597,6 @@ class CravatFilter ():
             else:
                 name = 'default'
         # Creates filter save table if not exists.
-        cursor = await conn.cursor()
         await cursor.execute('select name from sqlite_master where ' +
             'type="table" and name="' + self.filtertable + '"')
         for ret in await cursor.fetchone():
@@ -607,8 +609,6 @@ class CravatFilter ():
             ' values ("' + name + '", \'' + filterstr + '\')'
         await cursor.execute(sql)
         await conn.commit()
-        await cursor.close()
-        await conn.close()
 
     async def listfilter (self, name=None, conn=None, cursor=None):
         if name == None:

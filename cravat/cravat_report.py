@@ -406,6 +406,7 @@ class CravatReport:
                 await self.make_col_info(tab)
             await self.run_level(tab)
         await self.close_db()
+        await self.cf.close_db()
         self.cf = None
         if self.module_conf is not None and self.status_writer is not None:
             if self.parsed_args.do_not_change_status == False:
