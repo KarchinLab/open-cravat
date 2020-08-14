@@ -126,27 +126,6 @@ def converttohg38 (args):
         print('  ' + table + ': done.', count, 'rows converted')
     newdb.commit()
 
-def check_result_db_version (dbpath, version):
-    try:
-        db = sqlite3.connect(dbpath)
-        cursor = db.cursor()
-        q = 'select colval from info where colkey="open-cravat"'
-        cursor.execute(q)
-        r = cursor.fetchone()
-        if r is None:
-            raise
-        else:
-            oc_ver = r[0]
-        if oc_ver != version:
-            raise
-        checked = True
-    except:
-        raise
-    finally:
-        cursor.close()
-        db.close()
-    return True
-
 def migrate_result_144_to_145 (dbpath):
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
@@ -466,7 +445,7 @@ def migrate_result_180_to_181 (dbpath):
     c.execute('create index sample_idx_2 on sample (base__sample_id, base__uid)')
     db.commit()
 
-def migrate_result_201_to_202(dbpath):
+def migrate_result_201_to_210(dbpath):
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     try:
@@ -492,21 +471,20 @@ def migrate_result_201_to_202(dbpath):
         if col in gene_cols:
             q = f'create index sf_gene_{col} on gene ({col})'
             cursor.execute(q)
-    cursor.execute('update info set colval="2.0.2" where colkey="open-cravat"')
     db.commit()
 
 migrate_functions = {}
-migrate_functions['1.4.4'] = {'target': '1.4.5', 'func': migrate_result_144_to_145}
-migrate_functions['1.4.5'] = {'target': '1.5.0', 'func': migrate_result_145_to_150}
-migrate_functions['1.5.0'] = {'target': '1.5.1', 'func': migrate_result_150_to_151}
-migrate_functions['1.5.1'] = {'target': '1.5.2', 'func': migrate_result_151_to_152}
-migrate_functions['1.5.2'] = {'target': '1.5.3', 'func': migrate_result_152_to_153}
-migrate_functions['1.5.3'] = {'target': '1.6.0', 'func': migrate_result_153_to_160}
-migrate_functions['1.6.0'] = {'target': '1.6.1', 'func': migrate_result_160_to_161}
-migrate_functions['1.6.1'] = {'target': '1.7.0', 'func': migrate_result_161_to_170}
-migrate_functions['1.7.0'] = {'target': '1.8.0', 'func': migrate_result_170_to_180}
-migrate_functions['1.8.0'] = {'target': '2.0.1', 'func': migrate_result_180_to_181}
-migrate_functions['2.0.1'] = {'target': '2.0.2', 'func': migrate_result_201_to_202}
+migrate_functions['1.4.5'] = migrate_result_144_to_145
+migrate_functions['1.5.0'] = migrate_result_145_to_150
+migrate_functions['1.5.1'] = migrate_result_150_to_151
+migrate_functions['1.5.2'] = migrate_result_151_to_152
+migrate_functions['1.5.3'] = migrate_result_152_to_153
+migrate_functions['1.6.0'] = migrate_result_153_to_160
+migrate_functions['1.6.1'] = migrate_result_160_to_161
+migrate_functions['1.7.0'] = migrate_result_161_to_170
+migrate_functions['1.8.0'] = migrate_result_170_to_180
+migrate_functions['2.0.1'] = migrate_result_180_to_181
+migrate_functions['2.1.0'] = migrate_result_201_to_210
 migrate_checkpoints = [LooseVersion(v) for v in list(migrate_functions.keys())]
 migrate_checkpoints.sort()
 max_version_supported_for_migration = str(max(migrate_checkpoints))
@@ -553,10 +531,10 @@ def migrate_result (args):
         except:
             print('  [{}] is not open-cravat result DB or too old for migration.'.format(dbpath))
             continue
-        if oc_ver > max(migrate_checkpoints):
+        if oc_ver >= max(migrate_checkpoints):
             print(f'  OpenCRAVAT version of {oc_ver} does not need migration.')
             continue
-        elif oc_ver < min(migrate_checkpoints):
+        elif oc_ver < LooseVersion('1.4.4'):
             print(f'  OpenCRAVAT version of {oc_ver} is not supported for migration.')
             continue
         try:
@@ -565,15 +543,18 @@ def migrate_result (args):
                 print('  making backup copy [{}]...'.format(bak_path))
                 shutil.copy(dbpath, bak_path)
             ver_idx = None
-            for i in range(len(migrate_checkpoints) - 1):
-                if oc_ver >= migrate_checkpoints[i] and oc_ver < migrate_checkpoints[i + 1]:
+            for i,target_ver in enumerate(migrate_checkpoints):
+                if oc_ver < target_ver:
                     ver_idx = i
                     break
-            for mig_ver in migrate_checkpoints[ver_idx:]:
-                mig_ver = str(mig_ver)
-                target_ver = migrate_functions[mig_ver]['target']
+            if ver_idx is None:
+                continue
+            for target_ver in migrate_checkpoints[ver_idx:]:
+                target_ver = str(target_ver)
                 print(f'  converting open-cravat version to {target_ver}...')
-                migrate_functions[mig_ver]['func'](dbpath)
+                migrate_functions[target_ver](dbpath)
+                with sqlite3.connect(dbpath) as db:
+                    db.execute('update info set colval=? where colkey="open-cravat"',(target_ver,))
         except:
             traceback.print_exc()
             print('  converting [{}] was not successful.'.format(dbpath))
