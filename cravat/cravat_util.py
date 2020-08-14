@@ -13,6 +13,7 @@ from pathlib import Path
 import datetime
 from . import admin_util as au
 from distutils.version import LooseVersion
+from cravat import util
 
 def get_args ():
     args = parser.parse_args()
@@ -127,7 +128,7 @@ def converttohg38 (args):
 
 migrate_functions = {}
 #supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.7.0', '1.8.0']
-supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.7.0']
+supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.7.0','2.0.1']
 max_version_supported_for_migration = max([LooseVersion(ver) for ver in supported_oc_ver])
 
 def check_result_db_version (dbpath, version):
@@ -475,6 +476,35 @@ def migrate_result_180_to_181 (dbpath):
     c.execute('create index sample_idx_2 on sample (base__sample_id, base__uid)')
     db.commit()
 
+def migrate_result_201_to_202(dbpath):
+    db = sqlite3.connect(dbpath)
+    cursor = db.cursor()
+    try:
+        q = 'select * from smartfilters'
+        cursor.execute(q)
+    except sqlite3.OperationalError:
+        return
+    sfs = {row[0]:json.loads(row[1]) for row in cursor}
+    cols_to_index = set()
+    for sf in constants.base_smartfilters:
+        cols_to_index |= util.filter_affected_cols(sf['filter'])
+    for module_sfs in sfs.values():
+        for sf in module_sfs:
+            cols_to_index |= util.filter_affected_cols(sf['filter'])
+    cursor.execute('pragma table_info(variant)')
+    variant_cols = {row[1] for row in cursor}
+    cursor.execute('pragma table_info(gene)')
+    gene_cols = {row[1] for row in cursor}
+    for col in cols_to_index:
+        if col in variant_cols:
+            q = f'create index sf_variant_{col} on variant ({col})'
+            cursor.execute(q)
+        if col in gene_cols:
+            q = f'create index sf_gene_{col} on gene ({col})'
+            cursor.execute(q)
+    cursor.execute('update info set colval="2.0.2" where colkey="open-cravat"')
+    db.commit()
+
 migrate_functions['1.4.4'] = migrate_result_144_to_145
 migrate_functions['1.4.5'] = migrate_result_145_to_150
 migrate_functions['1.5.0'] = migrate_result_150_to_151
@@ -485,6 +515,7 @@ migrate_functions['1.6.0'] = migrate_result_160_to_161
 migrate_functions['1.6.1'] = migrate_result_161_to_170
 migrate_functions['1.7.0'] = migrate_result_170_to_180
 migrate_functions['1.8.0'] = migrate_result_180_to_181
+migrate_functions['2.0.1'] = migrate_result_201_to_202
 
 def migrate_result (args):
     def get_dbpaths (dbpaths, path):
