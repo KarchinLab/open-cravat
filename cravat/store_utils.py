@@ -134,9 +134,6 @@ def stream_multipart_post(url, fields, stage_handler=None, stages=50, **kwargs):
     r = requests.post(url, data=monitor, headers=headers, **kwargs)
     return r
 
-def sigint_handler (signal_number, stack_frame):
-    exit()
-
 def stream_to_file(url, fpath, stage_handler=None, stages=50, install_state=None, **kwargs):
     """
     Stream the content at a url to a file. Optionally pass in a callback 
@@ -146,7 +143,7 @@ def stream_to_file(url, fpath, stage_handler=None, stages=50, install_state=None
     try:
         r = requests.get(url, stream=True, timeout=(3, None))
     except requests.exceptions.ConnectionError:
-        r = types.SimpleNamespaces()
+        r = types.SimpleNamespace()
         r.status_code = 503
     if r.status_code == 200:
         total_size = int(r.headers.get('content-length', 0))
@@ -155,15 +152,11 @@ def stream_to_file(url, fpath, stage_handler=None, stages=50, install_state=None
                                 total_stages=stages,
                                 stage_handler=stage_handler)
         with open(fpath, 'wb') as wf:
-            import signal
-            signal.signal(signal.SIGINT, sigint_handler)
             for chunk in r.iter_content(chunk_size): 
                 if install_state is not None and install_state['kill_signal'] == True:
                     raise exceptions.KillInstallException()
                 wf.write(chunk)
                 stager.increase_cur_size(len(chunk))
-            from . import raise_break
-            signal.signal(signal.SIGINT, raise_break)
     return r
 
 def get_file_to_string(url):

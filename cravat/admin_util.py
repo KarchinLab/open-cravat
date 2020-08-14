@@ -20,6 +20,7 @@ from collections.abc import MutableMapping
 import multiprocessing
 import importlib
 import traceback
+import signal
 
 def load_yml_conf(yml_conf_path):
     """
@@ -63,10 +64,6 @@ class LocalModuleInfo (object):
         else:
             self.name = name
         self.script_path = os.path.join(self.directory, self.name+'.py')
-        #if importlib.util.find_spec('cython') is not None:
-        #    pyx_path = self.script_path + 'x'
-        #    if os.path.exists(pyx_path):
-        #        self.script_path = pyx_path
         self.script_exists = os.path.exists(self.script_path)
         self.conf_path = os.path.join(self.directory, self.name+'.yml')
         self.conf_exists = os.path.exists(self.conf_path)
@@ -243,6 +240,8 @@ class ModuleInfoCache(object):
         if not(os.path.exists(self._modules_dir)):
             return
         for mg in os.listdir(self._modules_dir):
+            if mg == constants.install_tempdir_name:
+                continue
             mg_path = os.path.join(self._modules_dir, mg)
             basename = os.path.basename(mg_path)
             if not(os.path.isdir(mg_path)) or basename.startswith('.') or basename.startswith('_'):
@@ -565,7 +564,16 @@ def install_module (
     version=None will install the latest version.
     force_data=True will force an update to the data files, even if one is not needed.
     """
+    modules_dir = get_modules_dir()
+    temp_dir = os.path.join(modules_dir, constants.install_tempdir_name, module_name)
+    shutil.rmtree(temp_dir, ignore_errors=True)
+    os.makedirs(temp_dir)
     try:
+        # Ctrl-c in this func must be caught to delete temp_dir
+        def raise_kbi(a,b):
+            raise KeyboardInterrupt
+        original_sigint = signal.signal(signal.SIGINT, raise_kbi)
+
         if stage_handler is None:
             stage_handler = InstallProgressHandler(module_name, version)
         if version is None:
@@ -576,7 +584,6 @@ def install_module (
         else:
             install_state = None
         stage_handler.stage_start('start')
-        modules_dir = get_modules_dir()
         sys_conf = get_system_conf()
         store_url = sys_conf['store_url']
         store_path_builder = su.PathBuilder(store_url,'url')
@@ -598,20 +605,11 @@ def install_module (
             # Private module. Fallback to remote config.
             remote_config = mic.get_remote_config(module_name, version)
             module_type = remote_config['type']
-        module_dir = os.path.join(modules_dir, module_type+'s', module_name)
-        if not(os.path.isdir(module_dir)):
-            os.makedirs(module_dir)
-        else:
-            uninstall_module_code(module_name)
+
         if install_state:
             if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
                 raise exceptions.KillInstallException
-        wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
-        wf.close()
-        endofinstall_path = os.path.join(module_dir, 'endofinstall')
-        if os.path.exists(os.path.join(module_dir, 'endofinstall')):
-            os.remove(endofinstall_path)
-        zipfile_path = os.path.join(module_dir, zipfile_fname)
+        zipfile_path = os.path.join(temp_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
         r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
         if r.status_code != 200:
@@ -621,7 +619,7 @@ def install_module (
                 raise exceptions.KillInstallException
         stage_handler.stage_start('extract_code')
         zf = zipfile.ZipFile(zipfile_path)
-        zf.extractall(module_dir)
+        zf.extractall(temp_dir)
         zf.close()
         if install_state:
             if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
@@ -629,27 +627,26 @@ def install_module (
         stage_handler.stage_start('verify_code')
         code_manifest_url = store_path_builder.module_code_manifest(module_name, version)
         code_manifest = yaml.safe_load(su.get_file_to_string(code_manifest_url))
-        su.verify_against_manifest(module_dir, code_manifest)
+        su.verify_against_manifest(temp_dir, code_manifest)
         os.remove(zipfile_path)
-        local_info = LocalModuleInfo(module_dir)
         if install_state:
             if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
                 raise exceptions.KillInstallException
+        data_installed = False
         if not(skip_data) and (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
+            data_installed = True
             data_url = store_path_builder.module_data(module_name, remote_data_version)
             data_fname = '.'.join([module_name,'data','zip'])
-            data_path = os.path.join(module_dir, data_fname)
+            data_path = os.path.join(temp_dir, data_fname)
             stage_handler.stage_start('download_data')
             r = su.stream_to_file(data_url, data_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
             if install_state:
                 if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
                     raise exceptions.KillInstallException
             if r.status_code == 200:
-                if local_info.data_dir_exists:
-                    uninstall_module_data(module_name)
                 stage_handler.stage_start('extract_data')
                 zf = zipfile.ZipFile(data_path)
-                zf.extractall(module_dir)
+                zf.extractall(temp_dir)
                 zf.close()
                 if install_state:
                     if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
@@ -657,7 +654,7 @@ def install_module (
                 stage_handler.stage_start('verify_data')
                 data_manifest_url = store_path_builder.module_data_manifest(module_name, remote_data_version)
                 data_manifest = yaml.safe_load(su.get_file_to_string(data_manifest_url))
-                su.verify_against_manifest(module_dir, data_manifest)
+                su.verify_against_manifest(temp_dir, data_manifest)
                 os.remove(data_path)
                 if install_state:
                     if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
@@ -667,23 +664,51 @@ def install_module (
                 pass
             else:
                 raise(requests.HTTPError(r))
-        mic.update_local()
-        stage_handler.stage_start('finish')
+        if install_state:
+            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                raise exceptions.KillInstallException
+        module_dir = os.path.join(modules_dir, module_type+'s', module_name)
+        if os.path.isdir(module_dir):
+            # Module being updated
+            if data_installed:
+                # Overwrite the whole module
+                shutil.rmtree(module_dir)
+                shutil.move(temp_dir, module_dir)
+            else:
+                # Remove all code items
+                for item in os.listdir(module_dir):
+                    item_path = os.path.join(module_dir, item)
+                    if item != 'data':
+                        if os.path.isdir(item_path):
+                            shutil.rmtree(item_path)
+                        else:
+                            os.remove(item_path)
+                # Copy in new code items
+                for item in os.listdir(temp_dir):
+                    old_path = os.path.join(temp_dir, item)
+                    new_path = os.path.join(module_dir, item)
+                    if item != 'data':
+                        shutil.move(old_path, new_path)
+                shutil.rmtree(temp_dir)
+        else:
+            # Move the module to the right place
+            shutil.move(temp_dir, module_dir)
+        wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
+        wf.close()
         wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
         wf.close()
+        mic.update_local()
+        stage_handler.stage_start('finish')
     except (Exception, KeyboardInterrupt, SystemExit) as e:
+        shutil.rmtree(temp_dir, ignore_errors=True)
         if type(e) == exceptions.KillInstallException:
             stage_handler.stage_start('killed')
-        try:
-            shutil.rmtree(module_dir)
-        except (NameError, FileNotFoundError):
+        elif type(e) in (KeyboardInterrupt, SystemExit):
             pass
-        except:
-            raise
-        if type(e) == exceptions.KillInstallException:
-            return
         else:
-            raise
+            raise e
+    finally:
+        signal.signal(signal.SIGINT, original_sigint)
 
 def get_remote_data_version(module_name, version):
     """
@@ -711,35 +736,6 @@ def uninstall_module (module_name):
         uninstalled_modules = True
     if uninstalled_modules:
         mic.update_local()
-
-def uninstall_module_code (module_name):
-    """
-    Uninstalls all code files from a module.
-    """
-    if module_name in list_local():
-        module_info = get_local_module_info(module_name)
-        module_dir = module_info.directory
-        for item in os.listdir(module_dir):
-            item_path = os.path.join(module_dir, item)
-            if item_path != module_info.data_dir:
-                if os.path.isdir(item_path):
-                    shutil.rmtree(item_path)
-                else:
-                    os.remove(item_path)
-
-def uninstall_module_data (module_name):
-    """
-    Uninstalls all data files and directories from a module.
-    """
-    if module_name in list_local():
-        module_info = get_local_module_info(module_name)
-        if module_info.data_dir_exists:
-            for item in os.listdir(module_info.data_dir):
-                item_path = os.path.join(module_info.data_dir, item)
-                if os.path.isdir(item_path):
-                    shutil.rmtree(item_path)
-                else:
-                    os.remove(item_path)
 
 def set_modules_dir (path, overwrite=False):
     """
