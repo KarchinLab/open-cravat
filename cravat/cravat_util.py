@@ -126,11 +126,6 @@ def converttohg38 (args):
         print('  ' + table + ': done.', count, 'rows converted')
     newdb.commit()
 
-migrate_functions = {}
-#supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.7.0', '1.8.0']
-supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1', '1.7.0','2.0.1']
-max_version_supported_for_migration = max([LooseVersion(ver) for ver in supported_oc_ver])
-
 def check_result_db_version (dbpath, version):
     try:
         db = sqlite3.connect(dbpath)
@@ -376,7 +371,7 @@ def migrate_result_180_to_181 (dbpath):
     try:
         c.execute('alter table variant add column base__cchange text')
     except:
-        print(f'  base__cchange column already exists. Not created anew.')
+        pass
     c.execute('update variant set base__cchange=null')
     c.execute('insert or replace into variant_header values ("base__cchange", \'{"index": 10, "name": "base__cchange", "title": "cDNA change", "type": "string", "categories": [], "width": 70, "desc": null, "hidden": false, "category": null, "filterable": false, "link_format": null, "genesummary": false}\')')
     c.execute('update variant_header set col_def=\'{"index": 11, "name": "base__achange", "title": "Protein Change", "type": "string", "categories": [], "width": 55, "desc": null, "hidden": false, "category": null, "filterable": false, "link_format": null, "genesummary": false}\' where col_name="base__achange"')
@@ -505,17 +500,21 @@ def migrate_result_201_to_202(dbpath):
     cursor.execute('update info set colval="2.0.2" where colkey="open-cravat"')
     db.commit()
 
-migrate_functions['1.4.4'] = migrate_result_144_to_145
-migrate_functions['1.4.5'] = migrate_result_145_to_150
-migrate_functions['1.5.0'] = migrate_result_150_to_151
-migrate_functions['1.5.1'] = migrate_result_151_to_152
-migrate_functions['1.5.2'] = migrate_result_152_to_153
-migrate_functions['1.5.3'] = migrate_result_153_to_160
-migrate_functions['1.6.0'] = migrate_result_160_to_161
-migrate_functions['1.6.1'] = migrate_result_161_to_170
-migrate_functions['1.7.0'] = migrate_result_170_to_180
-migrate_functions['1.8.0'] = migrate_result_180_to_181
-migrate_functions['2.0.1'] = migrate_result_201_to_202
+migrate_functions = {}
+migrate_functions['1.4.4'] = {'target': '1.4.5', 'func': migrate_result_144_to_145}
+migrate_functions['1.4.5'] = {'target': '1.5.0', 'func': migrate_result_145_to_150}
+migrate_functions['1.5.0'] = {'target': '1.5.1', 'func': migrate_result_150_to_151}
+migrate_functions['1.5.1'] = {'target': '1.5.2', 'func': migrate_result_151_to_152}
+migrate_functions['1.5.2'] = {'target': '1.5.3', 'func': migrate_result_152_to_153}
+migrate_functions['1.5.3'] = {'target': '1.6.0', 'func': migrate_result_153_to_160}
+migrate_functions['1.6.0'] = {'target': '1.6.1', 'func': migrate_result_160_to_161}
+migrate_functions['1.6.1'] = {'target': '1.7.0', 'func': migrate_result_161_to_170}
+migrate_functions['1.7.0'] = {'target': '1.8.0', 'func': migrate_result_170_to_180}
+migrate_functions['1.8.0'] = {'target': '2.0.1', 'func': migrate_result_180_to_181}
+migrate_functions['2.0.1'] = {'target': '2.0.2', 'func': migrate_result_201_to_202}
+migrate_checkpoints = [LooseVersion(v) for v in list(migrate_functions.keys())]
+migrate_checkpoints.sort()
+max_version_supported_for_migration = str(max(migrate_checkpoints))
 
 def migrate_result (args):
     def get_dbpaths (dbpaths, path):
@@ -540,7 +539,7 @@ def migrate_result (args):
         print('    ' + dbpath)
     for dbpath in dbpaths:
         print('converting [{}]...'.format(dbpath))
-        global supported_oc_ver
+        global migrate_checkpoints
         try:
             db = sqlite3.connect(dbpath)
             cursor = db.cursor()
@@ -555,22 +554,31 @@ def migrate_result (args):
                 print('  Result DB is too old for migration.')
                 continue
             else:
-                oc_ver = r[0]
+                oc_ver = LooseVersion(r[0])
         except:
             print('  [{}] is not open-cravat result DB or too old for migration.'.format(dbpath))
             continue
-        if oc_ver not in supported_oc_ver:
-            print('  OpenCRAVAT version of {} is not supported for migration. Supported versions are {}.'.format(oc_ver, str(supported_oc_ver)))
+        if oc_ver > max(migrate_checkpoints):
+            print(f'  OpenCRAVAT version of {oc_ver} does not need migration.')
+            continue
+        elif oc_ver < min(migrate_checkpoints):
+            print(f'  OpenCRAVAT version of {oc_ver} is not supported for migration.')
             continue
         try:
             if args.backup:
                 bak_path = dbpath + '.bak'
                 print('  making backup copy [{}]...'.format(bak_path))
                 shutil.copy(dbpath, bak_path)
-            ver_idx = supported_oc_ver.index(oc_ver)
-            for mig_ver in supported_oc_ver[ver_idx:]:
-                print('  converting from open-cravat version {}...'.format(mig_ver))
-                migrate_functions[mig_ver](dbpath)
+            ver_idx = None
+            for i in range(len(migrate_checkpoints) - 1):
+                if oc_ver >= migrate_checkpoints[i] and oc_ver < migrate_checkpoints[i + 1]:
+                    ver_idx = i
+                    break
+            for mig_ver in migrate_checkpoints[ver_idx:]:
+                mig_ver = str(mig_ver)
+                target_ver = migrate_functions[mig_ver]['target']
+                print(f'  converting open-cravat version to {target_ver}...')
+                migrate_functions[mig_ver]['func'](dbpath)
         except:
             traceback.print_exc()
             print('  converting [{}] was not successful.'.format(dbpath))
