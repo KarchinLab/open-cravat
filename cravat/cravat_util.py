@@ -148,7 +148,6 @@ def check_result_db_version (dbpath, version):
     return True
 
 def migrate_result_144_to_145 (dbpath):
-    check_result_db_version(dbpath, '1.4.4')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     cursor.execute('update info set colval="1.4.5" where colkey="open-cravat"')
@@ -157,7 +156,6 @@ def migrate_result_144_to_145 (dbpath):
     db.close()
 
 def migrate_result_145_to_150 (dbpath):
-    check_result_db_version(dbpath, '1.4.5')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     # gene
@@ -304,7 +302,6 @@ def migrate_result_145_to_150 (dbpath):
     db.close()
 
 def migrate_result_150_to_151 (dbpath):
-    check_result_db_version(dbpath, '1.5.0')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     cursor.execute('update info set colval="1.5.1" where colkey="open-cravat"')
@@ -313,7 +310,6 @@ def migrate_result_150_to_151 (dbpath):
     db.close()
 
 def migrate_result_151_to_152 (dbpath):
-    check_result_db_version(dbpath, '1.5.1')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     cursor.execute('update info set colval="1.5.2" where colkey="open-cravat"')
@@ -322,7 +318,6 @@ def migrate_result_151_to_152 (dbpath):
     db.close()
 
 def migrate_result_152_to_153 (dbpath):
-    check_result_db_version(dbpath, '1.5.2')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     q = 'select col_def from variant_header where col_name="base__coding"'
