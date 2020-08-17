@@ -478,7 +478,7 @@ async def get_job (request, job_id):
     job.info['username'] = os.path.basename(os.path.dirname(job_dir))
     if 'open_cravat_version' not in job.info:
         job.info['open_cravat_version'] = '0.0.0'
-    if LooseVersion(job.info['open_cravat_version']) <= max_version_supported_for_migration:
+    if LooseVersion(job.info['open_cravat_version']) < max_version_supported_for_migration:
         job.info['result_available'] = False
     else:
         job.info['result_available'] = True
@@ -1061,13 +1061,13 @@ async def update_result_db (request):
     p = await asyncio.create_subprocess_shell(' '.join(cmd))
     await p.wait()
     compatible_version, db_version, oc_version = cravat.util.is_compatible_version(db_path)
-    if db_version == oc_version:
+    if compatible_version:
         msg = 'success'
         fn = find_files_by_ending(job_dir, '.status.json')[0]
         path = os.path.join(job_dir, fn)
         with open(path) as f:
             status_json = json.load(f)
-        status_json['open_cravat_version'] = str(oc_version)
+        status_json['open_cravat_version'] = str(db_version)
         wf = open(path, 'w')
         json.dump(status_json, wf, indent=2, sort_keys=True)
         wf.close()

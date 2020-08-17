@@ -215,11 +215,12 @@ def is_compatible_version (dbpath):
     c.execute(sql)
     r = c.fetchone()
     compatible = None
+    db_version = '0.0.0'
     if r is None:
         compatible = False
     else:
         db_version = LooseVersion(r[0])
-        if db_version <= max_version_supported_for_migration:
+        if db_version < max_version_supported_for_migration:
             compatible = False
         else:
             compatible = True
