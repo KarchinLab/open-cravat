@@ -262,11 +262,10 @@ def migrate_result_145_to_150 (dbpath):
         cursor.execute(q)
         r = cursor.fetchone()
         ips = r[0].split(';')
-        input_paths_str = '{'
+        input_paths = {}
         for i in range(len(ips)):
-            input_paths_str += "'" + str(i) + "': '" + ips[i] + "', "
-        input_paths_str += '}'
-        q = 'insert into info values ("_input_paths", "{}")'.format(input_paths_str)
+            input_paths[i] = ips[i]
+        q = 'insert into info values ("_input_paths", "{}")'.format(json.dumps(input_paths).replace('"', "'"))
         cursor.execute(q)
     q = 'select colval from info where colkey="_annotator_desc"'
     cursor.execute(q)

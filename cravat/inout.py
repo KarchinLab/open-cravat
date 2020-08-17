@@ -552,6 +552,7 @@ class ColumnDefinition (object):
             'col_filterable': self.filterable,
             'link_format': self.link_format,
             'col_genesummary': self.genesummary,
+            'col_index': self.index
         }
     
     def __iter__(self): # Allows casting to dict

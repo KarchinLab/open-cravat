@@ -102,7 +102,8 @@ class CravatReport:
                 s = r[0]
                 if ' ' in s:
                     s = s.replace("'", '"')
-                s = json.loads(r[0].replace("'", '"'))
+                s = s.replace('\\', '\\\\\\\\')
+                s = json.loads(s)
                 for k in s:
                     input_path = s[k]
                     parsed_args.inputfiles.append(input_path)
