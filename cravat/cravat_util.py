@@ -442,7 +442,10 @@ def migrate_result_180_to_181 (dbpath):
                '"IND": "inframe_deletion", "MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
                '"coding": {"Y": "Yes"}}\' where module="base"'))
     c.execute('update info set colval="1.8.1" where colkey="open-cravat"')
-    c.execute('create index sample_idx_2 on sample (base__sample_id, base__uid)')
+    c.execute('SELECT name FROM sqlite_master WHERE type="index" AND name="sample_idx_2"')
+    r = c.fetchone()
+    if r is None:
+        c.execute('create index sample_idx_2 on sample (base__sample_id, base__uid)')
     db.commit()
 
 def migrate_result_201_to_210(dbpath):
@@ -466,11 +469,19 @@ def migrate_result_201_to_210(dbpath):
     gene_cols = {row[1] for row in cursor}
     for col in cols_to_index:
         if col in variant_cols:
-            q = f'create index sf_variant_{col} on variant ({col})'
+            q = f'select name from sqlite_master where type="index" and name="sf_variant_{col}"'
             cursor.execute(q)
+            r = cursor.fetchone()
+            if r is None:
+                q = f'create index sf_variant_{col} on variant ({col})'
+                cursor.execute(q)
         if col in gene_cols:
-            q = f'create index sf_gene_{col} on gene ({col})'
+            q = f'select name from sqlite_master where type="index" and name="sf_gene_{col}"'
             cursor.execute(q)
+            r = cursor.fetchone()
+            if r is None:
+                q = f'create index sf_gene_{col} on gene ({col})'
+                cursor.execute(q)
     db.commit()
 
 migrate_functions = {}
