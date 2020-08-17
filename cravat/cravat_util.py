@@ -498,7 +498,8 @@ migrate_functions['2.0.1'] = migrate_result_180_to_181
 migrate_functions['2.1.0'] = migrate_result_201_to_210
 migrate_checkpoints = [LooseVersion(v) for v in list(migrate_functions.keys())]
 migrate_checkpoints.sort()
-max_version_supported_for_migration = max(migrate_checkpoints)
+#max_version_supported_for_migration = max(migrate_checkpoints)
+max_version_supported_for_migration = LooseVersion('1.7.0')
 
 def migrate_result (args):
     def get_dbpaths (dbpaths, path):
