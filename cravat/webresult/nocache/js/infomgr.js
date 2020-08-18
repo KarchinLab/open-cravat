@@ -165,9 +165,9 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 					if (val==null){
 						val = '';
 						content = '';
-					} else if (val == 0) {
+					} else if (val === 0) {
 						content = '0';
-					} else if (val>1e4 || val<1e-4) {
+					} else if (Math.abs(val)>1e4 || Math.abs(val)<1e-4) {
 						content = val.toExponential(3);
 					} else {
 						let rnd = Math.round((val+Number.EPSILON)*1e4)/1e4;
