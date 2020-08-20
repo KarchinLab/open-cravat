@@ -413,6 +413,51 @@ def handle_modules_changed():
         au.mic.update_local()
         local_modules_changed.clear()
 
+async def get_remote_manifest_from_local (request):
+    queries = request.rel_url.query
+    module = queries.get('module', None)
+    if module is None:
+        return web.json_response({})
+    module_info = au.mic.local[module]
+    module_conf = module_info.conf
+    response = {}
+    module_dir = module_info.directory
+    response['code_size'] = os.path.getsize(module_dir)
+    response['commercial_warning'] = module_conf.get('commercial_warning', None)
+    if os.path.exists(module_info.data_dir) == False:
+        response['data_size'] = 0
+    else:
+        response['data_size'] = os.path.getsize(module_info.data_dir)
+    version = module_conf.get('version', '')
+    response['data_sources'] = {version: module_info.datasource}
+    response['data_versions'] = {version: version}
+    response['downloads'] = 0
+    response['groups'] = module_info.groups
+    response['has_logo'] = os.path.exists(os.path.join(module_dir, 'logo.png'))
+    response['hidden'] = module_conf.get('hidden', False)
+    response['latest_version'] = version
+    import datetime
+    response['publish_time'] = str(datetime.datetime.now())
+    response['requires'] = module_conf.get('requires', [])
+    response['size'] = response['code_size'] + response['data_size']
+    response['tags'] = module_conf.get('tags', [])
+    response['title'] = module_conf.get('title', '')
+    response['type'] = module_conf.get('type', '')
+    response['version'] = version
+    response['versions'] = [version]
+    response['private'] = module_conf.get('private', False)
+    response['uselocalonstore'] = module_conf.get('uselocalonstore', False)
+    return web.json_response(response)
+
+async def get_local_module_logo (request):
+    queries = request.rel_url.query
+    module = queries.get('module', None)
+    module_info = au.mic.local[module]
+    module_conf = module_info.conf
+    module_dir = module_info.directory
+    logo_path = os.path.join(module_dir, 'logo.png')
+    return web.FileResponse(logo_path)
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/installwidgetsformodule', install_widgets_for_module])
@@ -432,3 +477,5 @@ routes.append(['GET', '/store/killinstall', kill_install])
 routes.append(['GET', '/store/unqueue', unqueue_install])
 routes.append(['GET', '/store/tagdesc', get_tag_desc])
 routes.append(['GET', '/store/updateremote', update_remote])
+routes.append(['GET', '/store/localasremote', get_remote_manifest_from_local])
+routes.append(['GET', '/store/locallogo', get_local_module_logo])

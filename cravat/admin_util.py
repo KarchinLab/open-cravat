@@ -124,7 +124,7 @@ class LocalModuleInfo (object):
         self.tags = self.conf.get('tags',[])
         self.datasource = str(self.conf.get('datasource',''))
         self.smartfilters = self.conf.get('smartfilters')
-        self.groups = self.conf.get('groups')
+        self.groups = self.conf.get('groups', [])
 
     def is_valid_module(self):
         r = self.exists
@@ -250,7 +250,11 @@ class ModuleInfoCache(object):
                 if module_name == 'hgvs': # deprecate hgvs
                     continue
                 module_dir = os.path.join(mg_path, module_name)
-                if module_dir.startswith('.') == False and os.path.isdir(module_dir):
+                if module_dir.startswith('.') == False \
+                        and os.path.isdir(module_dir) \
+                        and not module_name.startswith('.') \
+                        and not module_name.startswith('_') \
+                        and os.path.exists(os.path.join(module_dir, module_name + '.yml')):
                     self.local[module_name] = module_dir
 
     def update_remote(self, force=False):

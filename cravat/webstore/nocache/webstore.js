@@ -138,9 +138,39 @@ function hideSystemModulePage () {
     document.getElementById('store-systemmodule-div').style.display = 'none';
 }
 
+function complementRemoteWithLocal () {
+    var localModuleNames = Object.keys(localModuleInfo);
+    for (var i = 0; i < localModuleNames.length; i++) {
+        var localModuleName = localModuleNames[i];
+        if (localModuleName == 'example_annotator') {
+            continue;
+        }
+        var localModule = localModuleInfo[localModuleName];
+        var check1 = remoteModuleInfo[localModuleName];
+        var check2 = localModule.conf.uselocalonstore;
+        var check3 = localModule.conf['private'];
+        if ((check1 == undefined || check2 == true) && check3 != true) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/store/localasremote?module=' + localModuleName, false);
+            xhr.onload = function (e) {
+                var moduleInfo = JSON.parse(xhr.responseText);
+                if (moduleInfo.private == true) {
+                    return;
+                }
+                remoteModuleInfo[localModuleName] = JSON.parse(xhr.responseText);
+            };
+            xhr.onerror = function (e) {
+                console.error(xhr.statusText);
+            };
+            xhr.send();
+        }
+    }
+}
+
 function getLocal () {
     $.get('/store/local').done(function(data){
         localModuleInfo = data;
+        complementRemoteWithLocal();
         populateInputFormats();
         $.get('/store/updates').done(function(data){
             updates = data.updates;
@@ -1394,7 +1424,11 @@ function addLogo (moduleName, sdiv) {
     if (moduleInfo.has_logo == true) {
         img = getEl('img');
         img.className = 'moduletile-logo';
-        img.src = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
+        if (moduleInfo.uselocalonstore) {
+            img.src = '/store/locallogo?module=' + moduleName;
+        } else {
+            img.src = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
+        }
         addEl(sdiv, img);
         storeLogos[moduleName] = img;
     } else {
