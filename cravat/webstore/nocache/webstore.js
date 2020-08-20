@@ -971,6 +971,9 @@ function populateModuleGroupDiv (moduleGroupName) {
         for (var i = 0; i < remoteModuleNames.length; i++) {
             var remoteModuleName = remoteModuleNames[i];
             var remoteModule = remoteModuleInfo[remoteModuleName];
+            if (remoteModule == undefined) {
+                continue;
+            }
             var panel = null;
             if (remoteModule['type'] != 'group') {
                 panel = getRemoteModulePanel(remoteModuleName, 'modulegroup', i);
@@ -1065,6 +1068,9 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
     if (members != undefined) {
         for (var i = 0; i < members.length; i++) {
             var member = members[i];
+            if (remoteModuleInfo[member] == undefined) {
+                continue;
+            }
             if (remoteModuleInfo[member].tags.indexOf('newavailable') != -1) {
                 updateAvail = true;
                 break;
