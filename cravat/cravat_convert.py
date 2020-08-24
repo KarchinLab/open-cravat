@@ -378,9 +378,6 @@ class MasterCravatConverter(object):
                                         wdict['sample_id'] = '__'.join([samp_prefix, wdict['sample_id']])
                                     else:
                                         wdict['sample_id'] = samp_prefix
-                                if self.do_liftover:
-                                    prelift_wdict = copy.copy(wdict)
-                                    wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
                                 if 'ref_base' not in wdict or wdict['ref_base'] == '':
                                     wdict['ref_base'] = self.wgsreader.get_bases(chrom, int(wdict['pos']))
                                 else:
@@ -389,6 +386,9 @@ class MasterCravatConverter(object):
                                         raise BadFormatError('Reference base required for non SNV')
                                     elif ref_base is None or ref_base == '':
                                         wdict['ref_base'] = self.wgsreader.get_bases(chrom, int(pos))
+                                if self.do_liftover:
+                                    prelift_wdict = copy.copy(wdict)
+                                    wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])
                                 if base_re.fullmatch(wdict['ref_base']) is None:
                                     raise BadFormatError('Invalid reference base')
                                 if base_re.fullmatch(wdict['alt_base']) is None:
@@ -445,14 +445,66 @@ class MasterCravatConverter(object):
         self.status_writer.queue_status_update('status', 'Finished {} ({})'.format('Converter', self.primary_converter.format_name))
         return total_lnum, self.primary_converter.format_name
 
-    def liftover(self, old_chrom, old_pos):
-        new_coords = self.lifter.convert_coordinate(old_chrom, int(old_pos))
-        if new_coords != None and len(new_coords) > 0:
-            new_chrom = new_coords[0][0]
-            new_pos = new_coords[0][1]
-            return new_chrom, new_pos
+    def liftover(self, old_chrom, old_pos, ref, alt):
+        reflen = len(ref)
+        altlen = len(alt)
+        if reflen == 1 and altlen == 1:
+            res = self.lifter.convert_coordinate(chrom, pos - 1)
+            if res is None or len(res) == 0:
+                raise LiftoverFailure('Liftover failure')
+            if len(res) > 1:
+                raise LiftoverFailure('Liftover failure')
+            try:
+                el = res[0]
+            except:
+                raise LiftoverFailure('Liftover failure')
+            newchrom = el[0]
+            newpos = el[1] + 1
+        elif reflen >= 1 and altlen == 0: # del
+            pos1 = pos
+            pos2 = pos + reflen - 1
+            res1 = self.lifter.convert_coordinate(chrom, pos1 - 1)
+            res2 = self.lifter.convert_coordinate(chrom, pos2 - 1)
+            if res1 is None or res2 is None or len(res1) == 0 or len(res2) == 0:
+                raise LiftoverFailure('Liftover failure')
+            if len(res1) > 1 or len(res2) > 1:
+                raise LiftoverFailure('Liftover failure')
+            el1 = res1[0]
+            el2 = res2[0]
+            newchrom1 = el1[0]
+            newpos1 = el1[1] + 1
+            newchrom2 = el2[0]
+            newpos2 = el2[1] + 1
+            newchrom = newchrom1
+            newpos = newpos1
+            newpos = min(newpos1, newpos2)
+        elif reflen == 0 and altlen >= 1: # ins
+            res = self.lifter.convert_coordinate(chrom, pos - 1)
+            if res is None or len(res) == 0:
+                raise LiftoverFailure('Liftover failure')
+            if len(res) > 1:
+                raise LiftoverFailure('Liftover failure')
+            el = res[0]
+            newchrom = el[0]
+            newpos = el[1] + 1
         else:
-            raise LiftoverFailure('Liftover failure')
+            pos1 = pos
+            pos2 = pos + reflen - 1
+            res1 = self.lifter.convert_coordinate(chrom, pos1 - 1)
+            res2 = self.lifter.convert_coordinate(chrom, pos2 - 1)
+            if res1 is None or res2 is None or len(res1) == 0 or len(res2) == 0:
+                raise LiftoverFailure('Liftover failure')
+            if len(res1) > 1 or len(res2) > 1:
+                raise LiftoverFailure('Liftover failure')
+            el1 = res1[0]
+            el2 = res2[0]
+            newchrom1 = el1[0]
+            newpos1 = el1[1] + 1
+            newchrom2 = el2[0]
+            newpos2 = el2[1] + 1
+            newchrom = newchrom1
+            newpos = min(newpos1, newpos2)
+        return [newchrom, newpos]
 
     def _log_conversion_error(self, ln, line, e):
         """ Log exceptions thrown by primary converter.
