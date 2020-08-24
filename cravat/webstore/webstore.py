@@ -446,7 +446,7 @@ async def get_remote_manifest_from_local (request):
     response['version'] = version
     response['versions'] = [version]
     response['private'] = module_conf.get('private', False)
-    response['uselocalonstore'] = module_conf.get('uselocalonstore', False)
+    #response['uselocalonstore'] = module_conf.get('uselocalonstore', False)
     return web.json_response(response)
 
 async def get_local_module_logo (request):

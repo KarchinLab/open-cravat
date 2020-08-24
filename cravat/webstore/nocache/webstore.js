@@ -146,10 +146,17 @@ function complementRemoteWithLocal () {
             continue;
         }
         var localModule = localModuleInfo[localModuleName];
-        var check1 = remoteModuleInfo[localModuleName];
-        var check2 = localModule.conf.uselocalonstore;
+        var remoteModule = remoteModuleInfo[localModuleName];
+        var check2 = false;
+        if (remoteModule) {
+            if (compareVersion(localModule.version, remoteModule.version) > 0) {
+                check2 = true;
+                localModule.uselocalonstore = true;
+            }
+        }
+        //var check2 = localModule.conf.uselocalonstore;
         var check3 = localModule.conf['private'];
-        if ((check1 == undefined || check2 == true) && check3 != true) {
+        if ((remoteModule == undefined || check2 == true) && check3 != true) {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/store/localasremote?module=' + localModuleName, false);
             xhr.onload = function (e) {
