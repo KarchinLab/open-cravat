@@ -445,7 +445,7 @@ class MasterCravatConverter(object):
         self.status_writer.queue_status_update('status', 'Finished {} ({})'.format('Converter', self.primary_converter.format_name))
         return total_lnum, self.primary_converter.format_name
 
-    def liftover(self, old_chrom, old_pos, ref, alt):
+    def liftover(self, chrom, pos, ref, alt):
         reflen = len(ref)
         altlen = len(alt)
         if reflen == 1 and altlen == 1:
