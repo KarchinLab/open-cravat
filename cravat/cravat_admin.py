@@ -89,6 +89,8 @@ def humanize_bytes(num, binary=False):
     return '{quotient} {unit}'.format(quotient=quot_str, unit=unit)
 
 def yield_tabular_lines(l, col_spacing=4, indent=0):
+    if not l:
+        return
     sl = []
     n_toks = len(l[0])
     max_lens = [0] * n_toks
