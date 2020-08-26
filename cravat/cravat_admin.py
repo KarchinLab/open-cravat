@@ -338,6 +338,7 @@ def install_modules(args):
                                 force_data=args.force_data,
                                 stage_handler=stage_handler,
                                 force=args.force,
+                                skip_data=args.skip_data,
                                 )
 
 def update_modules(args):
@@ -371,6 +372,7 @@ def update_modules(args):
         args.private = False
         args.skip_dependencies = False
         args.force = False
+        args.skip_data = False
         install_modules(args)
 
 def uninstall_modules (args):
@@ -408,6 +410,7 @@ def install_base (args):
                             private=False,
                             skip_dependencies=False,
                             force=args.force,
+                            skip_data=False
                             )
     install_modules(args)
 
@@ -521,6 +524,10 @@ parser_install.add_argument('--skip-dependencies',
 parser_install.add_argument('-p','--private',
     action='store_true',
     help='Install a private module'
+)
+parser_install.add_argument('--skip-data',
+    action='store_true',
+    help='Skip installing data'
 )
 parser_install.set_defaults(func=install_modules)
 
