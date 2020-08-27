@@ -335,6 +335,7 @@ class MasterCravatConverter(object):
         fileno = 0
         total_lnum = 0
         base_re = re.compile('^[ATGC]+|[-]+$')
+        write_lnum = 0
         for f in self.input_files:
             if self.pipeinput == True:
                 fname = STDIN
@@ -345,7 +346,6 @@ class MasterCravatConverter(object):
             if self.pipeinput == False:
                 f.seek(0)
             read_lnum = 0
-            write_lnum = 0
             num_errors = 0
             if self.pipeinput:
                 cur_fname = STDIN
