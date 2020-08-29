@@ -797,11 +797,13 @@ def get_local_module_infos_by_names (module_names):
             modules[module_name] = module
     return modules
 
-def get_system_conf ():
+exeextdef get_system_conf (file_only=False):
     """
     Get the system config. Fill in the default modules dir if not set.
     """
     conf = load_yml_conf(constants.system_conf_path)
+    if file_only:
+        return conf
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
     if constants.conf_dir_key not in conf:
@@ -895,20 +897,16 @@ def update_system_conf_file(d):
     """
     Recursively update the system config and re-write to disk.
     """
-    try:
-        sys_conf = recursive_update(get_system_conf(), d)
-        write_system_conf_file(sys_conf)
-        refresh_cache()
-        return True
-    except:
-        raise
-        return False
+    sys_conf = get_system_conf(file_only=True)
+    sys_conf = recursive_update(sys_conf, d)
+    write_system_conf_file(sys_conf)
+    refresh_cache()
+    return True
 
 def read_system_conf_template ():
     with open(constants.system_conf_template_path) as f:
         d = yaml.safe_load(f)
         return d
-    return None
 
 def get_main_conf_path():
     """
