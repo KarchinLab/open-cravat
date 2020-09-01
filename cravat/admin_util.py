@@ -797,7 +797,7 @@ def get_local_module_infos_by_names (module_names):
             modules[module_name] = module
     return modules
 
-exeextdef get_system_conf (file_only=False):
+def get_system_conf (file_only=False):
     """
     Get the system config. Fill in the default modules dir if not set.
     """
