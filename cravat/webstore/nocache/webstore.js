@@ -149,9 +149,11 @@ function complementRemoteWithLocal () {
         var remoteModule = remoteModuleInfo[localModuleName];
         var check2 = false;
         if (remoteModule) {
-            if (compareVersion(localModule.version, remoteModule.version) > 0) {
+            if (compareVersion(localModule.version, remoteModule.versions[remoteModule.versions.length - 1]) > 0) {
                 check2 = true;
                 localModule.uselocalonstore = true;
+            } else {
+                check2 = localModule.conf.uselocalonstore;
             }
         }
         //var check2 = localModule.conf.uselocalonstore;

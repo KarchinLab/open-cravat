@@ -25,6 +25,7 @@ var adminMode = false;
 var inputFileList = [];
 var JOB_IDS = []
 var jobListUpdateIntervalFn = null;
+var reportRunning = {};
 
 function submit () {
     if (servermode && logged == false) {
@@ -228,12 +229,25 @@ function addJob (job, prepend) {
     } else if (jobRunning[job.id] != undefined) {
         delete jobRunning[job.id];
     }
+    if (job.reports_being_generated.length > 0) {
+        websubmitReportBeingGenerated[job.id] = {};
+        if (reportRunning[job.id] == undefined) {
+            reportRunning[job.id] = {};
+        }
+        for (var i = 0; i < job.reports_being_generated.length; i++) {
+            var reportType = job.reports_being_generated[i];
+            websubmitReportBeingGenerated[job.id][reportType] = true;
+            reportRunning[job.id][reportType] = true;
+        }
+    }
 }
 
 function createJobReport (evt) {
-    var btn = evt.target;
-    var jobId = btn.getAttribute('jobid');
-    var reportType = btn.getAttribute('report-type');
+    var div = document.querySelector('#report_generation_div');
+    var jobId = div.getAttribute('jobid');
+    closeReportGenerationDiv();
+    var select = document.querySelector('#report_generation_div_select');
+    var reportType = select.value;
     if (websubmitReportBeingGenerated[jobId] == undefined) {
         websubmitReportBeingGenerated[jobId] = {};
     }
@@ -256,7 +270,11 @@ function generateReport (jobId, reportType, callback) {
         success: function (data) {
             callback();
         }
-    })
+    });
+    if (reportRunning[jobId] == undefined) {
+        reportRunning[jobId] = {};
+    }
+    reportRunning[jobId][reportType] = true;
 }
 
 function getAnnotatorsForJob (jobid) {
@@ -397,7 +415,6 @@ function populateJobTr (job) {
                         showJobListPage();
                     }
                 });
-
             });
             addEl(viewTd, button);
         }
@@ -413,30 +430,36 @@ function populateJobTr (job) {
         if (reportType == 'text' || reportType == 'pandas' || reportType == 'stdout') {
             continue;
         }
-        var btn = getEl('button');
-        btn.classList.add('butn');
-        btn.setAttribute('jobid', job.id);
-        btn.setAttribute('report-type', reportType);
-        addEl(btn, getTn(reportType.toUpperCase()));
-        if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id][reportType] == true) {
-            btn.style.backgroundColor = '#cccccc';
+        if ((websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id][reportType] == true) || job.reports_being_generated.includes(reportType)) {
+            var btn = getEl('button');
+            btn.classList.add('butn');
+            btn.setAttribute('jobid', job.id);
+            btn.setAttribute('report-type', reportType);
+            addEl(btn, getTn(reportType.toUpperCase()));
             btn.setAttribute('disabled', true);
-            btn.textContent = 'Generating...';
+            btn.classList.add('inactive-download-button');
+            var spinner = getEl('img');
+            spinner.classList.add('btn_overlay');
+            spinner.src = '/result/images/arrow-spinner.gif';
+            addEl(btn, spinner);
+            if (job.status == 'Finished') {
+                addEl(dbTd, btn);
+            }
         } else {
-            var jobId = btn.getAttribute('jobid');
-            var reportType = btn.getAttribute('report-type');
             if (job.reports.includes(reportType) == false) {
-                btn.classList.add('inactive-download-button');
-                btn.addEventListener('click', function (evt) {createJobReport(evt);});
-                btn.title = 'Click to create.';
             } else {
+                var btn = getEl('button');
+                btn.classList.add('butn');
+                btn.setAttribute('jobid', job.id);
+                btn.setAttribute('report-type', reportType);
+                addEl(btn, getTn(reportType.toUpperCase()));
                 btn.classList.add('active-download-button');
                 btn.addEventListener('click', function (evt) {jobReportDownloadButtonHandler(evt);});
                 btn.title = 'Click to download.';
+                if (job.status == 'Finished') {
+                    addEl(dbTd, btn);
+                }
             }
-        }
-        if (job.status == 'Finished') {
-            addEl(dbTd, btn);
         }
     }
     // Log
@@ -451,6 +474,43 @@ function populateJobTr (job) {
     addEl(logLink, button);
     addEl(dbTd, logLink);
     addEl(jobTr, dbTd);
+    // + button
+    var btn = getEl('button');
+    btn.classList.add('butn');
+    btn.setAttribute('jobid', job.id);
+    addEl(btn, getTn('+'));
+    btn.classList.add('inactive-download-button');
+    btn.addEventListener('click', function (evt) {
+        var repSelDiv = document.querySelector('#report_generation_div');
+        if (repSelDiv.classList.contains('show')) {
+            repSelDiv.classList.remove('show');
+            return;
+        }
+        var jobId = evt.target.getAttribute('jobid');
+        var job = GLOBALS.idToJob[jobId];
+        var select = document.querySelector('#report_generation_div_select');
+        while (select.options.length > 0) {
+            select.remove(0);
+        }
+        for (var i = 0; i < GLOBALS.reports.valid.length; i++) {
+            var reportType = GLOBALS.reports.valid[i];
+            if (reportType == 'stdout' || reportType == 'pandas' || reportType == 'example') {
+                continue;
+            }
+            if ((websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id][reportType] == true) || job.reports.includes(reportType) == true) {
+            } else {
+                var option = new Option(reportType, reportType);
+                select.add(option);
+            }
+        }
+        var div2 = document.querySelector('#report_generation_div');
+        div2.setAttribute('jobid', jobId);
+        div2.style.top = (evt.clientY + 2) + 'px';
+        div2.style.right = (window.innerWidth - evt.clientX) + 'px';
+        div2.classList.add('show');
+    });
+    btn.title = 'Click to open report generator.';
+    addEl(dbTd, btn);
     // Delete
     var deleteTd = getEl('td');
     deleteTd.title = 'Click to delete.';
@@ -465,6 +525,11 @@ function populateJobTr (job) {
     deleteBtn.addEventListener('click', jobDeleteButtonHandler);
     addEl(jobTr, deleteTd);
     return true;
+}
+
+function closeReportGenerationDiv (evt) {
+    var div = document.querySelector('#report_generation_div');
+    div.classList.remove('show');
 }
 
 function populateJobDetailTr (job) {
@@ -858,30 +923,39 @@ function showJobListPage () {
             if (jobListUpdateIntervalFn == null) {
                 jobListUpdateIntervalFn = setInterval(function () {
                     var runningJobIds = Object.keys(jobRunning);
-                    if (runningJobIds.length == 0) {
+                    var runningReportIds = Object.keys(reportRunning);
+                    var combinedIds = runningJobIds.concat(runningReportIds);
+                    if (combinedIds.length == 0) {
+                        clearInterval(jobListUpdateIntervalFn);
                         return;
                     }
                     $.ajax({
                         url: '/submit/getjobs',
-                        data: {'ids': JSON.stringify(runningJobIds)},
+                        data: {'ids': JSON.stringify(combinedIds)},
                         ajax: true,
                         success: function (response) {
                             try {
                                 for (var i=0; i < response.length; i++) {
                                     var job = response[i];
                                     GLOBALS.idToJob[job.id] = job;
-                                    /*
-                                    for (var j = 0; j < GLOBALS.jobs; j++) {
-                                        if (job.id == GLOBALS.jobs[j].id) {
-                                            GLOBALS.jobs[j] = job;
-                                            break;
-                                        }
-                                    }
-                                    */
-                                    updateRunningJobTrs(job);
                                     if (job.status == 'Finished' || job.status == 'Aborted' || job.status == 'Error') {
                                         delete jobRunning[job.id];
                                     }
+                                    if (reportRunning[job.id] != undefined) {
+                                        var reportTypes = Object.keys(reportRunning[job.id]);
+                                        for (var j = 0; j < reportTypes.length; j++) {
+                                            var reportType = reportTypes[j];
+                                            if (job.reports.includes(reportType)) {
+                                                delete reportRunning[job.id][reportType];
+                                                delete websubmitReportBeingGenerated[job.id][reportType];
+                                                if (Object.keys(reportRunning[job.id]) == 0) {
+                                                    delete reportRunning[job.id];
+                                                    delete websubmitReportBeingGenerated[job.id];
+                                                }
+                                            }
+                                        }
+                                    }
+                                    updateRunningJobTrs(job);
                                 }
                             } catch (e) {
                                 console.error(e);
@@ -1935,6 +2009,11 @@ function addListeners () {
             if (div != null) {
                 div.style.display = 'none';
             }
+        }
+        if (evt.target.id == 'report_generation_generate_button') {
+            createJobReport(evt);
+        } else if (evt.target.id == 'report_generation_close_button') {
+            closeReportGenerationDiv();
         }
     });
     window.addEventListener('resize', function (evt) {
