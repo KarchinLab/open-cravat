@@ -2064,3 +2064,24 @@ function websubmit_run () {
     populateMultInputsMessage();
 };
 
+function importJob() {
+    let fileSel = document.querySelector('#job-import-file');
+    if (fileSel.files.length === 0) return;
+    var req = new XMLHttpRequest();
+    // formData = new FormData();
+    // formData.append('file',inputFiles[0]);
+    req.open('POST', '/submit/import');
+    req.setRequestHeader('Content-Disposition', `attachment; filename=${fileSel.files[0].name}`);
+    req.upload.onprogress = function (evt) {
+        var uploadPerc = evt.loaded / evt.total * 100;
+        document.querySelector('#spinner-div-progress-bar').style.width = uploadPerc + '%';
+        document.querySelector('#spinner-div-progress-num').textContent = uploadPerc.toFixed(0) + '%';
+    };
+    req.onloadend  = function (evt) {
+        hideSpinner();
+        refreshJobsTable();
+    };
+    showSpinner();
+    req.send(fileSel.files[0]);
+    // req.send(formData);
+}
