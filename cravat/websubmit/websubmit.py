@@ -29,6 +29,7 @@ from cravat.cravat_util import max_version_supported_for_migration, status_from_
 import cravat.util
 
 cfl = ConfigLoader()
+report_generation_ps = {}
 
 class FileRouter(object):
 
@@ -216,7 +217,8 @@ class WebJob(object):
         self.info['submission_time'] = ''
         self.job_dir = job_dir
         self.job_status_fpath = job_status_fpath
-        self.info['id'] = os.path.basename(job_dir)
+        job_id = os.path.basename(job_dir)
+        self.info['id'] = job_id
 
     def save_job_options (self, job_options):
         self.set_values(**job_options)
@@ -464,6 +466,7 @@ async def get_job (request, job_id):
         status=job.info['status'],
     )
     existing_reports = []
+    reports_being_generated = []
     for report_type in get_valid_report_types():
         report_paths = await filerouter.job_report(request, job_id, report_type)
         if report_paths is not None:
@@ -474,6 +477,13 @@ async def get_job (request, job_id):
                     break
             if report_exist:
                 existing_reports.append(report_type)
+                global report_generation_ps
+                if job_id in report_generation_ps and report_type in report_generation_ps[job_id]:
+                    del report_generation_ps[job_id][report_type]
+            else:
+                if job_id in report_generation_ps and report_type in report_generation_ps[job_id]:
+                    reports_being_generated.append(report_type)
+    job.info['reports_being_generated'] = reports_being_generated
     job.set_info_values(reports=existing_reports)
     job.info['username'] = os.path.basename(os.path.dirname(job_dir))
     if 'open_cravat_version' not in job.info:
@@ -592,9 +602,13 @@ async def generate_report(request):
     job_db_path = await filerouter.job_db(request, job_id)
     run_args = ['oc', 'report', job_db_path]
     run_args.extend(['-t', report_type])
+    if job_id not in report_generation_ps:
+        report_generation_ps[job_id] = {}
+    report_generation_ps[job_id][report_type] = True
     p = await asyncio.create_subprocess_shell(' '.join(run_args))
     await p.wait()
     #await p.terminate()
+    del report_generation_ps[job_id][report_type]
     return web.json_response('done')
 
 async def download_report(request):

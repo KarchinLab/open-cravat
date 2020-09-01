@@ -509,6 +509,7 @@ input:checked + .slider:before {
 .active-download-button {
     background-color: #c5af8d;
     border: 1px solid #c5af8d;
+    position: relative;
 }
 
 .active-download-button:hover {
@@ -527,6 +528,7 @@ input:checked + .slider:before {
   color: #c5af8d;
   background-color: white;
   border: 1px solid #c5af8d;
+  position: relative;
 }
 
 .inactive-download-button:hover {
@@ -822,5 +824,32 @@ input:checked + .slider:before {
 
 .fileaddbutn {
     font-size: 10px;
+}
+
+.btn_overlay {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    opacity: 0.4;
+    width: 100%;
+    height: 100%;
+}
+
+#report_generation_div {
+    position: fixed;
+    top: -1000px;
+    right: 1000px;
+    background-color: #96b6c6;
+    z-index: 1;
+    text-align: right;
+    border: 1px solid gray;
+    padding: 10px;
+    box-shadow: 3px 3px 3px gray;
+    font-size: 12px;
+    display: none;
+}
+
+#report_generation_div.show {
+    display: block;
 }
 
