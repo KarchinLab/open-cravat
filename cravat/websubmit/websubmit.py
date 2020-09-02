@@ -25,7 +25,7 @@ from cravat import constants
 from cravat import get_live_annotator, get_live_mapper
 import signal
 import gzip
-from cravat.cravat_util import max_version_supported_for_migration
+from cravat.cravat_util import max_version_supported_for_migration, status_from_db
 import cravat.util
 import logging
 
@@ -1094,6 +1094,24 @@ async def update_result_db (request):
         msg = 'fail'
     return web.json_response(msg)
 
+async def import_job (request):
+    global filerouter
+    jobs_dirs = await filerouter.get_jobs_dirs(request)
+    jobs_dir = jobs_dirs[0]
+    job_id = get_next_job_id()
+    job_dir = os.path.join(jobs_dir, job_id)
+    os.makedirs(job_dir, exist_ok=True)
+    fn = request.headers['Content-Disposition'].split('filename=')[1]
+    dbpath = os.path.join(job_dir,fn)
+    with open(dbpath,'wb') as wf:
+        async for data, _ in request.content.iter_chunks():
+            wf.write(data)
+    status_d = status_from_db(dbpath)
+    status_path = dbpath + '.status.json'
+    with open(status_path,'w') as wf:
+        json.dump(status_d,wf)
+    return web.response()
+
 filerouter = FileRouter()
 VIEW_PROCESS = None
 live_modules = None
@@ -1132,6 +1150,7 @@ routes.append(['POST', '/submit/annotate', get_live_annotation_post])
 routes.append(['GET', '/', redirect_to_index])
 routes.append(['GET', '/submit/jobs/{job_id}/status', get_job_status])
 routes.append(['GET', '/submit/updateresultdb', update_result_db])
+routes.append(['POST','/submit/import',import_job])
 
 if __name__ == '__main__':
     app = web.Application()
