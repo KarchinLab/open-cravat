@@ -559,6 +559,11 @@ input:checked + .store-switch-slider:before {
     color: white;
 }
 
+#store-systemmodule-install-button.disabled {
+    pointer-events: none;
+    background-color: gray;
+}
+
 #store-noconnect-div {
     display: none;
     position: fixed;

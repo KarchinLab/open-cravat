@@ -106,7 +106,8 @@ function showPageselect () {
 
 function onClickInstallBaseComponents () {
     document.getElementById('store-systemmodule-msg-div').textContent = '';
-    document.getElementById('store-systemmodule-install-button').disabled = true;
+    var btn = document.getElementById('store-systemmodule-install-button');
+    btn.classList.add('disabled');
     installBaseComponents();
     document.getElementById('messagediv').style.display = 'none';
 }
@@ -2179,7 +2180,7 @@ function connectWebSocket () {
     }
     ws.onclose = function (evt) {
         console.log('Re-establishing websocket');
-        connectWebSocket(failures);
+        connectWebSocket();
     }
     ws.onmessage = function (evt) {
         var data = JSON.parse(evt.data);

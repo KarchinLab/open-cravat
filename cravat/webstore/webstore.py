@@ -262,7 +262,7 @@ async def send_socket_msg ():
     data = {}
     data['module'] = install_state['module_name']
     data['msg'] = install_state['message']
-    if data['msg'].startswith('Downloading'):
+    if 'Downloading ' in data['msg']:
         data['msg'] = data['msg'] + ' ' + str(install_state['cur_chunk']) + '%'
     await install_ws.send_str(json.dumps(data))
     last_update_time = install_state['update_time']
