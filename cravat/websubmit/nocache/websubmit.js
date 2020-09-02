@@ -268,6 +268,18 @@ function generateReport (jobId, reportType, callback) {
         //processData: false,
         contentType: 'application/json',
         success: function (data) {
+            if (data == 'fail') {
+                var mdiv = getEl('div');
+                var span = getEl('span');
+                span.textContent = reportType + ' report generation failed for ' + jobId;
+                addEl(mdiv, span);
+                addEl(mdiv, getEl('br'));
+                addEl(mdiv, getEl('br'));
+                var span = getEl('span');
+                span.textContent = 'Check your system\'s wcravat.log for details.';
+                addEl(mdiv, span);
+                showYesNoDialog(mdiv, null, false, true);
+            }
             callback();
         }
     });

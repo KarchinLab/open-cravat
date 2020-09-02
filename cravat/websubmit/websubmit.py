@@ -27,6 +27,7 @@ import signal
 import gzip
 from cravat.cravat_util import max_version_supported_for_migration
 import cravat.util
+import logging
 
 cfl = ConfigLoader()
 report_generation_ps = {}
@@ -605,11 +606,15 @@ async def generate_report(request):
     if job_id not in report_generation_ps:
         report_generation_ps[job_id] = {}
     report_generation_ps[job_id][report_type] = True
-    p = await asyncio.create_subprocess_shell(' '.join(run_args))
-    await p.wait()
-    #await p.terminate()
+    p = await asyncio.create_subprocess_shell(' '.join(run_args), stderr=asyncio.subprocess.PIPE)
+    out, err = await p.communicate()
     del report_generation_ps[job_id][report_type]
-    return web.json_response('done')
+    response = 'done'
+    if len(err) > 0:
+        logger = logging.getLogger()
+        logger.error(err.decode('utf-8'))
+        response = 'fail'
+    return web.json_response(response)
 
 async def download_report(request):
     global filerouter

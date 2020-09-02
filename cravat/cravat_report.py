@@ -729,10 +729,18 @@ def run_reporter (*inargs, **inkwargs):
         args.do_not_change_status = True
         reporter = module.Reporter(args)
         loop.run_until_complete(reporter.prep())
-        response_t = loop.run_until_complete(reporter.run())
+        try:
+            response_t = loop.run_until_complete(reporter.run())
+            if args.silent == False:
+                print(f'report created in {os.path.abspath(output_dir)}.')
+        except:
+            if args.silent == False:
+                print(f'report generation failed.')
+            loop.run_until_complete(reporter.close_db())
+            loop.run_until_complete(reporter.cf.close_db())
+            response_t = {'success': False}
+            raise
         response[report_type] = response_t
-        if args.silent == False:
-            print(f'report created in {os.path.abspath(output_dir)}.')
     return response
 
 def cravat_report_entrypoint ():
