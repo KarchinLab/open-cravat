@@ -264,6 +264,7 @@ class MasterCravatConverter(object):
         self.primary_converter = self.converters[self.input_format]
         self.primary_converter.output_dir = self.output_dir
         self.primary_converter.run_name = self.output_base_fname
+        self.primary_converter.input_assembly = self.input_assembly
         if self.pipeinput == False:
             if len(self.input_files) > 1:
                 for f in self.input_files[1:]:
