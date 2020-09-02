@@ -10,10 +10,10 @@ from cravat import constants
 from types import SimpleNamespace
 import re
 import textwrap
-import math
 import copy
 from getpass import getpass
 from distutils.version import LooseVersion
+from cravat import util
 
 class ExampleCommandsFormatter(object,):
     def __init__(self, prefix='',  cmd_indent=' '*2, desc_indent=' '*8, width=70):
@@ -55,38 +55,12 @@ class InstallProgressStdout(au.InstallProgressHandler):
         out = '\r[{cur_prog}{rem_prog}] {cur_size} / {total_size} ({perc:.0f}%)  '\
             .format(cur_prog='*'*cur_chunk,
                     rem_prog=' '*rem_chunks,
-                    cur_size = humanize_bytes(cur_size),
-                    total_size = humanize_bytes(total_size),
+                    cur_size = util.humanize_bytes(cur_size),
+                    total_size = util.humanize_bytes(total_size),
                     perc = perc)
         sys.stdout.write(out)
         if cur_chunk == total_chunks:
             sys.stdout.write('\n')
-
-def humanize_bytes(num, binary=False):
-    """Human friendly file size"""
-    exp2unit_dec = {0:'B',1:'kB',2:'MB',3:'GB'}
-    exp2unit_bin = {0:'B',1:'KiB',2:'MiB',3:'GiB'}
-    max_exponent = 3
-    if binary:
-        base = 1024
-    else:
-        base = 1000
-    if num > 0:
-        exponent = math.floor(math.log(num, base))
-        if exponent > max_exponent:
-            exponent = max_exponent
-    else:
-        exponent = 0
-    quotient = float(num) / base**exponent
-    if binary:
-        unit = exp2unit_bin[exponent]
-    else:
-        unit = exp2unit_dec[exponent]
-    quot_str = '{:.1f}'.format(quotient)
-    # No decimal for byte level sizes
-    if exponent == 0:
-        quot_str = quot_str.rstrip('0').rstrip('.')
-    return '{quotient} {unit}'.format(quotient=quot_str, unit=unit)
 
 def yield_tabular_lines(l, col_spacing=4, indent=0):
     if not l:
@@ -136,7 +110,7 @@ def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], q
             if raw_bytes:
                 toks.append(size)
             else:
-                toks.append(humanize_bytes(size))
+                toks.append(util.humanize_bytes(size))
         all_toks.append(toks)
     print_tabular_lines(all_toks)
 
@@ -189,7 +163,7 @@ def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[
             if raw_bytes:
                 toks.append(remote_info.size)
             else:
-                toks.append(humanize_bytes(remote_info.size))
+                toks.append(util.humanize_bytes(remote_info.size))
         all_toks.append(toks)
     print_tabular_lines(all_toks)
 
@@ -360,7 +334,7 @@ def update_modules(args):
     for mname, update_info in updates.items():
         version = update_info.version
         size = update_info.size
-        status_table.append([mname, version, humanize_bytes(size)])
+        status_table.append([mname, version, util.humanize_bytes(size)])
     print_tabular_lines(status_table)
     if not args.y:
         user_cont = input('Update the above modules? (y/n) > ')

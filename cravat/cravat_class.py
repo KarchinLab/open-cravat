@@ -648,21 +648,31 @@ class Cravat (object):
                     if util.is_url(ip):
                         import requests
                         if not self.args.silent:
-                            print(f'Fetching {ip}... ', end='', flush=True)
+                            print(f'Fetching {ip}... ')
                         try:
-                            r = requests.get(ip, timeout=3)
-                            r.raise_for_status()
+                            r = requests.head(ip)
+                            r = requests.get(ip, stream=True)
                             fn = os.path.basename(ip)
                             fpath = fn
-                            wf = open(fpath, 'w')
-                            wf.write(r.text)
-                            wf.close()
+                            cur_size = 0.0
+                            num_total_star = 40.0
+                            total_size = float(r.headers['content-length'])
+                            with open(fpath, 'wb') as wf:
+                                for chunk in r.iter_content(chunk_size=8192):
+                                    wf.write(chunk)
+                                    cur_size += float(len(chunk))
+                                    perc = cur_size / total_size
+                                    cur_star = int(perc * num_total_star)
+                                    rem_stars = int(num_total_star - cur_star)
+                                    cur_prog = '*' * cur_star
+                                    rem_prog = ' ' * rem_stars
+                                    print(f'[{cur_prog}{rem_prog}] {util.humanize_bytes(cur_size)} / {util.humanize_bytes(total_size)} ({perc * 100.0:.0f}%)', end='\r', flush=True)
+                                    if cur_size == total_size:
+                                        print('\n')
                             self.inputs[input_no] = os.path.abspath(fpath)
                         except:
-                            print(f'unsuccessful. exiting.')
+                            print(f'File downloading unsuccessful. Exiting.')
                             exit()
-                        if not self.args.silent:
-                            print(f'done')
                     elif first_non_url_input is None:
                         first_non_url_input = ip
         else:

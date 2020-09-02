@@ -15,6 +15,7 @@ import pkg_resources
 import datetime
 import argparse
 from types import SimpleNamespace
+import math
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -265,3 +266,30 @@ def filter_affected_cols(filter):
         for rule in filter['rules']:
             cols.update(filter_affected_cols(rule))
     return cols
+
+def humanize_bytes(num, binary=False):
+    """Human friendly file size"""
+    exp2unit_dec = {0:'B',1:'kB',2:'MB',3:'GB'}
+    exp2unit_bin = {0:'B',1:'KiB',2:'MiB',3:'GiB'}
+    max_exponent = 3
+    if binary:
+        base = 1024
+    else:
+        base = 1000
+    if num > 0:
+        exponent = math.floor(math.log(num, base))
+        if exponent > max_exponent:
+            exponent = max_exponent
+    else:
+        exponent = 0
+    quotient = float(num) / base**exponent
+    if binary:
+        unit = exp2unit_bin[exponent]
+    else:
+        unit = exp2unit_dec[exponent]
+    quot_str = '{:.1f}'.format(quotient)
+    # No decimal for byte level sizes
+    if exponent == 0:
+        quot_str = quot_str.rstrip('0').rstrip('.')
+    return '{quotient} {unit}'.format(quotient=quot_str, unit=unit)
+
