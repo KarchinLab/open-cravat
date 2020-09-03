@@ -175,6 +175,9 @@ def run (args):
             port = server.get('port')
             if args.result:
                 dbpath = args.result
+                if os.path.exists(dbpath) == False:
+                    print(f'{dbpath} does not exist. Exiting.')
+                    return
                 compatible_version, db_version, oc_version = cravat.util.is_compatible_version(dbpath)
                 if not compatible_version:
                     print(f'DB version {db_version} of {dbpath} is not compatible with the current OpenCRAVAT ({oc_version}).')
