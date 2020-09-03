@@ -39,10 +39,6 @@ class CravatReport:
         self.colname_conversion = {}
         self.warning_msgs = []
         self.parse_cmd_args(inargs, inkwargs)
-        if 'status_writer' not in inkwargs:
-            self.status_writer = None
-        else:
-            self.status_writer = status_writer
         global parser
         for ag in parser._action_groups:
             if ag.title == 'optional arguments':
@@ -109,6 +105,10 @@ class CravatReport:
                     parsed_args.inputfiles.append(input_path)
             c.close()
             db.close()
+        if hasattr(parsed_args, 'status_writer'):
+            self.status_writer = parsed_args.status_writer
+        else:
+            self.status_writer = None
         self.args = parsed_args
 
     async def prep (self):

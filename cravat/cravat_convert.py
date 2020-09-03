@@ -66,12 +66,8 @@ class MasterCravatConverter(object):
     """
     ALREADYCRV = 2
 
-    def __init__(self, args=None, status_writer=None):
-        args = args if args else sys.argv
-        self.status_writer = status_writer
-        self.input_paths = []
-        self.input_files = []
-        self.input_format = None
+    def __init__(self, *inargs, **inkwargs):
+        self._parse_cmd_args(inargs, inkwargs)
         self.logger = None
         self.crv_writer = None
         self.crs_writer = None
@@ -81,17 +77,12 @@ class MasterCravatConverter(object):
         self.converters = {}
         self.possible_formats = []
         self.ready_to_convert = False
-        self.cmd_args = None
-        self.output_dir = None
-        self.output_base_fname = None
-        self.pipeinput = False
         self.chromdict = {'chrx': 'chrX', 'chry': 'chrY', 'chrMT': 'chrM', 'chrMt': 'chrM', 'chr23': 'chrX', 'chr24': 'chrY'}
-        self._parse_cmd_args(args)
         self._setup_logger()
         self.vtracker = VTracker(deduplicate=not(self.unique_variants))
         self.wgsreader = cravat.get_wgs_reader(assembly='hg38')
 
-    def _parse_cmd_args(self, args):
+    def _parse_cmd_args(self, inargs, inkwargs):
         """ Parse the arguments in sys.argv """
         parser = argparse.ArgumentParser()
         parser.add_argument('path',
@@ -110,8 +101,8 @@ class MasterCravatConverter(object):
         parser.add_argument('-d', '--output-dir',
             dest='output_dir',
             help='Output directory. Default is input file directory.')
-        parser.add_argument('-l','--liftover',
-            dest='liftover',
+        parser.add_argument('-l','--genome',
+            dest='genome',
             choices=['hg38']+list(constants.liftover_chain_paths.keys()),
             default='hg38',
             help='Input gene assembly. Will be lifted over to hg38')
@@ -124,13 +115,16 @@ class MasterCravatConverter(object):
             default=False,
             action='store_true',
             help=argparse.SUPPRESS)
-        parsed_args = parser.parse_args(args)
+        parsed_args = cravat.util.get_args(parser, inargs, inkwargs)
+        self.input_format = None
         if parsed_args.format:
             self.input_format = parsed_args.format
         if parsed_args.inputs is None:
             raise ExpectedException('Input files are not given.')
+        self.pipeinput = False
         if parsed_args.inputs is not None and len(parsed_args.inputs) == 1 and parsed_args.inputs[0] == '-':
             self.pipeinput = True
+        self.input_paths = []
         if self.pipeinput == False:
             self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs if x != '-']
         else:
@@ -145,33 +139,41 @@ class MasterCravatConverter(object):
         else:
             self.input_path_dict[0] = self.input_paths[0]
             self.input_path_dict2[STDIN] = 0
+        self.output_dir = None
         if parsed_args.output_dir:
             self.output_dir = parsed_args.output_dir
         else:
             self.output_dir = self.input_dir
         if not(os.path.exists(self.output_dir)):
             os.makedirs(self.output_dir)
+        self.output_base_fname = None
         if parsed_args.name:
             self.output_base_fname = parsed_args.name
         else:
             self.output_base_fname = os.path.basename(self.input_paths[0])
-        self.input_assembly = parsed_args.liftover
+        self.input_assembly = parsed_args.genome
         self.do_liftover = self.input_assembly != 'hg38'
         if self.do_liftover:
             self.lifter = LiftOver(constants.liftover_chain_paths[self.input_assembly])
         else:
             self.lifter = None
         self.status_fpath = os.path.join(self.output_dir, self.output_base_fname + '.status.json')
-        self.confs = None
+        self.conf = {}
         if parsed_args.confs is not None:
             confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
-            self.confs = json.loads(confs)
+            self.conf = json.loads(confs)
+        self.conf.update(parsed_args.conf)
         self.unique_variants = parsed_args.unique_variants
+        if parsed_args.status_writer:
+            self.status_writer = parsed_args.status_writer
+        else:
+            self.status_writer = None
 
     def setup (self):
         """ Do necesarry pre-run tasks """
         if self.ready_to_convert: return
         # Open file handle to input path
+        self.input_files = []
         if self.pipeinput == False:
             for input_path in self.input_paths:
                 encoding = detect_encoding(input_path)
@@ -265,6 +267,11 @@ class MasterCravatConverter(object):
         self.primary_converter.output_dir = self.output_dir
         self.primary_converter.run_name = self.output_base_fname
         self.primary_converter.input_assembly = self.input_assembly
+        module_name = self.primary_converter.format_name + '-converter'
+        if module_name in self.conf:
+            if hasattr(self.primary_converter, 'conf') == False:
+                self.primary_converter.conf = {}
+            self.primary_converter.conf.update(self.conf[module_name])
         if self.pipeinput == False:
             if len(self.input_files) > 1:
                 for f in self.input_files[1:]:

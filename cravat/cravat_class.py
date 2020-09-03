@@ -897,26 +897,37 @@ class Cravat (object):
         module = SimpleNamespace(title='Converter',
                                  name='converter',
                                  script_path=converter_path)
-        cmd = [module.script_path,
-                *self.inputs,
-               '-n', self.run_name,
-               '-d', self.output_dir,
-               '-l', self.input_assembly]
+        arg_dict = {
+            'path': module.script_path, 
+            'inputs': self.inputs,
+            'name': self.run_name,
+            'output_dir': self.output_dir,
+            'genome': self.input_assembly
+        }
+        arg_dict['conf'] = {}
+        for mn in self.conf._all:
+            if mn.endswith('-converter'):
+                arg_dict['conf'][mn] = self.conf._all[mn]
+        if 'run' in self.conf._all:
+            for mn in self.conf._all['run']:
+                if mn.endswith('-converter'):
+                    arg_dict['conf'][mn] = self.conf._all[mn]
         if module.name in self.cravat_conf:
             if module.name in self.modules_conf:
                 confs = json.dumps(self.modules_conf[module.name])
                 confs = "'" + confs.replace("'", '"') + "'"
-                cmd.extend(['--confs', confs])
+                arg_dict['confs'] = confs
         if self.args.forcedinputformat is not None:
-            cmd.extend(['-f', self.args.forcedinputformat])
+            arg_dict['format', self.args.forcedinputformat]
         if self.args.unique_variants:
-            cmd.append('--unique-variants')
+            arg_dict['unique_variants'] = True
         self.announce_module(module)
         if self.verbose:
             if not self.args.silent:
-                print(' '.join(cmd))
+                print(' '.join([str(k) + '=' + str(v) for k, v in arg_dict.items()]))
+        arg_dict['status_writer'] = self.status_writer
         converter_class = util.load_class(module.script_path, 'MasterCravatConverter')
-        converter = converter_class(cmd, self.status_writer)
+        converter = converter_class(arg_dict)
         self.numinput, self.converter_format = converter.run()
 
     def run_genemapper (self):
@@ -1220,7 +1231,7 @@ class Cravat (object):
                     arg_dict['separatesample'] = True
                 if self.verbose:
                     if not self.args.silent:
-                        print(' '.join(arg_dict))
+                        print(' '.join([str(k) + '=' + str(v) for k, v in arg_dict.items()]))
                 arg_dict['status_writer'] = self.status_writer
                 arg_dict['reporttypes'] = [module_name.replace('reporter', '')]
                 Reporter = util.load_class(module.script_path, 'Reporter')
