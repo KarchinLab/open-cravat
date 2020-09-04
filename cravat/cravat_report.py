@@ -658,7 +658,8 @@ class CravatReport:
             exit()
 
     async def close_db (self):
-        pass
+        if self.cf is not None:
+            self.cf.close_db()
 
     async def load_filter (self):
         self.cf = await CravatFilter.create(dbpath=self.dbpath)
