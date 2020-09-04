@@ -138,9 +138,9 @@ class BaseMapper(object):
         self.args = args
 
     def base_setup(self):
+        self.setup()
         if self.live == False:
             self._setup_io()
-        self.setup()
 
     def setup(self):
         raise NotImplementedError('Mapper must have a setup() method.')
