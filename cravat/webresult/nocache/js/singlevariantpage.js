@@ -97,6 +97,7 @@ function showWidget (widgetName, moduleNames, level, parentDiv, maxWidth, maxHei
         generator[level]['max-height'] = maxHeight;
         maxHeightParent = maxHeight + 30;
     }
+    console.log('@', widgetName, 'maxHeight=', maxHeight);
     if (level != undefined) {
         divs = getDetailWidgetDivs(level, widgetName, widgetInfo[widgetName].title, maxWidthParent, maxHeightParent, showTitle);
     } else {
@@ -191,13 +192,13 @@ widgetGenerators['basepanel'] = {
         'function': function (div, row, tabName) {
             var generator = widgetGenerators['base']['variant'];
             generator['width'] = 450;
-            var divs = showWidget('base', ['base', 'dbsnp'], 'variant', div, null, 250);
+            var divs = showWidget('base', ['base', 'dbsnp'], 'variant', div, null, 220);
             divs[0].style.position = 'absolute';
             divs[0].style.top = '0px';
             divs[0].style.left = '0px';
             var generator = widgetGenerators['hgvs']['variant'];
             generator['width'] = 400;
-            var divs = showWidget('hgvs', ['base', 'hgvs'], 'variant', div, null, 250);
+            var divs = showWidget('hgvs', ['base', 'hgvs'], 'variant', div, null, 220);
             divs[0].style.position = 'absolute';
             divs[0].style.top = '0px';
             divs[0].style.left = '470px';
