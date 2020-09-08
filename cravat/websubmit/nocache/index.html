@@ -14,6 +14,7 @@
     <script src="/submit/nocache/websubmit.js?ver=1.7.0"></script>
     <script src='/store/nocache/webstore.js?ver=1.7.0'></script>
     <script src='/submit/Chart.bundle.min.js'></script>
+    <script src='/store/js/showdown-1.9.1.min.js'></script>
     <script>
         $(document).ready(function() {
             websubmit_run();
@@ -159,8 +160,7 @@
             </tbody>
         </table>
         <div id='jobs-table-pagination-div' style='float: right;'>
-            <input type="file" id="job-import-file">
-            <button id='job-import' class='butn' onclick="importJob()">Import Job</button>
+            
             <button id='jobs-table-pagination-prev-button' class='butn inactive-download-button' onclick='onClickJobsListPrevPage();'><</button>
             <button id='jobs-table-pagination-next-button' class='butn inactive-download-button' onclick='onClickJobsListNextPage();'>></button>
         </div>
@@ -289,8 +289,12 @@
     <span class="settingsdiv-elem">Maximum number of concurrent annotators per job: </span><input id='settings_max_num_concurrent_annotators_per_job' class="settingsdiv-elem" type='text' size='10' />
     <br />
     <button class="settingdsiv-elem butn" onclick='onClickStoreUpdateRemoteButton()'>Refresh store</button>
-    <br />
-    <br />
+    <p>
+        <button id='job-import' class='butn' onclick="document.getElementById('job-import-file').click()">
+            Import Job
+            <input type="file" id="job-import-file" style='display:none;' onchange="importJob()">
+        </button>
+    </p>
     <button class="settingsdiv-elem butn" onclick='onClickSaveSystemConf();'>Save</button>
     <button class="settingsdiv-elem butn" onclick='resetSystemConf();'>Reset</button>
 </div> <!-- settingsdiv -->

@@ -26,6 +26,7 @@ var inputFileList = [];
 var JOB_IDS = []
 var jobListUpdateIntervalFn = null;
 var reportRunning = {};
+var systemConf;
 
 function submit () {
     if (servermode && logged == false) {
@@ -1154,233 +1155,6 @@ function buildAnnotatorsSelector () {
     buildCheckBoxGroup(checkDatas, annotCheckDiv);
 }
 
-function getModuleDetailDiv (moduleName) {
-    var div = document.getElementById('moduledetaildiv_submit');
-    if (div) {
-        emptyElement(div);
-    } else {
-        div = getEl('div');
-        div.id = 'moduledetaildiv_submit';
-        div.style.position = 'fixed';
-        div.style.width = '80%';
-        div.style.height = '80%';
-        div.style.margin = 'auto';
-        div.style.backgroundColor = 'white';
-        div.style.left = '0';
-        div.style.right = '0';
-        div.style.top = '0';
-        div.style.bottom = '0';
-        div.style.zIndex = '300';
-        div.style.border = '6px';
-        div.style.padding = '10px';
-        div.style.paddingBottom = '23px';
-        div.style.border = '1px solid black';
-        div.style.boxShadow = '0px 0px 20px';
-    }
-    currentDetailModule = moduleName;
-    div.style.display = 'block';
-    var localModule = localModuleInfo[moduleName];
-    var table = getEl('table');
-    table.style.height = '100px';
-    table.style.border = '0px';
-    var tr = getEl('tr');
-    tr.style.border = '0px';
-    var td = getEl('td');
-    td.id = 'moduledetaillogotd';
-    td.style.width = '120px';
-    td.style.border = '0px';
-    addEl(tr, td);
-    var sdiv = getEl('sdiv');
-    sdiv.className = 'moduletile-logodiv';
-    var img = addLogo(moduleName, sdiv);
-    if (img != null) {
-        img.style.height = '86px';
-    }
-    if (img != null) {
-        img.style.maxHeight = '84px';
-    } else {
-        sdiv.style.position = 'relative';
-        sdiv.children[0].style.display = 'none';
-    }
-    addEl(td, sdiv);
-    addEl(tr, td);
-    td = getEl('td');
-    td.style.border = '0px';
-    var span = getEl('div');
-    span.style.fontSize = '30px';
-    span.textContent = localModule.title;
-    addEl(td, span);
-    addEl(td, getEl('br'));
-    span = getEl('span');
-    span.style.fontSize = '12px';
-    span.style.color = 'green';
-    span.textContent = localModule.type;
-    addEl(td, span);
-    span = getEl('span');
-    span.style.fontSize = '12px';
-    span.style.color = 'green';
-    span.textContent = ' | ' + localModule.developer.organization;
-    addEl(td, span);
-    addEl(tr, td);
-    td = getEl('td');
-    td.style.border = '0px';
-    td.style.verticalAlign = 'top';
-    td.style.textAlign = 'right';
-    var sdiv = getEl('div');
-    sdiv.id = 'installstatdiv_' + moduleName;
-    sdiv.style.marginTop = '10px';
-    sdiv.style.fontSize = '12px';
-    if (installInfo[moduleName] != undefined) {
-        sdiv.textContent = installInfo[moduleName]['msg'];
-    }
-    addEl(td, sdiv);
-    addEl(tr, td);
-    addEl(table, tr);
-    addEl(div, table);
-    addEl(div, getEl('hr'));
-    table = getEl('table');
-    table.style.height = 'calc(100% - 100px)';
-    table.style.border = '0px';
-    tr = getEl('tr');
-    tr.style.border = '0px';
-    var tdHeight = (window.innerHeight * 0.8 - 150) + 'px';
-    td = getEl('td');
-    td.style.border = '0px';
-    td.style.width = '70%';
-    td.style.verticalAlign = 'top';
-    td.style.height = tdHeight;
-    var mdDiv = getEl('div');
-    mdDiv.style.height = '100%';
-    mdDiv.style.overflow = 'auto';
-    var wiw = window.innerWidth;
-    mdDiv.style.maxWidth = (wiw * 0.8 * 0.68) + 'px';
-    addEl(td, mdDiv);
-    addEl(tr, td);
-	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
-		mdDiv.innerHTML = data;
-        addClassRecursive(mdDiv, 'moduledetaildiv-submit-elem');
-	});
-    td = getEl('td');
-    td.style.width = '30%';
-    td.style.border = '0px';
-    td.style.verticalAlign = 'top';
-    td.style.height = tdHeight;
-    var infodiv = getEl('div');
-    infodiv.style.height = '100%';
-    infodiv.style.overflow = 'auto';
-    infodiv.style.maxWidth = (wiw * 0.8 * 0.3) + 'px';
-    var d = getEl('div');
-    span = getEl('span');
-    span.textContent = localModule.description;
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Version: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.textContent = localModule['version'];
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Maintainer: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.textContent = localModule['developer']['name'];
-    addEl(d, span);
-    addEl(d, getEl('br'));
-    addEl(d, getEl('br'));
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'e-mail: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.textContent = localModule['developer']['email'];
-    addEl(d, span);
-    addEl(d, getEl('br'));
-    addEl(d, getEl('br'));
-    addEl(infodiv, d);
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Citation: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.style.display = 'inline-block';
-    span.style.width = 'calc(100% - 120px)';
-    span.style.wordWrap = 'break-word';
-    span.style.verticalAlign = 'text-top';
-    var citation = localModule['developer']['citation'];
-    if (citation.startsWith('http')) {
-        var a = getEl('a');
-        a.href = citation;
-        a.target = '_blank';
-        a.textContent = citation;
-        addEl(span, a);
-    } else {
-        span.textContent = citation;
-    }
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Organization: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.textContent = localModule['developer']['organization'];
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Website: ';
-    addEl(d, span);
-    span = getEl('a');
-    span.textContent = localModule['developer']['website'];
-    span.href = localModule['developer']['website'];
-    span.target = '_blank';
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    d = getEl('div');
-    span = getEl('span');
-    span.style.fontWeight = 'bold';
-    span.textContent = 'Type: ';
-    addEl(d, span);
-    span = getEl('span');
-    span.textContent = localModule['type'];
-    addEl(d, span);
-    addEl(infodiv, d);
-    addEl(infodiv, getEl('br'));
-    addEl(td, infodiv);
-    addEl(tr, td);
-    addEl(table, tr);
-    addEl(div, table);
-    var el = getEl('div');
-    el.style.position = 'absolute';
-    el.style.top = '0px';
-    el.style.right = '0px';
-    el.style.fontSize = '20px';
-    el.style.padding = '10px';
-    el.style.cursor = 'pointer';
-    el.textContent = 'X';
-    el.addEventListener('click', function (evt) {
-        var pel = evt.target.parentElement;
-        pel.parentElement.removeChild(pel);
-    });
-    addEl(div, el);
-    addClassRecursive(div, 'moduledetaildiv-submit-elem');
-    return div;
-}
-
 function buildCheckBoxGroup (checkDatas, parentDiv) {
     parentDiv = (parentDiv === undefined) ? getEl('div') : parentDiv;
     emptyElement(parentDiv);
@@ -1734,6 +1508,7 @@ function openSubmitDiv () {
 
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
+        systemConf = response.content;
         var s = document.getElementById('sysconfpathspan');
         s.value = response['path'];
         var s = document.getElementById('settings_jobs_dir_input');
@@ -2154,8 +1929,6 @@ function importJob() {
     let fileSel = document.querySelector('#job-import-file');
     if (fileSel.files.length === 0) return;
     var req = new XMLHttpRequest();
-    // formData = new FormData();
-    // formData.append('file',inputFiles[0]);
     req.open('POST', '/submit/import');
     req.setRequestHeader('Content-Disposition', `attachment; filename=${fileSel.files[0].name}`);
     req.upload.onprogress = function (evt) {
@@ -2169,5 +1942,4 @@ function importJob() {
     };
     showSpinner();
     req.send(fileSel.files[0]);
-    // req.send(formData);
 }

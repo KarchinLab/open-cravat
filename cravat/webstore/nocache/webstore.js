@@ -1723,11 +1723,21 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     addEl(tr, td);
 	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
         var protocol = window.location.protocol;
-        if (protocol == 'http:') {
-            mdDiv.innerHTML = data;
-        } else if (protocol == 'https:') {
-            mdDiv.innerHTML = data.replace(/http:/g, 'https:');
+        var converter = new showdown.Converter({tables:true,openLinksInNewWindow:true});
+        var mdhtml = converter.makeHtml(data);
+        if (protocol == 'https:') {
+            mdhtml = mdhtml.replace(/http:/g, 'https:');
         }
+        var $mdhtml = $(mdhtml);
+        var localRoot = window.location.origin + window.location.pathname.split('/').slice(0,-1).join('/');
+        for (let img of $mdhtml.children('img')) {
+            let storeRoot = `${systemConf.store_url}/modules/${moduleName}/${mInfo.latest_version}`
+            img.src = img.src.replace(localRoot, storeRoot);
+            img.style.display = 'block';
+            img.style.margin = 'auto';
+            img.style['max-width'] = '100%';
+        }
+        $(mdDiv).append($mdhtml);
         // output column description
         var d = getEl('div');
         d.id = 'moduledetail-output-column-div-' + currentTab;

@@ -26,6 +26,11 @@ body * {
     font-family: 'roboto-light';
 }
 
+/* Need for code sections of module markdowns */
+code {
+    font-family: monospace;
+}
+
 #pageselect {
     position: fixed; 
     top: 21px; 
