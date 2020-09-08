@@ -157,70 +157,7 @@ async def get_module_readme (request):
     if version == 'latest': 
         version=None
     readme_md = au.get_readme(module_name, version=version)
-    if readme_md is None:
-        content = ''
-    else:
-        content = markdown.markdown(readme_md, extensions=['tables'])
-        global system_conf
-        global pathbuilder
-        if module_name in au.mic.remote:
-            imgsrceditor = ImageSrcEditor(pathbuilder.module_version_dir(module_name, au.mic.remote[module_name]['latest_version']))
-            imgsrceditor.feed(content)
-            content = imgsrceditor.get_parsed()
-            linkouteditor = LinkOutEditor(pathbuilder.module_version_dir(module_name, au.mic.remote[module_name]['latest_version']))
-            linkouteditor.feed(content)
-            content = linkouteditor.get_parsed()
-    headers = {'Content-Type': 'text/html'}
-    return web.Response(body=content, headers=headers)
-
-class ImageSrcEditor(HTMLParser):
-    def __init__ (self, prefix_url):
-        super().__init__()
-        self.prefix_url = prefix_url
-        self.parsed = ''
-
-    def handle_starttag(self, tag, attrs):
-        html = '<{}'.format(tag)
-        if tag == 'img':
-            attrs.append(['style', 'display:block;margin:auto;max-width:100%'])
-        for name, value in attrs:
-            if tag == 'img' and name == 'src':
-                value = self.prefix_url + '/' + value.lstrip('/')
-            html += ' {name}="{value}"'.format(name=name, value=value)
-        html += '>'
-        self.parsed += html
-
-    def handle_data(self, data):
-        self.parsed += data
-
-    def handle_endtag(self, tag):
-        self.parsed += '</{}>'.format(tag)
-
-    def get_parsed(self):
-        return self.parsed
-
-class LinkOutEditor(HTMLParser):
-    def __init__ (self, prefix_url):
-        super().__init__()
-        self.prefix_url = prefix_url
-        self.parsed = ''
-    def handle_starttag(self, tag, attrs):
-        html = '<{}'.format(tag)
-        if tag == 'a':
-            attrs.append(['target', '_blank'])
-        for name, value in attrs:
-            html += ' {name}="{value}"'.format(name=name, value=value)
-        html += '>'
-        self.parsed += html
-
-    def handle_data(self, data):
-        self.parsed += data
-
-    def handle_endtag(self, tag):
-        self.parsed += '</{}>'.format(tag)
-
-    def get_parsed(self):
-        return self.parsed
+    return web.Response(body=readme_md)
 
 async def install_widgets_for_module (request):
     queries = request.rel_url.query
