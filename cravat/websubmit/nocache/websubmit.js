@@ -937,6 +937,9 @@ function showJobListPage () {
                     var runningJobIds = Object.keys(jobRunning);
                     var runningReportIds = Object.keys(reportRunning);
                     var combinedIds = runningJobIds.concat(runningReportIds);
+                    if (combinedIds.length == 0) {
+                        return;
+                    }
                     $.ajax({
                         url: '/submit/getjobs',
                         data: {'ids': JSON.stringify(combinedIds)},
