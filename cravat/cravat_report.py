@@ -737,7 +737,6 @@ def run_reporter (*inargs, **inkwargs):
             if args.silent == False:
                 print(f'report generation failed.')
             loop.run_until_complete(reporter.close_db())
-            loop.run_until_complete(reporter.cf.close_db())
             response_t = {'success': False}
             raise
         response[report_type] = response_t
