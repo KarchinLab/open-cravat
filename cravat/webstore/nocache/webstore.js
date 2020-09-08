@@ -148,18 +148,9 @@ function complementRemoteWithLocal () {
         }
         var localModule = localModuleInfo[localModuleName];
         var remoteModule = remoteModuleInfo[localModuleName];
-        var check2 = false;
-        if (remoteModule) {
-            if (compareVersion(localModule.version, remoteModule.latest_version) > 0) {
-                check2 = true;
-                localModule.uselocalonstore = true;
-            } else {
-                check2 = localModule.conf.uselocalonstore;
-            }
-        }
-        //var check2 = localModule.conf.uselocalonstore;
+        var check2 = localModule.conf.uselocalonstore;
         var check3 = localModule.conf['private'];
-        if ((remoteModule == undefined || check2 == true) && check3 != true) {
+        if (check2 == true && check3 != true) {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/store/localasremote?module=' + localModuleName, false);
             xhr.onload = function (e) {
@@ -1296,7 +1287,8 @@ function getFilteredRemoteModules () {
             if (filter['name'] != undefined && filter['name'] != '') {
                 for (var j = 0; j < filter['name'].length; j++) {
                     var queryStr = filter['name'][j].toLowerCase();
-                    if (remoteModule['title'].toLowerCase().includes(queryStr) || remoteModule['description'].toLowerCase().includes(queryStr)) {
+                    var descStr = remoteModule['description'];
+                    if (remoteModule['title'].toLowerCase().includes(queryStr) || (descStr != undefined && descStr.toLowerCase().includes(queryStr))) {
                         nameYes = true;
                         break;
                     }
