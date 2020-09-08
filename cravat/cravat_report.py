@@ -407,8 +407,6 @@ class CravatReport:
                 await self.make_col_info(tab)
             await self.run_level(tab)
         await self.close_db()
-        await self.cf.close_db()
-        self.cf = None
         if self.module_conf is not None and self.status_writer is not None:
             if self.parsed_args.do_not_change_status == False:
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
@@ -658,7 +656,9 @@ class CravatReport:
             exit()
 
     async def close_db (self):
-        pass
+        if self.cf is not None:
+            await self.cf.close_db()
+            self.cf = None
 
     async def load_filter (self):
         self.cf = await CravatFilter.create(dbpath=self.dbpath)

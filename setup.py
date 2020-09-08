@@ -102,6 +102,7 @@ setup(
         'twobitreader',
         'nest-asyncio',
         'psutil',
+        'mpmath',
         ],
     python_requires='>=3.6',
 )

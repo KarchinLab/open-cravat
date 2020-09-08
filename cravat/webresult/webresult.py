@@ -566,8 +566,12 @@ async def get_colinfo (dbpath, confpath, filterstring):
         await reporter.prep()
         colinfo = await reporter.get_variant_colinfo()
         await reporter.close_db()
+        if reporter.cf is not None:
+            await reporter.cf.close_db()
     except:
         await reporter.close_db()
+        if reporter.cf is not None:
+            await reporter.cf.close_db()
         raise
     return colinfo
 
