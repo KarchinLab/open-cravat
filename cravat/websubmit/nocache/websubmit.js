@@ -929,7 +929,6 @@ function showJobListPage () {
             for (var i=0; i < response.length; i++) {
                 var job = response[i];
                 addJob(job);
-                //updateRunningJobTrs(job);
             }
             buildJobsTable();
             if (jobListUpdateIntervalFn == null) {
@@ -937,10 +936,6 @@ function showJobListPage () {
                     var runningJobIds = Object.keys(jobRunning);
                     var runningReportIds = Object.keys(reportRunning);
                     var combinedIds = runningJobIds.concat(runningReportIds);
-                    if (combinedIds.length == 0) {
-                        clearInterval(jobListUpdateIntervalFn);
-                        return;
-                    }
                     $.ajax({
                         url: '/submit/getjobs',
                         data: {'ids': JSON.stringify(combinedIds)},

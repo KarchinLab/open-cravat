@@ -216,6 +216,7 @@ class WebJob(object):
         self.info['open_cravat_version'] = ''
         self.info['num_input_var'] = ''
         self.info['submission_time'] = ''
+        self.info['reports_being_generated'] = []
         self.job_dir = job_dir
         self.job_status_fpath = job_status_fpath
         job_id = os.path.basename(job_dir)
