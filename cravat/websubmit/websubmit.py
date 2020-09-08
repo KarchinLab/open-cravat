@@ -1110,7 +1110,7 @@ async def import_job (request):
     status_path = dbpath + '.status.json'
     with open(status_path,'w') as wf:
         json.dump(status_d,wf)
-    return web.response()
+    return web.Response()
 
 filerouter = FileRouter()
 VIEW_PROCESS = None
