@@ -81,7 +81,6 @@ def setup(args):
             asyncio.set_event_loop(loop)
         else:
             loop = asyncio.get_event_loop()
-        loop = asyncio.get_event_loop()
         global headless
         headless = args.headless
         global servermode
