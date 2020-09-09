@@ -255,10 +255,15 @@ function createJobReport (evt) {
     websubmitReportBeingGenerated[jobId][reportType] = true;
     buildJobsTable();
     generateReport(jobId, reportType, function () {
-        websubmitReportBeingGenerated[jobId][reportType] = false;
-        populateJobs().then(function () {
-            buildJobsTable();
-        });
+        if (websubmitReportBeingGenerated[jobId] == undefined) {
+            delete websubmitReportBeingGenerated[jobId];
+        } else {
+            //websubmitReportBeingGenerated[jobId][reportType] = false;
+            delete websubmitReportBeingGenerated[jobId][reportType];
+            populateJobs().then(function () {
+                buildJobsTable();
+            });
+        }
     });
 }
 
@@ -440,9 +445,6 @@ function populateJobTr (job) {
     // Reports
     for (var i = 0; i < GLOBALS.reports.valid.length; i++) {
         var reportType = GLOBALS.reports.valid[i];
-        if (reportType == 'text' || reportType == 'pandas' || reportType == 'stdout') {
-            continue;
-        }
         if ((websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id][reportType] == true) || job.reports_being_generated.includes(reportType)) {
             var btn = getEl('button');
             btn.classList.add('butn');
@@ -507,9 +509,6 @@ function populateJobTr (job) {
         }
         for (var i = 0; i < GLOBALS.reports.valid.length; i++) {
             var reportType = GLOBALS.reports.valid[i];
-            if (reportType == 'stdout' || reportType == 'pandas' || reportType == 'example') {
-                continue;
-            }
             if ((websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id][reportType] == true) || job.reports.includes(reportType) == true) {
             } else {
                 var option = new Option(reportType, reportType);
@@ -959,7 +958,7 @@ function showJobListPage () {
                                             if (job.reports.includes(reportType)) {
                                                 delete reportRunning[job.id][reportType];
                                                 delete websubmitReportBeingGenerated[job.id][reportType];
-                                                if (Object.keys(reportRunning[job.id]) == 0) {
+                                                if (Object.keys(reportRunning[job.id]).length == 0) {
                                                     delete reportRunning[job.id];
                                                     delete websubmitReportBeingGenerated[job.id];
                                                 }
