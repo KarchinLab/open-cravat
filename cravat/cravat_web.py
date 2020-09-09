@@ -31,8 +31,7 @@ import logging
 from cravat import constants
 import time
 import cravat.util
-if sys.platform == 'win32':
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 SERVER_ALREADY_RUNNING = -1
 
 sysconf = au.get_system_conf()
@@ -77,6 +76,11 @@ parser.add_argument('result',
 def setup(args):
     try:
         global loop
+        if sys.platform == 'win32': # Required to use asyncio subprocesses
+            loop = asyncio.ProactorEventLoop()
+            asyncio.set_event_loop(loop)
+        else:
+            loop = asyncio.get_event_loop()
         loop = asyncio.get_event_loop()
         global headless
         headless = args.headless
