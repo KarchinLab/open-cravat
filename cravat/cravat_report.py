@@ -22,6 +22,8 @@ import cravat.cravat_class
 from types import SimpleNamespace
 import nest_asyncio
 nest_asyncio.apply()
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class CravatReport:
 

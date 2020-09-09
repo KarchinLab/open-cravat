@@ -29,7 +29,8 @@ import glob
 import nest_asyncio
 nest_asyncio.apply()
 import re
-
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 # Custom system conf
 pre_parser = argparse.ArgumentParser(add_help=False)
 pre_parser.add_argument('--system-option', dest='system_option', nargs='*', default=None)

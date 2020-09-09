@@ -8,6 +8,9 @@ import json
 import re
 import time
 import asyncio
+import platform
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class FilterColumn(object):
 
