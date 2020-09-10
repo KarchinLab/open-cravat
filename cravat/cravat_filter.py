@@ -9,7 +9,8 @@ import re
 import time
 import asyncio
 import platform
-if sys.platform == 'win32':
+import sys
+if sys.platform == 'win32' and sys.version_info >= (3,8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class FilterColumn(object):

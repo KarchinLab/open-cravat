@@ -22,7 +22,8 @@ import cravat.cravat_class
 from types import SimpleNamespace
 import nest_asyncio
 nest_asyncio.apply()
-if sys.platform == 'win32':
+import sys
+if sys.platform == 'win32' and sys.version_info >= (3,8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class CravatReport:
