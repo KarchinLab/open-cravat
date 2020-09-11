@@ -630,6 +630,8 @@ async def serve_runwidget_post (request):
             pass
         else:
             val = '"' + val + '"'
+        if sys.platform == 'win32':
+            val = val.replace('\\', '\\\\')
         val = json.loads(val)
         new_queries[k] = val
     queries = new_queries
