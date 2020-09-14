@@ -1,4 +1,3 @@
-#try:
 from http.server import HTTPServer, CGIHTTPRequestHandler
 from socketserver import TCPServer
 import os

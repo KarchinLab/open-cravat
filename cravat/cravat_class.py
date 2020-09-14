@@ -29,6 +29,9 @@ import glob
 import nest_asyncio
 nest_asyncio.apply()
 import re
+import sys
+if sys.platform == 'win32' and sys.version_info >= (3,8):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # Custom system conf
 pre_parser = argparse.ArgumentParser(add_help=False)
@@ -918,7 +921,7 @@ class Cravat (object):
                 confs = "'" + confs.replace("'", '"') + "'"
                 arg_dict['confs'] = confs
         if self.args.forcedinputformat is not None:
-            arg_dict['format', self.args.forcedinputformat]
+            arg_dict['format'] = self.args.forcedinputformat
         if self.args.unique_variants:
             arg_dict['unique_variants'] = True
         self.announce_module(module)

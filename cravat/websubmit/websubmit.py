@@ -151,7 +151,7 @@ class FileRouter(object):
         run_name = os.path.basename(run_path)
         report_path = None
         if report_type in self.report_extensions:
-            ext = self.report_extensions.get(report_type, '.'+report_type)
+            ext = self.report_extensions.get(report_type, '.' + report_type)
             report_path = [run_path + ext]
         else:
             reporter = au.get_local_module_info(report_type + 'reporter')
@@ -588,6 +588,7 @@ async def get_job_log (request):
 def get_valid_report_types():
     reporter_infos = au.get_local_module_infos(types=['reporter'])
     report_types = [x.name.split('reporter')[0] for x in reporter_infos]
+    report_types = [v for v in report_types if not v in ['text', 'pandas', 'stdout', 'example']]
     return report_types
 
 async def get_report_types(request):
@@ -609,7 +610,10 @@ async def generate_report(request):
     report_generation_ps[job_id][report_type] = True
     p = await asyncio.create_subprocess_shell(' '.join(run_args), stderr=asyncio.subprocess.PIPE)
     out, err = await p.communicate()
-    del report_generation_ps[job_id][report_type]
+    if report_type in report_generation_ps[job_id]:
+        del report_generation_ps[job_id][report_type]
+    if job_id in report_generation_ps and len(report_generation_ps[job_id]) == 0:
+        del report_generation_ps[job_id]
     response = 'done'
     if len(err) > 0:
         logger = logging.getLogger()

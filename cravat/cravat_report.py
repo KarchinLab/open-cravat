@@ -22,6 +22,9 @@ import cravat.cravat_class
 from types import SimpleNamespace
 import nest_asyncio
 nest_asyncio.apply()
+import sys
+if sys.platform == 'win32' and sys.version_info >= (3,8):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 class CravatReport:
 
@@ -698,6 +701,15 @@ def run_reporter (*inargs, **inkwargs):
     args = cravat.util.get_args(parser, inargs, inkwargs)
     global au
     dbpath = args.dbpath
+    # Check if exists
+    if not os.path.exists(dbpath):
+        exit(f'{dbpath} not found')
+    # Check if database
+    try:
+        with sqlite3.connect(dbpath) as db:
+            db.execute('select * from info')
+    except:
+        exit(f'{dbpath} is not an OC database')
     compatible_version, db_version, oc_version = util.is_compatible_version(dbpath)
     if not compatible_version:
         if args.silent == False:

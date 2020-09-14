@@ -26,7 +26,6 @@ install_manager = None
 install_queue = None
 install_state = None
 install_worker = None
-install_ws = None
 local_modules_changed = None
 
 def get_filepath (path):
@@ -194,8 +193,7 @@ def start_worker ():
         install_worker = Process(target=fetch_install_queue, args=(install_queue, install_state, local_modules_changed))
         install_worker.start()
 
-async def send_socket_msg ():
-    global install_ws
+async def send_socket_msg (install_ws):
     data = {}
     data['module'] = install_state['module_name']
     data['msg'] = install_state['message']
@@ -207,7 +205,6 @@ async def send_socket_msg ():
 
 async def connect_websocket (request):
     global install_state
-    global install_ws
     if not install_state:
         install_state['stage'] = ''
         install_state['message'] = ''
@@ -228,7 +225,7 @@ async def connect_websocket (request):
         except concurrent.futures._base.CancelledError:
             return install_ws
         if last_update_time < install_state['update_time']:
-            last_update_time = await send_socket_msg()
+            last_update_time = await send_socket_msg(install_ws)
     return install_ws
 
 async def queue_install (request):
