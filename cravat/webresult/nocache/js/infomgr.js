@@ -221,7 +221,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                         if (select == '' || select == null) {
                             return true;
                         }
-                        var selects = JSON.parse(select);
+                        var selects = JSON.parse(selects);
                         if (Array.isArray(selects) && selects.length == 0) {
                             return true;
                         }
