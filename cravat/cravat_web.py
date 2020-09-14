@@ -349,13 +349,9 @@ class WebServer (object):
         self.app.router.add_static('/store', os.path.join(source_dir, 'webstore'))
         self.app.router.add_static('/result', os.path.join(source_dir, 'webresult'))
         self.app.router.add_static('/submit', os.path.join(source_dir, 'websubmit'))
-        modules_dir = au.get_modules_dir()
-        app_dir = os.path.join(modules_dir, 'app')
-        self.app.router.add_static('/app', app_dir)
         self.app.router.add_get('/heartbeat', heartbeat)
         self.app.router.add_get('/issystemready', is_system_ready)
         self.app.router.add_get('/favicon.ico', serve_favicon)
-        self.app.router.add_get('/app/{module_name}', serve_app)
         ws.start_worker()
         wu.start_worker()
 
