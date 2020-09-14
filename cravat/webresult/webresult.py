@@ -539,6 +539,7 @@ def get_colmodel (tab, colinfo):
                     "listeners":["keyup"]}
                 column['retfilt'] = True
                 column['retfilttype'] = 'between'
+                column['dataType'] = 'float'
                 column['multiseloptions'] = []
             if 'col_genesummary' in d and d['col_genesummary'] == True:
                 genesummary_present = True
