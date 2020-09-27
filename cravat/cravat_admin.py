@@ -462,7 +462,7 @@ parser_install_base = subparsers.add_parser('install-base',
 )
 parser_install_base.add_argument('-f','--force',
     action='store_true',
-    help='Overwrite existing moduels',
+    help='Overwrite existing modules',
 )
 parser_install_base.set_defaults(func=install_base)
 
