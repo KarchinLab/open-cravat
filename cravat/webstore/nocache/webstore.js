@@ -1602,7 +1602,11 @@ function getModuleDetailInstallButton (moduleName, td, buttonDiv) {
 function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     var mInfo = null;
     if (currentTab == 'store') {
-        mInfo = remoteModuleInfo[moduleName];
+        if (localModuleInfo[moduleName].conf.uselocalonstore) {
+            mInfo = localModuleInfo[moduleName].conf;
+        } else {
+            mInfo = remoteModuleInfo[moduleName];
+        }
     } else if (currentTab == 'submit') {
         mInfo = localModuleInfo[moduleName];
     }
@@ -1752,16 +1756,12 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         var otbody = getEl('tbody');
         otbody.id = 'moduledetail-' + currentTab + '-output-tbody';
         addEl(otable, otbody);
-        $.ajax({
-            url: '/store/remotemoduleconfig', 
-            data: {'module': moduleName},
-            success: function (data) {
-                var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
-                var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + currentTab);
-                var outputs = data['output_columns'];
-                if (outputs == undefined) {
-                    return;
-                }
+        if (localModuleInfo[moduleName].conf.uselocalonstore) {
+            var data = mInfo;
+            var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
+            var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + currentTab);
+            var outputs = data['output_columns'];
+            if (outputs != undefined) {
                 var descs = [];
                 for (var i1 = 0; i1 < outputs.length; i1++) {
                     var o = outputs[i1];
@@ -1790,8 +1790,49 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
                         addEl(otbody, otr);
                     }
                 }
-            },
-        });
+            }
+        } else {
+            $.ajax({
+                url: '/store/remotemoduleconfig', 
+                data: {'module': moduleName},
+                success: function (data) {
+                    var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
+                    var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + currentTab);
+                    var outputs = data['output_columns'];
+                    if (outputs == undefined) {
+                        return;
+                    }
+                    var descs = [];
+                    for (var i1 = 0; i1 < outputs.length; i1++) {
+                        var o = outputs[i1];
+                        var desc = '';
+                        if (o['desc'] != undefined) {
+                            desc = o['desc'];
+                        }
+                        descs.push([o['title'], desc]);
+                    }
+                    if (descs.length > 0) {
+                        outputColumnDiv.style.display = 'block';
+                        for (var i1 = 0; i1 < descs.length; i1++) {
+                            var title = descs[i1][0];
+                            var desc = descs[i1][1];
+                            var otr = getEl('tr');
+                            var otd = getEl('td');
+                            var ospan = getEl('span');
+                            ospan.textContent = title;
+                            addEl(otd, ospan);
+                            addEl(otr, otd);
+                            var otd = getEl('td');
+                            var ospan = getEl('span');
+                            ospan.textContent = desc;
+                            addEl(otd, ospan);
+                            addEl(otr, otd);
+                            addEl(otbody, otr);
+                        }
+                    }
+                },
+            });
+        }
         addEl(d, otable);
         addEl(mdDiv, d);
         addClassRecursive(mdDiv, 'moduledetaildiv-' + currentTab + '-elem');
