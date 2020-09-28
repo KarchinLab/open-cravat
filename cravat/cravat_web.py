@@ -73,6 +73,10 @@ parser.add_argument('--debug',
 parser.add_argument('result',
     nargs='?',
     help='Path to a CRAVAT result SQLite file')
+parser.add_argument('--webapp',
+    dest='webapp',
+    default=None,
+    help='Name of OpenCRAVAT webapp module to run')
 
 def setup(args):
     try:
@@ -173,7 +177,13 @@ def run (args):
             global servermode
             host = server.get('host')
             port = server.get('port')
-            if args.result:
+            if args.webapp is not None:
+                index_path = os.path.join(modules_dir, 'webapps', args.webapp, 'index.html')
+                if os.path.exists(index_path) == False:
+                    print(f'Webapp {args.webapp} does not exist. Exiting.')
+                    return
+                url = f'{host}:{port}/webapps/{args.webapp}/index.html'
+            elif args.result:
                 dbpath = args.result
                 if os.path.exists(dbpath) == False:
                     print(f'{dbpath} does not exist. Exiting.')
