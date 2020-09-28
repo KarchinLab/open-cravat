@@ -912,7 +912,7 @@ async def redirect_to_index (request):
         url = '/submit/nocache/index.html'
     return web.HTTPFound(url)
 
-async def load_live_modules ():
+async def load_live_modules (module_names=[]):
     global live_modules
     global live_mapper
     global include_live_modules
@@ -932,21 +932,24 @@ async def load_live_modules ():
     else:
         include_live_modules = []
         exclude_live_modules = []
-    live_modules = {}
-    cravat_conf = au.get_cravat_conf()
-    if 'genemapper' in cravat_conf:
-        default_mapper = cravat_conf['genemapper']
-    else:
-        default_mapper = 'hg38'
-    live_mapper = get_live_mapper(default_mapper)
+    if live_mapper is None:
+        cravat_conf = au.get_cravat_conf()
+        if 'genemapper' in cravat_conf:
+            default_mapper = cravat_conf['genemapper']
+        else:
+            default_mapper = 'hg38'
+        live_mapper = get_live_mapper(default_mapper)
     modules = au.get_local_module_infos(types=['annotator'])
     for module in modules:
-        if module.name in exclude_live_modules:
+        if module.name in live_modules:
             continue
-        if len(include_live_modules) > 0 and module.name not in include_live_modules:
-            continue
-        if 'secondary_inputs' in module.conf:
-            continue
+        if module.name not in module_names:
+            if module.name in exclude_live_modules:
+                continue
+            if len(include_live_modules) > 0 and module.name not in include_live_modules:
+                continue
+            if 'secondary_inputs' in module.conf:
+                continue
         annotator = get_live_annotator(module.name)
         if annotator is None:
             continue
@@ -1037,7 +1040,7 @@ async def get_live_annotation (queries):
         annotators = None
     global live_modules
     global mapper
-    if live_modules is None:
+    if len(live_modules) == 0:
         await load_live_modules()
         response = await live_annotate(input_data, annotators)
     else:
@@ -1119,7 +1122,7 @@ async def import_job (request):
 
 filerouter = FileRouter()
 VIEW_PROCESS = None
-live_modules = None
+live_modules = {}
 include_live_modules = None
 exclude_live_modules = None
 live_mapper = None
