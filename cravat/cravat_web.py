@@ -36,6 +36,7 @@ SERVER_ALREADY_RUNNING = -1
 
 sysconf = au.get_system_conf()
 log_dir = sysconf[constants.log_dir_key]
+modules_dir = sysconf[constants.modules_dir_key]
 log_path = os.path.join(log_dir, 'wcravat.log')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -334,6 +335,26 @@ class WebServer (object):
         await self.site.start()
         self.server_started = True
 
+    def setup_webapp_routes (self):
+        global modules_dir
+        webapps_dir = os.path.join(modules_dir, 'webapps')
+        module_names = os.listdir(webapps_dir)
+        for module_name in module_names:
+            module_dir = os.path.join(webapps_dir, module_name)
+            pypath = os.path.join(module_dir, 'route.py')
+            if os.path.exists(pypath):
+                spec = importlib.util.spec_from_file_location('route', pypath)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                for route in module.routes:
+                    method, path, func_name = route
+                    path = f'/webapps/{module_name}/' + path
+                    self.app.router.add_route(
+                        method, 
+                        path,
+                        func_name
+                    )
+
     def setup_routes (self):
         routes = list()
         routes.extend(ws.routes)
@@ -345,16 +366,32 @@ class WebServer (object):
         for route in routes:
             method, path, func_name = route
             self.app.router.add_route(method, path, func_name)
+        self.app.router.add_get('/webapps/{module}', get_webapp_index)
+        self.setup_webapp_routes()
         source_dir = os.path.dirname(os.path.realpath(__file__))
         self.app.router.add_static('/store', os.path.join(source_dir, 'webstore'))
         self.app.router.add_static('/result', os.path.join(source_dir, 'webresult'))
         self.app.router.add_static('/submit', os.path.join(source_dir, 'websubmit'))
+        self.app.router.add_static(
+            '/webapps',
+            os.path.join(modules_dir, 'webapps')
+        )
         self.app.router.add_get('/heartbeat', heartbeat)
         self.app.router.add_get('/issystemready', is_system_ready)
         self.app.router.add_get('/favicon.ico', serve_favicon)
         ws.start_worker()
         wu.start_worker()
 
+async def get_webapp_index (request):
+    queries = request.rel_url.query
+    url = request.path + '/index.html'
+    if len(request.query) > 0:
+        url = url + '?'
+        for k, v in request.query.items():
+            url += k + '=' + v + '&'
+        url = url.rstrip('&')
+    return web.HTTPFound(url)
+    
 async def serve_favicon (request):
     source_dir = os.path.dirname(os.path.realpath(__file__))
     return web.FileResponse(os.path.join(source_dir, 'favicon.ico'))
