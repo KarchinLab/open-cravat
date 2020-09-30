@@ -744,7 +744,7 @@ def run_reporter (*inargs, **inkwargs):
         try:
             response_t = loop.run_until_complete(reporter.run())
             if args.silent == False:
-                print(f'report created in {os.path.abspath(output_dir)}.')
+                print(f'report created in {os.path.abspath(output_dir)}')
         except:
             if args.silent == False:
                 print(f'report generation failed.')
