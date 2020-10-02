@@ -74,3 +74,5 @@ var separateSample = false;
 var allSamples = [];
 var smartFilters = {};
 var showFilterTabContent = false;
+
+var lastUsedFilterName = null;

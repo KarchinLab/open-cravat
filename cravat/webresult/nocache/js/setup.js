@@ -862,6 +862,7 @@ function savedFilterClick(event) {
 	let filterName = target.text();
 	getSavedFilter(filterName).then((msg) => {
 		filterMgr.updateAll(msg)
+        lastUsedFilterName = filterName;
 	});
 }
 
@@ -1024,6 +1025,20 @@ function displayFilterCount(n) {
     } else {
         warnDiv.css('display','none');
     }
+}
+
+function getFilterFile () {
+    makeFilterJson();
+    var fn = 'filter.json';
+    if (lastUsedFilterName != null && lastUsedFilterName != quickSaveName) {
+        fn = lastUsedFilterName + '.json';
+    }
+    var fn = prompt('Filter file name', fn);
+    var a = getEl('a');
+    a.download = fn;
+    var blob = new Blob([JSON.stringify(filterJson)], {type: 'text/plain'});
+    a.href = window.URL.createObjectURL(blob);
+    a.click();
 }
 
 function makeFilterJson () {
