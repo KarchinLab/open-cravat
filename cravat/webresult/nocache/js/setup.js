@@ -1036,7 +1036,7 @@ function getFilterFile () {
     var fn = prompt('Filter file name', fn);
     var a = getEl('a');
     a.download = fn;
-    var blob = new Blob([JSON.stringify(filterJson)], {type: 'text/plain'});
+    var blob = new Blob([JSON.stringify(filterJson, null, 2)], {type: 'text/plain'});
     a.href = window.URL.createObjectURL(blob);
     a.click();
 }
