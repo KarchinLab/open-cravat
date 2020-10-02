@@ -22,8 +22,10 @@ class CravatFile(object):
 
     def _validate_col_type(self, col_type):
         if col_type not in self.valid_types:
-            raise Exception('Invalid type: %s. Choose from %s' \
-                    %(col_type, ', '.join(self.valid_types)))
+            raise Exception('Invalid column type {} in {}. Choose from {}'.format(
+                    col_type,
+                    self.path,
+                    ', '.join(self.valid_types)))
 
     def get_col_def(self, col_index):
         return self.columns[col_index]
