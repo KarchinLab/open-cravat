@@ -313,8 +313,7 @@ class CravatFilter ():
         await conn.commit()
 
     async def filtertable_exists (self, conn=None, cursor=None):
-        sql = 'select name from sqlite_master where ' +\
-            'type="table" and name="' + self.filtertable + '"'
+        sql = f'select * from viewersetup where datatype="filter" and name="{self.filtername}"'
         await cursor.execute(sql)
         row = await cursor.fetchone()
         if row == None:
@@ -339,11 +338,11 @@ class CravatFilter ():
             self.filterstring = self.filterstring.replace("'", '"')
             self.filter = json.loads(self.filterstring)
         elif self.filtername is not None and filter_table_present:
-            await cursor.execute('select criteria from ' + self.filtertable +
-                ' where name="' + self.filtername + '"')
+            await cursor.execute('select viewersetup from viewersetup' +\
+                ' where datatype="filter" and name="' + self.filtername + '"')
             criteria = await cursor.fetchone()
             if criteria != None:
-                self.filter = json.loads(criteria[0])
+                self.filter = json.loads(criteria[0])['filterSet']
         elif self.filterpath is not None and os.path.exists(self.filterpath):
             with open(self.filterpath) as f:
                 ftype = self.filterpath.split('.')[-1]
