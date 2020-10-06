@@ -236,10 +236,12 @@ class BaseAnnotator(object):
             self.base_cleanup()
             end_time = time.time()
             self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
-            print('        {}: finished at {}'.format(self.module_name, time.asctime(time.localtime(end_time))))
+            if self.args.silent == False:
+                print('        {}: finished at {}'.format(self.module_name, time.asctime(time.localtime(end_time))))
             run_time = end_time - start_time
             self.logger.info('runtime: {0:0.3f}s'.format(run_time))
-            print('        {}: runtime {:0.3f}s'.format(self.module_name, run_time))
+            if self.args.silent == False:
+                print('        {}: runtime {:0.3f}s'.format(self.module_name, run_time))
             if self.update_status_json_flag and self.status_writer is not None:
                 version = self.conf.get('version', 'unknown')
                 self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.conf['title'], self.module_name))
