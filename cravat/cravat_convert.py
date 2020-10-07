@@ -386,22 +386,23 @@ class MasterCravatConverter(object):
                                         wdict['sample_id'] = '__'.join([samp_prefix, wdict['sample_id']])
                                     else:
                                         wdict['sample_id'] = samp_prefix
-                                if 'ref_base' not in wdict or wdict['ref_base'] == '' or wdict['ref_base'] is None:
+                                if 'ref_base' not in wdict or wdict['ref_base'] == '':
                                     wdict['ref_base'] = self.wgsreader.get_bases(chrom, int(wdict['pos']))
-                                if base_re.fullmatch(wdict['ref_base']) is None:
-                                    raise BadFormatError('Invalid reference base')
-                                if wdict['alt_base'] != '*' and base_re.fullmatch(wdict['alt_base']) is None:
-                                    raise BadFormatError('Invalid alternate base')
+                                else:
+                                    ref_base = wdict['ref_base']
+                                    if ref_base == '' and wdict['alt_base'] not in ['A','T','C','G']:
+                                        raise BadFormatError('Reference base required for non SNV')
+                                    elif ref_base is None or ref_base == '':
+                                        wdict['ref_base'] = self.wgsreader.get_bases(chrom, int(pos))
                                 if self.do_liftover:
                                     prelift_wdict = copy.copy(wdict)
                                     wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])
-                                if wdict['alt_base'] == '*':
-                                    new_pos = wdict['pos']
-                                    new_ref = wdict['ref_base']
-                                    new_alt = wdict['alt_base']
-                                else:
-                                    p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
-                                    new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
+                                if base_re.fullmatch(wdict['ref_base']) is None:
+                                    raise BadFormatError('Invalid reference base')
+                                if base_re.fullmatch(wdict['alt_base']) is None:
+                                    raise BadFormatError('Invalid alternate base')
+                                p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
+                                new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
                                 unique, UID = self.vtracker.addVar(wdict['chrom'], new_pos, new_ref, new_alt)
                                 wdict['uid'] = UID
                                 if unique:

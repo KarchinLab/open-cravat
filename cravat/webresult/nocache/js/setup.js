@@ -82,6 +82,7 @@ class FilterManager {
         this.sampleContId = 'filter-cont-sample';
         this.geneContId = 'filter-cont-gene';
         this.variantContId = 'filter-cont-variant'
+
         this.sampleControlClass = 'sample-control'
         this.sampleFilterId = 'sample-select-filt';
         this.sampleFileId = 'sample-list-file';
