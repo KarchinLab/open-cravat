@@ -57,7 +57,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='2.1.1',
+    version='2.1.2',
     description='OpenCRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
@@ -87,6 +87,7 @@ setup(
               'install':InstallCommand,
               },
     install_requires=[
+        'yarl<1.6.0',
         'pyyaml',
         'requests',
         'requests-toolbelt',

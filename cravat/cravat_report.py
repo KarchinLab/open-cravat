@@ -826,5 +826,9 @@ parser.add_argument('--silent',
     action='store_true',
     default=False,
     help='Suppress output to STDOUT')
+parser.add_argument('--system-option',
+    dest='system_option',
+    nargs='*',
+    help='System option in key=value syntax. For example, --system-option modules_dir=/home/user/open-cravat/modules')
 parser.set_defaults(func=run_reporter)
 
