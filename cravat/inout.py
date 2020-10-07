@@ -156,11 +156,14 @@ class CravatReader (CravatFile):
                     elif col_type == 'int':
                         out[col_name] = int(tok)
                     elif col_type == 'float':
-                        tok = json.loads(tok)
-                        if (type(tok) == list):
-                            out[col_name] = ','.join([str(v) for v in tok])
-                        else:
-                            out[col_name] = float(tok)
+                        try:
+                            tok = json.loads(tok)
+                            if (type(tok) == list):
+                                out[col_name] = ','.join([str(v) for v in tok])
+                            else:
+                                out[col_name] = float(tok)
+                        except Exception as e:
+                            tok = None
             yield lnum, l, out
 
     def _open_file (self):
