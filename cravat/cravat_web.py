@@ -348,6 +348,8 @@ class WebServer (object):
     def setup_webapp_routes (self):
         global modules_dir
         webapps_dir = os.path.join(modules_dir, 'webapps')
+        if os.path.exists(webapps_dir) == False:
+            os.mkdir(webapps_dir)
         module_names = os.listdir(webapps_dir)
         for module_name in module_names:
             module_dir = os.path.join(webapps_dir, module_name)
