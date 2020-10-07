@@ -87,6 +87,7 @@ setup(
               'install':InstallCommand,
               },
     install_requires=[
+        'yarl<1.6.0',
         'pyyaml',
         'requests',
         'requests-toolbelt',
