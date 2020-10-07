@@ -5,6 +5,17 @@ import sys
 import oyaml as yaml
 import chardet
 import gzip
+import types
+import inspect
+import logging
+from distutils.version import LooseVersion
+from cravat.cravat_util import max_version_supported_for_migration
+import sqlite3
+import pkg_resources
+import datetime
+import argparse
+from types import SimpleNamespace
+import math
 
 def get_ucsc_bins (start, stop=None):
     if stop is None:
@@ -111,44 +122,8 @@ def translate_codon(bases, fallback=None):
     else:
         return codon_table[bases]
 
-so_severity = ['',
-               '2KD',
-               '2KU',
-               'UT3',
-               'UT5',
-               'INT',
-               'UNK',
-               'SYN',
-               'MIS',
-               'CSS',
-               'IND',
-               'IDV',
-               'INI',
-               'IIV',
-               'STL',
-               'SPL',
-               'STG',
-               'FD1',
-               'FD2',
-               'FSD',
-               'FI1',
-               'FI2',
-               'FSI'
-               ]
-
 def valid_so(so):
     return so in so_severity
-
-def most_severe_so(so_list):
-    return sort_so_severity(so_list)[-1]
-        
-def sort_so_severity(so_list, reverse=False):
-    return sorted(so_list,key=so_severity.index)
-
-def more_severe_so (so1, so2):
-    soi1 = so_severity.index(so1)
-    soi2 = so_severity.index(so2)
-    return soi1 > soi2
 
 def get_caller_name (path):
     path = os.path.abspath(path)
@@ -159,15 +134,37 @@ def get_caller_name (path):
         module_name = basename
     return module_name
 
-def load_class(class_name, path):
+def load_class (path, class_name=None):
     """Load a class from the class's name and path. (dynamic importing)"""
     path_dir = os.path.dirname(path)
     sys.path = [path_dir] + sys.path
-    spec = importlib.util.spec_from_file_location(class_name, path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    module = None
+    module_class = None
+    module_name = os.path.basename(path).split('.')[0]
+    try:
+        module = __import__(module_name)
+    except:
+        try:
+            spec = importlib.util.spec_from_file_location(class_name, path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        except:
+            raise
+            logger = logging.getLogger('cravat')
+            logger.exception(f'{module_name} could not be loaded.')
+            print(f'{module_name} is not found')
+    if module is not None:
+        if class_name is not None:
+            module_class = getattr(module, class_name)
+        else:
+            for n in dir(module):
+                if n.startswith('Cravat') or n == 'Mapper' or n == 'Reporter':
+                    c = getattr(module, n)
+                    if inspect.isclass(c):
+                        module_class = c
+                        break
     del sys.path[0]
-    return getattr(mod, class_name)
+    return module_class
 
 def get_directory_size(start_path):
     """
@@ -188,15 +185,111 @@ def get_argument_parser_defaults(parser):
             }
 
 def detect_encoding (path):
+    if ' ' not in path:
+        path = path.strip('"')
     if path.endswith('.gz'):
         f = gzip.open(path)
     else:
         f = open(path, 'rb')
     detector = chardet.universaldetector.UniversalDetector()
-    for line in f:
+    for n,line in enumerate(f):
+        if n>100:
+            break
         detector.feed(line)
         if detector.done:
             break
     detector.close()
     f.close()
-    return detector.result['encoding']
+    encoding = detector.result['encoding']
+    # utf-8 is superset of ascii that may include chars
+    # not in the first 100 lines
+    if encoding == 'ascii':
+        return 'utf-8'
+    else:
+        return encoding
+
+def is_compatible_version (dbpath):
+    db = sqlite3.connect(dbpath)
+    c = db.cursor()
+    oc_version = LooseVersion(pkg_resources.get_distribution('open-cravat').version)
+    sql = 'select colval from info where colkey="open-cravat"'
+    c.execute(sql)
+    r = c.fetchone()
+    compatible = None
+    db_version = '0.0.0'
+    if r is None:
+        compatible = False
+    else:
+        db_version = LooseVersion(r[0])
+        if db_version < max_version_supported_for_migration:
+            compatible = False
+        else:
+            compatible = True
+    return compatible, db_version, oc_version
+
+def is_url (s):
+    if s.startswith('http://') or s.startswith('https://'):
+        return True
+    else:
+        return False
+
+def get_current_time_str ():
+    t = datetime.datetime.now()
+    return t.strftime('%Y:%m:%d %H:%M:%S')
+
+def get_args (parser, inargs, inkwargs):
+    # Combines arguments in various formats.
+    inarg_dict = {}
+    for inarg in inargs:
+        t = type(inarg)
+        if t == list: # ['-t', 'text']
+            if inarg[0].endswith('.py'):
+                inarg = inarg[1:]
+            inarg_dict.update(**vars(parser.parse_args(inarg)))
+        elif t == argparse.Namespace: # already parsed by a parser.
+            inarg_dict.update(**vars(inarg))
+        elif t == types.SimpleNamespace:
+            inarg_dict.update(**vars(inarg))
+        elif t == dict: # {'output_dir': '/rt'}
+            inarg_dict.update(inarg)
+    inarg_dict.update(inkwargs)
+    arg_dict = get_argument_parser_defaults(parser)
+    arg_dict.update(inarg_dict)
+    args = SimpleNamespace(**arg_dict)
+    return args
+
+def filter_affected_cols(filter):
+    cols = set()
+    if 'column' in filter:
+        cols.add(filter['column'])
+    else:
+        for rule in filter['rules']:
+            cols.update(filter_affected_cols(rule))
+    return cols
+
+def humanize_bytes(num, binary=False):
+    """Human friendly file size"""
+    exp2unit_dec = {0:'B',1:'kB',2:'MB',3:'GB'}
+    exp2unit_bin = {0:'B',1:'KiB',2:'MiB',3:'GiB'}
+    max_exponent = 3
+    if binary:
+        base = 1024
+    else:
+        base = 1000
+    if num > 0:
+        exponent = math.floor(math.log(num, base))
+        if exponent > max_exponent:
+            exponent = max_exponent
+    else:
+        exponent = 0
+    quotient = float(num) / base**exponent
+    if binary:
+        unit = exp2unit_bin[exponent]
+    else:
+        unit = exp2unit_dec[exponent]
+    quot_str = '{:.1f}'.format(quotient)
+    # No decimal for byte level sizes
+    if exponent == 0:
+        quot_str = quot_str.rstrip('0').rstrip('.')
+    return '{quotient} {unit}'.format(quotient=quot_str, unit=unit)
+

@@ -7,13 +7,14 @@
     <link rel='stylesheet' href='/result/js/jquery-ui-1.12.1.custom/jquery-ui.css' />
     <link rel="shortcut icon" href='#'>
     <link rel="icon" href="/submit/logo_transparent.png" />
-    <link rel="stylesheet" href="/submit/nocache/websubmit.css?ver=1.7.0">
-    <link rel="stylesheet" href="/store/nocache/webstore.css?ver=1.7.0">
+    <link rel="stylesheet" href="/submit/nocache/websubmit.css">
+    <link rel="stylesheet" href="/store/nocache/webstore.css">
     <script type='text/javascript' src='/submit/pqselect.dev.customforsubmit.js'></script>
     <link rel='stylesheet' href='/result/css/pqselect.min.css' />
-    <script src="/submit/nocache/websubmit.js?ver=1.7.0"></script>
-    <script src='/store/nocache/webstore.js?ver=1.7.0'></script>
+    <script src="/submit/nocache/websubmit.js"></script>
+    <script src='/store/nocache/webstore.js'></script>
     <script src='/submit/Chart.bundle.min.js'></script>
+    <script src='/store/js/showdown-1.9.1.min.js'></script>
     <script>
         $(document).ready(function() {
             websubmit_run();
@@ -68,9 +69,9 @@
                             <div id='assembly-select-div'>
                                 Genome:
                                 <select id="assembly-select">
-                                    <option value="hg38">hg38</option>
-                                    <option value="hg19" selected=true>hg19</option>
-                                    <option value="hg18">hg18</option>
+                                    <option value="hg38">hg38/GRCh38</option>
+                                    <option value="hg19" selected=true>hg19/GRCh37</option>
+                                    <option value="hg18">hg18/GRCh36</option>
                                 </select>
                             </div>
                         </td>
@@ -144,8 +145,10 @@
         <table id="jobs-table">
             <thead>
             <tr>
+                <th class='tableheadercell'>Job ID</th>
                 <th class='tableheadercell'>Input File</th>
-                <th class='tableheadercell' style='width: 100px;'># Annotators</th>
+                <th class='tableheadercell' style='width: 100px; cursor: default;' title='Number of unique variants'>Variants</th>
+                <th class='tableheadercell' style='width: 100px;'>Annotators</th>
                 <th class='tableheadercell'>Genome</th>
                 <th class='tableheadercell'>Note</th>
                 <th class='tableheadercell'>Status</th>
@@ -157,6 +160,7 @@
             </tbody>
         </table>
         <div id='jobs-table-pagination-div' style='float: right;'>
+            
             <button id='jobs-table-pagination-prev-button' class='butn inactive-download-button' onclick='onClickJobsListPrevPage();'><</button>
             <button id='jobs-table-pagination-next-button' class='butn inactive-download-button' onclick='onClickJobsListNextPage();'>></button>
         </div>
@@ -278,12 +282,19 @@
     <br />
     <span class="settingsdiv-elem">Modules dir: </span><input id='settings_modules_dir_input' class="settingsdiv-elem" autocomplete="on" type='text' size='60' />
     <br />
-    <span class="settingsdiv-elem">Warn if total input file size is larger than: </span><input id='settings_sum_input_size_warning_cutoff' class="settingsdiv-elem" type='text' size='5' /><span>MB</span>
+    <span class="settingsdiv-elem">Limit the sum of input file sizes to: </span><input id='settings_gui_input_size_limit' class="settingsdiv-elem" type='text' size='5' /><span>MB</span>
     <br />
     <span class="settingsdiv-elem">Maximum number of concurrent jobs: </span><input id='settings_max_num_concurrent_jobs' class="settingsdiv-elem" type='text' size='10' />
     <br />
     <span class="settingsdiv-elem">Maximum number of concurrent annotators per job: </span><input id='settings_max_num_concurrent_annotators_per_job' class="settingsdiv-elem" type='text' size='10' />
     <br />
+    <button class="settingdsiv-elem butn" onclick='onClickStoreUpdateRemoteButton()'>Refresh store</button>
+    <p>
+        <button id='job-import' class='butn' onclick="document.getElementById('job-import-file').click()">
+            Import Job
+            <input type="file" id="job-import-file" style='display:none;' onchange="importJob()">
+        </button>
+    </p>
     <button class="settingsdiv-elem butn" onclick='onClickSaveSystemConf();'>Save</button>
     <button class="settingsdiv-elem butn" onclick='resetSystemConf();'>Reset</button>
 </div> <!-- settingsdiv -->
@@ -307,6 +318,14 @@
 
 <div id='update-remote-spinner-div'>
     <div id='update-remote-spinner-div-text'>Updating store information...</div>
+</div>
+
+<div id='report_generation_div'>
+    Choose a report type:
+    <select id='report_generation_div_select'></select>
+    <br />
+    <br />
+    <button id='report_generation_generate_button' onclick='createJobReport'>Generate</button><button id='report_generation_close_button' onclick='closeReportGenerationDiv'>Cancel</button>
 </div>
 
 </body>

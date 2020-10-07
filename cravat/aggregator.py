@@ -224,9 +224,10 @@ class Aggregator (object):
                             continue
                         col_set.update(r[0].split(';'))
                     col_cats = list(col_set)
-                    col_cats.sort()
+                    col_cats = self.do_reportsub_col_cats(coldef.name, col_cats)
                 else:
                     col_cats = self.do_reportsub_col_cats(coldef.name, col_cats)
+                col_cats.sort()
                 coldef.categories = col_cats
                 self.update_col_def(coldef)
         self.dbconn.commit()
@@ -339,12 +340,12 @@ class Aggregator (object):
         for col_def in columns:
             name = col_def.name
             sql_type = self.cr_type_to_sql[col_def.type]
-            s = name + ' ' + sql_type
+            s = '"' + name + '" ' + sql_type
             col_def_strings.append(s)
         if not self.append:
             q = f'drop table if exists {self.table_name}'
             self.cursor.execute(q)
-            q = 'create table {} ({});'.format(
+            q = 'create table "{}" ({});'.format(
                 self.table_name,
                 ', '.join(col_def_strings),
             )

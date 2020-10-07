@@ -70,3 +70,7 @@ var geneRows = {};
 var colgroupkeysWithMissingCols = [];
 
 var separateSample = false;
+
+var allSamples = [];
+var smartFilters = {};
+var showFilterTabContent = false;

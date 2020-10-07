@@ -15930,7 +15930,10 @@
 	cFilterData.convert = function(cd, dataType) {
 		cd = (cd == null) ? "" : cd;
 		if (dataType == "string") {
-			cd = $.trim(cd).toUpperCase()
+            if (typeof(cd) != "string") {
+                cd = JSON.stringify(cd);
+            }
+            cd = $.trim(cd).toUpperCase();
 		} else {
 			if (dataType == "date") {
 				cd = Date.parse(cd)

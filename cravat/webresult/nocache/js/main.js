@@ -27,7 +27,7 @@ function getExportContent (tabName) {
                 continue;
             }
             colExist = true;
-            colNos.push(colNo);
+            colNos.push(col.dataIndx);
             numCols++;
 			colTitles.push(col.title.replace(' ', '_'));
 			var filter = col.filter;
@@ -83,7 +83,11 @@ function getExportContent (tabName) {
 	var rows = $grids[tabName].pqGrid('option', 'dataModel').data;
 	for (var rowNo = 0; rowNo < rows.length; rowNo++) {
 		var row = rows[rowNo];
-		content += row[colNos[0]];
+        var value = row[colNos[0]];
+        if (value == null) {
+            value = '';
+        }
+		content += value;
 		for (var i = 1; i < colNos.length; i++) {
 			var value = row[colNos[i]];
 			if (value == null) {
@@ -336,7 +340,7 @@ function addGeneLevelToVariantLevel () {
         for (var j = i + 1; j < vcm.length; j++) {
             var cmi = vcm[i];
             var cmj = vcm[j];
-            if (cmi.name == 'base' || cmi.name == 'tagsampler' || cmi.name.startsWith('hg')) {
+            if (cmi.name == 'base' || cmi.name == 'tagsampler') {
                 continue;
             }
             if (cmi.title.toLowerCase() > cmj.title.toLowerCase()) {
@@ -663,11 +667,10 @@ function unlockTabs () {
 
 function notifyToUseFilter () {
 	var div = document.getElementById('infonoticediv');
-	div.style.background = 'red';
-	div.textContent = 
-		'Number of variants exceeds viewer limit (' + NUMVAR_LIMIT + ').' +
-		'Use the filter tab to reduce the number of ' +
-		'variants to ' + NUMVAR_LIMIT + ' or less, and click Update to load filtered variants.';
+    div.style.background = 'red';
+    div.textContent = 
+         `The OpenCRAVAT viewer cannot display more than ${NUMVAR_LIMIT} variants. `
+        +`Use the filter tab to load at most ${NUMVAR_LIMIT} variants.`;
 	showInfonoticediv();
     document.getElementById('tabhead_filter').style.pointerEvents = 'auto';
 }
@@ -1046,6 +1049,7 @@ function webresult_run () {
     } else if (dbPath != null) {
         var toks = dbPath.split('/');
         document.title = 'CRAVAT: ' + toks[toks.length - 1];
+        jobId = toks[toks.length - 1];
     }
     var resizeTimeout = null;
     $(window).resize(function(event) {

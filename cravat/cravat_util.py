@@ -12,6 +12,8 @@ import time
 from pathlib import Path
 import datetime
 from . import admin_util as au
+from distutils.version import LooseVersion
+from cravat import util
 
 def get_args ():
     args = parser.parse_args()
@@ -124,32 +126,7 @@ def converttohg38 (args):
         print('  ' + table + ': done.', count, 'rows converted')
     newdb.commit()
 
-migrate_functions = {}
-supported_oc_ver = ['1.4.4', '1.4.5', '1.5.0', '1.5.1', '1.5.2','1.5.3','1.6.0','1.6.1']
-
-def check_result_db_version (dbpath, version):
-    try:
-        db = sqlite3.connect(dbpath)
-        cursor = db.cursor()
-        q = 'select colval from info where colkey="open-cravat"'
-        cursor.execute(q)
-        r = cursor.fetchone()
-        if r is None:
-            raise
-        else:
-            oc_ver = r[0]
-        if oc_ver != version:
-            raise
-        checked = True
-    except:
-        raise
-    finally:
-        cursor.close()
-        db.close()
-    return True
-
 def migrate_result_144_to_145 (dbpath):
-    check_result_db_version(dbpath, '1.4.4')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     cursor.execute('update info set colval="1.4.5" where colkey="open-cravat"')
@@ -158,7 +135,6 @@ def migrate_result_144_to_145 (dbpath):
     db.close()
 
 def migrate_result_145_to_150 (dbpath):
-    check_result_db_version(dbpath, '1.4.5')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     # gene
@@ -286,11 +262,10 @@ def migrate_result_145_to_150 (dbpath):
         cursor.execute(q)
         r = cursor.fetchone()
         ips = r[0].split(';')
-        input_paths_str = '{'
+        input_paths = {}
         for i in range(len(ips)):
-            input_paths_str += "'" + str(i) + "': '" + ips[i] + "', "
-        input_paths_str += '}'
-        q = 'insert into info values ("_input_paths", "{}")'.format(input_paths_str)
+            input_paths[i] = ips[i]
+        q = 'insert into info values ("_input_paths", "{}")'.format(json.dumps(input_paths).replace('"', "'"))
         cursor.execute(q)
     q = 'select colval from info where colkey="_annotator_desc"'
     cursor.execute(q)
@@ -305,7 +280,6 @@ def migrate_result_145_to_150 (dbpath):
     db.close()
 
 def migrate_result_150_to_151 (dbpath):
-    check_result_db_version(dbpath, '1.5.0')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     cursor.execute('update info set colval="1.5.1" where colkey="open-cravat"')
@@ -314,7 +288,6 @@ def migrate_result_150_to_151 (dbpath):
     db.close()
 
 def migrate_result_151_to_152 (dbpath):
-    check_result_db_version(dbpath, '1.5.1')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     cursor.execute('update info set colval="1.5.2" where colkey="open-cravat"')
@@ -323,7 +296,6 @@ def migrate_result_151_to_152 (dbpath):
     db.close()
 
 def migrate_result_152_to_153 (dbpath):
-    check_result_db_version(dbpath, '1.5.2')
     db = sqlite3.connect(dbpath)
     cursor = db.cursor()
     q = 'select col_def from variant_header where col_name="base__coding"'
@@ -360,14 +332,173 @@ def migrate_result_161_to_170 (dbpath):
     c.execute('create unique index unq_info_colkey on info (colkey)')
     c.execute('update info set colval="1.7.0" where colkey="open-cravat"')
 
-migrate_functions['1.4.4'] = migrate_result_144_to_145
-migrate_functions['1.4.5'] = migrate_result_145_to_150
-migrate_functions['1.5.0'] = migrate_result_150_to_151
-migrate_functions['1.5.1'] = migrate_result_151_to_152
-migrate_functions['1.5.2'] = migrate_result_152_to_153
-migrate_functions['1.5.3'] = migrate_result_153_to_160
-migrate_functions['1.6.0'] = migrate_result_160_to_161
-migrate_functions['1.6.1'] = migrate_result_161_to_170
+def migrate_result_170_to_180 (dbpath):
+    db = sqlite3.connect(dbpath)
+    c = db.cursor()
+    c.execute('update info set colval="1.8.0" where colkey="open-cravat"')
+    db.commit()
+
+def migrate_result_180_to_181 (dbpath):
+    db = sqlite3.connect(dbpath)
+    c = db.cursor()
+    try:
+        c.execute('alter table variant add column base__cchange text')
+    except:
+        pass
+    c.execute('update variant set base__cchange=null')
+    c.execute('insert or replace into variant_header values ("base__cchange", \'{"index": 10, "name": "base__cchange", "title": "cDNA change", "type": "string", "categories": [], "width": 70, "desc": null, "hidden": false, "category": null, "filterable": false, "link_format": null, "genesummary": false}\')')
+    c.execute('update variant_header set col_def=\'{"index": 11, "name": "base__achange", "title": "Protein Change", "type": "string", "categories": [], "width": 55, "desc": null, "hidden": false, "category": null, "filterable": false, "link_format": null, "genesummary": false}\' where col_name="base__achange"')
+    c.execute('update variant_header set col_def=\'{"index": 12, "name": "base__all_mappings", "title": "All Mappings", "type": "string", "categories": [], "width": 100, "desc": null, "hidden": true, "category": null, "filterable": false, "link_format": null, "genesummary": false}\' where col_name="base__all_mappings"')
+    c.execute('update variant_header set col_def=\'{"index": null, "name": "tagsampler__numsample", "title": "Sample Count", "type": "int", "categories": [], "width": 55, "desc": "Number of samples which contain the variant.", "hidden": true, "category": null, "filterable": false, "link_format": null, "genesummary": false}\' where col_name="tagsampler__numsample"')
+    c.execute('update variant_header set col_def=\'{"index": null, "name": "tagsampler__samples", "title": "Samples", "type": "string", "categories": ["s0", "s1", "s2", "s3", "s4"], "width": 65, "desc": "Samples which contain the variant.", "hidden": false, "category": "multi", "filterable": true, "link_format": null, "genesummary": false}\' where col_name="tagsampler__samples"')
+    c.execute('update variant_header set col_def=\'{"index": null, "name": "tagsampler__tags", "title": "Tags", "type": "string", "categories": [], "width": 65, "desc": "Variant tags from the input file.", "hidden": true, "category": null, "filterable": true, "link_format": null, "genesummary": false}\' where col_name="tagsampler__tags"')
+    c.execute(('update variant_reportsub set subdict='
+               '\'{"so": {"PTR": "processed_transcript", "TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", '
+               '"MIR": "miRNA", "LNC": "lnc_RNA", "PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", '
+               '"RTI": "retained_intron", "NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", '
+               '"PSE": "pseudogene", "TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", '
+               '"PRR": "pseudogene_rRNA", "UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", '
+               '"RIB": "ribozyme", "SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", '
+               '"TCG": "TR_C_gene", "TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", '
+               '"IJP": "IG_J_pseudogene", "IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", '
+               '"SCR": "scRNA", "VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", '
+               '"2KD": "2kb_downstream_variant", "2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", '
+               '"INT": "intron_variant", "UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", "STG": "stop_gained", '
+               '"FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", "IND": "inframe_deletion", '
+               '"MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, "all_so": {"PTR": "processed_transcript", '
+               '"TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", "MIR": "miRNA", "LNC": "lnc_RNA", '
+               '"PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", "RTI": "retained_intron", '
+               '"NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", "PSE": "pseudogene", '
+               '"TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", "PRR": "pseudogene_rRNA", '
+               '"UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", "RIB": "ribozyme", '
+               '"SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", "TCG": "TR_C_gene", '
+               '"TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", "IJP": "IG_J_pseudogene", '
+               '"IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", "SCR": "scRNA", '
+               '"VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", "2KD": "2kb_downstream_variant", '
+               '"2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", "INT": "intron_variant", '
+               '"UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", "STG": "stop_gained", '
+               '"FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", "IND": "inframe_deletion", '
+               '"MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
+               '"all_mappings": {"PTR": "processed_transcript", "TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", '
+               '"MIR": "miRNA", "LNC": "lnc_RNA", "PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", '
+               '"RTI": "retained_intron", "NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", "PSE": "pseudogene", '
+               '"TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", "PRR": "pseudogene_rRNA", '
+               '"UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", "RIB": "ribozyme", '
+               '"SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", "TCG": "TR_C_gene", '
+               '"TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", "IJP": "IG_J_pseudogene", '
+               '"IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", "SCR": "scRNA", '
+               '"VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", "2KD": "2kb_downstream_variant", '
+               '"2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", "INT": "intron_variant", '
+               '"UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", '
+               '"STG": "stop_gained", "FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", '
+               '"IND": "inframe_deletion", "MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
+               '"coding": {"Y": "Yes"}}\' where module="base"'))
+    c.execute(('update gene_reportsub set subdict='
+               '\'{"so": {"PTR": "processed_transcript", "TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", '
+               '"MIR": "miRNA", "LNC": "lnc_RNA", "PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", '
+               '"RTI": "retained_intron", "NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", '
+               '"PSE": "pseudogene", "TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", '
+               '"PRR": "pseudogene_rRNA", "UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", '
+               '"RIB": "ribozyme", "SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", '
+               '"TCG": "TR_C_gene", "TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", '
+               '"IJP": "IG_J_pseudogene", "IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", '
+               '"SCR": "scRNA", "VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", '
+               '"2KD": "2kb_downstream_variant", "2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", '
+               '"INT": "intron_variant", "UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", "STG": "stop_gained", '
+               '"FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", "IND": "inframe_deletion", '
+               '"MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, "all_so": {"PTR": "processed_transcript", '
+               '"TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", "MIR": "miRNA", "LNC": "lnc_RNA", '
+               '"PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", "RTI": "retained_intron", '
+               '"NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", "PSE": "pseudogene", '
+               '"TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", "PRR": "pseudogene_rRNA", '
+               '"UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", "RIB": "ribozyme", '
+               '"SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", "TCG": "TR_C_gene", '
+               '"TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", "IJP": "IG_J_pseudogene", '
+               '"IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", "SCR": "scRNA", '
+               '"VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", "2KD": "2kb_downstream_variant", '
+               '"2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", "INT": "intron_variant", '
+               '"UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", "STG": "stop_gained", '
+               '"FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", "IND": "inframe_deletion", '
+               '"MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
+               '"all_mappings": {"PTR": "processed_transcript", "TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene", '
+               '"MIR": "miRNA", "LNC": "lnc_RNA", "PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene", '
+               '"RTI": "retained_intron", "NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript", "PSE": "pseudogene", '
+               '"TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA", "PRR": "pseudogene_rRNA", '
+               '"UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene", "RIB": "ribozyme", '
+               '"SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene", "TCG": "TR_C_gene", '
+               '"TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene", "IJP": "IG_J_pseudogene", '
+               '"IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene", "SCR": "scRNA", '
+               '"VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA", "2KD": "2kb_downstream_variant", '
+               '"2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant", "INT": "intron_variant", '
+               '"UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant", '
+               '"MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", '
+               '"STG": "stop_gained", "FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", '
+               '"IND": "inframe_deletion", "MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"}, '
+               '"coding": {"Y": "Yes"}}\' where module="base"'))
+    c.execute('update info set colval="1.8.1" where colkey="open-cravat"')
+    c.execute('SELECT name FROM sqlite_master WHERE type="index" AND name="sample_idx_2"')
+    r = c.fetchone()
+    if r is None:
+        c.execute('create index sample_idx_2 on sample (base__sample_id, base__uid)')
+    db.commit()
+
+def migrate_result_201_to_210(dbpath):
+    db = sqlite3.connect(dbpath)
+    cursor = db.cursor()
+    try:
+        q = 'select * from smartfilters'
+        cursor.execute(q)
+    except sqlite3.OperationalError:
+        return
+    sfs = {row[0]:json.loads(row[1]) for row in cursor}
+    cols_to_index = set()
+    for sf in constants.base_smartfilters:
+        cols_to_index |= util.filter_affected_cols(sf['filter'])
+    for module_sfs in sfs.values():
+        for sf in module_sfs:
+            cols_to_index |= util.filter_affected_cols(sf['filter'])
+    cursor.execute('pragma table_info(variant)')
+    variant_cols = {row[1] for row in cursor}
+    cursor.execute('pragma table_info(gene)')
+    gene_cols = {row[1] for row in cursor}
+    for col in cols_to_index:
+        if col in variant_cols:
+            q = f'select name from sqlite_master where type="index" and name="sf_variant_{col}"'
+            cursor.execute(q)
+            r = cursor.fetchone()
+            if r is None:
+                q = f'create index sf_variant_{col} on variant ({col})'
+                cursor.execute(q)
+        if col in gene_cols:
+            q = f'select name from sqlite_master where type="index" and name="sf_gene_{col}"'
+            cursor.execute(q)
+            r = cursor.fetchone()
+            if r is None:
+                q = f'create index sf_gene_{col} on gene ({col})'
+                cursor.execute(q)
+    db.commit()
+
+migrate_functions = {}
+migrate_functions['1.4.5'] = migrate_result_144_to_145
+migrate_functions['1.5.0'] = migrate_result_145_to_150
+migrate_functions['1.5.1'] = migrate_result_150_to_151
+migrate_functions['1.5.2'] = migrate_result_151_to_152
+migrate_functions['1.5.3'] = migrate_result_152_to_153
+migrate_functions['1.6.0'] = migrate_result_153_to_160
+migrate_functions['1.6.1'] = migrate_result_160_to_161
+migrate_functions['1.7.0'] = migrate_result_161_to_170
+migrate_functions['1.8.0'] = migrate_result_170_to_180
+migrate_functions['2.0.1'] = migrate_result_180_to_181
+migrate_functions['2.1.0'] = migrate_result_201_to_210
+migrate_checkpoints = [LooseVersion(v) for v in list(migrate_functions.keys())]
+migrate_checkpoints.sort()
+#max_version_supported_for_migration = max(migrate_checkpoints)
+max_version_supported_for_migration = LooseVersion('1.7.0')
 
 def migrate_result (args):
     def get_dbpaths (dbpaths, path):
@@ -392,7 +523,7 @@ def migrate_result (args):
         print('    ' + dbpath)
     for dbpath in dbpaths:
         print('converting [{}]...'.format(dbpath))
-        global supported_oc_ver
+        global migrate_checkpoints
         try:
             db = sqlite3.connect(dbpath)
             cursor = db.cursor()
@@ -407,22 +538,34 @@ def migrate_result (args):
                 print('  Result DB is too old for migration.')
                 continue
             else:
-                oc_ver = r[0]
+                oc_ver = LooseVersion(r[0])
         except:
             print('  [{}] is not open-cravat result DB or too old for migration.'.format(dbpath))
             continue
-        if oc_ver not in supported_oc_ver:
-            print('  OpenCRAVAT version of {} is not supported for migration. Supported versions are {}.'.format(oc_ver, str(supported_oc_ver)))
+        if oc_ver >= max(migrate_checkpoints):
+            print(f'  OpenCRAVAT version of {oc_ver} does not need migration.')
+            continue
+        elif oc_ver < LooseVersion('1.4.4'):
+            print(f'  OpenCRAVAT version of {oc_ver} is not supported for migration.')
             continue
         try:
             if args.backup:
                 bak_path = dbpath + '.bak'
                 print('  making backup copy [{}]...'.format(bak_path))
                 shutil.copy(dbpath, bak_path)
-            ver_idx = supported_oc_ver.index(oc_ver)
-            for mig_ver in supported_oc_ver[ver_idx:]:
-                print('  converting from open-cravat version {}...'.format(mig_ver))
-                migrate_functions[mig_ver](dbpath)
+            ver_idx = None
+            for i,target_ver in enumerate(migrate_checkpoints):
+                if oc_ver < target_ver:
+                    ver_idx = i
+                    break
+            if ver_idx is None:
+                continue
+            for target_ver in migrate_checkpoints[ver_idx:]:
+                target_ver = str(target_ver)
+                print(f'  converting open-cravat version to {target_ver}...')
+                migrate_functions[target_ver](dbpath)
+                with sqlite3.connect(dbpath) as db:
+                    db.execute('update info set colval=? where colkey="open-cravat"',(target_ver,))
         except:
             traceback.print_exc()
             print('  converting [{}] was not successful.'.format(dbpath))

@@ -17,6 +17,10 @@ import json
 import gzip
 from collections import defaultdict
 from cravat.base_converter import BaseConverter
+import cravat
+import re
+
+STDIN = 'stdin'
 
 class VTracker:
     """ This helper class is used to identify the unique variants from the input 
@@ -62,12 +66,8 @@ class MasterCravatConverter(object):
     """
     ALREADYCRV = 2
 
-    def __init__(self, args=None, status_writer=None):
-        args = args if args else sys.argv
-        self.status_writer = status_writer
-        self.input_paths = []
-        self.input_files = []
-        self.input_format = None
+    def __init__(self, *inargs, **inkwargs):
+        self._parse_cmd_args(inargs, inkwargs)
         self.logger = None
         self.crv_writer = None
         self.crs_writer = None
@@ -77,24 +77,23 @@ class MasterCravatConverter(object):
         self.converters = {}
         self.possible_formats = []
         self.ready_to_convert = False
-        self.cmd_args = None
-        self.output_dir = None
-        self.output_base_fname = None
         self.chromdict = {'chrx': 'chrX', 'chry': 'chrY', 'chrMT': 'chrM', 'chrMt': 'chrM', 'chr23': 'chrX', 'chr24': 'chrY'}
-        self._parse_cmd_args(args)
         self._setup_logger()
         self.vtracker = VTracker(deduplicate=not(self.unique_variants))
+        self.wgsreader = cravat.get_wgs_reader(assembly='hg38')
 
-    def _parse_cmd_args(self, args):
+    def _parse_cmd_args(self, inargs, inkwargs):
         """ Parse the arguments in sys.argv """
         parser = argparse.ArgumentParser()
         parser.add_argument('path',
             help='Path to this converter\'s python module')
         parser.add_argument('inputs',
-            nargs='+',
+            nargs='*',
+            default=None,
             help='Files to be converted to .crv')
         parser.add_argument('-f',
             dest='format',
+            default=None,
             help='Specify an input format')
         parser.add_argument('-n', '--name',
             dest='name',
@@ -102,8 +101,8 @@ class MasterCravatConverter(object):
         parser.add_argument('-d', '--output-dir',
             dest='output_dir',
             help='Output directory. Default is input file directory.')
-        parser.add_argument('-l','--liftover',
-            dest='liftover',
+        parser.add_argument('-l','--genome',
+            dest='genome',
             choices=['hg38']+list(constants.liftover_chain_paths.keys()),
             default='hg38',
             help='Input gene assembly. Will be lifted over to hg38')
@@ -116,50 +115,75 @@ class MasterCravatConverter(object):
             default=False,
             action='store_true',
             help=argparse.SUPPRESS)
-        parsed_args = parser.parse_args(args)
-        self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs]
-        self.input_path_dict = {}
-        self.input_path_dict2 = {}
-        for i in range(len(self.input_paths)):
-            self.input_path_dict[i] = self.input_paths[i]
-            self.input_path_dict2[self.input_paths[i]] = i
+        parsed_args = cravat.util.get_args(parser, inargs, inkwargs)
+        self.input_format = None
         if parsed_args.format:
             self.input_format = parsed_args.format
+        if parsed_args.inputs is None:
+            raise ExpectedException('Input files are not given.')
+        self.pipeinput = False
+        if parsed_args.inputs is not None and len(parsed_args.inputs) == 1 and parsed_args.inputs[0] == '-':
+            self.pipeinput = True
+        self.input_paths = []
+        if self.pipeinput == False:
+            self.input_paths = [os.path.abspath(x) for x in parsed_args.inputs if x != '-']
+        else:
+            self.input_paths = [f'./{STDIN}']
         self.input_dir = os.path.dirname(self.input_paths[0])
+        self.input_path_dict = {}
+        self.input_path_dict2 = {}
+        if self.pipeinput == False:
+            for i in range(len(self.input_paths)):
+                self.input_path_dict[i] = self.input_paths[i]
+                self.input_path_dict2[self.input_paths[i]] = i
+        else:
+            self.input_path_dict[0] = self.input_paths[0]
+            self.input_path_dict2[STDIN] = 0
+        self.output_dir = None
         if parsed_args.output_dir:
             self.output_dir = parsed_args.output_dir
         else:
             self.output_dir = self.input_dir
         if not(os.path.exists(self.output_dir)):
             os.makedirs(self.output_dir)
+        self.output_base_fname = None
         if parsed_args.name:
             self.output_base_fname = parsed_args.name
         else:
             self.output_base_fname = os.path.basename(self.input_paths[0])
-        self.input_assembly = parsed_args.liftover
+        self.input_assembly = parsed_args.genome
         self.do_liftover = self.input_assembly != 'hg38'
         if self.do_liftover:
             self.lifter = LiftOver(constants.liftover_chain_paths[self.input_assembly])
         else:
             self.lifter = None
         self.status_fpath = os.path.join(self.output_dir, self.output_base_fname + '.status.json')
-        self.confs = None
+        self.conf = {}
         if parsed_args.confs is not None:
             confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
-            self.confs = json.loads(confs)
+            self.conf = json.loads(confs)
+        self.conf.update(parsed_args.conf)
         self.unique_variants = parsed_args.unique_variants
+        if parsed_args.status_writer:
+            self.status_writer = parsed_args.status_writer
+        else:
+            self.status_writer = None
 
     def setup (self):
         """ Do necesarry pre-run tasks """
         if self.ready_to_convert: return
         # Open file handle to input path
-        for input_path in self.input_paths:
-            encoding = detect_encoding(input_path)
-            if input_path.endswith('.gz'):
-                f = gzip.open(input_path, mode='rt', encoding=encoding)
-            else:
-                f = open(input_path, encoding=encoding)
-            self.input_files.append(f)
+        self.input_files = []
+        if self.pipeinput == False:
+            for input_path in self.input_paths:
+                encoding = detect_encoding(input_path)
+                if input_path.endswith('.gz'):
+                    f = gzip.open(input_path, mode='rt', encoding=encoding)
+                else:
+                    f = open(input_path, encoding=encoding)
+                self.input_files.append(f)
+        else:
+            self.input_files = [sys.stdin]
         # Read in the available converters
         self._initialize_converters()
         # Select the converter that matches the input format
@@ -173,7 +197,10 @@ class MasterCravatConverter(object):
         """ Open a log file and set up log handler """
         self.logger = logging.getLogger('cravat.converter')
         self.logger.info('started: %s' %time.asctime())
-        self.logger.info('input files: %s' %', '.join(self.input_paths))
+        if self.pipeinput == False:
+            self.logger.info('Input file(s): %s' %', '.join(self.input_paths))
+        else:
+            self.logger.info(f'Input file(s): {STDIN}')
         if self.do_liftover:
             self.logger.info('liftover from %s' %self.input_assembly)
         self.error_logger = logging.getLogger('error.converter')
@@ -213,31 +240,45 @@ class MasterCravatConverter(object):
                 raise ExpectedException ('Invalid input format. Please select from [%s]' \
                          %', '.join(self.possible_formats))
         else:
-            valid_formats = []
-            first_file = self.input_files[0]
-            first_file.seek(0)
-            for converter_name, converter in self.converters.items():
-                check_success = converter.check_format(first_file)
+            if self.pipeinput == False:
+                valid_formats = []
+                first_file = self.input_files[0]
                 first_file.seek(0)
-                if check_success: valid_formats.append(converter_name)
-            if len(valid_formats) == 0:
-                msg = 'Input format could not be determined. Additional input format converters are available. View available converters in the store or with "oc module ls -a -t converter"'
-                raise ExpectedException(msg)
-            elif len(valid_formats) > 1:
-                raise ExpectedException('Input format ambiguous in [%s]. '\
-                            %', '.join(valid_formats)\
-                         +'Please specify an input format.')
+                for converter_name, converter in self.converters.items():
+                    check_success = converter.check_format(first_file)
+                    first_file.seek(0)
+                    if check_success: valid_formats.append(converter_name)
+                if len(valid_formats) == 0:
+                    fn = os.path.basename(first_file.name)
+                    msg = f'Input format could not be determined for file {fn}. Additional input format converters are available. View available converters in the store or with "oc module ls -a -t converter"'
+                    raise ExpectedException(msg)
+                elif len(valid_formats) > 1:
+                    raise ExpectedException('Input format ambiguous in [%s]. '\
+                                %', '.join(valid_formats)\
+                             +'Please specify an input format.')
+                else:
+                    self.input_format = valid_formats[0]
             else:
-                self.input_format = valid_formats[0]
+                if self.input_format is None:
+                    msg = 'Input should be specified with --input-format option when input is given through pipe'
+                    print(f'\n{msg}')
+                    raise ExpectedException(msg)
         self.primary_converter = self.converters[self.input_format]
         self.primary_converter.output_dir = self.output_dir
         self.primary_converter.run_name = self.output_base_fname
-        if len(self.input_files) > 1:
-            for f in self.input_files[1:]:
-                if not self.primary_converter.check_format(f):
-                    raise ExpectedException('Inconsistent file types')
-                else:
-                    f.seek(0)
+        self.primary_converter.input_assembly = self.input_assembly
+        module_name = self.primary_converter.format_name + '-converter'
+        if module_name in self.conf:
+            if hasattr(self.primary_converter, 'conf') == False:
+                self.primary_converter.conf = {}
+            self.primary_converter.conf.update(self.conf[module_name])
+        if self.pipeinput == False:
+            if len(self.input_files) > 1:
+                for f in self.input_files[1:]:
+                    if not self.primary_converter.check_format(f):
+                        raise ExpectedException('Inconsistent file types')
+                    else:
+                        f.seek(0)
         self.logger.info('input format: %s' %self.input_format)
 
     def _open_output_files (self):
@@ -301,15 +342,24 @@ class MasterCravatConverter(object):
         multiple_files = len(self.input_files) > 1
         fileno = 0
         total_lnum = 0
+        base_re = re.compile('^[ATGC]+|[-]+$')
+        write_lnum = 0
         for f in self.input_files:
+            if self.pipeinput == True:
+                fname = STDIN
+            else:
+                fname = f.name
             fileno += 1
             self.primary_converter.setup(f)
-            f.seek(0)
+            if self.pipeinput == False:
+                f.seek(0)
             read_lnum = 0
-            write_lnum = 0
             num_errors = 0
-            for l in f:
+            if self.pipeinput:
+                cur_fname = STDIN
+            else:
                 cur_fname = os.path.basename(f.name)
+            for l in f:
                 samp_prefix = cur_fname
                 read_lnum += 1
                 try:
@@ -320,62 +370,68 @@ class MasterCravatConverter(object):
                     if all_wdicts is BaseConverter.IGNORE:
                         continue
                     total_lnum += 1
+                    if all_wdicts:
+                        UIDMap = []
+                        no_unique_var = 0
+                        for wdict_no in range(len(all_wdicts)):
+                            wdict = all_wdicts[wdict_no]
+                            chrom = wdict['chrom']
+                            pos = wdict['pos']
+                            if chrom is not None:
+                                if not chrom.startswith('chr'):
+                                    chrom = 'chr' + chrom
+                                wdict['chrom'] = self.chromdict.get(chrom, chrom)
+                                if multiple_files:
+                                    if wdict['sample_id']:
+                                        wdict['sample_id'] = '__'.join([samp_prefix, wdict['sample_id']])
+                                    else:
+                                        wdict['sample_id'] = samp_prefix
+                                if 'ref_base' not in wdict or wdict['ref_base'] == '' or wdict['ref_base'] is None:
+                                    wdict['ref_base'] = self.wgsreader.get_bases(chrom, int(wdict['pos']))
+                                if base_re.fullmatch(wdict['ref_base']) is None:
+                                    raise BadFormatError('Invalid reference base')
+                                if wdict['alt_base'] == '*' and base_re.fullmatch(wdict['alt_base']) is None:
+                                    raise BadFormatError('Invalid alternate base')
+                                if self.do_liftover:
+                                    prelift_wdict = copy.copy(wdict)
+                                    wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])
+                                if wdict['alt_base'] == '*':
+                                    new_pos = wdict['pos']
+                                    new_ref = wdict['ref_base']
+                                    new_alt = wdict['alt_base']
+                                else:
+                                    p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
+                                    new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
+                                unique, UID = self.vtracker.addVar(wdict['chrom'], new_pos, new_ref, new_alt)
+                                wdict['uid'] = UID
+                                if unique:
+                                    write_lnum += 1
+                                    self.crv_writer.write_data(wdict)
+                                    if self.do_liftover:
+                                        prelift_wdict['uid'] = UID
+                                        self.crl_writer.write_data(prelift_wdict)
+                                    # addl_operation errors shouldnt prevent variant from writing
+                                    try:
+                                        self.primary_converter.addl_operation_for_unique_variant(wdict, no_unique_var)
+                                    except Exception as e:
+                                        self._log_conversion_error(read_lnum, l, e)
+                                    no_unique_var += 1
+                                if UID not in UIDMap: 
+                                    #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
+                                    self.crm_writer.write_data({
+                                        'original_line': read_lnum, 
+                                        'tags': wdict['tags'], 
+                                        'uid': UID, 
+                                        'fileno': self.input_path_dict2[fname]
+                                    })
+                                    UIDMap.append(UID)
+                            self.crs_writer.write_data(wdict)
+                    else:
+                        raise ExpectedException('No conversion result')
                 except Exception as e:
                     num_errors += 1
                     self._log_conversion_error(read_lnum, l, e)
                     continue
-                if all_wdicts:
-                    UIDMap = []
-                    no_unique_var = 0
-                    for wdict_no in range(len(all_wdicts)):
-                        wdict = all_wdicts[wdict_no]
-                        chrom = wdict['chrom']
-                        if chrom is not None:
-                            if not chrom.startswith('chr'): chrom = 'chr' + chrom
-                            wdict['chrom'] = self.chromdict.get(chrom, chrom)
-                            if multiple_files:
-                                if wdict['sample_id']:
-                                    wdict['sample_id'] = '__'.join([samp_prefix, wdict['sample_id']])
-                                else:
-                                    wdict['sample_id'] = samp_prefix
-                            if wdict['alt_base'] == '*':
-                                new_pos = wdict['pos']
-                                new_ref = wdict['ref_base']
-                                new_alt = wdict['alt_base']
-                            else:
-                                if wdict['ref_base'] == '' and wdict['alt_base'] not in ['A','T','C','G']:
-                                    num_errors += 1
-                                    e = BadFormatError('Reference base required for non SNV')
-                                    self._log_conversion_error(read_lnum, l, e)
-                                    continue
-                                if self.do_liftover:
-                                    prelift_wdict = copy.copy(wdict)
-                                    try:
-                                        wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], wdict['pos'])
-                                    except LiftoverFailure as e:
-                                        num_errors += 1
-                                        self._log_conversion_error(read_lnum, l, e)
-                                        continue
-                                p, r, a = int(wdict['pos']), wdict['ref_base'], wdict['alt_base']
-                                new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
-                            unique, UID = self.vtracker.addVar(wdict['chrom'], new_pos, new_ref, new_alt)
-                            wdict['uid'] = UID
-                            if unique:
-                                write_lnum += 1
-                                self.crv_writer.write_data(wdict)
-                                if self.do_liftover:
-                                    prelift_wdict['uid'] = UID
-                                    self.crl_writer.write_data(prelift_wdict)
-                                self.primary_converter.addl_operation_for_unique_variant(wdict, no_unique_var)
-                                no_unique_var += 1
-                            if UID not in UIDMap: 
-                                #For this input line, only write to the .crm if the UID has not yet been written to the map file.   
-                                self.crm_writer.write_data({'original_line': read_lnum, 'tags': wdict['tags'], 'uid': UID, 'fileno': self.input_path_dict2[f.name]})
-                                UIDMap.append(UID)
-                        self.crs_writer.write_data(wdict)
-                else:
-                    e = ExpectedException('No conversion result')
-                    self._log_conversion_error(read_lnum, l, e)
             cur_time = time.time()
             if total_lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
                 self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format('Converter', cur_fname, read_lnum))
@@ -396,14 +452,66 @@ class MasterCravatConverter(object):
         self.status_writer.queue_status_update('status', 'Finished {} ({})'.format('Converter', self.primary_converter.format_name))
         return total_lnum, self.primary_converter.format_name
 
-    def liftover(self, old_chrom, old_pos):
-        new_coords = self.lifter.convert_coordinate(old_chrom, int(old_pos))
-        if new_coords != None and len(new_coords) > 0:
-            new_chrom = new_coords[0][0]
-            new_pos = new_coords[0][1]
-            return new_chrom, new_pos
+    def liftover(self, chrom, pos, ref, alt):
+        reflen = len(ref)
+        altlen = len(alt)
+        if reflen == 1 and altlen == 1:
+            res = self.lifter.convert_coordinate(chrom, pos - 1)
+            if res is None or len(res) == 0:
+                raise LiftoverFailure('Liftover failure')
+            if len(res) > 1:
+                raise LiftoverFailure('Liftover failure')
+            try:
+                el = res[0]
+            except:
+                raise LiftoverFailure('Liftover failure')
+            newchrom = el[0]
+            newpos = el[1] + 1
+        elif reflen >= 1 and altlen == 0: # del
+            pos1 = pos
+            pos2 = pos + reflen - 1
+            res1 = self.lifter.convert_coordinate(chrom, pos1 - 1)
+            res2 = self.lifter.convert_coordinate(chrom, pos2 - 1)
+            if res1 is None or res2 is None or len(res1) == 0 or len(res2) == 0:
+                raise LiftoverFailure('Liftover failure')
+            if len(res1) > 1 or len(res2) > 1:
+                raise LiftoverFailure('Liftover failure')
+            el1 = res1[0]
+            el2 = res2[0]
+            newchrom1 = el1[0]
+            newpos1 = el1[1] + 1
+            newchrom2 = el2[0]
+            newpos2 = el2[1] + 1
+            newchrom = newchrom1
+            newpos = newpos1
+            newpos = min(newpos1, newpos2)
+        elif reflen == 0 and altlen >= 1: # ins
+            res = self.lifter.convert_coordinate(chrom, pos - 1)
+            if res is None or len(res) == 0:
+                raise LiftoverFailure('Liftover failure')
+            if len(res) > 1:
+                raise LiftoverFailure('Liftover failure')
+            el = res[0]
+            newchrom = el[0]
+            newpos = el[1] + 1
         else:
-            raise LiftoverFailure('Liftover failure')
+            pos1 = pos
+            pos2 = pos + reflen - 1
+            res1 = self.lifter.convert_coordinate(chrom, pos1 - 1)
+            res2 = self.lifter.convert_coordinate(chrom, pos2 - 1)
+            if res1 is None or res2 is None or len(res1) == 0 or len(res2) == 0:
+                raise LiftoverFailure('Liftover failure')
+            if len(res1) > 1 or len(res2) > 1:
+                raise LiftoverFailure('Liftover failure')
+            el1 = res1[0]
+            el2 = res2[0]
+            newchrom1 = el1[0]
+            newpos1 = el1[1] + 1
+            newchrom2 = el2[0]
+            newpos2 = el2[1] + 1
+            newchrom = newchrom1
+            newpos = min(newpos1, newpos2)
+        return [newchrom, newpos]
 
     def _log_conversion_error(self, ln, line, e):
         """ Log exceptions thrown by primary converter.

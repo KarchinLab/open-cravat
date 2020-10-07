@@ -134,7 +134,7 @@ def stream_multipart_post(url, fields, stage_handler=None, stages=50, **kwargs):
     r = requests.post(url, data=monitor, headers=headers, **kwargs)
     return r
 
-def stream_to_file(url, fpath, stage_handler=None, stages=50, install_state=None):
+def stream_to_file(url, fpath, stage_handler=None, stages=50, install_state=None, **kwargs):
     """
     Stream the content at a url to a file. Optionally pass in a callback 
     function which is called when the uploaded size passes each of 
@@ -143,7 +143,7 @@ def stream_to_file(url, fpath, stage_handler=None, stages=50, install_state=None
     try:
         r = requests.get(url, stream=True, timeout=(3, None))
     except requests.exceptions.ConnectionError:
-        r = types.SimpleNamespaces()
+        r = types.SimpleNamespace()
         r.status_code = 503
     if r.status_code == 200:
         total_size = int(r.headers.get('content-length', 0))

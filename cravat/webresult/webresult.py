@@ -1,7 +1,7 @@
 import os
 import webbrowser
 import multiprocessing
-import aiosqlite3
+import aiosqlite
 import urllib.parse
 import json
 import sys
@@ -31,7 +31,7 @@ async def get_nowg_annot_modules (request):
     # Below is not run. Delete the above and change the below so that remote manifest's required_annotator is used.
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     remote_widget_modules = au.get_remote_module_infos_of_type('webviewerwidget')
     remote_widget_names = remote_widget_modules.keys()
@@ -72,27 +72,32 @@ async def get_nowg_annot_modules (request):
 async def get_filter_save_names (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
-    conn = await aiosqlite3.connect(dbpath)
-    cursor = await conn.cursor()
-    table = 'viewersetup'
-    content = []
-    r = await table_exists(cursor, table)
-    if r == False:
-        pass
-    else:
-        q = 'select distinct name from ' + table + ' where datatype="filter"'
-        await cursor.execute(q)
-        rs = await cursor.fetchall()
-        for r in rs:
-            content.append(r[0])
-    await cursor.close()
-    await conn.close()
+    conn = await get_db_conn(dbpath)
+    try:
+        cursor = await conn.cursor()
+        table = 'viewersetup'
+        content = []
+        r = await table_exists(cursor, table)
+        if r == False:
+            pass
+        else:
+            q = 'select distinct name from ' + table + ' where datatype="filter"'
+            await cursor.execute(q)
+            rs = await cursor.fetchall()
+            for r in rs:
+                content.append(r[0])
+        await cursor.close()
+        await conn.close()
+    except:
+        await cursor.close()
+        await conn.close()
+        raise
     return web.json_response(content)
 
 async def get_layout_save_names (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     table = 'viewersetup'
     content = []
@@ -112,7 +117,7 @@ async def rename_layout_setting (request):
     job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
     new_name = queries['newname']
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     table = 'viewersetup'
     r = await table_exists(cursor, table)
@@ -125,11 +130,17 @@ async def rename_layout_setting (request):
     content = {}
     return web.json_response(content)
 
+async def get_db_conn (dbpath):
+    if dbpath is None:
+        return None
+    conn = await aiosqlite.connect(dbpath)
+    return conn
+
 async def delete_layout_setting (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     table = 'viewersetup'
     r = await table_exists(cursor, table)
@@ -146,7 +157,7 @@ async def load_layout_setting (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     table = 'viewersetup'
     r = await table_exists(cursor, table)
@@ -169,7 +180,7 @@ async def load_filter_setting (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     table = 'viewersetup'
     r = await table_exists(cursor, table)
@@ -193,7 +204,7 @@ async def save_layout_setting (request):
     job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
     savedata = queries['savedata']
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     table = 'viewersetup'
     r = await table_exists(cursor, table)
@@ -204,7 +215,7 @@ async def save_layout_setting (request):
     await cursor.execute(q)
     await conn.commit()
     await cursor.close()
-    conn.close()
+    await conn.close()
     content = 'saved'
     return web.json_response(content)
 
@@ -213,7 +224,7 @@ async def save_filter_setting (request):
     job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
     savedata = queries['savedata']
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     table = 'viewersetup'
     r = await table_exists(cursor, table)
@@ -239,7 +250,7 @@ async def delete_filter_setting (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
     name = queries['name']
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     table = 'viewersetup'
     r = await table_exists(cursor, table)
@@ -256,9 +267,8 @@ async def delete_filter_setting (request):
     return web.json_response(content)
 
 async def get_status (request):
-    queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     q = 'select * from info where colkey not like "\_%" escape "\\"'
     await cursor.execute(q)
@@ -270,7 +280,6 @@ async def get_status (request):
     return web.json_response(content)
 
 def get_widgetlist (request):
-    queries = request.rel_url.query
     content = []
     modules = au.get_local_module_infos_of_type('webviewerwidget')
     for module_name in modules:
@@ -288,8 +297,8 @@ def get_widgetlist (request):
     return web.json_response(content)
 
 async def get_count (request):
-    queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
+    queries = await request.post()
     tab = queries['tab']
     if 'filter' in queries:
         filterstring = queries['filter']
@@ -301,14 +310,15 @@ async def get_count (request):
     dbbasename = os.path.basename(dbpath)
     print('calling count for {}'.format(dbbasename))
     t = time.time()
-    n = await cf.getcount(level=tab)
+    n = await cf.exec_db(cf.getcount, level=tab)
+    await cf.close_db()
     t = round(time.time() - t, 3)
     print('count obtained from {} in {}s'.format(dbbasename, t))
     content = {'n': n}        
     return web.json_response(content)
 
 async def get_result (request):
-    queries = request.rel_url.query
+    queries = await request.post()
     job_id, dbpath = await get_jobid_dbpath(request)
     dbname = os.path.basename(dbpath)
     tab = queries['tab']
@@ -327,12 +337,12 @@ async def get_result (request):
         reporter_name, 
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
-    args = ['oc', 'report', dbpath, '--module-name', reporter_name]
+    arg_dict = {'dbpath': dbpath, 'module_name': reporter_name}
     if confpath != None:
-        args.extend(['-c', confpath])
+        arg_dict['confpath'] = confpath
     if filterstring != None:
-        args.extend(['--filterstring', filterstring])
-    args.append('--nogenelevelonvariantlevel')
+        arg_dict['filterstring'] = filterstring
+    arg_dict['nogenelevelonvariantlevel'] = True
     if 'separatesample' in queries:
         separatesample = queries['separatesample']
         if separatesample == 'true':
@@ -342,15 +352,12 @@ async def get_result (request):
     else:
         separatesample = False
     if separatesample:
-        args.append('--separatesample')
-    reporter = m.Reporter(args, None)
+        arg_dict['separatesample'] = True
+    arg_dict['reporttypes'] = ['text']
+    reporter = m.Reporter(arg_dict)
     await reporter.prep()
-    #print('  getting result [{}] from {} for viewer...'.format(tab, dbname))
-    #t = time.time()
     data = await reporter.run(tab=tab)
     data['modules_info'] = await get_modules_info(request)
-    #t = round(time.time() - start_time, 3)
-    #print('  result [{}] obtained from {} in {}s. packing...'.format(tab, dbname, t))
     content = {}
     content['stat'] = {'rowsreturned': True, 
                    'wherestr':'', 
@@ -370,7 +377,7 @@ async def get_result (request):
 async def get_result_levels (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     sql = 'select name from sqlite_master where type="table" and ' +\
         'name like "%_header"'
@@ -389,6 +396,7 @@ async def get_result_levels (request):
     return web.json_response(content)
 
 async def get_jobid_dbpath (request):
+    global servermode
     method = request.method
     if method == 'GET':
         queries = request.rel_url.query
@@ -494,6 +502,7 @@ def get_colmodel (tab, colinfo):
                 'link_format': d.get('link_format'),
                 }
             if d['col_type'] == 'string':
+                column['align'] = 'left'
                 if d['col_ctg'] == 'single':
                     column['filter'] = {
                         'type': 'select',
@@ -523,12 +532,14 @@ def get_colmodel (tab, colinfo):
                     column['retfilttype'] = 'regexp'
                     column['multiseloptions'] = []
             elif d['col_type'] == 'float' or d['col_type'] == 'int':
+                column['align'] = 'right'
                 column['filter'] = {
                     "type":"textbox",
                     "condition":"between",
                     "listeners":["keyup"]}
                 column['retfilt'] = True
                 column['retfilttype'] = 'between'
+                column['dataType'] = 'float'
                 column['multiseloptions'] = []
             if 'col_genesummary' in d and d['col_genesummary'] == True:
                 genesummary_present = True
@@ -545,14 +556,24 @@ async def get_colinfo (dbpath, confpath, filterstring):
         reporter_name, 
         [os.path.join(os.path.dirname(__file__),)])
     m = imp.load_module(reporter_name, f, fn, d)
-    args = ['oc', 'report', dbpath, '--module-name', reporter_name]
+    arg_dict = {'dbpath': dbpath, 'module_name': reporter_name}
     if confpath != None:
-        args.extend(['-c', confpath])
+        arg_dict['confpath'] = confpath
     if filterstring != None:
-        args.extend(['--filterstring', filterstring])
-    reporter = m.Reporter(args, None)
-    await reporter.prep()
-    colinfo = await reporter.get_variant_colinfo()
+        arg_dict['filterstring'] = filterstring
+    arg_dict['reporttypes'] = ['text']
+    reporter = m.Reporter(arg_dict)
+    try:
+        await reporter.prep()
+        colinfo = await reporter.get_variant_colinfo()
+        await reporter.close_db()
+        if reporter.cf is not None:
+            await reporter.cf.close_db()
+    except:
+        await reporter.close_db()
+        if reporter.cf is not None:
+            await reporter.cf.close_db()
+        raise
     return colinfo
 
 async def table_exists (cursor, table):
@@ -610,6 +631,8 @@ async def serve_runwidget_post (request):
             pass
         else:
             val = '"' + val + '"'
+        if sys.platform == 'win32':
+            val = val.replace('\\', '\\\\')
         val = json.loads(val)
         new_queries[k] = val
     queries = new_queries
@@ -630,7 +653,7 @@ async def serve_runwidget_post (request):
 async def get_modules_info (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     q = 'select colval from info where colkey="_annotator_desc"'
     await cursor.execute(q)
@@ -647,13 +670,15 @@ async def get_modules_info (request):
             v = t2[1].strip().strip("'").replace("'", "\'")
             d[k] = v
         content = d
+    await cursor.close()
+    await conn.close()
     return content
 
 async def load_smartfilters (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
     sfs = {'base':base_smartfilters}
-    conn = await aiosqlite3.connect(dbpath)
+    conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     sf_table = 'smartfilters'
     if await table_exists(cursor, sf_table):
@@ -662,14 +687,31 @@ async def load_smartfilters (request):
         r = await cursor.fetchall()
         for mname, definitions in r:
             sfs[mname] = json.loads(definitions)
+    await cursor.close()
+    await conn.close()
     return web.json_response(sfs)
+
+async def get_samples (request):
+    _, dbpath = await get_jobid_dbpath(request)
+    conn = await get_db_conn(dbpath)
+    cursor = await conn.cursor()
+    sample_table = 'sample'
+    samples = []
+    if await table_exists(cursor, sample_table):
+        q = f'select distinct base__sample_id from {sample_table};'
+        await cursor.execute(q)
+        rows = await cursor.fetchall()
+        samples = [r[0] for r in rows]
+    await cursor.close()
+    await conn.close()
+    return web.json_response(samples)
 
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
 routes.append(['GET', '/result/service/getsummarywidgetnames', get_summary_widget_names])
 routes.append(['GET', '/result/service/getresulttablelevels', get_result_levels])
-routes.append(['GET', '/result/service/result', get_result])
-routes.append(['GET', '/result/service/count', get_count])
+routes.append(['POST', '/result/service/result', get_result])
+routes.append(['POST', '/result/service/count', get_count])
 routes.append(['GET', '/result/service/widgetlist', get_widgetlist])
 routes.append(['GET', '/result/service/status', get_status])
 routes.append(['GET', '/result/service/savefiltersetting', save_filter_setting])
@@ -686,4 +728,5 @@ routes.append(['GET', '/result/runwidget/{module}', serve_runwidget])
 routes.append(['POST', '/result/runwidget/{module}', serve_runwidget_post])
 routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
 routes.append(['GET', '/result/service/smartfilters', load_smartfilters])
+routes.append(['GET', '/result/service/samples', get_samples])
 

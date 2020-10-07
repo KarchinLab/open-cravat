@@ -1,84 +1,77 @@
-try:
-    from http.server import HTTPServer, CGIHTTPRequestHandler
-    from socketserver import TCPServer
-    import os
-    import webbrowser
-    import multiprocessing
-    import sqlite3
-    import urllib.parse
-    import json
-    import sys
-    import argparse
-    import imp
-    import oyaml as yaml
-    import re
-    from cravat import ConfigLoader
-    from cravat import admin_util as au
-    from cravat import CravatFilter
-    from cravat.webresult import webresult as wr
-    from cravat.webstore import webstore as ws
-    from cravat.websubmit import websubmit as wu
-    import websockets
-    from aiohttp import web, web_runner
-    import socket
-    import hashlib
-    import platform
-    import asyncio
-    import datetime as dt
-    import requests
-    import traceback
-    import ssl
-    import importlib
-    import socket
-    import concurrent
-    import logging
-    from cravat import constants
-    import time
+from http.server import HTTPServer, CGIHTTPRequestHandler
+from socketserver import TCPServer
+import os
+import webbrowser
+import multiprocessing
+import urllib.parse
+import json
+import sys
+import argparse
+import imp
+import oyaml as yaml
+import re
+from cravat import admin_util as au
+from cravat.webresult import webresult as wr
+from cravat.webstore import webstore as ws
+from cravat.websubmit import websubmit as wu
+import websockets
+from aiohttp import web, web_runner
+import socket
+import hashlib
+import platform
+import asyncio
+import datetime as dt
+import requests
+import traceback
+import ssl
+import importlib
+import socket
+import concurrent
+import logging
+from cravat import constants
+import time
+import cravat.util
 
-    SERVER_ALREADY_RUNNING = -1
+SERVER_ALREADY_RUNNING = -1
 
-    conf = ConfigLoader()
-    sysconf = au.get_system_conf()
-    log_dir = sysconf[constants.log_dir_key]
-    log_path = os.path.join(log_dir, 'wcravat.log')
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+sysconf = au.get_system_conf()
+log_dir = sysconf[constants.log_dir_key]
+log_path = os.path.join(log_dir, 'wcravat.log')
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
-    headless = None
-    servermode = None
-    server_ready = None
-    ssl_enabled = None
-    protocol = None
-    http_only = None
-    sc = None
-    loop = None
-    debug = False
+headless = None
+servermode = None
+server_ready = None
+ssl_enabled = None
+protocol = None
+http_only = None
+sc = None
+loop = None
+debug = False
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--multiuser',
-        dest='servermode',
-        action='store_true',
-        default=False,
-        help='Runs in multiuser mode')
-    parser.add_argument('--headless',
-        action='store_true',
-        default=False,
-        help='do not open the cravat web page')
-    parser.add_argument('--http-only',
-        action='store_true',
-        default=False,
-        help='Force not to accept https connection')
-    parser.add_argument('--debug',
-        dest='debug',
-        action='store_true',
-        default=False,
-        help='Console echoes exceptions written to log file.')
-    parser.add_argument('result',
-        nargs='?',
-        help='Path to a CRAVAT result SQLite file')
-except KeyboardInterrupt:
-    import sys
-    sys.exit(1)
+parser = argparse.ArgumentParser()
+parser.add_argument('--multiuser',
+    dest='servermode',
+    action='store_true',
+    default=False,
+    help='Runs in multiuser mode')
+parser.add_argument('--headless',
+    action='store_true',
+    default=False,
+    help='do not open the cravat web page')
+parser.add_argument('--http-only',
+    action='store_true',
+    default=False,
+    help='Force not to accept https connection')
+parser.add_argument('--debug',
+    dest='debug',
+    action='store_true',
+    default=False,
+    help='Console echoes exceptions written to log file.')
+parser.add_argument('result',
+    nargs='?',
+    help='Path to a CRAVAT result SQLite file')
 
 def setup(args):
     try:
@@ -159,7 +152,7 @@ def wcravat_entrypoint ():
     args = parser.parse_args()
     run(args)
 
-def run(args):
+def run (args):
     log_handler = logging.handlers.TimedRotatingFileHandler(log_path, when='d', backupCount=30)
     log_formatter = logging.Formatter('%(asctime)s: %(message)s', '%Y/%m/%d %H:%M:%S')
     log_handler.setFormatter(log_formatter)
@@ -180,7 +173,17 @@ def run(args):
             host = server.get('host')
             port = server.get('port')
             if args.result:
-                url = f'{host}:{port}/result/index.html?dbpath={args.result}'
+                dbpath = args.result
+                if os.path.exists(dbpath) == False:
+                    print(f'{dbpath} does not exist. Exiting.')
+                    return
+                compatible_version, db_version, oc_version = cravat.util.is_compatible_version(dbpath)
+                if not compatible_version:
+                    print(f'DB version {db_version} of {dbpath} is not compatible with the current OpenCRAVAT ({oc_version}).')
+                    print(f'Consider running "oc util update-result {dbpath}" and running "oc gui {dbpath}" again.')
+                    return
+                else:
+                    url = f'{host}:{port}/result/index.html?dbpath={args.result}'
             else:
                 if server_ready and servermode:
                     url = f'{host}:{port}/server/nocache/login.html'
@@ -195,14 +198,17 @@ def run(args):
             traceback.print_exc()
         logger.info('Exiting...')
         print('Error occurred while starting OpenCRAVAT server.\nCheck {} for details.'.format(log_path))
-        exit()
+    finally:
+        for handler in logger.handlers:
+            handler.close()
+            logger.removeHandler(handler)
+
 parser.set_defaults(func=run)
 
 def get_server():
     global args
     try:
         server = {}
-        conf = ConfigLoader()
         pl = platform.platform()
         if pl.startswith('Windows'):
             def_host = 'localhost'
@@ -215,8 +221,22 @@ def get_server():
             def_host = '0.0.0.0'
         else:
             def_host = 'localhost'
-        host = au.get_system_conf().get('gui_host', def_host)
-        port = au.get_system_conf().get('gui_port', 8060)
+        if ssl_enabled:
+            if 'gui_host_ssl' in sysconf:
+                host = sysconf['gui_host_ssl']
+            elif 'gui_host' in sysconf:
+                host = sysconf['gui_host']
+            else:
+                host = def_host
+            if 'gui_port_ssl' in sysconf:
+                port = sysconf['gui_port_ssl']
+            elif 'gui_port' in sysconf:
+                port = sysconf['gui_port']
+            else:
+                port = 8443
+        else:
+            host = au.get_system_conf().get('gui_host', def_host)
+            port = au.get_system_conf().get('gui_port', 8080)
         server['host'] = host
         server['port'] = port
         return server
@@ -239,7 +259,7 @@ class TCPSitePatched (web_runner.BaseSite):
             host = '0.0.0.0'
         self._host = host
         if port is None:
-            port = 8443 if self._ssl_context else 8080
+            port = 8443 if self._ssl_context else 8060
         self._port = port
         self._reuse_address = reuse_address
         self._reuse_port = reuse_port
@@ -275,6 +295,7 @@ async def middleware (request, handler):
         logger.exception(e)
         if debug:
             traceback.print_exc()
+        return web.HTTPInternalServerError(text=json.dumps({'status':'error','msg':str(e)}))
 
 class WebServer (object):
     def __init__ (self, host=None, port=None, loop=None, ssl_context=None, url=None):
@@ -357,11 +378,18 @@ loop = None
 def main (url=None):
     global args
     try:
+        global loop
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1)
         def wakeup ():
-            global loop
             loop.call_later(0.1, wakeup)
+        def check_local_update(interval):
+            try:
+                ws.handle_modules_changed()
+            except:
+                traceback.print_exc()
+            finally:
+                loop.call_later(interval, check_local_update, interval)
         serv = get_server()
         global protocol
         host = serv.get('host')
@@ -381,9 +409,9 @@ def main (url=None):
         print('OpenCRAVAT is served at {}:{}'.format(serv.get('host'), serv.get('port')))
         logger.info('Serving OpenCRAVAT server at {}:{}'.format(serv.get('host'), serv.get('port')))
         print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')
-        global loop
         loop = asyncio.get_event_loop()
         loop.call_later(0.1, wakeup)
+        loop.call_later(1, check_local_update, 5)
         async def clean_sessions():
             """
             Clean sessions periodically.
@@ -407,10 +435,7 @@ def main (url=None):
             server = WebServer(loop=loop, ssl_context=sc, url=url)
         else:
             server = WebServer(loop=loop, url=url)
-        try:
-            loop.run_forever()
-        except KeyboardInterrupt:
-            pass
+        loop.run_forever()
     except Exception as e:
         logger.exception(e)
         if debug:

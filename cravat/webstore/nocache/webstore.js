@@ -106,7 +106,8 @@ function showPageselect () {
 
 function onClickInstallBaseComponents () {
     document.getElementById('store-systemmodule-msg-div').textContent = '';
-    document.getElementById('store-systemmodule-install-button').disabled = true;
+    var btn = document.getElementById('store-systemmodule-install-button');
+    btn.classList.add('disabled');
     installBaseComponents();
     document.getElementById('messagediv').style.display = 'none';
 }
@@ -138,9 +139,39 @@ function hideSystemModulePage () {
     document.getElementById('store-systemmodule-div').style.display = 'none';
 }
 
+function complementRemoteWithLocal () {
+    var localModuleNames = Object.keys(localModuleInfo);
+    for (var i = 0; i < localModuleNames.length; i++) {
+        var localModuleName = localModuleNames[i];
+        if (localModuleName == 'example_annotator') {
+            continue;
+        }
+        var localModule = localModuleInfo[localModuleName];
+        var remoteModule = remoteModuleInfo[localModuleName];
+        var check2 = localModule.conf.uselocalonstore;
+        var check3 = localModule.conf['private'];
+        if (check2 == true && check3 != true) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/store/localasremote?module=' + localModuleName, false);
+            xhr.onload = function (e) {
+                var moduleInfo = JSON.parse(xhr.responseText);
+                if (moduleInfo.private == true) {
+                    return;
+                }
+                remoteModuleInfo[localModuleName] = JSON.parse(xhr.responseText);
+            };
+            xhr.onerror = function (e) {
+                console.error(xhr.statusText);
+            };
+            xhr.send();
+        }
+    }
+}
+
 function getLocal () {
     $.get('/store/local').done(function(data){
         localModuleInfo = data;
+        complementRemoteWithLocal();
         populateInputFormats();
         $.get('/store/updates').done(function(data){
             updates = data.updates;
@@ -432,6 +463,7 @@ function getMostDownloadedModuleNames () {
 }
 
 function updateModuleGroupInfo () {
+    moduleGroupMembers = {};
     for (var mn in remoteModuleInfo) {
         var groups = remoteModuleInfo[mn]['groups'];
         if (groups != undefined && groups.length > 0) {
@@ -479,6 +511,9 @@ function updateModuleGroupInfo () {
         for (var j = 0; j < mns.length; j++) {
             var mn = mns[j];
             var m = remoteModuleInfo[mn];
+            if (m===undefined) { // Work if no internet
+                continue;
+            }
             var d1 = new Date(group.publish_time);
             var d2 = new Date(m.publish_time);
             if (d1 < d2) {
@@ -967,6 +1002,9 @@ function populateModuleGroupDiv (moduleGroupName) {
         for (var i = 0; i < remoteModuleNames.length; i++) {
             var remoteModuleName = remoteModuleNames[i];
             var remoteModule = remoteModuleInfo[remoteModuleName];
+            if (remoteModule == undefined) {
+                continue;
+            }
             var panel = null;
             if (remoteModule['type'] != 'group') {
                 panel = getRemoteModulePanel(remoteModuleName, 'modulegroup', i);
@@ -1061,6 +1099,9 @@ function getRemoteModuleGroupPanel (moduleName, moduleListName, moduleListPos) {
     if (members != undefined) {
         for (var i = 0; i < members.length; i++) {
             var member = members[i];
+            if (remoteModuleInfo[member] == undefined) {
+                continue;
+            }
             if (remoteModuleInfo[member].tags.indexOf('newavailable') != -1) {
                 updateAvail = true;
                 break;
@@ -1246,7 +1287,8 @@ function getFilteredRemoteModules () {
             if (filter['name'] != undefined && filter['name'] != '') {
                 for (var j = 0; j < filter['name'].length; j++) {
                     var queryStr = filter['name'][j].toLowerCase();
-                    if (remoteModule['title'].toLowerCase().includes(queryStr) || remoteModule['description'].toLowerCase().includes(queryStr)) {
+                    var descStr = remoteModule['description'];
+                    if (remoteModule['title'].toLowerCase().includes(queryStr) || (descStr != undefined && descStr.toLowerCase().includes(queryStr))) {
                         nameYes = true;
                         break;
                     }
@@ -1384,7 +1426,11 @@ function addLogo (moduleName, sdiv) {
     if (moduleInfo.has_logo == true) {
         img = getEl('img');
         img.className = 'moduletile-logo';
-        img.src = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
+        if (moduleInfo.uselocalonstore) {
+            img.src = '/store/locallogo?module=' + moduleName;
+        } else {
+            img.src = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
+        }
         addEl(sdiv, img);
         storeLogos[moduleName] = img;
     } else {
@@ -1669,11 +1715,21 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     addEl(tr, td);
 	$.get('/store/modules/'+moduleName+'/'+'latest'+'/readme').done(function(data){
         var protocol = window.location.protocol;
-        if (protocol == 'http:') {
-            mdDiv.innerHTML = data;
-        } else if (protocol == 'https:') {
-            mdDiv.innerHTML = data.replace(/http:/g, 'https:');
+        var converter = new showdown.Converter({tables:true,openLinksInNewWindow:true});
+        var mdhtml = converter.makeHtml(data);
+        if (protocol == 'https:') {
+            mdhtml = mdhtml.replace(/http:/g, 'https:');
         }
+        var $mdhtml = $(mdhtml);
+        var localRoot = window.location.origin + window.location.pathname.split('/').slice(0,-1).join('/');
+        for (let img of $mdhtml.children('img')) {
+            let storeRoot = `${systemConf.store_url}/modules/${moduleName}/${mInfo.latest_version}`
+            img.src = img.src.replace(localRoot, storeRoot);
+            img.style.display = 'block';
+            img.style.margin = 'auto';
+            img.style['max-width'] = '100%';
+        }
+        $(mdDiv).append($mdhtml);
         // output column description
         var d = getEl('div');
         d.id = 'moduledetail-output-column-div-' + currentTab;
@@ -2126,7 +2182,7 @@ function connectWebSocket () {
     }
     ws.onclose = function (evt) {
         console.log('Re-establishing websocket');
-        connectWebSocket(failures);
+        connectWebSocket();
     }
     ws.onmessage = function (evt) {
         var data = JSON.parse(evt.data);
@@ -2153,7 +2209,7 @@ function connectWebSocket () {
             sdiv.style.color = 'black';
             sdiv.textContent = msg;
         }
-        if (msg.startsWith('Finished installation of')) {
+        if (msg.search('Finished installation of')>0) {
             delete installInfo[module];
             //installQueue = installQueue.filter(e => e != module);
             unqueue(module);
@@ -2163,11 +2219,11 @@ function connectWebSocket () {
                 var module = installQueue.shift();
                 installInfo[module] = {'msg': 'installing'};
             }
-        } else if (msg.startsWith('Aborted ')) {
+        } else if (msg.search('Aborted')>0) {
             delete installInfo[module];
             unqueue(module);
             setModuleTileInstallButton (module);
-        } else if (msg.startsWith('Unqueued')) {
+        } else if (msg.search('Unqueued')>0) {
             delete installInfo[module];
             unqueue(module);
             setModuleTileInstallButton (module);

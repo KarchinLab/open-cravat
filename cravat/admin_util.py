@@ -19,6 +19,8 @@ from . import exceptions
 from collections.abc import MutableMapping
 import multiprocessing
 import importlib
+import traceback
+import signal
 
 def load_yml_conf(yml_conf_path):
     """
@@ -26,7 +28,7 @@ def load_yml_conf(yml_conf_path):
     empty.
     """
     with open(yml_conf_path) as f:
-        conf = yaml.load(f)
+        conf = yaml.safe_load(f)
     if conf == None:
         conf = {}
     return conf
@@ -93,7 +95,9 @@ class LocalModuleInfo (object):
         self.helphtml_exists = os.path.exists(self.helphtml_path)
         self.conf = {}
         if self.conf_exists:
-            self.conf = load_yml_conf(self.conf_path) # THIS SHOULD NOT BE KEPT HERE, USE CONFIG LOADER
+            from cravat.config_loader import ConfigLoader
+            conf = ConfigLoader()
+            self.conf = conf.get_module_conf(self.name)
         self.type = self.conf.get('type')
         self.version = self.conf.get('version')
         self.description = self.conf.get('description')
@@ -120,7 +124,7 @@ class LocalModuleInfo (object):
         self.tags = self.conf.get('tags',[])
         self.datasource = str(self.conf.get('datasource',''))
         self.smartfilters = self.conf.get('smartfilters')
-        self.groups = self.conf.get('groups')
+        self.groups = self.conf.get('groups', [])
 
     def is_valid_module(self):
         r = self.exists
@@ -163,6 +167,7 @@ class RemoteModuleInfo(object):
         self.data_versions = kwargs.get('data_versions', {})
         self.data_sources = {x:str(y) for x,y in kwargs.get('data_sources', {}).items()}
         self.tags = kwargs.get('tags', [])
+        self.publish_time = kwargs.get('publish_time')
 
     def has_version(self, version):
         return version in self.versions    
@@ -227,7 +232,7 @@ class ModuleInfoCache(object):
             counts_url = self._store_path_builder.download_counts()
             counts_str = su.get_file_to_string(counts_url)
             if counts_str != '':
-                self.download_counts = yaml.load(counts_str).get('modules',{})
+                self.download_counts = yaml.safe_load(counts_str).get('modules',{})
             self._counts_fetched = True
 
     def update_local(self):
@@ -235,16 +240,21 @@ class ModuleInfoCache(object):
         if not(os.path.exists(self._modules_dir)):
             return
         for mg in os.listdir(self._modules_dir):
+            if mg == constants.install_tempdir_name:
+                continue
             mg_path = os.path.join(self._modules_dir, mg)
             basename = os.path.basename(mg_path)
             if not(os.path.isdir(mg_path)) or basename.startswith('.') or basename.startswith('_'):
                 continue
             for module_name in os.listdir(mg_path):
+                if module_name == 'hgvs': # deprecate hgvs
+                    continue
                 module_dir = os.path.join(mg_path, module_name)
-                if module_dir.startswith('.') == False and os.path.isdir(module_dir):
-                    # local_info = LocalModuleInfo(module_dir)
-                    # if local_info.is_valid_module():
-                    #     self.local[module_name] = local_info
+                if module_dir.startswith('.') == False \
+                        and os.path.isdir(module_dir) \
+                        and not module_name.startswith('.') \
+                        and not module_name.startswith('_') \
+                        and os.path.exists(os.path.join(module_dir, module_name + '.yml')):
                     self.local[module_name] = module_dir
 
     def update_remote(self, force=False):
@@ -260,7 +270,11 @@ class ModuleInfoCache(object):
                 manifest_str = su.get_file_to_string(self._remote_url)
             self.remote = {}
             if manifest_str != '':
-                self.remote = yaml.load(manifest_str)
+                self.remote = yaml.safe_load(manifest_str)
+                self.remote.pop('hgvs',None) # deprecate hgvs annotator
+            else:
+                msg = f'WARNING: Could not list modules from {self._remote_url}. Check internet connection.'
+                print(msg, file=sys.stderr)
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
@@ -295,7 +309,7 @@ class ModuleInfoCache(object):
             return config
         except LookupError:
             config_url = self._store_path_builder.module_conf(module_name, version)
-            config = yaml.load(su.get_file_to_string(config_url))
+            config = yaml.safe_load(su.get_file_to_string(config_url))
             # add to cache
             if module_name not in self.remote_config:
                 self.remote_config[module_name] = {}
@@ -382,7 +396,7 @@ def module_exists_local(module_name):
     """
     return module_name in mic.local
 
-def module_exists_remote(module_name, version=None, include_private=False):
+def module_exists_remote(module_name, version=None, private=False):
     """
     Returns true if a module (optionally versioned) exists in remote
     """
@@ -393,7 +407,7 @@ def module_exists_remote(module_name, version=None, include_private=False):
             found = True
         else:
             found = version in mic.remote[module_name]['versions']
-    if include_private and not found:
+    if private and not found:
         sys_conf = get_system_conf()
         path_builder = su.PathBuilder(sys_conf['store_url'], 'url')
         if version is None:
@@ -516,25 +530,25 @@ class InstallProgressHandler(object):
         if stage is None or stage=='':
             return ''
         elif stage=='start':
-            return 'Start install of %s' %self.display_name
+            return f'[{util.get_current_time_str()}] Starting to install {self.display_name}...'
         elif stage=='download_code':
-            return 'Downloading %s code archive' %self.display_name
+            return f'[{util.get_current_time_str()}] Downloading code archive of {self.display_name}...'
         elif stage=='extract_code':
-            return 'Extracting %s code archive' %self.display_name
+            return f'[{util.get_current_time_str()}] Extracting code archive of {self.display_name}...'
         elif stage=='verify_code':
-            return 'Verifying %s code integrity' %self.display_name
+            return f'[{util.get_current_time_str()}] Verifying code integrity of {self.display_name}...'
         elif stage=='download_data':
-            return 'Downloading %s data' %self.display_name
+            return f'[{util.get_current_time_str()}] Downloading data of {self.display_name}...'
         elif stage=='extract_data':
-            return 'Extracting %s data' %self.display_name
+            return f'[{util.get_current_time_str()}] Extracting data of {self.display_name}...'
         elif stage=='verify_data':
-            return 'Verifying %s data integrity' %self.display_name
+            return f'[{util.get_current_time_str()}] Verifying data integrity of {self.display_name}...'
         elif stage=='finish':
-            return 'Finished installation of %s' %self.display_name
+            return f'[{util.get_current_time_str()}] Finished installation of {self.display_name}'
         elif stage == 'killed':
-            return 'Aborted {} installation'.format(self.display_name)
+            return f'[{util.get_current_time_str()}] Aborted installation of {self.display_name}'
         elif stage == 'Unqueued':
-            return 'Unqueued {} from installation'.format(self.display_name)
+            return f'Unqueued {self.display_name} from installation'
         else:
             raise ValueError(stage)
 
@@ -542,13 +556,28 @@ def install_widgets_for_module (module_name):
     widget_name = 'wg' + module_name
     install_module(widget_name)
 
-def install_module (module_name, version=None, force_data=False, stage_handler=None, **kwargs):
+def install_module (
+        module_name, 
+        version=None, 
+        force_data=False, 
+        skip_data=False,
+        stage_handler=None, 
+        **kwargs):
     """
     Installs a module.
     version=None will install the latest version.
     force_data=True will force an update to the data files, even if one is not needed.
     """
+    modules_dir = get_modules_dir()
+    temp_dir = os.path.join(modules_dir, constants.install_tempdir_name, module_name)
+    shutil.rmtree(temp_dir, ignore_errors=True)
+    os.makedirs(temp_dir)
     try:
+        # Ctrl-c in this func must be caught to delete temp_dir
+        def raise_kbi(a,b):
+            raise KeyboardInterrupt
+        original_sigint = signal.signal(signal.SIGINT, raise_kbi)
+
         if stage_handler is None:
             stage_handler = InstallProgressHandler(module_name, version)
         if version is None:
@@ -559,7 +588,6 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
         else:
             install_state = None
         stage_handler.stage_start('start')
-        modules_dir = get_modules_dir()
         sys_conf = get_system_conf()
         store_url = sys_conf['store_url']
         store_path_builder = su.PathBuilder(store_url,'url')
@@ -581,20 +609,11 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
             # Private module. Fallback to remote config.
             remote_config = mic.get_remote_config(module_name, version)
             module_type = remote_config['type']
-        module_dir = os.path.join(modules_dir, module_type+'s', module_name)
-        if not(os.path.isdir(module_dir)):
-            os.makedirs(module_dir)
-        else:
-            uninstall_module_code(module_name)
+
         if install_state:
             if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
                 raise exceptions.KillInstallException
-        wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
-        wf.close()
-        endofinstall_path = os.path.join(module_dir, 'endofinstall')
-        if os.path.exists(os.path.join(module_dir, 'endofinstall')):
-            os.remove(endofinstall_path)
-        zipfile_path = os.path.join(module_dir, zipfile_fname)
+        zipfile_path = os.path.join(temp_dir, zipfile_fname)
         stage_handler.stage_start('download_code')
         r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
         if r.status_code != 200:
@@ -604,43 +623,42 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                 raise exceptions.KillInstallException
         stage_handler.stage_start('extract_code')
         zf = zipfile.ZipFile(zipfile_path)
-        zf.extractall(module_dir)
+        zf.extractall(temp_dir)
         zf.close()
         if install_state:
             if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
                 raise exceptions.KillInstallException
         stage_handler.stage_start('verify_code')
         code_manifest_url = store_path_builder.module_code_manifest(module_name, version)
-        code_manifest = yaml.load(su.get_file_to_string(code_manifest_url))
-        su.verify_against_manifest(module_dir, code_manifest)
+        code_manifest = yaml.safe_load(su.get_file_to_string(code_manifest_url))
+        su.verify_against_manifest(temp_dir, code_manifest)
         os.remove(zipfile_path)
-        local_info = LocalModuleInfo(module_dir)
         if install_state:
             if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
                 raise exceptions.KillInstallException
-        if (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
+        data_installed = False
+        if not(skip_data) and (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
+            data_installed = True
             data_url = store_path_builder.module_data(module_name, remote_data_version)
             data_fname = '.'.join([module_name,'data','zip'])
-            data_path = os.path.join(module_dir, data_fname)
+            data_path = os.path.join(temp_dir, data_fname)
             stage_handler.stage_start('download_data')
             r = su.stream_to_file(data_url, data_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
             if install_state:
                 if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
                     raise exceptions.KillInstallException
             if r.status_code == 200:
-                if local_info.data_dir_exists:
-                    uninstall_module_data(module_name)
                 stage_handler.stage_start('extract_data')
                 zf = zipfile.ZipFile(data_path)
-                zf.extractall(module_dir)
+                zf.extractall(temp_dir)
                 zf.close()
                 if install_state:
                     if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
                         raise exceptions.KillInstallException
                 stage_handler.stage_start('verify_data')
                 data_manifest_url = store_path_builder.module_data_manifest(module_name, remote_data_version)
-                data_manifest = yaml.load(su.get_file_to_string(data_manifest_url))
-                su.verify_against_manifest(module_dir, data_manifest)
+                data_manifest = yaml.safe_load(su.get_file_to_string(data_manifest_url))
+                su.verify_against_manifest(temp_dir, data_manifest)
                 os.remove(data_path)
                 if install_state:
                     if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
@@ -650,23 +668,51 @@ def install_module (module_name, version=None, force_data=False, stage_handler=N
                 pass
             else:
                 raise(requests.HTTPError(r))
-        mic.update_local()
-        stage_handler.stage_start('finish')
+        if install_state:
+            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                raise exceptions.KillInstallException
+        module_dir = os.path.join(modules_dir, module_type+'s', module_name)
+        if os.path.isdir(module_dir):
+            # Module being updated
+            if data_installed:
+                # Overwrite the whole module
+                shutil.rmtree(module_dir)
+                shutil.move(temp_dir, module_dir)
+            else:
+                # Remove all code items
+                for item in os.listdir(module_dir):
+                    item_path = os.path.join(module_dir, item)
+                    if item != 'data':
+                        if os.path.isdir(item_path):
+                            shutil.rmtree(item_path)
+                        else:
+                            os.remove(item_path)
+                # Copy in new code items
+                for item in os.listdir(temp_dir):
+                    old_path = os.path.join(temp_dir, item)
+                    new_path = os.path.join(module_dir, item)
+                    if item != 'data':
+                        shutil.move(old_path, new_path)
+                shutil.rmtree(temp_dir)
+        else:
+            # Move the module to the right place
+            shutil.move(temp_dir, module_dir)
+        wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
+        wf.close()
         wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
         wf.close()
+        mic.update_local()
+        stage_handler.stage_start('finish')
     except (Exception, KeyboardInterrupt, SystemExit) as e:
+        shutil.rmtree(temp_dir, ignore_errors=True)
         if type(e) == exceptions.KillInstallException:
             stage_handler.stage_start('killed')
-        try:
-            shutil.rmtree(module_dir)
-        except (NameError, FileNotFoundError):
+        elif type(e) in (KeyboardInterrupt, SystemExit):
             pass
-        except:
-            raise
-        if type(e) == exceptions.KillInstallException:
-            return
         else:
-            raise
+            raise e
+    finally:
+        signal.signal(signal.SIGINT, original_sigint)
 
 def get_remote_data_version(module_name, version):
     """
@@ -695,35 +741,6 @@ def uninstall_module (module_name):
     if uninstalled_modules:
         mic.update_local()
 
-def uninstall_module_code (module_name):
-    """
-    Uninstalls all code files from a module.
-    """
-    if module_name in list_local():
-        module_info = get_local_module_info(module_name)
-        module_dir = module_info.directory
-        for item in os.listdir(module_dir):
-            item_path = os.path.join(module_dir, item)
-            if item_path != module_info.data_dir:
-                if os.path.isdir(item_path):
-                    shutil.rmtree(item_path)
-                else:
-                    os.remove(item_path)
-
-def uninstall_module_data (module_name):
-    """
-    Uninstalls all data files and directories from a module.
-    """
-    if module_name in list_local():
-        module_info = get_local_module_info(module_name)
-        if module_info.data_dir_exists:
-            for item in os.listdir(module_info.data_dir):
-                item_path = os.path.join(module_info.data_dir, item)
-                if os.path.isdir(item_path):
-                    shutil.rmtree(item_path)
-                else:
-                    os.remove(item_path)
-
 def set_modules_dir (path, overwrite=False):
     """
     Set the modules_dir to the directory in path.
@@ -748,9 +765,10 @@ def get_local_module_types():
             types.append(mic.local[module].type)
     return types
 
-def get_local_module_infos_of_type (t):
+def get_local_module_infos_of_type (t, update=False):
     modules = {}
-    mic.update_local()
+    if update:
+        mic.update_local()
     for module_name in mic.local:
         if mic.local[module_name].type == t:
             modules[module_name] = mic.local[module_name] 
@@ -779,44 +797,37 @@ def get_local_module_infos_by_names (module_names):
             modules[module_name] = module
     return modules
 
-def get_system_conf ():
+def get_system_conf (file_only=False):
     """
     Get the system config. Fill in the default modules dir if not set.
     """
     conf = load_yml_conf(constants.system_conf_path)
-    '''
-    if os.path.exists(constants.system_conf_path):
-        conf = load_yml_conf(constants.system_conf_path)
-    else:
-        conf = load_yml_conf(constants.system_conf_template_path)
-    '''
-    conf_modified = False
+    if file_only:
+        return conf
     if constants.modules_dir_key not in conf:
         conf[constants.modules_dir_key] = constants.default_modules_dir
-        conf_modified = True
     if constants.conf_dir_key not in conf:
         conf[constants.conf_dir_key] = constants.default_conf_dir
-        conf_modified = True
     if constants.jobs_dir_key not in conf:
         conf[constants.jobs_dir_key] = constants.default_jobs_dir
-        conf_modified = True
+    if constants.log_dir_key not in conf:
+        conf[constants.log_dir_key] = constants.default_log_dir
     key = 'num_input_line_warning_cutoff'
     if key not in conf:
         conf[key] = constants.default_num_input_line_warning_cutoff
-        conf_modified = True
-    key = 'sum_input_size_warning_cutoff'
+    key = 'gui_input_size_limit'
     if key not in conf:
-        conf[key] = constants.default_sum_input_size_warning_cutoff
-        conf_modified = True
+        conf[key] = constants.default_settings_gui_input_size_limit
     key = 'max_num_concurrent_jobs'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_jobs
-        conf_modified = True
-    if conf_modified:
-        write_system_conf_file(conf)
     key = 'max_num_concurrent_annotators_per_job'
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_annotators_per_job
+    if 'custom_system_conf' in globals():
+        global custom_system_conf
+        for k, v in custom_system_conf.items():
+            conf[k] = v
     return conf
 
 def get_modules_dir():
@@ -827,6 +838,26 @@ def get_modules_dir():
     modules_dir = conf[constants.modules_dir_key]
     return modules_dir
 
+def get_module_conf_path (module_name):
+    modules_dir = get_modules_dir()
+    typefns = os.listdir(modules_dir)
+    conf_path = None
+    for typefn in typefns:
+        typepath = os.path.join(modules_dir, typefn)
+        if os.path.isdir(typepath):
+            modulefns = os.listdir(typepath)
+            for modulefn in modulefns:
+                if os.path.basename(modulefn) == module_name:
+                    modulepath = os.path.join(typepath, modulefn)
+                    if os.path.isdir(modulepath):
+                        path = os.path.join(modulepath, module_name + '.yml')
+                        if os.path.exists(path):
+                            conf_path = path
+                            break
+            if conf_path is not None:
+                break
+    return conf_path
+    
 def get_annotator_dir (module_name):
     module_dir = os.path.join(get_modules_dir(), 'annotators', module_name)
     if os.path.exists(module_dir) == False:
@@ -866,20 +897,16 @@ def update_system_conf_file(d):
     """
     Recursively update the system config and re-write to disk.
     """
-    try:
-        sys_conf = recursive_update(get_system_conf(), d)
-        write_system_conf_file(sys_conf)
-        refresh_cache()
-        return True
-    except:
-        raise
-        return False
+    sys_conf = get_system_conf(file_only=True)
+    sys_conf = recursive_update(sys_conf, d)
+    write_system_conf_file(sys_conf)
+    refresh_cache()
+    return True
 
 def read_system_conf_template ():
     with open(constants.system_conf_template_path) as f:
-        d = yaml.load(f)
+        d = yaml.safe_load(f)
         return d
-    return None
 
 def get_main_conf_path():
     """
@@ -1071,11 +1098,10 @@ def get_system_conf_info (json=False):
     return system_conf_info
 
 def get_cravat_conf ():
+    from cravat.config_loader import ConfigLoader
     confpath = get_main_conf_path()
-    if os.path.exists(confpath):
-        cravat_conf = load_yml_conf(confpath)
-    else:
-        cravat_conf = {}
+    conf = ConfigLoader()
+    cravat_conf = conf.get_cravat_conf()
     return cravat_conf
 
 def write_cravat_conf (cravat_conf):
@@ -1257,10 +1283,12 @@ class ReadyState(object):
 
     READY = 0
     MISSING_MD = 1
+    UPDATE_NEEDED = 2
 
     messages = {
         0: '',
         1: 'Modules directory not found',
+        2: 'Update on system modules needed. Run "oc module install-base"'
     }
 
     def __init__(self, code=READY):
@@ -1331,6 +1359,11 @@ def report_formats():
             if fn.endswith('reporter'):
                 formats.add(fn.replace('reporter',''))
     return formats
+
+def update_mic ():
+    global mic
+    global custom_system_conf
+    mic = ModuleInfoCache()
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote

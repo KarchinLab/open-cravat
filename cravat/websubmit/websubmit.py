@@ -11,7 +11,6 @@ import sys
 import traceback
 import shutil
 from aiohttp import web
-import aiosqlite3
 import hashlib
 from distutils.version import LooseVersion
 import glob
@@ -26,8 +25,12 @@ from cravat import constants
 from cravat import get_live_annotator, get_live_mapper
 import signal
 import gzip
+from cravat.cravat_util import max_version_supported_for_migration, status_from_db
+import cravat.util
+import logging
 
 cfl = ConfigLoader()
+report_generation_ps = {}
 
 class FileRouter(object):
 
@@ -91,7 +94,7 @@ class FileRouter(object):
                 job_dir = os.path.join(jobs_dirs[0], job_id)
         return job_dir
 
-    async def job_input(self, request, job_id):
+    async def job_input (self, request, job_id):
         job_dir, statusjson = await self.job_status(request, job_id)
         orig_input_fname = None
         if 'orig_input_fname' in statusjson:
@@ -103,7 +106,7 @@ class FileRouter(object):
                     orig_input_fname = fn[:-4]
                     break
         if orig_input_fname is not None:
-            orig_input_path = os.path.join(job_dir, orig_input_fname)
+            orig_input_path = [os.path.join(job_dir, v) for v in orig_input_fname]
         else:
             orig_input_path = None
         return orig_input_path
@@ -148,7 +151,7 @@ class FileRouter(object):
         run_name = os.path.basename(run_path)
         report_path = None
         if report_type in self.report_extensions:
-            ext = self.report_extensions.get(report_type, '.'+report_type)
+            ext = self.report_extensions.get(report_type, '.' + report_type)
             report_path = [run_path + ext]
         else:
             reporter = au.get_local_module_info(report_type + 'reporter')
@@ -179,7 +182,7 @@ class FileRouter(object):
                         break
                 elif fn.endswith('.info.yaml'):
                     with open(os.path.join(job_dir, fn)) as f:
-                        statusjson = yaml.load(f)
+                        statusjson = yaml.safe_load(f)
                         break
             if statusjson != {}:
                 self.job_statuses[job_id] = statusjson
@@ -213,9 +216,11 @@ class WebJob(object):
         self.info['open_cravat_version'] = ''
         self.info['num_input_var'] = ''
         self.info['submission_time'] = ''
+        self.info['reports_being_generated'] = []
         self.job_dir = job_dir
         self.job_status_fpath = job_status_fpath
-        self.info['id'] = os.path.basename(job_dir)
+        job_id = os.path.basename(job_dir)
+        self.info['id'] = job_id
 
     def save_job_options (self, job_options):
         self.set_values(**job_options)
@@ -225,7 +230,7 @@ class WebJob(object):
             info_dict = {'status': 'Error'}
         else:
             with open(self.job_status_fpath) as f:
-                info_dict = yaml.load(f)
+                info_dict = yaml.safe_load(f)
         if info_dict != None:
             self.set_values(**info_dict)
 
@@ -244,6 +249,20 @@ def get_next_job_id():
 async def submit (request):
     global filerouter
     global servermode
+    sysconf = au.get_system_conf()
+    size_cutoff = sysconf['gui_input_size_limit']
+    if request.content_length is None:
+        return web.HTTPLengthRequired(
+            text=json.dumps({
+                'status': 'fail', 
+                'msg': 'Content-Length header required'
+        }))
+    if request.content_length > size_cutoff * 1024 * 1024:
+        return web.HTTPRequestEntityTooLarge(
+            text=json.dumps({
+                'status': 'fail', 
+                'msg': f'Input is too big. Limit is {size_cutoff}MB.'
+        }))
     if servermode and server_ready:
         r = await cravat_multiuser.is_loggedin(request)
         if r == False:
@@ -285,11 +304,11 @@ async def submit (request):
                         )
     # Subprocess arguments
     input_fpaths = [os.path.join(job_dir, fn) for fn in input_fnames]
-    run_args = ['cravat']
+    run_args = ['oc', 'run']
     for fn in input_fnames:
         run_args.append(os.path.join(job_dir, fn))
     # Annotators
-    if 'annotators' in job_options and len(job_options['annotators']) > 0:
+    if 'annotators' in job_options and len(job_options['annotators']) > 0 and job_options['annotators'][0] != '':
         annotators = job_options['annotators']
         annotators.sort()
         run_args.append('-a')
@@ -309,7 +328,6 @@ async def submit (request):
         await cravat_multiuser.update_user_settings(request, {'lastAssembly':assembly})
     else:
         au.set_cravat_conf_prop('last_assembly', assembly)
-
     # Reports
     if 'reports' in job_options and len(job_options['reports']) > 0:
         run_args.append('-t')
@@ -319,14 +337,9 @@ async def submit (request):
     # Note
     if 'note' in job_options:
         note = job_options['note']
-    else:
-        note = ''
-    run_args.append('--note')
-    if 'note' in job_options:
-        note = job_options['note']
-    else:
-        note = ''
-    run_args.append(note)
+        if note != '':
+            run_args.append('--note')
+            run_args.append(note)
     # Forced input format
     if 'forcedinputformat' in job_options and job_options['forcedinputformat']:
         run_args.append('--input-format')
@@ -426,7 +439,7 @@ async def get_job (request, job_id):
     if len(fns) > 0:
         info_fpath = os.path.join(job_dir, fns[0])
         with open (info_fpath) as f:
-            info_json = yaml.load('\n'.join(f.readlines()))
+            info_json = yaml.safe_load('\n'.join(f.readlines()))
             for k, v in info_json.items():
                 if k == 'status' and 'status' in job.info:
                     continue
@@ -455,6 +468,7 @@ async def get_job (request, job_id):
         status=job.info['status'],
     )
     existing_reports = []
+    reports_being_generated = []
     for report_type in get_valid_report_types():
         report_paths = await filerouter.job_report(request, job_id, report_type)
         if report_paths is not None:
@@ -465,8 +479,24 @@ async def get_job (request, job_id):
                     break
             if report_exist:
                 existing_reports.append(report_type)
+                global report_generation_ps
+                if job_id in report_generation_ps and report_type in report_generation_ps[job_id]:
+                    del report_generation_ps[job_id][report_type]
+            else:
+                if job_id in report_generation_ps and report_type in report_generation_ps[job_id]:
+                    reports_being_generated.append(report_type)
+    job.info['reports_being_generated'] = reports_being_generated
     job.set_info_values(reports=existing_reports)
     job.info['username'] = os.path.basename(os.path.dirname(job_dir))
+    if 'open_cravat_version' not in job.info:
+        job.info['open_cravat_version'] = '0.0.0'
+    if LooseVersion(job.info['open_cravat_version']) < max_version_supported_for_migration:
+        job.info['result_available'] = False
+    else:
+        job.info['result_available'] = True
+    for annot_to_del in ['extra_vcf_info', 'extra_variant_info']:
+        if annot_to_del in job.info['annotators']:
+            job.info['annotators'].remove(annot_to_del)
     return job
 
 async def get_jobs (request):
@@ -508,6 +538,8 @@ async def get_all_jobs (request):
         direntries = [de for de in dir_it]
         de_names = []
         for it in direntries:
+            if it.name.startswith('.'):
+                continue
             de_names.append(it.name)
         all_jobs.extend(de_names)
     all_jobs.sort(reverse=True)
@@ -531,7 +563,7 @@ async def get_job_status (request):
     job_id = request.match_info['job_id']
     status_path = await filerouter.job_status_path(request, job_id)
     f = open(status_path)
-    status = yaml.load(f)
+    status = yaml.safe_load(f)
     f.close()
     return web.json_response(status)
 
@@ -556,6 +588,7 @@ async def get_job_log (request):
 def get_valid_report_types():
     reporter_infos = au.get_local_module_infos(types=['reporter'])
     report_types = [x.name.split('reporter')[0] for x in reporter_infos]
+    report_types = [v for v in report_types if not v in ['text', 'pandas', 'stdout', 'example']]
     return report_types
 
 async def get_report_types(request):
@@ -569,15 +602,24 @@ async def generate_report(request):
     global filerouter
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
-    job_input = await filerouter.job_run_path(request, job_id)
-    run_args = ['oc', 'run', job_input]
-    run_args.extend(['--startat', 'reporter'])
-    run_args.extend(['--repeat', 'reporter'])
+    job_db_path = await filerouter.job_db(request, job_id)
+    run_args = ['oc', 'report', job_db_path]
     run_args.extend(['-t', report_type])
-    run_args.extend(['-l', 'hg38']) # dummy -l option
-    p = await asyncio.create_subprocess_shell(' '.join(run_args))
-    await p.wait()
-    return web.json_response('done')
+    if job_id not in report_generation_ps:
+        report_generation_ps[job_id] = {}
+    report_generation_ps[job_id][report_type] = True
+    p = await asyncio.create_subprocess_shell(' '.join(run_args), stderr=asyncio.subprocess.PIPE)
+    out, err = await p.communicate()
+    if report_type in report_generation_ps[job_id]:
+        del report_generation_ps[job_id][report_type]
+    if job_id in report_generation_ps and len(report_generation_ps[job_id]) == 0:
+        del report_generation_ps[job_id]
+    response = 'done'
+    if len(err) > 0:
+        logger = logging.getLogger()
+        logger.error(err.decode('utf-8'))
+        response = 'fail'
+    return web.json_response(response)
 
 async def download_report(request):
     global filerouter
@@ -853,10 +895,9 @@ def fetch_job_queue (job_queue, run_jobs_info):
 
     main_loop = asyncio.new_event_loop()
     job_tracker = JobTracker(main_loop)
-    try:
-        main_loop.run_until_complete(job_worker_main())
-    except KeyboardInterrupt:
-        pass
+    main_loop.run_until_complete(job_worker_main())
+    job_tracker.loop.close()
+    main_loop.close()
 
 async def redirect_to_index (request):
     global servermode
@@ -937,7 +978,7 @@ async def live_annotate (input_data, annotators):
     global live_modules
     global live_mapper
     response = {}
-    crx_data, alt_transcripts = live_mapper.map(input_data)
+    crx_data = live_mapper.map(input_data)
     crx_data = live_mapper.live_report_substitute(crx_data)
     crx_data[mapping_parser_name] = AllMappingsParser(crx_data[all_mappings_col_name])
     for k, v in live_modules.items():
@@ -1033,6 +1074,49 @@ def get_status_json_in_dir (job_dir):
                 status_json = json.load(f)
     return status_json
 
+async def update_result_db (request):
+    queries = request.rel_url.query
+    job_id = queries['job_id']
+    global filerouter
+    job_dir = await filerouter.job_dir(request, job_id)
+    fns = find_files_by_ending(job_dir, '.sqlite')
+    db_path = os.path.join(job_dir, fns[0])
+    cmd = ['oc', 'util', 'update-result', db_path]
+    p = await asyncio.create_subprocess_shell(' '.join(cmd))
+    await p.wait()
+    compatible_version, db_version, oc_version = cravat.util.is_compatible_version(db_path)
+    if compatible_version:
+        msg = 'success'
+        fn = find_files_by_ending(job_dir, '.status.json')[0]
+        path = os.path.join(job_dir, fn)
+        with open(path) as f:
+            status_json = json.load(f)
+        status_json['open_cravat_version'] = str(db_version)
+        wf = open(path, 'w')
+        json.dump(status_json, wf, indent=2, sort_keys=True)
+        wf.close()
+    else:
+        msg = 'fail'
+    return web.json_response(msg)
+
+async def import_job (request):
+    global filerouter
+    jobs_dirs = await filerouter.get_jobs_dirs(request)
+    jobs_dir = jobs_dirs[0]
+    job_id = get_next_job_id()
+    job_dir = os.path.join(jobs_dir, job_id)
+    os.makedirs(job_dir, exist_ok=True)
+    fn = request.headers['Content-Disposition'].split('filename=')[1]
+    dbpath = os.path.join(job_dir,fn)
+    with open(dbpath,'wb') as wf:
+        async for data, _ in request.content.iter_chunks():
+            wf.write(data)
+    status_d = status_from_db(dbpath)
+    status_path = dbpath + '.status.json'
+    with open(status_path,'w') as wf:
+        json.dump(status_d,wf)
+    return web.Response()
+
 filerouter = FileRouter()
 VIEW_PROCESS = None
 live_modules = None
@@ -1070,6 +1154,8 @@ routes.append(['GET', '/submit/annotate', get_live_annotation_get])
 routes.append(['POST', '/submit/annotate', get_live_annotation_post])
 routes.append(['GET', '/', redirect_to_index])
 routes.append(['GET', '/submit/jobs/{job_id}/status', get_job_status])
+routes.append(['GET', '/submit/updateresultdb', update_result_db])
+routes.append(['POST','/submit/import',import_job])
 
 if __name__ == '__main__':
     app = web.Application()

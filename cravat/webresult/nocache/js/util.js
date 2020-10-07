@@ -120,6 +120,29 @@ function deleteFilterSetting (name) {
 	})
 }
 
+function saveLayoutSettingAs (evt) {
+    hideAllMenu3();
+    evt.stopPropagation();
+       $.get('/result/service/getlayoutsavenames', {'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
+        var quickSaveNameIdx = response.indexOf(quickSaveName);
+        if (quickSaveNameIdx >= 0) {
+            response.splice(quickSaveNameIdx, 1);
+        }
+               var names = response.join(', ');
+               var msg = 'Please enter layout name to save.';
+               if (names != '') {
+                       msg = msg + ' Saved layout names are: ' + names;
+               }
+        if (lastUsedLayoutName == quickSaveName) {
+            lastUsedLayoutName = '';
+        }
+               var name = prompt(msg, lastUsedLayoutName);
+               if (name != null) {
+                       saveLayoutSetting(name);
+               }
+       });
+}
+
 function saveFilterSettingAs () {
 	return new Promise((resolve, reject) => {
 		$.get('/result/service/getfiltersavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
@@ -540,14 +563,15 @@ function loadFilterSetting (name, callback, doNotCount) {
 				smartFilters[source] = refac;
 			}
 		}
-		setupTab('filter');
+		$.get('/result/service/samples', {username:username, job_id:jobId, dbpath:dbPath}).done(response=>{
+			allSamples = response;
+			showFilterTabContent = true;
+			setupTab('filter');
+		})
 		$.get('/result/service/loadfiltersetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name}).done(function (response) {
 			writeLogDiv('Filter setting loaded');
 			var data = response;
 			filterJson = data['filterSet'];
-			// var filterWrapDiv = document.getElementById('filterwrapdiv');
-			// $(filterWrapDiv).empty();
-			// populateFilterWrapDiv(filterWrapDiv); //TODO delete this
 			if (! doNotCount) {
 				infomgr.count(dbPath, 'variant', updateLoadMsgDiv);
 			}
@@ -577,23 +601,29 @@ function loadLayoutSettingAs (evt) {
     hideAllMenu3();
 	var div = document.getElementById('load_layout_select_div');
 	emptyElement(div);
-    div.style.display = 'block';
+    div.style.display = 'inline-block';
     evt.stopPropagation();
 	$.get('/result/service/getlayoutsavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
-        var quickSaveNameIdx = response.indexOf(quickSaveName);
-        if (quickSaveNameIdx >= 0) {
-            response.splice(quickSaveNameIdx, 1);
+        if (response.length == 0) {
+            var a = getEl('a');
+            a.textContent = '(no\xa0saved\xa0layout)';
+            addEl(div, a);
+        } else {
+            var quickSaveNameIdx = response.indexOf(quickSaveName);
+            if (quickSaveNameIdx >= 0) {
+                response.splice(quickSaveNameIdx, 1);
+            }
+            var savedLayoutNames = response;
+            for (var i = 0; i < savedLayoutNames.length; i++) {
+                var name = savedLayoutNames[i];
+                var a = getEl('a');
+                a.textContent = name;
+                a.addEventListener('click', function (evt) {
+                    loadLayoutSetting(evt.target.textContent, null)
+                });
+                addEl(div, a);
+            }
         }
-    	var savedLayoutNames = response;
-    	for (var i = 0; i < savedLayoutNames.length; i++) {
-    		var name = savedLayoutNames[i];
-    		var a = getEl('a');
-    		a.textContent = name;
-    		a.addEventListener('click', function (evt) {
-    			loadLayoutSetting(evt.target.textContent, null)
-    		});
-    		addEl(div, a);
-    	}
     });
 }
 
@@ -641,7 +671,9 @@ function deleteLayoutSettingAs (evt) {
 	var div = document.getElementById('delete_layout_select_div');
 	emptyElement(div);
     div.style.display = 'block';
-    evt.stopPropagation();
+    if (evt != null) {
+        evt.stopPropagation();
+    }
 	$.get('/result/service/getlayoutsavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
         /*
         var quickSaveNameIdx = response.indexOf(quickSaveName);
@@ -649,27 +681,34 @@ function deleteLayoutSettingAs (evt) {
             response.splice(quickSaveNameIdx, 1);
         }
         */
-    	savedLayoutNames = response;
-    	for (var i = 0; i < savedLayoutNames.length; i++) {
-    		var name = savedLayoutNames[i];
-    		var a = getEl('a');
-    		a.textContent = name;
-    		a.setAttribute('module', name);
-    		a.addEventListener('click', function (evt) {
-    			var name = evt.target.getAttribute('module');
-    			var yes = confirm('Delete ' + name + '?');
-    			if (yes) {
-    				deleteLayoutSetting(evt.target.textContent, null)
-    			}
-    		});
-    		addEl(div, a);
-    	}
+        if (response.length == 0) {
+            var a = getEl('a');
+            a.textContent = '(no\xa0saved\xa0layout)';
+            addEl(div, a);
+        } else {
+            savedLayoutNames = response;
+            for (var i = 0; i < savedLayoutNames.length; i++) {
+                var name = savedLayoutNames[i];
+                var a = getEl('a');
+                a.textContent = name;
+                a.setAttribute('module', name);
+                a.addEventListener('click', function (evt) {
+                    var name = evt.target.getAttribute('module');
+                    var yes = confirm('Delete ' + name + '?');
+                    if (yes) {
+                        deleteLayoutSetting(evt.target.textContent, null)
+                    }
+                });
+                addEl(div, a);
+            }
+        }
     });
 }
 
 function deleteLayoutSetting (name, callback) {
 	$.get('/result/service/deletelayoutsetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name}).done(function (response) {
 		writeLogDiv('Layout setting deleted');
+        deleteLayoutSettingAs(null);
     });
 }
 
@@ -680,20 +719,26 @@ function renameLayoutSettingAs (evt) {
     div.style.display = 'block';
     evt.stopPropagation();
 	$.get('/result/service/getlayoutsavenames', {'username': username, 'job_id': jobId, 'dbpath': dbPath}).done(function (response) {
-        var quickSaveNameIdx = response.indexOf(quickSaveName);
-        if (quickSaveNameIdx >= 0) {
-            response.splice(quickSaveNameIdx, 1);
+        if (response.length == 0) {
+            var a = getEl('a');
+            a.textContent = '(no\xa0saved\xa0layout)';
+            addEl(div, a);
+        } else {
+            var quickSaveNameIdx = response.indexOf(quickSaveName);
+            if (quickSaveNameIdx >= 0) {
+                response.splice(quickSaveNameIdx, 1);
+            }
+            savedLayoutNames = response;
+            for (var i = 0; i < savedLayoutNames.length; i++) {
+                var name = savedLayoutNames[i];
+                var a = getEl('a');
+                a.textContent = name;
+                a.addEventListener('click', function (evt) {
+                    renameLayoutSetting(evt.target.textContent, null)
+                });
+                addEl(div, a);
+            }
         }
-    	savedLayoutNames = response;
-    	for (var i = 0; i < savedLayoutNames.length; i++) {
-    		var name = savedLayoutNames[i];
-    		var a = getEl('a');
-    		a.textContent = name;
-    		a.addEventListener('click', function (evt) {
-    			renameLayoutSetting(evt.target.textContent, null)
-    		});
-    		addEl(div, a);
-    	}
     });
 }
 

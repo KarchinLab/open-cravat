@@ -1,0 +1,11 @@
+Metadata-Version: 1.2
+Name: open-cravat
+Version: 2.0.2
+Summary: OpenCRAVAT - variant analysis toolkit
+Home-page: http://www.opencravat.org
+Author: Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin
+Author-email: rkim@insilico.us.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.6

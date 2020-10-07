@@ -46,12 +46,16 @@ class Tester():
         self.start_time = time.time()
         python_exc = sys.executable
         cmd_list = [python_exc, self.cravat_run, self.input_path, '-d', self.out_dir, '-t', 'text']
-        cmd_list.extend(['--repeat', 'reporter'])
         if (self.module.type == 'annotator'):
             cmd_list.extend(['-a', self.module.name])
         else:
             cmd_list.extend(['--skip', 'annotator'])
-        cmd_list.extend(['-l', 'hg38'])
+        
+        #special case
+        if (self.module.name in ['ftdna-converter', 'ancestrydna-converter', '23andme-converter']):
+            cmd_list.extend(['-l', 'hg19'])
+        else:
+            cmd_list.extend(['-l', 'hg38'])
         print(' '.join(cmd_list))
         exit_code = subprocess.call(' '.join(cmd_list), shell=True, stdout=self.log, stderr=subprocess.STDOUT)
         if exit_code != 0:
@@ -80,6 +84,7 @@ class Tester():
         for idx, header in enumerate(headers):
             if col in header:
                 return idx
+        return -1    
     
     #The ID of a result row is used to match key and output.  The ID
     #differs depending on which section of the output is being checked.         
@@ -92,7 +97,10 @@ class Tester():
                  columns[self.getColPos(headers, 'Alt Base')] + ' ' + \
                  columns[self.getColPos(headers, 'Tags')];
         if (level == 'gene'):
-            Id = columns[self.getColPos(headers, 'Hugo')];
+            pos = self.getColPos(headers, 'Hugo')
+            if pos == -1:
+                pos = self.getColPos(headers, 'Gene')
+            Id = columns[pos];
         if (level == 'sample'):
             Id = columns[self.getColPos(headers, 'UID')] + ' ' + \
                  columns[self.getColPos(headers, 'Sample')];    

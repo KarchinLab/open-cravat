@@ -10,19 +10,30 @@ class ConfigLoader():
     def __init__(self, job_conf_path = None):
         self.job_conf_path = job_conf_path
         self.main_conf_path = au.get_main_conf_path()
+        self._system = {}
         self._main = {}
         self._job = {}
         self._modules = {}
         self._all = {}
+        self._load_system_conf(build_all=False)
         self._load_main_conf(build_all=False)
         self._load_job_conf(build_all=False)
         self._build_all()
         
+    def _load_system_conf (self, build_all=True):
+        self._system = au.get_system_conf()
+        if build_all:
+            self._build_all()
+
     def _load_main_conf(self, build_all=True):
         self._main = {}
         if os.path.exists(self.main_conf_path) == False:
             shutil.copy(os.path.join(constants.packagedir, 'cravat.yml'), self.main_conf_path)
         self._main = au.load_yml_conf(self.main_conf_path)
+        conf_modified = False
+        k = 'multicore_mapper_mode'
+        if k not in self._main:
+            self._main[k] = constants.default_multicore_mapper_mode
         if build_all:
             self._build_all()
         
@@ -38,9 +49,9 @@ class ConfigLoader():
             self._build_all()
     
     def _load_module_conf(self, module_name, build_all=True):
-        module_info = au.get_local_module_info(module_name)
-        if module_info is not None:
-            self._modules[module_name] = au.load_yml_conf(module_info.conf_path)
+        conf_path = au.get_module_conf_path(module_name)
+        if conf_path is not None:
+            self._modules[module_name] = au.load_yml_conf(conf_path)
         if build_all:
             self._build_all()
             
@@ -50,6 +61,8 @@ class ConfigLoader():
             self._all['modules'] = copy.deepcopy(self._modules)
         if self._main:
             self._all['cravat'] = copy.deepcopy(self._main)
+        if self._system:
+            self._all['system'] = copy.deepcopy(self._system)
         self._all = au.recursive_update(self._all, self._job)
         if 'run' not in self._all:
             self._all['run'] = {}
@@ -99,8 +112,13 @@ class ConfigLoader():
     def get_cravat_conf(self):
         if 'cravat' not in self._all:
             self._load_main_conf()
-        return self._main
+        return self._all['cravat']
     
+    def get_system_conf (self):
+        if 'system' not in self._all:
+            self._load_system_conf()
+        return self._all['system']
+
     def get_modules_conf(self):
         conf = self._all.get('modules', {})
         return conf

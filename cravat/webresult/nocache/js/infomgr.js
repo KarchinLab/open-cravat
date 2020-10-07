@@ -20,12 +20,18 @@ InfoMgr.prototype.getStatus = function (jobId) {
 	self.jobId = jobId;
 }
 
-
 InfoMgr.prototype.count = function (dbPath, tabName, callback) {
-	$.get('/result/service/count', {'username': username, 'job_id': jobId, tab: tabName, dbpath: dbPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
+	const data = {
+		username: username, 
+		job_id: jobId, 
+		tab: tabName, 
+		dbpath: dbPath,
+		filter: JSON.stringify(filterJson),
+	};
+	$.post('/result/service/count', data).done(function (jsonResponseData) {
 		var msg = jsonResponseData['n'] + ' variants meet the criteria';
 		callback(msg, jsonResponseData);
-    });
+	});	
 }
 
 InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson, fetchtype) {
@@ -39,7 +45,7 @@ InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson
 		}
 		$.ajax({
 			url: '/result/service/result', 
-			type: 'get',
+			type: 'post',
 			async: true,
 			data: {'username': username, job_id: jobId, tab: tabName, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson), separatesample: separateSample},
 			success: function (jsonResponseData) {
@@ -154,10 +160,26 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
 				};
 			column['render'] = function (ui) {
 				var val = ui.rowData[ui.dataIndx];
-				if (val == null) {
-					val = '';
+				var content;
+				if (ui.column.type==="float") {
+					if (val==null){
+						val = '';
+						content = '';
+					} else if (val === 0) {
+						content = '0';
+					} else if (Math.abs(val)>1e4 || Math.abs(val)<1e-4) {
+						content = val.toExponential(3);
+					} else {
+						let rnd = Math.round((val+Number.EPSILON)*1e4)/1e4;
+						content = rnd.toString();
+					}
+				} else {
+					if (val == null) {
+						val = '';
+					}
+					content = '' + val;
 				}
-				var content = '' + val;
+                content = content.replace(/>/g, '&gt;');
 				var title = content;
 				if (ui.column.link_format !== null) {
 					var linkFormat = ui.column.link_format;
@@ -199,7 +221,10 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                         if (select == '' || select == null) {
                             return true;
                         }
-                        var selects = select.split(',');
+                        var selects = JSON.parse(select);
+                        if (Array.isArray(selects) && selects.length == 0) {
+                            return true;
+                        }
                         if (selects.indexOf(val) >= 0) {
                             return true;
                         } else {
@@ -211,7 +236,10 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                         if (selects == null) {
                             return true;
                         }
-                        selects = selects.split(',');
+                        var selects = JSON.parse(selects);
+                        if (Array.isArray(selects) && selects.length == 0) {
+                            return true;
+                        }
                         for (var i = 0; i < selects.length; i++) {
                             var select = selects[i];
                             if (val.indexOf(select) >= 0) {

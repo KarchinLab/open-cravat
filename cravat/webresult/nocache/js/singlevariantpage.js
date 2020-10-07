@@ -97,6 +97,7 @@ function showWidget (widgetName, moduleNames, level, parentDiv, maxWidth, maxHei
         generator[level]['max-height'] = maxHeight;
         maxHeightParent = maxHeight + 30;
     }
+    console.log('@', widgetName, 'maxHeight=', maxHeight);
     if (level != undefined) {
         divs = getDetailWidgetDivs(level, widgetName, widgetInfo[widgetName].title, maxWidthParent, maxHeightParent, showTitle);
     } else {
@@ -191,13 +192,13 @@ widgetGenerators['basepanel'] = {
         'function': function (div, row, tabName) {
             var generator = widgetGenerators['base']['variant'];
             generator['width'] = 450;
-            var divs = showWidget('base', ['base', 'dbsnp'], 'variant', div, null, 250);
+            var divs = showWidget('base', ['base', 'dbsnp'], 'variant', div, null, 220);
             divs[0].style.position = 'absolute';
             divs[0].style.top = '0px';
             divs[0].style.left = '0px';
             var generator = widgetGenerators['hgvs']['variant'];
             generator['width'] = 400;
-            var divs = showWidget('hgvs', ['base', 'hgvs'], 'variant', div, null, 250);
+            var divs = showWidget('hgvs', ['base', 'hgvs'], 'variant', div, null, 220);
             divs[0].style.position = 'absolute';
             divs[0].style.top = '0px';
             divs[0].style.left = '470px';
@@ -508,7 +509,7 @@ widgetGenerators['clinpanel'] = {
             var tr = getEl('tr');
             tr.style.borderBottom = '1px dotted #cccccc';
             var td = getEl('th');
-            td.textContent = 'GWAS Catolog';
+            td.textContent = 'GWAS Catalog';
             addEl(tr, td);
             var td = getEl('td');
             if (row['gwas_catalog__risk_allele'] == undefined) {
@@ -775,6 +776,7 @@ widgetGenerators['visupanel'] = {
         'width': sectionWidth,
         'height': 'unset',
         'function': function (div, row, tabName) {
+            div.style.overflow = 'unset';
             var table = getEl('table');
             var tr = getEl('tr');
             var td = getEl('td');
@@ -823,18 +825,19 @@ widgetGenerators['mupit2'] = {
             var chrom = getWidgetData(tabName, 'base', row, 'chrom');
             var pos = getWidgetData(tabName, 'base', row, 'pos');
             var url = location.protocol + '//www.cravat.us/MuPIT_Interactive/rest/showstructure/check?pos=' + chrom + ':' + pos;
+            var iframe = getEl('iframe');
+            iframe.style.position = 'absolute';
+            iframe.style.top = '15px';
+            iframe.style.left = '0px';
+            iframe.style.width = '100%';
+            iframe.style.height = '500px';
+            iframe.style.border = '0px';
+            addEl(div, iframe);
             $.get(url).done(function (response) {
                 if (response.hit == true) {
-                    var iframe = getEl('iframe');
-                    iframe.style.position = 'absolute';
-                    iframe.style.top = '15px';
-                    iframe.style.left = '0px';
-                    iframe.style.width = '100%';
-                    iframe.style.height = 'calc(100% - 32px)';
-                    iframe.style.border = '0px';
                     iframe.src = location.protocol + '//www.cravat.us/MuPIT_Interactive?gm=' + chrom + ':' + pos + '&embed=true';
-                    addEl(div, iframe);
                 } else {
+                    iframe.parentElement.removeChild(iframe);
                     var sdiv = getEl('div');
                     sdiv.textContent = 'No annotation available';
                     sdiv.style.paddingLeft = '7px';

@@ -1,0 +1,14 @@
+[console_scripts]
+cravat = cravat.runcravat:main
+cravat-admin = cravat.cravat_admin:main
+cravat-filter = cravat.cravat_filter:main
+cravat-report = cravat.cravat_report:cravat_report_entrypoint
+cravat-test = cravat.cravat_test:main
+cravat-util = cravat.cravat_util:main
+cravat-view = cravat.cravat_web:wcravat_entrypoint
+cv = cravat.runcravat:main
+cva = cravat.cravat_admin:main
+oc = cravat.oc:main
+wcravat = cravat.cravat_web:wcravat_entrypoint
+wcv = cravat.cravat_web:wcravat_entrypoint
+

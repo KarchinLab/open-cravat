@@ -10,9 +10,10 @@ from cravat import constants
 from types import SimpleNamespace
 import re
 import textwrap
-import math
 import copy
 from getpass import getpass
+from distutils.version import LooseVersion
+from cravat import util
 
 class ExampleCommandsFormatter(object,):
     def __init__(self, prefix='',  cmd_indent=' '*2, desc_indent=' '*8, width=70):
@@ -54,40 +55,16 @@ class InstallProgressStdout(au.InstallProgressHandler):
         out = '\r[{cur_prog}{rem_prog}] {cur_size} / {total_size} ({perc:.0f}%)  '\
             .format(cur_prog='*'*cur_chunk,
                     rem_prog=' '*rem_chunks,
-                    cur_size = humanize_bytes(cur_size),
-                    total_size = humanize_bytes(total_size),
+                    cur_size = util.humanize_bytes(cur_size),
+                    total_size = util.humanize_bytes(total_size),
                     perc = perc)
         sys.stdout.write(out)
         if cur_chunk == total_chunks:
             sys.stdout.write('\n')
 
-def humanize_bytes(num, binary=False):
-    """Human friendly file size"""
-    exp2unit_dec = {0:'B',1:'kB',2:'MB',3:'GB'}
-    exp2unit_bin = {0:'B',1:'KiB',2:'MiB',3:'GiB'}
-    max_exponent = 3
-    if binary:
-        base = 1024
-    else:
-        base = 1000
-    if num > 0:
-        exponent = math.floor(math.log(num, base))
-        if exponent > max_exponent:
-            exponent = max_exponent
-    else:
-        exponent = 0
-    quotient = float(num) / base**exponent
-    if binary:
-        unit = exp2unit_bin[exponent]
-    else:
-        unit = exp2unit_dec[exponent]
-    quot_str = '{:.1f}'.format(quotient)
-    # No decimal for byte level sizes
-    if exponent == 0:
-        quot_str = quot_str.rstrip('0').rstrip('.')
-    return '{quotient} {unit}'.format(quotient=quot_str, unit=unit)
-
 def yield_tabular_lines(l, col_spacing=4, indent=0):
+    if not l:
+        return
     sl = []
     n_toks = len(l[0])
     max_lens = [0] * n_toks
@@ -108,7 +85,7 @@ def print_tabular_lines(l, *kwargs):
     for line in yield_tabular_lines(l, *kwargs):
         print(line)
 
-def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False):
+def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False, raw_bytes=False):
     if quiet:
         all_toks = []
     else:
@@ -125,15 +102,19 @@ def list_local_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], q
                 continue
         if module_info.hidden and not include_hidden:
             continue
-        size = module_info.get_size()
         if quiet:
             toks = [module_name]
         else:
-            toks = [module_name, module_info.title, module_info.type, module_info.version, module_info.datasource, humanize_bytes(size)]
+            size = module_info.get_size()
+            toks = [module_name, module_info.title, module_info.type, module_info.version, module_info.datasource]
+            if raw_bytes:
+                toks.append(size)
+            else:
+                toks.append(util.humanize_bytes(size))
         all_toks.append(toks)
     print_tabular_lines(all_toks)
 
-def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False):
+def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[], quiet=False, raw_bytes=False):
     if quiet:
         all_toks = []
     else:
@@ -168,24 +149,29 @@ def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[
         if quiet:
             toks = [module_name]
         else:
-            toks = [module_name,
-                    remote_info.title,
-                    remote_info.type,
-                    installed,
-                    up_to_date,
-                    remote_info.latest_version,
-                    remote_info.datasource,
-                    local_version,
-                    local_datasource,
-                    humanize_bytes(remote_info.size)]
+            toks = [
+                module_name,
+                remote_info.title,
+                remote_info.type,
+                installed,
+                up_to_date,
+                remote_info.latest_version,
+                remote_info.datasource,
+                local_version,
+                local_datasource,
+            ]
+            if raw_bytes:
+                toks.append(remote_info.size)
+            else:
+                toks.append(util.humanize_bytes(remote_info.size))
         all_toks.append(toks)
     print_tabular_lines(all_toks)
 
 def list_modules(args):
     if args.available:
-        list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet)
+        list_available_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet, raw_bytes=args.raw_bytes)
     else:
-        list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet)
+        list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet, raw_bytes=args.raw_bytes)
 
 def yaml_string(x):
     s = yaml.dump(x, default_flow_style = False)
@@ -278,16 +264,23 @@ def install_modules(args):
     for module_name in matching_names:
         remote_info = au.get_remote_module_info(module_name)
         if args.version is None:
+            local_info = au.get_local_module_info(module_name)
+            if local_info is not None:
+                local_ver = local_info.version
+                remote_ver = remote_info.latest_version
+                if not args.force and LooseVersion(local_ver) >= LooseVersion(remote_ver):
+                    print(f'{module_name}: latest is already installed. ({local_ver})')
+                    continue
             selected_install[module_name] = remote_info.latest_version
         elif remote_info.has_version(args.version):
             selected_install[module_name] = args.version
         else:
             continue
-    if args.include_private:
+    if args.private:
         if args.version is None:
             sys.exit('--include-private cannot be used without specifying a version using -v/--version')
         for module_name in args.modules:
-            if au.module_exists_remote(module_name, version=args.version, include_private=True):
+            if au.module_exists_remote(module_name, version=args.version, private=True):
                 selected_install[module_name] = args.version
     # Add dependencies of selected modules
     dep_install = {}
@@ -299,7 +292,7 @@ def install_modules(args):
     to_install = selected_install
     to_install.update(dep_install)
     if len(to_install) == 0:
-        print('No modules found')
+        print('No modules to install found')
     else:
         print('Installing: {:}'\
                 .format(', '.join([name+':'+version for name, version in sorted(to_install.items())]))
@@ -319,7 +312,9 @@ def install_modules(args):
             au.install_module(module_name,
                                 version=module_version,
                                 force_data=args.force_data,
-                                stage_handler=stage_handler
+                                stage_handler=stage_handler,
+                                force=args.force,
+                                skip_data=args.skip_data,
                                 )
 
 def update_modules(args):
@@ -339,7 +334,7 @@ def update_modules(args):
     for mname, update_info in updates.items():
         version = update_info.version
         size = update_info.size
-        status_table.append([mname, version, humanize_bytes(size)])
+        status_table.append([mname, version, util.humanize_bytes(size)])
     print_tabular_lines(status_table)
     if not args.y:
         user_cont = input('Update the above modules? (y/n) > ')
@@ -350,8 +345,10 @@ def update_modules(args):
         args.force_data = False
         args.version = update_info.version
         args.yes = True
-        args.include_private = False
+        args.private = False
         args.skip_dependencies = False
+        args.force = False
+        args.skip_data = False
         install_modules(args)
 
 def uninstall_modules (args):
@@ -371,7 +368,7 @@ def uninstall_modules (args):
             au.uninstall_module(module_name)
             print('Uninstalled %s' %module_name)
     else:
-        print('No modules found')
+        print('No modules to uninstall found')
 
 def publish_module (args):
     if args.password is None:
@@ -386,8 +383,10 @@ def install_base (args):
                             skip_installed=True,
                             version=None,
                             yes=True,
-                            include_private=False,
+                            private=False,
                             skip_dependencies=False,
+                            force=args.force,
+                            skip_data=False
                             )
     install_modules(args)
 
@@ -458,8 +457,13 @@ parser_md.set_defaults(func=set_modules_dir)
 
 # install-base
 parser_install_base = subparsers.add_parser('install-base',
-                                            help='installs base modules.',
-                                            description='installs base modules.')
+    help='installs base modules.',
+    description='installs base modules.'
+)
+parser_install_base.add_argument('-f','--force',
+    action='store_true',
+    help='Overwrite existing moduels',
+)
 parser_install_base.set_defaults(func=install_base)
 
 # install
@@ -467,26 +471,40 @@ parser_install = subparsers.add_parser('install',
                                         help='installs modules.',
                                         description='installs modules.')
 parser_install.add_argument('modules',
-                            nargs='+',
-                            help='Modules to install. May be regular expressions.')
+    nargs='+',
+    help='Modules to install. May be regular expressions.'
+)
 parser_install.add_argument('-v','--version',
-                            help='Version to install. Will apply to all modules. Default is latest version for each module')
-parser_install.add_argument('-d',
-                            '--force-data',
-                            action='store_true',
-                            help='Force download new data even if not needed.')
+    help='Install a specific version'
+)
+parser_install.add_argument('-f','--force',
+    action='store_true',
+    help='Install module even if latest version is already installed',
+)
+parser_install.add_argument('-d', '--force-data',
+    action='store_true',
+    help='Force download new data even if not needed.'
+)
 parser_install.add_argument('--skip-installed',
-                            action='store_true',
-                            help='skips already installed modules.')
+    action='store_true',
+    help='skips already installed modules.'
+)
 parser_install.add_argument('-y','--yes',
-                            action='store_true',
-                            help='Proceed without prompt')
+    action='store_true',
+    help='Proceed without prompt'
+)
 parser_install.add_argument('--skip-dependencies',
-                            action='store_true',
-                            help='Skip installing dependencies of selected modules')
-parser_install.add_argument('-p','--include-private',
-                            action='store_true',
-                            help='Include private modules when checking for module existence')
+    action='store_true',
+    help='Skip installing dependencies of selected modules'
+)
+parser_install.add_argument('-p','--private',
+    action='store_true',
+    help='Install a private module'
+)
+parser_install.add_argument('--skip-data',
+    action='store_true',
+    help='Skip installing data'
+)
 parser_install.set_defaults(func=install_modules)
 
 # update
@@ -573,6 +591,11 @@ parser_ls.add_argument('--tags',
 parser_ls.add_argument('-q','--quiet',
                         action='store_true',
                         help='Only list module names')
+parser_ls.add_argument('--bytes',
+    action='store_true',
+    dest='raw_bytes',
+    help='Machine readable data sizes'
+    )
 parser_ls.set_defaults(func=list_modules)
 
 # publish

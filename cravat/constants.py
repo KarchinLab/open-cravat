@@ -32,7 +32,7 @@ if os.path.exists(system_conf_path) == False:
     shutil.copyfile(system_conf_template_path, system_conf_path)
 # conf
 f = open(system_conf_path)
-conf = yaml.load(f)
+conf = yaml.safe_load(f)
 f.close()
 # modules dir
 modules_dir_key = 'modules_dir'
@@ -53,9 +53,6 @@ if not jobs_dir_key in conf:
     if os.path.exists(default_jobs_dir) == False:
         os.mkdir(default_jobs_dir)
     conf[jobs_dir_key] = default_jobs_dir
-    wf = open(system_conf_path, 'w')
-    yaml.dump(conf, wf, default_flow_style=False)
-    wf.close()
 # log dir
 log_dir_key = 'log_dir'
 log_dir_name = 'logs'
@@ -64,9 +61,6 @@ if not log_dir_key in conf:
     if os.path.exists(default_log_dir) == False:
         os.mkdir(default_log_dir)
     conf[log_dir_key] = default_log_dir
-    wf = open(system_conf_path, 'w')
-    yaml.dump(conf, wf, default_flow_style=False)
-    wf.close()
 # Live conf
 live_conf_fname = 'live.yml'
 
@@ -95,8 +89,8 @@ crm_def = [{'name':'original_line', 'title':'Original Line', 'type':'int', 'widt
     ]
 crm_idx = [['uid'],['tags']]
 crs_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 70},
-           {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90, 'category': 'multi'}]
-crs_idx = [['uid'], ['sample_id']]
+           {'name':'sample_id', 'title':'Sample', 'type':'string', 'width': 90}]
+crs_idx = [['uid'], ['sample_id'],['sample_id','uid']]
 crv_def = [{'name':'uid', 'title':'UID', 'type':'int', 'width': 60, 'hidden':True, 'filterable': False},
            {'name':'chrom', 'title':'Chrom', 'type':'string', 'width': 50, 'category': 'single', 'filterable': True},
            {'name':'pos', 'title':'Position', 'type':'int', 'width': 80, 'filterable': True},
@@ -108,31 +102,15 @@ crv_idx = [['uid']]
 crx_def = crv_def + \
           [{'name':'coding', 'title':'Coding', 'type':'string', 'width': 50, 'category': 'single',
                'categories': ['Y']},
-           {'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70, 'filterable': True},
-           {'name':'transcript', 'title':'Transcript', 'type':'string', 'width': 135, 'hidden':True, 'filterable': False},
-           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 120, 'category': 'single',
-               'categories': [
-                   '2KD',
-                   '2KU', 
-                   'UT3', 
-                   'UT5', 
-                   'INT', 
-                   'UNK', 
-                   'SYN', 
-                   'MIS', 
-                   'CSS', 
-                   'IND', 
-                   'INI', 
-                   'STL', 
-                   'SPL', 
-                   'STG', 
-                   'FSD', 
-                   'FSI'], 'filterable': True},
+           {'name':'hugo', 'title':'Gene', 'type':'string', 'width': 70, 'filterable': True},
+           {'name':'transcript', 'title':'Transcript', 'type':'string', 'width': 135, 'hidden':False, 'filterable': False},
+           {'name':'so', 'title':'Sequence Ontology', 'type':'string', 'width': 120, 'category': 'single', 'filterable': True},
+           {'name':'cchange', 'title': 'cDNA change', 'type': 'string', 'width': 70, 'filterable': False},
            {'name':'achange', 'title':'Protein Change', 'type':'string', 'width': 55, 'filterable': False},
            {'name':'all_mappings', 'title':'All Mappings', 'type':'string', 'width': 100, 'hidden':True, 'filterable': False},
            ]
 crx_idx = [['uid']]
-crg_def = [{'name':'hugo', 'title':'Hugo', 'type':'string', 'width': 70, 'filterable': True},
+crg_def = [{'name':'hugo', 'title':'Gene', 'type':'string', 'width': 70, 'filterable': True},
            {'name': 'note', 'title': 'Note', 'type': 'string', 'width': 50},
           ]
 crg_idx = [['hugo']]
@@ -158,8 +136,6 @@ VARIANT = 0
 GENE = 1
 LEVELS = {'variant': VARIANT, 'gene': GENE}
 
-viewer_effective_digits = 3
-
 gene_level_so_exclude = ['2KU', '2KD']
 
 base_smartfilters = [
@@ -179,6 +155,20 @@ base_smartfilters = [
                     'operator': 'or',
                     'rules': [
                         {
+                            'column': 'gnomad3__af', 
+                            'test': 'lessThanEq',
+                            'value': '${value}'
+                        },
+                        {
+                            'column': 'gnomad3__af', 
+                            'test': 'noData'
+                        },
+                    ]
+                },
+                {
+                    'operator': 'or',
+                    'rules': [
+                        {
                             'column': 'gnomad__af', 
                             'test': 'lessThanEq',
                             'value': '${value}'
@@ -186,7 +176,7 @@ base_smartfilters = [
                         {
                             'column': 'gnomad__af', 
                             'test': 'noData'
-                        }
+                        },
                     ]
                 },
                 {
@@ -278,9 +268,13 @@ module_tag_desc = {
 
 legacy_gene_level_cols_to_skip = ['base__num_variants', 'base__so', 'base__all_so']
 default_num_input_line_warning_cutoff = 25000
-default_sum_input_size_warning_cutoff = 500
+default_settings_gui_input_size_limit = 500
 default_max_num_concurrent_jobs = 4
 default_max_num_concurrent_annotators_per_job = max(1, os.cpu_count() - 1)
+default_multicore_mapper_mode = True
 default_assembly = 'hg38'
 default_assembly_key = 'default_assembly'
 assembly_choices = ['hg38', 'hg19', 'hg18']
+publish_time_fmt = '%Y-%m-%dT%H:%M:%S.%f%z'
+
+install_tempdir_name = 'temp'

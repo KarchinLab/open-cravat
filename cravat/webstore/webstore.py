@@ -17,16 +17,16 @@ import cravat.admin_util as au
 import markdown
 import shutil
 import copy
-import aiosqlite3
 import importlib
 import concurrent.futures
 
 system_conf = au.get_system_conf()
 pathbuilder = su.PathBuilder(system_conf['store_url'],'url')
+install_manager = None
 install_queue = None
 install_state = None
 install_worker = None
-install_ws = None
+local_modules_changed = None
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -83,7 +83,7 @@ class InstallProgressMpDict(au.InstallProgressHandler):
         self.install_state['total_size'] = total_size
         self.install_state['update_time'] = time.time()
 
-def fetch_install_queue (install_queue, install_state):
+def fetch_install_queue (install_queue, install_state, local_modules_changed):
     while True:
         try:
             data = install_queue.get()
@@ -94,9 +94,11 @@ def fetch_install_queue (install_queue, install_state):
             stage_handler = InstallProgressMpDict(module_name, module_version, install_state)
             au.install_module(module_name, version=module_version, stage_handler=stage_handler, stages=100)
             au.mic.update_local()
+            local_modules_changed.set()
             time.sleep(1)
         except:
-            sys.exit()
+            traceback.print_exc()
+            local_modules_changed.set()
 
 ###################### start from store_handler #####################
 
@@ -135,8 +137,7 @@ async def get_remote_module_config (request):
     return web.json_response(response)
 
 async def get_local_manifest (request):
-    #au.refresh_cache()
-    au.mic.update_local()
+    handle_modules_changed()
     content = {}
     for k, v in au.mic.local.items():
         content[k] = v.serialize()
@@ -155,70 +156,7 @@ async def get_module_readme (request):
     if version == 'latest': 
         version=None
     readme_md = au.get_readme(module_name, version=version)
-    if readme_md is None:
-        content = ''
-    else:
-        content = markdown.markdown(readme_md, extensions=['tables'])
-        global system_conf
-        global pathbuilder
-        if module_name in au.mic.remote:
-            imgsrceditor = ImageSrcEditor(pathbuilder.module_version_dir(module_name, au.mic.remote[module_name]['latest_version']))
-            imgsrceditor.feed(content)
-            content = imgsrceditor.get_parsed()
-            linkouteditor = LinkOutEditor(pathbuilder.module_version_dir(module_name, au.mic.remote[module_name]['latest_version']))
-            linkouteditor.feed(content)
-            content = linkouteditor.get_parsed()
-    headers = {'Content-Type': 'text/html'}
-    return web.Response(body=content, headers=headers)
-
-class ImageSrcEditor(HTMLParser):
-    def __init__ (self, prefix_url):
-        super().__init__()
-        self.prefix_url = prefix_url
-        self.parsed = ''
-
-    def handle_starttag(self, tag, attrs):
-        html = '<{}'.format(tag)
-        if tag == 'img':
-            attrs.append(['style', 'display:block;margin:auto;max-width:100%'])
-        for name, value in attrs:
-            if tag == 'img' and name == 'src':
-                value = self.prefix_url + '/' + value.lstrip('/')
-            html += ' {name}="{value}"'.format(name=name, value=value)
-        html += '>'
-        self.parsed += html
-
-    def handle_data(self, data):
-        self.parsed += data
-
-    def handle_endtag(self, tag):
-        self.parsed += '</{}>'.format(tag)
-
-    def get_parsed(self):
-        return self.parsed
-
-class LinkOutEditor(HTMLParser):
-    def __init__ (self, prefix_url):
-        super().__init__()
-        self.prefix_url = prefix_url
-        self.parsed = ''
-    def handle_starttag(self, tag, attrs):
-        html = '<{}'.format(tag)
-        if tag == 'a':
-            attrs.append(['target', '_blank'])
-        for name, value in attrs:
-            html += ' {name}="{value}"'.format(name=name, value=value)
-        html += '>'
-        self.parsed += html
-
-    def handle_data(self, data):
-        self.parsed += data
-
-    def handle_endtag(self, tag):
-        self.parsed += '</{}>'.format(tag)
-
-    def get_parsed(self):
-        return self.parsed
+    return web.Response(body=readme_md)
 
 async def install_widgets_for_module (request):
     queries = request.rel_url.query
@@ -237,6 +175,7 @@ async def uninstall_module (request):
     queries = request.rel_url.query
     module_name = queries['name']
     au.uninstall_module(module_name)
+    au.mic.update_local()
     response = 'uninstalled ' + module_name
     return web.json_response(response)
 
@@ -244,18 +183,21 @@ def start_worker ():
     global install_worker
     global install_queue
     global install_state
-    install_queue = Queue()
-    install_state = Manager().dict()
+    global install_manager
+    global local_modules_changed
+    install_manager = Manager()
+    install_queue = install_manager.Queue()
+    install_state = install_manager.dict()
+    local_modules_changed = install_manager.Event()
     if install_worker == None:
-        install_worker = Process(target=fetch_install_queue, args=(install_queue, install_state,))
+        install_worker = Process(target=fetch_install_queue, args=(install_queue, install_state, local_modules_changed))
         install_worker.start()
 
-async def send_socket_msg ():
-    global install_ws
+async def send_socket_msg (install_ws):
     data = {}
     data['module'] = install_state['module_name']
     data['msg'] = install_state['message']
-    if data['msg'].startswith('Downloading'):
+    if 'Downloading ' in data['msg']:
         data['msg'] = data['msg'] + ' ' + str(install_state['cur_chunk']) + '%'
     await install_ws.send_str(json.dumps(data))
     last_update_time = install_state['update_time']
@@ -263,7 +205,6 @@ async def send_socket_msg ():
 
 async def connect_websocket (request):
     global install_state
-    global install_ws
     if not install_state:
         install_state['stage'] = ''
         install_state['message'] = ''
@@ -284,7 +225,7 @@ async def connect_websocket (request):
         except concurrent.futures._base.CancelledError:
             return install_ws
         if last_update_time < install_state['update_time']:
-            last_update_time = await send_socket_msg()
+            last_update_time = await send_socket_msg(install_ws)
     return install_ws
 
 async def queue_install (request):
@@ -331,6 +272,7 @@ async def get_md (request):
     return web.Response(text=modules_dir)
 
 async def get_module_updates (request):
+    handle_modules_changed()
     queries = request.rel_url.query
     smodules = queries.get('modules','')
     if smodules:
@@ -400,6 +342,56 @@ async def update_remote (request):
     au.mic.update_remote(force=True)
     return web.json_response('done')
 
+def handle_modules_changed():
+    if local_modules_changed and local_modules_changed.is_set():
+        au.mic.update_local()
+        local_modules_changed.clear()
+
+async def get_remote_manifest_from_local (request):
+    queries = request.rel_url.query
+    module = queries.get('module', None)
+    if module is None:
+        return web.json_response({})
+    module_info = au.mic.local[module]
+    module_conf = module_info.conf
+    response = {}
+    module_dir = module_info.directory
+    response['code_size'] = os.path.getsize(module_dir)
+    response['commercial_warning'] = module_conf.get('commercial_warning', None)
+    if os.path.exists(module_info.data_dir) == False:
+        response['data_size'] = 0
+    else:
+        response['data_size'] = os.path.getsize(module_info.data_dir)
+    version = module_conf.get('version', '')
+    response['data_sources'] = {version: module_info.datasource}
+    response['data_versions'] = {version: version}
+    response['downloads'] = 0
+    response['groups'] = module_info.groups
+    response['has_logo'] = os.path.exists(os.path.join(module_dir, 'logo.png'))
+    response['hidden'] = module_conf.get('hidden', False)
+    response['latest_version'] = version
+    import datetime
+    response['publish_time'] = str(datetime.datetime.now())
+    response['requires'] = module_conf.get('requires', [])
+    response['size'] = response['code_size'] + response['data_size']
+    response['tags'] = module_conf.get('tags', [])
+    response['title'] = module_conf.get('title', '')
+    response['type'] = module_conf.get('type', '')
+    response['version'] = version
+    response['versions'] = [version]
+    response['private'] = module_conf.get('private', False)
+    response['uselocalonstore'] = module_conf.get('uselocalonstore', False)
+    return web.json_response(response)
+
+async def get_local_module_logo (request):
+    queries = request.rel_url.query
+    module = queries.get('module', None)
+    module_info = au.mic.local[module]
+    module_conf = module_info.conf
+    module_dir = module_info.directory
+    logo_path = os.path.join(module_dir, 'logo.png')
+    return web.FileResponse(logo_path)
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/installwidgetsformodule', install_widgets_for_module])
@@ -419,3 +411,5 @@ routes.append(['GET', '/store/killinstall', kill_install])
 routes.append(['GET', '/store/unqueue', unqueue_install])
 routes.append(['GET', '/store/tagdesc', get_tag_desc])
 routes.append(['GET', '/store/updateremote', update_remote])
+routes.append(['GET', '/store/localasremote', get_remote_manifest_from_local])
+routes.append(['GET', '/store/locallogo', get_local_module_logo])

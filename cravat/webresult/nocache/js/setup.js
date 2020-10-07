@@ -23,13 +23,16 @@ function setupTab (tabName) {
 	
 	// Populates the right panel.
 	if (tabName == 'info') {
-		makeInfoTab(rightDiv);
+        makeInfoTab(rightDiv);
+        resetTab[tabName] = false;
 	} else if (tabName == 'variant' || tabName == 'gene') {
-		makeVariantGeneTab(tabName, rightDiv);
+        makeVariantGeneTab(tabName, rightDiv);
+        resetTab[tabName] = false;
 	} else if (tabName == 'sample' || tabName == 'mapping') {
-		makeSampleMappingTab(tabName, rightDiv);
+        makeSampleMappingTab(tabName, rightDiv);
+        resetTab[tabName] = false;
 	} else if (tabName == 'filter') {
-		makeFilterTab(rightDiv);
+        resetTab[tabName] = !makeFilterTab(rightDiv);
 	}
 	addEl(tabDiv, rightDiv);
 	
@@ -52,9 +55,7 @@ function setupTab (tabName) {
                 selectedRowNos[tabName] = 0;
 			}
 		}
-	}
-	
-	resetTab[tabName] = false;
+    }
 	
 	placeDragNSBar(tabName);
 	placeCellValueDiv(tabName);
@@ -81,18 +82,31 @@ class FilterManager {
         this.sampleContId = 'filter-cont-sample';
         this.geneContId = 'filter-cont-gene';
         this.variantContId = 'filter-cont-variant'
-        this.sampleSelectId = 'sample-select-cont';
+        this.sampleControlClass = 'sample-control'
+        this.sampleFilterId = 'sample-select-filt';
         this.sampleFileId = 'sample-list-file';
+        this.sampleFileDisplayId = 'sample-list-file-display';
+        this.sampleFileClearId = 'sample-list-file-clear';
+        this.sampleSelectId = 'sample-select-cont';
+        this.sampleReqCountId = 'sample-req-count';
+        this.sampleRejCountId = 'sample-rej-count';
+        this.sampleInFilterCountId = 'sample-infiliter-count';
+        this.sampleRuleClass = 'filter-sample-hasrule-span';
+        this.sampleShownCount = 'sample-shown-count';
+        this.sampleInteractedSpan = 'sample-interacted-cont';
 		this.geneTextId = 'gene-list-text';
 		this.geneFileId = 'gene-list-file';
 		this.vpropSelectId = 'vprop-sel';
 		this.vpropSfId = 'vprop-sf';
 		this.vpropQbId = 'vprop-qb';
-		this.qbRootId = 'qb-root';
+        this.qbRootId = 'qb-root';
 		this.qbBannedColumns = [
 			'base__numsample',
 			'base__samples',
-		]
+        ];
+        this.allSamples = [];
+        this.requireSamples = new Set();
+        this.rejectSamples = new Set();
 	}
 
 	getFilterSection (headerTitle, active) {
@@ -122,7 +136,7 @@ class FilterManager {
             .addClass('filter-content');
         filterBody.append(filterContent);
         let filterControls = $(getEl('div'))
-        .addClass('filter-controls');
+            .addClass('filter-controls');
         filterBody.append(filterControls);
         filterControls.append($(getEl('button'))
             .addClass('filter-section-clear')
@@ -150,25 +164,197 @@ class FilterManager {
         }
         event.stopPropagation();
     }
-
+    
 	addSampleSelect (outerDiv, filter) {
         filter = new CravatFilter(filter);
+        this.requireSamples.clear();
+        this.rejectSamples.clear();
+        filter.sample.require.forEach(this.requireSamples.add, this.requireSamples);
+        filter.sample.reject.forEach(this.rejectSamples.add, this.rejectSamples);
+        this.allSamples = allSamples;
+        
         outerDiv.attr('id', this.sampleContId);
-		outerDiv.append($(getEl('div'))
-			.text('Click sample IDs once to include only variants in that sample. Click twice to exclude variants from that sample.')
-		)
-		let sampleSelDiv = $(getEl('div'))
-			.attr('id', this.sampleSelectId);
+
+        const controlsL1 = $(getEl('div'))
+            .addClass(this.sampleControlClass);
+        outerDiv.append(controlsL1);
+        
+        // Show all
+        
+        controlsL1.append($(getEl('button'))
+            .click(()=>{this.drawSamples(this.allSamples)})
+            .text(`Show all`)
+            .addClass('butn')
+        );
+
+        // Filter down the show samples
+        controlsL1.append($(getEl('input'))
+            .attr('id', this.sampleFilterId)
+            .attr('placeholder', 'Search samples')
+            .on('input',event=>{
+                const q = event.target.value;
+                if (q) {
+                    this.drawSamples(this.matchingSamples(q));
+                } else {
+                    this.drawSamples(this.allSamples);
+                }
+            }
+        ));
+        
+        // File filter
+        controlsL1.append($(getEl('input'))
+            .attr('id', this.sampleFileId)
+            .attr('type', 'file')
+            .on('input', this.sampleListFile.bind(this))
+            .css('display','none')
+        );
+        controlsL1.append($(getEl('button'))
+            .text('Sample list')
+            .addClass('butn')
+            .attr('title','Upload a list of sample IDs. One per line.')
+            .click(()=>{
+                const fileInput = $('#'+this.sampleFileId);
+                fileInput.val(null);
+                $('#'+this.sampleFileId).click();
+            }
+        ));
+        controlsL1.append($(getEl('span'))
+            .attr('id',this.sampleFileDisplayId)
+            .click(event=>{
+                $('#'+this.sampleFileId).trigger('input');
+            })
+        );
+        controlsL1.append($(getEl('button'))
+            .attr('id',this.sampleFileClearId)
+            .text('X')
+            .click(()=>{
+                $('#'+this.sampleFileId)
+                    .val(null)
+                    .trigger('input')
+            })
+            .addClass('butn')
+        );        
+        
+        // Show in filter
+        const interactedSpan = $(getEl('span'))
+            .addClass(this.sampleInteractedSpan);
+        controlsL1.append(interactedSpan);
+        interactedSpan.append($(getEl('span'))
+            .attr('id', this.sampleInFilterCountId)
+            .addClass(this.sampleRuleClass)
+            .text('In filter: 0')
+            .click(()=>{
+                this.drawSamples([...this.requireSamples].concat([...this.rejectSamples]));
+            })
+        );
+        interactedSpan.append($(getEl('span'))
+            .attr('id', this.sampleReqCountId)
+            .addClass(this.sampleRuleClass)
+            .text('Include: 0')
+            .click(()=>{this.drawSamples([...this.requireSamples])})
+        );
+        interactedSpan.append($(getEl('span'))
+            .attr('id', this.sampleRejCountId)
+            .addClass(this.sampleRuleClass)
+            .text('Exclude: 0')
+            .click(()=>{this.drawSamples([...this.rejectSamples])})
+        );
+
+        // Clear selection
+        controlsL1.append($(getEl('button'))
+            .addClass('butn')
+            .click(event=>{
+                this.sampleSelectionClear();
+                this.drawSamples();
+            })
+            .text('Clear')
+        )
+        
+        // Line 2
+        const controlsL2 = $(getEl('div'))
+            .addClass(this.sampleControlClass);
+        outerDiv.append(controlsL2);
+        
+        
+        const allChange = event => {
+            const target = $(event.target);
+            if (target.prop('checked')) {
+                this.samplePickShown(target.val());
+            }
+        }
+        const reqRejClick = event => {
+            const rd = $(event.target).prev('input:radio');
+            let toClick;
+            if (rd.prop('checked')) {
+                toClick = $('input[name="sample-sel-all"][value="neutral"]')
+            } else {
+                toClick = rd
+            }
+            toClick.prop('checked',true).trigger('change')
+        }
+        controlsL2.append($(getEl('input'))
+        .attr('type','radio')
+        .attr('name','sample-sel-all')
+        .val('neutral')
+        .change(allChange)
+            .attr('hidden',true)
+        )
+        controlsL2.append($(getEl('input'))
+        .attr('type','radio')
+            .attr('name','sample-sel-all')
+            .val('require')
+            .change(allChange)
+            .attr('hidden',true)
+            )
+            controlsL2.append($(getEl('span'))
+            .addClass('sample-rd')
+            .addClass('sample-rd-req')
+            .click(reqRejClick)
+        )
+        controlsL2.append($(getEl('input'))
+            .attr('type','radio')
+            .attr('name','sample-sel-all')
+            .val('reject')
+            .change(allChange)
+            .attr('hidden',true)
+            )
+        controlsL2.append($(getEl('span'))
+        .addClass('sample-rd')
+        .addClass('sample-rd-rej')
+        .click(reqRejClick)
+        )
+        
+        // Count shown
+        controlsL2.append($(getEl('span'))
+            .attr('id',this.sampleShownCount)
+            .text(`${this.allSamples.length}/${this.allSamples.length}`)
+        );
+
+		const sampleSelDiv = $(getEl('div'))
+            .attr('id', this.sampleSelectId);
 		outerDiv.append(sampleSelDiv);
-		let sampleIds = getFilterCol('base__samples').categories;
-		if (sampleIds.length==0 || (sampleIds.length==1 && !sampleIds[0])) {
-			outerDiv.closest('.filter-section').css('display','none');
+		if (this.allSamples.length==0 || (this.allSamples.length==1 && !this.allSamples[0])) {
+            outerDiv.closest('.filter-section').css('display','none');
 		}
-		for (let i=0; i<sampleIds.length; i++) {
+        this.drawSamples(this.allSamples, sampleSelDiv);
+        this.sampleSelChange();
+		return outerDiv;
+    }
+    
+    drawSamples(sampleIds, sampleSelDiv) {
+        sampleIds = sampleIds==undefined ? 
+            this.allSamples : sampleIds;
+        sampleIds = sampleIds
+            .filter(sid=>this.allSamples.indexOf(sid)>=0)
+            .sort();
+        sampleSelDiv = sampleSelDiv==undefined ? 
+            $('#'+this.sampleSelectId) : sampleSelDiv;
+        sampleSelDiv.empty();
+        for (let i=0; i<sampleIds.length; i++) {
 			let sid = sampleIds[i];
 			let sampleBox = $(getEl('div'))
 				.addClass('sample-selector')
-				.click(this.onSampleSelectorClick)
+				.click(this.onSampleSelectorClick.bind(this))
 				.addClass('sample-neutral')
 				.attr('title', sid);
 			sampleSelDiv.append(sampleBox);
@@ -179,43 +365,48 @@ class FilterManager {
 				.text(sid)
 				.addClass('sample-selector-label')
 			)
-			if (filter.sample.require.indexOf(sid) >= 0) {
+			if (this.requireSamples.has(sid)) {
 				sampleBox.removeClass('sample-neutral');
 				sampleBox.addClass('sample-require');
-			} else if (filter.sample.reject.indexOf(sid) >= 0) {
+			} else if (this.rejectSamples.has(sid)) {
 				sampleBox.removeClass('sample-neutral');
 				sampleBox.addClass('sample-reject');
 			}
         }
-        let sampListDiv = $(getEl('div'));
-        outerDiv.append(sampListDiv);
-        let sampListInput = $(getEl('input'))
-            .attr('id', this.sampleFileId)
-            .attr('type', 'file')
-            .change(this.onSampleListFileChange.bind(this))
-            .css('display','none');
-        sampListDiv.append(sampListInput);
-        let sampListBtn = $(getEl('button'))
-            .text('Sample list')
-            .addClass('butn')
-            .click(()=>{
-                $('#'+this.sampleFileId).click();
-            });
-        sampListDiv.append(sampListBtn);
-		return outerDiv;
-    }
-    
-    onSampleListFileChange (event) {
-        let fileInput = $(event.target);
-        let fr = new FileReader();
-        var that = this;
-        fr.onloadend = function(e) { //Not an arrow function so that this=FileReader
-            let text = this.result;
-            let samples = text.split(/\r?\n/g);
-            let filter = {sample:{require:samples, reject:[]}}
-            that.updateSampleSelect(filter);
+        if (sampleIds.length===0) {
+            sampleSelDiv.text('No samples to show');
         }
-        fr.readAsText(fileInput.prop('files')[0])
+        $('#'+this.sampleShownCount).text(
+            `${sampleIds.length}/${this.allSamples.length}`
+        );
+        $('input[name="sample-sel-all"][value="neutral"]').prop('checked',true);
+    }
+
+    sampleSelChange() {
+        const nReq = this.requireSamples.size;
+        const nRej = this.rejectSamples.size;
+        const nRule = nReq+nRej;
+        $('#'+this.sampleReqCountId).text(`Include: ${nReq}`);
+        $('#'+this.sampleRejCountId).text(`Exclude: ${nRej}`);
+        $('#'+this.sampleInFilterCountId).text(`In filter: ${nRule}`);
+    }
+
+    sampleSelectionClear () {
+        this.rejectSamples.clear();
+        this.requireSamples.clear();
+        this.sampleSelChange();
+    }
+
+    matchingSamples(q) {
+        return this.allSamples.filter(sid=>sid.includes(q));
+    }
+
+    samplePickShown (state) {
+        const selectors = $('#'+this.sampleSelectId).children('.sample-selector');
+        for (let sbox of selectors) {
+            this.setSampleSelector($(sbox),state);
+        }
+        this.sampleSelChange();
     }
 
 	updateSampleSelect (filter) {
@@ -227,25 +418,64 @@ class FilterManager {
 		if (filter.sample.require.length>0 || filter.sample.reject.length>0) {
 			sampleHeader.removeClass('inactive');
 		}
-	}
-
-	onSampleSelectorClick(event) {
-		let sbox = $(this);
-		let sid = sbox.text();
-		if (sbox.hasClass('sample-neutral')) { // Set to require
-			sbox.removeClass('sample-neutral');
+    }
+    
+    setSampleSelector(sbox, state) {
+        const sid = sbox.text();
+        if (state==='require') { // Set to require
 			sbox.addClass('sample-require');
-			sbox.attr('title',`${sid}\nVariants MUST be in this sample`);
-		} else if (sbox.hasClass('sample-require')) { // Set to reject
+            sbox.removeClass('sample-reject');
+            sbox.removeClass('sample-neutral');
+            sbox.attr('title',`${sid}\nVariants MUST be in this sample`);
+            this.requireSamples.add(sid);
+            this.rejectSamples.delete(sid);
+		} else if (state==='reject') { // Set to reject
 			sbox.removeClass('sample-require');
-			sbox.addClass('sample-reject');
-			sbox.attr('title',`${sid}\nVariants MUST NOT be in this sample`);
+            sbox.addClass('sample-reject');
+			sbox.removeClass('sample-neutral');
+            sbox.attr('title',`${sid}\nVariants MUST NOT be in this sample`);
+            this.requireSamples.delete(sid);
+            this.rejectSamples.add(sid);
+		} else if (state==='neutral') { // Set to neutral
+			sbox.removeClass('sample-require');
+            sbox.removeClass('sample-reject');
+            sbox.addClass('sample-neutral');
+            sbox.attr('title',sid);
+            this.requireSamples.delete(sid);
+            this.rejectSamples.delete(sid);
+        }
+    }
+
+	onSampleSelectorClick (event) {
+        let sbox = $(event.currentTarget);
+		if (sbox.hasClass('sample-neutral')) { // Set to require
+			this.setSampleSelector(sbox,'require');
+		} else if (sbox.hasClass('sample-require')) { // Set to reject
+			this.setSampleSelector(sbox,'reject');
 		} else if (sbox.hasClass('sample-reject')) { // Set to neutral
-			sbox.removeClass('sample-reject');
-			sbox.addClass('sample-neutral');
-			sbox.attr('title',sid);
-		}
-	}
+			this.setSampleSelector(sbox,'neutral');
+        }
+        this.sampleSelChange();
+    }
+    
+    sampleListFile (event) {
+        const fileInput = $(event.target);
+        const nameDisplay = $('#'+this.sampleFileDisplayId);
+        const files = fileInput.prop('files');
+        if (files.length) {
+            const file = files[0];
+            const fr = new FileReader();
+            fr.onloadend = (loadEnd) => {
+                const text = loadEnd.target.result;
+                const samples = text.split(/\r?\n/g);
+                this.drawSamples(samples);
+            }
+            fr.readAsText(file);
+            nameDisplay.text(file.name);
+        } else {
+            nameDisplay.text(null);
+        }
+    }
 
 	addGeneSelect (outerDiv, filter) {
         filter = new CravatFilter(filter);
@@ -347,14 +577,17 @@ class FilterManager {
 	}
 
 	addSfUI (outerDiv, filter) {
-		filter = new CravatFilter(filter);
-		outerDiv.append($(getEl('div'))
-			.text('Click a filter to apply it.')
-		)
-		let orderedSources = Object.keys(smartFilters);
+        filter = new CravatFilter(filter);
+        let orderedSources = Object.keys(smartFilters);
+        if (orderedSources.length===0){
+            return;
+        }
 		orderedSources.splice(orderedSources.indexOf('base'), 1);
 		orderedSources.sort();
 		orderedSources = ['base'].concat(orderedSources)
+        outerDiv.append($(getEl('div'))
+            .text('Click a filter to apply it.')
+        )
 		for (let i=0; i<orderedSources.length; i++){
 			let sfSource = orderedSources[i];
 			let sfGroup = smartFilters[sfSource];
@@ -485,7 +718,12 @@ class SmartFilter {
 		if (this.selectorType === 'inputFloat') {
 			let valueInput = $(getEl('input'))
 				.val(this.value);
-			selectorSpan.append(valueInput);
+            selectorSpan.append(valueInput);
+        } else if (this.selectorType === 'inputInt') {
+            let valueInput = $(getEl('input'))
+                .attr('type','number')
+                .val(this.value);
+            selectorSpan.append(valueInput);
 		} else if (this.selectorType === 'inputString') {
 			let valueInput = $(getEl('input'))
 				.val(this.value);
@@ -637,10 +875,18 @@ function filterDeleteIconClick(event) {
 
 
 function makeFilterTab (rightDiv) {
-	if (smartFilters === undefined) { 
-		return;
-	}
-	rightDiv = $(rightDiv);
+    rightDiv = $(rightDiv);
+    rightDiv.empty();
+    if (!showFilterTabContent) {
+        rightDiv.css('display','grid');
+        rightDiv.append($(getEl('img'))
+            .attr('src','images/bigSpinner.gif')
+            .css('margin','auto')
+        );
+        return false;
+    } else {
+        rightDiv.css('display','');
+    }
 
 	// Left panel
 	let leftPanel =$(getEl('div'))
@@ -656,14 +902,17 @@ function makeFilterTab (rightDiv) {
 	leftPanel.append(savedList);
 	populateFilterSaveNames();
 	
-	// Right panel
+    // Right panel
 	let rightPanel = $(getEl('div'))
-		.attr('id','filter-right-panel');
-	rightDiv.append(rightPanel);
-	
+        .attr('id','filter-right-panel');
+    rightDiv.append(rightPanel);
+
 	// Sample selector
 	let sampleSection = filterMgr.getFilterSection('Samples',false);
-	rightPanel.append(sampleSection);
+    rightPanel.append(sampleSection);
+    // Sample has it's own clear button
+    sampleSection.find('.filter-controls')
+        .css('display','none');
 	let sampleContent = sampleSection.find('.filter-content');
 	filterMgr.addSampleSelect(sampleContent);
 
@@ -729,7 +978,9 @@ function makeFilterTab (rightDiv) {
 				populateFilterSaveNames();
 			})
 		});
-    loadControls.append(saveIcon)
+    loadControls.append(saveIcon);
+    displayFilterCount();
+    return true;
 }
 
 function countFilterVariants() {
@@ -762,30 +1013,25 @@ function countFilterVariants() {
 }
 
 function displayFilterCount(n) {
-	let t = infomgr.jobinfo['Number of unique input variants'];
+    let t = infomgr.jobinfo['Number of unique input variants'];
+    n = n===undefined ? t : n;
 	let countDisplay = $('#filter-count-display');
 	countDisplay.text(`${n}/${t} variants`);
-    var warnDiv = document.getElementById('filter-tab-count-warning');
+    var warnDiv = $('#filter-tab-count-warning');
     if (n > NUMVAR_LIMIT) {
-        warnDiv.style.display = null;
+        warnDiv.css('display','');
     } else {
-        warnDiv.style.display = 'none';
+        warnDiv.css('display','none');
     }
 }
 
 function makeFilterJson () {
 	let fjs = {}
 	// Samples
-	let sampleSelectors = $('#'+filterMgr.sampleSelectId).children();
-	fjs.sample = {'require':[],'reject':[]}
-	for (let i=0; i<sampleSelectors.length; i++) {
-		let sel = $(sampleSelectors[i]);
-		if (sel.hasClass('sample-require')) {
-			fjs.sample.require.push(sel.text());
-		} else if (sel.hasClass('sample-reject')) {
-			fjs.sample.reject.push(sel.text());
-		}
-	}
+	fjs.sample = {
+        'require':[...filterMgr.requireSamples],
+        'reject':[...filterMgr.rejectSamples]
+    }
 	// Gene list
 	let geneListString = $('#'+filterMgr.geneTextId).val();
 	let geneList = geneListString.split('\n')
@@ -882,7 +1128,9 @@ function pullSfValue(selectorDiv) {
 	let selectorWrapper = selectorDiv.children('.sf-selector');
 	if (selectorType === 'inputFloat') {
 		return parseFloat(selectorWrapper.children('input').val());
-	} else if (selectorType === 'inputString') {
+	} else if (selectorType === 'inputInt') {
+        return parseInt(selectorWrapper.children('input').val());
+    } else if (selectorType === 'inputString') {
 		return selectorWrapper.children('input').val();
 	} else if (selectorType === 'select') {
 		let selector = selectorWrapper.children('.filter-value-input').first();
@@ -1175,14 +1423,6 @@ function makeVariantGeneTab (tabName, rightDiv) {
         input.id = 'cellvaluetext_' + tabName;
         input.setAttribute('readonly', 'true');
         input.rows = '1';
-        /*
-        $(cellValueDiv).resizable({
-            resize: function(event, ui) {
-                ui.size.width = ui.originalSize.width;
-                resizesTheWindow();
-            },
-        });
-        */
         addEl(cellValueDiv, input);
         var button = getEl('button');
         button.textContent = '+';
@@ -1778,7 +2018,7 @@ function makeGrid (columns, data, tabName) {
         var tsvContent = getExportContent(tabName);
         a.href = window.URL.createObjectURL(
                 new Blob([tsvContent], {type: 'text/tsv'}));
-        a.download = jobId + '_' + tabName + '.tsv';
+        a.download = jobId + '_export_' + tabName + '.tsv';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2159,7 +2399,7 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             if (col.desc !== null) {
                 desc = col.desc;
             }
-            var colTitleLimit = 20;
+            var colTitleLimit = 30;
             if (col.title.length > colTitleLimit) {
                 $headerCell.text(col.title.substring(0, colTitleLimit) + '..');
                 if (col.desc != null && col.desc != col.title) {
@@ -2173,6 +2413,9 @@ function loadGridObject(columns, data, tabName, tableTitle, tableType) {
             $headerCell.attr('coltitle', col.title);
             $headerCell.attr('colgroup', col.colgroup);
             $headerCell.attr('colgroupkey', col.colgroupkey);
+            $headerCell[0].classList.remove('pq-align-right');
+            $headerCell[0].classList.remove('pq-align-left');
+            $headerCell[0].classList.add('pq-align-center');
             $headerCell.contextmenu(function (evt) {
                 var headerCell = evt.target;
                 if (headerCell.classList.contains('pq-td-div')) {
