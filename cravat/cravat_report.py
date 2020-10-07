@@ -237,9 +237,14 @@ class CravatReport:
             new_datarow[colno] = newcell
         return new_datarow
 
+    def should_write_level (self, level):
+        return True
+
     async def run_level (self, level):
         ret = await self.table_exists(level)
         if ret == False:
+            return
+        if self.should_write_level(level) == False:
             return
         gene_summary_datas = {}
         if level == 'variant':
@@ -826,5 +831,9 @@ parser.add_argument('--silent',
     action='store_true',
     default=False,
     help='Suppress output to STDOUT')
+parser.add_argument('--system-option',
+    dest='system_option',
+    nargs='*',
+    help='System option in key=value syntax. For example, --system-option modules_dir=/home/user/open-cravat/modules')
 parser.set_defaults(func=run_reporter)
 
