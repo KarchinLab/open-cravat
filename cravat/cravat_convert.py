@@ -390,7 +390,7 @@ class MasterCravatConverter(object):
                                     wdict['ref_base'] = self.wgsreader.get_bases(chrom, int(wdict['pos']))
                                 if base_re.fullmatch(wdict['ref_base']) is None:
                                     raise BadFormatError('Invalid reference base')
-                                if wdict['alt_base'] == '*' and base_re.fullmatch(wdict['alt_base']) is None:
+                                if wdict['alt_base'] != '*' and base_re.fullmatch(wdict['alt_base']) is None:
                                     raise BadFormatError('Invalid alternate base')
                                 if self.do_liftover:
                                     prelift_wdict = copy.copy(wdict)
