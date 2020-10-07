@@ -584,6 +584,41 @@ function loadFilterSetting (name, callback, doNotCount) {
 	})
 }
 
+function importFilterFromFile () {
+}
+
+function showImportFilterDialog () {
+    var content = getEl('div');
+    var span = getEl('span');
+    span.textContent = 'Filter file to import:\xa0';
+    addEl(content, span);
+    var input = getEl('input');
+    input.type = 'file';
+    addEl(content, input);
+    var div = document.getElementById('yesnodialog');
+    if (div != undefined) {
+        $(div).remove();
+    }
+    var div = getEl('div');
+    div.id = 'yesnodialog';
+    if (typeof content === 'string') {
+        content = getTn(content);
+    }
+    content.id = 'yesnodialog-contentdiv'
+    addEl(div, content);
+    addEl(div, getEl('br'));
+    var btnDiv = getEl('div');
+    btnDiv.className = 'buttondiv';
+    var btn = getEl('button');
+    btn.textContent = 'Cancel';
+    btn.addEventListener('click', function (evt) {
+        $('#yesnodialog').remove();
+    });
+    addEl(btnDiv, btn);
+    addEl(div, btnDiv);
+    addEl(document.body, div);
+}
+
 function getSavedFilter (name) {
 	return new Promise((resolve, reject) => {
 		$.get('/result/service/loadfiltersetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name}).done(function (response) {

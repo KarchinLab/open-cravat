@@ -1064,3 +1064,39 @@ input:checked + .sample-rd-rej::before {
 .menu2_container.hide {
     display: none;
 }
+
+#yesnodialog {
+	position: fixed;
+    font-size: 14px;
+    width: 500px;
+    max-height: 500px;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    background-color: white;
+    text-align: center;
+    box-shadow: 3px 3px 12px 0px;
+    z-index: 300;
+    padding: 10px;
+}
+
+#yesnodialog .buttondiv {
+    font-size: 16px;
+}
+
+#yesnodialog .buttondiv button {
+    width: 100px;
+    height: 40px;
+}
+
+#yesnodialog-contentdiv {
+    font-size: 16px;
+    max-height: 300px;
+    overflow: auto;
+    padding: 10px;
+    /*position: absolute;
+    height: calc(100% - 80px);
+    width: calc(100% - 20px);
+    */
+}
+
