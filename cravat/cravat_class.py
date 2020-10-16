@@ -959,15 +959,23 @@ class Cravat (object):
         genemapper.run()
 
     def run_genemapper_mp (self):
-        num_core = au.get_system_conf()['max_num_concurrent_annotators_per_job']
+        num_workers = au.get_max_num_concurrent_annotators_per_job()
+        if self.args.mp is not None:
+            try:
+                self.args.mp = int(self.args.mp)
+                if self.args.mp >= 1:
+                    num_workers = self.args.mp
+            except:
+                self.logger.exception('error handling mp argument:')
+        self.logger.info('num_workers: {}'.format(num_workers))
         reader = CravatReader(self.crvinput)
-        num_lines, chunksize, poss, len_poss, max_num_lines = reader.get_chunksize(num_core)
+        num_lines, chunksize, poss, len_poss, max_num_lines = reader.get_chunksize(num_workers)
         self.logger.info(f'input line chunksize={chunksize} total number of input lines={num_lines} number of chunks={len_poss}')
-        pool = mp.Pool(num_core, init_worker)
+        pool = mp.Pool(num_workers, init_worker)
         pos_no = 0
         while pos_no < len_poss:
             jobs = []
-            for i in range(num_core):
+            for i in range(num_workers):
                 if pos_no == len_poss:
                     break
                 (seekpos, num_lines) = poss[pos_no]
