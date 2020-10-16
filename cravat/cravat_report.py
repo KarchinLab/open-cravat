@@ -57,19 +57,7 @@ class CravatReport:
         self.filterpath = parsed_args.filterpath
         self.filtername = parsed_args.filtername
         self.filterstring = parsed_args.filterstring
-        self.confs = None
-        if hasattr(parsed_args, 'conf') and parsed_args.conf is not None:
-            self.confs = parsed_args.conf
-        if parsed_args.confs is not None:
-            confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
-            if self.confs is None:
-                self.confs = json.loads(confs)
-            else:
-                self.confs.update(json.loads(confs))
-        if self.confs is not None and 'filter' in self.confs:
-            self.filter = self.confs['filter']
-        else:
-            self.filter = None
+        self.confs = {}
         if parsed_args.output_dir is not None:
             self.output_dir = parsed_args.output_dir
         else:
@@ -80,12 +68,26 @@ class CravatReport:
         self.confpath = parsed_args.confpath
         self.conf = ConfigLoader(job_conf_path=self.confpath)
         self.module_name = parsed_args.module_name
+        if self.module_name in self.conf._all:
+            self.confs.update(self.conf._all[self.module_name])
         if self.conf is not None:
             self.module_conf = self.conf.get_module_conf(self.module_name)
         else:
             self.module_conf = None
         if hasattr(parsed_args, 'reporttypes'):
             self.report_types = parsed_args.reporttypes
+        if hasattr(parsed_args, 'conf') and parsed_args.conf is not None:
+            self.confs.update(parsed_args.conf)
+        if parsed_args.confs is not None:
+            confs = parsed_args.confs.lstrip('\'').rstrip('\'').replace("'", '"')
+            if self.confs is None:
+                self.confs = json.loads(confs)
+            else:
+                self.confs.update(json.loads(confs))
+        if self.confs is not None and 'filter' in self.confs:
+            self.filter = self.confs['filter']
+        else:
+            self.filter = None
         self.output_basename = os.path.basename(self.dbpath)[:-7]
         status_fname = '{}.status.json'.format(self.output_basename)
         self.status_fpath = os.path.join(self.output_dir, status_fname)
@@ -733,17 +735,39 @@ def run_reporter (*inargs, **inkwargs):
         savedir = os.path.dirname(args.savepath)
         if savedir != '':
             output_dir = savedir
+    module_options = {}
+    if args.module_option is not None:
+        for opt_str in args.module_option:
+            toks = opt_str.split('=')
+            if len(toks) != 2:
+                if not args.silent:
+                    print('Ignoring invalid module option {opt_str}. module-option should be module_name.key=value.')
+                continue
+            k = toks[0]
+            if k.count('.') != 1:
+                if not args.silent:
+                    print('Ignoring invalid module option {opt_str}. module-option should be module_name.key=value.')
+                continue
+            [module_name, key] = k.split('.')
+            if module_name not in module_options:
+                module_options[module_name] = {}
+            v = toks[1]
+            module_options[module_name][key] = v
+    del args.module_option
     loop = asyncio.get_event_loop()
     response = {}
     for report_type in report_types:
         if args.silent == False:
             print(f'Generating {report_type} report... ', end='', flush=True)
         module_info = au.get_local_module_info(report_type + 'reporter')
-        spec = importlib.util.spec_from_file_location(module_info.name, module_info.script_path)
+        module_name = module_info.name
+        spec = importlib.util.spec_from_file_location(module_name, module_info.script_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        args.module_name = module_info.name
+        args.module_name = module_name
         args.do_not_change_status = True
+        if module_name in module_options:
+            args.conf = module_options[module_name]
         reporter = module.Reporter(args)
         loop.run_until_complete(reporter.prep())
         try:
@@ -835,5 +859,9 @@ parser.add_argument('--system-option',
     dest='system_option',
     nargs='*',
     help='System option in key=value syntax. For example, --system-option modules_dir=/home/user/open-cravat/modules')
+parser.add_argument('--module-option',
+    dest='module_option',
+    nargs='*',
+    help='Module-specific option in module_name.key=value syntax. For example, --module-option vcfreporter.type=separate')
 parser.set_defaults(func=run_reporter)
 
