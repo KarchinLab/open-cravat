@@ -615,7 +615,7 @@ parser_publish.add_argument('-u',
                             )
 parser_publish.add_argument('-p',
                             '--password',
-                            help='password for the user.')
+                            help='password for the user. Enter at prompt if missing.')
 parser_publish.add_argument('--force-yes',
                             default=False,
                             action='store_true',
