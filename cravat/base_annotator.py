@@ -527,10 +527,7 @@ class BaseAnnotator(object):
 
 
 class SecondaryInputFetcher():
-    def __init__(self,
-                 input_path,
-                 key_col,
-                 fetch_cols=[]):
+    def __init__(self, input_path, key_col, fetch_cols=[]):
         self.key_col = key_col
         self.input_path = input_path
         self.input_reader = CravatReader(self.input_path)
@@ -556,9 +553,15 @@ class SecondaryInputFetcher():
             key_data = all_col_data[self.key_col]
             if key_data not in self.data: self.data[key_data] = []
             fetch_col_data = {}
+            row_has_data = False
             for col in self.fetch_cols:
+                if col!=self.key_col and all_col_data[col] is not None:
+                    row_has_data = True
                 fetch_col_data[col] = all_col_data[col]
-            self.data[key_data].append(fetch_col_data)
+            if row_has_data:
+                self.data[key_data].append(fetch_col_data)
+            # self.data[key_data].append(fetch_col_data)
+
 
     def get(self, key_data):
         if key_data in self.data:
