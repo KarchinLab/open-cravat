@@ -214,16 +214,18 @@ def print_info(args):
         del remote_info.data_sources
         dump = yaml_string(remote_info)
         print(dump)
-    # output columns
-    print('output columns:')
-    conf = au.get_remote_module_config(module_name)
-    if 'output_columns' in conf:
-        output_columns = conf['output_columns']
-        for col in output_columns:
-            desc = ''
-            if 'desc' in col:
-                desc = col['desc']
-            print('  {}: {}'.format(col['title'], desc))
+        # output columns
+        print('output columns:')
+        conf = au.get_remote_module_config(module_name)
+        if 'output_columns' in conf:
+            output_columns = conf['output_columns']
+            for col in output_columns:
+                desc = ''
+                if 'desc' in col:
+                    desc = col['desc']
+                print('  {}: {}'.format(col['title'], desc))
+    else:
+        print('NOT IN STORE')
     if installed:
         print('INSTALLED')
         if args.local:
