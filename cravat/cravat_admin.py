@@ -62,7 +62,7 @@ class InstallProgressStdout(au.InstallProgressHandler):
         if cur_chunk == total_chunks:
             sys.stdout.write('\n')
 
-def yield_tabular_lines(l, col_spacing=4, indent=0):
+def yield_tabular_lines(l, col_spacing=2, indent=0):
     if not l:
         return
     sl = []
@@ -118,7 +118,7 @@ def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[
     if quiet:
         all_toks = []
     else:
-        header = ['Name', 'Title', 'Type','Installed','Up to date', 'Store latest ver','Store data source ver', 'Local ver', 'Local data source ver', 'Size']
+        header = ['Name', 'Title', 'Type','Installed', 'Store ver','Store data ver', 'Local ver', 'Local data ver', 'Size']
         all_toks = [header]
     for module_name in au.search_remote(pattern):
         remote_info = au.get_remote_module_info(module_name)
@@ -135,16 +135,10 @@ def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[
         if local_info is not None:
             installed = 'yes'
             local_version = local_info.version
-            up_to_date = local_version == remote_info.latest_version
-            if up_to_date:
-                up_to_date = 'yes'
-            else:
-                up_to_date = ''
             local_datasource = local_info.datasource
         else:
             installed = ''
             local_version = ''
-            up_to_date = ''
             local_datasource = ''
         if quiet:
             toks = [module_name]
@@ -154,7 +148,6 @@ def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[
                 remote_info.title,
                 remote_info.type,
                 installed,
-                up_to_date,
                 remote_info.latest_version,
                 remote_info.datasource,
                 local_version,
