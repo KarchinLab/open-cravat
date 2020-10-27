@@ -62,7 +62,7 @@ class InstallProgressStdout(au.InstallProgressHandler):
         if cur_chunk == total_chunks:
             sys.stdout.write('\n')
 
-def yield_tabular_lines(l, col_spacing=4, indent=0):
+def yield_tabular_lines(l, col_spacing=2, indent=0):
     if not l:
         return
     sl = []
@@ -118,7 +118,7 @@ def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[
     if quiet:
         all_toks = []
     else:
-        header = ['Name', 'Title', 'Type','Installed','Up to date', 'Store latest ver','Store data source ver', 'Local ver', 'Local data source ver', 'Size']
+        header = ['Name', 'Title', 'Type','Installed', 'Store ver','Store data ver', 'Local ver', 'Local data ver', 'Size']
         all_toks = [header]
     for module_name in au.search_remote(pattern):
         remote_info = au.get_remote_module_info(module_name)
@@ -135,16 +135,10 @@ def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[
         if local_info is not None:
             installed = 'yes'
             local_version = local_info.version
-            up_to_date = local_version == remote_info.latest_version
-            if up_to_date:
-                up_to_date = 'yes'
-            else:
-                up_to_date = ''
             local_datasource = local_info.datasource
         else:
             installed = ''
             local_version = ''
-            up_to_date = ''
             local_datasource = ''
         if quiet:
             toks = [module_name]
@@ -154,7 +148,6 @@ def list_available_modules(pattern=r'.*', types=[], include_hidden=False, tags=[
                 remote_info.title,
                 remote_info.type,
                 installed,
-                up_to_date,
                 remote_info.latest_version,
                 remote_info.datasource,
                 local_version,
@@ -221,16 +214,18 @@ def print_info(args):
         del remote_info.data_sources
         dump = yaml_string(remote_info)
         print(dump)
-    # output columns
-    print('output columns:')
-    conf = au.get_remote_module_config(module_name)
-    if 'output_columns' in conf:
-        output_columns = conf['output_columns']
-        for col in output_columns:
-            desc = ''
-            if 'desc' in col:
-                desc = col['desc']
-            print('  {}: {}'.format(col['title'], desc))
+        # output columns
+        print('output columns:')
+        conf = au.get_remote_module_config(module_name)
+        if 'output_columns' in conf:
+            output_columns = conf['output_columns']
+            for col in output_columns:
+                desc = ''
+                if 'desc' in col:
+                    desc = col['desc']
+                print('  {}: {}'.format(col['title'], desc))
+    else:
+        print('NOT IN STORE')
     if installed:
         print('INSTALLED')
         if args.local:
@@ -620,7 +615,7 @@ parser_publish.add_argument('-u',
                             )
 parser_publish.add_argument('-p',
                             '--password',
-                            help='password for the user.')
+                            help='password for the user. Enter at prompt if missing.')
 parser_publish.add_argument('--force-yes',
                             default=False,
                             action='store_true',

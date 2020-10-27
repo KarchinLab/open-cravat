@@ -121,6 +121,8 @@ class BaseAnnotator(object):
                     self.conf['input_columns'].append(id_col_name)
             else:
                 self.conf['input_columns'] = self.default_input_columns[self.conf['input_format']]
+            if self.conf['level'] == 'variant':
+                self.conf['handle_alt_contigs'] = self.conf.get('handle_alt_contigs',False)
         except Exception as e:
             self._log_exception(e)
 
@@ -212,14 +214,18 @@ class BaseAnnotator(object):
                         if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
                             self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, lnum))
                             last_status_update_time = cur_time
-                    if input_data.get('alt_base', '') == '*': # VCF format * allele gets empty annotation.
-                        output_dict = {}
+                    if input_data.get('alt_base', '') == '*': 
+                        # VCF format * allele gets empty annotation.
+                        output_dict = None
+                    elif len(input_data.get('chrom',''))>5 and not self.conf.get('handle_alt_contigs'):
+                        # Skip alt chroms by default
+                        output_dict = None
                     elif secondary_data == {}:
                         output_dict = self.annotate(input_data)
                     else:
                         output_dict = self.annotate(input_data, secondary_data)
                     # This enables summarizing without writing for now.
-                    if output_dict == None:
+                    if output_dict is None:
                         continue
                     # Preserves the first column
                     output_dict[self._id_col_name] = input_data[self._id_col_name]
@@ -527,10 +533,7 @@ class BaseAnnotator(object):
 
 
 class SecondaryInputFetcher():
-    def __init__(self,
-                 input_path,
-                 key_col,
-                 fetch_cols=[]):
+    def __init__(self, input_path, key_col, fetch_cols=[]):
         self.key_col = key_col
         self.input_path = input_path
         self.input_reader = CravatReader(self.input_path)
@@ -556,9 +559,15 @@ class SecondaryInputFetcher():
             key_data = all_col_data[self.key_col]
             if key_data not in self.data: self.data[key_data] = []
             fetch_col_data = {}
+            row_has_data = False
             for col in self.fetch_cols:
+                if col!=self.key_col and all_col_data[col] is not None:
+                    row_has_data = True
                 fetch_col_data[col] = all_col_data[col]
-            self.data[key_data].append(fetch_col_data)
+            if row_has_data:
+                self.data[key_data].append(fetch_col_data)
+            # self.data[key_data].append(fetch_col_data)
+
 
     def get(self, key_data):
         if key_data in self.data:
