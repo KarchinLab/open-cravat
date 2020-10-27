@@ -616,6 +616,22 @@ async def serve_runwidget (request):
     content = await m.get_data(queries)
     return web.json_response(content)
 
+async def serve_webapp_runwidget (request):
+    module_name = request.match_info['module']
+    widget_name = request.match_info['widget']
+    queries = request.rel_url.query
+    tmp_queries = {}
+    for key in queries:
+        tmp_queries[key] = queries[key]
+    queries = tmp_queries
+    f, fn, d = imp.find_module(
+        'wg' + widget_name,
+        [os.path.join(au.get_modules_dir(), 'webapps', module_name, 'widgets', 'wg' + widget_name)]
+    )
+    m = imp.load_module(widget_name, f, fn, d)
+    content = await m.get_data(queries)
+    return web.json_response(content)
+
 async def serve_runwidget_post (request):
     path = 'wg' + request.match_info['module']
     job_id, dbpath = await get_jobid_dbpath(request)
@@ -729,4 +745,5 @@ routes.append(['POST', '/result/runwidget/{module}', serve_runwidget_post])
 routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setting])
 routes.append(['GET', '/result/service/smartfilters', load_smartfilters])
 routes.append(['GET', '/result/service/samples', get_samples])
+routes.append(['GET', '/webapps/{module}/widgets/{widget}', serve_webapp_runwidget])
 
