@@ -96,7 +96,7 @@ cravat_cmd_parser.add_argument('--endat',
 cravat_cmd_parser.add_argument('--skip',
     dest='skip',
     nargs='+',
-    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator'],
+    choices=['converter', 'mapper', 'annotator', 'aggregator', 'postaggregator', 'reporter'],
     default=None,
     help='skips given stage(s).')
 cravat_cmd_parser.add_argument('-c',
@@ -472,6 +472,7 @@ class Cravat (object):
                 self.run_postaggregators()
             if self.endlevel >= self.runlevels['reporter'] and \
                     self.startlevel <= self.runlevels['reporter'] and \
+                    not 'reporter' in self.args.skip and \
                     self.aggregator_ran and \
                     self.reports:
                 if not self.args.silent:

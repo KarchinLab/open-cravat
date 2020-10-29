@@ -1399,36 +1399,6 @@ function checkBoxGroupAllNoneHandler (event) {
     });
 }
 
-function populateReports () {
-    return new Promise((resolve, reject) => {
-        $.ajax({
-            url:'/submit/reports',
-            type: 'GET',
-            success: function (data) {
-                GLOBALS.reports = data
-                buildReportSelector();
-                //resolve();
-            }
-        })
-    })
-}
-
-function buildReportSelector () {
-    var validReports = GLOBALS.reports.valid;
-    var checkData = [];
-    for (var i=0; i<validReports.length; i++) {
-        reportName = validReports[i];
-        checkData.push({
-            name: reportName,
-            value: reportName,
-            label: reportName[0].toUpperCase()+reportName.slice(1),
-            checked: reportName === GLOBALS.reports.default
-        })
-    }
-    var reportDiv = document.getElementById('report-select-div');
-    buildCheckBoxGroup(checkData, reportDiv);
-}
-
 function onTabChange () {
     var submitcontentdiv = document.getElementById('submitcontentdiv');
     var jobdiv = document.getElementById('jobdiv');
