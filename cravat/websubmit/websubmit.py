@@ -592,11 +592,8 @@ def get_valid_report_types():
     return report_types
 
 async def get_report_types(request):
-    global cfl
-    default_reporter = cfl.get_cravat_conf_value('reporter')
-    default_type = default_reporter.split('reporter')[0]
     valid_types = get_valid_report_types()
-    return web.json_response({'valid': valid_types, 'default': default_type})
+    return web.json_response({'valid': valid_types})
 
 async def generate_report(request):
     global filerouter

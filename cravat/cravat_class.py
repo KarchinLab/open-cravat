@@ -473,10 +473,8 @@ class Cravat (object):
             if self.endlevel >= self.runlevels['reporter'] and \
                     self.startlevel <= self.runlevels['reporter'] and \
                     not 'reporter' in self.args.skip and \
-                    (
-                        self.aggregator_ran or \
-                        len(self.reports) > 0
-                    ):
+                    self.aggregator_ran and \
+                    self.reports:
                 if not self.args.silent:
                     print('Running reporter...')
                 no_problem_in_run, report_response = await self.run_reporter()
@@ -725,7 +723,10 @@ class Cravat (object):
             self.verbose = False
         self.reports = self.args.reports
         if self.reports is None:
-            self.reports = ['excel']
+            if 'reporter' in self.cravat_conf:
+                self.reports = [self.cravat_conf['reporter'].replace('reporter','')]
+            else:
+                self.reports = []
         if self.args.genome is None:
             if constants.default_assembly_key in self.cravat_conf:
                 self.input_assembly = self.cravat_conf[constants.default_assembly_key]
