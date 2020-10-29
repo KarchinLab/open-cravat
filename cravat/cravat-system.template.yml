@@ -1,5 +1,5 @@
-publish_url: http://cravatpublish.karchinlab.org/cravatpublish
-store_url: http://karchinlab.org/cravatstore
+publish_url: https://publish.opencravat.org
+store_url: https://store.opencravat.org
 
 base_modules:
 - cravat-converter
