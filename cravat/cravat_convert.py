@@ -81,6 +81,7 @@ class MasterCravatConverter(object):
         self._setup_logger()
         self.vtracker = VTracker(deduplicate=not(self.unique_variants))
         self.wgsreader = cravat.get_wgs_reader(assembly='hg38')
+        self.crs_def = constants.crs_def.copy()
 
     def _parse_cmd_args(self, inargs, inkwargs):
         """ Parse the arguments in sys.argv """
@@ -312,10 +313,10 @@ class MasterCravatConverter(object):
         # Setup crs sample file
         self.crs_path = os.path.join(self.output_dir, self.output_base_fname +'.crs')
         self.crs_writer = CravatWriter(self.crs_path)
-        self.crs_writer.add_columns(constants.crs_def)
+        self.crs_writer.add_columns(self.crs_def)
         if hasattr(self.primary_converter, 'addl_cols'):
             self.crs_writer.add_columns(self.primary_converter.addl_cols, append=True)
-            constants.crs_def.extend(self.primary_converter.addl_cols)
+            self.crs_def.extend(self.primary_converter.addl_cols)
         self.crs_writer.write_definition()
         for index_columns in constants.crs_idx:
             self.crs_writer.add_index(index_columns)
