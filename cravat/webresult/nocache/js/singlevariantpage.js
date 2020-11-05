@@ -97,7 +97,6 @@ function showWidget (widgetName, moduleNames, level, parentDiv, maxWidth, maxHei
         generator[level]['max-height'] = maxHeight;
         maxHeightParent = maxHeight + 30;
     }
-    console.log('@', widgetName, 'maxHeight=', maxHeight);
     if (level != undefined) {
         divs = getDetailWidgetDivs(level, widgetName, widgetInfo[widgetName].title, maxWidthParent, maxHeightParent, showTitle);
     } else {

@@ -861,7 +861,7 @@ function savedFilterClick(event) {
 	let target = $(this);
 	let filterName = target.text();
 	getSavedFilter(filterName).then((msg) => {
-		filterMgr.updateAll(msg)
+		filterMgr.updateAll(msg['filterSet'])
         lastUsedFilterName = filterName;
 	});
 }
@@ -1034,6 +1034,9 @@ function getFilterFile () {
         fn = lastUsedFilterName + '.json';
     }
     var fn = prompt('Filter file name', fn);
+    if (fn == '' || fn == null || fn == undefined) {
+        return;
+    }
     var a = getEl('a');
     a.download = fn;
     var blob = new Blob([JSON.stringify(filterJson, null, 2)], {type: 'text/plain'});

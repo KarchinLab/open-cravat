@@ -585,6 +585,26 @@ function loadFilterSetting (name, callback, doNotCount) {
 }
 
 function importFilterFromFile () {
+    var sdiv = getEl('button');
+    sdiv.style.position = 'fixed';
+    sdiv.style.bottom = '0px';
+    sdiv.style.right = '0px';
+    sdiv.textContent = 'Import filter...';
+    sdiv.addEventListener('click', function (e) {
+        var input = getEl('input');
+        input.type = 'file';
+        input.addEventListener('change', function (e) {
+            var file = e.target.files[0];
+            var reader = new FileReader();
+            reader.readAsText(file, 'utf-8');
+            reader.addEventListener('load', function (e) {
+                var fs = JSON.parse(e.target.result);
+                filterMgr.updateAll(fs)
+            });
+        });
+        input.click();
+    });
+    addEl(document.body, sdiv);
 }
 
 function showImportFilterDialog () {
@@ -622,7 +642,7 @@ function showImportFilterDialog () {
 function getSavedFilter (name) {
 	return new Promise((resolve, reject) => {
 		$.get('/result/service/loadfiltersetting', {'username': username, 'job_id': jobId, 'dbpath': dbPath, 'name': name}).done(function (response) {
-			resolve(response['filterSet'])
+			resolve(response)
 		});
 	})
 }
