@@ -258,16 +258,19 @@ def install_modules(args):
     selected_install = {}
     for module_name in matching_names:
         remote_info = au.get_remote_module_info(module_name)
+        local_info = au.get_local_module_info(module_name)
         if args.version is None:
-            local_info = au.get_local_module_info(module_name)
             if local_info is not None:
                 local_ver = local_info.version
                 remote_ver = remote_info.latest_version
                 if not args.force and LooseVersion(local_ver) >= LooseVersion(remote_ver):
-                    print(f'{module_name}: latest is already installed. ({local_ver})')
+                    print(f'{module_name}: latest ({local_ver}) is already installed. Use -f/--force to overwrite')
                     continue
             selected_install[module_name] = remote_info.latest_version
         elif remote_info.has_version(args.version):
+            if not args.force and local_info is not None and LooseVersion(local_info.version) == LooseVersion(args.version):
+                print(f'{module_name}:{args.version} is already installed. Use -f/--force to overwrite')
+                continue
             selected_install[module_name] = args.version
         else:
             continue
@@ -294,8 +297,8 @@ def install_modules(args):
                 )
         if not(args.yes):
             while True:
-                resp = input('Proceed? (y/n) > ')
-                if resp == 'y':
+                resp = input('Proceed? ([y]/n) > ')
+                if resp == 'y' or resp=='':
                     break
                 if resp == 'n':
                     exit()
@@ -375,7 +378,6 @@ def install_base (args):
     base_modules = sys_conf.get(constants.base_modules_key,[])
     args = SimpleNamespace(modules=base_modules,
                             force_data=False,
-                            skip_installed=True,
                             version=None,
                             yes=True,
                             private=False,
@@ -478,11 +480,7 @@ parser_install.add_argument('-f','--force',
 )
 parser_install.add_argument('-d', '--force-data',
     action='store_true',
-    help='Force download new data even if not needed.'
-)
-parser_install.add_argument('--skip-installed',
-    action='store_true',
-    help='skips already installed modules.'
+    help='Download data even if latest data is already installed'
 )
 parser_install.add_argument('-y','--yes',
     action='store_true',
@@ -490,7 +488,7 @@ parser_install.add_argument('-y','--yes',
 )
 parser_install.add_argument('--skip-dependencies',
     action='store_true',
-    help='Skip installing dependencies of selected modules'
+    help='Skip installing dependencies'
 )
 parser_install.add_argument('-p','--private',
     action='store_true',
