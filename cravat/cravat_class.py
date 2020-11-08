@@ -570,7 +570,7 @@ class Cravat (object):
         gene_cols = {row[1] for row in cursor}
         for col in cols_to_index:
             if col in variant_cols:
-                q = f'create index sf_variant_{col} on variant ({col})'
+                q = f'create index if not exists sf_variant_{col} on variant ({col})'
                 if not self.args.silent:
                     print(f'\tvariant {col}',end='',flush=True)
                 st = time.time()
@@ -706,7 +706,14 @@ class Cravat (object):
                 if num_input > 1:
                     self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
         if num_input > 0 and self.inputs[0].endswith('.sqlite'):
-            self.append_mode = True  
+            self.append_mode = True
+            if self.args.skip is None:
+                self.args.skip = ['converter','mapper']
+            else:
+                if 'converter' not in self.args.skip:
+                    self.args.skip.append('converter')
+                if 'mapper' not in self.args.skip:
+                    self.args.skip.append('mapper')
             if self.run_name.endswith('.sqlite'):
                 self.run_name = self.run_name[:-7]
         self.output_dir = self.args.output_dir
@@ -841,8 +848,10 @@ class Cravat (object):
                     crv.write_data(rd)
                 if crx:
                     crx.write_data(rd)
-            crv.close()
-            crx.close()
+            if crv:
+                crv.close()
+            if crx:
+                crx.close()
             self.crv_present = True
             self.crx_present = True
         # Gene
