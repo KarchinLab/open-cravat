@@ -368,7 +368,7 @@ class Aggregator (object):
             self.cursor.execute(q)
             cur_cols = set([x[1] for x in self.cursor])
             for cds in col_def_strings:
-                col_name = cds.split(' ')[0]
+                col_name = cds.split(' ')[0].strip('"')
                 if col_name in cur_cols:
                     if col_name.startswith('base'):
                         continue
