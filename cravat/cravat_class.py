@@ -32,6 +32,7 @@ import re
 import sys
 if sys.platform == 'win32' and sys.version_info >= (3,8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+import shutil
 
 # Custom system conf
 pre_parser = argparse.ArgumentParser(add_help=False)
@@ -714,6 +715,14 @@ class Cravat (object):
                     self.args.skip.append('converter')
                 if 'mapper' not in self.args.skip:
                     self.args.skip.append('mapper')
+            if self.args.output_dir:
+                if self.run_name.endswith('.sqlite'):
+                    target_name = self.run_name
+                else:
+                    target_name = self.run_name+'.sqlite'
+                target_path = os.path.join(self.args.output_dir, target_name)
+                shutil.copyfile(self.inputs[0], target_path)
+                self.inputs[0] = target_path
             if self.run_name.endswith('.sqlite'):
                 self.run_name = self.run_name[:-7]
         self.output_dir = self.args.output_dir
