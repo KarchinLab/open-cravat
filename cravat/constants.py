@@ -257,7 +257,7 @@ module_tag_desc = {
     'interaction': 'modules for studying molecular interactions',
     'literature': 'modules for variant-related literature',
     'multiple assays': 'modules for multiplex assays',
-    'noncoding': 'modules for studying noncoding variants',
+    'non coding': 'modules for studying noncoding variants',
     'populations': 'modules for studying population statistics of variants',
     'protein visualization': 'modules to visualize variants on protein structures',
     'reporters': 'modules for generating output formats',
