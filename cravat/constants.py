@@ -253,7 +253,6 @@ module_tag_desc = {
     'evolution': 'modules for studying variants in evolutionary context',
     'genes': 'modules for studying variants at the gene level',
     'genomic features': 'modules for studying genomic features',
-    'germline': 'modules for studying germline variants',
     'interaction': 'modules for studying molecular interactions',
     'literature': 'modules for variant-related literature',
     'multiple assays': 'modules for multiplex assays',
