@@ -245,6 +245,7 @@ base_smartfilters = [
 ]
 
 module_tag_desc = {
+    'allele frequency': 'modules for studying allele frequency across populations',
     'cancer': 'tools for cancer research',
     'clinical relevance': 'tools for assessing clinical relevance of variants',
     'converters': 'modules for using the result of other tools as open-cravat input',
@@ -257,7 +258,6 @@ module_tag_desc = {
     'literature': 'modules for variant-related literature',
     'multiple assays': 'modules for multiplex assays',
     'non coding': 'modules for studying noncoding variants',
-    'populations': 'modules for studying population statistics of variants',
     'protein visualization': 'modules to visualize variants on protein structures',
     'reporters': 'modules for generating output formats',
     'variant effect prediction': 'modules to predict variant effects',
