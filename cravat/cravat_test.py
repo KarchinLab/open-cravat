@@ -4,8 +4,9 @@ import subprocess
 from cravat import admin_util as au
 import time
 import sys
+from abc import ABC, abstractmethod
 
-# Regression test program for CRAAT modules.  By default, it will go through all modules and
+# Regression test program for CRAVAT modules.  By default, it will go through all modules and
 # if the module has a test directory with an input and key file, it will test the module 
 # and compare the results to the key to determine whether everything is running as expected.
 # The command line -m can be used to specify one or more specific modules to test and the 
@@ -20,51 +21,79 @@ import sys
 # The tester creates an output directory and then a subdirectory for each module run.
 # Logs and output for each module can be found in the associated subdirectory.
 
-class Tester():
-    def __init__(self, module, rundir):
-        cur_dir = os.path.dirname(os.path.abspath(__file__))
-        self.module = module
-        if not os.path.exists(module.directory) or not module.script_exists:
-            raise Exception('No runnable module installed at path %s' %module.directory)
-        self.out_dir = os.path.join(rundir, module.name);
-        if not os.path.exists(self.out_dir):
-            os.makedirs(self.out_dir)
-        self.input_path = os.path.join(module.test_dir, 'input')
-        self.key_path = os.path.join(module.test_dir, 'key')
-        self.log_path = os.path.join(self.out_dir,'test.log')    #put the output of this program in test.log
-        self.cravat_run = os.path.join(cur_dir, 'runcravat.py')
-        self.out_path = os.path.join(self.out_dir, 'input.tsv') 
-        self.log = open(self.log_path, 'w', encoding='UTF-8')
-        self.start_time = None
-        self.end_time = None
-        self.failures = []
-        self.test_passed = False
-                              
-    # function that tests one module                          
-    def run(self):
-        self._report('  Testing: ' + self.module.name);
-        self.start_time = time.time()
-        python_exc = sys.executable
-        cmd_list = [python_exc, self.cravat_run, self.input_path, '-d', self.out_dir, '-t', 'text']
-        if (self.module.type == 'annotator'):
-            cmd_list.extend(['-a', self.module.name])
-        else:
-            cmd_list.extend(['--skip', 'annotator'])
+
+#Open CRAVAT has multiple output types (reports) generated optional using the -t parameter when running oc.
+#The tester uses report output to verify expected results.  The ReportReader class is responsible for parsing
+#output reports and 'key' files which are expected results.  Because there are multiple types of reports, 
+#the ReportReader is an abstract class and a class of the correct type is instantiated based on the type of
+#report selected in the test.
+class ReportReader(ABC):
+    def __init__(self, rsltFile):
+        self.rsltFile = rsltFile
         
-        #special case
-        if (self.module.name in ['ftdna-converter', 'ancestrydna-converter', '23andme-converter']):
-            cmd_list.extend(['-l', 'hg19'])
+    #Return the file extension of this type of report (e.g. text is .tsv)
+    @abstractmethod
+    def reportFileExtension(self):
+        pass
+        
+    #Read the specified level (variant, gene, etc) from a cravat report
+    #Return a list of the report headers and a list of the row values
+    #The bDict parameter indicates whether to return Rows as a list or dictionary
+    @abstractmethod
+    def readReport(self, test_level, bDict):
+        pass
+
+ 
+ 
+#Derived Report Reader class for reating text reports (-t text)    
+class TextReportReader(ReportReader): 
+   
+    def reportFileExtension(self):
+        return ('.tsv')
+       
+    #Based on the level selected, return column headers and row values.   
+    def readReport(self, test_level, bDict):
+        level_hdr = 'Report level:'
+        level = ''
+        headers = None
+        if (bDict):
+            rows = {}
         else:
-            cmd_list.extend(['-l', 'hg38'])
-        print(' '.join(cmd_list))
-        exit_code = subprocess.call(' '.join(cmd_list), shell=True, stdout=self.log, stderr=subprocess.STDOUT)
-        if exit_code != 0:
-            self._report('    CRAVAT non-zero exit code: ' + str(exit_code))
-        return exit_code
+            rows = []
+        with open(self.rsltFile, encoding='latin-1') as f:
+            line = f.readline().strip('\n')
+            while line:
+                # skip comment lines but pull out the report level
+                if line.strip().startswith('#'):    
+                    if level_hdr in line:
+                        level = line[line.index(level_hdr) + len(level_hdr) + 1:]
+                    line = f.readline().strip('\n')
+                    continue
+                
+                #only load the level we are testing
+                if level != test_level:
+                    line = f.readline().strip('\n')
+                    continue
+                   
+                #load headers for the section
+                if headers == None:
+                    line2 = f.readline().strip('\n')  
+                    headers = self.readSectionHeader(line, line2)
+                    line = f.readline().strip('\n')
+                    continue
+                
+                columns = line.split('\t')
+                line_id = self.getRowID(headers, columns, level)
+                if (bDict):
+                    rows[line_id] = columns
+                else:
+                    rows.append((line_id, columns))    
+                line = f.readline().strip('\n')
+        return headers, rows        
     
     # Read the two report header columns that define the module/column
     # for each data column.  Returned as list of: module|column
-    def readTextSectionHeader(self, line1, line2):
+    def readSectionHeader(self, line1, line2):
         cols = line1.split('\t')
         headers = []
         current_module = cols[0]
@@ -78,17 +107,10 @@ class Tester():
         for idx, col in enumerate(cols):            
             headers[idx] = headers[idx] + col
         return headers    
-    
-    #get the position of a specific output column
-    def getColPos(self, headers, col):
-        for idx, header in enumerate(headers):
-            if col in header:
-                return idx
-        return -1    
-    
+
     #The ID of a result row is used to match key and output.  The ID
     #differs depending on which section of the output is being checked.         
-    def getTextReportID(self, headers, columns, level):
+    def getRowID(self, headers, columns, level):
         Id = ''
         if (level == 'variant'):
             Id = columns[self.getColPos(headers, 'Chrom')] + ' ' + \
@@ -108,49 +130,83 @@ class Tester():
             Id = columns[self.getColPos(headers, 'Original Line')];    
         return Id         
     
-    #Read the specified level (variant, gene, etc) from text cravat report
-    #Return a list of the report headers and a list of the row values
-    #Rows can be returned as a list or dictionary
-    def readTextReport(self, rsltFile, test_level, bDict):
-        level_hdr = 'Report level:'
-        level = ''
-        headers = None
-        if (bDict):
-            rows = {}
-        else:
-            rows = []
-        with open(rsltFile, encoding='latin-1') as f:
-            line = f.readline().strip('\n')
-            while line:
-                # skip comment lines but pull out the report level
-                if line.strip().startswith('#'):    
-                    if level_hdr in line:
-                        level = line[line.index(level_hdr) + len(level_hdr) + 1:]
-                    line = f.readline().strip('\n')
-                    continue
-                
-                #only load the level we are testing
-                if level != test_level:
-                    line = f.readline().strip('\n')
-                    continue
-                   
-                #load headers for the section
-                if headers == None:
-                    line2 = f.readline().strip('\n')  
-                    headers = self.readTextSectionHeader(line, line2)
-                    line = f.readline().strip('\n')
-                    continue
-                
-                
-                columns = line.split('\t')
-                line_id = self.getTextReportID(headers, columns, level)
-                if (bDict):
-                    rows[line_id] = columns
-                else:
-                    rows.append((line_id, columns))    
-                line = f.readline().strip('\n')
-        return headers, rows        
+    #get the position of a specific output column
+    def getColPos(self, headers, col):
+        for idx, header in enumerate(headers):
+            if col in header:
+                return idx
+        return -1    
+
+
+#class that actually runs a test of a specific module and then verifies the results.
+class Tester():
+    def __init__(self, module, rundir):
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        self.module = module
+        if not os.path.exists(module.directory) or not module.script_exists:
+            raise Exception('No runnable module installed at path %s' %module.directory)
+        self.out_dir = os.path.join(rundir, module.name);
+        if not os.path.exists(self.out_dir):
+            os.makedirs(self.out_dir)
+        self.input_path = os.path.join(module.test_dir, 'input')
+        self.key_path = os.path.join(module.test_dir, 'key')
+        self.parms_path = os.path.join(module.test_dir, 'parms')
+        self.log_path = os.path.join(self.out_dir,'test.log')    #put the output of this program in test.log
+        self.cravat_run = os.path.join(cur_dir, 'runcravat.py')
+        self.output_file = 'oc_output'
+        self.out_path = os.path.join(self.out_dir, self.output_file) 
+        self.log = open(self.log_path, 'w', encoding='UTF-8')
+        self.start_time = None
+        self.end_time = None
+        self.failures = []
+        self.test_passed = False
+        self.report_type = 'text'
     
+    #optionally a test director for a module can have a 'parms' file.  If it does,
+    #the test parameters are tab delimited.  Load each parm/value into the parms
+    #dictionary.
+    def parse_parms(self):
+        self.parms = {}
+        if os.path.exists(self.parms_path):
+            with open(self.parms_path) as f:
+                line = f.readline().strip('\n')
+                while line:
+                    parm = line.split('\t')
+                    if len(parm) == 2:
+                        #put the parameter and value in the parms dictionary
+                        self.parms[parm[0]] = parm[1]
+                    line = f.readline().strip('\n')
+                                 
+    # function that tests one module                          
+    def run(self):
+        self._report('  Testing: ' + self.module.name);
+        self.start_time = time.time()
+        self.parse_parms()
+        python_exc = sys.executable
+
+        #default is to run 'text' report but it can be overridden in the optional parms file.
+        if ('Report_Type' in self.parms):        
+            report_type = self.parms['Report_Type']
+        else:
+            report_type = 'text'
+
+        cmd_list = [python_exc, self.cravat_run, self.input_path, '-d', self.out_dir, '-n', self.output_file, '-t', report_type]
+        if (self.module.type == 'annotator'):
+            cmd_list.extend(['-a', self.module.name])
+        else:
+            cmd_list.extend(['--skip', 'annotator'])
+        
+        #special case
+        if (self.module.name in ['ftdna-converter', 'ancestrydna-converter', '23andme-converter']):
+            cmd_list.extend(['-l', 'hg19'])
+        else:
+            cmd_list.extend(['-l', 'hg38'])
+        print(' '.join(cmd_list))
+        exit_code = subprocess.call(' '.join(cmd_list), shell=True, stdout=self.log, stderr=subprocess.STDOUT)
+        if exit_code != 0:
+            self._report('    CRAVAT non-zero exit code: ' + str(exit_code))
+        return exit_code
+        
     def verify(self):
         self.test_passed = True
         if (self.module.type == 'annotator'):
@@ -178,14 +234,24 @@ class Tester():
         else:
             return True    
     
+    #based on the type of report run in this test, create the appropriate type of 
+    #report reader.
+    def create_report_reader(self, type, report_path):
+        if type == "text":
+            return TextReportReader(report_path)
         
+        #need to put more parsers here when they are implemented
+            
     #Match the key (expected values) to the text report output.  Generate errors
     #if expected results are not found and fail the test.    Test just the specified
     #level (variant, gene, etc) and specified module's columns 
     def verify_level(self, level, module_name):
         self._report('  Verifying ' + level + ' level values.')
-        key_header, key_rows = self.readTextReport(self.key_path, level, False)
-        result_header, result_rows = self.readTextReport(self.out_path, level, True)
+        key_reader = self.create_report_reader(self.report_type, self.key_path)
+        report_extension = key_reader.reportFileExtension()
+        result_reader = self.create_report_reader(self.report_type, self.out_path + report_extension)
+        key_header, key_rows = key_reader.readReport(level, False)
+        result_header, result_rows = result_reader.readReport(level, True)
         for key in key_rows:
             variant, key_row = key
             if variant not in result_rows:
