@@ -138,6 +138,174 @@ class TextReportReader(ReportReader):
         return -1    
 
 
+#Derived Report Reader class for reating text reports (-t text)    
+class TsvReportReader(ReportReader): 
+   
+    def reportFileExtension(self):
+        return ('.variant.tsv')
+       
+    #Based on the level selected, return column headers and row values.   
+    def readReport(self, test_level, bDict):
+        level_hdr = 'level='
+        level = ''
+        headers = None
+        if (bDict):
+            rows = {}
+        else:
+            rows = []
+        with open(self.rsltFile, encoding='latin-1') as f:
+            line = f.readline().strip('\n')
+            while line:
+                # skip comment lines but pull out the report level
+                if line.strip().startswith('#'):    
+                    if level_hdr in line:
+                        level = line[line.index(level_hdr) + len(level_hdr):]
+                    line = f.readline().strip('\n')
+                    continue
+                
+                #only load the level we are testing
+                if level != test_level:
+                    line = f.readline().strip('\n')
+                    continue
+                   
+                #load headers for the section
+                if headers == None:
+                    headers = self.readSectionHeader(line)
+                    line = f.readline().strip('\n')
+                    continue
+                
+                columns = line.split('\t')
+                line_id = self.getRowID(headers, columns, level)
+                if (bDict):
+                    rows[line_id] = columns
+                else:
+                    rows.append((line_id, columns))    
+                line = f.readline().strip('\n')
+        return headers, rows        
+    
+    # Read the two report header columns that define the module/column
+    # for each data column.  Returned as list of: module|column
+    def readSectionHeader(self, line):
+        cols = line.split('\t')
+        headers = []
+        for col in cols:
+            headers.append(col)
+        return headers    
+
+    #The ID of a result row is used to match key and output.  The ID
+    #differs depending on which section of the output is being checked.         
+    def getRowID(self, headers, columns, level):
+        Id = ''
+        if (level == 'variant'):
+            Id = columns[self.getColPos(headers, 'chrom')] + ' ' + \
+                 columns[self.getColPos(headers, 'pos')] + ' ' + \
+                 columns[self.getColPos(headers, 'ref_base')] + ' ' + \
+                 columns[self.getColPos(headers, 'alt_base')] + ' ' + \
+                 columns[self.getColPos(headers, 'tags')];
+        if (level == 'gene'):
+            pos = self.getColPos(headers, 'Hugo')
+            if pos == -1:
+                pos = self.getColPos(headers, 'Gene')
+            Id = columns[pos];
+        if (level == 'sample'):
+            Id = columns[self.getColPos(headers, 'UID')] + ' ' + \
+                 columns[self.getColPos(headers, 'Sample')];    
+        if (level == 'mapping'):
+            Id = columns[self.getColPos(headers, 'Original Line')];    
+        return Id         
+    
+    #get the position of a specific output column
+    def getColPos(self, headers, col):
+        for idx, header in enumerate(headers):
+            if col in header:
+                return idx
+        return -1    
+
+#Derived Report Reader class for reating text reports (-t text)    
+class CsvReportReader(ReportReader): 
+   
+    def reportFileExtension(self):
+        return ('.variant.csv')
+       
+    #Based on the level selected, return column headers and row values.   
+    def readReport(self, test_level, bDict):
+        level_hdr = 'Report level:'
+        level = ''
+        headers = None
+        if (bDict):
+            rows = {}
+        else:
+            rows = []
+        with open(self.rsltFile, encoding='latin-1') as f:
+            line = f.readline().strip('\n')
+            while line:
+                # skip comment lines but pull out the report level
+                if line.strip().startswith('##'):    
+                    headers = self.readSectionHeader(line)
+                    line = f.readline().strip('\n')
+                    continue
+                
+                # skip comment lines but pull out the report level
+                if line.strip().startswith('#'):    
+                    if level_hdr in line:
+                        level = line[line.index(level_hdr) + len(level_hdr) + 1:]
+                    line = f.readline().strip('\n')
+                    continue
+                
+                #only load the level we are testing
+                if level != test_level:
+                    line = f.readline().strip('\n')
+                    continue
+                   
+                #load headers for the section
+                columns = line.split(',')
+                line_id = self.getRowID(headers, columns, level)
+                if (bDict):
+                    rows[line_id] = columns
+                else:
+                    rows.append((line_id, columns))    
+                line = f.readline().strip('\n')
+        return headers, rows        
+    
+    # Read the two report header columns that define the module/column
+    # for each data column.  Returned as list of: module|column
+    def readSectionHeader(self, line):
+        cols = line.split(',')
+        headers = []
+        for col in cols:
+            colHeader = col.split(':')[1]
+            headers.append(colHeader)
+        return headers    
+    #The ID of a result row is used to match key and output.  The ID
+    #differs depending on which section of the output is being checked.         
+    def getRowID(self, headers, columns, level):
+        Id = ''
+        if (level == 'variant'):
+            Id = columns[self.getColPos(headers, 'chrom')] + ' ' + \
+                 columns[self.getColPos(headers, 'pos')] + ' ' + \
+                 columns[self.getColPos(headers, 'ref_base')] + ' ' + \
+                 columns[self.getColPos(headers, 'alt_base')] + ' ' + \
+                 columns[self.getColPos(headers, 'tags')];
+        if (level == 'gene'):
+            pos = self.getColPos(headers, 'Hugo')
+            if pos == -1:
+                pos = self.getColPos(headers, 'Gene')
+            Id = columns[pos];
+        if (level == 'sample'):
+            Id = columns[self.getColPos(headers, 'UID')] + ' ' + \
+                 columns[self.getColPos(headers, 'Sample')];    
+        if (level == 'mapping'):
+            Id = columns[self.getColPos(headers, 'Original Line')];    
+        return Id         
+    
+    #get the position of a specific output column
+    def getColPos(self, headers, col):
+        for idx, header in enumerate(headers):
+            if col in header:
+                return idx
+        return -1    
+
+
 #class that actually runs a test of a specific module and then verifies the results.
 class Tester():
     def __init__(self, module, rundir):
@@ -186,12 +354,12 @@ class Tester():
 
         #default is to run 'text' report but it can be overridden in the optional parms file.
         if ('Report_Type' in self.parms):        
-            report_type = self.parms['Report_Type']
+            self.report_type = self.parms['Report_Type']
         else:
-            report_type = 'text'
+            self.report_type = 'text'
 
         #Basic oc run command line 
-        cmd_list = [python_exc, self.cravat_run, self.input_path, '-d', self.out_dir, '-n', self.output_file, '-t', report_type]
+        cmd_list = [python_exc, self.cravat_run, self.input_path, '-d', self.out_dir, '-n', self.output_file, '-t', self.report_type]
         if (self.module.type == 'annotator'):
             cmd_list.extend(['-a', self.module.name])
         elif (self.module.type == 'reporter') and (au.get_local_module_info('vest') is not None) and (au.get_local_module_info('cgl') is not None):
@@ -242,7 +410,7 @@ class Tester():
         except:
             return True
         
-        if abs(v1 - v2) < .0001:
+        if abs(v1 - v2) < .002:
             return False
         else:
             return True    
@@ -252,7 +420,11 @@ class Tester():
     def create_report_reader(self, type, report_path):
         if type == "text":
             return TextReportReader(report_path)
-        
+        elif type == "tsv":
+            return TsvReportReader(report_path)
+        elif type == "csv":
+            return CsvReportReader(report_path)
+       
         #need to put more parsers here when they are implemented
             
     #Match the key (expected values) to the text report output.  Generate errors
@@ -276,7 +448,7 @@ class Tester():
                         
             for idx, header in enumerate(key_header):
                 #just check the columns from the module we are testing
-                if (self.getModule(header) not in module_name) or 'UID' in header:
+                if 'uid' in header:
                     continue
                 
                 if header not in result_header:
@@ -286,8 +458,11 @@ class Tester():
                 
                 result_idx = result_header.index(header)
                 if (result[result_idx] != key_row[idx]) and self.floats_differ(result[result_idx], key_row[idx]):
+                    headLabel = header
+                    if '|' in header:
+                        headLabel = header[header.index("|")+1:]
                     self._report('      ' + variant + '  ' + \
-                          header[header.index("|")+1:] + \
+                          headLabel + \
                           '  Expected: ' + key_row[idx] + \
                           '  Result: ' + result[result_idx])
                     self.test_passed = False
