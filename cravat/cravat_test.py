@@ -190,17 +190,23 @@ class Tester():
         else:
             report_type = 'text'
 
+        #Basic oc run command line 
         cmd_list = [python_exc, self.cravat_run, self.input_path, '-d', self.out_dir, '-n', self.output_file, '-t', report_type]
         if (self.module.type == 'annotator'):
             cmd_list.extend(['-a', self.module.name])
+        elif (self.module.type == 'reporter') and (au.get_local_module_info('vest') is not None) and (au.get_local_module_info('cgl') is not None):
+            # when testing reporters, if the vest and cgl modules are installed, include them in the run / report.
+            cmd_list.extend(['-a', 'vest', 'cgl'])
         else:
             cmd_list.extend(['--skip', 'annotator'])
         
-        #special case
+        #special case for a few converter modules that need hg19 coordinates
         if (self.module.name in ['ftdna-converter', 'ancestrydna-converter', '23andme-converter']):
             cmd_list.extend(['-l', 'hg19'])
         else:
             cmd_list.extend(['-l', 'hg38'])
+            
+            
         print(' '.join(cmd_list))
         exit_code = subprocess.call(' '.join(cmd_list), shell=True, stdout=self.log, stderr=subprocess.STDOUT)
         if exit_code != 0:
@@ -210,14 +216,21 @@ class Tester():
     def verify(self):
         self.test_passed = True
         if (self.module.type == 'annotator'):
-            self.verify_level(self.module.level, self.module.title)
-        elif (self.module.type == 'mapper'):
-            self.verify_level('variant', 'Variant Annotation')
-            self.verify_level('gene', 'Variant Annotation')  
+            self.verify_level(self.module.level, [self.module.title])
         elif (self.module.type == 'converter'):
-            self.verify_level('variant', 'Variant Annotation')
-            self.verify_level('sample', 'Variant Annotation')
-            self.verify_level('mapping', 'Variant Annotation')
+            self.verify_level('variant', ['Variant Annotation'])
+            self.verify_level('sample', ['Variant Annotation'])
+            self.verify_level('mapping', ['Variant Annotation'])
+        elif (self.module.type == 'mapper'):
+            self.verify_level('variant', ['Variant Annotation'])
+            self.verify_level('gene', ['Variant Annotation'])  
+        elif (self.module.type == 'reporter'):
+            if (au.get_local_module_info('vest') is not None) and (au.get_local_module_info('cgl') is not None):
+                self.verify_level('variant', ['Variant Annotation', 'VEST4', 'Cancer Gene Landscape'])
+                self.verify_level('gene', ['Variant Annotation', 'VEST4', 'Cancer Gene Landscape'])  
+            else: 
+                self.verify_level('variant', ['Variant Annotation'])
+                self.verify_level('gene', ['Variant Annotation'])  
                  
     
     #See if key and result are floating point numbers.  If so, allow tiny 
@@ -263,7 +276,7 @@ class Tester():
                         
             for idx, header in enumerate(key_header):
                 #just check the columns from the module we are testing
-                if module_name not in header or 'UID' in header:
+                if (self.getModule(header) not in module_name) or 'UID' in header:
                     continue
                 
                 if header not in result_header:
@@ -278,6 +291,10 @@ class Tester():
                           '  Expected: ' + key_row[idx] + \
                           '  Result: ' + result[result_idx])
                     self.test_passed = False
+    
+    #headers are <module name>|<header> - this extracts the module name
+    def getModule(self, header):
+        return header[:header.index('|')]
              
     #Write a message to the screen and to the log file.
     def _report(self, s):
