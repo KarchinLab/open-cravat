@@ -773,7 +773,11 @@ def run_reporter (*inargs, **inkwargs):
         try:
             response_t = loop.run_until_complete(reporter.run())
             if args.silent == False:
-                print(f'report created in {os.path.abspath(output_dir)}')
+                if type(response_t) == list:
+                    output_fns = ' '.join(response_t)
+                else:
+                    output_fns = response_t
+                print(f'report created: {output_fns}')
         except:
             if args.silent == False:
                 print(f'report generation failed.')
@@ -781,7 +785,10 @@ def run_reporter (*inargs, **inkwargs):
             response_t = {'success': False}
             raise
         response[report_type] = response_t
-    return response
+    if len(report_types) == 1 and len(response) == 1:
+        return response[list(response.keys())[0]]
+    else:
+        return response
 
 def cravat_report_entrypoint ():
     global parser

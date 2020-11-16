@@ -507,7 +507,10 @@ class Cravat (object):
                 self.clean_up_at_end()
             if self.args.writeadmindb:
                 await self.write_admin_db(runtime, self.numinput)
-            return report_response
+            if report_response is not None and type(report_response) == list and len(report_response) == 1:
+                return report_response[list(report_response.keys())[0]]
+            else:
+                return report_response
 
     async def write_admin_db (self, runtime, numinput):
         if runtime is None or numinput is None:
