@@ -1260,7 +1260,17 @@ class Cravat (object):
                 reporter = Reporter(arg_dict)
                 await reporter.prep()
                 stime = time.time()
-                response[re.sub('reporter$', '', module_name)] = await reporter.run()
+                response_t = await reporter.run()
+                output_fns = None
+                if self.args.silent == False:
+                    response_type = type(response_t)
+                    if response_type == list:
+                        output_fns = ' '.join(response_t)
+                    elif response_type == str:
+                        output_fns = response_t
+                    if output_fns is not None:
+                        print(f'report created: {output_fns} ', end='', flush=True)
+                response[re.sub('reporter$', '', module_name)] = response_t
                 rtime = time.time() - stime
                 if not self.args.silent:
                     print('finished in {0:.3f}s'.format(rtime))

@@ -770,14 +770,17 @@ def run_reporter (*inargs, **inkwargs):
             args.conf = module_options[module_name]
         reporter = module.Reporter(args)
         loop.run_until_complete(reporter.prep())
+        response_t = None
         try:
             response_t = loop.run_until_complete(reporter.run())
+            output_fns = None
             if args.silent == False:
                 if type(response_t) == list:
                     output_fns = ' '.join(response_t)
                 else:
                     output_fns = response_t
-                print(f'report created: {output_fns}')
+                if output_fns is not None:
+                    print(f'report created: {output_fns}')
         except:
             if args.silent == False:
                 print(f'report generation failed.')
