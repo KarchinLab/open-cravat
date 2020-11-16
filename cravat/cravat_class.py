@@ -383,6 +383,20 @@ class Cravat (object):
                 print(f'  Removing {fn}')
             os.remove(fn)
 
+    def log_versions (self):
+        self.logger.info(f'version: open-cravat {au.get_current_package_version()}')
+        for mname, module in self.annotators.items():
+            if mname in au.mic.local:
+                version = au.mic.local[mname].conf['version']
+                self.logger.info(f'version: {mname} {version}')
+        if self.mapper_name in au.mic.local:
+            self.logger.info(f'version: {self.mapper_name} {au.mic.local[self.mapper_name].conf["version"]}')
+        for mname in self.reports:
+            mname = mname + 'reporter'
+            if mname in au.mic.local:
+                version = au.mic.local[mname].conf['version']
+                self.logger.info(f'version: {mname} {version}')
+
     async def main (self):
         no_problem_in_run = True
         report_response = None
@@ -400,6 +414,7 @@ class Cravat (object):
                 print('Genome assembly: {}'.format(self.input_assembly))
             self.logger.info('input files: {}'.format(input_files_str))
             self.logger.info('input assembly: {}'.format(self.input_assembly))
+            self.log_versions()
             self.set_and_check_input_files()
             converter_ran = False
             if self.endlevel >= self.runlevels['converter'] and \
