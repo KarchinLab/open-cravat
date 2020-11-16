@@ -1199,8 +1199,15 @@ class Cravat (object):
             cmd = [module.script_path, 
                    '-d', self.output_dir, 
                    '-n', self.run_name]
+            postagg_conf = {}
             if module.name in self.cravat_conf:
-                confs = json.dumps(self.cravat_conf[module.name])
+                postagg_conf.update(self.cravat_conf[module_name])
+            if module_name in self.conf._all:
+                postagg_conf.update(self.conf._all[module_name])
+            elif 'run' in self.conf._all and module_name in self.conf._all['run']:
+                postagg_conf.update(self.conf._all['run'][module_name])
+            if postagg_conf:
+                confs = json.dumps(postagg_conf)
                 confs = "'" + confs.replace("'", '"') + "'"
                 cmd.extend(['--confs', confs])
             if self.verbose:
