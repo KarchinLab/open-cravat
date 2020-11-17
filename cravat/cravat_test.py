@@ -5,6 +5,7 @@ from cravat import admin_util as au
 import time
 import sys
 from abc import ABC, abstractmethod
+import csv as csv
 
 # Regression test program for CRAVAT modules.  By default, it will go through all modules and
 # if the module has a test directory with an input and key file, it will test the module 
@@ -189,7 +190,10 @@ class TsvReportReader(ReportReader):
         cols = line.split('\t')
         headers = []
         for col in cols:
-            headers.append(col)
+            header = col.replace('.', '|', 1)
+            if not '|' in header:
+                header = 'Variant Annotation|' + header
+            headers.append(header)
         return headers    
 
     #The ID of a result row is used to match key and output.  The ID
@@ -229,7 +233,7 @@ class CsvReportReader(ReportReader):
        
     #Based on the level selected, return column headers and row values.   
     def readReport(self, test_level, bDict):
-        level_hdr = 'Report level:'
+        level_hdr = 'level='
         level = ''
         headers = None
         if (bDict):
@@ -237,45 +241,46 @@ class CsvReportReader(ReportReader):
         else:
             rows = []
         with open(self.rsltFile, encoding='latin-1') as f:
-            line = f.readline().strip('\n')
-            while line:
+            rdr = csv.reader(f)
+            for row in rdr:
                 # skip comment lines but pull out the report level
-                if line.strip().startswith('##'):    
-                    headers = self.readSectionHeader(line)
-                    line = f.readline().strip('\n')
-                    continue
-                
-                # skip comment lines but pull out the report level
-                if line.strip().startswith('#'):    
-                    if level_hdr in line:
-                        level = line[line.index(level_hdr) + len(level_hdr) + 1:]
-                    line = f.readline().strip('\n')
+                if row[0].startswith('#'):    
+                    if level_hdr in row[0]:
+                        hdr_line = row[0]
+                        level = hdr_line[hdr_line.index(level_hdr) + len(level_hdr):]
                     continue
                 
                 #only load the level we are testing
                 if level != test_level:
-                    line = f.readline().strip('\n')
                     continue
-                   
+                
                 #load headers for the section
-                columns = line.split(',')
-                line_id = self.getRowID(headers, columns, level)
+                if headers == None:
+                    headers = self.readSectionHeader(row)
+                    continue
+                  
+                #load headers for the section
+                line_id = self.getRowID(headers, row, level)
                 if (bDict):
-                    rows[line_id] = columns
+                    rows[line_id] = row
                 else:
-                    rows.append((line_id, columns))    
-                line = f.readline().strip('\n')
+                    rows.append((line_id, row))    
         return headers, rows        
     
-    # Read the two report header columns that define the module/column
+    # Read the two report header column that define the module/column
     # for each data column.  Returned as list of: module|column
-    def readSectionHeader(self, line):
-        cols = line.split(',')
+    def readSectionHeader(self, row):
         headers = []
-        for col in cols:
-            colHeader = col.split(':')[1]
-            headers.append(colHeader)
-        return headers    
+        for col in row:
+            #tester use '|' and csv uses ':', just switch the character
+            header = col.replace('.', '|', 1)
+            #tester is expecting base module to be 'Variant Annotation' so switch it.
+            if not '|' in header:
+                header = 'Variant Annotation|' + header
+               
+            headers.append(header)
+        return headers  
+      
     #The ID of a result row is used to match key and output.  The ID
     #differs depending on which section of the output is being checked.         
     def getRowID(self, headers, columns, level):
@@ -394,8 +399,8 @@ class Tester():
             self.verify_level('gene', ['Variant Annotation'])  
         elif (self.module.type == 'reporter'):
             if (au.get_local_module_info('vest') is not None) and (au.get_local_module_info('cgl') is not None):
-                self.verify_level('variant', ['Variant Annotation', 'VEST4', 'Cancer Gene Landscape'])
-                self.verify_level('gene', ['Variant Annotation', 'VEST4', 'Cancer Gene Landscape'])  
+                self.verify_level('variant', ['Variant Annotation', 'vest', 'cgl', 'VEST4', 'Cancer Gene Landscape'])
+                self.verify_level('gene', ['Variant Annotation', 'vest', 'cgl', 'VEST4', 'Cancer Gene Landscape'])  
             else: 
                 self.verify_level('variant', ['Variant Annotation'])
                 self.verify_level('gene', ['Variant Annotation'])  
@@ -448,7 +453,7 @@ class Tester():
                         
             for idx, header in enumerate(key_header):
                 #just check the columns from the module we are testing
-                if 'uid' in header:
+                if (self.getModule(header) not in module_name) or 'uid' in header:
                     continue
                 
                 if header not in result_header:
