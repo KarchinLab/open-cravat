@@ -1210,7 +1210,6 @@ class Cravat (object):
         modules = au.get_local_module_infos_of_type('postaggregator')
         for module_name in modules:
             module = modules[module_name]
-            self.announce_module(module)
             cmd = [module.script_path, 
                    '-d', self.output_dir, 
                    '-n', self.run_name]
@@ -1230,10 +1229,12 @@ class Cravat (object):
                     print(' '.join(cmd))
             post_agg_cls = util.load_class(module.script_path, 'CravatPostAggregator')
             post_agg = post_agg_cls(cmd, self.status_writer)
+            if post_agg.should_run_annotate:
+                self.announce_module(module)
             stime = time.time()
             post_agg.run()
             rtime = time.time() - stime
-            if not self.args.silent:
+            if not self.args.silent and post_agg.should_run_annotate:
                 print('finished in {0:.3f}s'.format(rtime))
 
     async def run_reporter (self):
