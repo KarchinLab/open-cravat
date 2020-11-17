@@ -558,13 +558,14 @@ class Cravat (object):
         cols_to_index = set()
         for sf in constants.base_smartfilters:
             cols_to_index |= util.filter_affected_cols(sf['filter'])
-        for linfo in self.annotators.values():
-            if linfo.smartfilters is not None:
-                for sf in linfo.smartfilters:
-                    cols_to_index |= util.filter_affected_cols(sf['filter'])
-                mname = linfo.name
-                json_info = json.dumps(linfo.smartfilters)
-                cursor.execute(ins_template, (mname, json_info))
+        if self.annotator_ran:
+            for linfo in self.annotators.values():
+                if linfo.smartfilters is not None:
+                    for sf in linfo.smartfilters:
+                        cols_to_index |= util.filter_affected_cols(sf['filter'])
+                    mname = linfo.name
+                    json_info = json.dumps(linfo.smartfilters)
+                    cursor.execute(ins_template, (mname, json_info))
         cursor.execute('pragma table_info(variant)')
         variant_cols = {row[1] for row in cursor}
         cursor.execute('pragma table_info(gene)')
