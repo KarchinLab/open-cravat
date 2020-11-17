@@ -32,6 +32,7 @@ import re
 import sys
 if sys.platform == 'win32' and sys.version_info >= (3,8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+import shutil
 
 # Custom system conf
 pre_parser = argparse.ArgumentParser(add_help=False)
@@ -383,6 +384,20 @@ class Cravat (object):
                 print(f'  Removing {fn}')
             os.remove(fn)
 
+    def log_versions (self):
+        self.logger.info(f'version: open-cravat {au.get_current_package_version()}')
+        for mname, module in self.annotators.items():
+            if mname in au.mic.local:
+                version = au.mic.local[mname].conf['version']
+                self.logger.info(f'version: {mname} {version}')
+        if self.mapper_name in au.mic.local:
+            self.logger.info(f'version: {self.mapper_name} {au.mic.local[self.mapper_name].conf["version"]}')
+        for mname in self.reports:
+            mname = mname + 'reporter'
+            if mname in au.mic.local:
+                version = au.mic.local[mname].conf['version']
+                self.logger.info(f'version: {mname} {version}')
+
     async def main (self):
         no_problem_in_run = True
         report_response = None
@@ -400,6 +415,7 @@ class Cravat (object):
                 print('Genome assembly: {}'.format(self.input_assembly))
             self.logger.info('input files: {}'.format(input_files_str))
             self.logger.info('input assembly: {}'.format(self.input_assembly))
+            self.log_versions()
             self.set_and_check_input_files()
             converter_ran = False
             if self.endlevel >= self.runlevels['converter'] and \
@@ -507,7 +523,10 @@ class Cravat (object):
                 self.clean_up_at_end()
             if self.args.writeadmindb:
                 await self.write_admin_db(runtime, self.numinput)
-            return report_response
+            if report_response is not None and type(report_response) == list and len(report_response) == 1:
+                return report_response[list(report_response.keys())[0]]
+            else:
+                return report_response
 
     async def write_admin_db (self, runtime, numinput):
         if runtime is None or numinput is None:
@@ -552,7 +571,7 @@ class Cravat (object):
         gene_cols = {row[1] for row in cursor}
         for col in cols_to_index:
             if col in variant_cols:
-                q = f'create index sf_variant_{col} on variant ({col})'
+                q = f'create index if not exists sf_variant_{col} on variant ({col})'
                 if not self.args.silent:
                     print(f'\tvariant {col}',end='',flush=True)
                 st = time.time()
@@ -688,7 +707,22 @@ class Cravat (object):
                 if num_input > 1:
                     self.run_name += '_and_'+str(len(self.inputs)-1)+'_files'
         if num_input > 0 and self.inputs[0].endswith('.sqlite'):
-            self.append_mode = True  
+            self.append_mode = True
+            if self.args.skip is None:
+                self.args.skip = ['converter','mapper']
+            else:
+                if 'converter' not in self.args.skip:
+                    self.args.skip.append('converter')
+                if 'mapper' not in self.args.skip:
+                    self.args.skip.append('mapper')
+            if self.args.output_dir:
+                if self.run_name.endswith('.sqlite'):
+                    target_name = self.run_name
+                else:
+                    target_name = self.run_name+'.sqlite'
+                target_path = os.path.join(self.args.output_dir, target_name)
+                shutil.copyfile(self.inputs[0], target_path)
+                self.inputs[0] = target_path
             if self.run_name.endswith('.sqlite'):
                 self.run_name = self.run_name[:-7]
         self.output_dir = self.args.output_dir
@@ -823,8 +857,10 @@ class Cravat (object):
                     crv.write_data(rd)
                 if crx:
                     crx.write_data(rd)
-            crv.close()
-            crx.close()
+            if crv:
+                crv.close()
+            if crx:
+                crx.close()
             self.crv_present = True
             self.crx_present = True
         # Gene
@@ -1192,7 +1228,6 @@ class Cravat (object):
         modules = au.get_local_module_infos_of_type('postaggregator')
         for module_name in modules:
             module = modules[module_name]
-            self.announce_module(module)
             cmd = [module.script_path, 
                    '-d', self.output_dir, 
                    '-n', self.run_name]
@@ -1212,10 +1247,12 @@ class Cravat (object):
                     print(' '.join(cmd))
             post_agg_cls = util.load_class(module.script_path, 'CravatPostAggregator')
             post_agg = post_agg_cls(cmd, self.status_writer)
+            if post_agg.should_run_annotate:
+                self.announce_module(module)
             stime = time.time()
             post_agg.run()
             rtime = time.time() - stime
-            if not self.args.silent:
+            if not self.args.silent and post_agg.should_run_annotate:
                 print('finished in {0:.3f}s'.format(rtime))
 
     async def run_reporter (self):
@@ -1257,7 +1294,17 @@ class Cravat (object):
                 reporter = Reporter(arg_dict)
                 await reporter.prep()
                 stime = time.time()
-                response[re.sub('reporter$', '', module_name)] = await reporter.run()
+                response_t = await reporter.run()
+                output_fns = None
+                if self.args.silent == False:
+                    response_type = type(response_t)
+                    if response_type == list:
+                        output_fns = ' '.join(response_t)
+                    elif response_type == str:
+                        output_fns = response_t
+                    if output_fns is not None:
+                        print(f'report created: {output_fns} ', end='', flush=True)
+                response[re.sub('reporter$', '', module_name)] = response_t
                 rtime = time.time() - stime
                 if not self.args.silent:
                     print('finished in {0:.3f}s'.format(rtime))
