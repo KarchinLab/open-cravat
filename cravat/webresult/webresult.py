@@ -377,22 +377,25 @@ async def get_result (request):
 async def get_result_levels (request):
     queries = request.rel_url.query
     job_id, dbpath = await get_jobid_dbpath(request)
-    conn = await get_db_conn(dbpath)
-    cursor = await conn.cursor()
-    sql = 'select name from sqlite_master where type="table" and ' +\
-        'name like "%_header"'
-    await cursor.execute(sql)
-    ret = await cursor.fetchall()
-    if len(ret) > 0:
-        content = [v[0].split('_')[0] for v in ret]
-        content.insert(0, 'info')
-        content.insert(1,'filter')
+    if dbpath is None:
+        content = ['NODB']
     else:
-        content = []
-    content.remove('sample')
-    content.remove('mapping')
-    await cursor.close()
-    await conn.close()
+        conn = await get_db_conn(dbpath)
+        cursor = await conn.cursor()
+        sql = 'select name from sqlite_master where type="table" and ' +\
+            'name like "%_header"'
+        await cursor.execute(sql)
+        ret = await cursor.fetchall()
+        if len(ret) > 0:
+            content = [v[0].split('_')[0] for v in ret]
+            content.insert(0, 'info')
+            content.insert(1,'filter')
+        else:
+            content = []
+        content.remove('sample')
+        content.remove('mapping')
+        await cursor.close()
+        await conn.close()
     return web.json_response(content)
 
 async def get_jobid_dbpath (request):

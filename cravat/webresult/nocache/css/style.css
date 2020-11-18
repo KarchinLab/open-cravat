@@ -1100,3 +1100,10 @@ input:checked + .sample-rd-rej::before {
     */
 }
 
+#sorrydiv {
+    width: 500px;
+    height: 500px;
+    position: fixed;
+    top: calc(50% - 250px);
+    left: calc(50% - 250px);
+}

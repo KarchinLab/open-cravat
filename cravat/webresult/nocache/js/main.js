@@ -195,6 +195,41 @@ function resizesTheWindow () {
     }
 }
 
+function showNoDB () {
+    var div = getEl('div');
+    div.id = 'sorrydiv';
+    var img = getEl('img');
+    img.src = '/result/images/sorry.png';
+    addEl(div, img);
+    var span = getEl('p');
+    span.style.fontSize = '36px';
+    span.textContent = 'Sorry about that...';
+    addEl(div, span);
+    var span = getEl('p');
+    span.style.fontSize = '20px';
+    span.textContent = 'OpenCRAVAT is unable to show the job result.';
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    var span = getEl('p');
+    span.style.fontSize = '16px';
+    span.textContent = 'Usually, it is because...';
+    addEl(div, span);
+    addEl(div, getEl('br'));
+    var span = getEl('p');
+    span.style.fontSize = '16px';
+    span.textContent = '\u2022 Job ID is wrong.'
+    addEl(div, span);
+    var span = getEl('p');
+    span.style.fontSize = '16px';
+    span.textContent = '\u2022 You are not authorized to view this job result.';
+    addEl(div, span);
+    var span = getEl('p');
+    span.style.fontSize = '16px';
+    span.textContent = '\u2022 Result database path is wrong.';
+    addEl(div, span);
+    addEl(document.body, div);
+}
+
 function getResultLevels (callback) {
     $.ajax({
         method: 'GET',
@@ -202,8 +237,12 @@ function getResultLevels (callback) {
         async: true,
         data: {'job_id': jobId, 'username': username, 'dbpath': dbPath},
         success: function (response) {
-            resultLevels = response;
-            callback();
+            if (response.length > 0 && response[0] == 'NODB') {
+                showNoDB();
+            } else {
+                resultLevels = response;
+                callback();
+            }
         },
     });
 }
