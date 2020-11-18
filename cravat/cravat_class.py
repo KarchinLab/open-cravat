@@ -433,6 +433,12 @@ class Cravat (object):
                 if not self.args.silent:
                     print('finished in {0:.3f}s'.format(rtime))
                 converter_ran = True
+            if self.numinput == 0:
+                msg = 'No variant found in input'
+                if not self.args.silent:
+                    print(msg)
+                self.logger.info(msg)
+                exit()
             self.mapper_ran = False
             if self.endlevel >= self.runlevels['mapper'] and \
                     self.startlevel <= self.runlevels['mapper'] and \
