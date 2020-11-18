@@ -174,13 +174,29 @@ class CravatFilter ():
     #    for conn in self.open_conns.values():
     #        await conn.close()
 
+    async def get_module_version_in_job (self, module_name, conn=None, cursor=None):
+        if conn is None or cursor is None:
+            return None
+        q = 'select colval from info where colkey="_annotators"'
+        await cursor.execute(q)
+        anno_vers = await cursor.fetchone()
+        if anno_vers is None:
+            return None
+        version = None
+        for anno_ver in anno_vers[0].split(','):
+            [mname, ver] = anno_ver.split(':')
+            if mname == module_name:
+                version = ver
+                break
+        return version
+
     async def exec_db (self, func, *args, **kwargs):
         conn = await self.get_db_conn()
         cursor = await conn.cursor()
         #conn_hash = conn.__hash__()
         #self.open_conns[conn_hash] = conn
         ret = await func(*args, conn=conn, cursor=cursor, **kwargs)
-        #await cursor.close()
+        await cursor.close()
         #await conn.close()
         #del self.open_conns[conn_hash]
         return ret

@@ -9,6 +9,7 @@ class Reporter (CravatReport):
     def __init__ (self, cmd_args, status_writer=None):
         self.no_log = True
         self.no_status_update = True
+        self.levels_to_write = None
         super().__init__(cmd_args, status_writer)
 
     def setup (self):

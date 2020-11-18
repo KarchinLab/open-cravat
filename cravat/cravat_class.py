@@ -202,6 +202,11 @@ cravat_cmd_parser.add_argument('--silent',
     action='store_true',
     default=False,
     help='Runs silently.')
+cravat_cmd_parser.add_argument('--concise-report',
+    dest='concise_report',
+    action='store_true',
+    default=False,
+    help='Generate concise reports with default columns defined by each annotation module')
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -1271,6 +1276,7 @@ class Cravat (object):
                         print(' '.join([str(k) + '=' + str(v) for k, v in arg_dict.items()]))
                 arg_dict['status_writer'] = self.status_writer
                 arg_dict['reporttypes'] = [module_name.replace('reporter', '')]
+                arg_dict['concise_report'] = self.args.concise_report
                 Reporter = util.load_class(module.script_path, 'Reporter')
                 reporter = Reporter(arg_dict)
                 await reporter.prep()

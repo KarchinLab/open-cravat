@@ -41,6 +41,10 @@ class CravatReport:
         self.column_sub_allow_partial_match = {}
         self.colname_conversion = {}
         self.warning_msgs = []
+        self.colnames_to_display = {}
+        self.colnos_to_display = {}
+        self.display_select_columns = {}
+        self.extracted_cols = {}
         self.parse_cmd_args(inargs, inkwargs)
         global parser
         for ag in parser._action_groups:
@@ -114,7 +118,17 @@ class CravatReport:
             self.status_writer = parsed_args.status_writer
         else:
             self.status_writer = None
+        self.concise_report = parsed_args.concise_report
+        self.extract_columns_multilevel = self.get_standardized_module_option(self.confs.get('extract-columns', {}))
         self.args = parsed_args
+
+    def should_write_level (self, level):
+        if self.levels_to_write is None:
+            return True
+        elif level in self.levels_to_write:
+            return True
+        else:
+            return False
 
     async def prep (self):
         await self.connect_db()
@@ -239,8 +253,12 @@ class CravatReport:
             new_datarow[colno] = newcell
         return new_datarow
 
-    def should_write_level (self, level):
-        return True
+    def get_extracted_header_columns (self, level):
+        cols = []
+        for col in self.colinfo[level]['columns']:
+            if col['col_name'] in self.colnames_to_display[level]:
+                cols.append(col)
+        return cols
 
     async def run_level (self, level):
         ret = await self.table_exists(level)
@@ -283,6 +301,7 @@ class CravatReport:
                                 cats.append(val)
                         self.colinfo[level]['columns'][i]['col_cats'] = cats
         self.write_preface(level)
+        self.extracted_cols[level] = self.get_extracted_header_columns(level)
         self.write_header(level)
         if level == 'variant':
             hugo_present = 'base__hugo' in self.colnos['variant']
@@ -366,11 +385,11 @@ class CravatReport:
                     for sample in samples:
                         sample_datarow = new_datarow
                         sample_datarow[sample_newcolno] = sample
-                        self.write_table_row(sample_datarow)
+                        self.write_table_row(self.get_extracted_row(sample_datarow))
                 else:
-                    self.write_table_row(new_datarow)
+                    self.write_table_row(self.get_extracted_row(new_datarow))
             else:
-                self.write_table_row(new_datarow)
+                self.write_table_row(self.get_extracted_row(new_datarow))
 
     async def get_db_conn (self):
         if self.dbpath is None:
@@ -403,9 +422,11 @@ class CravatReport:
             return
         if tab == 'all':
             for level in await self.cf.exec_db(self.cf.get_result_levels):
+                self.level = level
                 if await self.table_exists(level):
                     await self.make_col_info(level)
             for level in await self.cf.exec_db(self.cf.get_result_levels):
+                self.level = level
                 if await self.table_exists(level):
                     await self.run_level(level)
         else:
@@ -415,6 +436,7 @@ class CravatReport:
                         await self.make_col_info(level)
             else:
                 await self.make_col_info(tab)
+            self.level = level
             await self.run_level(tab)
         await self.close_db()
         if self.module_conf is not None and self.status_writer is not None:
@@ -453,7 +475,35 @@ class CravatReport:
     def write_table_row (self, row):
         pass
 
+    def get_extracted_row (self, row):
+        if self.display_select_columns[self.level]:
+            filtered_row = [row[colno] for colno in self.colnos_to_display[self.level]]
+        else:
+            filtered_row = row
+        return filtered_row
+
+    def add_conditional_to_colnames_to_display (self, level, column, module_name):
+        col_name = column['col_name']
+        if level in self.extract_columns_multilevel and len(self.extract_columns_multilevel[level]) > 0:
+            if col_name in self.extract_columns_multilevel[level]:
+                incl = True
+            else:
+                incl = False
+        elif self.concise_report:
+            if 'col_hidden' in column and column['col_hidden'] == True:
+                incl = False
+            else:
+                incl = True
+        else:
+            incl = True
+        if incl and col_name not in self.colnames_to_display[level]:
+            if module_name == self.mapper_name:
+                self.colnames_to_display[level].append(col_name.replace(module_name + '__', 'base__'))
+            else:
+                self.colnames_to_display[level].append(col_name)
+
     async def make_col_info (self, level):
+        self.colnames_to_display[level] = []
         conn = await self.get_db_conn()
         cursor = await conn.cursor()
         await self.store_mapper()
@@ -498,6 +548,7 @@ class CravatReport:
             [colgrpname, _] = coldef.name.split('__')
             column = coldef.get_colinfo()
             columns.append(column)
+            self.add_conditional_to_colnames_to_display(level, column, colgrpname)
             for columngroup in self.columngroups[level]:
                 if columngroup['name'] == colgrpname:
                     columngroup['count'] += 1
@@ -509,8 +560,6 @@ class CravatReport:
             gene_annotators = [v[0] for v in await cursor.fetchall()]
             modules_to_add = [m for m in gene_annotators if m != 'base']
             for module in modules_to_add:
-                if not module in gene_annotators:
-                    continue
                 cols = []
                 q = 'select col_def from gene_header where col_name like "{}__%"'.format(module)
                 await cursor.execute(q)
@@ -537,6 +586,7 @@ class CravatReport:
                             coldef.categories.append(r[0])
                     column = coldef.get_colinfo()
                     columns.append(column)
+                    self.add_conditional_to_colnames_to_display(level, column, module)
                     self.var_added_cols.append(coldef.name)
         # Gene level summary columns
         if level == 'gene':
@@ -581,6 +631,7 @@ class CravatReport:
                     coldef.genesummary = True
                     column = coldef.get_colinfo()
                     columns.append(column)
+                    self.add_conditional_to_colnames_to_display(level, column, mi.name)
                 self.summarizing_modules.append([mi, annot, cols])
                 for col in cols:
                     fullname = module_name+'__'+col['name']
@@ -614,6 +665,7 @@ class CravatReport:
         new_columns = []
         self.newcolnos[level] = {}
         newcolno = 0
+        new_colnames_to_display = []
         for colgrp in newcolgrps:
             colgrpname = colgrp['name']
             for col in columns:
@@ -625,13 +677,18 @@ class CravatReport:
                     col['col_name'] = newcolname
                     new_columns.append(col)
                     self.newcolnos[level][newcolname] = newcolno
+                    if newcolname in self.colnames_to_display[level]:
+                        new_colnames_to_display.append(newcolname)
                 elif grpname == colgrpname:
                     new_columns.append(col)
                     self.newcolnos[level][colname] = newcolno
+                    if colname in self.colnames_to_display[level]:
+                        new_colnames_to_display.append(colname)
                 else:
                     continue
                 newcolno += 1
         self.colinfo[level] = {'colgroups': newcolgrps, 'columns': new_columns}
+        self.colnames_to_display[level] = new_colnames_to_display
         # report substitution
         if level in ['variant', 'gene']:
             reportsubtable = level + '_reportsub'
@@ -652,8 +709,50 @@ class CravatReport:
                             subs = reportsub[module][col],
                         ))
                         new_columns[i]['reportsub'] = reportsub[module][col]
+        # display_select_columns
+        if (level in self.extract_columns_multilevel and len(self.extract_columns_multilevel[level]) > 0) or self.concise_report:
+            self.display_select_columns[level] = True
+        else:
+            self.display_select_columns[level] = False
+        # column numbers to display
+        colno = 0
+        self.colnos_to_display[level] = []
+        for colgroup in self.colinfo[level]['colgroups']:
+            count = colgroup['count']
+            if count == 0:
+                continue
+            for col in self.colinfo[level]['columns'][colno:colno+count]:
+                module_col_name = col['col_name']
+                if module_col_name in self.colnames_to_display[level]:
+                    include_col = True
+                else:
+                    include_col = False
+                if include_col:
+                    self.colnos_to_display[level].append(colno)
+                colno += 1
         await cursor.close()
         await conn.close()
+
+    def get_standardized_module_option (self, v):
+        tv = type(v)
+        if tv == str:
+            if ':' in v:
+                v0 = {}
+                for v1 in v.split('.'):
+                    if ':' in v1:
+                        v1toks = v1.split(':')
+                        if len(v1toks) == 2:
+                            level = v1toks[0]
+                            v2s = v1toks[1].split(',')
+                            v0[level] = v2s
+                v = v0
+            elif ',' in v:
+                v = [val for val in v.split(',') if val != '']
+        if v == 'true':
+            v = True
+        elif v == 'false':
+            v = False
+        return v
 
     async def connect_db (self, dbpath=None):
         if dbpath != None:
@@ -873,5 +972,10 @@ parser.add_argument('--module-option',
     dest='module_option',
     nargs='*',
     help='Module-specific option in module_name.key=value syntax. For example, --module-option vcfreporter.type=separate')
+parser.add_argument('--concise-report',
+    dest='concise_report',
+    action='store_true',
+    default=False,
+    help='Generate concise report with default columns defined by annotation modules')
 parser.set_defaults(func=run_reporter)
 

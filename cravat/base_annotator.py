@@ -22,6 +22,7 @@ import cravat.admin_util as au
 import re
 from types import SimpleNamespace
 import cravat.util
+from distutils.version import LooseVersion
 
 class BaseAnnotator(object):
 
@@ -266,10 +267,23 @@ class BaseAnnotator(object):
     async def get_gene_summary_data (self, cf):
         #print('            {}: getting gene summary data'.format(self.module_name))
         t = time.time()
+        module_ver = await cf.exec_db(cf.get_module_version_in_job, self.module_name)
         hugos = await cf.exec_db(cf.get_filtered_hugo_list)
-        cols = [self.module_name + '__' + coldef['name'] \
-            for coldef in self.conf['output_columns'] \
-            if coldef['name'] != 'uid']
+        output_columns = None
+        if 'old_output_columns' in self.conf:
+            old_output_columns = self.conf['old_output_columns']
+            old_vers = [LooseVersion(v) for v in list(old_output_columns.keys())]
+            old_vers.sort(reverse=True)
+            if module_ver is None:
+                output_columns = old_output_columns[str(min(old_vers))]['output_columns']
+            else:
+                module_ver = LooseVersion(module_ver)
+                for old_ver in old_vers:
+                    if module_ver <= old_ver:
+                        output_columns = old_output_columns[str(old_ver)]['output_columns']
+        if output_columns is None:
+            output_columns = self.conf['output_columns']
+        cols = [self.module_name + '__' + coldef['name'] for coldef in output_columns if coldef['name'] != 'uid']
         data = {}
         t = time.time()
         rows = await cf.exec_db(cf.get_variant_data_for_cols, cols)
