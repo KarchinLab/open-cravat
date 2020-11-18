@@ -300,7 +300,12 @@ function getLocal () {
             }
             makeInstalledGroup();
             buildAnnotatorGroupSelector();
-            populateAnnotators();
+            let annotatorsDone = populateAnnotators();
+            annotatorsDone.then(()=>{
+                    // Populate cc here to avoid it showing before annotators
+                    // and then getting quickly shoved down. Looks bad.
+                    populateAddtlAnalysis();
+                })
             if (servermode == false) {
                 populateJobs();
             }

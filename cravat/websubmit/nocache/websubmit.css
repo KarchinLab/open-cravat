@@ -725,6 +725,33 @@ input:checked + .slider:before {
   background-color: #de6342;
 }
 
+#addtl-analysis-div {
+    background-color: #dbd3c8;
+	color: white;
+    margin-top: 15px;
+}
+
+#addtl-analysis-div .div-header {
+	color: white;
+}
+
+#addtl-analysis-div .divbanner {
+    background-color: #8c8780;
+}
+
+#case-control-cohorts + label {
+    font-family: roboto-medium;
+    font-size: 13px;
+    color: white;
+    background-color: #6e593a;
+    display: inline-block;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    cursor: pointer;
+}
+
 #submit-form {
     overflow-y: scroll;
 }

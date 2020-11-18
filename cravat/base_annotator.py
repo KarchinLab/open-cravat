@@ -23,6 +23,7 @@ import re
 from types import SimpleNamespace
 import cravat.util
 from distutils.version import LooseVersion
+from cravat.constants import cannonical_chroms
 
 class BaseAnnotator(object):
 
@@ -85,6 +86,7 @@ class BaseAnnotator(object):
                 self.annotator_version = self.conf['version']
             else:
                 self.annotator_version = ''
+            self.supported_chroms = set(cannonical_chroms)
         except Exception as e:
             self._log_exception(e)
 
@@ -122,8 +124,6 @@ class BaseAnnotator(object):
                     self.conf['input_columns'].append(id_col_name)
             else:
                 self.conf['input_columns'] = self.default_input_columns[self.conf['input_format']]
-            if self.conf['level'] == 'variant':
-                self.conf['handle_alt_contigs'] = self.conf.get('handle_alt_contigs',False)
         except Exception as e:
             self._log_exception(e)
 
@@ -215,11 +215,11 @@ class BaseAnnotator(object):
                         if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
                             self.status_writer.queue_status_update('status', 'Running {} ({}): line {}'.format(self.conf['title'], self.module_name, lnum))
                             last_status_update_time = cur_time
-                    if input_data.get('alt_base', '') == '*': 
-                        # VCF format * allele gets empty annotation.
+                    # VCF format * allele gets empty annotation.
+                    if self.conf['level']=='variant' and input_data.get('alt_base', '') == '*': 
                         output_dict = None
-                    elif len(input_data.get('chrom',''))>5 and not self.conf.get('handle_alt_contigs'):
-                        # Skip alt chroms by default
+                    # Skip alt chroms by default
+                    elif self.conf['level']=='variant' and not input_data.get('chrom') in self.supported_chroms:
                         output_dict = None
                     elif secondary_data == {}:
                         output_dict = self.annotate(input_data)
@@ -327,6 +327,8 @@ class BaseAnnotator(object):
             self._setup_outputs()
             self._open_db_connection()
             self.setup()
+            if not hasattr(self, 'supported_chroms'):
+                self.supported_chroms = set(['chr'+str(n) for n in range(1,23)]+['chrX','chrY'])
         except Exception as e:
             self._log_exception(e)
 
