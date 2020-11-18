@@ -94,15 +94,9 @@
                             <div style='text-align: left;'>
                                 <textarea rows="1" id="input-text" style='' placeholder="Enter variants" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
-                            <!--
-                            <span>Format:</span>
-                            -->
                             <select id='submit-input-format-select' disabled style='display: none;'>
                                 <option value=''>Detect</option>
                             </select>
-                            <!--
-                            <span style='font-size: 10px;'> | </span>
-                            -->
                             <span style='font-size: 13px;'>Example:</span>
                             <button value="vcf" class='butn input-example-button'>VCF</button>
                             <button value="cravat" class='butn input-example-button'>TSV</button>
@@ -121,9 +115,6 @@
                 <div class='divbanner'></div>
                 <div class='chevrondiv'><div class='chevron chevron1to2'></div></div>
             </div>
-            <!--
-            <div><img src='down.png' /></div>
-            -->
             <div id='annotchoosediv' class='container'>
                 <span class='divtitle'>Annotations</span>
                 <br />
@@ -131,6 +122,10 @@
                 <div id="annotator-group-select-div"></div>
                 <div id="annotator-select-div"></div>
                 <div class='divbanner' style='background-color: #3175b0;'></div>
+            </div>
+            <div id='addtl-analysis-div' class='container' style='display:none'>
+                <span class='divtitle'>Additional Analysis</span>
+                <div class='divbanner'></div>
             </div>
         </div>
         <div class='chevrondiv'><div class='chevron chevron2to3'></div></div>

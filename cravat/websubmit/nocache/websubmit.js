@@ -1013,6 +1013,7 @@ function populateAnnotators () {
                 GLOBALS.annotators = data
                 setTimeout(function () {
                     buildAnnotatorsSelector();
+                    resolve();
                 }, 100);
             }
         })
@@ -1914,4 +1915,72 @@ function importJob() {
     };
     showSpinner();
     req.send(fileSel.files[0]);
+}
+
+// Additional analysis stuff. Currently just casecontrol. Design expected to change when more added.
+const addtlAnalysis = {
+    names: [],
+    fetchers: {},
+};
+
+function populateAddtlAnalysis () {
+    let display = false;
+    display = display || populateCaseControl()===true;
+    if (display) {
+        $('#addtl-analysis-div').css('display','');
+    }
+}
+
+function populateCaseControl () {
+    if ( ! localModuleInfo.hasOwnProperty('casecontrol')) {
+        return false
+    }
+    let outer = $('#addtl-analysis-div');
+    let wrapper = $(getEl('div'))
+        .attr('id','case-control-wrapper')
+        .addClass('addtl-analysis-wrapper')
+    outer.append(wrapper);
+    let cohortsInput = $(getEl('input'))
+        .attr('id','case-control-cohorts')
+        .attr('type','file')
+        .css('display','none');
+    wrapper.append(cohortsInput)
+    let cohortsLabel = $(getEl('label'))
+        .attr('for','case-control-cohorts')
+        .text('Case-Control cohorts')
+        .attr('title','Compare variant distribution across case and control cohorts. See documentation for details.');
+    wrapper.append(cohortsLabel);
+    let spanDefaultText = 'No file selected'
+    let filenameSpan = $(getEl('span'))
+        .attr('id','case-control-filename')
+        .css('margin-left','1ch')
+        .css('color','black')
+        .text(spanDefaultText);
+    wrapper.append(filenameSpan);
+    let clearBtn = $(getEl('button'))
+        .click(event => {
+            cohortsInput.val('').trigger('change');
+        })
+        .text('X')
+        .addClass('butn')
+        .css('display','none');
+    wrapper.append(clearBtn);
+    cohortsInput.change(event => {
+        let files = event.target.files;
+        if (files.length > 0) {
+            filenameSpan.text(files[0].name);
+            clearBtn.css('display','');
+        } else {
+            filenameSpan.text(spanDefaultText);
+            clearBtn.css('display','none');
+        }
+    })
+    addtlAnalysis.names.push('casecontrol');
+    addtlAnalysis.fetchers.casecontrol = function () {
+        let files = cohortsInput[0].files;
+        if (files.length > 0) {
+            return files[0];
+        }
+    }    
+    return true
 }
