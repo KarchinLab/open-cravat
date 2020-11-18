@@ -275,6 +275,7 @@ async def submit (request):
     reader = await request.multipart()
     job_options = {}
     input_files = []
+    cc_cohorts_path = None
     while True:
         part = await reader.next()
         if not part: 
@@ -288,6 +289,10 @@ async def submit (request):
                 wf.write(await part.read())
         elif part.name == 'options':
             job_options = await part.json()
+        elif part.name == 'casecontrol':
+            cc_cohorts_path = os.path.join(job_dir, part.filename)
+            with open(cc_cohorts_path,'wb') as wf:
+                wf.write(await part.read())
     input_fnames = [fp.filename for fp in input_files]
     run_name = input_fnames[0]
     if len(input_fnames) > 1:
@@ -348,6 +353,8 @@ async def submit (request):
         run_args.append('--writeadmindb')
         run_args.extend(['--jobid', job_id])
     run_args.append('--temp-files')
+    if cc_cohorts_path is not None:
+        run_args.extend(['--module-option',f'casecontrol.cohorts={cc_cohorts_path}'])
     global job_queue
     global run_jobs_info
     job_ids = run_jobs_info['job_ids']

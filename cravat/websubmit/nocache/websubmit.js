@@ -85,6 +85,13 @@ function submit () {
     submitOpts.note = note;
     document.querySelector('#submit-job-button').disabled = true;
     formData.append('options',JSON.stringify(submitOpts));
+    // AddtlAnalysis
+    for (addtlName of addtlAnalysis.names) {
+        let addtlData = addtlAnalysis.fetchers[addtlName]();
+        if (addtlData != undefined) {
+            formData.append(addtlName, addtlAnalysis.fetchers[addtlName]());
+        }
+    }
     var guiInputSizeLimit = parseInt(document.getElementById('settings_gui_input_size_limit').value);
     var sumInputSize = 0;
     for (var i = 0; i < inputFiles.length; i++) {
