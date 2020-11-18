@@ -269,20 +269,7 @@ class BaseAnnotator(object):
         t = time.time()
         module_ver = await cf.exec_db(cf.get_module_version_in_job, self.module_name)
         hugos = await cf.exec_db(cf.get_filtered_hugo_list)
-        output_columns = None
-        if 'old_output_columns' in self.conf:
-            old_output_columns = self.conf['old_output_columns']
-            old_vers = [LooseVersion(v) for v in list(old_output_columns.keys())]
-            old_vers.sort(reverse=True)
-            if module_ver is None:
-                output_columns = old_output_columns[str(min(old_vers))]['output_columns']
-            else:
-                module_ver = LooseVersion(module_ver)
-                for old_ver in old_vers:
-                    if module_ver <= old_ver:
-                        output_columns = old_output_columns[str(old_ver)]['output_columns']
-        if output_columns is None:
-            output_columns = self.conf['output_columns']
+        output_columns = await cf.exec_db(cf.get_stored_output_columns, self.module_name)
         cols = [self.module_name + '__' + coldef['name'] for coldef in output_columns if coldef['name'] != 'uid']
         data = {}
         t = time.time()

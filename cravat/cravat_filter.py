@@ -754,6 +754,16 @@ class CravatFilter ():
             table_names.append(row[0].replace('_header', ''))
         return table_names
 
+    async def get_stored_output_columns (self, module_name, conn=None, cursor=None):
+        q = f'select col_def from variant_header where col_name like "{module_name}__%"'
+        await cursor.execute(q)
+        output_columns = []
+        for row in await cursor.fetchall():
+            d = json.loads(row[0])
+            d['name'] = d['name'].replace(f'{module_name}__', '')
+            output_columns.append(d)
+        return output_columns
+
 def regexp (y, x, search=re.search):
     if x is None:
         return 0
