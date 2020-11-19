@@ -158,7 +158,7 @@ function complementRemoteWithLocal () {
                 if (moduleInfo.private == true) {
                     return;
                 }
-                remoteModuleInfo[localModuleName] = JSON.parse(xhr.responseText);
+                remoteModuleInfo[localModuleName] = moduleInfo;
             };
             xhr.onerror = function (e) {
                 console.error(xhr.statusText);
@@ -224,12 +224,12 @@ function getLocal () {
                 }
                 var localTags = localModule.tags;
                 var remoteTags = remoteModule.tags;
-                for (var i = 0; i < localTags.length; i++) {
-                    var tag = localTags[i];
-                    if (remoteTags.indexOf(tag) == -1) {
-                        remoteTags.push(tag);
-                    }
-                }
+                //for (var i = 0; i < localTags.length; i++) {
+                //    var tag = localTags[i];
+                //    if (remoteTags.indexOf(tag) == -1) {
+                //        remoteTags.push(tag);
+                //    }
+                //}
                 remoteModule.tags = remoteTags;
             }
             baseInstalled = true;
@@ -811,7 +811,9 @@ function updateFilter () {
         tags.push(checkboxes[i].value);
         filterHasValue = true;
     }
-    filter['tags'] = tags;
+    if (tags.length > 0) {
+        filter['tags'] = tags;
+    }
     populateAllModulesDiv();
     showAllModulesDiv();
     if (filterHasValue) {
@@ -1279,10 +1281,13 @@ function getFilteredRemoteModules () {
                 pass = true;
             } else if (remoteModule['tags'].indexOf('newavailable') != -1 && newCheck == true) {
                 pass = true;
+            } else if (hasFilter) {
+                pass = true;
             }
             if (pass == false) {
                 continue;
             }
+        } else {
         }
         if (hasFilter) {
             var typeYes = false;
