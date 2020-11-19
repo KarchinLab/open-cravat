@@ -1386,6 +1386,13 @@ function onChangeAnnotatorGroupCheckbox (tags) {
                         } else {
                             c.classList.add('show');
                             c.classList.remove('hide');
+                            var groups = localModuleInfo[c.getAttribute('name')].groups;
+                            for (var groupNo = 0; groupNo < groups.length; groupNo++) {
+                                var group = groups[groupNo];
+                                var groupDiv = document.querySelector('div.checkbox-group-element[name="'+group+'"]');
+                                groupDiv.classList.add('show');
+                                groupDiv.classList.remove('hide');
+                            }
                         }
                     }
                 }
