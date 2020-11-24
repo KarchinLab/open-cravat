@@ -45,6 +45,7 @@ class CravatReport:
         self.colnos_to_display = {}
         self.display_select_columns = {}
         self.extracted_cols = {}
+        self.levels_to_write = None
         self.parse_cmd_args(inargs, inkwargs)
         global parser
         for ag in parser._action_groups:
