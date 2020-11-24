@@ -851,7 +851,7 @@ function populateFilterSaveNames() {
                 .addClass('filter-list-item-export')
                 .attr('title','export filter')
                 .click(()=>{
-                    savedFilterExport(filterName);
+                    exportFilter(filterName);
                 })
             );
 			li.append($(getEl('img'))
@@ -874,9 +874,9 @@ function savedFilterClick(event) {
 	});
 }
 
-function savedFilterExport(filterName) {
+function exportFilter(filterName) {
     getSavedFilter(filterName).then((msg)=>{
-        let text = JSON.stringify(msg, null, 2);
+        let text = JSON.stringify(msg['filterSet'], null, 2);
         var link = getEl('a');
         link.download = filterName+'.json';
         var blob = new Blob([text], {type: 'text/plain'});
