@@ -581,23 +581,29 @@ class Cravat (object):
         variant_cols = {row[1] for row in cursor}
         cursor.execute('pragma table_info(gene)')
         gene_cols = {row[1] for row in cursor}
+        cursor.execute('select name from sqlite_master where type="index"')
+        existing_indices = {row[0] for row in cursor}
         for col in cols_to_index:
             if col in variant_cols:
-                q = f'create index if not exists sf_variant_{col} on variant ({col})'
-                if not self.args.silent:
-                    print(f'\tvariant {col}',end='',flush=True)
-                st = time.time()
-                cursor.execute(q)
-                if not self.args.silent:
-                    print(f'\tfinished in {time.time()-st:.3f}s')
+                index_name = f'sf_variant_{col}'
+                if index_name not in existing_indices:
+                    q = f'create index if not exists {index_name} on variant ({col})'
+                    if not self.args.silent:
+                        print(f'\tvariant {col}',end='',flush=True)
+                    st = time.time()
+                    cursor.execute(q)
+                    if not self.args.silent:
+                        print(f'\tfinished in {time.time()-st:.3f}s')
             if col in gene_cols:
-                q = f'create index sf_gene_{col} on gene ({col})'
-                if not self.args.silent:
-                    print(f'\tIndexing gene {col}',end='',flush=True)
-                st = time.time()
-                cursor.execute(q)
-                if not self.args.silent:
-                    print(f'\tfinished in {time.time()-st:.3f}s')
+                index_name = f'sf_gene_{col}'
+                if index_name not in existing_indices:
+                    q = f'create index if not exists {index_name} on gene ({col})'
+                    if not self.args.silent:
+                        print(f'\tgene {col}',end='',flush=True)
+                    st = time.time()
+                    cursor.execute(q)
+                    if not self.args.silent:
+                        print(f'\tfinished in {time.time()-st:.3f}s')
 
         conn.commit()
         cursor.close()
