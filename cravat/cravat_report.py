@@ -321,6 +321,12 @@ class CravatReport:
             write_variant_sample_separately = False
         colnos = self.colnos[level]
         all_mappings_newcolno = self.newcolnos['variant']['base__all_mappings']
+        cols = self.colinfo[level]['columns']
+        json_colnos = []
+        for i in range(len(cols)):
+            col = cols[i]
+            if col['table'] == True:
+                json_colnos.append(i)
         for datarow in datarows:
             if datarow is None:
                 continue
@@ -499,6 +505,8 @@ class CravatReport:
             incl = True
         if incl and col_name not in self.colnames_to_display[level]:
             if module_name == self.mapper_name:
+                self.colnames_to_display[level].append(col_name.replace(module_name + '__', 'base__'))
+            elif module_name == 'tagsampler':
                 self.colnames_to_display[level].append(col_name.replace(module_name + '__', 'base__'))
             else:
                 self.colnames_to_display[level].append(col_name)

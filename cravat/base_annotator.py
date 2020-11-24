@@ -208,6 +208,11 @@ class BaseAnnotator(object):
                 print('        {}: started at {}'.format(self.module_name, time.asctime(time.localtime(start_time))))
             self.base_setup()
             last_status_update_time = time.time()
+            output_columns = self.conf['output_columns']
+            json_colnames = []
+            for col in output_columns:
+                if 'table' in col and col['table'] == True:
+                    json_colnames.append(col['name'])
             for lnum, line, input_data, secondary_data in self._get_input():
                 try:
                     if self.update_status_json_flag and self.status_writer is not None:
@@ -225,6 +230,8 @@ class BaseAnnotator(object):
                         output_dict = self.annotate(input_data)
                     else:
                         output_dict = self.annotate(input_data, secondary_data)
+                    for colname in json_colnames:
+                        output_dict[colname] = json.dumps(output_dict[colname])
                     # This enables summarizing without writing for now.
                     if output_dict is None:
                         continue

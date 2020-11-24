@@ -514,6 +514,7 @@ class ColumnDefinition (object):
         self.filterable = bool(d.get('filterable',True))
         self.link_format = d.get('link_format')
         self.genesummary = d.get('genesummary',False)
+        self.table = d.get('table', False)
 
     def from_row(self, row, order=None):
         if order is None:
@@ -557,7 +558,8 @@ class ColumnDefinition (object):
             'col_filterable': self.filterable,
             'link_format': self.link_format,
             'col_genesummary': self.genesummary,
-            'col_index': self.index
+            'col_index': self.index,
+            'table': self.table,
         }
     
     def __iter__(self): # Allows casting to dict
