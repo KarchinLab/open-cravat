@@ -203,11 +203,11 @@ function showNoDB () {
     addEl(div, img);
     var span = getEl('p');
     span.style.fontSize = '36px';
-    span.textContent = 'Sorry about that...';
+    span.textContent = 'Sorry...';
     addEl(div, span);
     var span = getEl('p');
     span.style.fontSize = '20px';
-    span.textContent = 'OpenCRAVAT is unable to show the job result.';
+    span.textContent = 'OpenCRAVAT was unable to show the job result.';
     addEl(div, span);
     addEl(div, getEl('br'));
     var span = getEl('p');
