@@ -863,8 +863,12 @@ div.pq-select-menu>.pq-select-option-label {
     font-family: sourcesanspro-bold;
     font-size: 18px;
 }
-
 #filter-save {
+	margin-left: 0.5ch;
+	height: 2em;
+	cursor: pointer;
+}
+#filter-import-label img {
 	margin-left: 0.5ch;
 	height: 2em;
 	cursor: pointer;
@@ -877,13 +881,13 @@ div.pq-select-menu>.pq-select-option-label {
 	height: 100%;
 	border-right: 1px solid gray;
 	padding: 5px;
-	width: 8%;
+	width: 10%;
 }
 #filter-right-panel {
 	max-width: 1100px;
 	float: left;
 	height: 100%;
-	width: 95%;
+	width: 90%;
 }
 #saved-filter-header {
 	font-size: 24px;
@@ -904,6 +908,11 @@ div.pq-select-menu>.pq-select-option-label {
 }
 .filter-list-item-title:hover {
 	background-color: #4a87bd;
+}
+.filter-list-item-export {
+	margin-left: auto;
+	height: 1em;
+	cursor: pointer;
 }
 .filter-list-item-delete {
 	margin-left: auto;

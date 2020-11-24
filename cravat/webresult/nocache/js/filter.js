@@ -601,19 +601,6 @@ const makeGroupFilter = (groupDiv) => {
     return filter;
 }
 
-const importFilter = () => {
-    const json = $('#filter-json').val();
-    const filter = JSON.parse(json);
-    loadFilter(filter);
-}
-
-const loadFilter = (filter) => {
-    const mainDiv = $('#main-div');
-    mainDiv.empty();
-    rootGroupDiv = makeFilterGroupDiv(filter);
-    mainDiv.append(rootGroupDiv);
-}
-
 const filterTests = {
     equals: {title:'equals', inputs: 1, colTypes: ['string', 'float', 'int', 'select'], },
     lessThanEq: {title:'<=', inputs: 1, colTypes: ['float', 'int']},

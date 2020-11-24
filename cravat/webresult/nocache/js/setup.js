@@ -845,7 +845,15 @@ function populateFilterSaveNames() {
 				.addClass('filter-list-item-title')
 				.attr('title',filterName)
 				.click(savedFilterClick)
-			)
+            );
+            li.append($(getEl('img'))
+                .attr('src','images/download.png')
+                .addClass('filter-list-item-export')
+                .attr('title','export filter')
+                .click(()=>{
+                    savedFilterExport(filterName);
+                })
+            );
 			li.append($(getEl('img'))
 				.attr('src','images/close.png')
 				.addClass('filter-list-item-delete')
@@ -864,6 +872,18 @@ function savedFilterClick(event) {
 		filterMgr.updateAll(msg['filterSet'])
         lastUsedFilterName = filterName;
 	});
+}
+
+function savedFilterExport(filterName) {
+    getSavedFilter(filterName).then((msg)=>{
+        let text = JSON.stringify(msg, null, 2);
+        var link = getEl('a');
+        link.download = filterName+'.json';
+        var blob = new Blob([text], {type: 'text/plain'});
+        link.href = window.URL.createObjectURL(blob);
+        link.click();
+        document.body.removeChild(link);
+    })
 }
 
 function filterDeleteIconClick(event) {
@@ -942,10 +962,10 @@ function makeFilterTab (rightDiv) {
 	let filterCount = $(getEl('img'))
     .attr('src','images/arrow-spinner-static.gif')
     .attr('title','Refresh count')
-	.attr('id','filter-count-btn')
-		.click(function(e) {
+    .attr('id','filter-count-btn')
+        .click(function(e) {
             $(e.target).attr('src','images/arrow-spinner.gif')
-			countFilterVariants();
+            countFilterVariants();
 		}
     );
     loadControls.append(filterCount);
@@ -970,7 +990,25 @@ function makeFilterTab (rightDiv) {
             });
 		}
 	);
-	loadControls.append(filterApply);
+    loadControls.append(filterApply);
+    let importInput = $(getEl('input'))
+        .attr('id','filter-import')
+        .attr('type','file')
+        .change(event=>{
+            if (event.target.files.length > 0) {
+                importFilter(event.target.files[0]);
+                event.target.value = null;
+            }
+        })
+        .css('display','none');
+    loadControls.append(importInput);
+    let importLabel = $(getEl('label'))
+        .attr('id','filter-import-label')
+        .attr('for','filter-import')
+        .append($(getEl('img'))
+            .attr('src','images/upload.png')
+        );
+    loadControls.append(importLabel);
 	let saveIcon = $(getEl('img'))
 		.attr('id','filter-save')
 		.attr('src','images/save.png')
@@ -983,6 +1021,15 @@ function makeFilterTab (rightDiv) {
     loadControls.append(saveIcon);
     displayFilterCount();
     return true;
+}
+
+function importFilter(file) {
+    var reader = new FileReader();
+    reader.readAsText(file, 'utf-8');
+    reader.addEventListener('load', e => {
+        var filter = JSON.parse(e.target.result);
+        filterMgr.updateAll(filter)
+    });
 }
 
 function countFilterVariants() {
