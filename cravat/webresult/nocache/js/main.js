@@ -217,7 +217,7 @@ function showNoDB () {
     addEl(div, getEl('br'));
     var span = getEl('p');
     span.style.fontSize = '16px';
-    span.textContent = '\u2022 Job ID is wrong.'
+    span.textContent = '\u2022 Job ID is incorrect.'
     addEl(div, span);
     var span = getEl('p');
     span.style.fontSize = '16px';
