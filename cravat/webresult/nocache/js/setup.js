@@ -991,6 +991,16 @@ function makeFilterTab (rightDiv) {
 		}
 	);
     loadControls.append(filterApply);
+	let saveIcon = $(getEl('img'))
+		.attr('id','filter-save')
+		.attr('src','images/save.png')
+		.attr('title','Save filter')
+		.click(e => {
+			saveFilterSettingAs().then((msg) => {
+				populateFilterSaveNames();
+			})
+		});
+    loadControls.append(saveIcon);
     let importInput = $(getEl('input'))
         .attr('id','filter-import')
         .attr('type','file')
@@ -1009,16 +1019,6 @@ function makeFilterTab (rightDiv) {
             .attr('src','images/upload.png')
         );
     loadControls.append(importLabel);
-	let saveIcon = $(getEl('img'))
-		.attr('id','filter-save')
-		.attr('src','images/save.png')
-		.attr('title','Save filter')
-		.click(e => {
-			saveFilterSettingAs().then((msg) => {
-				populateFilterSaveNames();
-			})
-		});
-    loadControls.append(saveIcon);
     displayFilterCount();
     return true;
 }
