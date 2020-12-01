@@ -847,9 +847,9 @@ function populateFilterSaveNames() {
 				.click(savedFilterClick)
             );
             li.append($(getEl('img'))
-                .attr('src','images/download.png')
+                .attr('src','images/download-material-black.png')
                 .addClass('filter-list-item-export')
-                .attr('title','export filter')
+                .attr('title','Export filter to file')
                 .click(()=>{
                     exportFilter(filterName);
                 })
@@ -1015,8 +1015,9 @@ function makeFilterTab (rightDiv) {
     let importLabel = $(getEl('label'))
         .attr('id','filter-import-label')
         .attr('for','filter-import')
+        .attr('title','Import filter from file')
         .append($(getEl('img'))
-            .attr('src','images/upload.png')
+            .attr('src','images/upload-material-blue.png')
         );
     loadControls.append(importLabel);
     displayFilterCount();
