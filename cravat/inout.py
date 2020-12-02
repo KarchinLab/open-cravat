@@ -154,7 +154,15 @@ class CravatReader (CravatFile):
                     if col_type == 'string':
                         out[col_name] = tok
                     elif col_type == 'int':
-                        out[col_name] = int(tok)
+                        try:
+                            out[col_name] = int(tok)
+                        except ValueError:
+                            try:
+                                out[col_name] = int(float(tok))
+                            except:
+                                out[col_name] = None
+                        except:
+                            out[col_name] = None
                     elif col_type == 'float':
                         try:
                             tok = json.loads(tok)
@@ -162,7 +170,7 @@ class CravatReader (CravatFile):
                                 out[col_name] = ','.join([str(v) for v in tok])
                             else:
                                 out[col_name] = float(tok)
-                        except Exception as e:
+                        except:
                             tok = None
             yield lnum, l, out
 
