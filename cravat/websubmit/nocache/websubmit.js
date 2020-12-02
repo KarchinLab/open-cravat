@@ -1954,23 +1954,31 @@ function populateCaseControl () {
         .attr('id','case-control-wrapper')
         .addClass('addtl-analysis-wrapper')
     outer.append(wrapper);
+    let d1 = $(getEl('div'));
+    wrapper.append(d1);
     let cohortsInput = $(getEl('input'))
         .attr('id','case-control-cohorts')
         .attr('type','file')
         .css('display','none');
-    wrapper.append(cohortsInput)
+    d1.append(cohortsInput);
     let cohortsLabel = $(getEl('label'))
         .attr('for','case-control-cohorts')
         .text('Case-Control cohorts')
         .attr('title','Compare variant distribution across case and control cohorts. See documentation for details.');
-    wrapper.append(cohortsLabel);
+    d1.append(cohortsLabel);
+    let helpIcon = $(getEl('a'))
+        .attr('id','case-control-help')
+        .attr('target','_blank')
+        .attr('href','https://github.com/KarchinLab/open-cravat/wiki/Case-Control')
+        .append($(getEl('img')).attr('src','../help.png').attr('id','case-control-help-img'));
+    d1.append(helpIcon);
+    let d2 = $(getEl('div'))
+    wrapper.append(d2);
     let spanDefaultText = 'No file selected'
     let filenameSpan = $(getEl('span'))
         .attr('id','case-control-filename')
-        .css('margin-left','1ch')
-        .css('color','black')
         .text(spanDefaultText);
-    wrapper.append(filenameSpan);
+    d2.append(filenameSpan);
     let clearBtn = $(getEl('button'))
         .click(event => {
             cohortsInput.val('').trigger('change');
@@ -1978,7 +1986,7 @@ function populateCaseControl () {
         .text('X')
         .addClass('butn')
         .css('display','none');
-    wrapper.append(clearBtn);
+    d2.append(clearBtn);
     cohortsInput.change(event => {
         let files = event.target.files;
         if (files.length > 0) {
