@@ -27,7 +27,7 @@ def load_yml_conf(yml_conf_path):
     Load a .yml file into a dictionary. Return an empty dictionary if file is
     empty.
     """
-    with open(yml_conf_path) as f:
+    with open(yml_conf_path, encoding='utf-8') as f:
         conf = yaml.safe_load(f)
     if conf == None:
         conf = {}

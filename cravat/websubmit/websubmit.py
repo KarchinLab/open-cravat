@@ -484,6 +484,8 @@ async def get_job (request, job_id):
                 if os.path.exists(os.path.join(job_dir, p)) == False:
                     report_exist = False
                     break
+            if os.path.exists(os.path.join(job_dir, job_id + '.report_being_generated.' + report_type)):
+                report_exist = False
             if report_exist:
                 existing_reports.append(report_type)
                 global report_generation_ps
@@ -612,8 +614,13 @@ async def generate_report(request):
     if job_id not in report_generation_ps:
         report_generation_ps[job_id] = {}
     report_generation_ps[job_id][report_type] = True
+    tmp_flag_path = os.path.join(os.path.dirname(job_db_path), job_id + '.report_being_generated.' + report_type)
+    wf = open(tmp_flag_path, 'w')
+    wf.write(report_type)
+    wf.close()
     p = await asyncio.create_subprocess_shell(' '.join(run_args), stderr=asyncio.subprocess.PIPE)
     out, err = await p.communicate()
+    os.remove(tmp_flag_path)
     if report_type in report_generation_ps[job_id]:
         del report_generation_ps[job_id][report_type]
     if job_id in report_generation_ps and len(report_generation_ps[job_id]) == 0:
