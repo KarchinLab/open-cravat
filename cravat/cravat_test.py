@@ -453,7 +453,7 @@ class Tester():
                         
             for idx, header in enumerate(key_header):
                 #just check the columns from the module we are testing
-                if (self.getModule(header) not in module_name) or 'uid' in header:
+                if (self.getModule(header) not in module_name) or 'uid' in header or 'UID' in header:
                     continue
                 
                 if header not in result_header:

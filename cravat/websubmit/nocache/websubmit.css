@@ -751,6 +751,14 @@ input:checked + .slider:before {
     padding-bottom: 2px;
     cursor: pointer;
 }
+#case-control-filename {
+    color: black;
+}
+#case-control-help-img {
+    margin-left: 1ch;
+    height: 1.5em;
+    vertical-align: text-bottom;
+}
 
 #submit-form {
     overflow-y: scroll;
