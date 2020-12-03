@@ -193,12 +193,8 @@ class CravatFilter ():
     async def exec_db (self, func, *args, **kwargs):
         conn = await self.get_db_conn()
         cursor = await conn.cursor()
-        #conn_hash = conn.__hash__()
-        #self.open_conns[conn_hash] = conn
         ret = await func(*args, conn=conn, cursor=cursor, **kwargs)
         await cursor.close()
-        #await conn.close()
-        #del self.open_conns[conn_hash]
         return ret
 
     async def second_init (self):
@@ -304,7 +300,6 @@ class CravatFilter ():
             self.dbpath = dbpath
         conn = await self.get_db_conn()
         await conn.create_function('regexp', 2, regexp)
-        #await conn.close()
         await self.exec_db(self.set_aliases)
 
     async def set_aliases (self, conn=None, cursor=None):

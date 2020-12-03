@@ -45,6 +45,7 @@ class CravatReport:
         self.colnos_to_display = {}
         self.display_select_columns = {}
         self.extracted_cols = {}
+        self.conn = None
         self.levels_to_write = None
         self.parse_cmd_args(inargs, inkwargs)
         global parser
@@ -145,6 +146,24 @@ class CravatReport:
         self.error_logger = logging.getLogger('error.' + self.module_name)
         self.unique_excs = []
 
+    async def get_db_conn (self):
+        if self.dbpath is None:
+            return None
+        if self.conn is None:
+            self.conn = await aiosqlite.connect(self.dbpath)
+        return self.conn
+
+    async def exec_db (self, func, *args, **kwargs):
+        conn = await self.get_db_conn()
+        cursor = await conn.cursor()
+        try:
+            ret = await func(*args, conn=conn, cursor=cursor, **kwargs)
+        except:
+            await cursor.close()
+            raise
+        await cursor.close()
+        return ret
+
     def _log_exception(self, e, halt=True):
         if halt:
             raise e
@@ -154,7 +173,7 @@ class CravatReport:
 
     async def getjson (self, level):
         ret = None
-        if await self.table_exists(level) == False:
+        if await self.exec_db(self.table_exists, level) == False:
             return ret
         for row in await self.cf.exec_db(self.cf.getiterator, level):
             row = self.substitute_val(level, row)
@@ -262,7 +281,7 @@ class CravatReport:
         return cols
 
     async def run_level (self, level):
-        ret = await self.table_exists(level)
+        ret = await self.exec_db(self.table_exists, level)
         if ret == False:
             return
         if self.should_write_level(level) == False:
@@ -398,15 +417,9 @@ class CravatReport:
             else:
                 self.write_table_row(self.get_extracted_row(new_datarow))
 
-    async def get_db_conn (self):
-        if self.dbpath is None:
-            return None
-        conn = await aiosqlite.connect(self.dbpath)
-        return conn
-
-    async def store_mapper (self):
-        conn = await self.get_db_conn()
-        cursor = await conn.cursor()
+    async def store_mapper (self, conn=None, cursor=None):
+        #conn = await self.get_db_conn()
+        #cursor = await conn.cursor()
         q = 'select colval from info where colkey="_mapper"'
         await cursor.execute(q)
         r = await cursor.fetchone()
@@ -414,57 +427,69 @@ class CravatReport:
             self.mapper_name = 'hg38'
         else:
             self.mapper_name = r[0].split(':')[0]
-        await cursor.close()
-        await conn.close()
+        #await cursor.close()
+        #await conn.close()
 
     async def run (self, tab='all'):
-        start_time = time.time()
-        if not (hasattr(self, 'no_log') and self.no_log):
-            self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
-        if self.module_conf is not None and self.status_writer is not None:
-            if self.parsed_args.do_not_change_status == False:
-                self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
-        if self.setup() == False:
-            await self.close_db()
-            return
-        if tab == 'all':
-            for level in await self.cf.exec_db(self.cf.get_result_levels):
-                self.level = level
-                if await self.table_exists(level):
-                    await self.make_col_info(level)
-            for level in await self.cf.exec_db(self.cf.get_result_levels):
-                self.level = level
-                if await self.table_exists(level):
-                    await self.run_level(level)
-        else:
-            if tab in ['variant', 'gene']:
-                for level in ['variant', 'gene']:
-                    if await self.table_exists(level):
-                        await self.make_col_info(level)
+        try:
+            start_time = time.time()
+            if not (hasattr(self, 'no_log') and self.no_log):
+                self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
+            if self.module_conf is not None and self.status_writer is not None:
+                if self.parsed_args.do_not_change_status == False:
+                    self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
+            if self.setup() == False:
+                await self.close_db()
+                return
+            if tab == 'all':
+                for level in await self.cf.exec_db(self.cf.get_result_levels):
+                    self.level = level
+                    if await self.exec_db(self.table_exists, level):
+                        await self.exec_db(self.make_col_info, level)
+                for level in await self.cf.exec_db(self.cf.get_result_levels):
+                    self.level = level
+                    if await self.exec_db(self.table_exists, level):
+                        await self.run_level(level)
             else:
-                await self.make_col_info(tab)
-            self.level = level
-            await self.run_level(tab)
-        await self.close_db()
-        if self.module_conf is not None and self.status_writer is not None:
-            if self.parsed_args.do_not_change_status == False:
-                self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
-        end_time = time.time()
-        if not (hasattr(self, 'no_log') and self.no_log):
-            self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
-            run_time = end_time - start_time
-            self.logger.info('runtime: {0:0.3f}'.format(run_time))
-        ret = self.end()
+                if tab in ['variant', 'gene']:
+                    for level in ['variant', 'gene']:
+                        if await self.exec_db(self.table_exists, level):
+                            await self.exec_db(self.make_col_info, level)
+                else:
+                    await self.exec_db(self.make_col_info, tab)
+                self.level = level
+                await self.run_level(tab)
+            await self.close_db()
+            if self.module_conf is not None and self.status_writer is not None:
+                if self.parsed_args.do_not_change_status == False:
+                    self.status_writer.queue_status_update('status', 'Finished {} ({})'.format(self.module_conf['title'], self.module_name))
+            end_time = time.time()
+            if not (hasattr(self, 'no_log') and self.no_log):
+                self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
+                run_time = end_time - start_time
+                self.logger.info('runtime: {0:0.3f}'.format(run_time))
+            ret = self.end()
+        except:
+            await self.close_db()
+            if self.module_conf is not None and self.status_writer is not None:
+                if self.parsed_args.do_not_change_status == False:
+                    self.status_writer.queue_status_update('status', 'Failed {} ({})'.format(self.module_conf['title'], self.module_name))
+            end_time = time.time()
+            if not (hasattr(self, 'no_log') and self.no_log):
+                self.logger.info('finished: {0}'.format(time.asctime(time.localtime(end_time))))
+                run_time = end_time - start_time
+                self.logger.info('runtime: {0:0.3f}'.format(run_time))
+            raise
         return ret
 
     async def get_variant_colinfo (self):
         self.setup()
         level = 'variant'
-        if await self.table_exists(level):
-            await self.make_col_info(level)
+        if await self.exec_db(self.table_exists, level):
+            await self.exec_db(self.make_col_info, level)
         level = 'gene'
-        if await self.table_exists(level):
-            await self.make_col_info(level)
+        if await self.exec_db(self.table_exists, level):
+            await self.exec_db(self.make_col_info, level)
         return self.colinfo
 
     def setup (self):
@@ -511,11 +536,9 @@ class CravatReport:
             else:
                 self.colnames_to_display[level].append(col_name)
 
-    async def make_col_info (self, level):
+    async def make_col_info (self, level, conn=None, cursor=None):
         self.colnames_to_display[level] = []
-        conn = await self.get_db_conn()
-        cursor = await conn.cursor()
-        await self.store_mapper()
+        await self.exec_db(self.store_mapper)
         cravat_conf = self.conf.get_cravat_conf()
         if 'report_module_order' in cravat_conf:
             priority_colgroupnames = cravat_conf['report_module_order']
@@ -562,7 +585,7 @@ class CravatReport:
                 if columngroup['name'] == colgrpname:
                     columngroup['count'] += 1
         # adds gene level columns to variant level.
-        if self.nogenelevelonvariantlevel == False and level == 'variant' and await self.table_exists('gene'):
+        if self.nogenelevelonvariantlevel == False and level == 'variant' and await self.exec_db(self.table_exists, 'gene'):
             modules_to_add = []
             q = 'select name from gene_annotator'
             await cursor.execute(q)
@@ -701,7 +724,7 @@ class CravatReport:
         # report substitution
         if level in ['variant', 'gene']:
             reportsubtable = level + '_reportsub'
-            if await self.table_exists(reportsubtable):
+            if await self.exec_db(self.table_exists, reportsubtable):
                 q = 'select * from {}'.format(reportsubtable)
                 await cursor.execute(q)
                 reportsub = {r[0]:json.loads(r[1]) for r in await cursor.fetchall()}
@@ -739,8 +762,6 @@ class CravatReport:
                 if include_col:
                     self.colnos_to_display[level].append(colno)
                 colno += 1
-        await cursor.close()
-        await conn.close()
 
     def get_standardized_module_option (self, v):
         tv = type(v)
@@ -774,6 +795,8 @@ class CravatReport:
             exit()
 
     async def close_db (self):
+        if hasattr(self, 'conn') and self.conn is not None:
+            await self.conn.close()
         if self.cf is not None:
             await self.cf.close_db()
             self.cf = None
@@ -782,9 +805,7 @@ class CravatReport:
         self.cf = await CravatFilter.create(dbpath=self.dbpath)
         await self.cf.exec_db(self.cf.loadfilter, filter=self.filter, filterpath=self.filterpath, filtername=self.filtername, filterstring=self.filterstring)
 
-    async def table_exists (self, tablename):
-        conn = await self.get_db_conn()
-        cursor = await conn.cursor()
+    async def table_exists (self, tablename, conn=None, cursor=None):
         sql = 'select name from sqlite_master where ' + \
             'type="table" and name="' + tablename + '"'
         await cursor.execute(sql)
@@ -793,8 +814,6 @@ class CravatReport:
             ret = False
         else:
             ret = True
-        await cursor.close()
-        await conn.close()
         return ret
 
 def clean_args (cmd_args):
@@ -889,12 +908,12 @@ def run_reporter (*inargs, **inkwargs):
                     output_fns = response_t
                 if output_fns is not None:
                     print(f'report created: {output_fns}')
-        except:
+        except Exception as e:
             if args.silent == False:
                 print(f'report generation failed.')
-            loop.run_until_complete(reporter.close_db())
-            response_t = {'success': False}
-            raise
+            response_t = None
+            import traceback
+            traceback.print_exc()
         response[report_type] = response_t
     if len(report_types) == 1 and len(response) == 1:
         return response[list(response.keys())[0]]
