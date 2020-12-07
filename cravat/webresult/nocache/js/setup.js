@@ -986,6 +986,7 @@ function makeFilterTab (rightDiv) {
                 if (n <= NUMVAR_LIMIT) {
                     drawingRetrievingDataDiv('filter');
                     loadData(false, null);
+                    loadLayoutSetting(quickSaveName, null);
                 }
             });
 		}

@@ -488,7 +488,7 @@ function applyTableSetting (level) {
 			var colGroup = colGroups[j];
 			if (colGroup.title == colGroupSetting.title) {
 				newColModel.push(colGroup);
-				newColModel.colModel = [];
+                var newColGroupColModel = [];
 				var cols = colGroup.colModel;
 				for (k = 0; k < colGroupColsSetting.length; k++) {
 					var colSetting = colGroupColsSetting[k];
@@ -497,11 +497,12 @@ function applyTableSetting (level) {
 						if (col.col == colSetting.col) {
 							col.width = colSetting.width;
                             col.hidden = colSetting.hidden;
-							newColModel.colModel.push(col);
+							newColGroupColModel.push(col);
 							break;
 						}
 					}
 				}
+                newColModel[i].colModel = newColGroupColModel;
 			}
 		}
 	}
