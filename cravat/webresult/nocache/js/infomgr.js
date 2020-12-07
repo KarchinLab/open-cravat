@@ -1,4 +1,4 @@
-function InfoMgr () {
+unction InfoMgr () {
 	this.datas = {};
 	this.columnnoss = {};
 	this.columnss = {};
@@ -221,7 +221,7 @@ InfoMgr.prototype.store = function (self, tabName, jsonResponseData, callback, c
                         if (select == '' || select == null) {
                             return true;
                         }
-                        var selects = JSON.parse(selects);
+                        var selects = JSON.parse(select);
                         if (Array.isArray(selects) && selects.length == 0) {
                             return true;
                         }
