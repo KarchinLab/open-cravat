@@ -1,4 +1,4 @@
-unction InfoMgr () {
+function InfoMgr () {
 	this.datas = {};
 	this.columnnoss = {};
 	this.columnss = {};
