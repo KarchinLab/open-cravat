@@ -391,17 +391,20 @@ class Cravat (object):
 
     def log_versions (self):
         self.logger.info(f'version: open-cravat {au.get_current_package_version()}')
-        for mname, module in self.annotators.items():
-            if mname in au.mic.local:
-                version = au.mic.local[mname].conf['version']
-                self.logger.info(f'version: {mname} {version}')
-        if self.mapper_name in au.mic.local:
-            self.logger.info(f'version: {self.mapper_name} {au.mic.local[self.mapper_name].conf["version"]}')
-        for mname in self.reports:
-            mname = mname + 'reporter'
-            if mname in au.mic.local:
-                version = au.mic.local[mname].conf['version']
-                self.logger.info(f'version: {mname} {version}')
+        if 'annotator' not in self.args.skip:
+            for mname, module in self.annotators.items():
+                if mname in au.mic.local:
+                    version = au.mic.local[mname].conf['version']
+                    self.logger.info(f'version: {mname} {version}')
+        if 'mapper' not in self.args.skip:
+            if self.mapper_name in au.mic.local:
+                self.logger.info(f'version: {self.mapper_name} {au.mic.local[self.mapper_name].conf["version"]}')
+        if 'reporter' not in self.args.skip:
+            for mname in self.reports:
+                mname = mname + 'reporter'
+                if mname in au.mic.local:
+                    version = au.mic.local[mname].conf['version']
+                    self.logger.info(f'version: {mname} {version}')
 
     async def main (self):
         no_problem_in_run = True
