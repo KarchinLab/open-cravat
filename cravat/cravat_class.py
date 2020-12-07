@@ -290,7 +290,6 @@ class Cravat (object):
                     if not self.args.silent:
                         print(msg)
                     raise InvalidReporter
-                
 
     def write_initial_status_json (self):
         status_fname = '{}.status.json'.format(self.run_name)
@@ -391,20 +390,18 @@ class Cravat (object):
 
     def log_versions (self):
         self.logger.info(f'version: open-cravat {au.get_current_package_version()}')
-        if 'annotator' not in self.args.skip:
-            for mname, module in self.annotators.items():
-                if mname in au.mic.local:
-                    version = au.mic.local[mname].conf['version']
-                    self.logger.info(f'version: {mname} {version}')
+        for mname, module in self.annotators.items():
+            if mname in au.mic.local:
+                version = au.mic.local[mname].conf['version']
+                self.logger.info(f'version: {mname} {version}')
         if 'mapper' not in self.args.skip:
             if self.mapper_name in au.mic.local:
                 self.logger.info(f'version: {self.mapper_name} {au.mic.local[self.mapper_name].conf["version"]}')
-        if 'reporter' not in self.args.skip:
-            for mname in self.reports:
-                mname = mname + 'reporter'
-                if mname in au.mic.local:
-                    version = au.mic.local[mname].conf['version']
-                    self.logger.info(f'version: {mname} {version}')
+        for mname in self.reports:
+            mname = mname + 'reporter'
+            if mname in au.mic.local:
+                version = au.mic.local[mname].conf['version']
+                self.logger.info(f'version: {mname} {version}')
 
     async def main (self):
         no_problem_in_run = True
@@ -746,6 +743,8 @@ class Cravat (object):
                 self.inputs[0] = target_path
             if self.run_name.endswith('.sqlite'):
                 self.run_name = self.run_name[:-7]
+        if self.args.skip is None:
+            self.args.skip = []
         self.output_dir = self.args.output_dir
         if self.output_dir == None:
             if num_input == 0 or first_non_url_input is None:
@@ -760,7 +759,10 @@ class Cravat (object):
                 self.args.__dict__[arg_key] = self.run_conf[arg_key]
         self.annotator_names = self.args.annotators
         if self.annotator_names == None:
-            self.annotators = au.get_local_module_infos_of_type('annotator')
+            if 'annotator' in self.args.skip:
+                self.annotators = {}
+            else:
+                self.annotators = au.get_local_module_infos_of_type('annotator')
         else:
             self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
         self.excludes = self.args.excludes
@@ -778,7 +780,9 @@ class Cravat (object):
             self.verbose = False
         self.reports = self.args.reports
         if self.reports is None:
-            if 'reporter' in self.cravat_conf:
+            if 'reporter' in self.args.skip:
+                self.reports = []
+            elif 'reporter' in self.cravat_conf:
                 self.reports = [self.cravat_conf['reporter'].replace('reporter','')]
             else:
                 self.reports = []
@@ -794,8 +798,6 @@ class Cravat (object):
                 exit()
         else:
             self.input_assembly = self.args.genome
-        if self.args.skip is None:
-            self.args.skip = []
         if self.append_mode:
             self.args.endat = 'aggregator'
         try:
