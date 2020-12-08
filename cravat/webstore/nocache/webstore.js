@@ -1612,7 +1612,7 @@ function getModuleDetailInstallButton (moduleName, td, buttonDiv) {
 function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
     var mInfo = null;
     if (currentTab == 'store') {
-        if (localModuleInfo[moduleName].conf.uselocalonstore) {
+        if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName].conf.uselocalonstore) {
             mInfo = localModuleInfo[moduleName].conf;
         } else {
             mInfo = remoteModuleInfo[moduleName];
@@ -1766,7 +1766,7 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         var otbody = getEl('tbody');
         otbody.id = 'moduledetail-' + currentTab + '-output-tbody';
         addEl(otable, otbody);
-        if (localModuleInfo[moduleName].conf.uselocalonstore) {
+        if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName].conf.uselocalonstore) {
             var data = mInfo;
             var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
             var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + currentTab);
