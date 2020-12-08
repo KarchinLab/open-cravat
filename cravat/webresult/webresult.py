@@ -237,7 +237,7 @@ async def save_filter_setting (request):
     if r is not None:
         q = 'delete from {} where datatype="filter" and name="{}"'.format(table, name)
         await cursor.execute(q)
-        conn.commit()
+        await conn.commit()
     q = 'replace into ' + table + ' values ("filter", "' + name + '", \'' + savedata + '\')'
     await cursor.execute(q)
     await conn.commit()
