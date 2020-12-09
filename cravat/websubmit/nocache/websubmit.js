@@ -1939,17 +1939,18 @@ const addtlAnalysis = {
 
 function populateAddtlAnalysis () {
     let display = false;
-    display = display || populateCaseControl()===true;
+    let addtlWrapper = $('#addtl-analysis-content');
+    addtlWrapper.empty();
+    display = display || populateCaseControl(addtlWrapper)===true;
     if (display) {
         $('#addtl-analysis-div').css('display','');
     }
 }
 
-function populateCaseControl () {
+function populateCaseControl (outer) {
     if ( ! localModuleInfo.hasOwnProperty('casecontrol')) {
         return false
     }
-    let outer = $('#addtl-analysis-div');
     let wrapper = $(getEl('div'))
         .attr('id','case-control-wrapper')
         .addClass('addtl-analysis-wrapper')
