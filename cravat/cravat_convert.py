@@ -265,14 +265,7 @@ class MasterCravatConverter(object):
                     print(f'\n{msg}')
                     raise ExpectedException(msg)
         self.primary_converter = self.converters[self.input_format]
-        self.primary_converter.output_dir = self.output_dir
-        self.primary_converter.run_name = self.output_base_fname
-        self.primary_converter.input_assembly = self.input_assembly
-        module_name = self.primary_converter.format_name + '-converter'
-        if module_name in self.conf:
-            if hasattr(self.primary_converter, 'conf') == False:
-                self.primary_converter.conf = {}
-            self.primary_converter.conf.update(self.conf[module_name])
+        self._set_converter_properties(self.primary_converter)
         if self.pipeinput == False:
             if len(self.input_files) > 1:
                 for f in self.input_files[1:]:
@@ -281,6 +274,16 @@ class MasterCravatConverter(object):
                     else:
                         f.seek(0)
         self.logger.info('input format: %s' %self.input_format)
+
+    def _set_converter_properties(self, converter):
+        converter.output_dir = self.output_dir
+        converter.run_name = self.output_base_fname
+        converter.input_assembly = self.input_assembly
+        module_name = self.primary_converter.format_name + '-converter'
+        if module_name in self.conf:
+            if hasattr(converter, 'conf') == False:
+                converter.conf = {}
+            converter.conf.update(self.conf[module_name])
 
     def _open_output_files (self):
         """ Open .crv .crs and .crm output files, plus .err file.
@@ -352,6 +355,7 @@ class MasterCravatConverter(object):
                 fname = f.name
             fileno += 1
             converter = self.primary_converter.__class__()
+            self._set_converter_properties(converter)
             converter.setup(f)
             if self.pipeinput == False:
                 f.seek(0)
