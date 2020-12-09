@@ -351,7 +351,8 @@ class MasterCravatConverter(object):
             else:
                 fname = f.name
             fileno += 1
-            self.primary_converter.setup(f)
+            converter = self.primary_converter.__class__()
+            converter.setup(f)
             if self.pipeinput == False:
                 f.seek(0)
             read_lnum = 0
@@ -367,7 +368,7 @@ class MasterCravatConverter(object):
                     # all_wdicts is a list, since one input line can become
                     # multiple output lines. False is returned if converter
                     # decides line is not an input line.
-                    all_wdicts = self.primary_converter.convert_line(l)
+                    all_wdicts = converter.convert_line(l)
                     if all_wdicts is BaseConverter.IGNORE:
                         continue
                     total_lnum += 1
@@ -414,7 +415,7 @@ class MasterCravatConverter(object):
                                         self.crl_writer.write_data(prelift_wdict)
                                     # addl_operation errors shouldnt prevent variant from writing
                                     try:
-                                        self.primary_converter.addl_operation_for_unique_variant(wdict, no_unique_var)
+                                        converter.addl_operation_for_unique_variant(wdict, no_unique_var)
                                     except Exception as e:
                                         self._log_conversion_error(read_lnum, l, e)
                                     no_unique_var += 1
