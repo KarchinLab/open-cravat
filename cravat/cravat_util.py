@@ -616,6 +616,8 @@ def status_from_db(dbpath):
     d = {}
     db = sqlite3.connect(str(dbpath))
     c = db.cursor()
+    c.execute('select colkey, colval from info')
+    infod = {r[0]:r[1] for r in c}
     try:
         d['annotators'] = []
         d['annotator_version'] = {}
@@ -644,8 +646,12 @@ def status_from_db(dbpath):
         d['num_input_var'] = d['num_unique_var']
         c.execute('select colval from info where colkey="open-cravat"')
         d['open_cravat_version'] = c.fetchone()[0]
-        d['orig_input_fname'] = [str(dbpath.stem)]
-        d['orig_input_path'] = [str(dbpath.with_suffix(''))]
+        if 'Input file name' in infod:
+            d['orig_input_path'] = infod['Input file name'].split(';')
+            d['orig_input_fname'] = [Path(p).name for p in infod['Input file name'].split(';')]
+        else:
+            d['orig_input_fname'] = [str(dbpath.stem)]
+            d['orig_input_path'] = [str(dbpath.with_suffix(''))]
         d['reports'] = []
         d['run_name'] = str(dbpath.stem)
         d['status'] = 'Finished'
