@@ -54,18 +54,18 @@ InfoMgr.prototype.load = function (jobId, tabName, callback, callbackArgs, fJson
                 addTextToInfonoticediv(jsonResponseData['warning_msgs']);
                 if (tabName == 'variant') {
 					var loaded = jsonResponseData.data.length;
-					var total = infomgr.jobinfo['Number of unique input variants'];
+					var total = parseInt(infomgr.jobinfo['Number of unique input variants']);
 					var filterTab = document.getElementById('tabhead_filter');
 					var filterTitle = 'FILTER';
 					if (loaded != total) {
-						filterTitle += ` ${loaded}/${total}`;
+						filterTitle += ` ${loaded.toLocaleString()}/${total.toLocaleString()}`;
 						filterTab.classList.add('active');
 					} else {
 						filterTab.classList.remove('active');
 					}
 					filterTab.innerText = filterTitle;
 					var vCountLoad = document.getElementById('filter-count-display');
-					vCountLoad.innerText = `${loaded}/${total} variants`
+					vCountLoad.innerText = `${loaded.toLocaleString()}/${total.toLocaleString()} variants`
 					if (Object.keys(filterJson) !== 0) {
 						filterMgr.updateAll(filterJson);
 					}

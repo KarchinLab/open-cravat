@@ -971,7 +971,7 @@ function makeFilterTab (rightDiv) {
     loadControls.append(filterCount);
     let countWarning = $(getEl('div'))
         .attr('id','filter-tab-count-warning')
-        .text(`Variants will not load if count is above ${NUMVAR_LIMIT}`)
+        .text(`Variants will not load if count is above ${NUMVAR_LIMIT.toLocaleString()}`)
         .css('display','none');
     loadControls.append(countWarning);
 	let filterApply = $(getEl('button'))
@@ -1064,10 +1064,10 @@ function countFilterVariants() {
 }
 
 function displayFilterCount(n) {
-    let t = infomgr.jobinfo['Number of unique input variants'];
+    let t = parseInt(infomgr.jobinfo['Number of unique input variants']);
     n = n===undefined ? t : n;
 	let countDisplay = $('#filter-count-display');
-	countDisplay.text(`${n}/${t} variants`);
+	countDisplay.text(`${n.toLocaleString()}/${t.toLocaleString()} variants`);
     var warnDiv = $('#filter-tab-count-warning');
     if (n > NUMVAR_LIMIT) {
         warnDiv.css('display','');
