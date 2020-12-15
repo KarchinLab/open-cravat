@@ -230,11 +230,14 @@ class BaseAnnotator(object):
                         output_dict = self.annotate(input_data)
                     else:
                         output_dict = self.annotate(input_data, secondary_data)
-                    for colname in json_colnames:
-                        output_dict[colname] = json.dumps(output_dict[colname])
                     # This enables summarizing without writing for now.
                     if output_dict is None:
                         continue
+                    for colname in json_colnames:
+                        json_data = output_dict.get(colname, None)
+                        if json_data is not None:
+                            json_data = json.dumps(json_data)
+                        output_dict[colname] = json_data
                     # Preserves the first column
                     output_dict[self._id_col_name] = input_data[self._id_col_name]
                     # Fill absent columns with empty strings
