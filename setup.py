@@ -100,6 +100,7 @@ setup(
         'oyaml',
         'intervaltree',
         'xlsxwriter',
+        'openpyxl',
         'twobitreader',
         'nest-asyncio',
         'psutil',

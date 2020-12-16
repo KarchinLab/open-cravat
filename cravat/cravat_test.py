@@ -6,6 +6,8 @@ import time
 import sys
 from abc import ABC, abstractmethod
 import csv as csv
+import openpyxl as pyxl
+
 
 # Regression test program for CRAVAT modules.  By default, it will go through all modules and
 # if the module has a test directory with an input and key file, it will test the module 
@@ -137,6 +139,89 @@ class TextReportReader(ReportReader):
             if col in header:
                 return idx
         return -1    
+
+#Derived Report Reader class for reating text reports (-t text)    
+class ExcelReportReader(ReportReader): 
+   
+    def reportFileExtension(self):
+        return ('.xlsx')
+       
+    #Based on the level selected, return column headers and row values.   
+    def readReport(self, test_level, bDict):
+        headers = None
+        tabNbr = 'Variant'
+        if (test_level == 'gene'):
+            tabNbr = 'Gene'
+        elif (test_level == 'sample'):
+            tabNbr = 'Sample'
+        elif (test_level == 'mapping'):
+            tabNbr = 'Mapping'
+        
+        # To open Workbook
+        xlxsFile = self.rsltFile if '.xlsx' in self.rsltFile else self.rsltFile + '.xlsx' 
+        wb = pyxl.load_workbook(filename = xlxsFile)
+        sheet = wb[tabNbr]
+         
+        if (bDict):
+            rows = {}
+        else:
+            rows = []
+        if headers == None:
+            headers = self.readSectionHeader(test_level,sheet)
+        for i in range(3, sheet.max_row+1):
+            columns = []
+            for j in range(1, sheet.max_column + 1):
+                columns.append('' if sheet.cell(i, j).value is None else sheet.cell(i, j).value)
+            line_id = self.getRowID(headers, columns, test_level)
+            if (bDict):
+                rows[line_id] = columns
+            else:
+                rows.append((line_id, columns))    
+        return headers, rows        
+    
+    # Read the two report header columns that define the module/column
+    # for each data column.  Returned as list of: module|column
+    def readSectionHeader(self, test_level, sheet):
+        headers = []
+        # To open Workbook
+        header1 = sheet.cell(1, 1).value
+        for i in range(1, sheet.max_column+1):
+            if sheet.cell(1, i).value is not None and sheet.cell(1, i).value != '': 
+                header1 = sheet.cell(1, i).value
+            header2 = sheet.cell(2, i).value
+            combinedHeader = header1 + '|' + header2
+            headers.append(combinedHeader)
+        return headers    
+
+    #The ID of a result row is used to match key and output.  The ID
+    #differs depending on which section of the output is being checked.         
+    def getRowID(self, headers, columns, level):
+        Id = ''
+        if (level == 'variant'):
+            Id = columns[self.getColPos(headers, 'Chrom')] + ' ' + \
+                 str(int(columns[self.getColPos(headers, 'Position')])) + ' ' + \
+                 columns[self.getColPos(headers, 'Ref Base')] + ' ' + \
+                 columns[self.getColPos(headers, 'Alt Base')] + ' ' + \
+                 columns[self.getColPos(headers, 'Tags')];
+        if (level == 'gene'):
+            pos = self.getColPos(headers, 'Hugo')
+            if pos == -1:
+                pos = self.getColPos(headers, 'Gene')
+            Id = columns[pos];
+        if (level == 'sample'):
+            Id = columns[self.getColPos(headers, 'UID')] + ' ' + \
+                 columns[self.getColPos(headers, 'Sample')];    
+        if (level == 'mapping'):
+            Id = columns[self.getColPos(headers, 'Original Line')];    
+        return Id         
+    
+    #get the position of a specific output column
+    def getColPos(self, headers, col):
+        for idx, header in enumerate(headers):
+            if col in header:
+                return idx
+        return -1    
+
 
 
 #Derived Report Reader class for reating text reports (-t text)    
@@ -429,6 +514,8 @@ class Tester():
             return TsvReportReader(report_path)
         elif type == "csv":
             return CsvReportReader(report_path)
+        elif type == "excel":
+            return ExcelReportReader(report_path)
        
         #need to put more parsers here when they are implemented
             
