@@ -290,9 +290,6 @@ class BaseMapper(object):
                     crx_data = self.map(crv_data)
                 if crx_data is None:
                     continue
-                # Skip cases where there was no change. Can result if ref_base not in original input
-                if crx_data['ref_base'] == crx_data['alt_base']:
-                    raise NoVariantError()
             except Exception as e:
                 self._log_runtime_error(ln, line, e)
             if crx_data is not None:
