@@ -5,7 +5,7 @@ import logging
 import time
 from .inout import CravatReader, CravatWriter, AllMappingsParser
 from .constants import crx_def, crx_idx, crg_def, crg_idx, crt_def, crt_idx, gene_level_so_exclude
-from .exceptions import InvalidData
+from .exceptions import InvalidData, NoVariantError
 from cravat.config_loader import ConfigLoader
 import sys
 import pkg_resources
@@ -292,7 +292,7 @@ class BaseMapper(object):
                     continue
                 # Skip cases where there was no change. Can result if ref_base not in original input
                 if crx_data['ref_base'] == crx_data['alt_base']:
-                    continue
+                    raise NoVariantError()
             except Exception as e:
                 self._log_runtime_error(ln, line, e)
             if crx_data is not None:

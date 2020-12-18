@@ -26,3 +26,7 @@ class KillInstallException (Exception):
 
 class InvalidReporter (Exception):
     pass
+
+class NoVariantError (Exception):
+    def __init__ (self):
+        super().__init__('Reference and alternate alleles are the same.')
