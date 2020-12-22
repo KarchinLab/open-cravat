@@ -233,6 +233,7 @@ class BaseAnnotator(object):
                     # This enables summarizing without writing for now.
                     if output_dict is None:
                         continue
+                    # Handles empty table-format column data.
                     for colname in json_colnames:
                         json_data = output_dict.get(colname, None)
                         if json_data is not None:
