@@ -7,6 +7,8 @@ import sys
 from abc import ABC, abstractmethod
 import csv as csv
 import openpyxl as pyxl
+import openpyxl as pyxl
+import vcf
 
 
 # Regression test program for CRAVAT modules.  By default, it will go through all modules and
@@ -222,7 +224,77 @@ class ExcelReportReader(ReportReader):
                 return idx
         return -1    
 
+#Derived Report Reader class for reating text reports (-t text)    
+class VcfReportReader(ReportReader): 
+   
+    def reportFileExtension(self):
+        return ('.vcf')
+       
+    #Based on the level selected, return column headers and row values.   
+    def readReport(self, test_level, bDict):
+        headers = None
+        if (bDict):
+            rows = {}
+        else:
+            rows = []
+        reader = vcf.Reader(filename=self.rsltFile)
+        if headers == None:
+            headers = self.readSectionHeader(reader)
+        for record in reader:
+            columns = []
+            columns.append(record.ID)
+            lineitems = record.INFO['CRV'][0].split('|')
+            i = 1
+            while i < len(headers):
+                columns.append(lineitems[i].strip('"'))
+                i += 1
+                line_id = self.getRowID(headers, lineitems)
+            if (bDict):
+                rows[line_id] = columns
+            else:
+                rows.append((line_id, columns))    
+        return headers, rows        
 
+    # Read the two report header columns that define the module/column
+    # for each data column.  Returned as list of: module|column
+    def readSectionHeader(self, reader):
+        headers = ['Variant Annotation|chrom','Variant Annotation|pos','Variant Annotation|ref','Variant Annotation|alt']
+        colList = reader.infos['CRV'][3]
+        cols = colList.split('|')
+        for col in cols:
+            underscorepos = col.find('__')
+            equalspos = col.find('=')
+            prevheader = col[underscorepos-4:underscorepos]
+            postheader = col[underscorepos+2:len(col)]
+            hugopos = postheader.find('hugo')
+            if (hugopos >= 0):
+                postheader = 'hugo'
+            elif (equalspos > 0):
+                break
+            if prevheader == 'base':
+                header = 'Variant Annotation|' + postheader
+            else:
+                module = col[0:underscorepos]
+                header = module + '|' + postheader
+            headers.append(header)
+        return headers    
+    
+    #The ID of a result row is used to match key and output.  The ID
+    #differs depending on which section of the output is being checked.         
+    def getRowID(self, headers, lineitems):
+        Id = lineitems[self.getColPos(headers, 'Variant Annotation|chrom')].strip('"') + ' ' + \
+             lineitems[self.getColPos(headers, 'Variant Annotation|pos')].strip('"') + ' ' + \
+             lineitems[self.getColPos(headers, 'Variant Annotation|ref')].strip('"') + ' ' + \
+             lineitems[self.getColPos(headers, 'Variant Annotation|alt')].strip('"') + ' ' + \
+             lineitems[self.getColPos(headers, 'Variant Annotation|tags')].strip('"');
+        return Id         
+    
+    #get the position of a specific output column
+    def getColPos(self, headers, col):
+        for idx, header in enumerate(headers):
+            if col in header:
+                return idx
+        return -1    
 
 #Derived Report Reader class for reating text reports (-t text)    
 class TsvReportReader(ReportReader): 
@@ -483,12 +555,15 @@ class Tester():
             self.verify_level('variant', ['Variant Annotation'])
             self.verify_level('gene', ['Variant Annotation'])  
         elif (self.module.type == 'reporter'):
-            if (au.get_local_module_info('vest') is not None) and (au.get_local_module_info('cgl') is not None):
+            if (self.report_type == 'vcf'):
                 self.verify_level('variant', ['Variant Annotation', 'vest', 'cgl', 'VEST4', 'Cancer Gene Landscape'])
-                self.verify_level('gene', ['Variant Annotation', 'vest', 'cgl', 'VEST4', 'Cancer Gene Landscape'])  
-            else: 
-                self.verify_level('variant', ['Variant Annotation'])
-                self.verify_level('gene', ['Variant Annotation'])  
+            else:
+                if (au.get_local_module_info('vest') is not None) and (au.get_local_module_info('cgl') is not None):
+                    self.verify_level('variant', ['Variant Annotation', 'vest', 'cgl', 'VEST4', 'Cancer Gene Landscape'])
+                    self.verify_level('gene', ['Variant Annotation', 'vest', 'cgl', 'VEST4', 'Cancer Gene Landscape'])  
+                else: 
+                    self.verify_level('variant', ['Variant Annotation'])
+                    self.verify_level('gene', ['Variant Annotation'])  
                  
     
     #See if key and result are floating point numbers.  If so, allow tiny 
@@ -516,7 +591,9 @@ class Tester():
             return CsvReportReader(report_path)
         elif type == "excel":
             return ExcelReportReader(report_path)
-       
+        elif type == "vcf":
+            return VcfReportReader(report_path)
+      
         #need to put more parsers here when they are implemented
             
     #Match the key (expected values) to the text report output.  Generate errors
