@@ -1281,7 +1281,7 @@ function getFilteredRemoteModules () {
                 pass = true;
             } else if (remoteModule['tags'].indexOf('newavailable') != -1 && newCheck == true) {
                 pass = true;
-            } else if (hasFilter) {
+            } else if (hasFilter && newCheck == true) {
                 pass = true;
             }
             if (pass == false) {
