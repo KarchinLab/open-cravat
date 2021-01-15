@@ -74,6 +74,35 @@ function getWidgetTableTr (values,linkNames) {
 	return tr;
 }
 
+function elementsToWidgetTr (values) {
+	var elements = [];
+	for (let i=0; i<values.length; i++) {
+		let value = values[i];
+		if (typeof value === 'object' && value!==null && value instanceof HTMLElement) {
+			elements.push(value);
+		} else {
+			value = value==null ? '' : value;
+			let text = typeof value == 'string' ? value : JSON.stringify(value);
+			let p = getEl('p');
+			p.style.wordBreak = 'break-word';
+			addEl(p, getTn(text));
+			elements.push(p);
+		}
+	}
+	var numBorder = values.length - 1;
+	var tr = getEl('tr');
+	tr.style.borderBottom = '1px solid #cccccc';
+	for (var i = 0; i < elements.length; i++) {
+		var td = getEl('td');
+		if (i < numBorder) {
+			td.style.borderRight = widgetTableBorderStyle;
+		}
+		addEl(td, elements[i]);
+		addEl(tr, td);
+	}
+	return tr;
+}
+
 function addInfoLine (div, row, header, col, tabName, headerMinWidth, highlightIfValue) {
     var text = null;
     if (typeof(row) != 'object') {
