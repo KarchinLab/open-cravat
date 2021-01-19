@@ -94,6 +94,7 @@ function elementsToWidgetTr (values) {
 	tr.style.borderBottom = '1px solid #cccccc';
 	for (var i = 0; i < elements.length; i++) {
 		var td = getEl('td');
+		td.style['word-break'] = 'break-word';
 		if (i < numBorder) {
 			td.style.borderRight = widgetTableBorderStyle;
 		}
