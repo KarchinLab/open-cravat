@@ -893,3 +893,22 @@ input:checked + .slider:before {
     display: block;
 }
 
+.submit-annot-tag {
+    background-color: rgb(49, 117, 176);
+    /* border: 1px solid black; */
+    border-radius: 2px;
+    color: white;
+    margin-bottom: 3px;
+    margin-right: 3px;
+    padding: 3px;
+    width: 47%;
+    white-space: nowrap;
+    font-weight: bold;
+}
+.submit-annot-tag:hover {
+    cursor: pointer;
+}
+/* check change not working */
+.submit-annot-tag.selected {
+    background-color: rgb(197, 175, 141);   
+}

@@ -1027,7 +1027,103 @@ function populateAnnotators () {
     });
 }
 
+function titleCase(str) {
+    return str.replace(
+      /\w\S*/g,
+      function(txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+      }
+    );
+  }
+
 function buildAnnotatorGroupSelector () {
+    tagsCollectedForSubmit = [];
+    for (var module in localModuleInfo) {
+        if (localModuleInfo[module].type != 'annotator') {
+            continue;
+        }
+        var tags = localModuleInfo[module].tags;
+        for (var i = 0; i < tags.length; i++) {
+            var tag = tags[i];
+            if (tagsCollectedForSubmit.indexOf(tag) == -1) {
+                tagsCollectedForSubmit.push(tag);
+            }
+        }
+    }
+    tagsCollectedForSubmit.sort();
+    var annotCheckDiv = document.getElementById('annotator-group-select-div');
+    $(annotCheckDiv).empty();
+    var wrapper = getEl('div');
+    wrapper.id = 'annotator-group-select-tag-div';
+    wrapper.className = 'annotator-group-select';
+    addEl(annotCheckDiv, wrapper);
+    var checkDatas = [];
+    checkDatas.push({
+        name: 'selected',
+        value: 'selected',
+        label: 'selected',
+        checked: false,
+        kind: 'collect',
+    });
+    for (var i = 0; i < tagsCollectedForSubmit.length; i++) {
+        var tag = tagsCollectedForSubmit[i];
+        checkDatas.push({
+            name: tag,
+            value: tag,
+            label: tag,
+            checked: false,
+            kind: 'tag',
+        });
+    }
+    var select = getEl('select');
+    select.id = 'annotator-group-select-select';
+    select.multiple = true;
+    for (var i = 0; i < tagsCollectedForSubmit.length; i++) {
+        var tagName = tagsCollectedForSubmit[i];
+        var option = new Option(tagName, tagName);
+        addEl(select, option);
+    }
+    select.addEventListener('change',function (evt) {
+        var tags = $(this).val();
+        onChangeAnnotatorGroupCheckbox(tags);
+    });
+    select.style.display = 'none';
+    addEl(wrapper, select);
+    var tagWrapper = getEl('div');
+    tagWrapper.classList.add('checkbox-group-flexbox');
+    addEl(wrapper, tagWrapper);
+    for (let tag of tagsCollectedForSubmit) {
+        let tagDiv = getEl('div');
+        tagDiv.classList.add('submit-annot-tag');
+        addEl(tagWrapper, tagDiv);
+        let tagCb = getEl('input');
+        addEl(tagDiv, tagCb);
+        tagCb.type = 'checkbox';
+        tagCb.value = tag;
+        tagCb.style.display = 'none';
+        tagCb.addEventListener('change', event=>{
+            for (let option of select.options) {
+                if (option.value === tag) {
+                    option.selected = event.target.checked;
+                }
+            };
+            select.dispatchEvent(new Event('change'));
+            tagDiv.classList.toggle('selected');
+        });
+        let cbId = `annot-control-${tag}`;
+        tagCb.id = cbId;
+        let tagLabel = getEl('label');
+        addEl(tagDiv, tagLabel);
+        tagLabel.setAttribute('for', cbId);
+        tagLabel.innerText = titleCase(tag);
+        tagLabel.style.cursor = 'pointer';
+        //TODO do without jquery
+        tagDiv.addEventListener('click', ()=>{$(tagLabel).click()});
+    }
+    
+}
+
+function buildAnnotatorGroupSelectorOld () {
     tagsCollectedForSubmit = [];
     for (var module in localModuleInfo) {
         if (localModuleInfo[module].type != 'annotator') {
