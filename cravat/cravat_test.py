@@ -470,7 +470,7 @@ class CsvReportReader(ReportReader):
 
 #class that actually runs a test of a specific module and then verifies the results.
 class Tester():
-    def __init__(self, module, rundir):
+    def __init__(self, module, rundir, input_file):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         self.module = module
         if not os.path.exists(module.directory) or not module.script_exists:
@@ -478,10 +478,14 @@ class Tester():
         self.out_dir = os.path.join(rundir, module.name);
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
-        self.input_path = os.path.join(module.test_dir, 'input')
-        self.key_path = os.path.join(module.test_dir, 'key')
-        self.parms_path = os.path.join(module.test_dir, 'parms')
-        self.log_path = os.path.join(self.out_dir,'test.log')    #put the output of this program in test.log
+        self.input_file = input_file
+        self.input_path = os.path.join(module.test_dir, input_file)
+        self.key_path = os.path.join(module.test_dir, input_file.replace('input','key'))
+        self.parms_path = os.path.join(module.test_dir, input_file.replace('input','parms'))
+        log = 'test.log'
+        if (len(input_file.replace('input', '')) > 0):
+            log = input_file + '.test.log'
+        self.log_path = os.path.join(self.out_dir, log)    #put the output of this program in test.log
         self.cravat_run = os.path.join(cur_dir, 'runcravat.py')
         self.output_file = 'oc_output'
         self.out_path = os.path.join(self.out_dir, self.output_file) 
@@ -509,7 +513,8 @@ class Tester():
                                  
     # function that tests one module                          
     def run(self):
-        self._report('  Testing: ' + self.module.name);
+        input_msg = '' if self.input_file == 'input' else self.input_file # if there is more than one test for the module, include the test file in the log.
+        self._report('  Testing: ' + self.module.name + ' ' + input_msg);
         self.start_time = time.time()
         self.parse_parms()
         python_exc = sys.executable
@@ -691,8 +696,11 @@ def run_test (cmd_args):
             for mod_name in modules: 
                 if cmd_args.modules is None or mod_name in cmd_args.modules:
                     module = modules[mod_name];
-                    if (module.has_test):
-                        tester = Tester(module, cmd_args.rundir);
+                    #If a module has a test, it is usually a single 'input' file and 'key' but modules can 
+                    #have multiple input and key files.  This loop runs all input/key file pairs.
+                    #Example input.1, key.1, input.2, key.2
+                    for test_input_file in module.tests:
+                        tester = Tester(module, cmd_args.rundir, test_input_file);
                         exit_code = tester.run();
                         if exit_code == 0:
                             tester.verify()
@@ -702,7 +710,8 @@ def run_test (cmd_args):
                             passed += 1
                         else:
                             failed += 1
-                            modules_failed.append(mod_name)
+                            fail_msg = mod_name + ('' if test_input_file == 'input' else ' ' + test_input_file)
+                            modules_failed.append(fail_msg)
     modules_failed.sort()
     print ('\nTests complete.  Passed: ' + str(passed) + '  Failed: ' + str(failed) + ' [' + ', '.join(modules_failed) + ']')
 
