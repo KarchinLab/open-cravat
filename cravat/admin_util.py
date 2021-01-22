@@ -81,9 +81,8 @@ class LocalModuleInfo (object):
                         and len(os.listdir(self.data_dir)) > 0
         self.test_dir = os.path.join(dir_path, 'test')
         self.test_dir_exists = os.path.isdir(self.test_dir)
-        self.has_test = self.test_dir_exists \
-                        and os.path.isfile(os.path.join(self.test_dir, 'input')) \
-                        and  os.path.isfile(os.path.join(self.test_dir, 'key'))
+        self.tests = self.get_tests()
+        self.has_test = len(self.tests) > 0
         self.readme_path = os.path.join(self.directory, self.name+'.md')
         self.readme_exists = os.path.exists(self.readme_path)
         if self.readme_exists:
@@ -142,6 +141,18 @@ class LocalModuleInfo (object):
             self.disk_size = util.get_directory_size(self.directory)
         return self.disk_size
 
+    def get_tests(self):
+        """
+        Gets the module test input file(s) if the module has tests.  A test is a input file / key file pair.
+        """
+        tests = []
+        if self.test_dir_exists:
+            for i in os.listdir(self.test_dir):
+                if 'input' in i and os.path.isfile(os.path.join(self.test_dir,i)) and  os.path.isfile(os.path.join(self.test_dir,i.replace('input','key'))):
+                    tests.append(i)
+        return tests
+        
+        
     def serialize (self):
         return self.__dict__
 
