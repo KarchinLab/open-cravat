@@ -59,6 +59,7 @@ class BaseAnnotator(object):
                 live = False
             else:
                 live = self.args.live
+            self.supported_chroms = set(cannonical_chroms)
             if live:
                 return
             main_basename = os.path.basename(main_fpath)
@@ -86,7 +87,6 @@ class BaseAnnotator(object):
                 self.annotator_version = self.conf['version']
             else:
                 self.annotator_version = ''
-            self.supported_chroms = set(cannonical_chroms)
         except Exception as e:
             self._log_exception(e)
 
