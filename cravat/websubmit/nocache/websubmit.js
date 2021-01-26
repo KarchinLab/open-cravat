@@ -1126,14 +1126,14 @@ function buildAnnotatorGroupSelector () {
         });
         let cbId = `annot-control-${tag}`;
         tagCb.id = cbId;
-        let tagLabel = getEl('label');
-        addEl(tagDiv, tagLabel);
-        tagLabel.setAttribute('for', cbId);
-        tagLabel.innerText = titleCase(tag);
-        tagLabel.style.cursor = 'pointer';
-        tagLabel.style['user-select'] = 'none';
+        let tagSpan = getEl('label');
+        addEl(tagDiv, tagSpan);
+        // tagSpan.setAttribute('for', cbId);
+        tagSpan.innerText = titleCase(tag);
+        tagSpan.style.cursor = 'pointer';
+        tagSpan.style['user-select'] = 'none';
         //TODO do without jquery
-        tagDiv.addEventListener('click', ()=>{$(tagLabel).click()});
+        tagDiv.addEventListener('click', ()=>{$(tagCb).click()});
     }
     // Way down here to use local variables in listener
     var showSelBtn = getEl('button');

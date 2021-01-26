@@ -893,9 +893,8 @@ input:checked + .slider:before {
 }
 
 .submit-annot-tag {
-    background-color: rgb(49, 117, 176);
-    /* border: 1px solid black; */
-    border-radius: 2px;
+    background-color: #6295b1;
+    border-radius: 6px;
     color: white;
     margin-bottom: 3px;
     margin-right: 3px;
@@ -907,7 +906,7 @@ input:checked + .slider:before {
 .submit-annot-tag:hover {
     cursor: pointer;
 }
-/* check change not working */
+
 .submit-annot-tag.selected {
-    background-color: rgb(197, 175, 141);   
+    background-color:#3175b0;   
 }
