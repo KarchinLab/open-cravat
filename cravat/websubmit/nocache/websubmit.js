@@ -1027,8 +1027,18 @@ function populateAnnotators () {
     });
 }
 
+function titleCase(str) {
+    return str.replace(
+      /\w\S*/g,
+      function(txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+      }
+    );
+  }
+
 function buildAnnotatorGroupSelector () {
     tagsCollectedForSubmit = [];
+    tagMembership = {};
     for (var module in localModuleInfo) {
         if (localModuleInfo[module].type != 'annotator') {
             continue;
@@ -1038,22 +1048,28 @@ function buildAnnotatorGroupSelector () {
             var tag = tags[i];
             if (tagsCollectedForSubmit.indexOf(tag) == -1) {
                 tagsCollectedForSubmit.push(tag);
+                tagMembership[tag] = 1;
+            } else {
+                tagMembership[tag]++;
             }
         }
     }
+    tagsCollectedForSubmit.sort((a,b)=>{return tagMembership[b]-tagMembership[a]});
     var annotCheckDiv = document.getElementById('annotator-group-select-div');
     $(annotCheckDiv).empty();
+    var annotCheckTitleDiv = getEl('div');
+    addEl(annotCheckDiv, annotCheckTitleDiv);
+    annotCheckTitleDiv.style.display = 'flex';
+    annotCheckTitleDiv.style['margin-bottom'] = '3px';
     var div = getEl('div');
-    div.className = 'div-header';
-    var span = getEl('span');
-    span.textContent = 'View Category\xa0\xa0';
-    addEl(div, span);
-    addEl(annotCheckDiv, div);
-    var div = getEl('div');
-    div.id = 'annotator-group-select-tag-div';
-    div.className = 'annotator-group-select';
-    addEl(annotCheckDiv, div);
-    var tagToAnnots = {};
+    addEl(annotCheckTitleDiv, div);
+    div.innerText = 'Categories';
+    div.style['font-size'] = '1.2em';
+    div.style['font-weight'] = 'bold';
+    var wrapper = getEl('div');
+    wrapper.id = 'annotator-group-select-tag-div';
+    wrapper.className = 'annotator-group-select';
+    addEl(annotCheckDiv, wrapper);
     var checkDatas = [];
     checkDatas.push({
         name: 'selected',
@@ -1073,46 +1089,82 @@ function buildAnnotatorGroupSelector () {
         });
     }
     var select = getEl('select');
+    addEl(wrapper, select);
     select.id = 'annotator-group-select-select';
     select.multiple = true;
-    for (var i = 0; i < checkDatas.length; i++) {
-        var cd = checkDatas[i];
-        var option = new Option(cd.name, cd.value);
+    for (var i = 0; i < tagsCollectedForSubmit.length; i++) {
+        var tagName = tagsCollectedForSubmit[i];
+        var option = new Option(tagName, tagName);
         addEl(select, option);
     }
-    addEl(div, select);
-    var pqs = $(select).pqSelect({
-        checkbox: true, 
-        deselect: false,
-        maxDisplay: 1,
-        displayText: '{0} selected',
-        singlePlaceholder: 'Click to choose',
-        multiplePlaceholder: 'Click to choose',
-        width: 198,
-        search: false,
-        selectallText: '',
-    }).on('change', function (evt) {
+    select.addEventListener('change',function (evt) {
         var tags = $(this).val();
         onChangeAnnotatorGroupCheckbox(tags);
-        document.querySelector('#annotator-group-select-tag-div').children[2].style.display = 'none';
     });
-    $.each($('.pq-select-menu').children(), function (i, item) {
-        var desc = tagDesc[item.textContent];
-        if (desc != undefined) {
-            item.title = desc;
-        }
-    });
-    addEl(annotCheckDiv, getEl('br'));
-    addEl(annotCheckDiv, getEl('br'));
-    var height = annotCheckDiv.offsetHeight;
-    var stylesheets = window.document.styleSheets;
-    for (var i = 0; i <= stylesheets.length; i++) {
-        var stylesheet = stylesheets[i];
-        if (stylesheet.href.indexOf('websubmit.css') >= 0) {
-            stylesheet.insertRule('#annotator-group-select-tag-div {max-height: ' + height + 'px;}');
-            break;
-        }
+    select.style.display = 'none';
+    var tagWrapper = getEl('div');
+    tagWrapper.classList.add('checkbox-group-flexbox');
+    addEl(wrapper, tagWrapper);
+    for (let tag of tagsCollectedForSubmit) {
+        let tagDiv = getEl('div');
+        tagDiv.classList.add('submit-annot-tag');
+        addEl(tagWrapper, tagDiv);
+        let tagCb = getEl('input');
+        addEl(tagDiv, tagCb);
+        tagCb.classList.add('submit-annot-tag-cb');
+        tagCb.type = 'checkbox';
+        tagCb.value = tag;
+        tagCb.style.display = 'none';
+        tagCb.addEventListener('change', event=>{
+            for (let option of select.options) {
+                if (option.value === tag) {
+                    option.selected = event.target.checked;
+                }
+            }
+            select.dispatchEvent(new Event('change'));
+            tagDiv.classList.toggle('selected');
+        });
+        let cbId = `annot-control-${tag}`;
+        tagCb.id = cbId;
+        let tagSpan = getEl('label');
+        addEl(tagDiv, tagSpan);
+        // tagSpan.setAttribute('for', cbId);
+        tagSpan.innerText = titleCase(tag);
+        tagSpan.style.cursor = 'pointer';
+        tagSpan.style['user-select'] = 'none';
+        //TODO do without jquery
+        tagDiv.addEventListener('click', ()=>{$(tagCb).click()});
     }
+    // Way down here to use local variables in listener
+    var showSelBtn = getEl('button');
+    addEl(annotCheckTitleDiv, showSelBtn);
+    showSelBtn.classList.add('butn');
+    showSelBtn.innerText = 'Selected';
+    showSelBtn.style['margin-left'] = 'auto';
+    showSelBtn.addEventListener('click',()=>{
+        document.querySelectorAll('.submit-annot-tag')
+            .forEach(tagDiv=>{tagDiv.classList.remove('selected')});
+        document.querySelectorAll('.submit-annot-tag-cb')
+            .forEach(cb=>{cb.checked=false});
+        for (let option of select.options) {
+            option.selected = false;
+        }
+        onChangeAnnotatorGroupCheckbox(['selected']);
+    });
+    var clearCatsBtn = getEl('button');
+    addEl(annotCheckTitleDiv, clearCatsBtn);
+    clearCatsBtn.classList.add('butn');
+    clearCatsBtn.innerText = 'Clear';
+    clearCatsBtn.addEventListener('click', ()=>{
+        document.querySelectorAll('.submit-annot-tag')
+            .forEach(tagDiv=>{tagDiv.classList.remove('selected')});
+        document.querySelectorAll('.submit-annot-tag-cb')
+            .forEach(cb=>{cb.checked=false});
+        for (let option of select.options) {
+            option.selected = false;
+        }
+        select.dispatchEvent(new Event('change'));
+    });
 }
 
 function buildAnnotatorsSelector () {
@@ -1205,7 +1257,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         var checkData = checkDatas[i];
         var checkDiv = getEl('div');
         checkDiv.classList.add('checkbox-group-element');
-        checkDiv.classList.add('show');
+        checkDiv.classList.add('hide');
         checkDiv.setAttribute('name', checkData.name);
         checkDiv.setAttribute('kind', checkData.kind);
         if (checkData.groups != null) {
@@ -1366,7 +1418,7 @@ function onChangeAnnotatorGroupCheckbox (tags) {
                 }
             });
         } else {
-            $moduleCheckboxes.addClass('show').removeClass('hide');
+            $moduleCheckboxes.addClass('hide').removeClass('show');
         }
     } else {
         $moduleCheckboxes.addClass('hide').removeClass('show');

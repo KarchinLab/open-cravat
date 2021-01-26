@@ -288,10 +288,8 @@ button {
 }
 
 .checkbox-group-all-none-div {
-    position: absolute;
-    top: 8px;
-    right: 5px;
-    z-index: 8;
+    margin-bottom: 4px;
+    display: flex;
 }
 
 .checkbox-group-flexbox {
@@ -330,6 +328,7 @@ div.checkbox-group-element[kind=group] span.label {
 }
 
 #annotator-select-div button.checkbox-group-all-button {
+    margin-left: auto;
     font-size: 10px;
 }
 
@@ -893,3 +892,21 @@ input:checked + .slider:before {
     display: block;
 }
 
+.submit-annot-tag {
+    background-color: #6295b1;
+    border-radius: 6px;
+    color: white;
+    margin-bottom: 3px;
+    margin-right: 3px;
+    padding: 3px;
+    width: 47%;
+    white-space: nowrap;
+    font-weight: bold;
+}
+.submit-annot-tag:hover {
+    cursor: pointer;
+}
+
+.submit-annot-tag.selected {
+    background-color:#3175b0;   
+}
