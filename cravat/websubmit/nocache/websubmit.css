@@ -288,10 +288,8 @@ button {
 }
 
 .checkbox-group-all-none-div {
-    position: absolute;
-    top: 8px;
-    right: 5px;
-    z-index: 8;
+    margin-bottom: 4px;
+    display: flex;
 }
 
 .checkbox-group-flexbox {
@@ -330,6 +328,7 @@ div.checkbox-group-element[kind=group] span.label {
 }
 
 #annotator-select-div button.checkbox-group-all-button {
+    margin-left: auto;
     font-size: 10px;
 }
 
