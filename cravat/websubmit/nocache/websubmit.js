@@ -1227,16 +1227,14 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
     allNoneDiv.className = 'checkbox-group-all-none-div';
     var parentId = parentDiv.id;
     if (parentId == 'annotator-select-div') {
-        if (servermode == false) {
-            var btn = getEl('button');
-            btn.classList.add('butn');
-            btn.classList.add('checkbox-group-all-button');
-            btn.textContent = 'ALL';
-            btn.addEventListener('click', function (evt) {
-                checkBoxGroupAllNoneHandler (evt);
-            });
-            addEl(allNoneDiv, btn);
-        }
+        var btn = getEl('button');
+        btn.classList.add('butn');
+        btn.classList.add('checkbox-group-all-button');
+        btn.textContent = 'ALL';
+        btn.addEventListener('click', function (evt) {
+            checkBoxGroupAllNoneHandler (evt);
+        });
+        addEl(allNoneDiv, btn);
         var btn = getEl('button');
         btn.classList.add('butn');
         btn.classList.add('checkbox-group-none-button');
