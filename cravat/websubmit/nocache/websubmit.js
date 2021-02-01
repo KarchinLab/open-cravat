@@ -1258,6 +1258,22 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         checkDiv.classList.add('hide');
         checkDiv.setAttribute('name', checkData.name);
         checkDiv.setAttribute('kind', checkData.kind);
+        var mouseoverTimer = null;
+        checkDiv.addEventListener('mouseover', function (evt) {
+            mouseoverTimer = setTimeout(function () {
+                var dialog = makeModuleDetailDialog(
+                    evt.target.closest('.checkbox-group-element').getAttribute('name'), null, null);
+                dialog.style.width = 'calc(100% - 500px)';
+                dialog.style.left = '425px';
+                dialog.style.right = 'inherit';
+                addEl(document.querySelector('#submitdiv'), dialog);
+                //evt.preventDefault();
+                //evt.stopPropagation();
+            }, 500)
+        })
+        checkDiv.addEventListener('mouseout', function (evt) {
+            clearTimeout(mouseoverTimer)
+        })
         if (checkData.groups != null) {
             var groups = checkData.groups;
             var group = groups[0];
@@ -1275,7 +1291,7 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
         var label = getEl('label');
         label.classList.add('checkbox-container');
         label.textContent = checkData.label + ' ';
-        label.title = checkData.label;
+        //label.title = checkData.label + '. Right-click to see details.';
         var check = getEl('input');
         check.setAttribute('type', 'checkbox');
         check.setAttribute('name', checkData.name);
