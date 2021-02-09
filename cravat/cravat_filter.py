@@ -305,9 +305,9 @@ class CravatFilter ():
     async def set_aliases (self, conn=None, cursor=None):
         self.table_aliases = {'variant':'t','gene':'g'}
         self.column_prefixes = {}
-        #q = 'pragma table_info(variant)'
-        #await cursor.execute(q)
-        #self.column_prefixes.update({row[1]:self.table_aliases['variant'] for row in await cursor.fetchall()})
+        q = 'pragma table_info(variant)'
+        await cursor.execute(q)
+        self.column_prefixes.update({row[1]:self.table_aliases['variant'] for row in await cursor.fetchall()})
         q = 'pragma table_info(gene)'
         await cursor.execute(q)
         self.column_prefixes.update({row[1]:self.table_aliases['gene'] for row in await cursor.fetchall()})
@@ -561,15 +561,15 @@ class CravatFilter ():
             q = 'drop table if exists ' + vftable
             await cursor.execute(q)
             where = self.getwhere(level)
-            q = f'create table {vftable} as select t.base__uid from (select base__uid, base__hugo from variant {where}) as t'
+            q = f'create table {vftable} as select t.base__uid from variant as t'
             if fsample_made:
                 q += ' join fsample as s on t.base__uid=s.base__uid'
             if gene_list_made:
                 if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
                     q += ' join gene_list as gl on t.base__hugo=gl.base__hugo'
-                if 'g.' in where:
-                    q += ' join gene as g on t.base__hugo=g.base__hugo'
-            #q += ' '+where
+            if 'g.' in where:
+                q += ' join gene as g on t.base__hugo=g.base__hugo'
+            q += ' '+where
             await cursor.execute(q)
             await conn.commit()
             t = time.time() - t
