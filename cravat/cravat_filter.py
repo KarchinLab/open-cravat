@@ -758,7 +758,7 @@ class CravatFilter ():
         return table_names
 
     async def get_stored_output_columns (self, module_name, conn=None, cursor=None):
-        q = f'select col_def from variant_header where col_name like "{module_name}__%"'
+        q = f'select col_def from variant_header where col_name like "{module_name}\\_\\_%" escape "\\"'
         await cursor.execute(q)
         output_columns = []
         for row in await cursor.fetchall():
