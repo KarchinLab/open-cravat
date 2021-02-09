@@ -24,3 +24,4 @@ base_modules:
 - wgvcfinfo
 - hg38wgs
 - varmeta
+- wgrankscore
