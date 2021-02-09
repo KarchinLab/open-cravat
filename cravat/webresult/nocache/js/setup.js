@@ -1806,10 +1806,10 @@ function onClickWidgetPinButton (evt, tabName) {
     if (pinned) {
         button.classList.remove('pinned');
         button.classList.add('unpinned');
-        button.src = '/result/images/pin.png';
+        //button.src = '/result/images/pin.png';
         $(container).packery('unstamp', widget);
     } else {
-        button.src = '/result/images/pin-2.png';
+        //button.src = '/result/images/pin-2.png';
         button.classList.remove('unpinned');
         button.classList.add('pinned');
         $(container).packery('stamp', widget);

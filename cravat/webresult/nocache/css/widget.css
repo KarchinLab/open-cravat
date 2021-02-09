@@ -66,26 +66,28 @@ body * {
 	font-size: 12px;
 	border: 1px solid #d0d0d0;
     padding: 0px;
+    border-radius: 6px;
 }
 
 .detailwidgetheader {
 	font-size: 14px;
 	font-weight: bold;
-	display: inline-block;
+	display: flex;
 	width: 100%;
-	position: relative;
-	top: 0px;
-	left: 0px;
+    vertical-align: middle;
+    border-radius: 6px 6px 0 0;
+    background-color: #1a4a75;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
 }
 
 .detailwidgettitle {
 	display: inline-block;
-	width: calc(100% - 4px);
-	background: #4a87bd;
     font-family: sourcesanspro-bold;
 	font-size: 13px;
     height: 18px;
-    margin-bottom: 6px;
+    padding: 9px;
 }
 
 .detailwidget-hr {
@@ -95,32 +97,31 @@ body * {
 }
 
 .detailwidgeticondiv {
-	display: inline-block;
-	width: 70px;
-	position: absolute;
-	right: 0px;
-	top: 0px;
+	display: flex;
     text-align: right;
+    margin-right: 7px;
 }
 
 .detailwidget-closebutton {
 	width: 16px;
 	height: 16px;
+    cursor: pointer;
+    margin: 2px;
+    padding: 2px;
 }
 
 .detailwidgetpinbutton {
-	cursor: default;
 	font-size: 12px;
 	text-align: center;
-	border: 1px solid gray;
 	width: 14px;
-	border-radius: 4px;
 	cursor: pointer;
+    margin: 2px;
+    padding: 2px;
 }
 
 .detailwidgetpinbutton.unpinned {
 	color: black;
-	background-color: white;
+    background-color: #1a4a75;
 }
 
 .detailwidgetpinbutton.pinned {
@@ -130,6 +131,9 @@ body * {
 
 .detailwidget-camerabutton {
     height: 16px;
+    cursor: pointer;
+    margin: 2px;
+    padding: 2px;
 }
 
 .detailwidgetselect {

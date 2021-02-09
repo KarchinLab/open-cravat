@@ -476,9 +476,6 @@ function getDetailWidgetDivs (tabName, widgetName, title, maxWidth, maxHeight, s
     if (widgetInfo[widgetName]['helphtml_exists']) {
         var btn = getEl('span');
         btn.className = 'detailwidgetpinbutton';
-        btn.style.position = 'relative';
-        btn.style.top = '-4px';
-        btn.style.backgroundColor = 'white';
         btn.textContent = '\u2754';
         btn.addEventListener('click', function (evt) {
             onClickWidgetHelpButton(evt, tabName);
@@ -488,7 +485,7 @@ function getDetailWidgetDivs (tabName, widgetName, title, maxWidth, maxHeight, s
 
 	// Camera button
 	var button = getEl('img');
-	button.src = '/result/images/camera.png';
+	button.src = '/result/images/camera.svg';
 	button.className = 'detailwidget-camerabutton';
 	button.setAttribute('widgetname', widgetName);
 	button.addEventListener('click', function (evt) {
@@ -498,7 +495,7 @@ function getDetailWidgetDivs (tabName, widgetName, title, maxWidth, maxHeight, s
 
 	// Pin button
 	var pinButton = getEl('img');
-	pinButton.src = '/result/images/pin.png';
+	pinButton.src = '/result/images/pin.svg';
 	pinButton.className = 'detailwidgetpinbutton';
 	pinButton.classList.add('unpinned');
 	pinButton.setAttribute('widgetname', widgetName);
@@ -509,7 +506,7 @@ function getDetailWidgetDivs (tabName, widgetName, title, maxWidth, maxHeight, s
 
 	// Close button
 	var closeButton = getEl('img');
-	closeButton.src = '/result/images/close-button.png';
+	closeButton.src = '/result/images/close.svg';
 	closeButton.className = 'detailwidget-closebutton';
 	closeButton.setAttribute('widgetname', widgetName);
 	closeButton.addEventListener('click', function (evt) {
