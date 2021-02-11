@@ -1066,6 +1066,13 @@ function buildAnnotatorGroupSelector () {
     div.innerText = 'Categories';
     div.style['font-size'] = '1.2em';
     div.style['font-weight'] = 'bold';
+    var div = getEl('div');
+    addEl(annotCheckTitleDiv, div);
+    div.innerText = 'Show';
+    div.style['margin-left'] = 'auto';
+    div.style['margin-right'] = '0.5ch';
+    div.style['font-weight'] = 'bold';
+    div.style['padding'] = '1px';
     var wrapper = getEl('div');
     wrapper.id = 'annotator-group-select-tag-div';
     wrapper.className = 'annotator-group-select';
@@ -1136,11 +1143,39 @@ function buildAnnotatorGroupSelector () {
         tagDiv.addEventListener('click', ()=>{$(tagCb).click()});
     }
     // Way down here to use local variables in listener
+    var allCatsBtn = getEl('button');
+    addEl(annotCheckTitleDiv, allCatsBtn);
+    allCatsBtn.classList.add('butn');
+    allCatsBtn.innerText = 'All';
+    allCatsBtn.addEventListener('click', ()=>{
+        document.querySelectorAll('.submit-annot-tag')
+            .forEach(tagDiv=>{tagDiv.classList.add('selected')});
+        document.querySelectorAll('.submit-annot-tag-cb')
+            .forEach(cb=>{cb.checked=true});
+        for (let option of select.options) {
+            option.selected = true;
+        }
+        select.dispatchEvent(new Event('change'));
+    });
+    var clearCatsBtn = getEl('button');
+    addEl(annotCheckTitleDiv, clearCatsBtn);
+    clearCatsBtn.classList.add('butn');
+    clearCatsBtn.innerText = 'None';
+    clearCatsBtn.addEventListener('click', ()=>{
+        document.querySelectorAll('.submit-annot-tag')
+        .forEach(tagDiv=>{tagDiv.classList.remove('selected')});
+        document.querySelectorAll('.submit-annot-tag-cb')
+        .forEach(cb=>{cb.checked=false});
+        for (let option of select.options) {
+            option.selected = false;
+        }
+        select.dispatchEvent(new Event('change'));
+    });
     var showSelBtn = getEl('button');
     addEl(annotCheckTitleDiv, showSelBtn);
     showSelBtn.classList.add('butn');
     showSelBtn.innerText = 'Selected';
-    showSelBtn.style['margin-left'] = 'auto';
+    
     showSelBtn.addEventListener('click',()=>{
         document.querySelectorAll('.submit-annot-tag')
             .forEach(tagDiv=>{tagDiv.classList.remove('selected')});
@@ -1150,20 +1185,6 @@ function buildAnnotatorGroupSelector () {
             option.selected = false;
         }
         onChangeAnnotatorGroupCheckbox(['selected']);
-    });
-    var clearCatsBtn = getEl('button');
-    addEl(annotCheckTitleDiv, clearCatsBtn);
-    clearCatsBtn.classList.add('butn');
-    clearCatsBtn.innerText = 'Clear';
-    clearCatsBtn.addEventListener('click', ()=>{
-        document.querySelectorAll('.submit-annot-tag')
-            .forEach(tagDiv=>{tagDiv.classList.remove('selected')});
-        document.querySelectorAll('.submit-annot-tag-cb')
-            .forEach(cb=>{cb.checked=false});
-        for (let option of select.options) {
-            option.selected = false;
-        }
-        select.dispatchEvent(new Event('change'));
     });
 }
 
@@ -1227,22 +1248,18 @@ function buildCheckBoxGroup (checkDatas, parentDiv) {
     allNoneDiv.className = 'checkbox-group-all-none-div';
     var parentId = parentDiv.id;
     if (parentId == 'annotator-select-div') {
-        var btn = getEl('button');
-        btn.classList.add('butn');
-        btn.classList.add('checkbox-group-all-button');
-        btn.textContent = 'ALL';
-        btn.addEventListener('click', function (evt) {
+        var span = getEl('span');
+        span.classList.add('checkbox-group-all-button');
+        span.addEventListener('click', function (evt) {
             checkBoxGroupAllNoneHandler (evt);
         });
-        addEl(allNoneDiv, btn);
-        var btn = getEl('button');
-        btn.classList.add('butn');
-        btn.classList.add('checkbox-group-none-button');
-        btn.textContent = 'CLEAR';
-        btn.addEventListener('click', function (evt) {
+        addEl(allNoneDiv, span);
+        var span = getEl('span');
+        span.classList.add('checkbox-group-none-button');
+        span.addEventListener('click', function (evt) {
             checkBoxGroupAllNoneHandler (evt);
         });
-        addEl(allNoneDiv, btn);
+        addEl(allNoneDiv, span);
     }
     // flexbox
     var flexbox = getEl('div');
