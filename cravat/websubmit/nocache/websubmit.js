@@ -1482,6 +1482,16 @@ function onChangeAnnotatorGroupCheckbox (tags) {
             }
         }
     }
+    if ( ! checkVisible(document.querySelector('#annotator-select-div').querySelector('.checkbox-group-flexbox'))) {
+        document.querySelector('#annotchoosediv').scrollIntoView();
+    }
+}
+
+function checkVisible(elm) {
+    // https://stackoverflow.com/questions/5353934/check-if-element-is-visible-on-screen
+    var rect = elm.getBoundingClientRect();
+    var viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
+    return !(rect.bottom < 0 || rect.top - viewHeight >= 0);
 }
 
 function checkBoxGroupAllNoneHandler (event) {
