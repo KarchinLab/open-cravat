@@ -328,9 +328,8 @@ div.checkbox-group-element[kind=group] span.label {
 }
 
 .checkbox-group-all-button {
-    font-size: 16px;
+    font-size: 1.8em;
     cursor: pointer;
-    margin: 0px 2px 0px 2px;
 }
 
 .checkbox-group-all-button::before {
@@ -338,9 +337,9 @@ div.checkbox-group-element[kind=group] span.label {
 }
 
 .checkbox-group-none-button {
-    font-size: 16px;
+    font-size: 1.8em;
     cursor: pointer;
-    margin: 0px 2px 0px 2px;
+    margin-left: 5px;
 }
 
 .checkbox-group-none-button::before {
