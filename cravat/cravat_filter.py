@@ -522,6 +522,7 @@ class CravatFilter ():
     async def make_filtered_sample_table (self, conn=None, cursor=None):
         q = 'drop table if exists fsample'
         await cursor.execute(q)
+        await conn.commit()
         if 'sample' in self.filter:
             if 'require' in self.filter['sample']:
                 req = self.filter['sample']['require']
@@ -534,32 +535,38 @@ class CravatFilter ():
         else:
             req = []
             rej = []
-        q = 'create table fsample as select distinct base__uid from sample'
-        if req:
-            q += ' where base__sample_id in ({})'.format(
-                ', '.join(['"{}"'.format(sid) for sid in req])
-            )
-        for s in rej:
-           q += ' except select base__uid from sample where base__sample_id="{}"'.format(s)
-        await cursor.execute(q)
-        await conn.commit()
+        if len(req) > 0 or len(rej) > 0:
+            q = 'create table fsample as select distinct base__uid from sample'
+            if req:
+                q += ' where base__sample_id in ({})'.format(
+                    ', '.join(['"{}"'.format(sid) for sid in req])
+                )
+            for s in rej:
+               q += ' except select base__uid from sample where base__sample_id="{}"'.format(s)
+            await cursor.execute(q)
+            await conn.commit()
+            return True
+        else:
+            return False
 
     async def make_filtered_uid_table (self, conn=None, cursor=None):
         t = time.time()
         bypassfilter = (self.filter == {})
         if bypassfilter == False:
-            await self.exec_db(self.make_filtered_sample_table)
-            await self.exec_db(self.make_gene_list_table)
+            fsample_made = await self.exec_db(self.make_filtered_sample_table)
+            gene_list_made = await self.exec_db(self.make_gene_list_table)
             level = 'variant'
             vtable = level
             vftable = level + '_filtered'
             q = 'drop table if exists ' + vftable
             await cursor.execute(q)
             where = self.getwhere(level)
-            q = 'create table {} as select t.base__uid from {} as t'.format(vftable, level)
-            q += ' join fsample as s on t.base__uid=s.base__uid'
-            if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
-                q += ' join gene_list as gl on t.base__hugo=gl.base__hugo'
+            q = f'create table {vftable} as select t.base__uid from variant as t'
+            if fsample_made:
+                q += ' join fsample as s on t.base__uid=s.base__uid'
+            if gene_list_made:
+                if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
+                    q += ' join gene_list as gl on t.base__hugo=gl.base__hugo'
             if 'g.' in where:
                 q += ' join gene as g on t.base__hugo=g.base__hugo'
             q += ' '+where
@@ -571,19 +578,20 @@ class CravatFilter ():
         tname = 'gene_list'
         q = 'drop table if exists {}'.format(tname)
         await cursor.execute(q)
-        q = 'create table {} (base__hugo text)'.format(tname)
-        await cursor.execute(q)
+        await conn.commit()
         if isinstance(self.filter,dict) and 'genes' in self.filter:
             tdata = [(hugo,) for hugo in self.filter['genes']]
         else:
             tdata = []
-        if tdata:
+        if len(tdata) > 0:
+            q = 'create table {} (base__hugo text)'.format(tname)
+            await cursor.execute(q)
             q = 'insert into {} (base__hugo) values (?)'.format(tname)
             await cursor.executemany(q, tdata)
+            await conn.commit()
+            return True
         else:
-            q = 'insert into {} select base__hugo from gene'.format(tname)
-            await cursor.execute(q)
-        await conn.commit()
+            return False
 
     async def make_filtered_hugo_table (self, conn=None, cursor=None):
         bypassfilter = (self.filter == {})
@@ -750,7 +758,7 @@ class CravatFilter ():
         return table_names
 
     async def get_stored_output_columns (self, module_name, conn=None, cursor=None):
-        q = f'select col_def from variant_header where col_name like "{module_name}__%"'
+        q = f'select col_def from variant_header where col_name like "{module_name}\\_\\_%" escape "\\"'
         await cursor.execute(q)
         output_columns = []
         for row in await cursor.fetchall():

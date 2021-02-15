@@ -384,10 +384,8 @@ class WebServer (object):
         self.app.router.add_static('/store', os.path.join(source_dir, 'webstore'))
         self.app.router.add_static('/result', os.path.join(source_dir, 'webresult'))
         self.app.router.add_static('/submit', os.path.join(source_dir, 'websubmit'))
-        self.app.router.add_static(
-            '/webapps',
-            os.path.join(modules_dir, 'webapps')
-        )
+        self.app.router.add_static('/webapps', os.path.join(modules_dir, 'webapps'))
+        self.app.router.add_static('/modules/annotators/', os.path.join(modules_dir, 'annotators'))
         self.app.router.add_get('/heartbeat', heartbeat)
         self.app.router.add_get('/issystemready', is_system_ready)
         self.app.router.add_get('/favicon.ico', serve_favicon)
@@ -455,6 +453,15 @@ def main (url=None):
                 return SERVER_ALREADY_RUNNING
         except requests.exceptions.ConnectionError:
             pass
+        print(
+'''
+   ____                   __________  ___ _    _____  ______
+  / __ \____  ___  ____  / ____/ __ \/   | |  / /   |/_  __/
+ / / / / __ \/ _ \/ __ \/ /   / /_/ / /| | | / / /| | / /   
+/ /_/ / /_/ /  __/ / / / /___/ _, _/ ___ | |/ / ___ |/ /    
+\____/ .___/\___/_/ /_/\____/_/ |_/_/  |_|___/_/  |_/_/     
+    /_/                                                     
+''')
         print('OpenCRAVAT is served at {}:{}'.format(serv.get('host'), serv.get('port')))
         logger.info('Serving OpenCRAVAT server at {}:{}'.format(serv.get('host'), serv.get('port')))
         print('(To quit: Press Ctrl-C or Ctrl-Break if run on a Terminal or Windows, or click "Cancel" and then "Quit" if run through OpenCRAVAT app on Mac OS)')

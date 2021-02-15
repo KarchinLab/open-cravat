@@ -1281,7 +1281,7 @@ function getFilteredRemoteModules () {
                 pass = true;
             } else if (remoteModule['tags'].indexOf('newavailable') != -1 && newCheck == true) {
                 pass = true;
-            } else if (hasFilter) {
+            } else if (hasFilter && newCheck == true) {
                 pass = true;
             }
             if (pass == false) {
@@ -1619,6 +1619,7 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         }
     } else if (currentTab == 'submit') {
         mInfo = localModuleInfo[moduleName];
+        mInfo.latest_version = remoteModuleInfo[moduleName].latest_version
     }
     var div = document.getElementById('moduledetaildiv_' + currentTab);
     if (div) {
@@ -1737,7 +1738,11 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         var $mdhtml = $(mdhtml);
         var localRoot = window.location.origin + window.location.pathname.split('/').slice(0,-1).join('/');
         for (let img of $mdhtml.children('img')) {
-            let storeRoot = `${systemConf.store_url}/modules/${moduleName}/${mInfo.latest_version}`
+            if (currentTab == 'store') {
+                var storeRoot = `${systemConf.store_url}/modules/${moduleName}/${mInfo.latest_version}`
+            } else if (currentTab == 'submit') {
+                var storeRoot = `/modules/annotators/${moduleName}`
+            }
             img.src = img.src.replace(localRoot, storeRoot);
             img.style.display = 'block';
             img.style.margin = 'auto';
@@ -1766,6 +1771,9 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
         var otbody = getEl('tbody');
         otbody.id = 'moduledetail-' + currentTab + '-output-tbody';
         addEl(otable, otbody);
+        addEl(d, otable);
+        addEl(mdDiv, d);
+        addClassRecursive(mdDiv, 'moduledetaildiv-' + currentTab + '-elem');
         if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName].conf.uselocalonstore) {
             var data = mInfo;
             var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
@@ -1843,9 +1851,6 @@ function makeModuleDetailDialog (moduleName, moduleListName, moduleListPos) {
                 },
             });
         }
-        addEl(d, otable);
-        addEl(mdDiv, d);
-        addClassRecursive(mdDiv, 'moduledetaildiv-' + currentTab + '-elem');
 	});
     // Information div
     td = getEl('td');

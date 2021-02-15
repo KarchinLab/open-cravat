@@ -7,7 +7,7 @@ import time
 import traceback
 import cravat.constants as constants
 from cravat.inout import CravatWriter
-from cravat.exceptions import LiftoverFailure, InvalidData, BadFormatError, ExpectedException
+from cravat.exceptions import LiftoverFailure, InvalidData, BadFormatError, ExpectedException, NoVariantError
 import cravat.admin_util as au
 from pyliftover import LiftOver
 import copy
@@ -411,6 +411,8 @@ class MasterCravatConverter(object):
                                 new_pos, new_ref, new_alt = self.standardize_pos_ref_alt('+', p, r, a)
                                 unique, UID = self.vtracker.addVar(wdict['chrom'], new_pos, new_ref, new_alt)
                                 wdict['uid'] = UID
+                                if wdict['ref_base'] == wdict['alt_base']:
+                                    raise NoVariantError()
                                 if unique:
                                     write_lnum += 1
                                     self.crv_writer.write_data(wdict)

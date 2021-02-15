@@ -6,6 +6,10 @@ import time
 import sys
 from abc import ABC, abstractmethod
 import csv as csv
+import openpyxl as pyxl
+import openpyxl as pyxl
+import vcf
+
 
 # Regression test program for CRAVAT modules.  By default, it will go through all modules and
 # if the module has a test directory with an input and key file, it will test the module 
@@ -138,6 +142,159 @@ class TextReportReader(ReportReader):
                 return idx
         return -1    
 
+#Derived Report Reader class for reating text reports (-t text)    
+class ExcelReportReader(ReportReader): 
+   
+    def reportFileExtension(self):
+        return ('.xlsx')
+       
+    #Based on the level selected, return column headers and row values.   
+    def readReport(self, test_level, bDict):
+        headers = None
+        tabNbr = 'Variant'
+        if (test_level == 'gene'):
+            tabNbr = 'Gene'
+        elif (test_level == 'sample'):
+            tabNbr = 'Sample'
+        elif (test_level == 'mapping'):
+            tabNbr = 'Mapping'
+        
+        # To open Workbook
+        xlxsFile = self.rsltFile if '.xlsx' in self.rsltFile else self.rsltFile + '.xlsx' 
+        wb = pyxl.load_workbook(filename = xlxsFile)
+        sheet = wb[tabNbr]
+         
+        if (bDict):
+            rows = {}
+        else:
+            rows = []
+        if headers == None:
+            headers = self.readSectionHeader(test_level,sheet)
+        for i in range(3, sheet.max_row+1):
+            columns = []
+            for j in range(1, sheet.max_column + 1):
+                columns.append('' if sheet.cell(i, j).value is None else sheet.cell(i, j).value)
+            line_id = self.getRowID(headers, columns, test_level)
+            if (bDict):
+                rows[line_id] = columns
+            else:
+                rows.append((line_id, columns))    
+        return headers, rows        
+    
+    # Read the two report header columns that define the module/column
+    # for each data column.  Returned as list of: module|column
+    def readSectionHeader(self, test_level, sheet):
+        headers = []
+        # To open Workbook
+        header1 = sheet.cell(1, 1).value
+        for i in range(1, sheet.max_column+1):
+            if sheet.cell(1, i).value is not None and sheet.cell(1, i).value != '': 
+                header1 = sheet.cell(1, i).value
+            header2 = sheet.cell(2, i).value
+            combinedHeader = header1 + '|' + header2
+            headers.append(combinedHeader)
+        return headers    
+
+    #The ID of a result row is used to match key and output.  The ID
+    #differs depending on which section of the output is being checked.         
+    def getRowID(self, headers, columns, level):
+        Id = ''
+        if (level == 'variant'):
+            Id = columns[self.getColPos(headers, 'Chrom')] + ' ' + \
+                 str(int(columns[self.getColPos(headers, 'Position')])) + ' ' + \
+                 columns[self.getColPos(headers, 'Ref Base')] + ' ' + \
+                 columns[self.getColPos(headers, 'Alt Base')] + ' ' + \
+                 columns[self.getColPos(headers, 'Tags')];
+        if (level == 'gene'):
+            pos = self.getColPos(headers, 'Hugo')
+            if pos == -1:
+                pos = self.getColPos(headers, 'Gene')
+            Id = columns[pos];
+        if (level == 'sample'):
+            Id = columns[self.getColPos(headers, 'UID')] + ' ' + \
+                 columns[self.getColPos(headers, 'Sample')];    
+        if (level == 'mapping'):
+            Id = columns[self.getColPos(headers, 'Original Line')];    
+        return Id         
+    
+    #get the position of a specific output column
+    def getColPos(self, headers, col):
+        for idx, header in enumerate(headers):
+            if col in header:
+                return idx
+        return -1    
+
+#Derived Report Reader class for reating text reports (-t text)    
+class VcfReportReader(ReportReader): 
+   
+    def reportFileExtension(self):
+        return ('.vcf')
+       
+    #Based on the level selected, return column headers and row values.   
+    def readReport(self, test_level, bDict):
+        headers = None
+        if (bDict):
+            rows = {}
+        else:
+            rows = []
+        reader = vcf.Reader(filename=self.rsltFile)
+        if headers == None:
+            headers = self.readSectionHeader(reader)
+        for record in reader:
+            columns = []
+            columns.append(record.ID)
+            lineitems = record.INFO['CRV'][0].split('|')
+            i = 1
+            while i < len(headers):
+                columns.append(lineitems[i].strip('"'))
+                i += 1
+                line_id = self.getRowID(headers, lineitems)
+            if (bDict):
+                rows[line_id] = columns
+            else:
+                rows.append((line_id, columns))    
+        return headers, rows        
+
+    # Read the two report header columns that define the module/column
+    # for each data column.  Returned as list of: module|column
+    def readSectionHeader(self, reader):
+        headers = ['Variant Annotation|chrom','Variant Annotation|pos','Variant Annotation|ref','Variant Annotation|alt']
+        colList = reader.infos['CRV'][3]
+        cols = colList.split('|')
+        for col in cols:
+            underscorepos = col.find('__')
+            equalspos = col.find('=')
+            prevheader = col[underscorepos-4:underscorepos]
+            postheader = col[underscorepos+2:len(col)]
+            hugopos = postheader.find('hugo')
+            if (hugopos >= 0):
+                postheader = 'hugo'
+            elif (equalspos > 0):
+                break
+            if prevheader == 'base':
+                header = 'Variant Annotation|' + postheader
+            else:
+                module = col[0:underscorepos]
+                header = module + '|' + postheader
+            headers.append(header)
+        return headers    
+    
+    #The ID of a result row is used to match key and output.  The ID
+    #differs depending on which section of the output is being checked.         
+    def getRowID(self, headers, lineitems):
+        Id = lineitems[self.getColPos(headers, 'Variant Annotation|chrom')].strip('"') + ' ' + \
+             lineitems[self.getColPos(headers, 'Variant Annotation|pos')].strip('"') + ' ' + \
+             lineitems[self.getColPos(headers, 'Variant Annotation|ref')].strip('"') + ' ' + \
+             lineitems[self.getColPos(headers, 'Variant Annotation|alt')].strip('"') + ' ' + \
+             lineitems[self.getColPos(headers, 'Variant Annotation|tags')].strip('"');
+        return Id         
+    
+    #get the position of a specific output column
+    def getColPos(self, headers, col):
+        for idx, header in enumerate(headers):
+            if col in header:
+                return idx
+        return -1    
 
 #Derived Report Reader class for reating text reports (-t text)    
 class TsvReportReader(ReportReader): 
@@ -313,7 +470,7 @@ class CsvReportReader(ReportReader):
 
 #class that actually runs a test of a specific module and then verifies the results.
 class Tester():
-    def __init__(self, module, rundir):
+    def __init__(self, module, rundir, input_file):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         self.module = module
         if not os.path.exists(module.directory) or not module.script_exists:
@@ -321,10 +478,14 @@ class Tester():
         self.out_dir = os.path.join(rundir, module.name);
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
-        self.input_path = os.path.join(module.test_dir, 'input')
-        self.key_path = os.path.join(module.test_dir, 'key')
-        self.parms_path = os.path.join(module.test_dir, 'parms')
-        self.log_path = os.path.join(self.out_dir,'test.log')    #put the output of this program in test.log
+        self.input_file = input_file
+        self.input_path = os.path.join(module.test_dir, input_file)
+        self.key_path = os.path.join(module.test_dir, input_file.replace('input','key'))
+        self.parms_path = os.path.join(module.test_dir, input_file.replace('input','parms'))
+        log = 'test.log'
+        if (len(input_file.replace('input', '')) > 0):
+            log = input_file + '.test.log'
+        self.log_path = os.path.join(self.out_dir, log)    #put the output of this program in test.log
         self.cravat_run = os.path.join(cur_dir, 'runcravat.py')
         self.output_file = 'oc_output'
         self.out_path = os.path.join(self.out_dir, self.output_file) 
@@ -352,7 +513,8 @@ class Tester():
                                  
     # function that tests one module                          
     def run(self):
-        self._report('  Testing: ' + self.module.name);
+        input_msg = '' if self.input_file == 'input' else self.input_file # if there is more than one test for the module, include the test file in the log.
+        self._report('  Testing: ' + self.module.name + ' ' + input_msg);
         self.start_time = time.time()
         self.parse_parms()
         python_exc = sys.executable
@@ -398,12 +560,15 @@ class Tester():
             self.verify_level('variant', ['Variant Annotation'])
             self.verify_level('gene', ['Variant Annotation'])  
         elif (self.module.type == 'reporter'):
-            if (au.get_local_module_info('vest') is not None) and (au.get_local_module_info('cgl') is not None):
+            if (self.report_type == 'vcf'):
                 self.verify_level('variant', ['Variant Annotation', 'vest', 'cgl', 'VEST4', 'Cancer Gene Landscape'])
-                self.verify_level('gene', ['Variant Annotation', 'vest', 'cgl', 'VEST4', 'Cancer Gene Landscape'])  
-            else: 
-                self.verify_level('variant', ['Variant Annotation'])
-                self.verify_level('gene', ['Variant Annotation'])  
+            else:
+                if (au.get_local_module_info('vest') is not None) and (au.get_local_module_info('cgl') is not None):
+                    self.verify_level('variant', ['Variant Annotation', 'vest', 'cgl', 'VEST4', 'Cancer Gene Landscape'])
+                    self.verify_level('gene', ['Variant Annotation', 'vest', 'cgl', 'VEST4', 'Cancer Gene Landscape'])  
+                else: 
+                    self.verify_level('variant', ['Variant Annotation'])
+                    self.verify_level('gene', ['Variant Annotation'])  
                  
     
     #See if key and result are floating point numbers.  If so, allow tiny 
@@ -429,7 +594,11 @@ class Tester():
             return TsvReportReader(report_path)
         elif type == "csv":
             return CsvReportReader(report_path)
-       
+        elif type == "excel":
+            return ExcelReportReader(report_path)
+        elif type == "vcf":
+            return VcfReportReader(report_path)
+      
         #need to put more parsers here when they are implemented
             
     #Match the key (expected values) to the text report output.  Generate errors
@@ -527,8 +696,11 @@ def run_test (cmd_args):
             for mod_name in modules: 
                 if cmd_args.modules is None or mod_name in cmd_args.modules:
                     module = modules[mod_name];
-                    if (module.has_test):
-                        tester = Tester(module, cmd_args.rundir);
+                    #If a module has a test, it is usually a single 'input' file and 'key' but modules can 
+                    #have multiple input and key files.  This loop runs all input/key file pairs.
+                    #Example input.1, key.1, input.2, key.2
+                    for test_input_file in module.tests:
+                        tester = Tester(module, cmd_args.rundir, test_input_file);
                         exit_code = tester.run();
                         if exit_code == 0:
                             tester.verify()
@@ -538,7 +710,8 @@ def run_test (cmd_args):
                             passed += 1
                         else:
                             failed += 1
-                            modules_failed.append(mod_name)
+                            fail_msg = mod_name + ('' if test_input_file == 'input' else ' ' + test_input_file)
+                            modules_failed.append(fail_msg)
     modules_failed.sort()
     print ('\nTests complete.  Passed: ' + str(passed) + '  Failed: ' + str(failed) + ' [' + ', '.join(modules_failed) + ']')
 
