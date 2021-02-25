@@ -305,9 +305,9 @@ class CravatFilter ():
     async def set_aliases (self, conn=None, cursor=None):
         self.table_aliases = {'variant':'t','gene':'g'}
         self.column_prefixes = {}
-        #q = 'pragma table_info(variant)'
-        #await cursor.execute(q)
-        #self.column_prefixes.update({row[1]:self.table_aliases['variant'] for row in await cursor.fetchall()})
+        q = 'pragma table_info(variant)'
+        await cursor.execute(q)
+        self.column_prefixes.update({row[1]:self.table_aliases['variant'] for row in await cursor.fetchall()})
         q = 'pragma table_info(gene)'
         await cursor.execute(q)
         self.column_prefixes.update({row[1]:self.table_aliases['gene'] for row in await cursor.fetchall()})
