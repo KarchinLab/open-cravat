@@ -561,15 +561,15 @@ class CravatFilter ():
             q = 'drop table if exists ' + vftable
             await cursor.execute(q)
             where = self.getwhere(level)
-            q = f'create table {vftable} as select t.base__uid from (select base__uid, base__hugo from variant {where}) as t'
+            q = f'create table {vftable} as select t.base__uid from variant as t'
             if fsample_made:
                 q += ' join fsample as s on t.base__uid=s.base__uid'
             if gene_list_made:
                 if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
                     q += ' join gene_list as gl on t.base__hugo=gl.base__hugo'
-                if 'g.' in where:
-                    q += ' join gene as g on t.base__hugo=g.base__hugo'
-            #q += ' '+where
+            if 'g.' in where:
+                q += ' join gene as g on t.base__hugo=g.base__hugo'
+            q += ' '+where
             await cursor.execute(q)
             await conn.commit()
             t = time.time() - t

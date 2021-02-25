@@ -327,13 +327,23 @@ div.checkbox-group-element[kind=group] span.label {
     left: 7px;
 }
 
-#annotator-select-div button.checkbox-group-all-button {
-    margin-left: auto;
-    font-size: 10px;
+.checkbox-group-all-button {
+    font-size: 1.8em;
+    cursor: pointer;
 }
 
-#annotator-select-div button.checkbox-group-none-button {
-    font-size: 10px;
+.checkbox-group-all-button::before {
+    content: "\2611";
+}
+
+.checkbox-group-none-button {
+    font-size: 1.8em;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.checkbox-group-none-button::before {
+    content: "\2612";
 }
 
 #annotator-select-div > .checkbox-group-flexbox > .checkbox-group-element {
