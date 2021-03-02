@@ -385,7 +385,7 @@ class WebServer (object):
         self.app.router.add_static('/result', os.path.join(source_dir, 'webresult'))
         self.app.router.add_static('/submit', os.path.join(source_dir, 'websubmit'))
         self.app.router.add_static('/webapps', os.path.join(modules_dir, 'webapps'))
-        self.app.router.add_static('/modules/annotators/', os.path.join(modules_dir, 'annotators'))
+        if os.path.exists(os.path.join(modules_dir, 'annotators')): self.app.router.add_static('/modules/annotators/', os.path.join(modules_dir, 'annotators'))
         self.app.router.add_get('/heartbeat', heartbeat)
         self.app.router.add_get('/issystemready', is_system_ready)
         self.app.router.add_get('/favicon.ico', serve_favicon)
