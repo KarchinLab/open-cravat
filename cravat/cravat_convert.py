@@ -402,7 +402,15 @@ class MasterCravatConverter(object):
                                         wdict['ref_base'] = self.wgsreader.get_bases(chrom, int(pos))
                                 if self.do_liftover:
                                     prelift_wdict = copy.copy(wdict)
-                                    wdict['chrom'], wdict['pos'] = self.liftover(wdict['chrom'], int(wdict['pos']), wdict['ref_base'], wdict['alt_base'])
+                                    wdict['chrom'], \
+                                        wdict['pos'], \
+                                        wdict['ref_base'], \
+                                        wdict['alt_base']\
+                                        = self.liftover(
+                                            wdict['chrom'], 
+                                            int(wdict['pos']), 
+                                            wdict['ref_base'], 
+                                            wdict['alt_base'])
                                 if base_re.fullmatch(wdict['ref_base']) is None:
                                     raise BadFormatError('Invalid reference base')
                                 if base_re.fullmatch(wdict['alt_base']) is None:
@@ -520,7 +528,14 @@ class MasterCravatConverter(object):
             newpos2 = el2[1] + 1
             newchrom = newchrom1
             newpos = min(newpos1, newpos2)
-        return [newchrom, newpos]
+        hg38_ref = self.wgsreader.get_bases(newchrom, newpos)
+        if hg38_ref == cravat.util.reverse_complement(ref):
+            newref = hg38_ref
+            newalt = cravat.util.reverse_complement(alt)
+        else:
+            newref = ref
+            newalt = alt
+        return [newchrom, newpos, newref, newalt]
 
     def _log_conversion_error(self, ln, line, e):
         """ Log exceptions thrown by primary converter.
