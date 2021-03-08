@@ -1101,11 +1101,15 @@ def get_system_conf_info (json=False):
     else:
         conf = {}
         confexists = False
+    conf['package_path'] = os.path.dirname(os.path.abspath(__file__))
     if json:
         content = conf
     else:
         content = yaml.dump(conf, default_flow_style=False)
-    system_conf_info = {'path': confpath, 'exists': confexists, 'content': content}
+    system_conf_info = {
+        'path': confpath, 
+        'exists': confexists, 
+        'content': content}
     return system_conf_info
 
 def get_cravat_conf ():
