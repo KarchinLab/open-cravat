@@ -60,7 +60,7 @@ setup(
     version='2.2.3',
     description='OpenCRAVAT - variant analysis toolkit',
     long_description=readme(),
-    author='Rick Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
+    author='RyangGuk Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
     author_email='rkim@insilico.us.com',
     url='http://www.opencravat.org',
     license='',
