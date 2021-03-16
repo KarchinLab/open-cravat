@@ -2063,7 +2063,7 @@ function populateCaseControl (outer) {
     let helpIcon = $(getEl('a'))
         .attr('id','case-control-help')
         .attr('target','_blank')
-        .attr('href','https://github.com/KarchinLab/open-cravat/wiki/Case-Control')
+        .attr('href','https://open-cravat.readthedocs.io/en/latest/Case-Control.html')
         .append($(getEl('img')).attr('src','../help.png').attr('id','case-control-help-img'));
     d1.append(helpIcon);
     let d2 = $(getEl('div'))
