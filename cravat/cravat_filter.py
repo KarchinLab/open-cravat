@@ -38,6 +38,9 @@ class FilterColumn(object):
         self.negate = d.get('negate', False)
         self.parent_operator = parent_operator
 
+    def __repr__(self):
+        return f'{self.column} {self.test} {self.value}'
+
     def get_sql(self):
         s = ''
         #TODO unify this to a single if/else on self.test
@@ -45,6 +48,15 @@ class FilterColumn(object):
             s = '{} like "%{}%"'.format(self.column, self.value[0])
             for v in self.value[1:]:
                 s += ' or {} like "%{}%"'.format(self.column, v)
+        elif self.test in ('select', 'in'):
+            ss = []
+            for val in self.value:
+                if type(val) == str:
+                    val = '"{}"'.format(val)
+                else:
+                    val = str(val)
+                ss.append(f'({self.column} = {val})')
+            s = f' or '.join(ss)
         else:
             s = '{col} {opr}'.format(col=self.column, opr=self.test2sql[self.test])
             sql_val = None
@@ -72,14 +84,6 @@ class FilterColumn(object):
                 sql_val = '"{}%"'.format(self.value)
             elif self.test == 'stringEnds':
                 sql_val = '"%{}"'.format(self.value)
-            elif self.test in ('select','in'):
-                str_toks = []
-                for val in self.value:
-                    if type(val) == str:
-                        str_toks.append('"{}"'.format(val))
-                    else:
-                        str_toks.append(str(val))
-                sql_val = '(' + ', '.join(str_toks) + ')'
             elif self.test == 'between':
                 sql_val = '{} and {}'.format(self.value[0], self.value[1])
             elif self.test in ('lessThan','lessThanEq','greaterThan','greaterThanEq'):
@@ -553,23 +557,23 @@ class CravatFilter ():
         t = time.time()
         bypassfilter = (self.filter == {})
         if bypassfilter == False:
-            fsample_made = await self.exec_db(self.make_filtered_sample_table)
-            gene_list_made = await self.exec_db(self.make_gene_list_table)
             level = 'variant'
             vtable = level
             vftable = level + '_filtered'
+            where = self.getwhere(level)
+            fsample_made = await self.exec_db(self.make_filtered_sample_table)
+            gene_list_made = await self.exec_db(self.make_gene_list_table)
             q = 'drop table if exists ' + vftable
             await cursor.execute(q)
-            where = self.getwhere(level)
             q = f'create table {vftable} as select t.base__uid from variant as t'
-            if fsample_made:
-                q += ' join fsample as s on t.base__uid=s.base__uid'
             if gene_list_made:
                 if isinstance(self.filter,dict) and len(self.filter.get('genes',[])) > 0:
                     q += ' join gene_list as gl on t.base__hugo=gl.base__hugo'
             if 'g.' in where:
                 q += ' join gene as g on t.base__hugo=g.base__hugo'
             q += ' '+where
+            if fsample_made:
+                q += ' and (t.base__uid in (select base__uid from fsample))'
             await cursor.execute(q)
             await conn.commit()
             t = time.time() - t

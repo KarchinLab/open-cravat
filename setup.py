@@ -57,11 +57,11 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='2.2.3',
+    version='2.2.4',
     description='OpenCRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='RyangGuk Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
-    author_email='rkim@insilico.us.com',
+    author_email='rkim@oakbioinformatics.com',
     url='http://www.opencravat.org',
     license='',
     package_data={
