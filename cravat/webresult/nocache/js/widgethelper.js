@@ -556,3 +556,128 @@ function getSpinner () {
     return spinner;
 }
 
+function addGradientStopBarComponent (outerDiv, row, header, col, tabName, colors={'0.0':[255,255,255],'1.0':[255,0,0]}, minval=0.0, maxval=1.0) {
+    var cutoff = 0.01;
+    var barStyle = {
+        "top": 0,
+        "height": lineHeight,
+        "width": 1,
+        "fill": 'black',
+        "stroke": 'black',
+        "round_edge": 1
+    };
+
+    var dtype = null;
+    var orderedPivots = [];
+    for (pivot in colors){
+        orderedPivots.push(pivot)
+    }
+    orderedPivots.sort(function(a,b){return a-b})
+    
+    // Value
+    var value = null;
+    if (typeof(row) === 'object' && row.constructor == Object) {
+        value = row[col];
+    } else {
+        value = infomgr.getRowValue(tabName, row, col);
+    }
+    if (value == null) {
+        value = '';
+    }
+    else if(typeof value == 'string'){
+        dtype = 'string'
+    }
+    else {
+        value = value.toFixed(3);
+    }
+    // Div
+    var div = getEl('div');
+    div.style.display = 'inline-block';
+    div.style.margin = '2px';
+
+    // Header
+    var span = getEl('span');
+    addEl(div, addEl(span, getTn(header + ': ')));
+    if (value == undefined || value == '') {
+        span.classList.add('nodata');
+    }
+    var span = getEl('span');
+    addEl(div, addEl(span, getTn(value)));
+    if (value == undefined || value == '') {
+        span.classList.add('nodata');
+    }
+    addEl(div, getEl('br'));
+    if(value !== ''){
+        value = parseFloat(value);
+    }
+
+    // Paper
+    var barWidth = 108;
+    var barHeight = 12;
+    var lineOverhang = 3;
+    var lineHeight = barHeight + (2 * lineOverhang);
+    var paperHeight = lineHeight + 4;
+    var subDiv = document.createElement('div');
+    addEl(div, subDiv);
+    subDiv.style.width = (barWidth + 10) + 'px';
+    subDiv.style.height = paperHeight + 'px';
+    var allele_frequencies_map_config = {};
+    var paper = Raphael(subDiv, barWidth, paperHeight);
+
+    // Box with remainder white
+    var box = paper.rect(0, lineOverhang, barWidth, barHeight, 4);
+    box.attr('fill', 'white');
+
+    // Box.
+    var value = (value - parseFloat(minval))/(Math.abs(parseFloat(minval)) + Math.abs(parseFloat(maxval)));
+    var box = paper.rect(0, lineOverhang, value * barWidth, barHeight, 4);
+    var c = [];
+    if (value !== '') {
+        if(value <= orderedPivots[0]){
+            var piv = orderedPivots[0];
+            c = colors['%s',piv];
+        }
+        else if(value>=orderedPivots[orderedPivots.length-1]){
+            var piv = orderedPivots[orderedPivots.length-1];
+            c = colors['%s',piv];
+        }
+        else{
+            var boundColors = {color1:[], color2:[]};
+            var boundPivots = [];
+            for (var i=0; i<(orderedPivots.length-1); i++){
+                if (orderedPivots[i] <= value && value < orderedPivots[i+1]){
+                    boundPivots[0] = orderedPivots[i];
+                    boundPivots[1] = orderedPivots[i+1];
+                    boundColors.color1 = colors[boundPivots[0]];
+                    boundColors.color2 = colors[boundPivots[1]];
+                    break;
+                }
+            }
+            //semi-broken when values are negative
+            var ratio = (value - boundPivots[0])/(boundPivots[1]-boundPivots[0]);
+            c[0] = Math.round(boundColors.color1[0] * (1.0 - ratio) + boundColors.color2[0] * ratio);
+            c[1] = Math.round(boundColors.color1[1] * (1.0 - ratio) + boundColors.color2[1] * ratio);
+            c[2] = Math.round(boundColors.color1[2] * (1.0 - ratio) + boundColors.color2[2] * ratio);
+        }
+        
+    } else {
+        c = [255, 255, 255];
+    }
+    box.attr('fill', 'rgb('+c.toString()+')');
+    if (value == undefined || value == '') {
+        color = '#cccccc';
+    } else {
+        color = 'black';
+    }
+    box.attr('stroke', color);
+    
+    // Bar.
+    if (value !== '' && dtype != 'string') {
+        //Convert values onto 0 to 1 scale depending on min and max val provided (defaults to 0 and 1)
+        value = (value - parseFloat(minval))/(Math.abs(parseFloat(minval)) + Math.abs(parseFloat(maxval)));
+        var bar = paper.rect(value * barWidth, 0, 1, lineHeight, 1);
+        bar.attr('fill', color);
+        bar.attr('stroke', color);
+    }
+    addEl(outerDiv, div);
+}
