@@ -3,7 +3,6 @@ import time
 import traceback
 import os
 import logging
-from logging.handlers import QueueHandler
 from queue import Empty
 import signal
 import cravat.admin_util as au
@@ -21,9 +20,19 @@ def annot_from_queue(start_queue, end_queue, queue_populated, status_writer):
             else:
                 continue
         module, kwargs = task
-        kwargs['status_writer'] = status_writer
-        annotator_class = util.load_class(module.script_path, "CravatAnnotator")
-        annotator = annotator_class(kwargs)
+        logger = logging.getLogger(module.name)
+        log_handler = logging.FileHandler(kwargs['log_path'], 'a')
+        formatter = logging.Formatter('%(asctime)s %(name)-20s %(message)s', '%Y/%m/%d %H:%M:%S')
+        log_handler.setFormatter(formatter)
+        logger.addHandler(log_handler)
+        try:
+            kwargs['status_writer'] = status_writer
+            annotator_class = util.load_class(module.script_path, "CravatAnnotator")
+            annotator = annotator_class(kwargs)
+        except Exception as e:
+            print(f'        Error with {module.name}: {e}')
+            logger.error(e)
+            raise
         annotator.run()
         end_queue.put(module.name)
 

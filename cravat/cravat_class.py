@@ -1374,7 +1374,7 @@ class Cravat (object):
                     secondary_output_path =\
                         self.get_module_output_path(secondary_module)
                     secondary_inputs.append(secondary_module.name.replace('=',r'\=') + '=' + os.path.join(self.output_dir, secondary_output_path).replace('=',r'\='))
-            kwargs = {'script_path': module.script_path, 'input_file': inputpath, 'secondary_inputs': secondary_inputs, 'silent': self.args.silent}
+            kwargs = {'script_path': module.script_path, 'input_file': inputpath, 'secondary_inputs': secondary_inputs, 'silent': self.args.silent, 'log_path': self.log_path}
             if self.run_name != None:
                 kwargs['run_name'] = self.run_name
             if self.output_dir != None:
