@@ -208,6 +208,10 @@ cravat_cmd_parser.add_argument('--concise-report',
     action='store_true',
     default=False,
     help='Generate concise reports with default columns defined by each annotation module')
+cravat_cmd_parser.add_argument('--package',
+    dest='package',
+    default=None,
+    help='Use package')
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -390,6 +394,8 @@ class Cravat (object):
 
     def log_versions (self):
         self.logger.info(f'version: open-cravat {au.get_current_package_version()}')
+        if self.package_conf is not None:
+            self.logger.info(f'package: {self.args.package} {self.package_conf["version"]}')
         for mname, module in self.annotators.items():
             if mname in au.mic.local:
                 version = au.mic.local[mname].conf['version']
@@ -757,14 +763,28 @@ class Cravat (object):
         for arg_key in args_keys:
             if self.args.__dict__[arg_key] is None and arg_key in self.run_conf:
                 self.args.__dict__[arg_key] = self.run_conf[arg_key]
-        self.annotator_names = self.args.annotators
-        if self.annotator_names == None:
-            if 'annotator' in self.args.skip:
-                self.annotators = {}
-            else:
-                self.annotators = au.get_local_module_infos_of_type('annotator')
+        # Package
+        if self.args.package is not None and self.args.package in au.mic.local:
+            self.package_conf = au.mic.local[self.args.package].conf
         else:
-            self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
+            self.package_conf = None
+        self.annotator_names = self.args.annotators
+        if 'annotator' in self.args.skip:
+            self.annotators = {}
+        else:
+            if self.annotator_names == None:
+                if self.package_conf is not None:
+                    if 'run' in self.package_conf and \
+                            'annotators' in self.package_conf['run']:
+                        self.annotators = \
+                            au.get_local_module_infos_by_names(
+                                self.package_conf['run']['annotators'])
+                    else:
+                        self.annotators = au.get_local_module_infos_of_type('annotator')
+                else:
+                    self.annotators = au.get_local_module_infos_of_type('annotator')
+            else:
+                self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
         self.excludes = self.args.excludes
         if self.excludes == ['*']:
             self.annotators = {}
@@ -778,14 +798,20 @@ class Cravat (object):
             self.verbose = True
         else:
             self.verbose = False
-        self.reports = self.args.reports
-        if self.reports is None:
-            if 'reporter' in self.args.skip:
-                self.reports = []
-            elif 'reporter' in self.cravat_conf:
-                self.reports = [self.cravat_conf['reporter'].replace('reporter','')]
+        if 'reporter' in self.args.skip:
+            self.reports = []
+        else:
+            if self.args.reports is None:
+                if self.package_conf is not None:
+                    if 'run' in self.package_conf and \
+                            'reports' in self.package_conf['run']:
+                        self.reports = self.package_conf['run']['reports']
+                elif 'reporter' in self.cravat_conf:
+                    self.reports = [self.cravat_conf['reporter'].replace('reporter','')]
+                else:
+                    self.reports = []
             else:
-                self.reports = []
+                self.reports = self.args.reports
         if self.args.genome is None:
             if constants.default_assembly_key in self.cravat_conf:
                 self.input_assembly = self.cravat_conf[constants.default_assembly_key]
@@ -1314,6 +1340,7 @@ class Cravat (object):
                 arg_dict['status_writer'] = self.status_writer
                 arg_dict['reporttypes'] = [module_name.replace('reporter', '')]
                 arg_dict['concise_report'] = self.args.concise_report
+                arg_dict['package'] = self.args.package
                 Reporter = util.load_class(module.script_path, 'Reporter')
                 reporter = Reporter(arg_dict)
                 await reporter.prep()

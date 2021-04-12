@@ -23,6 +23,8 @@ from types import SimpleNamespace
 import nest_asyncio
 nest_asyncio.apply()
 import sys
+import oyaml as yaml
+
 if sys.platform == 'win32' and sys.version_info >= (3,8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -94,6 +96,14 @@ class CravatReport:
             self.filter = self.confs['filter']
         else:
             self.filter = None
+        if self.filter is None and \
+                self.filterpath is None and \
+                self.filtername is None and \
+                self.filterstring is None and \
+                parsed_args.package is not None and \
+                parsed_args.package in au.mic.local and \
+                'filter' in au.mic.local[parsed_args.package].conf:
+            self.filter = au.mic.local[parsed_args.package].conf['filter']
         self.output_basename = os.path.basename(self.dbpath)[:-7]
         status_fname = '{}.status.json'.format(self.output_basename)
         self.status_fpath = os.path.join(self.output_dir, status_fname)
@@ -435,6 +445,9 @@ class CravatReport:
             start_time = time.time()
             if not (hasattr(self, 'no_log') and self.no_log):
                 self.logger.info('started: %s'%time.asctime(time.localtime(start_time)))
+            if self.cf.filter:
+                s = f'filter:\n{yaml.dump(self.filter)}'
+                self.logger.info(s)
             if self.module_conf is not None and self.status_writer is not None:
                 if self.parsed_args.do_not_change_status == False:
                     self.status_writer.queue_status_update('status', 'Started {} ({})'.format(self.module_conf['title'], self.module_name))
@@ -851,6 +864,11 @@ def run_reporter (*inargs, **inkwargs):
             print(f'Consider running "oc util update-result {dbpath}" and running "oc gui {dbpath}" again.')
         return
     report_types = args.reporttypes
+    if len(report_types) == 0:
+        if args.package is not None and args.package in au.mic.local:
+            package_conf = au.mic.local[args.package].conf
+            if 'run' in package_conf and 'reports' in package_conf['run']:
+                report_types = package_conf['run']['reports']
     if hasattr(args, 'output_dir') and args.output_dir is not None:
         output_dir = args.output_dir
     else:
@@ -934,7 +952,6 @@ parser.add_argument('-t',
     nargs='+',
     choices=au.report_formats(),
     default=[],
-    required=True,
     help='report types')
 parser.add_argument('-f',
     dest='filterpath',
@@ -1005,5 +1022,7 @@ parser.add_argument('--concise-report',
     action='store_true',
     default=False,
     help='Generate concise report with default columns defined by annotation modules')
+parser.add_argument('--package',
+    help='Use filters and report types in a package')
 parser.set_defaults(func=run_reporter)
 
