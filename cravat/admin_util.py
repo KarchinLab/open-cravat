@@ -22,16 +22,18 @@ import importlib
 import traceback
 import signal
 
+
 def load_yml_conf(yml_conf_path):
     """
     Load a .yml file into a dictionary. Return an empty dictionary if file is
     empty.
     """
-    with open(yml_conf_path, encoding='utf-8') as f:
+    with open(yml_conf_path, encoding="utf-8") as f:
         conf = yaml.safe_load(f)
     if conf == None:
         conf = {}
     return conf
+
 
 def recursive_update(d1, d2):
     """
@@ -40,7 +42,7 @@ def recursive_update(d1, d2):
     at all levels. The default Dict.update() only preserved keys at the top
     level.
     """
-    d3 = copy.deepcopy(d1) # Copy perhaps not needed. Test.
+    d3 = copy.deepcopy(d1)  # Copy perhaps not needed. Test.
     for k, v in d2.items():
         if k in d3:
             orig_v = d3[k]
@@ -48,7 +50,7 @@ def recursive_update(d1, d2):
                 if isinstance(orig_v, dict) == False:
                     d3[k] = v
                 else:
-                    t = recursive_update(d3.get(k,{}), v)
+                    t = recursive_update(d3.get(k, {}), v)
                     d3[k] = t
             else:
                 d3[k] = d2[k]
@@ -56,74 +58,75 @@ def recursive_update(d1, d2):
             d3[k] = v
     return d3
 
-class LocalModuleInfo (object):
+
+class LocalModuleInfo(object):
     def __init__(self, dir_path, name=None):
         self.directory = dir_path
         if name is None:
             self.name = os.path.basename(self.directory)
         else:
             self.name = name
-        self.script_path = os.path.join(self.directory, self.name+'.py')
+        self.script_path = os.path.join(self.directory, self.name + ".py")
         self.script_exists = os.path.exists(self.script_path)
-        self.conf_path = os.path.join(self.directory, self.name+'.yml')
+        self.conf_path = os.path.join(self.directory, self.name + ".yml")
         self.conf_exists = os.path.exists(self.conf_path)
         self.exists = self.conf_exists
-        startofinstall_path = os.path.join(self.directory, 'startofinstall')
+        startofinstall_path = os.path.join(self.directory, "startofinstall")
         if os.path.exists(startofinstall_path):
-            endofinstall_path = os.path.join(self.directory, 'endofinstall')
+            endofinstall_path = os.path.join(self.directory, "endofinstall")
             if os.path.exists(endofinstall_path):
                 self.exists = True
             else:
                 self.exists = False
-        self.data_dir = os.path.join(dir_path, 'data')
+        self.data_dir = os.path.join(dir_path, "data")
         self.data_dir_exists = os.path.isdir(self.data_dir)
-        self.has_data = self.data_dir_exists \
-                        and len(os.listdir(self.data_dir)) > 0
-        self.test_dir = os.path.join(dir_path, 'test')
+        self.has_data = self.data_dir_exists and len(os.listdir(self.data_dir)) > 0
+        self.test_dir = os.path.join(dir_path, "test")
         self.test_dir_exists = os.path.isdir(self.test_dir)
         self.tests = self.get_tests()
         self.has_test = len(self.tests) > 0
-        self.readme_path = os.path.join(self.directory, self.name+'.md')
+        self.readme_path = os.path.join(self.directory, self.name + ".md")
         self.readme_exists = os.path.exists(self.readme_path)
         if self.readme_exists:
-            with open(self.readme_path, encoding='utf-8') as f:
+            with open(self.readme_path, encoding="utf-8") as f:
                 self.readme = f.read()
         else:
-            self.readme = ''
-        self.helphtml_path = os.path.join(self.directory, 'help.html')
+            self.readme = ""
+        self.helphtml_path = os.path.join(self.directory, "help.html")
         self.helphtml_exists = os.path.exists(self.helphtml_path)
         self.conf = {}
         if self.conf_exists:
             from cravat.config_loader import ConfigLoader
+
             conf = ConfigLoader()
             self.conf = conf.get_module_conf(self.name)
-        self.type = self.conf.get('type')
-        self.version = self.conf.get('version')
-        self.description = self.conf.get('description')
-        self.hidden = self.conf.get('hidden',False)
-        dev_dict = self.conf.get('developer')
-        if not(type(dev_dict)==dict):
+        self.type = self.conf.get("type")
+        self.version = self.conf.get("version")
+        self.description = self.conf.get("description")
+        self.hidden = self.conf.get("hidden", False)
+        dev_dict = self.conf.get("developer")
+        if not (type(dev_dict) == dict):
             dev_dict = {}
         self.developer = get_developer_dict(**dev_dict)
-        if 'type' not in self.conf:
-            self.conf['type'] = 'unknown'
-        self.type = self.conf['type']
-        self.level = self.conf.get('level')
-        self.input_format = self.conf.get('input_format')
-        self.secondary_module_names = list(self.conf.get('secondary_inputs',{}))
-        if self.type == 'annotator':
-            if self.level == 'variant':
-                self.output_suffix = self.name + '.var'
-            elif self.level == 'gene':
-                self.output_suffix = self.name + '.gen'
+        if "type" not in self.conf:
+            self.conf["type"] = "unknown"
+        self.type = self.conf["type"]
+        self.level = self.conf.get("level")
+        self.input_format = self.conf.get("input_format")
+        self.secondary_module_names = list(self.conf.get("secondary_inputs", {}))
+        if self.type == "annotator":
+            if self.level == "variant":
+                self.output_suffix = self.name + ".var"
+            elif self.level == "gene":
+                self.output_suffix = self.name + ".gen"
             else:
-                self.output_suffix = self. name + '.' + self.type
-        self.title = self.conf.get('title',self.name)
+                self.output_suffix = self.name + "." + self.type
+        self.title = self.conf.get("title", self.name)
         self.disk_size = None
-        self.tags = self.conf.get('tags',[])
-        self.datasource = str(self.conf.get('datasource',''))
-        self.smartfilters = self.conf.get('smartfilters')
-        self.groups = self.conf.get('groups', [])
+        self.tags = self.conf.get("tags", [])
+        self.datasource = str(self.conf.get("datasource", ""))
+        self.smartfilters = self.conf.get("smartfilters")
+        self.groups = self.conf.get("groups", [])
 
     def is_valid_module(self):
         r = self.exists
@@ -148,49 +151,59 @@ class LocalModuleInfo (object):
         tests = []
         if self.test_dir_exists:
             for i in os.listdir(self.test_dir):
-                if 'input' in i and os.path.isfile(os.path.join(self.test_dir,i)) and  os.path.isfile(os.path.join(self.test_dir,i.replace('input','key'))):
+                if (
+                    "input" in i
+                    and os.path.isfile(os.path.join(self.test_dir, i))
+                    and os.path.isfile(
+                        os.path.join(self.test_dir, i.replace("input", "key"))
+                    )
+                ):
                     tests.append(i)
         return tests
-        
-        
-    def serialize (self):
+
+    def serialize(self):
         return self.__dict__
+
 
 class RemoteModuleInfo(object):
     def __init__(self, name, **kwargs):
         self.name = name
-        self.versions = kwargs.get('versions',[])
-        self.latest_version = kwargs.get('latest_version','')
-        self.type = kwargs.get('type','')
-        self.title = kwargs.get('title','')
-        self.description = kwargs.get('description','')
-        self.size = kwargs.get('size',0)
-        self.data_size = kwargs.get('data_size',0)
-        self.code_size = kwargs.get('code_size',0)
-        self.datasource = kwargs.get('datasource', '')
-        self.hidden = kwargs.get('hidden',False)
+        self.versions = kwargs.get("versions", [])
+        self.latest_version = kwargs.get("latest_version", "")
+        self.type = kwargs.get("type", "")
+        self.title = kwargs.get("title", "")
+        self.description = kwargs.get("description", "")
+        self.size = kwargs.get("size", 0)
+        self.data_size = kwargs.get("data_size", 0)
+        self.code_size = kwargs.get("code_size", 0)
+        self.datasource = kwargs.get("datasource", "")
+        self.hidden = kwargs.get("hidden", False)
         if self.datasource == None:
-            self.datasource = ''
-        dev_dict = kwargs.get('developer')
-        if not(type(dev_dict)==dict):
+            self.datasource = ""
+        dev_dict = kwargs.get("developer")
+        if not (type(dev_dict) == dict):
             dev_dict = {}
         self.developer = get_developer_dict(**dev_dict)
-        self.data_versions = kwargs.get('data_versions', {})
-        self.data_sources = {x:str(y) for x,y in kwargs.get('data_sources', {}).items()}
-        self.tags = kwargs.get('tags', [])
-        self.publish_time = kwargs.get('publish_time')
+        self.data_versions = kwargs.get("data_versions", {})
+        self.data_sources = {
+            x: str(y) for x, y in kwargs.get("data_sources", {}).items()
+        }
+        self.tags = kwargs.get("tags", [])
+        self.publish_time = kwargs.get("publish_time")
 
     def has_version(self, version):
-        return version in self.versions    
+        return version in self.versions
 
-def get_developer_dict (**kwargs):
+
+def get_developer_dict(**kwargs):
     d = {}
-    d['name'] = kwargs.get('name', '')
-    d['email'] = kwargs.get('email', '')
-    d['organization'] = kwargs.get('organization')
-    d['citation'] = kwargs.get('citation', '')
-    d['website'] = kwargs.get('website', '')
+    d["name"] = kwargs.get("name", "")
+    d["email"] = kwargs.get("email", "")
+    d["organization"] = kwargs.get("organization")
+    d["citation"] = kwargs.get("citation", "")
+    d["website"] = kwargs.get("website", "")
     return d
+
 
 class LocalInfoCache(MutableMapping):
     """
@@ -198,6 +211,7 @@ class LocalInfoCache(MutableMapping):
     is requested, the module info will be created from the path, stored, and returned.
     LocalInfoCache exposes the same interface as a dictionary.
     """
+
     def __init__(self, *args, **kwargs):
         self.store = dict()
         self.update(dict(*args, **kwargs))  # use the free update to set keys
@@ -210,7 +224,7 @@ class LocalInfoCache(MutableMapping):
         return self.store[key]
 
     def __setitem__(self, key, value):
-        if not(isinstance(value, LocalModuleInfo) or os.path.isdir(value)):
+        if not (isinstance(value, LocalModuleInfo) or os.path.isdir(value)):
             raise ValueError(value)
         self.store[key] = value
 
@@ -223,6 +237,7 @@ class LocalInfoCache(MutableMapping):
     def __len__(self):
         return len(self.store)
 
+
 class ModuleInfoCache(object):
     def __init__(self):
         self._sys_conf = get_system_conf()
@@ -234,42 +249,48 @@ class ModuleInfoCache(object):
         self.remote_readme = {}
         self.remote_config = {}
         self.update_local()
-        self._store_path_builder = su.PathBuilder(self._sys_conf['store_url'],'url')
+        self._store_path_builder = su.PathBuilder(self._sys_conf["store_url"], "url")
         self.download_counts = {}
         self._counts_fetched = False
 
     def update_download_counts(self, force=False):
-        if force or not(self._counts_fetched):
+        if force or not (self._counts_fetched):
             counts_url = self._store_path_builder.download_counts()
             counts_str = su.get_file_to_string(counts_url)
-            if counts_str != '':
-                self.download_counts = yaml.safe_load(counts_str).get('modules',{})
+            if counts_str != "":
+                self.download_counts = yaml.safe_load(counts_str).get("modules", {})
             self._counts_fetched = True
 
     def update_local(self):
         self.local = LocalInfoCache()
-        if not(os.path.exists(self._modules_dir)):
+        if not (os.path.exists(self._modules_dir)):
             return
         for mg in os.listdir(self._modules_dir):
             if mg == constants.install_tempdir_name:
                 continue
             mg_path = os.path.join(self._modules_dir, mg)
             basename = os.path.basename(mg_path)
-            if not(os.path.isdir(mg_path)) or basename.startswith('.') or basename.startswith('_'):
+            if (
+                not (os.path.isdir(mg_path))
+                or basename.startswith(".")
+                or basename.startswith("_")
+            ):
                 continue
             for module_name in os.listdir(mg_path):
-                if module_name == 'hgvs': # deprecate hgvs
+                if module_name == "hgvs":  # deprecate hgvs
                     continue
                 module_dir = os.path.join(mg_path, module_name)
-                if module_dir.startswith('.') == False \
-                        and os.path.isdir(module_dir) \
-                        and not module_name.startswith('.') \
-                        and not module_name.startswith('_') \
-                        and os.path.exists(os.path.join(module_dir, module_name + '.yml')):
+                if (
+                    module_dir.startswith(".") == False
+                    and os.path.isdir(module_dir)
+                    and not module_name.startswith(".")
+                    and not module_name.startswith("_")
+                    and os.path.exists(os.path.join(module_dir, module_name + ".yml"))
+                ):
                     self.local[module_name] = module_dir
 
     def update_remote(self, force=False):
-        if force or not(self._remote_fetched):
+        if force or not (self._remote_fetched):
             if self._remote_url is None:
                 self._remote_url = self._store_path_builder.manifest()
                 manifest_str = su.get_file_to_string(self._remote_url)
@@ -280,11 +301,11 @@ class ModuleInfoCache(object):
             else:
                 manifest_str = su.get_file_to_string(self._remote_url)
             self.remote = {}
-            if manifest_str != '':
+            if manifest_str != "":
                 self.remote = yaml.safe_load(manifest_str)
-                self.remote.pop('hgvs',None) # deprecate hgvs annotator
+                self.remote.pop("hgvs", None)  # deprecate hgvs annotator
             else:
-                msg = f'WARNING: Could not list modules from {self._remote_url}. Check internet connection.'
+                msg = f"WARNING: Could not list modules from {self._remote_url}. Check internet connection."
                 print(msg, file=sys.stderr)
             self._remote_fetched = True
 
@@ -293,10 +314,10 @@ class ModuleInfoCache(object):
         # Resolve name and version
         if module_name not in self.remote:
             raise LookupError(module_name)
-        if version != None and version not in self.remote[module_name]['versions']:
+        if version != None and version not in self.remote[module_name]["versions"]:
             raise LookupError(version)
         if version == None:
-            version = self.remote[module_name]['latest_version']
+            version = self.remote[module_name]["latest_version"]
         # Try for cache hit
         try:
             readme = self.remote_readme[module_name][version]
@@ -309,11 +330,11 @@ class ModuleInfoCache(object):
                 self.remote_readme[module_name] = {}
             self.remote_readme[module_name][version] = readme
         return readme
-    
+
     def get_remote_config(self, module_name, version=None):
         self.update_remote()
         if version == None:
-            version = self.remote[module_name]['latest_version']
+            version = self.remote[module_name]["latest_version"]
         # Check cache
         try:
             config = self.remote_config[module_name][version]
@@ -326,12 +347,13 @@ class ModuleInfoCache(object):
                 self.remote_config[module_name] = {}
             self.remote_config[module_name][version] = config
         return config
-    
+
     # def get_code_size(self, module_name, version):
     #     code_url = self._store_path_builder.module_code(module_name, version)
     #     r = requests.get(code_url)
     #     r.close()
     #     return int(r.headers['Content-Length'])
+
 
 def get_widgets_for_annotator(annotator_name, skip_installed=False):
     """
@@ -341,9 +363,9 @@ def get_widgets_for_annotator(annotator_name, skip_installed=False):
     linked_widgets = []
     for widget_name in list_remote():
         widget_info = get_remote_module_info(widget_name)
-        if widget_info.type == 'webviewerwidget':
+        if widget_info.type == "webviewerwidget":
             widget_config = mic.get_remote_config(widget_name)
-            linked_annotator = widget_config.get('required_annotator')
+            linked_annotator = widget_config.get("required_annotator")
             if linked_annotator == annotator_name:
                 if skip_installed and module_exists_local(widget_name):
                     continue
@@ -351,11 +373,13 @@ def get_widgets_for_annotator(annotator_name, skip_installed=False):
                     linked_widgets.append(widget_info)
     return linked_widgets
 
+
 def list_local():
     """
     Returns a list of locally installed modules.
     """
     return sorted(list(mic.local.keys()))
+
 
 def list_remote(force=False):
     """
@@ -363,6 +387,7 @@ def list_remote(force=False):
     """
     mic.update_remote(force=force)
     return sorted(list(mic.remote.keys()))
+
 
 def get_local_module_infos(types=[], names=[]):
     all_infos = list(mic.local.values())
@@ -378,8 +403,10 @@ def get_local_module_infos(types=[], names=[]):
             return_infos.append(minfo)
     return return_infos
 
-def set_jobs_dir (d):
-    update_system_conf_file({'jobs_dir': d})
+
+def set_jobs_dir(d):
+    update_system_conf_file({"jobs_dir": d})
+
 
 def search_remote(*patterns):
     """
@@ -391,6 +418,7 @@ def search_remote(*patterns):
             matching_names.append(module_name)
     return matching_names
 
+
 def search_local(*patterns):
     """
     Return local module names which match any of supplied patterns
@@ -401,11 +429,13 @@ def search_local(*patterns):
             matching_names.append(module_name)
     return matching_names
 
+
 def module_exists_local(module_name):
     """
     Returns True if a module exists locally. False otherwise.
     """
     return module_name in mic.local
+
 
 def module_exists_remote(module_name, version=None, private=False):
     """
@@ -417,24 +447,26 @@ def module_exists_remote(module_name, version=None, private=False):
         if version is None:
             found = True
         else:
-            found = version in mic.remote[module_name]['versions']
+            found = version in mic.remote[module_name]["versions"]
     if private and not found:
         sys_conf = get_system_conf()
-        path_builder = su.PathBuilder(sys_conf['store_url'], 'url')
+        path_builder = su.PathBuilder(sys_conf["store_url"], "url")
         if version is None:
             check_url = path_builder.module_dir(module_name)
         else:
             check_url = path_builder.module_version_dir(module_name, version)
         r = requests.get(check_url)
-        found = r.status_code != 404 and r.status_code < 500 
+        found = r.status_code != 404 and r.status_code < 500
     return found
+
 
 def get_remote_latest_version(module_name):
     """
     Returns latest remotely available version of a module.
     """
     mic.update_remote()
-    return mic.remote[module_name]['latest_version']
+    return mic.remote[module_name]["latest_version"]
+
 
 def get_remote_module_info(module_name):
     """
@@ -448,13 +480,15 @@ def get_remote_module_info(module_name):
     else:
         return None
 
+
 def get_remote_module_readme(module_name, version=None):
     """
     Get the detailed description file about a module as a string.
     """
     return mic.get_remote_readme(module_name, version=version)
 
-def compare_version (v1, v2):
+
+def compare_version(v1, v2):
     sv1 = LooseVersion(v1)
     sv2 = LooseVersion(v2)
     if sv1 == sv2:
@@ -463,6 +497,7 @@ def compare_version (v1, v2):
         return 1
     else:
         return -1
+
 
 def get_readme(module_name, version=None):
     """
@@ -473,15 +508,15 @@ def get_readme(module_name, version=None):
     if exists_remote:
         remote_readme = mic.get_remote_readme(module_name)
     else:
-        remote_readme = ''
+        remote_readme = ""
     if exists_local:
         local_info = get_local_module_info(module_name)
         if os.path.exists(local_info.readme_path):
             local_readme = open(local_info.readme_path).read()
         else:
-            local_readme = ''
+            local_readme = ""
     else:
-        local_readme = ''
+        local_readme = ""
     if exists_remote == True:
         if exists_local:
             remote_version = get_remote_latest_version(module_name)
@@ -495,6 +530,7 @@ def get_readme(module_name, version=None):
     else:
         return local_readme
 
+
 def get_local_module_info(module_name):
     """
     Returns a LocalModuleInfo object for a module.
@@ -504,24 +540,26 @@ def get_local_module_info(module_name):
     else:
         return None
 
+
 def print_stage_handler(cur_stage, total_stages, cur_size, total_size):
     rem_stages = total_stages - cur_stage
-    perc = cur_stage/total_stages*100
-    out = '\r[{1}{2}] {0:.0f}% '.format(perc, '*'*cur_stage,' '*rem_stages)
+    perc = cur_stage / total_stages * 100
+    out = "\r[{1}{2}] {0:.0f}% ".format(perc, "*" * cur_stage, " " * rem_stages)
     sys.stdout.write(out)
     if cur_stage == total_stages:
         print()
 
+
 class InstallProgressHandler(object):
-    def __init__ (self, module_name, module_version):
+    def __init__(self, module_name, module_version):
         self.module_name = module_name
         self.module_version = module_version
         self._make_display_name()
         self.cur_stage = None
 
     def _make_display_name(self):
-        ver_str = self.module_version if self.module_version is not None else ''
-        self.display_name = ':'.join([self.module_name,ver_str])
+        ver_str = self.module_version if self.module_version is not None else ""
+        self.display_name = ":".join([self.module_name, ver_str])
 
     def stage_start(self, stage):
         pass
@@ -538,42 +576,45 @@ class InstallProgressHandler(object):
         self._make_display_name()
 
     def _stage_msg(self, stage):
-        if stage is None or stage=='':
-            return ''
-        elif stage=='start':
-            return f'[{util.get_current_time_str()}] Starting to install {self.display_name}...'
-        elif stage=='download_code':
-            return f'[{util.get_current_time_str()}] Downloading code archive of {self.display_name}...'
-        elif stage=='extract_code':
-            return f'[{util.get_current_time_str()}] Extracting code archive of {self.display_name}...'
-        elif stage=='verify_code':
-            return f'[{util.get_current_time_str()}] Verifying code integrity of {self.display_name}...'
-        elif stage=='download_data':
-            return f'[{util.get_current_time_str()}] Downloading data of {self.display_name}...'
-        elif stage=='extract_data':
-            return f'[{util.get_current_time_str()}] Extracting data of {self.display_name}...'
-        elif stage=='verify_data':
-            return f'[{util.get_current_time_str()}] Verifying data integrity of {self.display_name}...'
-        elif stage=='finish':
-            return f'[{util.get_current_time_str()}] Finished installation of {self.display_name}'
-        elif stage == 'killed':
-            return f'[{util.get_current_time_str()}] Aborted installation of {self.display_name}'
-        elif stage == 'Unqueued':
-            return f'Unqueued {self.display_name} from installation'
+        if stage is None or stage == "":
+            return ""
+        elif stage == "start":
+            return f"[{util.get_current_time_str()}] Starting to install {self.display_name}..."
+        elif stage == "download_code":
+            return f"[{util.get_current_time_str()}] Downloading code archive of {self.display_name}..."
+        elif stage == "extract_code":
+            return f"[{util.get_current_time_str()}] Extracting code archive of {self.display_name}..."
+        elif stage == "verify_code":
+            return f"[{util.get_current_time_str()}] Verifying code integrity of {self.display_name}..."
+        elif stage == "download_data":
+            return f"[{util.get_current_time_str()}] Downloading data of {self.display_name}..."
+        elif stage == "extract_data":
+            return f"[{util.get_current_time_str()}] Extracting data of {self.display_name}..."
+        elif stage == "verify_data":
+            return f"[{util.get_current_time_str()}] Verifying data integrity of {self.display_name}..."
+        elif stage == "finish":
+            return f"[{util.get_current_time_str()}] Finished installation of {self.display_name}"
+        elif stage == "killed":
+            return f"[{util.get_current_time_str()}] Aborted installation of {self.display_name}"
+        elif stage == "Unqueued":
+            return f"Unqueued {self.display_name} from installation"
         else:
             raise ValueError(stage)
 
-def install_widgets_for_module (module_name):
-    widget_name = 'wg' + module_name
+
+def install_widgets_for_module(module_name):
+    widget_name = "wg" + module_name
     install_module(widget_name)
 
-def install_module (
-        module_name, 
-        version=None, 
-        force_data=False, 
-        skip_data=False,
-        stage_handler=None, 
-        **kwargs):
+
+def install_module(
+    module_name,
+    version=None,
+    force_data=False,
+    skip_data=False,
+    stage_handler=None,
+    **kwargs,
+):
     """
     Installs a module.
     version=None will install the latest version.
@@ -585,8 +626,9 @@ def install_module (
     os.makedirs(temp_dir)
     try:
         # Ctrl-c in this func must be caught to delete temp_dir
-        def raise_kbi(a,b):
+        def raise_kbi(a, b):
             raise KeyboardInterrupt
+
         original_sigint = signal.signal(signal.SIGINT, raise_kbi)
 
         if stage_handler is None:
@@ -594,95 +636,141 @@ def install_module (
         if version is None:
             version = get_remote_latest_version(module_name)
             stage_handler.set_module_version(version)
-        if hasattr(stage_handler, 'install_state') == True:
+        if hasattr(stage_handler, "install_state") == True:
             install_state = stage_handler.install_state
         else:
             install_state = None
-        stage_handler.stage_start('start')
+        stage_handler.stage_start("start")
         sys_conf = get_system_conf()
-        store_url = sys_conf['store_url']
-        store_path_builder = su.PathBuilder(store_url,'url')
+        store_url = sys_conf["store_url"]
+        store_path_builder = su.PathBuilder(store_url, "url")
         remote_data_version = get_remote_data_version(module_name, version)
         if module_name in list_local():
             local_info = get_local_module_info(module_name)
             if local_info.has_data:
-                local_data_version = get_remote_data_version(module_name, local_info.version)
+                local_data_version = get_remote_data_version(
+                    module_name, local_info.version
+                )
             else:
                 local_data_version = None
         else:
             local_data_version = None
         code_url = store_path_builder.module_code(module_name, version)
-        zipfile_fname = module_name + '.zip'
+        zipfile_fname = module_name + ".zip"
         remote_info = get_remote_module_info(module_name)
         if remote_info is not None:
             module_type = remote_info.type
         else:
             # Private module. Fallback to remote config.
             remote_config = mic.get_remote_config(module_name, version)
-            module_type = remote_config['type']
+            module_type = remote_config["type"]
 
         if install_state:
-            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+            if (
+                install_state["module_name"] == module_name
+                and install_state["kill_signal"] == True
+            ):
                 raise exceptions.KillInstallException
         zipfile_path = os.path.join(temp_dir, zipfile_fname)
-        stage_handler.stage_start('download_code')
-        r = su.stream_to_file(code_url, zipfile_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
+        stage_handler.stage_start("download_code")
+        r = su.stream_to_file(
+            code_url,
+            zipfile_path,
+            stage_handler=stage_handler.stage_progress,
+            install_state=install_state,
+            **kwargs,
+        )
         if r.status_code != 200:
-            raise(requests.HTTPError(r))
+            raise (requests.HTTPError(r))
         if install_state:
-            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+            if (
+                install_state["module_name"] == module_name
+                and install_state["kill_signal"] == True
+            ):
                 raise exceptions.KillInstallException
-        stage_handler.stage_start('extract_code')
+        stage_handler.stage_start("extract_code")
         zf = zipfile.ZipFile(zipfile_path)
         zf.extractall(temp_dir)
         zf.close()
         if install_state:
-            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+            if (
+                install_state["module_name"] == module_name
+                and install_state["kill_signal"] == True
+            ):
                 raise exceptions.KillInstallException
-        stage_handler.stage_start('verify_code')
-        code_manifest_url = store_path_builder.module_code_manifest(module_name, version)
+        stage_handler.stage_start("verify_code")
+        code_manifest_url = store_path_builder.module_code_manifest(
+            module_name, version
+        )
         code_manifest = yaml.safe_load(su.get_file_to_string(code_manifest_url))
         su.verify_against_manifest(temp_dir, code_manifest)
         os.remove(zipfile_path)
         if install_state:
-            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+            if (
+                install_state["module_name"] == module_name
+                and install_state["kill_signal"] == True
+            ):
                 raise exceptions.KillInstallException
         data_installed = False
-        if not(skip_data) and (remote_data_version is not None) and (remote_data_version != local_data_version or force_data):
+        if (
+            not (skip_data)
+            and (remote_data_version is not None)
+            and (remote_data_version != local_data_version or force_data)
+        ):
             data_installed = True
             data_url = store_path_builder.module_data(module_name, remote_data_version)
-            data_fname = '.'.join([module_name,'data','zip'])
+            data_fname = ".".join([module_name, "data", "zip"])
             data_path = os.path.join(temp_dir, data_fname)
-            stage_handler.stage_start('download_data')
-            r = su.stream_to_file(data_url, data_path, stage_handler=stage_handler.stage_progress, install_state=install_state, **kwargs)
+            stage_handler.stage_start("download_data")
+            r = su.stream_to_file(
+                data_url,
+                data_path,
+                stage_handler=stage_handler.stage_progress,
+                install_state=install_state,
+                **kwargs,
+            )
             if install_state:
-                if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                if (
+                    install_state["module_name"] == module_name
+                    and install_state["kill_signal"] == True
+                ):
                     raise exceptions.KillInstallException
             if r.status_code == 200:
-                stage_handler.stage_start('extract_data')
+                stage_handler.stage_start("extract_data")
                 zf = zipfile.ZipFile(data_path)
                 zf.extractall(temp_dir)
                 zf.close()
                 if install_state:
-                    if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                    if (
+                        install_state["module_name"] == module_name
+                        and install_state["kill_signal"] == True
+                    ):
                         raise exceptions.KillInstallException
-                stage_handler.stage_start('verify_data')
-                data_manifest_url = store_path_builder.module_data_manifest(module_name, remote_data_version)
+                stage_handler.stage_start("verify_data")
+                data_manifest_url = store_path_builder.module_data_manifest(
+                    module_name, remote_data_version
+                )
                 data_manifest = yaml.safe_load(su.get_file_to_string(data_manifest_url))
                 su.verify_against_manifest(temp_dir, data_manifest)
                 os.remove(data_path)
                 if install_state:
-                    if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+                    if (
+                        install_state["module_name"] == module_name
+                        and install_state["kill_signal"] == True
+                    ):
                         raise exceptions.KillInstallException
             elif r.status_code == 404:
                 # Probably a private module that does not have data
                 pass
             else:
-                raise(requests.HTTPError(r))
+                raise (requests.HTTPError(r))
         if install_state:
-            if install_state['module_name'] == module_name and install_state['kill_signal'] == True:
+            if (
+                install_state["module_name"] == module_name
+                and install_state["kill_signal"] == True
+            ):
                 raise exceptions.KillInstallException
-        module_dir = os.path.join(modules_dir, module_type+'s', module_name)
+        module_dir = os.path.join(modules_dir, module_type + "s", module_name)
         if os.path.isdir(module_dir):
             # Module being updated
             if data_installed:
@@ -693,7 +781,7 @@ def install_module (
                 # Remove all code items
                 for item in os.listdir(module_dir):
                     item_path = os.path.join(module_dir, item)
-                    if item != 'data':
+                    if item != "data":
                         if os.path.isdir(item_path):
                             shutil.rmtree(item_path)
                         else:
@@ -702,28 +790,29 @@ def install_module (
                 for item in os.listdir(temp_dir):
                     old_path = os.path.join(temp_dir, item)
                     new_path = os.path.join(module_dir, item)
-                    if item != 'data':
+                    if item != "data":
                         shutil.move(old_path, new_path)
                 shutil.rmtree(temp_dir)
         else:
             # Move the module to the right place
             shutil.move(temp_dir, module_dir)
-        wf = open(os.path.join(module_dir, 'startofinstall'), 'w')
+        wf = open(os.path.join(module_dir, "startofinstall"), "w")
         wf.close()
-        wf = open(os.path.join(module_dir, 'endofinstall'), 'w')
+        wf = open(os.path.join(module_dir, "endofinstall"), "w")
         wf.close()
         mic.update_local()
-        stage_handler.stage_start('finish')
+        stage_handler.stage_start("finish")
     except (Exception, KeyboardInterrupt, SystemExit) as e:
         shutil.rmtree(temp_dir, ignore_errors=True)
         if type(e) == exceptions.KillInstallException:
-            stage_handler.stage_start('killed')
+            stage_handler.stage_start("killed")
         elif type(e) in (KeyboardInterrupt, SystemExit):
             pass
         else:
             raise e
     finally:
         signal.signal(signal.SIGINT, original_sigint)
+
 
 def get_remote_data_version(module_name, version):
     """
@@ -736,11 +825,12 @@ def get_remote_data_version(module_name, version):
     except KeyError:
         return version
     try:
-        return manifest_entry['data_versions'][version]
+        return manifest_entry["data_versions"][version]
     except KeyError:
         return version
 
-def uninstall_module (module_name):
+
+def uninstall_module(module_name):
     """
     Uninstalls a module.
     """
@@ -752,23 +842,25 @@ def uninstall_module (module_name):
     if uninstalled_modules:
         mic.update_local()
 
-def set_modules_dir (path, overwrite=False):
+
+def set_modules_dir(path, overwrite=False):
     """
     Set the modules_dir to the directory in path.
     """
     path = os.path.abspath(os.path.expanduser(path))
-    if not(os.path.isdir(path)):
+    if not (os.path.isdir(path)):
         os.makedirs(path)
     old_conf_path = get_main_conf_path()
-    update_system_conf_file({constants.modules_dir_key:path})
-    if not(os.path.exists(get_main_conf_path())):
+    update_system_conf_file({constants.modules_dir_key: path})
+    if not (os.path.exists(get_main_conf_path())):
         if os.path.exists(old_conf_path):
             overwrite_conf_path = old_conf_path
         else:
             overwrite_conf_path = get_main_default_path()
         shutil.copy(overwrite_conf_path, get_main_conf_path())
 
-#return a list of module types (e.g. annotators) in the local install
+
+# return a list of module types (e.g. annotators) in the local install
 def get_local_module_types():
     types = []
     for module in mic.local:
@@ -776,31 +868,35 @@ def get_local_module_types():
             types.append(mic.local[module].type)
     return types
 
-def get_local_module_infos_of_type (t, update=False):
+
+def get_local_module_infos_of_type(t, update=False):
     modules = {}
     if update:
         mic.update_local()
     for module_name in mic.local:
         if mic.local[module_name].type == t:
-            modules[module_name] = mic.local[module_name] 
+            modules[module_name] = mic.local[module_name]
     return modules
 
-def get_remote_module_infos_of_type (t):
+
+def get_remote_module_infos_of_type(t):
     modules = {}
     mic.update_remote()
     for module_name in mic.remote:
-        if mic.remote[module_name]['type'] == t:
-            modules[module_name] = mic.remote[module_name] 
+        if mic.remote[module_name]["type"] == t:
+            modules[module_name] = mic.remote[module_name]
     return modules
 
-def refresh_cache ():
+
+def refresh_cache():
     """
     Refresh the local modules cache
     """
     global mic
     mic = ModuleInfoCache()
 
-def get_local_module_infos_by_names (module_names):
+
+def get_local_module_infos_by_names(module_names):
     modules = {}
     for module_name in module_names:
         module = get_local_module_info(module_name)
@@ -808,7 +904,8 @@ def get_local_module_infos_by_names (module_names):
             modules[module_name] = module
     return modules
 
-def get_system_conf (file_only=False):
+
+def get_system_conf(file_only=False):
     """
     Get the system config. Fill in the default modules dir if not set.
     """
@@ -823,23 +920,24 @@ def get_system_conf (file_only=False):
         conf[constants.jobs_dir_key] = constants.default_jobs_dir
     if constants.log_dir_key not in conf:
         conf[constants.log_dir_key] = constants.default_log_dir
-    key = 'num_input_line_warning_cutoff'
+    key = "num_input_line_warning_cutoff"
     if key not in conf:
         conf[key] = constants.default_num_input_line_warning_cutoff
-    key = 'gui_input_size_limit'
+    key = "gui_input_size_limit"
     if key not in conf:
         conf[key] = constants.default_settings_gui_input_size_limit
-    key = 'max_num_concurrent_jobs'
+    key = "max_num_concurrent_jobs"
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_jobs
-    key = 'max_num_concurrent_annotators_per_job'
+    key = "max_num_concurrent_annotators_per_job"
     if key not in conf:
         conf[key] = constants.default_max_num_concurrent_annotators_per_job
-    if 'custom_system_conf' in globals():
+    if "custom_system_conf" in globals():
         global custom_system_conf
         for k, v in custom_system_conf.items():
             conf[k] = v
     return conf
+
 
 def get_modules_dir():
     """
@@ -849,7 +947,8 @@ def get_modules_dir():
     modules_dir = conf[constants.modules_dir_key]
     return modules_dir
 
-def get_module_conf_path (module_name):
+
+def get_module_conf_path(module_name):
     modules_dir = get_modules_dir()
     typefns = os.listdir(modules_dir)
     conf_path = None
@@ -861,48 +960,59 @@ def get_module_conf_path (module_name):
                 if os.path.basename(modulefn) == module_name:
                     modulepath = os.path.join(typepath, modulefn)
                     if os.path.isdir(modulepath):
-                        path = os.path.join(modulepath, module_name + '.yml')
+                        path = os.path.join(modulepath, module_name + ".yml")
                         if os.path.exists(path):
                             conf_path = path
                             break
             if conf_path is not None:
                 break
     return conf_path
-    
-def get_annotator_dir (module_name):
-    module_dir = os.path.join(get_modules_dir(), 'annotators', module_name)
+
+
+def get_annotator_dir(module_name):
+    module_dir = os.path.join(get_modules_dir(), "annotators", module_name)
     if os.path.exists(module_dir) == False:
         module_dir = None
     return module_dir
 
-def get_annotator_script_path (module_name):
-    module_path = os.path.join(get_modules_dir(), 'annotators', module_name, module_name + '.py')
+
+def get_annotator_script_path(module_name):
+    module_path = os.path.join(
+        get_modules_dir(), "annotators", module_name, module_name + ".py"
+    )
     if os.path.exists(module_path) == False:
         module_path = None
     return module_path
 
-def get_mapper_script_path (module_name):
-    module_path = os.path.join(get_modules_dir(), 'mappers', module_name, module_name + '.py')
+
+def get_mapper_script_path(module_name):
+    module_path = os.path.join(
+        get_modules_dir(), "mappers", module_name, module_name + ".py"
+    )
     if os.path.exists(module_path) == False:
         module_path = None
     return module_path
 
-def get_conf_dir ():
+
+def get_conf_dir():
     conf = get_system_conf()
     conf_dir = conf[constants.conf_dir_key]
     return conf_dir
+
 
 def get_jobs_dir():
     conf = get_system_conf()
     jobs_dir = conf[constants.jobs_dir_key]
     return jobs_dir
 
+
 def write_system_conf_file(d):
     """
     Fully overwrite the system config file with a new system config.
     """
-    with open(constants.system_conf_path,'w') as wf:
+    with open(constants.system_conf_path, "w") as wf:
         wf.write(yaml.dump(d, default_flow_style=False))
+
 
 def update_system_conf_file(d):
     """
@@ -914,10 +1024,12 @@ def update_system_conf_file(d):
     refresh_cache()
     return True
 
-def read_system_conf_template ():
+
+def read_system_conf_template():
     with open(constants.system_conf_template_path) as f:
         d = yaml.safe_load(f)
         return d
+
 
 def get_main_conf_path():
     """
@@ -925,175 +1037,186 @@ def get_main_conf_path():
     """
     return os.path.join(get_conf_dir(), constants.main_conf_fname)
 
+
 def get_main_default_path():
     """
     Get the path to the default main cravat config.(backup lives in the pip package)
     """
     return os.path.join(constants.packagedir, constants.main_conf_fname)
 
+
 def publish_module(module_name, user, password, overwrite=False, include_data=True):
     sys_conf = get_system_conf()
-    publish_url = sys_conf['publish_url']
+    publish_url = sys_conf["publish_url"]
     mic.update_local()
     local_info = get_local_module_info(module_name)
     if local_info == None:
-        print(module_name + ' does not exist.')
+        print(module_name + " does not exist.")
         return
-    check_url = publish_url + '/%s/%s/check' %(module_name,local_info.version)
-    r = requests.get(check_url, auth=(user,password))
+    check_url = publish_url + "/%s/%s/check" % (module_name, local_info.version)
+    r = requests.get(check_url, auth=(user, password))
     if r.status_code != 200:
-        print('Cannot upload')
+        print("Cannot upload")
         if r.status_code == 401:
-            print('Incorrect username or password')
+            print("Incorrect username or password")
             exit()
         elif r.status_code == 400:
             err = json.loads(r.text)
-            if err['code'] == su.VersionExists.code:
+            if err["code"] == su.VersionExists.code:
                 while True:
                     if overwrite:
                         break
-                    resp = input('Version exists. Do you wish to overwrite (y/n)? ')
-                    if resp == 'y':
+                    resp = input("Version exists. Do you wish to overwrite (y/n)? ")
+                    if resp == "y":
                         overwrite = True
                         break
-                    if resp == 'n':
+                    if resp == "n":
                         exit()
                     else:
-                        print('Your response (\'%s\') was not one of the expected responses: y, n'%resp)
+                        print(
+                            "Your response ('%s') was not one of the expected responses: y, n"
+                            % resp
+                        )
                         continue
             else:
-                print(err['message'])
+                print(err["message"])
                 exit()
         elif r.status_code == 500:
-            print('Server error')
+            print("Server error")
             exit()
         else:
-            print('HTTP response status code: %d' %r.status_code)
+            print("HTTP response status code: %d" % r.status_code)
             exit()
-    zf_name = '%s.%s.zip' %(module_name, local_info.version)
+    zf_name = "%s.%s.zip" % (module_name, local_info.version)
     zf_path = os.path.join(get_modules_dir(), zf_name)
-    print('Zipping module and generating checksums')
+    print("Zipping module and generating checksums")
     zip_builder = su.ModuleArchiveBuilder(zf_path, base_path=local_info.directory)
     for item_name in os.listdir(local_info.directory):
-            item_path = os.path.join(local_info.directory, item_name)
-            if item_name.endswith('ofinstall'):
-                continue
-            elif item_name == '__pycache__':
-                continue
-            elif item_path == local_info.data_dir and not(include_data):
-                continue
-            else:
-                zip_builder.add_item(item_path)
+        item_path = os.path.join(local_info.directory, item_name)
+        if item_name.endswith("ofinstall"):
+            continue
+        elif item_name == "__pycache__":
+            continue
+        elif item_path == local_info.data_dir and not (include_data):
+            continue
+        else:
+            zip_builder.add_item(item_path)
     manifest = zip_builder.get_manifest()
     zip_builder.close()
-    post_url = '/'.join([publish_url, module_name, local_info.version])
+    post_url = "/".join([publish_url, module_name, local_info.version])
     if overwrite:
-        post_url += '?overwrite=1'
-    with open(zf_path,'rb') as zf:
-        fields={
-                'manifest': (
-                            'manifest.json',
-                            json.dumps(manifest),
-                            'application/json'
-                            ),
-                'archive': (
-                            zf_name,
-                            zf,
-                            'application/octet-stream'
-                        )
-                }
-        print('Uploading to store')
-        r = su.stream_multipart_post(post_url, fields, stage_handler=print_stage_handler, auth=(user,password))
+        post_url += "?overwrite=1"
+    with open(zf_path, "rb") as zf:
+        fields = {
+            "manifest": ("manifest.json", json.dumps(manifest), "application/json"),
+            "archive": (zf_name, zf, "application/octet-stream"),
+        }
+        print("Uploading to store")
+        r = su.stream_multipart_post(
+            post_url, fields, stage_handler=print_stage_handler, auth=(user, password)
+        )
     if r.status_code != 200:
-        print('Upload failed')
+        print("Upload failed")
         print(r.status_code)
         print(r.text)
     if r.text:
         print(r.text)
     os.remove(zf_path)
 
+
 def create_account(username, password):
     sys_conf = get_system_conf()
-    publish_url = sys_conf['publish_url']
-    create_account_url = publish_url+'/create-account'
+    publish_url = sys_conf["publish_url"]
+    create_account_url = publish_url + "/create-account"
     d = {
-         'username':username,
-         'password':password,
-         }
+        "username": username,
+        "password": password,
+    }
     r = requests.post(create_account_url, json=d)
     if r.status_code == 500:
-        print('Server error')
+        print("Server error")
     if r.text:
         print(r.text)
+
 
 def change_password(username, cur_pw, new_pw):
     sys_conf = get_system_conf()
-    publish_url = sys_conf['publish_url']
-    change_pw_url = publish_url+'/change-password'
-    r = requests.post(change_pw_url, auth=(username, cur_pw), json={'newPassword':new_pw})
+    publish_url = sys_conf["publish_url"]
+    change_pw_url = publish_url + "/change-password"
+    r = requests.post(
+        change_pw_url, auth=(username, cur_pw), json={"newPassword": new_pw}
+    )
     if r.status_code == 500:
-        print('Server error')
+        print("Server error")
     elif r.status_code == 401:
-        print('Incorrect username and password')
+        print("Incorrect username and password")
     if r.text:
         print(r.text)
+
 
 def send_reset_email(username):
     sys_conf = get_system_conf()
-    publish_url = sys_conf['publish_url']
-    reset_pw_url = publish_url+'/reset-password'
-    r = requests.post(reset_pw_url, params={'username':username})
+    publish_url = sys_conf["publish_url"]
+    reset_pw_url = publish_url + "/reset-password"
+    r = requests.post(reset_pw_url, params={"username": username})
     if r.status_code == 500:
-        print('Server error')
+        print("Server error")
     if r.text:
         print(r.text)
+
 
 def send_verify_email(username):
     sys_conf = get_system_conf()
-    publish_url = sys_conf['publish_url']
-    reset_pw_url = publish_url+'/verify-email'
-    r = requests.post(reset_pw_url, params={'username':username})
+    publish_url = sys_conf["publish_url"]
+    reset_pw_url = publish_url + "/verify-email"
+    r = requests.post(reset_pw_url, params={"username": username})
     if r.status_code == 500:
-        print('Server error')
+        print("Server error")
     if r.text:
         print(r.text)
 
+
 def check_login(username, password):
     sys_conf = get_system_conf()
-    publish_url = sys_conf['publish_url']
-    login_url = publish_url+'/login'
-    r = requests.get(login_url, auth=(username,password))
+    publish_url = sys_conf["publish_url"]
+    login_url = publish_url + "/login"
+    r = requests.get(login_url, auth=(username, password))
     if r.status_code == 200:
-        print('Correct username and password')
+        print("Correct username and password")
     elif r.status_code == 500:
-        print('Server error')
+        print("Server error")
     else:
-        print('Incorrect username and password')
+        print("Incorrect username and password")
+
 
 def new_annotator(annot_name):
-    annot_root = os.path.join(get_modules_dir(),'annotators',annot_name)
-    template_root = os.path.join(constants.packagedir,'annotator_template')
+    annot_root = os.path.join(get_modules_dir(), "annotators", annot_name)
+    template_root = os.path.join(constants.packagedir, "annotator_template")
     shutil.copytree(template_root, annot_root)
     for dir_path, _, fnames in os.walk(annot_root):
         for old_fname in fnames:
-            old_fpath = os.path.join(dir_path,old_fname)
-            new_fname = old_fname.replace('annotator_template',annot_name,1)
-            new_fpath = os.path.join(dir_path,new_fname)
-            os.rename(old_fpath,new_fpath)
+            old_fpath = os.path.join(dir_path, old_fname)
+            new_fname = old_fname.replace("annotator_template", annot_name, 1)
+            new_fpath = os.path.join(dir_path, new_fname)
+            os.rename(old_fpath, new_fpath)
     mic.update_local()
 
-def make_example_input (d):
-    fn = 'example_input'
+
+def make_example_input(d):
+    fn = "example_input"
     ifn = os.path.join(constants.packagedir, fn)
     ofn = os.path.join(d, fn)
     shutil.copyfile(ifn, ofn)
-    print(fn + ' has been created at ' + os.path.abspath(d))
+    print(fn + " has been created at " + os.path.abspath(d))
 
-def report_issue ():
+
+def report_issue():
     import webbrowser
-    webbrowser.open('http://github.com/KarchinLab/open-cravat/issues')
 
-def get_system_conf_info (json=False):
+    webbrowser.open("http://github.com/KarchinLab/open-cravat/issues")
+
+
+def get_system_conf_info(json=False):
     confpath = constants.system_conf_path
     if os.path.exists(confpath):
         conf = get_system_conf()
@@ -1101,68 +1224,77 @@ def get_system_conf_info (json=False):
     else:
         conf = {}
         confexists = False
-    conf['package_path'] = os.path.dirname(os.path.abspath(__file__))
+    conf["package_path"] = os.path.dirname(os.path.abspath(__file__))
     if json:
         content = conf
     else:
         content = yaml.dump(conf, default_flow_style=False)
-    system_conf_info = {
-        'path': confpath, 
-        'exists': confexists, 
-        'content': content}
+    system_conf_info = {"path": confpath, "exists": confexists, "content": content}
     return system_conf_info
 
-def get_cravat_conf ():
+
+def get_cravat_conf():
     from cravat.config_loader import ConfigLoader
+
     confpath = get_main_conf_path()
     conf = ConfigLoader()
     cravat_conf = conf.get_cravat_conf()
     return cravat_conf
 
-def write_cravat_conf (cravat_conf):
+
+def write_cravat_conf(cravat_conf):
     confpath = get_main_conf_path()
-    wf = open(confpath, 'w')
+    wf = open(confpath, "w")
     yaml.dump(cravat_conf, wf, default_flow_style=False)
     wf.close()
 
-def get_cravat_conf_info ():
+
+def get_cravat_conf_info():
     cravat_conf = get_cravat_conf()
-    cravat_conf_info = {'path': get_main_conf_path(), 'content': yaml.dump(cravat_conf, default_flow_style=False)}
+    cravat_conf_info = {
+        "path": get_main_conf_path(),
+        "content": yaml.dump(cravat_conf, default_flow_style=False),
+    }
     return cravat_conf_info
 
-def show_system_conf ():
+
+def show_system_conf():
     system_conf_info = get_system_conf_info()
-    print('Configuration file path:', system_conf_info['path'])
-    print(system_conf_info['content'])
+    print("Configuration file path:", system_conf_info["path"])
+    print(system_conf_info["content"])
 
-def show_cravat_conf ():
+
+def show_cravat_conf():
     cravat_conf_info = get_cravat_conf_info()
-    print('Configuration file path:', cravat_conf_info['path'])
-    print(cravat_conf_info['content'])
+    print("Configuration file path:", cravat_conf_info["path"])
+    print(cravat_conf_info["content"])
 
-def set_cravat_conf_prop (key, val):
+
+def set_cravat_conf_prop(key, val):
     conf = get_cravat_conf()
     conf[key] = val
-    wf = open(get_main_conf_path(), 'w')
+    wf = open(get_main_conf_path(), "w")
     yaml.dump(conf, wf, default_flow_style=False)
     wf.close()
+
 
 def get_package_versions():
     """
     Return available open-cravat versions from pypi, sorted asc
     """
     try:
-        r = requests.get('https://pypi.org/pypi/open-cravat/json', timeout=(3, None))
+        r = requests.get("https://pypi.org/pypi/open-cravat/json", timeout=(3, None))
     except requests.exceptions.ConnectionError:
-        print('Internet connection is not available.')
+        print("Internet connection is not available.")
         return None
     if r.status_code == 200:
         d = json.loads(r.text)
-        all_vers = list(d['releases'].keys())
+        all_vers = list(d["releases"].keys())
         all_vers.sort(key=LooseVersion)
         return all_vers
     else:
         return None
+
 
 def get_latest_package_version():
     """
@@ -1174,27 +1306,31 @@ def get_latest_package_version():
     else:
         return None
 
+
 def get_current_package_version():
-    version = pkg_resources.get_distribution('open-cravat').version
+    version = pkg_resources.get_distribution("open-cravat").version
     return version
 
-def get_remote_module_config (module_name):
+
+def get_remote_module_config(module_name):
     conf = mic.get_remote_config(module_name)
     return conf
 
-def get_download_counts ():
+
+def get_download_counts():
     mic.update_download_counts()
     counts = mic.download_counts
     return counts
 
-def get_install_deps (module_name, version=None, skip_installed=True):
+
+def get_install_deps(module_name, version=None, skip_installed=True):
     mic.update_remote()
     # If input module version not provided, set to highest
     if version is None:
         version = get_remote_latest_version(module_name)
     config = mic.get_remote_config(module_name, version=version)
     deps = {}
-    req_list = config.get('requires',[])
+    req_list = config.get("requires", [])
     for req_string in req_list:
         req = pkg_resources.Requirement(req_string)
         rem_info = get_remote_module_info(req.name)
@@ -1219,8 +1355,9 @@ def get_install_deps (module_name, version=None, skip_installed=True):
             deps[req.name] = highest_matching
     return deps
 
-def get_updatable(modules=[], strategy='consensus'):
-    if strategy not in ('consensus','force','skip'):
+
+def get_updatable(modules=[], strategy="consensus"):
+    if strategy not in ("consensus", "force", "skip"):
         raise ValueError('Unknown strategy "{}"'.format(strategy))
     if not modules:
         modules = list_local()
@@ -1231,7 +1368,7 @@ def get_updatable(modules=[], strategy='consensus'):
         remote_info = get_remote_module_info(mname)
         if remote_info:
             all_versions[mname] = sorted(remote_info.versions, key=LooseVersion)
-        req_strings = local_info.conf.get('requires',[])
+        req_strings = local_info.conf.get("requires", [])
         reqs = [pkg_resources.Requirement(s) for s in req_strings]
         for req in reqs:
             dep = req.name
@@ -1245,19 +1382,23 @@ def get_updatable(modules=[], strategy='consensus'):
         local_info = get_local_module_info(mname)
         remote_info = get_remote_module_info(mname)
         reqs = reqs_by_dep[mname]
-        versions = all_versions.get(mname,[])
+        versions = all_versions.get(mname, [])
         if not versions:
             continue
         selected_version = versions[-1]
-        if selected_version and local_info.version and LooseVersion(selected_version) <= LooseVersion(local_info.version):
+        if (
+            selected_version
+            and local_info.version
+            and LooseVersion(selected_version) <= LooseVersion(local_info.version)
+        ):
             continue
         if reqs:
             resolution_applied[mname] = reqs
-            if strategy == 'force':
+            if strategy == "force":
                 pass
-            elif strategy == 'skip':
+            elif strategy == "skip":
                 selected_version = None
-            elif strategy == 'consensus':
+            elif strategy == "consensus":
                 passing_versions = []
                 for version in versions:
                     version_passes = True
@@ -1268,31 +1409,44 @@ def get_updatable(modules=[], strategy='consensus'):
                     if version_passes:
                         passing_versions.append(version)
                 selected_version = passing_versions[-1] if passing_versions else None
-        if selected_version and local_info.version and LooseVersion(selected_version) > LooseVersion(local_info.version):
+        if (
+            selected_version
+            and local_info.version
+            and LooseVersion(selected_version) > LooseVersion(local_info.version)
+        ):
             update_data_version = get_remote_data_version(mname, selected_version)
             installed_data_version = get_remote_data_version(mname, local_info.version)
-            if update_data_version is not None and update_data_version != installed_data_version:
+            if (
+                update_data_version is not None
+                and update_data_version != installed_data_version
+            ):
                 update_size = remote_info.size
             else:
                 update_size = remote_info.code_size
-            update_vers[mname] = SimpleNamespace(version=selected_version, size=update_size)
+            update_vers[mname] = SimpleNamespace(
+                version=selected_version, size=update_size
+            )
         else:
             resolution_failed[mname] = reqs
     return update_vers, resolution_applied, resolution_failed
 
-def get_last_assembly ():
+
+def get_last_assembly():
     conf = get_cravat_conf()
-    last_assembly = conf.get('last_assembly')
+    last_assembly = conf.get("last_assembly")
     return last_assembly
 
-def get_default_assembly ():
+
+def get_default_assembly():
     conf = get_cravat_conf()
-    default_assembly = conf.get('default_assembly', None)
+    default_assembly = conf.get("default_assembly", None)
     return default_assembly
 
-def show_cravat_version ():
+
+def show_cravat_version():
     version = get_current_package_version()
     print(version)
+
 
 class ReadyState(object):
 
@@ -1301,32 +1455,34 @@ class ReadyState(object):
     UPDATE_NEEDED = 2
 
     messages = {
-        0: '',
-        1: 'Modules directory not found',
-        2: 'Update on system modules needed. Run "oc module install-base"'
+        0: "",
+        1: "Modules directory not found",
+        2: 'Update on system modules needed. Run "oc module install-base"',
     }
 
     def __init__(self, code=READY):
         if code not in self.messages:
             raise ValueError(code)
         self.code = code
-    
+
     @property
     def message(self):
         return self.messages[self.code]
-    
+
     def __bool__(self):
-        return self.code==self.READY
+        return self.code == self.READY
 
     def __iter__(self):
-        yield 'ready', bool(self)
-        yield 'code', self.code
-        yield 'message', self.message
+        yield "ready", bool(self)
+        yield "code", self.code
+        yield "message", self.message
+
 
 def system_ready():
-    if not(os.path.exists(get_modules_dir())):
+    if not (os.path.exists(get_modules_dir())):
         return ReadyState(code=ReadyState.MISSING_MD)
     return ReadyState()
+
 
 def ready_resolution_console():
     rs = system_ready()
@@ -1334,51 +1490,57 @@ def ready_resolution_console():
         return
     print(rs.message)
     if rs.code == ReadyState.MISSING_MD:
-        msg = 'Current modules directory is {}.\nInput a new modules directory, or press enter to exit.\n> '.format(
-                get_modules_dir()
-            )
+        msg = "Current modules directory is {}.\nInput a new modules directory, or press enter to exit.\n> ".format(
+            get_modules_dir()
+        )
         new_md = input(msg)
         if new_md:
             full_path = os.path.abspath(new_md)
             set_modules_dir(full_path)
             print(full_path)
         else:
-            print('Please manually recreate/reattach the modules directory')
-            exit()        
+            print("Please manually recreate/reattach the modules directory")
+            exit()
     exit()
 
-def get_max_num_concurrent_annotators_per_job ():
-    return get_system_conf()['max_num_concurrent_annotators_per_job']
 
-def get_remote_manifest ():
+def get_max_num_concurrent_annotators_per_job():
+    return get_system_conf()["max_num_concurrent_annotators_per_job"]
+
+
+def get_remote_manifest():
     if len(mic.remote) == 0:
         mic.update_remote()
     return mic.remote
 
+
 def input_formats():
     formats = set()
-    d = os.path.join(get_modules_dir(), 'converters')
+    d = os.path.join(get_modules_dir(), "converters")
     if os.path.exists(d):
         fns = os.listdir(d)
         for fn in fns:
-            if fn.endswith('-converter'):
-                formats.add(fn.split('-')[0])
+            if fn.endswith("-converter"):
+                formats.add(fn.split("-")[0])
     return formats
+
 
 def report_formats():
     formats = set()
-    d = os.path.join(get_modules_dir(), 'reporters')
+    d = os.path.join(get_modules_dir(), "reporters")
     if os.path.exists(d):
         fns = os.listdir(d)
         for fn in fns:
-            if fn.endswith('reporter'):
-                formats.add(fn.replace('reporter',''))
+            if fn.endswith("reporter"):
+                formats.add(fn.replace("reporter", ""))
     return formats
 
-def update_mic ():
+
+def update_mic():
     global mic
     global custom_system_conf
     mic = ModuleInfoCache()
+
 
 """
 Persistent ModuleInfoCache prevents repeated reloading of local and remote
