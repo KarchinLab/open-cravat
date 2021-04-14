@@ -643,7 +643,7 @@ class CravatFilter:
 
     async def make_filtered_uid_table(self, conn=None, cursor=None):
         t = time.time()
-        bypassfilter = self.filter == {} and self.filtersql is None and len(self.includesample) == 0 and len(self.excludesample) == 0
+        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
         if bypassfilter == False:
             level = "variant"
             vtable = level
