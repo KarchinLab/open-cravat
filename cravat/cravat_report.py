@@ -954,6 +954,8 @@ class CravatReport:
             filtername=self.filtername,
             filterstring=self.filterstring,
             filtersql=self.filtersql,
+            includesample=self.args.includesample,
+            excludesample=self.args.excludesample
         )
 
     async def table_exists(self, tablename, conn=None, cursor=None):
@@ -1185,6 +1187,20 @@ parser.add_argument(
     action="store_true",
     default=False,
     help="Generate concise report with default columns defined by annotation modules",
+)
+parser.add_argument(
+    '--includesample',
+    dest='includesample',
+    nargs='+',
+    default=None,
+    help='Sample IDs to include',
+)
+parser.add_argument(
+    '--excludesample',
+    dest='excludesample',
+    nargs='+',
+    default=None,
+    help='Sample IDs to exclude',
 )
 parser.add_argument("--package", help="Use filters and report types in a package")
 parser.set_defaults(func=run_reporter)

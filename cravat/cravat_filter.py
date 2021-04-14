@@ -173,6 +173,8 @@ class CravatFilter:
         filtername=None,
         filterstring=None,
         filter=None,
+        includesample=None,
+        excludesample=None,
         mode="sub",
     ):
         self.mode = mode
@@ -190,6 +192,8 @@ class CravatFilter:
         self.filtername = None
         self.filterstring = None
         self.filtersql = None
+        self.includesample = includesample
+        self.excludesample = excludesample
         if filter != None:
             self.filter = filter
         else:
@@ -391,6 +395,8 @@ class CravatFilter:
         filterstring=None,
         filtersql=None,
         filter=None,
+        includesample=None,
+        excludesample=None,
         conn=None,
         cursor=None,
     ):
@@ -404,6 +410,10 @@ class CravatFilter:
             self.filtersql = filtersql
         if filter != None:
             self.filter = filter
+        if includesample is not None:
+            self.includesample = includesample
+        if excludesample is not None:
+            self.excludesample = excludesample
         filter_table_present = await self.exec_db(self.filtertable_exists)
         if self.filter:
             pass
@@ -604,18 +614,17 @@ class CravatFilter:
         q = "drop table if exists fsample"
         await cursor.execute(q)
         await conn.commit()
+        req = []
+        rej = []
         if "sample" in self.filter:
             if "require" in self.filter["sample"]:
                 req = self.filter["sample"]["require"]
-            else:
-                req = []
             if "reject" in self.filter["sample"]:
                 rej = self.filter["sample"]["reject"]
-            else:
-                req = []
-        else:
-            req = []
-            rej = []
+        if self.includesample is not None:
+            req = self.includesample
+        if self.excludesample is not None:
+            rej = self.excludesample
         if len(req) > 0 or len(rej) > 0:
             q = "create table fsample as select distinct base__uid from sample"
             if req:
@@ -634,7 +643,7 @@ class CravatFilter:
 
     async def make_filtered_uid_table(self, conn=None, cursor=None):
         t = time.time()
-        bypassfilter = self.filter == {} and self.filtersql is None
+        bypassfilter = self.filter == {} and self.filtersql is None and len(self.includesample) == 0 and len(self.excludesample) == 0
         if bypassfilter == False:
             level = "variant"
             vtable = level
@@ -642,12 +651,19 @@ class CravatFilter:
             q = "drop table if exists " + vftable
             await cursor.execute(q)
             q = f"create table {vftable} as select v.base__uid from variant as v"
-            if self.filter == {} and self.filtersql is not None:
-                if "g." in self.filtersql:
-                    q += " join gene as g on v.base__hugo=g.base__hugo"
-                if "s." in self.filtersql:
-                    q += " join sample as s on v.base__uid=s.base__uid"
-                q += " where " + self.filtersql
+            if len(self.filter) == 0:
+                if self.includesample is not None or self.excludesample is not None:
+                    fsample_made = await self.exec_db(self.make_filtered_sample_table)
+                else:
+                    fsample_made = False
+                if self.filtersql is not None:
+                    if "g." in self.filtersql:
+                        q += " join gene as g on v.base__hugo=g.base__hugo"
+                    if "s." in self.filtersql:
+                        q += " join sample as s on v.base__uid=s.base__uid"
+                    q += " where " + self.filtersql
+                if fsample_made:
+                    q += " and (v.base__uid in (select base__uid from fsample))"
             else:
                 where = self.getwhere(level)
                 fsample_made = await self.exec_db(self.make_filtered_sample_table)

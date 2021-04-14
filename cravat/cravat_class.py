@@ -267,6 +267,8 @@ cravat_cmd_parser.add_argument(
     "--package", dest="package", default=None, help="Use package"
 )
 cravat_cmd_parser.add_argument("--filtersql", default=None, help="Filter SQL")
+cravat_cmd_parser.add_argument("--includesample", nargs='+', default=None, help="Sample IDs to include")
+cravat_cmd_parser.add_argument("--excludesample", nargs='+', default=None, help="Sample IDs to exclude")
 cravat_cmd_parser.add_argument("--filter", default=None, help=argparse.SUPPRESS)
 
 
@@ -1558,6 +1560,8 @@ class Cravat(object):
                 arg_dict["concise_report"] = self.args.concise_report
                 arg_dict["package"] = self.args.package
                 arg_dict["filtersql"] = self.args.filtersql
+                arg_dict['includesample'] = self.args.includesample
+                arg_dict['excludesample'] = self.args.excludesample
                 arg_dict["filter"] = self.args.filter
                 Reporter = util.load_class(module.script_path, "Reporter")
                 reporter = Reporter(arg_dict)
