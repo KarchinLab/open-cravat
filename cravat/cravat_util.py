@@ -717,6 +717,138 @@ def result2gui(args):
             json.dump(statusd, wf, indent=2, sort_keys=True)
 
 
+def variant_id(chrom, pos, ref, alt):
+    return chrom + str(pos) + ref + alt
+
+# For now, only jobs with same annotators are allowed.
+def mergesqlite(args):
+    dbpaths = args.paths
+    if len(dbpaths) < 2:
+        exit("Multiple sqlite file paths should be given")
+    outpath = args.outpath
+    if outpath.endswith('.sqlite') == False:
+        outpath = outpath + '.sqlite'
+    # Checks columns being the same.
+    conn = sqlite3.connect(dbpaths[0])
+    c = conn.cursor()
+    c.execute('select col_name from variant_header')
+    v_cols = sorted([r[0] for r in c.fetchall()])
+    c.execute('select col_name from gene_header')
+    g_cols = sorted([r[0] for r in c.fetchall()])
+    c.close()
+    conn.close()
+    for dbpath in dbpaths[1:]:
+        conn = sqlite3.connect(dbpath)
+        c = conn.cursor()
+        c.execute('select col_name from variant_header')
+        if v_cols != sorted([r[0] for r in c.fetchall()]):
+            exit("Annotation columns mismatch (variant table)")
+        c.execute('select col_name from gene_header')
+        if g_cols != sorted([r[0] for r in c.fetchall()]):
+            exit("Annotation columns mismatch (gene table)")
+    # Copies the first db.
+    print(f'Copying {dbpaths[0]} to {outpath}...')
+    shutil.copy(dbpaths[0], outpath)
+    outconn = sqlite3.connect(outpath)
+    outc = outconn.cursor()
+    # Gets key column numbers.
+    outc.execute('select col_name from variant_header order by rowid')
+    cols = [r[0] for r in outc.fetchall()]
+    v_chrom_colno = cols.index('base__chrom')
+    v_pos_colno = cols.index('base__pos')
+    v_ref_colno = cols.index('base__ref_base')
+    v_alt_colno = cols.index('base__alt_base')
+    outc.execute('select col_name from gene_header order by rowid')
+    cols = [r[0] for r in outc.fetchall()]
+    g_hugo_colno = cols.index('base__hugo')
+    outc.execute('select col_name from sample_header order by rowid')
+    cols = [r[0] for r in outc.fetchall()]
+    s_uid_colno = cols.index('base__uid')
+    outc.execute('select col_name from mapping_header order by rowid')
+    cols = [r[0] for r in outc.fetchall()]
+    m_uid_colno = cols.index('base__uid')
+    m_fileno_colno = cols.index('base__fileno')
+    outc.execute('select max(base__uid) from variant')
+    new_uid = outc.fetchone()[0] + 1
+    # Input paths
+    outc.execute('select colkey, colval from info where colkey="_input_paths"')
+    input_paths = json.loads(outc.fetchone()[1].replace("'", '"'))
+    new_fileno = max([int(v) for v in input_paths.keys()]) + 1
+    rev_input_paths = {}
+    for fileno, filepath in input_paths.items():
+        rev_input_paths[filepath] = fileno
+    # Makes initial hugo and variant id lists.
+    outc.execute('select base__hugo from gene')
+    genes = {r[0] for r in outc.fetchall()}
+    outc.execute('select base__chrom, base__pos, base__ref_base, base__alt_base from variant')
+    variants = {variant_id(r[0], r[1], r[2] ,r[3]) for r in outc.fetchall()}
+    for dbpath in dbpaths[1:]:
+        print(f'Merging {dbpath}...')
+        conn = sqlite3.connect(dbpath)
+        c = conn.cursor()
+        # Gene
+        c.execute('select * from gene order by rowid')
+        for r in c.fetchall():
+            hugo = r[g_hugo_colno]
+            if hugo in genes:
+                continue
+            q = f'insert into gene values ({",".join(["?" for v in range(len(r))])})'
+            outc.execute(q, r)
+            genes.add(hugo)
+        # Variant
+        uid_dic = {}
+        c.execute('select * from variant order by rowid')
+        for r in c.fetchall():
+            vid = variant_id(r[v_chrom_colno], r[v_pos_colno], r[v_ref_colno], r[v_alt_colno])
+            if vid in variants:
+                continue
+            old_uid = r[0]
+            r = list(r)
+            r[0] = new_uid
+            uid_dic[old_uid] = new_uid
+            new_uid += 1
+            q = f'insert into variant values ({",".join(["?" for v in range(len(r))])})'
+            outc.execute(q, r)
+            variants.add(vid)
+        # Sample
+        c.execute('select * from sample order by rowid')
+        for r in c.fetchall():
+            uid = r[s_uid_colno]
+            if uid in uid_dic:
+                new_uid = uid_dic[uid]
+                r = list(r)
+                r[s_uid_colno] = new_uid
+                q = f'insert into sample values ({",".join(["?" for v in range(len(r))])})'
+                outc.execute(q, r)
+        # File numbers
+        c.execute('select colkey, colval from info where colkey="_input_paths"')
+        ips = json.loads(c.fetchone()[1].replace("'", '"'))
+        fileno_dic = {}
+        for fileno, filepath in ips.items():
+            if filepath not in rev_input_paths:
+                input_paths[str(new_fileno)] = filepath
+                rev_input_paths[filepath] = str(new_fileno)
+                fileno_dic[int(fileno)] = new_fileno
+                new_fileno += 1
+        # Mapping
+        c.execute('select * from mapping order by rowid')
+        for r in c.fetchall():
+            uid = r[m_uid_colno]
+            if uid in uid_dic:
+                new_uid = uid_dic[uid]
+                r = list(r)
+                r[m_uid_colno] = new_uid
+                r[m_fileno_colno] = fileno_dic[r[m_fileno_colno]]
+                q = f'insert into mapping values ({",".join(["?" for v in range(len(r))])})'
+                outc.execute(q, r)
+    q = 'update info set colval=? where colkey="_input_paths"'
+    outc.execute(q, [json.dumps(input_paths)])
+    q = 'update info set colval=? where colkey="Input file name"'
+    v = ';'.join([input_paths[str(v)] for v in sorted(input_paths.keys(), key=lambda v: int(v))])
+    outc.execute(q, [v])
+    outconn.commit()
+
+
 def status_from_db(dbpath):
     """
     Generate a status json from a result database.
@@ -845,6 +977,14 @@ parser_result2gui.add_argument(
     default="default",
 )
 parser_result2gui.set_defaults(func=result2gui)
+# Merge sqlite files
+parser_mergesqlite = subparsers.add_parser(
+    "mergesqlite", help="Merge sqlite result files"
+)
+parser_mergesqlite.add_argument("paths", nargs='+', help="Path to result database", type=Path)
+parser_mergesqlite.add_argument("-o", dest="outpath", 
+    required=True, help="Output sqlite file path")
+parser_mergesqlite.set_defaults(func=mergesqlite)
 
 
 def main():

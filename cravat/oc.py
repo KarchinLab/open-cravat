@@ -178,6 +178,12 @@ util_send_gui_p = util_sp.add_parser(
     add_help=False,
     help="Copy a command line job into the GUI submission list",
 )
+util_mergesqlite_p = util_sp.add_parser(
+    "mergesqlite",
+    parents=[cravat_util.parser_mergesqlite],
+    add_help=False,
+    help="Merge sqlite result files",
+)
 
 # version
 version_p = root_sp.add_parser(
