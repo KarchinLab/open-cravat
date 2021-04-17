@@ -631,7 +631,10 @@ class MasterCravatConverter(object):
         err_str = traceback.format_exc().rstrip()
         if err_str not in self.unique_excs:
             self.unique_excs.append(err_str)
-            self.logger.error(err_str)
+            if hasattr(e, 'notraceback') and e.notraceback:
+                pass
+            else:
+                self.logger.error(err_str)
         self.error_logger.error(
             "\nLINE:{:d}\nINPUT:{}\nERROR:{}\n#".format(ln, line[:-1], str(e))
         )

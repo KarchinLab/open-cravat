@@ -1,4 +1,5 @@
 class InvalidData(Exception):
+    notraceback = True
     pass
 
 
