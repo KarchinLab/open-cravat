@@ -216,6 +216,8 @@ crl_def = [
     {"name": "uid", "title": "UID", "type": "int", "width": 70},
     {"name": "chrom", "title": "Chrom", "type": "string", "width": 80},
     {"name": "pos", "title": "Pos", "type": "int", "width": 80},
+    {"name": "ref_base", "title": "Reference allele", "type": "string", "width": 80},
+    {"name": "alt_base", "title": "Alternate allele", "type": "string", "width": 80},
 ]
 
 exit_codes = {"alreadycrv": 2, 2: "alreadycrv"}

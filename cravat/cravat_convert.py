@@ -486,6 +486,9 @@ class MasterCravatConverter(object):
                                     new_ref,
                                     new_alt,
                                 ) = self.standardize_pos_ref_alt("+", p, r, a)
+                                wdict["pos"] = new_pos
+                                wdict["ref_base"] = new_ref
+                                wdict["alt_base"] = new_alt
                                 unique, UID = self.vtracker.addVar(
                                     wdict["chrom"], new_pos, new_ref, new_alt
                                 )
