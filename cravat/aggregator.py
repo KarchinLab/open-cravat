@@ -283,19 +283,21 @@ class Aggregator(object):
         self.table_name = self.level
         self.header_table_name = self.table_name + "_header"
         self.reportsub_table_name = self.table_name + "_reportsub"
-        annot_name_re = re.compile(".*\.(.*)\.[var,gen]")
+        prefix = self.name + "."
+        len_prefix = len(prefix)
         for fname in os.listdir(self.input_dir):
-            if fname.startswith(self.name + "."):
+            if fname.startswith(prefix):
+                body = fname[len_prefix:]
                 if self.level == "variant" and fname.endswith(".var"):
-                    annot_name_match = annot_name_re.match(fname)
-                    annot_name = annot_name_match.group(1)
-                    self.annotators.append(annot_name)
-                    self.ipaths[annot_name] = os.path.join(self.input_dir, fname)
+                    annot_name = body[:-4]
+                    if not '.' in annot_name:
+                        self.annotators.append(annot_name)
+                        self.ipaths[annot_name] = os.path.join(self.input_dir, fname)
                 elif self.level == "gene" and fname.endswith(".gen"):
-                    annot_name_match = annot_name_re.match(fname)
-                    annot_name = annot_name_match.group(1)
-                    self.annotators.append(annot_name)
-                    self.ipaths[annot_name] = os.path.join(self.input_dir, fname)
+                    annot_name = body[:-4]
+                    if not '.' in annot_name:
+                        self.annotators.append(annot_name)
+                        self.ipaths[annot_name] = os.path.join(self.input_dir, fname)
         self.annotators.sort()
         self.base_fpath = os.path.join(self.input_dir, self.input_base_fname)
         self._setup_io()

@@ -362,23 +362,24 @@ class MasterCravatConverter(object):
         for index_columns in constants.crs_idx:
             self.crs_writer.add_index(index_columns)
         # Setup liftover var file
-        if self.do_liftover:
-            self.crl_path = os.path.join(
-                self.output_dir,
-                ".".join([self.output_base_fname, self.input_assembly, "var"]),
-            )
-            self.crl_writer = CravatWriter(self.crl_path)
-            assm_crl_def = copy.deepcopy(constants.crl_def)
-            assm_crl_def[1]["title"] = "Chrom".format(self.input_assembly.title())
-            assm_crl_def[2]["title"] = "Position".format(self.input_assembly.title())
-            assm_crl_def[2]["desc"] = "Position in {0}".format(
-                self.input_assembly.title()
-            )
-            self.crl_writer.add_columns(assm_crl_def)
-            self.crl_writer.write_definition()
-            self.crl_writer.write_names(
-                self.input_assembly, self.input_assembly.title(), ""
-            )
+        #if self.do_liftover or self.primary_converter.format_name == "vcf":
+        self.crl_path = os.path.join(
+            self.output_dir,
+            ".".join([self.output_base_fname, "original_input", "var"]),
+        )
+        self.crl_writer = CravatWriter(self.crl_path)
+        #assm_crl_def = copy.deepcopy(constants.crl_def)
+        #assm_crl_def[1]["title"] = "Chrom".format(self.input_assembly.title())
+        #assm_crl_def[2]["title"] = "Position".format(self.input_assembly.title())
+        #assm_crl_def[2]["desc"] = "Position in {0}".format(
+        #    self.input_assembly.title()
+        #)
+        #self.crl_writer.add_columns(assm_crl_def)
+        self.crl_writer.add_columns(constants.crl_def)
+        self.crl_writer.write_definition()
+        self.crl_writer.write_names(
+            "original_input", "Original Input", ""
+        )
 
     def run(self):
         """ Convert input file to a .crv file using the primary converter."""
@@ -459,8 +460,8 @@ class MasterCravatConverter(object):
                                         wdict["ref_base"] = self.wgsreader.get_bases(
                                             chrom, int(pos)
                                         )
+                                prelift_wdict = copy.copy(wdict)
                                 if self.do_liftover:
-                                    prelift_wdict = copy.copy(wdict)
                                     (
                                         wdict["chrom"],
                                         wdict["pos"],
@@ -498,9 +499,10 @@ class MasterCravatConverter(object):
                                 if unique:
                                     write_lnum += 1
                                     self.crv_writer.write_data(wdict)
-                                    if self.do_liftover:
-                                        prelift_wdict["uid"] = UID
-                                        self.crl_writer.write_data(prelift_wdict)
+                                    #if self.do_liftover:
+                                    #if wdict["pos"] != prelift_wdict["pos"] or wdict["ref_base"] != prelift_wdict["ref_base"] or wdict["alt_base"] != prelift_wdict["alt_base"]:
+                                    prelift_wdict["uid"] = UID
+                                    self.crl_writer.write_data(prelift_wdict)
                                     # addl_operation errors shouldnt prevent variant from writing
                                     try:
                                         converter.addl_operation_for_unique_variant(
