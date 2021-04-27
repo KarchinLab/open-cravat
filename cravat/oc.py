@@ -184,6 +184,12 @@ util_mergesqlite_p = util_sp.add_parser(
     add_help=False,
     help="Merge sqlite result files",
 )
+util_showsqliteinfo_p = util_sp.add_parser(
+    "showsqliteinfo",
+    parents=[cravat_util.parser_showsqliteinfo],
+    add_help=False,
+    help="Show sqlite result file information",
+)
 
 # version
 version_p = root_sp.add_parser(

@@ -720,6 +720,42 @@ def result2gui(args):
 def variant_id(chrom, pos, ref, alt):
     return chrom + str(pos) + ref + alt
 
+def showsqliteinfo(args):
+    dbpaths = args.paths
+    info_lines = []
+    for dbpath in dbpaths:
+        print(f'# SQLite file:\n{dbpath}')
+        conn = sqlite3.connect(dbpath)
+        c = conn.cursor()
+        c.execute('select colval from info where colkey="_input_paths"')
+        input_paths = json.loads(c.fetchone()[0].replace("'", '"'))
+        print(f'\n# Input files:')
+        for p in input_paths.values():
+            print(f'{p}')
+        max_lens = [len("# Name"), len("Title")]
+        c.execute('select col_name, col_def from variant_header')
+        rs = c.fetchall()
+        for r in rs:
+            col_name, col_def = r
+            col_def = json.loads(col_def)
+            max_lens[0] = max(max_lens[0], len(col_name))
+            max_lens[1] = max(max_lens[1], len(col_def["title"]))
+            info_lines.append([col_name, col_def["title"], str(col_def["type"])])
+        c.execute('select col_name, col_def from gene_header')
+        rs = c.fetchall()
+        for r in rs:
+            col_name, col_def = r
+            col_def = json.loads(col_def)
+            max_lens[0] = max(max_lens[0], len(col_name))
+            max_lens[1] = max(max_lens[1], len(col_def["title"]))
+            info_lines.append([col_name, col_def["title"], str(col_def["type"])])
+        print(f'\n# Output columns')
+        print(f'{"# Name".ljust(max_lens[0])}\t{"Title".ljust(max_lens[1])}\tType')
+        for line in info_lines:
+            print(f'{line[0].ljust(max_lens[0])}\t{line[1].ljust(max_lens[1])}\t{line[2]}')
+        c.close()
+        conn.close()
+
 # For now, only jobs with same annotators are allowed.
 def mergesqlite(args):
     dbpaths = args.paths
@@ -985,7 +1021,9 @@ parser_mergesqlite.add_argument("paths", nargs='+', help="Path to result databas
 parser_mergesqlite.add_argument("-o", dest="outpath", 
     required=True, help="Output sqlite file path")
 parser_mergesqlite.set_defaults(func=mergesqlite)
-
+parser_showsqliteinfo = subparsers.add_parser('showsqliteinfo', help='Show sqlite result file information')
+parser_showsqliteinfo.add_argument('paths', nargs='+', help='sqlite result file paths')
+parser_showsqliteinfo.set_defaults(func=showsqliteinfo)
 
 def main():
     args = get_args()
