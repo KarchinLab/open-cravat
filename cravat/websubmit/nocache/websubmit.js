@@ -104,11 +104,13 @@ function submit () {
         span.textContent = 'Input files are limited to ' + guiInputSizeLimit.toFixed(1) + ' MB.';
         addEl(alertDiv, span);
         addEl(alertDiv,getEl('br'));
-        addEl(alertDiv,getEl('br'));
-        var span = getEl('span');
-        span.textContent = 'The limit can be changed at the settings menu.';
-        addEl(alertDiv, span);
-        addEl(alertDiv,getEl('br'));
+        if (!servermode) {
+            addEl(alertDiv,getEl('br'));
+            var span = getEl('span');
+            span.textContent = 'The limit can be changed at the settings menu.';
+            addEl(alertDiv, span);
+            addEl(alertDiv,getEl('br'));
+        }
         showYesNoDialog(alertDiv, enableSubmitButton, false, true);
     } else {
         commitSubmit();
@@ -2063,7 +2065,7 @@ function populateCaseControl (outer) {
     let helpIcon = $(getEl('a'))
         .attr('id','case-control-help')
         .attr('target','_blank')
-        .attr('href','https://open-cravat.readthedocs.io/en/latest/Case-Control.html')
+        .attr('href','https://github.com/KarchinLab/open-cravat/wiki/Case-Control')
         .append($(getEl('img')).attr('src','../help.png').attr('id','case-control-help-img'));
     d1.append(helpIcon);
     let d2 = $(getEl('div'))
