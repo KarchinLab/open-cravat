@@ -154,6 +154,9 @@ class CravatFilter:
         filterstring=None,
         filter=None,
         mode="sub",
+        filtersql=None,
+        includesample=None,
+        excludesample=None
     ):
         self = CravatFilter(
             dbpath=dbpath,
@@ -162,6 +165,9 @@ class CravatFilter:
             filterstring=filterstring,
             filter=filter,
             mode=mode,
+            filtersql=filtersql,
+            includesample=includesample,
+            excludesample=excludesample
         )
         await self.second_init()
         return self
@@ -173,6 +179,7 @@ class CravatFilter:
         filtername=None,
         filterstring=None,
         filter=None,
+        filtersql=None,
         includesample=None,
         excludesample=None,
         mode="sub",
@@ -184,14 +191,14 @@ class CravatFilter:
             self.stdout = False
         self.dbpath = dbpath
         self.conn = None
-        self.filterpath = None
+        self.filterpath = filterpath
         self.cmd = None
         self.level = None
-        self.filter = None
+        self.filter = filter
         self.savefiltername = None
         self.filtername = None
-        self.filterstring = None
-        self.filtersql = None
+        self.filterstring = filterstring
+        self.filtersql = filtersql
         self.includesample = includesample
         self.excludesample = excludesample
         if filter != None:
@@ -321,6 +328,25 @@ class CravatFilter:
             dest="savefiltername",
             help="Name to save the filter as (in the database)",
         )
+        parser.add_argument(
+            "--filtersql", 
+            dest="filtersql", 
+            default=None, 
+            help="Filter SQL")
+        parser.add_argument(
+            '--includesample',
+            dest='includesample',
+            nargs='+',
+            default=None,
+            help='Sample IDs to include',
+        )
+        parser.add_argument(
+            '--excludesample',
+            dest='excludesample',
+            nargs='+',
+            default=None,
+            help='Sample IDs to exclude',
+        )
         if self.mode == "main":
             parser.add_argument(
                 "command",
@@ -426,7 +452,7 @@ class CravatFilter:
         elif self.filterstring is not None:
             self.filterstring = self.filterstring.replace("'", '"')
             self.filter = json.loads(self.filterstring)
-        elif self.filtername is not None and filter_table_present:
+        elif self.filtername is not None and filter_table_present and cursor is not None:
             await cursor.execute(
                 "select viewersetup from viewersetup"
                 + ' where datatype="filter" and name="'
@@ -477,7 +503,7 @@ class CravatFilter:
         return count
 
     async def getcount(self, level="variant", conn=None, cursor=None):
-        bypassfilter = self.filter == {}
+        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
         level = "variant"
         await self.exec_db(self.make_filtered_uid_table)
         if bypassfilter:
@@ -566,7 +592,7 @@ class CravatFilter:
         return it
 
     async def get_filtered_iterator(self, level="variant", conn=None, cursor=None):
-        bypassfilter = self.filter == {} and self.filtersql is None
+        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
         if level == "variant":
             kcol = "base__uid"
             if bypassfilter:
@@ -641,6 +667,38 @@ class CravatFilter:
         else:
             return False
 
+    async def make_filter_where(self, conn=None, cursor=None):
+        q = ""
+        if len(self.filter) == 0:
+            if self.includesample is not None or self.excludesample is not None:
+                fsample_made = await self.exec_db(self.make_filtered_sample_table)
+            else:
+                fsample_made = False
+            if self.filtersql is not None:
+                if "g." in self.filtersql:
+                    q += " join gene as g on v.base__hugo=g.base__hugo"
+                if "s." in self.filtersql:
+                    q += " join sample as s on v.base__uid=s.base__uid"
+                q += " where " + self.filtersql
+            if fsample_made:
+                q += " and (v.base__uid in (select base__uid from fsample))"
+        else:
+            where = self.getwhere("variant")
+            fsample_made = await self.exec_db(self.make_filtered_sample_table)
+            gene_list_made = await self.exec_db(self.make_gene_list_table)
+            if gene_list_made:
+                if (
+                    isinstance(self.filter, dict)
+                    and len(self.filter.get("genes", [])) > 0
+                ):
+                    q += " join gene_list as gl on v.base__hugo=gl.base__hugo"
+            if "g." in where:
+                q += " join gene as g on v.base__hugo=g.base__hugo"
+            q += " " + where
+            if fsample_made:
+                q += " and (v.base__uid in (select base__uid from fsample))"
+        return q
+
     async def make_filtered_uid_table(self, conn=None, cursor=None):
         t = time.time()
         bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
@@ -703,7 +761,7 @@ class CravatFilter:
             return False
 
     async def make_filtered_hugo_table(self, conn=None, cursor=None):
-        bypassfilter = self.filter == {}
+        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
         if bypassfilter == False:
             await cursor.execute("pragma synchronous=0")
             level = "gene"
@@ -837,7 +895,7 @@ class CravatFilter:
     ):
         if cols[0] == "base__uid":
             cols[0] = "v." + cols[0]
-        bypassfilter = self.filter == {}
+        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
         q = "select " + ",".join(cols) + " from variant as v"
         if bypassfilter == False:
             q += " inner join variant_filtered as f on v.base__uid=f.base__uid"
@@ -850,7 +908,7 @@ class CravatFilter:
             yield d
 
     async def get_filtered_hugo_list(self, conn=None, cursor=None):
-        bypassfilter = self.filter == {}
+        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
         if bypassfilter:
             q = "select distinct variant.base__hugo from gene, variant where gene.base__hugo==variant.base__hugo"
         else:
@@ -861,7 +919,7 @@ class CravatFilter:
         return hugos
 
     async def get_variant_data_for_cols(self, cols, conn=None, cursor=None):
-        bypassfilter = self.filter == {}
+        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
         if cols[0] == "base__uid":
             cols[0] = "v.base__uid"
         q = "select {},base__hugo from variant as v".format(",".join(cols))
@@ -874,7 +932,7 @@ class CravatFilter:
         return rows
 
     async def get_variant_data_for_hugo(self, hugo, cols, conn=None, cursor=None):
-        bypassfilter = self.filter == {}
+        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
         if cols[0] == "base__uid":
             cols[0] = "v.base__uid"
         q = "select {} from variant as v".format(",".join(cols))

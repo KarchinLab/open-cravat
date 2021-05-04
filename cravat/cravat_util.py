@@ -12,8 +12,10 @@ import time
 from pathlib import Path
 import datetime
 from . import admin_util as au
+from . import cravat_filter
 from distutils.version import LooseVersion
 from cravat import util
+import asyncio
 
 
 def get_args():
@@ -758,7 +760,7 @@ def showsqliteinfo(args):
 
 # For now, only jobs with same annotators are allowed.
 def mergesqlite(args):
-    dbpaths = args.paths
+    dbpaths = args.path
     if len(dbpaths) < 2:
         exit("Multiple sqlite file paths should be given")
     outpath = args.outpath
@@ -885,6 +887,97 @@ def mergesqlite(args):
     outconn.commit()
 
 
+def filtersqlite(args):
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(filtersqlite_async(args))
+
+def filtersqlite_async_drop_copy_table(c, table_name):
+    print(f"- {table_name}")
+    c.execute(f"drop table if exists main.{table_name}")
+    c.execute(f"create table main.{table_name} as select * from old_db.{table_name}")
+
+async def filtersqlite_async(args):
+    dbpaths = args.paths
+    for dbpath in dbpaths:
+        if not dbpath.endswith(".sqlite"):
+            print(f"  Skipping")
+            continue
+        opath = dbpath[:-7] + "." + args.suffix + ".sqlite"
+        print(f"{opath}")
+        if os.path.exists(opath):
+            os.remove(opath)
+        conn = sqlite3.connect(opath)
+        c = conn.cursor()
+        try:
+            c.execute("attach database '" + dbpath + "' as old_db")
+            cf = await cravat_filter.CravatFilter.create(
+                dbpath=dbpath, 
+                filterpath=args.filterpath, 
+                filtersql=args.filtersql, 
+                includesample=args.includesample, 
+                excludesample=args.excludesample)
+            await cf.exec_db(cf.loadfilter)
+            for table_name in ["info", "smartfilters", "viewersetup", 
+                "variant_annotator", "variant_header", "variant_reportsub", 
+                "gene_annotator", "gene_header", "gene_reportsub", 
+                "sample_annotator", "sample_header", "mapping_annotator", 
+                "mapping_header"]:
+                filtersqlite_async_drop_copy_table(c, table_name)
+            # Variant
+            print(f"- variant")
+            await cf.exec_db(cf.make_filtered_uid_table)
+            c.execute("create table variant as select v.* from old_db.variant as v, old_db.variant_filtered as f where v.base__uid=f.base__uid")
+            # Gene
+            print(f"- gene")
+            await cf.exec_db(cf.make_filtered_hugo_table)
+            c.execute("create table gene as select g.* from old_db.gene as g, old_db.gene_filtered as f where g.base__hugo=f.base__hugo")
+            # Sample
+            print(f"- sample")
+            req = []
+            rej = []
+            if "sample" in cf.filter:
+                if "require" in cf.filter["sample"]:
+                    req = cf.filter["sample"]["require"]
+                if "reject" in cf.filter["sample"]:
+                    rej = cf.filter["sample"]["reject"]
+            if cf.includesample is not None:
+                req = cf.includesample
+            if cf.excludesample is not None:
+                rej = cf.excludesample
+            if len(req) > 0 or len(rej) > 0:
+                q = "create table sample as select s.* from old_db.sample as s, old_db.variant_filtered as v where s.base__uid=v.base__uid"
+                if req:
+                    q += " and s.base__sample_id in ({})".format(
+                        ", ".join(['"{}"'.format(sid) for sid in req])
+                    )
+                for s in rej:
+                    q += ' except select * from sample where base__sample_id="{}"'.format(
+                        s
+                    )
+            else:
+                q = "create table sample as select s.* from old_db.sample as s, old_db.variant_filtered as v where s.base__uid=s.base__uid"
+            c.execute(q)
+            # Mapping
+            c.execute("create table mapping as select m.* from old_db.mapping as m, old_db.variant_filtered as v where m.base__uid=v.base__uid")
+            # Indices
+            c.execute("select name, sql from old_db.sqlite_master where type='index'")
+            for r in c.fetchall():
+                index_name = r[0]
+                sql = r[1]
+                if sql is not None:
+                    print(f"- {index_name}")
+                    c.execute(sql)
+            conn.commit()
+            await cf.close_db()
+            c.close()
+            conn.close()
+            print(f"-> {opath}")
+        except Exception as e:
+            c.close()
+            conn.close()
+            raise e
+
+
 def status_from_db(dbpath):
     """
     Generate a status json from a result database.
@@ -956,10 +1049,10 @@ parser = argparse.ArgumentParser()
 # converts db coordinate to hg38
 subparsers = parser.add_subparsers(title="Commands")
 parser_convert = subparsers.add_parser(
-    "converttohg38", help="converts hg19 coordinates in sqlite3 database to hg38 ones."
+    "converttohg38", help="converts hg19 coordinates in SQLite3 database to hg38 ones."
 )
 parser_convert.add_argument(
-    "--db", nargs="?", required=True, help="path to sqlite3 database file"
+    "--db", nargs="?", required=True, help="path to SQLite3 database file"
 )
 parser_convert.add_argument(
     "--sourcegenome", required=True, help="genome assembly of source database"
@@ -1013,17 +1106,40 @@ parser_result2gui.add_argument(
     default="default",
 )
 parser_result2gui.set_defaults(func=result2gui)
-# Merge sqlite files
+# Merge SQLite files
 parser_mergesqlite = subparsers.add_parser(
-    "mergesqlite", help="Merge sqlite result files"
+    "mergesqlite", help="Merge SQLite result files"
 )
-parser_mergesqlite.add_argument("paths", nargs='+', help="Path to result database", type=Path)
+parser_mergesqlite.add_argument("path", nargs='+', help="Path to result database", type=Path)
 parser_mergesqlite.add_argument("-o", dest="outpath", 
-    required=True, help="Output sqlite file path")
+    required=True, help="Output SQLite file path")
 parser_mergesqlite.set_defaults(func=mergesqlite)
-parser_showsqliteinfo = subparsers.add_parser('showsqliteinfo', help='Show sqlite result file information')
-parser_showsqliteinfo.add_argument('paths', nargs='+', help='sqlite result file paths')
+parser_showsqliteinfo = subparsers.add_parser('showsqliteinfo', help='Show SQLite result file information')
+parser_showsqliteinfo.add_argument('paths', nargs='+', help='SQLite result file paths')
 parser_showsqliteinfo.set_defaults(func=showsqliteinfo)
+parser_filtersqlite = subparsers.add_parser(
+    "filtersqlite", help="Filter SQLite result files to produce filtered SQLite result files"
+)
+parser_filtersqlite.add_argument("paths", nargs='+', help="Path to result database")
+parser_filtersqlite.add_argument("-o", dest="out", default=".", help="Output SQLite file folder")
+parser_filtersqlite.add_argument("-s", dest="suffix", default="filtered", help="Suffix for output SQLite files")
+parser_filtersqlite.add_argument("-f", dest="filterpath", default=None, help="Path to a filter JSON file")
+parser_filtersqlite.add_argument("--filtersql", default=None, help="Filter SQL")
+parser_filtersqlite.add_argument(
+    '--includesample',
+    dest='includesample',
+    nargs='+',
+    default=None,
+    help='Sample IDs to include',
+)
+parser_filtersqlite.add_argument(
+    '--excludesample',
+    dest='excludesample',
+    nargs='+',
+    default=None,
+    help='Sample IDs to exclude',
+)
+parser_filtersqlite.set_defaults(func=filtersqlite)
 
 def main():
     args = get_args()
