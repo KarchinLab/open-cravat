@@ -21,7 +21,7 @@ import multiprocessing
 import importlib
 import traceback
 import signal
-
+import subprocess
 
 def load_yml_conf(yml_conf_path):
     """
@@ -1329,13 +1329,15 @@ def get_install_deps(module_name, version=None, skip_installed=True):
     if version is None:
         version = get_remote_latest_version(module_name)
     config = mic.get_remote_config(module_name, version=version)
-    deps = {}
     req_list = config.get("requires", [])
+    deps = {}
+    non_oc_deps = []
     for req_string in req_list:
         req = pkg_resources.Requirement(req_string)
         rem_info = get_remote_module_info(req.name)
         # Skip if module does not exist
         if rem_info is None:
+            non_oc_deps.append(req.name)
             continue
         if skip_installed:
             # Skip if a matching version is installed
@@ -1353,6 +1355,20 @@ def get_install_deps(module_name, version=None, skip_installed=True):
         # Dont include if no matching version exists
         if highest_matching is not None:
             deps[req.name] = highest_matching
+    dep_err = []
+    for dep in non_oc_deps:
+        r = subprocess.run(["pip", "show", dep], stderr=subprocess.DEVNULL)
+        if r.returncode != 0:
+            dep_err.append(dep)
+    if len(dep_err) > 0:
+        print(f"Following non-OpenCRAVAT dependencies should be met before installing {module_name}")
+        for dep in dep_err:
+            print(f"- {dep}")
+        if version is not None:
+            print(f"{module_name} {version} was not installed")
+        else:
+            print(f"{module_name} was not installed")
+        exit()
     return deps
 
 
