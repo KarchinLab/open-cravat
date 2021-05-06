@@ -761,6 +761,7 @@ div.pq-select-menu>.pq-select-option-label {
 
 #rightdiv_filter {
 	font-size: 14px;
+    display: flex;
 }
 
 .filter-header {
@@ -877,17 +878,15 @@ div.pq-select-menu>.pq-select-option-label {
 	background-color: #d1dae0;
 }
 #filter-left-panel {
-	float: left;
-	height: 100%;
 	border-right: 1px solid gray;
 	padding: 5px;
 	width: 10%;
+    min-width: 100px;
 }
 #filter-right-panel {
 	max-width: 1100px;
-	float: left;
-	height: 100%;
 	width: 90%;
+    min-width: 700px;
 }
 #saved-filter-header {
 	font-size: 24px;
