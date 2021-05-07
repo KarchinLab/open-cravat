@@ -518,7 +518,7 @@ function populateJobTr (job) {
         }
         for (var i = 0; i < GLOBALS.reports.valid.length; i++) {
             var reportType = GLOBALS.reports.valid[i];
-            if ((websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id][reportType] == true) || job.reports.includes(reportType) == true) {
+            if (websubmitReportBeingGenerated[job.id] != undefined && websubmitReportBeingGenerated[job.id][reportType] == true) {
             } else {
                 var option = new Option(reportType, reportType);
                 select.add(option);
