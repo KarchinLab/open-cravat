@@ -766,7 +766,7 @@ class Cravat(object):
         full_args.update(supplied_args_no_none)
         self.args = SimpleNamespace(**full_args)
         self.run_conf_path = ""
-        if "conf" in full_args:
+        if "conf" in full_args and os.path.exists(full_args["conf"]):
             self.run_conf_path = full_args["conf"]
         self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
         if self.args.confs != None:
