@@ -129,13 +129,13 @@ cravat_cmd_parser.add_argument(
     help="skips given stage(s).",
 )
 cravat_cmd_parser.add_argument(
-    "-c", dest="conf", default=None, help="path to a conf file"
+    "-c", dest="conf", default="oc.yml", help="path to a conf file"
 )
 cravat_cmd_parser.add_argument(
     "--cs", dest="confs", default=None, help="configuration string"
 )
 cravat_cmd_parser.add_argument(
-    "-v", dest="verbose", action="store_true", default=False, help="verbose"
+    "-v", dest="verbose", action="store_true", default=None, help="verbose"
 )
 cravat_cmd_parser.add_argument(
     "-t",
@@ -186,14 +186,14 @@ cravat_cmd_parser.add_argument(
     "--temp-files",
     dest="temp_files",
     action="store_true",
-    default=False,
+    default=None,
     help="Leave temporary files after run is complete.",
 )
 cravat_cmd_parser.add_argument(
     "--writeadmindb",
     dest="writeadmindb",
     action="store_true",
-    default=False,
+    default=None,
     help="Write job information to admin db after job completion",
 )
 cravat_cmd_parser.add_argument(
@@ -203,21 +203,21 @@ cravat_cmd_parser.add_argument(
     "--version",
     dest="show_version",
     action="store_true",
-    default=False,
+    default=None,
     help="Shows open-cravat version.",
 )
 cravat_cmd_parser.add_argument(
     "--separatesample",
     dest="separatesample",
     action="store_true",
-    default=False,
+    default=None,
     help="Separate variant results by sample",
 )
 cravat_cmd_parser.add_argument(
     "--unique-variants",
     dest="unique_variants",
     action="store_true",
-    default=False,
+    default=None,
     help=argparse.SUPPRESS,
 )
 cravat_cmd_parser.add_argument(
@@ -231,14 +231,14 @@ cravat_cmd_parser.add_argument(
     "--cleanrun",
     dest="clean_run",
     action="store_true",
-    default=False,
+    default=None,
     help="Deletes all previous output files for the job and generate new ones.",
 )
 cravat_cmd_parser.add_argument(
     "--do-not-change-status",
     dest="do_not_change_status",
     action="store_true",
-    default=False,
+    default=None,
     help="Job status in status.json will not be changed",
 )
 cravat_cmd_parser.add_argument(
@@ -254,13 +254,13 @@ cravat_cmd_parser.add_argument(
     help="System option in key=value syntax. For example, --system-option modules_dir=/home/user/open-cravat/modules",
 )
 cravat_cmd_parser.add_argument(
-    "--silent", dest="silent", action="store_true", default=False, help="Runs silently."
+    "--silent", dest="silent", action="store_true", default=None, help="Runs silently."
 )
 cravat_cmd_parser.add_argument(
     "--concise-report",
     dest="concise_report",
     action="store_true",
-    default=False,
+    default=None,
     help="Generate concise reports with default columns defined by each annotation module",
 )
 cravat_cmd_parser.add_argument(
@@ -503,7 +503,7 @@ class Cravat(object):
         try:
             self.aggregator_ran = False
             self.check_valid_modules()
-            if self.args.do_not_change_status == False:
+            if self.args.do_not_change_status != True:
                 self.update_status("Started cravat")
             if self.pipeinput == False:
                 input_files_str = ", ".join(self.inputs)
@@ -613,7 +613,7 @@ class Cravat(object):
                 if not self.args.silent:
                     print("Running reporter...")
                 no_problem_in_run, report_response = await self.run_reporter()
-            if self.args.do_not_change_status == False:
+            if self.args.do_not_change_status != True:
                 self.update_status("Finished")
         except Exception as e:
             self.handle_exception(e)
@@ -635,10 +635,10 @@ class Cravat(object):
                         "Finished with an exception. Runtime: {0:0.3f}s".format(runtime)
                     )
                     print("Check {}".format(self.log_path))
-                if self.args.do_not_change_status == False:
+                if self.args.do_not_change_status != True:
                     self.update_status("Error")
             self.close_logger()
-            if self.args.do_not_change_status == False:
+            if self.args.do_not_change_status != True:
                 self.status_writer.flush()
             if no_problem_in_run and not self.args.temp_files and self.aggregator_ran:
                 self.clean_up_at_end()
@@ -800,7 +800,12 @@ class Cravat(object):
                 v = toks[1]
                 self.conf._all[module_name][key] = v
         self.cravat_conf = self.conf.get_cravat_conf()
-        self.run_conf = self.conf.get_run_conf()
+        # run conf
+        self.run_conf = self.conf._all #self.conf.get_run_conf()
+        args_keys = self.args.__dict__.keys()
+        for arg_key in args_keys:
+            if self.args.__dict__[arg_key] is None and arg_key in self.run_conf:
+                self.args.__dict__[arg_key] = self.run_conf[arg_key]
         if self.args.show_version:
             au.show_cravat_version()
             exit()
@@ -835,7 +840,6 @@ class Cravat(object):
                     ip = self.inputs[input_no]
                     if util.is_url(ip):
                         import requests
-
                         if not self.args.silent:
                             print(f"Fetching {ip}... ")
                         try:
@@ -908,10 +912,6 @@ class Cravat(object):
                 self.output_dir = os.path.dirname(os.path.abspath(first_non_url_input))
         else:
             self.output_dir = os.path.abspath(self.output_dir)
-        args_keys = self.args.__dict__.keys()
-        for arg_key in args_keys:
-            if self.args.__dict__[arg_key] is None and arg_key in self.run_conf:
-                self.args.__dict__[arg_key] = self.run_conf[arg_key]
         # Package
         if self.args.package is not None and self.args.package in au.mic.local:
             self.package_conf = au.mic.local[self.args.package].conf
@@ -1382,7 +1382,7 @@ class Cravat(object):
         if self.verbose:
             if not self.args.silent:
                 print(" ".join(cmd))
-        if self.args.do_not_change_status == False:
+        if self.args.do_not_change_status != True:
             self.update_status(
                 "Running {title} ({level})".format(title="Aggregator", level="variant")
             )
@@ -1412,7 +1412,7 @@ class Cravat(object):
         if self.verbose:
             if not self.args.silent:
                 print(" ".join(cmd))
-        if self.args.do_not_change_status == False:
+        if self.args.do_not_change_status != True:
             self.update_status(
                 "Running {title} ({level})".format(title="Aggregator", level="gene")
             )
@@ -1441,7 +1441,7 @@ class Cravat(object):
             if self.verbose:
                 if not self.args.silent:
                     print(" ".join(cmd))
-            if self.args.do_not_change_status == False:
+            if self.args.do_not_change_status != True:
                 self.update_status(
                     "Running {title} ({level})".format(
                         title="Aggregator", level="sample"
@@ -1471,7 +1471,7 @@ class Cravat(object):
             if self.verbose:
                 if not self.args.silent:
                     print(" ".join(cmd))
-            if self.args.do_not_change_status == False:
+            if self.args.do_not_change_status != True:
                 self.update_status(
                     "Running {title} ({level})".format(
                         title="Aggregator", level="mapping"
@@ -1842,7 +1842,7 @@ class Cravat(object):
             json.dumps(annotator_desc_dict).replace('"', "'")
         )
         await cursor.execute(q)
-        if self.args.do_not_change_status == False:
+        if self.args.do_not_change_status != True:
             self.status_writer.queue_status_update(
                 "annotator_version", annotator_version
             )
@@ -1885,7 +1885,7 @@ class Cravat(object):
                 end="",
                 flush=True,
             )
-        if self.args.do_not_change_status == False:
+        if self.args.do_not_change_status != True:
             self.update_status(
                 "Running {title} ({name})".format(title=module.title, name=module.name)
             )

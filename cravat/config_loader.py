@@ -68,6 +68,15 @@ class ConfigLoader:
         self._all = au.recursive_update(self._all, self._job)
         if "run" not in self._all:
             self._all["run"] = {}
+        for k, v in self._all["system"].items():
+            if k not in self._all:
+                self._all[k] = v
+        for k, v in self._all["cravat"].items():
+            if k not in self._all:
+                self._all[k] = v
+        for k, v in self._all["run"].items():
+            if k not in self._all:
+                self._all[k] = v
 
     def save(self, path, modules=[]):
         """
