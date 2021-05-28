@@ -35,6 +35,8 @@ class FilterColumn(object):
 
     def __init__(self, d, parent_operator):
         self.column = d["column"]
+        if self.column == "base__numsample":
+            self.column = "tagsampler__numsample"
         self.test = d["test"]
         self.value = d.get("value")
         self.negate = d.get("negate", False)
@@ -721,7 +723,11 @@ class CravatFilter:
                         q += " join sample as s on v.base__uid=s.base__uid"
                     q += " where " + self.filtersql
                 if fsample_made:
-                    q += " and (v.base__uid in (select base__uid from fsample))"
+                    if " where " in q:
+                        q += " and "
+                    else:
+                        q += " where "
+                    q += "(v.base__uid in (select base__uid from fsample))"
             else:
                 where = self.getwhere(level)
                 fsample_made = await self.exec_db(self.make_filtered_sample_table)
@@ -736,7 +742,11 @@ class CravatFilter:
                     q += " join gene as g on v.base__hugo=g.base__hugo"
                 q += " " + where
                 if fsample_made:
-                    q += " and (v.base__uid in (select base__uid from fsample))"
+                    if " where " in q:
+                        q += " and "
+                    else:
+                        q += " where "
+                    q += "(v.base__uid in (select base__uid from fsample))"
             await cursor.execute(q)
             await conn.commit()
             t = time.time() - t

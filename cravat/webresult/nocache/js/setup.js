@@ -102,7 +102,7 @@ class FilterManager {
 		this.vpropQbId = 'vprop-qb';
         this.qbRootId = 'qb-root';
 		this.qbBannedColumns = [
-			'base__numsample',
+			//'base__numsample',
 			'base__samples',
         ];
         this.allSamples = [];
