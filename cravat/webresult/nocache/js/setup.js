@@ -611,7 +611,9 @@ class FilterManager {
 		filter = new CravatFilter(filter);
 		outerDiv.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
 		let qbDiv = makeFilterGroupDiv(filter.variant);
-		qbDiv.children('.filter-element-remove').css('display','none');
+		qbDiv.children('.filter-element-control-div').remove()
+        qbDiv[0].querySelector('.filter-group-controls-div').style.visibility = 'visible'
+        //qbDiv[0].querySelector('.filter-group-controls-div').style.visibility = visibility = 'visible'
 		qbDiv.attr('id', this.qbRootId);
 		outerDiv.append(qbDiv);
 	}

@@ -19,6 +19,48 @@ const filterNotToggleClick = (event) => {
     target.attr('active',newActive);
 }
 
+const makeFilterElementControlDiv = function () {
+    var div = getEl('div')
+    div.classList.add('filter-element-control-div')
+    var sdiv = getEl('div')
+    sdiv.classList.add('filter-element-control-1-div')
+    addEl(div, sdiv)
+    // Remove
+    const removeDiv = $(getEl('img'))
+        .addClass('filter-element-control-icon')
+        .click(filterGroupRemoveHandler)
+    removeDiv.attr('src', '/result/images/x.svg')
+    sdiv.append(removeDiv[0]);
+    var sdiv = getEl('div')
+    sdiv.classList.add('filter-element-control-nav-div')
+    addEl(div, sdiv)
+    // Move up
+    const moveupDiv = $(getEl('img'))
+        .addClass('filter-element-control-icon')
+        .click(filterGroupMoveupHandler)
+    moveupDiv.attr('src', '/result/images/arrow-up.svg')
+    sdiv.append(moveupDiv[0])
+    // Move down
+    const movedownDiv = $(getEl('img'))
+        .addClass('filter-element-control-icon')
+        .click(filterGroupMovedownHandler)
+    movedownDiv.attr('src', '/result/images/arrow-down.svg')
+    sdiv.append(movedownDiv[0])
+    // Pop-out
+    const popoutDiv = $(getEl('img'))
+        .addClass('filter-element-control-icon')
+        .click(filterGroupPopoutHandler)
+    popoutDiv.attr('src', '/result/images/arrow-90deg-down.svg')
+    sdiv.append(popoutDiv[0]);
+    // Pop-in
+    const popinDiv = $(getEl('img'))
+        .addClass('filter-element-control-icon')
+        .click(filterGroupPopinHandler)
+    popinDiv.attr('src', '/result/images/arrow-down-right.svg')
+    sdiv.append(popinDiv[0]);
+    return div
+}
+
 const makeFilterColDiv = (filter) => {
     const colDiv = $(getEl('div'))
         .addClass('filter-column-div')
@@ -70,12 +112,8 @@ const makeFilterColDiv = (filter) => {
         .addClass('filter-values-div');
     colDiv.append(filterValsSpan)
     
-    // Remove column
-    const removeColBtn = $(getEl('span'))
-        .addClass('filter-element-remove')
-        .click(filterColRemoveHandler)
-        .text('X');
-    colDiv.append(removeColBtn);
+    var cdiv = makeFilterElementControlDiv()
+    colDiv.append(cdiv)
 
     // Populate from filter
     if (filter !== undefined) {
@@ -352,31 +390,25 @@ const makeFilterGroupDiv = (filter) => {
     const wrapperDiv = $(getEl('div'))
         .addClass('filter-group-wrapper-div')
         .addClass('filter-element-div');
-    // Not toggle
-    const notToggle = $(getEl('div'))
-        .addClass('filter-not-toggle')
-        .attr('active','false')
-        .click(filterNotToggleClick)
-        .text('not');
-    wrapperDiv.append(notToggle);
     // Group div
     const groupDiv = $(getEl('div'))
         .addClass('filter-group-div')
         .addClass('filter-element-div');
         wrapperDiv.append(groupDiv);
-    // Remove
-    const removeDiv = $(getEl('div'))
-        .addClass('filter-element-remove')
-        .click(filterGroupRemoveHandler)
-        .text('X');
-    wrapperDiv.append(removeDiv);
-    
+    var cdiv = makeFilterElementControlDiv()
+    wrapperDiv.append(cdiv)
+    // Not toggle
+    const notToggle = $(getEl('div'))
+        .addClass('filter-not-toggle')
+        .attr('active','false')
+        .click(filterNotToggleClick)
+        .text('N');
+    cdiv.firstChild.append(notToggle[0]);
     // Elements div
     const elemsDiv = $(getEl('div'))
         .addClass('filter-group-elements-div')
         .attr('join-operator','and');
     groupDiv.append(elemsDiv);
-        
     // Controls div
     const controlsDiv = $(getEl('div'))
         .addClass('filter-group-controls-div');
@@ -437,14 +469,84 @@ const makeFilterGroupDiv = (filter) => {
 }
 
 const filterGroupRemoveHandler = (event) => {
-    const target = $(event.target);
-    const filterElemDiv = target.parent();
+    //const target = $(event.target);
+    //const filterElemDiv = target.parent();
+    const filterElemDiv = $(event.target.closest(".filter-element-div"))
     removeFilterElem(filterElemDiv);
 }
 
-const filterColRemoveHandler = (event) => {
+const filterGroupMoveupHandler = (event) => {
     const target = $(event.target);
-    const filterElemDiv = target.parent();
+    const p = target.parent().closest(".filter-element-div")[0]
+    const gp = p.parentElement
+    const joinop = p.previousSibling
+    if (joinop == null) {
+        return
+    }
+    const upSib = joinop.previousSibling
+    const upJoinop = upSib.previousSibling
+    if (upSib != null) {
+        //gp.insertBefore(p, upSib)
+        gp.insertBefore(upSib, p)
+        gp.insertBefore(p, joinop)
+    }
+}
+
+const filterGroupMovedownHandler = (event) => {
+    const target = $(event.target);
+    const p = target.parent().closest(".filter-element-div")[0]
+    const gp = p.parentElement
+    const joinop = p.previousSibling
+    const upJoinop = p.nextSibling
+    if (upJoinop == null) {
+        return
+    }
+    const upSib = upJoinop.nextSibling
+    if (upSib != null) {
+        //gp.insertBefore(upSib, p)
+        gp.insertBefore(p, upSib)
+        gp.insertBefore(upSib, upJoinop)
+    }
+}
+
+const filterGroupPopoutHandler = (event) => {
+    const target = $(event.target);
+    const p = target.parent().closest(".filter-element-div")[0]
+    var joinop = p.nextSibling
+    const gp = p.parentElement.closest(".filter-group-wrapper-div")
+    const ggp = gp.parentElement
+    const newJoinop = makeJoinOperatorDiv(ggp.getAttribute('join-operator'))[0]
+    addEl(ggp, newJoinop)
+    addEl(ggp, p)
+    ggp.insertBefore(p, gp.nextSibling)
+    ggp.insertBefore(newJoinop, p)
+    if (joinop != null) {
+        joinop.parentElement.removeChild(joinop)
+    }
+}
+
+const filterGroupPopinHandler = (event) => {
+    const p = event.target.parentElement.closest(".filter-element-div")
+    const nextJoinop = p.nextSibling
+    if (nextJoinop == null) {
+        return
+    }
+    const nextP = nextJoinop.nextSibling
+    if (nextP.classList.contains("filter-group-wrapper-div") == false) {
+        return
+    }
+    const eldiv = nextP.querySelector(".filter-group-elements-div")
+    const eldivFirstChild = eldiv.firstChild
+    const operator = makeJoinOperatorDiv(eldiv.getAttribute('join-operator'))[0]
+    eldiv.insertBefore(operator, eldivFirstChild)
+    eldiv.insertBefore(p, operator)
+    nextJoinop.parentElement.removeChild(nextJoinop)
+}
+
+const filterColRemoveHandler = (event) => {
+    /*const target = $(event.target);
+    const filterElemDiv = target.parent();*/
+    const filterElemDiv = $(event.target.closest(".filter-element-div"))
     removeFilterElem(filterElemDiv);
 }
 
@@ -472,6 +574,14 @@ const addFilterGroupHandler = (event) => {
     addFilterElement(elemsDiv, 'group', undefined);
 }
 
+const makeJoinOperatorDiv = function (operator) {
+    const joinOpDiv = $(getEl('div'))
+        .addClass('filter-join-operator-div')
+        .append(operator);
+    joinOpDiv.click(groupOperatorClickHandler);
+    return joinOpDiv
+}
+
 const addFilterElement = (allElemsDiv, elementType, filter) => {
     let elemDiv;
     if (elementType === 'group') {
@@ -481,10 +591,7 @@ const addFilterElement = (allElemsDiv, elementType, filter) => {
     }
     if (allElemsDiv.children().length > 0) {
         const operator = allElemsDiv.attr('join-operator');
-        const joinOpDiv = $(getEl('div'))
-            .addClass('filter-join-operator-div')
-            .append(operator);
-        joinOpDiv.click(groupOperatorClickHandler);
+        const joinOpDiv = makeJoinOperatorDiv(operator)
         allElemsDiv.append(joinOpDiv);
     }
     allElemsDiv.append(elemDiv);

@@ -380,13 +380,18 @@ button {
 .filter-element-div {
     margin: 5px;
 	padding: 3px;
+    display: flex;
+    position: relative;
 }
 
 .filter-group-div {
 	border-left: 1px solid black;
 	border-right: 1px solid black;
-	border-radius: 5px;
+    border-radius: 6px;
 	display: flex;
+    min-width: 40px;
+    min-height: 20px;
+    padding-right: 30px;
 }
 
 .filter-join-operator-div {
@@ -431,21 +436,30 @@ div.filter-not-toggle {
 	padding-bottom: 2px;
 }
 .filter-group-controls-div {
-	display: flex;
+    display: flex;
 	margin-bottom: 3px;
+    visibility: hidden;
+    position: absolute;
+    right: 2px;
+    bottom: 1px;
 }
+
+.filter-element-div:hover > .filter-group-controls-div {
+    visibility: visible;
+}
+
 .filter-add-elem-div {
 	font-size: 15px;
 	align-self: flex-end;
-	margin: 5px;
 }
 
-.filter-element-remove {
-	font-size: 10px;
+.filter-element-control-icon {
+	width: 12px;
+    height: 12px;
 	cursor: pointer;
 }
-.filter-element-remove:hover {
-	font-weight: bold;
+.filter-element-control-icon:hover {
+    fill: #ff0000;
 }
 
 .email-icon {
@@ -1115,3 +1129,23 @@ input:checked + .sample-rd-rej::before {
     top: calc(50% - 250px);
     left: calc(50% - 250px);
 }
+
+.filter-element-control-div {
+    display: flex;
+    visibility: hidden;
+}
+
+.filter-element-div:hover > .filter-element-control-div {
+    visibility: visible;
+}
+
+.filter-element-control-1-div {
+    display: flex;
+    flex-direction: column;
+    height: 24px;
+}
+
+.filter-element-control-nav-div {
+    width: 24px;
+}
+
