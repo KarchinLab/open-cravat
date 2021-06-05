@@ -133,35 +133,6 @@ body * {
     z-index: 100;
 }
 
-/*
-.menu1:hover .menu2 {
-	display: block;
-    z-index: 100;
-}
-
-.menu1:hover, .menu1 a:hover, .menu2 a:hover {
-	background-color: #555555;
-	color: #ffffff;
-    z-index: 100;
-}
-
-.menu3 > div {
-	display: none;
-	border: 1px solid #888888;
-    z-index: 100;
-}
-
-.menu3:hover > div {
-	display: block;
-	position: absolute;
-	background-color: #c1c1c1;
-	left: 150px;
-	top: 0px;
-	padding: 16px;
-    z-index: 100;
-}
-*/
-
 .draggableDiv {
 	background-color: #d1dee3;
 	width: 100%;
@@ -238,12 +209,10 @@ div.tabContent {
 }
 
 div.tabContent.show { 
-	/*display: block; */
 	visibility: visible; 
 }
 
 div.tabContent.hide { 
-	/*display: none; */
     visibility: hidden;
 }
 
@@ -264,10 +233,6 @@ div.tabContent.hide {
 
 .pq-grid {
 	font-size: 12px;
-}
-
-.ui-widget-header .ui-icon{
-	    /* background-image: url("../js/paramquery-pro-3/images/ui-icons_222222_256x240.png"); */
 }
 
 .tablediv {
@@ -384,25 +349,78 @@ button {
     position: relative;
 }
 
-.filter-group-div {
-	border-left: 1px solid black;
-	border-right: 1px solid black;
-    border-radius: 6px;
-	display: flex;
-    min-width: 40px;
-    min-height: 20px;
-    padding-right: 30px;
+.filter-element-div[dropto="above"] {
+    border-top: 1px solid red;
 }
 
-.filter-join-operator-div {
+.filter-element-div[dropto="below"] {
+    border-bottom: 1px solid red;
+}
+
+.filter-group-elements-div .filter-join-operator-div {
 	margin-left: 12px;
 	cursor: pointer;
 	font-size: 13px;
 	width: fit-content;
 	height: fit-content;
+    display: flex;
+    align-items: center;
 }
+
+.filter-group-elements-div .filter-join-operator-div:first-child {
+    visibility: hidden;
+    width: 1px;
+    height: 1px;
+}
+
+#qb-root.dragstarted .filter-group-elements-div .filter-join-operator-div:first-child {
+    visibility: visible;
+}
+
+.filter-group-elements-div .filter-join-operator-div:last-child {
+    visibility: hidden;
+    width: 1px;
+    height: 1px;
+}
+
+#qb-root.dragstarted .filter-group-elements-div .filter-join-operator-div:last-child {
+    visibility: visible;
+}
+
+.filter-group-elements-div[join-operator="and"] .filter-join-operator-div:after {
+    content: 'and';
+}
+
+.filter-group-elements-div[join-operator="or"] .filter-join-operator-div:after {
+    content: 'or';
+}
+
+#qb-root.dragstarted .filter-group-elements-div[join-operator="and"] .filter-join-operator-div:after {
+    content: url('/result/images/arrow-down-right-circle.svg');
+}
+
+#qb-root.dragstarted .filter-group-elements-div[join-operator="and"] .filter-join-operator-div.dragenter:after {
+    content: url('/result/images/arrow-down-right-circle-fill.svg');
+}
+
+#qb-root.dragstarted .filter-group-elements-div[join-operator="or"] .filter-join-operator-div:after {
+    content: url('/result/images/arrow-down-right-circle.svg');
+}
+
+#qb-root.dragstarted .filter-group-elements-div[join-operator="or"] .filter-join-operator-div.dragenter:after {
+    content: url('/result/images/arrow-down-right-circle-fill.svg');
+}
+
 .filter-join-operator-div:hover {
 	font-weight: bold;
+}
+
+.filter-join-operator-div > img {
+    visibility: hidden;
+}
+
+#qb-root.dragstarted div.filter-join-operator-div img {
+    visibility: visible;
 }
 
 .filter-not-toggle {
@@ -410,23 +428,18 @@ button {
 	cursor: pointer;
 	margin: 3px;
 }
-.filter-not-toggle:hover {
-	font-weight: bold;
-}
-div.filter-not-toggle {
-	display: flex;
-    align-items: center;
-}
+
 .filter-not-toggle[active="true"] {
 	color: black;
-	font-weight: bold;
+    display: block;
 }
+
 .filter-not-toggle[active="false"] {
 	color: #bebebe;
-	text-decoration: line-through;
 }
-.filter-group-wrapper-div {
-	display: flex;
+
+.filter-not-toggle[active="false"]:hover {
+	color: #888888;
 }
 
 .filter-control-button {
@@ -434,7 +447,10 @@ div.filter-not-toggle {
     padding-right: 4px;
     padding-top: 2px;
 	padding-bottom: 2px;
+    width: 20px;
+    height: 20px;
 }
+
 .filter-group-controls-div {
     display: flex;
 	margin-bottom: 3px;
@@ -442,10 +458,6 @@ div.filter-not-toggle {
     position: absolute;
     right: 2px;
     bottom: 1px;
-}
-
-.filter-element-div:hover > .filter-group-controls-div {
-    visibility: visible;
 }
 
 .filter-add-elem-div {
@@ -457,9 +469,6 @@ div.filter-not-toggle {
 	width: 12px;
     height: 12px;
 	cursor: pointer;
-}
-.filter-element-control-icon:hover {
-    fill: #ff0000;
 }
 
 .email-icon {
@@ -796,11 +805,6 @@ div.pq-select-menu>.pq-select-option-label {
 .filter-controls {
 	position: relative;
 }
-.filter-section-clear {
-	position: absolute;
-	right: 5px;
-	bottom: 5px;
-}
 .filter-section {
 	margin: 10px;
 	border: 0.5px solid #939393;
@@ -1003,12 +1007,10 @@ input:checked + .sample-rd-rej::before {
   padding-left: 21px;
   margin-bottom: 2px;
   cursor: pointer;
-  /*font-size: 22px;*/
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  /*font-size: 12px;*/
 }
 
 .checkbox-container:hover {
@@ -1116,10 +1118,6 @@ input:checked + .sample-rd-rej::before {
     max-height: 300px;
     overflow: auto;
     padding: 10px;
-    /*position: absolute;
-    height: calc(100% - 80px);
-    width: calc(100% - 20px);
-    */
 }
 
 #sorrydiv {
@@ -1130,22 +1128,82 @@ input:checked + .sample-rd-rej::before {
     left: calc(50% - 250px);
 }
 
-.filter-element-control-div {
-    display: flex;
-    visibility: hidden;
+.filter-group-div {
+	border-left: 1px solid black;
+	border-right: 1px solid black;
+    border-radius: 6px;
+	display: flex;
+    min-width: 40px;
+    min-height: 20px;
+    padding-right: 30px;
+    padding-bottom: 20px;
+    padding-top: 10px;
 }
 
-.filter-element-div:hover > .filter-element-control-div {
-    visibility: visible;
+.filter-group-div.hoveredgroup {
+    border-color: #6ababd;
 }
 
-.filter-element-control-1-div {
+.filter-group-div > .filter-element-control-div {
     display: flex;
     flex-direction: column;
-    height: 24px;
+    position: absolute;
+    top: 0px;
+    right: 2px;
 }
 
-.filter-element-control-nav-div {
-    width: 24px;
+.filter-column-div {
+    display: flex;
+    align-items: center;
+}
+
+.hovercontrol {
+    visibility: hidden;
+    position: absolute;
+    cursor: grab;
+}
+
+.filter-group-div .hovercontrol {
+    left: 5px;
+    top: -5px;
+}
+
+.passthrough {
+    pointer-events: none;
+}
+
+.filter-column-div .hovercontrol {
+    position: relative;
+    left: 0px;
+    top: 0px;
+    cursor: grab;
+}
+
+.filter-group-div .hovercontrol.addrule {
+    position: absolute;
+    top: inherit;
+    bottom: 2px;
+    left: 4px;
+}
+
+.filter-group-div .hovercontrol.addgroup {
+    position: absolute;
+    top: inherit;
+    bottom: 2px;
+    left: 26px;
+}
+
+.filter-group-div .hovercontrol.filter-not-toggle {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    right: inherit;
+}
+
+.filter-group-div .hovercontrol.x {
+    position: absolute;
+    top: 0px;
+    left: inherit;
+    right: 2px;
 }
 

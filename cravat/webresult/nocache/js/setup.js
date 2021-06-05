@@ -612,10 +612,12 @@ class FilterManager {
 		outerDiv.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
 		let qbDiv = makeFilterGroupDiv(filter.variant);
 		qbDiv.children('.filter-element-control-div').remove()
-        qbDiv[0].querySelector('.filter-group-controls-div').style.visibility = 'visible'
-        //qbDiv[0].querySelector('.filter-group-controls-div').style.visibility = visibility = 'visible'
+        qbDiv[0].querySelector('.addrule').style.visibility = 'visible'
+        qbDiv[0].querySelector('.addgroup').style.visibility = 'visible'
+        qbDiv[0].querySelector('.passthrough').remove()
 		qbDiv.attr('id', this.qbRootId);
 		outerDiv.append(qbDiv);
+        //addFilterElement(qbDiv, 'rule', undefined)
 	}
 
 	updateVpropUI (filter) {

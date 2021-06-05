@@ -1,3 +1,7 @@
+var filterElemCount = 0
+var visibleFilterHoverP = null
+var filterDragEnterEl = null
+
 const getAnnotColsByName = (annotName) => {
     for (let i=0; i<filterCols.length; i++) {
         const annotGroup = filterCols[i];
@@ -22,50 +26,78 @@ const filterNotToggleClick = (event) => {
 const makeFilterElementControlDiv = function () {
     var div = getEl('div')
     div.classList.add('filter-element-control-div')
-    var sdiv = getEl('div')
-    sdiv.classList.add('filter-element-control-1-div')
-    addEl(div, sdiv)
-    // Remove
+    div.classList.add('hovercontrol')
+    div.addEventListener('click', function (evt) {
+        filterGroupRemoveHandler(evt)
+    })
     const removeDiv = $(getEl('img'))
         .addClass('filter-element-control-icon')
-        .click(filterGroupRemoveHandler)
     removeDiv.attr('src', '/result/images/x.svg')
-    sdiv.append(removeDiv[0]);
-    var sdiv = getEl('div')
-    sdiv.classList.add('filter-element-control-nav-div')
-    addEl(div, sdiv)
-    // Move up
-    const moveupDiv = $(getEl('img'))
-        .addClass('filter-element-control-icon')
-        .click(filterGroupMoveupHandler)
-    moveupDiv.attr('src', '/result/images/arrow-up.svg')
-    sdiv.append(moveupDiv[0])
-    // Move down
-    const movedownDiv = $(getEl('img'))
-        .addClass('filter-element-control-icon')
-        .click(filterGroupMovedownHandler)
-    movedownDiv.attr('src', '/result/images/arrow-down.svg')
-    sdiv.append(movedownDiv[0])
-    // Pop-out
-    const popoutDiv = $(getEl('img'))
-        .addClass('filter-element-control-icon')
-        .click(filterGroupPopoutHandler)
-    popoutDiv.attr('src', '/result/images/arrow-90deg-down.svg')
-    sdiv.append(popoutDiv[0]);
-    // Pop-in
-    const popinDiv = $(getEl('img'))
-        .addClass('filter-element-control-icon')
-        .click(filterGroupPopinHandler)
-    popinDiv.attr('src', '/result/images/arrow-down-right.svg')
-    sdiv.append(popinDiv[0]);
+    div.append(removeDiv[0]);
     return div
+}
+
+const addHoverControlEventListener = function (el) {
+    el.addEventListener('mouseover', function (evt) {
+        showHoverControl(evt)
+    })
+    el.addEventListener('mouseleave', function (evt) {
+        hideHoverControl(evt)
+    })
+}
+
+const showHoverControl = function (evt) {
+    if (visibleFilterHoverP != null) {
+        visibleFilterHoverP.classList.remove('hoveredgroup')
+        visibleFilterHoverP.querySelectorAll(':scope > .hovercontrol').forEach(el => {
+            if (el.getAttribute('active') != 'true') {
+                el.style.visibility = 'hidden'
+            }
+        })
+    }
+    var p = evt.target.closest('.filter-element-div')
+    p.classList.add('hoveredgroup')
+    var els = p.querySelectorAll(':scope > .hovercontrol')
+    if (els.length > 0) {
+        els.forEach(el => {
+            el.style.visibility = 'visible'
+        })
+        visibleFilterHoverP = p
+    }
+}
+
+const hideHoverControl = function (evt) {
+    var p = evt.target.closest('.filter-element-div')
+    p.classList.remove('hoveredgroup')
+    var els = p.querySelectorAll(':scope > .hovercontrol')
+    if (els.length > 0) {
+        els.forEach(el => {
+            if (el.getAttribute('active') != 'true') {
+                el.style.visibility = 'hidden'
+            }
+        })
+        visibleFilterHoverP = null
+    }
+}
+
+const makeDragHandle = function () {
+    const moveDiv = getEl('div')
+    moveDiv.classList.add('hovercontrol')
+    moveDiv.title = 'Drag and drop to rearrange filters'
+    addHoverControlEventListener(moveDiv)
+    var moveImg = getEl('img')
+    moveImg.setAttribute('src', '/result/images/grip-vertical.svg')
+    moveImg.classList.add('passthrough')
+    addEl(moveDiv, moveImg)
+    return moveDiv
 }
 
 const makeFilterColDiv = (filter) => {
     const colDiv = $(getEl('div'))
         .addClass('filter-column-div')
         .addClass('filter-element-div');
-        
+    addHoverControlEventListener(colDiv[0])
+    addEl(colDiv[0], makeDragHandle())
     // Annotator select
     const groupSel = $(getEl('select'))
         .addClass('filter-annotator-selector')
@@ -78,13 +110,11 @@ const makeFilterColDiv = (filter) => {
             .append(colGroup.title);
         groupSel.append(groupOpt);
     };
-    
     // Column select
     const colSel = $(getEl('select'))
         .addClass('filter-column-selector')
         .on('change', onFilterColumnSelectorChange);
     colDiv.append(colSel);
-
     // Not toggle
     const notSpan = $(getEl('span'))
         .addClass('filter-not-toggle')
@@ -92,7 +122,6 @@ const makeFilterColDiv = (filter) => {
         .click(filterNotToggleClick)
         .text('not');
     colDiv.append(notSpan);
-    
     // Test select
     const testSel = $(getEl('select'))
         .addClass('filter-test-selector')
@@ -111,10 +140,9 @@ const makeFilterColDiv = (filter) => {
     const filterValsSpan = $(getEl('span'))
         .addClass('filter-values-div');
     colDiv.append(filterValsSpan)
-    
+    // Controls
     var cdiv = makeFilterElementControlDiv()
     colDiv.append(cdiv)
-
     // Populate from filter
     if (filter !== undefined) {
         // Annotator select
@@ -136,7 +164,6 @@ const makeFilterColDiv = (filter) => {
     } else {
         populateFilterColumnSelector(colSel, groupSel.val());
     }
-
     return colDiv;
 }
 
@@ -387,74 +414,82 @@ function makeFilterRootGroupDiv (filter, name, filterLevel) {
 }
 
 const makeFilterGroupDiv = (filter) => {
-    const wrapperDiv = $(getEl('div'))
-        .addClass('filter-group-wrapper-div')
-        .addClass('filter-element-div');
     // Group div
     const groupDiv = $(getEl('div'))
         .addClass('filter-group-div')
         .addClass('filter-element-div');
-        wrapperDiv.append(groupDiv);
-    var cdiv = makeFilterElementControlDiv()
-    wrapperDiv.append(cdiv)
-    // Not toggle
-    const notToggle = $(getEl('div'))
-        .addClass('filter-not-toggle')
-        .attr('active','false')
-        .click(filterNotToggleClick)
-        .text('N');
-    cdiv.firstChild.append(notToggle[0]);
+    addHoverControlEventListener(groupDiv[0])
+    addEl(groupDiv[0], makeDragHandle())
     // Elements div
-    const elemsDiv = $(getEl('div'))
-        .addClass('filter-group-elements-div')
-        .attr('join-operator','and');
-    groupDiv.append(elemsDiv);
-    // Controls div
+    const operator = 'and'
+    var elemsDiv = getEl('div')
+    elemsDiv.classList.add('filter-group-elements-div')
+    elemsDiv.setAttribute('join-operator', operator)
+    addEl(groupDiv[0], elemsDiv)
+    // Join
+    addEl(elemsDiv, makeJoinOperatorDiv(operator)[0])
+    /*// Controls div
     const controlsDiv = $(getEl('div'))
-        .addClass('filter-group-controls-div');
-    groupDiv.append(controlsDiv);
-    // Add column
-    const addRuleDiv = $(getEl('div'))
-        .addClass('filter-add-elem-div')
-    controlsDiv.append(addRuleDiv);
+        .addClass('filter-group-controls-div')
+        .addClass('hovercontrol')
+    addHoverControlEventListener(controlsDiv[0])
+    groupDiv.append(controlsDiv);*/
+    // Remove
+    var cdiv = makeFilterElementControlDiv()
+    cdiv.classList.add('hovercontrol')
+    cdiv.classList.add('x')
+    addHoverControlEventListener(cdiv)
+    groupDiv.append(cdiv)
+    // Not toggle
+    var notToggle = getEl('div')
+    notToggle.classList.add('filter-not-toggle')
+    notToggle.classList.add('hovercontrol')
+    notToggle.classList.add('negate')
+    notToggle.setAttribute('active','false')
+    notToggle.addEventListener('click', function (evt) {
+        filterNotToggleClick(evt)
+    })
+    addEl(notToggle, getTn('NOT'))
+    addHoverControlEventListener(notToggle)
+    groupDiv.append(notToggle);
     const addRuleBtn = $(getEl('button'))
         .text('+')
         .addClass('filter-control-button')
         .addClass('butn')
+        .addClass('addrule')
+        .addClass('hovercontrol')
         .click(function (evt) {
             addFilterRuleHandler(evt);
         })
         .attr('title','Add rule');
-    addRuleDiv.append(addRuleBtn);
-    /// Add group
-    const addGroupDiv = $(getEl('div'))
-        .addClass('filter-add-elem-div')
-    controlsDiv.append(addGroupDiv);
+    groupDiv.append(addRuleBtn);
     const addGroupBtn = $(getEl('button'))
         .text('( )')
         .addClass('filter-control-button')
         .addClass('butn')
+        .addClass('addgroup')
+        .addClass('hovercontrol')
         .click(function (evt) {
             addFilterGroupHandler(evt);
         })
         .attr('title','Add group');
-    addGroupDiv.append(addGroupBtn);
+    groupDiv.append(addGroupBtn);
     // Populate from filter
     if (filter !== undefined && !$.isEmptyObject(filter)) {
         if (filter.operator != undefined) {
             // Assign operator
-            elemsDiv.attr('join-operator',filter.operator);
-            const joinOperators = elemsDiv.children('.filter-join-operator-div');
+            elemsDiv.setAttribute('join-operator', filter.operator)
+            /*const joinOperators = $(elemsDiv).children('.filter-join-operator-div');
             if (joinOperators.length > 0) {
                 $(joinOperators[0]).click();
-            }
+            }*/
             // Add rules
             for (let i=0; i<filter.rules.length; i++) {
                 let rule = filter.rules[i];
                 if (rule.hasOwnProperty('operator')) {
-                    addFilterElement(elemsDiv,'group', rule, undefined);
+                    addFilterElement($(elemsDiv),'group', rule, undefined);
                 } else {
-                    addFilterElement(elemsDiv,'rule', rule, undefined);
+                    addFilterElement($(elemsDiv),'rule', rule, undefined);
                 }
             }
             // Check negate
@@ -463,92 +498,20 @@ const makeFilterGroupDiv = (filter) => {
             }
         }
     } else {
-        addFilterElement(elemsDiv,'rule', undefined);
+        addFilterElement($(elemsDiv),'rule', undefined);
     }
-    return wrapperDiv;
+    return groupDiv;
 }
 
 const filterGroupRemoveHandler = (event) => {
-    //const target = $(event.target);
-    //const filterElemDiv = target.parent();
     const filterElemDiv = $(event.target.closest(".filter-element-div"))
     removeFilterElem(filterElemDiv);
 }
 
-const filterGroupMoveupHandler = (event) => {
-    const target = $(event.target);
-    const p = target.parent().closest(".filter-element-div")[0]
-    const gp = p.parentElement
-    const joinop = p.previousSibling
-    if (joinop == null) {
-        return
-    }
-    const upSib = joinop.previousSibling
-    const upJoinop = upSib.previousSibling
-    if (upSib != null) {
-        //gp.insertBefore(p, upSib)
-        gp.insertBefore(upSib, p)
-        gp.insertBefore(p, joinop)
-    }
-}
-
-const filterGroupMovedownHandler = (event) => {
-    const target = $(event.target);
-    const p = target.parent().closest(".filter-element-div")[0]
-    const gp = p.parentElement
-    const joinop = p.previousSibling
-    const upJoinop = p.nextSibling
-    if (upJoinop == null) {
-        return
-    }
-    const upSib = upJoinop.nextSibling
-    if (upSib != null) {
-        //gp.insertBefore(upSib, p)
-        gp.insertBefore(p, upSib)
-        gp.insertBefore(upSib, upJoinop)
-    }
-}
-
-const filterGroupPopoutHandler = (event) => {
-    const target = $(event.target);
-    const p = target.parent().closest(".filter-element-div")[0]
-    var joinop = p.nextSibling
-    const gp = p.parentElement.closest(".filter-group-wrapper-div")
-    const ggp = gp.parentElement
-    const newJoinop = makeJoinOperatorDiv(ggp.getAttribute('join-operator'))[0]
-    addEl(ggp, newJoinop)
-    addEl(ggp, p)
-    ggp.insertBefore(p, gp.nextSibling)
-    ggp.insertBefore(newJoinop, p)
-    if (joinop != null) {
-        joinop.parentElement.removeChild(joinop)
-    }
-}
-
-const filterGroupPopinHandler = (event) => {
-    const p = event.target.parentElement.closest(".filter-element-div")
-    const nextJoinop = p.nextSibling
-    if (nextJoinop == null) {
-        return
-    }
-    const nextP = nextJoinop.nextSibling
-    if (nextP.classList.contains("filter-group-wrapper-div") == false) {
-        return
-    }
-    const eldiv = nextP.querySelector(".filter-group-elements-div")
-    const eldivFirstChild = eldiv.firstChild
-    const operator = makeJoinOperatorDiv(eldiv.getAttribute('join-operator'))[0]
-    eldiv.insertBefore(operator, eldivFirstChild)
-    eldiv.insertBefore(p, operator)
-    nextJoinop.parentElement.removeChild(nextJoinop)
-}
-
-const filterColRemoveHandler = (event) => {
-    /*const target = $(event.target);
-    const filterElemDiv = target.parent();*/
+/*const filterColRemoveHandler = (event) => {
     const filterElemDiv = $(event.target.closest(".filter-element-div"))
     removeFilterElem(filterElemDiv);
-}
+}*/
 
 const removeFilterElem = (elemDiv) => {
     // Remove preceding join operator
@@ -563,22 +526,53 @@ const removeFilterElem = (elemDiv) => {
 }
 
 const addFilterRuleHandler = (event) => {
-    const button = $(event.target);
-    const elemsDiv = button.parent().parent().siblings('.filter-group-elements-div');
+    const button = event.target
+    const elemsDiv = $(button.closest('.filter-group-div').querySelector('div.filter-group-elements-div'))
     addFilterElement(elemsDiv, 'rule', undefined);
 }
 
 const addFilterGroupHandler = (event) => {
-    const button = $(event.target);
-    const elemsDiv = button.parent().parent().siblings('.filter-group-elements-div');
+    const button = event.target
+    const elemsDiv = $(button.closest('.filter-group-div').querySelector('div.filter-group-elements-div'))
     addFilterElement(elemsDiv, 'group', undefined);
 }
 
 const makeJoinOperatorDiv = function (operator) {
     const joinOpDiv = $(getEl('div'))
         .addClass('filter-join-operator-div')
-        .append(operator);
+        .addClass('filter-drop-target')
     joinOpDiv.click(groupOperatorClickHandler);
+    joinOpDiv[0].addEventListener('dragenter', function (evt) {
+        joinOpDiv[0].classList.add('dragenter')
+        evt.preventDefault()
+    })
+    joinOpDiv[0].addEventListener('dragleave', function (evt) {
+        joinOpDiv[0].src = 'result/images/arrow-down-right-circle.svg'
+        joinOpDiv[0].classList.remove('dragenter')
+    })
+    joinOpDiv[0].addEventListener('dragover', function (evt) {
+        evt.preventDefault()
+    })
+    joinOpDiv[0].addEventListener('drop', function (evt) {
+        var source = document.querySelector('#' + evt.dataTransfer.getData('text/plain'))
+        var target = evt.target
+        if (source.nextSibling == target || target.nextSibling == source) {
+            return
+        }
+        source.previousSibling.remove()
+        var p = target.closest('.filter-group-elements-div')
+        addEl(p, source)
+        p.insertBefore(source, target)
+        if (source.previousSibling == null || source.previousSibling.classList.contains('filter-join-operator-div') == false) {
+            var newj = makeJoinOperatorDiv(p.getAttribute('join-operator'))[0]
+            p.insertBefore(newj, source)
+        }
+        if (source.nextSibling == null || source.nextSibling.classList.contains('filter-join-operator-div') == false) {
+            var newj = makeJoinOperatorDiv(p.getAttribute('join-operator'))[0]
+            p.insertBefore(newj, source)
+            p.insertBefore(source, newj)
+        }
+    })
     return joinOpDiv
 }
 
@@ -589,27 +583,37 @@ const addFilterElement = (allElemsDiv, elementType, filter) => {
     } else if (elementType === 'rule') {
         elemDiv = makeFilterColDiv(filter);
     }
-    if (allElemsDiv.children().length > 0) {
+    elemDiv[0].id = 'filter-element-' + filterElemCount
+    filterElemCount += 1
+    elemDiv[0].setAttribute('draggable', true)
+    elemDiv[0].addEventListener('dragstart', function (evt) {
+        evt.dataTransfer.setData('text/plain', evt.target.id)
+        evt.dataTransfer.dropEffect = 'move'
+        filterDragEnterEl = evt.target.id
+        document.querySelector('#qb-root').classList.add('dragstarted')
+    })
+    elemDiv[0].addEventListener('dragend', function (evt) {
+        document.querySelector('#qb-root').classList.remove('dragstarted')
+    })
+    allElemsDiv.append(elemDiv);
+    //if (allElemsDiv.children().length > 0) {
         const operator = allElemsDiv.attr('join-operator');
         const joinOpDiv = makeJoinOperatorDiv(operator)
         allElemsDiv.append(joinOpDiv);
-    }
-    allElemsDiv.append(elemDiv);
+    //}
 }
 
 const groupOperatorClickHandler = (event) => {
     const opDiv = $(event.target);
     const allElemsDiv = opDiv.parent();
     const curOperator = allElemsDiv.attr('join-operator');
-    let newOperator;
+    let newOperator
     if (curOperator.toLowerCase() === 'and') {
         newOperator = 'or';
     } else if (curOperator.toLowerCase() === 'or') {
         newOperator = 'and';
     }
-    opDiv.text(newOperator);
-    opDiv.siblings('.filter-join-operator-div').text(newOperator);
-    allElemsDiv.attr('join-operator',newOperator);
+    allElemsDiv.attr('join-operator', newOperator);
 }
 
 function doReportSub (reportsub, reportsubKeys, origVal) {
@@ -623,7 +627,7 @@ function doReportSub (reportsub, reportsubKeys, origVal) {
 
 const makeGroupFilter = (groupDiv) => {
     const filter = {};
-    const elemsDiv = groupDiv.children('.filter-group-div').children('.filter-group-elements-div');
+    const elemsDiv = groupDiv.children('.filter-group-elements-div')
     // Operator
     filter.operator = elemsDiv.attr('join-operator');
     // Columns
@@ -696,13 +700,12 @@ const makeGroupFilter = (groupDiv) => {
         filter.rules.push(colFilter)
     }
     // Groups
-    const groupDivs = elemsDiv.children('.filter-group-wrapper-div');
+    const groupDivs = elemsDiv.children('.filter-group-div');
     for (let i=0; i<groupDivs.length; i++) {
         subGroupDiv = $(groupDivs[i]);
         subGroupFilter = makeGroupFilter(subGroupDiv);
         filter.rules.push(subGroupFilter);
     }
-    
     // Negate
     filter.negate = groupDiv.children('.filter-not-toggle').attr('active') === 'true';
     return filter;
