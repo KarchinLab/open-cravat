@@ -357,6 +357,21 @@ button {
     border-bottom: 1px solid red;
 }
 
+.dragclicked {
+    background-color: #e1f5f7;
+    opacity: 0.3;
+}
+
+/*.filter-column-div.dragclicked {
+    background-color: #e1f5f7;
+    opacity: 0.3;
+}
+
+.filter-group-div.dragclicked {
+    background-color: #e1f5f7;
+    opacity: 0.3;
+}*/
+
 .filter-group-elements-div .filter-join-operator-div {
 	margin-left: 12px;
 	cursor: pointer;
@@ -396,19 +411,23 @@ button {
 }
 
 #qb-root.dragstarted .filter-group-elements-div[join-operator="and"] .filter-join-operator-div:after {
-    content: url('/result/images/arrow-down-right-circle.svg');
+    content: url('/result/images/plus-circle-dotted.svg');
+    opacity: 0.5;
 }
 
 #qb-root.dragstarted .filter-group-elements-div[join-operator="and"] .filter-join-operator-div.dragenter:after {
-    content: url('/result/images/arrow-down-right-circle-fill.svg');
+    content: url('/result/images/plus-circle-fill.svg');
+    opacity: 0.5;
 }
 
 #qb-root.dragstarted .filter-group-elements-div[join-operator="or"] .filter-join-operator-div:after {
-    content: url('/result/images/arrow-down-right-circle.svg');
+    content: url('/result/images/plus-circle-dotted.svg');
+    opacity: 0.5;
 }
 
 #qb-root.dragstarted .filter-group-elements-div[join-operator="or"] .filter-join-operator-div.dragenter:after {
-    content: url('/result/images/arrow-down-right-circle-fill.svg');
+    content: url('/result/images/plus-circle-fill.svg');
+    opacity: 0.5;
 }
 
 .filter-join-operator-div:hover {
@@ -512,11 +531,6 @@ div.pq-select-menu>.pq-select-option-label {
 
 .filter-level-button.filter-level-advanced:before {
     content: "Back to simple filter";
-}
-
-.filter-group-div.filter-level-simple {
-    border-left: 0;
-    border-right: 0;
 }
 
 #filterdiv {
@@ -1152,6 +1166,11 @@ input:checked + .sample-rd-rej::before {
     right: 2px;
 }
 
+.filter-group-div.filter-level-simple {
+    border-left: 0;
+    border-right: 0;
+}
+
 .filter-column-div {
     display: flex;
     align-items: center;
@@ -1161,6 +1180,7 @@ input:checked + .sample-rd-rej::before {
     visibility: hidden;
     position: absolute;
     cursor: grab;
+    opacity: 0.5;
 }
 
 .filter-group-div .hovercontrol {

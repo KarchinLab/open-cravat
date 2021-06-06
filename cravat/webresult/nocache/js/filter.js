@@ -85,6 +85,12 @@ const makeDragHandle = function () {
     moveDiv.classList.add('hovercontrol')
     moveDiv.title = 'Drag and drop to rearrange filters'
     addHoverControlEventListener(moveDiv)
+    moveDiv.addEventListener('mousedown', function (evt) {
+        evt.target.closest('.filter-element-div').classList.add('dragclicked')
+    })
+    moveDiv.addEventListener('mouseup', function (evt) {
+        evt.target.closest('.filter-element-div').classList.remove('dragclicked')
+    })
     var moveImg = getEl('img')
     moveImg.setAttribute('src', '/result/images/grip-vertical.svg')
     moveImg.classList.add('passthrough')
@@ -428,12 +434,6 @@ const makeFilterGroupDiv = (filter) => {
     addEl(groupDiv[0], elemsDiv)
     // Join
     addEl(elemsDiv, makeJoinOperatorDiv(operator)[0])
-    /*// Controls div
-    const controlsDiv = $(getEl('div'))
-        .addClass('filter-group-controls-div')
-        .addClass('hovercontrol')
-    addHoverControlEventListener(controlsDiv[0])
-    groupDiv.append(controlsDiv);*/
     // Remove
     var cdiv = makeFilterElementControlDiv()
     cdiv.classList.add('hovercontrol')
@@ -572,6 +572,9 @@ const makeJoinOperatorDiv = function (operator) {
             p.insertBefore(newj, source)
             p.insertBefore(source, newj)
         }
+        document.querySelector('#qb-root').querySelectorAll('.filter-join-operator-div').forEach(el => {
+            el.classList.remove('dragenter')
+        })
     })
     return joinOpDiv
 }
@@ -594,6 +597,7 @@ const addFilterElement = (allElemsDiv, elementType, filter) => {
     })
     elemDiv[0].addEventListener('dragend', function (evt) {
         document.querySelector('#qb-root').classList.remove('dragstarted')
+        evt.target.closest('.filter-element-div').classList.remove('dragclicked')
     })
     allElemsDiv.append(elemDiv);
     //if (allElemsDiv.children().length > 0) {
