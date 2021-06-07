@@ -1336,7 +1336,7 @@ def get_install_deps(module_name, version=None, skip_installed=True):
         req = pkg_resources.Requirement(req_string)
         rem_info = get_remote_module_info(req.name)
         # Skip if module does not exist
-        if rem_info is None:
+        if rem_info is None and get_local_module_info(req.name) is None:
             non_oc_deps.append(req.name)
             continue
         if skip_installed:
