@@ -69,17 +69,6 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'wcravat=cravat.cravat_web:wcravat_entrypoint',
-            'wcv=cravat.cravat_web:wcravat_entrypoint',
-            'cravat-admin=cravat.cravat_admin:main',
-            'cva=cravat.cravat_admin:main',
-            'cravat=cravat.runcravat:main',
-            'cv=cravat.runcravat:main',
-            'cravat-view=cravat.cravat_web:wcravat_entrypoint',
-            'cravat-filter=cravat.cravat_filter:main',
-            'cravat-report=cravat.cravat_report:cravat_report_entrypoint',
-            'cravat-test=cravat.cravat_test:main',
-            'cravat-util=cravat.cravat_util:main',
             'oc=cravat.oc:main',
         ]
     },
