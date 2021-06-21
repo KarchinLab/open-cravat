@@ -1,0 +1,23 @@
+{
+  "annotators": [
+    "biogrid",
+    "clinvar"
+  ],
+  "assembly": "hg38",
+  "db_path": "/Users/rick/oc/open-cravat/cravat/example_input2.sqlite",
+  "id": "cravat",
+  "job_dir": "/Users/rick/oc/open-cravat/cravat",
+  "note": "",
+  "open_cravat_version": "2.2.4",
+  "orig_input_fname": [
+    "example_input"
+  ],
+  "orig_input_path": [
+    "/Users/rick/oc/open-cravat/cravat/example_input"
+  ],
+  "reports": [],
+  "run_name": "example_input2",
+  "status": "Error",
+  "submission_time": "2021-06-08T09:50:36.422178",
+  "viewable": false
+}

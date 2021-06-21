@@ -218,7 +218,7 @@ class BaseAnnotator(object):
         try:
             start_time = time.time()
             self.logger.info("started: %s" % time.asctime(time.localtime(start_time)))
-            if self.args.silent == False:
+            if not self.args.silent:
                 print(
                     "        {}: started at {}".format(
                         self.module_name, time.asctime(time.localtime(start_time))
@@ -285,7 +285,7 @@ class BaseAnnotator(object):
             self.logger.info(
                 "finished: {0}".format(time.asctime(time.localtime(end_time)))
             )
-            if self.args.silent == False:
+            if not self.args.silent:
                 print(
                     "        {}: finished at {}".format(
                         self.module_name, time.asctime(time.localtime(end_time))
@@ -293,7 +293,7 @@ class BaseAnnotator(object):
                 )
             run_time = end_time - start_time
             self.logger.info("runtime: {0:0.3f}s".format(run_time))
-            if self.args.silent == False:
+            if not self.args.silent:
                 print("        {}: runtime {:0.3f}s".format(self.module_name, run_time))
             if self.update_status_json_flag and self.status_writer is not None:
                 version = self.conf.get("version", "unknown")
