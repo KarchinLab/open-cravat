@@ -282,6 +282,7 @@ def install_modules(args):
                 selected_install[module_name] = args.version
     # Add dependencies of selected modules
     dep_install = {}
+    pypi_deps_install = {}
     if not args.skip_dependencies:
         for module_name, version in selected_install.items():
             deps = au.get_install_deps(module_name, version=version)
@@ -307,13 +308,15 @@ def install_modules(args):
                     continue
         for module_name, module_version in sorted(to_install.items()):
             stage_handler = InstallProgressStdout(module_name, module_version)
-            au.install_module(module_name,
-                                version=module_version,
-                                force_data=args.force_data,
-                                stage_handler=stage_handler,
-                                force=args.force,
-                                skip_data=args.skip_data,
-                                )
+            au.install_module(
+                module_name,
+                version=module_version,
+                force_data=args.force_data,
+                stage_handler=stage_handler,
+                force=args.force,
+                skip_data=args.skip_data,
+                install_pypi_dependency=args.install_pypi_dependency
+            )
 
 def update_modules(args):
     if len(args.modules) > 0:
@@ -383,7 +386,8 @@ def install_base (args):
                             private=False,
                             skip_dependencies=False,
                             force=args.force,
-                            skip_data=False
+                            skip_data=False,
+                            install_pypi_dependency=args.install_pypi_dependency
                             )
     install_modules(args)
 
@@ -465,6 +469,11 @@ parser_install_base.add_argument('-d', '--force-data',
     action='store_true',
     help='Download data even if latest data is already installed'
 )
+parser_install_base.add_argument('--install-pypi-dependency',
+    action='store_true',
+    default=False,
+    help='Try to install non-OpenCRAVAT package dependency with pip'
+)
 parser_install_base.set_defaults(func=install_base)
 
 # install
@@ -502,6 +511,11 @@ parser_install.add_argument('--skip-data',
     action='store_true',
     help='Skip installing data'
 )
+parser_install.add_argument('--install-pypi-dependency',
+    action='store_true',
+    default=False,
+    help='Try to install non-OpenCRAVAT package dependency with pip'
+)
 parser_install.set_defaults(func=install_modules)
 
 # update
@@ -531,6 +545,11 @@ parser_update.add_argument('--strategy',
                             type=str,
                             choices=('consensus','force','skip')
                             )
+parser_update.add_argument('--install-pypi-dependency',
+    action='store_true',
+    default=False,
+    help='Try to install non-OpenCRAVAT package dependency with pip'
+)
 parser_update.set_defaults(func=update_modules)
 
 # uninstall

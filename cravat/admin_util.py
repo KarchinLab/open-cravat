@@ -613,6 +613,7 @@ def install_module(
     force_data=False,
     skip_data=False,
     stage_handler=None,
+    install_pypi_dependency=False,
     **kwargs,
 ):
     """
@@ -628,9 +629,7 @@ def install_module(
         # Ctrl-c in this func must be caught to delete temp_dir
         def raise_kbi(a, b):
             raise KeyboardInterrupt
-
         original_sigint = signal.signal(signal.SIGINT, raise_kbi)
-
         if stage_handler is None:
             stage_handler = InstallProgressHandler(module_name, version)
         if version is None:
@@ -641,167 +640,201 @@ def install_module(
         else:
             install_state = None
         stage_handler.stage_start("start")
-        sys_conf = get_system_conf()
-        store_url = sys_conf["store_url"]
-        store_path_builder = su.PathBuilder(store_url, "url")
-        remote_data_version = get_remote_data_version(module_name, version)
-        if module_name in list_local():
-            local_info = get_local_module_info(module_name)
-            if local_info.has_data:
-                local_data_version = get_remote_data_version(
-                    module_name, local_info.version
-                )
+        # Checks and installs pip packages.
+        config = mic.get_remote_config(module_name, version=version)
+        pypi_deps = config.get("pypi_dependency", [])
+        idx = 0
+        while idx < len(pypi_deps):
+            dep = pypi_deps[idx]
+            r = subprocess.run(["pip", "show", dep], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if r.returncode == 0:
+                pypi_deps.remove(dep)
+            else:
+                idx += 1
+        if len(pypi_deps) > 0:
+            print(f"Following PyPI dependencies should be met before installing {module_name}.")
+            for dep in pypi_deps:
+                print(f"- {dep}")
+            if install_pypi_dependency:
+                print(f"Trying to install required PyPI packages...")
+                idx = 0
+                while idx < len(pypi_deps):
+                    dep = pypi_deps[idx]
+                    r = subprocess.run(["pip", "install", dep])
+                    if r.returncode == 0:
+                        pypi_deps.remove(dep)
+                    else:
+                        idx += 1
+                if len(pypi_deps) > 0:
+                    print(f"Following PyPI dependencies could not be installed.")
+                    for dep in pypi_deps:
+                        print(f"- {dep}")
+        if len(pypi_deps) > 0:
+            if version is not None:
+                print(f"Skipping installation of {module_name}:{version} due to unmet requirement for PyPI packages")
+            else:
+                print(f"Skipping installation of {module_name} due to unmet requirement for PyPI packages")
+        else:
+            sys_conf = get_system_conf()
+            store_url = sys_conf["store_url"]
+            store_path_builder = su.PathBuilder(store_url, "url")
+            remote_data_version = get_remote_data_version(module_name, version)
+            if module_name in list_local():
+                local_info = get_local_module_info(module_name)
+                if local_info.has_data:
+                    local_data_version = get_remote_data_version(
+                        module_name, local_info.version
+                    )
+                else:
+                    local_data_version = None
             else:
                 local_data_version = None
-        else:
-            local_data_version = None
-        code_url = store_path_builder.module_code(module_name, version)
-        zipfile_fname = module_name + ".zip"
-        remote_info = get_remote_module_info(module_name)
-        if remote_info is not None:
-            module_type = remote_info.type
-        else:
-            # Private module. Fallback to remote config.
-            remote_config = mic.get_remote_config(module_name, version)
-            module_type = remote_config["type"]
-
-        if install_state:
-            if (
-                install_state["module_name"] == module_name
-                and install_state["kill_signal"] == True
-            ):
-                raise exceptions.KillInstallException
-        zipfile_path = os.path.join(temp_dir, zipfile_fname)
-        stage_handler.stage_start("download_code")
-        r = su.stream_to_file(
-            code_url,
-            zipfile_path,
-            stage_handler=stage_handler.stage_progress,
-            install_state=install_state,
-            **kwargs,
-        )
-        if r.status_code != 200:
-            raise (requests.HTTPError(r))
-        if install_state:
-            if (
-                install_state["module_name"] == module_name
-                and install_state["kill_signal"] == True
-            ):
-                raise exceptions.KillInstallException
-        stage_handler.stage_start("extract_code")
-        zf = zipfile.ZipFile(zipfile_path)
-        zf.extractall(temp_dir)
-        zf.close()
-        if install_state:
-            if (
-                install_state["module_name"] == module_name
-                and install_state["kill_signal"] == True
-            ):
-                raise exceptions.KillInstallException
-        stage_handler.stage_start("verify_code")
-        code_manifest_url = store_path_builder.module_code_manifest(
-            module_name, version
-        )
-        code_manifest = yaml.safe_load(su.get_file_to_string(code_manifest_url))
-        su.verify_against_manifest(temp_dir, code_manifest)
-        os.remove(zipfile_path)
-        if install_state:
-            if (
-                install_state["module_name"] == module_name
-                and install_state["kill_signal"] == True
-            ):
-                raise exceptions.KillInstallException
-        data_installed = False
-        if (
-            not (skip_data)
-            and (remote_data_version is not None)
-            and (remote_data_version != local_data_version or force_data)
-        ):
-            data_installed = True
-            data_url = store_path_builder.module_data(module_name, remote_data_version)
-            data_fname = ".".join([module_name, "data", "zip"])
-            data_path = os.path.join(temp_dir, data_fname)
-            stage_handler.stage_start("download_data")
-            r = su.stream_to_file(
-                data_url,
-                data_path,
-                stage_handler=stage_handler.stage_progress,
-                install_state=install_state,
-                **kwargs,
-            )
+            code_url = store_path_builder.module_code(module_name, version)
+            zipfile_fname = module_name + ".zip"
+            remote_info = get_remote_module_info(module_name)
+            if remote_info is not None:
+                module_type = remote_info.type
+            else:
+                # Private module. Fallback to remote config.
+                remote_config = mic.get_remote_config(module_name, version)
+                module_type = remote_config["type"]
             if install_state:
                 if (
                     install_state["module_name"] == module_name
                     and install_state["kill_signal"] == True
                 ):
                     raise exceptions.KillInstallException
-            if r.status_code == 200:
-                stage_handler.stage_start("extract_data")
-                zf = zipfile.ZipFile(data_path)
-                zf.extractall(temp_dir)
-                zf.close()
-                if install_state:
-                    if (
-                        install_state["module_name"] == module_name
-                        and install_state["kill_signal"] == True
-                    ):
-                        raise exceptions.KillInstallException
-                stage_handler.stage_start("verify_data")
-                data_manifest_url = store_path_builder.module_data_manifest(
-                    module_name, remote_data_version
-                )
-                data_manifest = yaml.safe_load(su.get_file_to_string(data_manifest_url))
-                su.verify_against_manifest(temp_dir, data_manifest)
-                os.remove(data_path)
-                if install_state:
-                    if (
-                        install_state["module_name"] == module_name
-                        and install_state["kill_signal"] == True
-                    ):
-                        raise exceptions.KillInstallException
-            elif r.status_code == 404:
-                # Probably a private module that does not have data
-                pass
-            else:
+            zipfile_path = os.path.join(temp_dir, zipfile_fname)
+            stage_handler.stage_start("download_code")
+            r = su.stream_to_file(
+                code_url,
+                zipfile_path,
+                stage_handler=stage_handler.stage_progress,
+                install_state=install_state,
+                **kwargs,
+            )
+            if r.status_code != 200:
                 raise (requests.HTTPError(r))
-        if install_state:
+            if install_state:
+                if (
+                    install_state["module_name"] == module_name
+                    and install_state["kill_signal"] == True
+                ):
+                    raise exceptions.KillInstallException
+            stage_handler.stage_start("extract_code")
+            zf = zipfile.ZipFile(zipfile_path)
+            zf.extractall(temp_dir)
+            zf.close()
+            if install_state:
+                if (
+                    install_state["module_name"] == module_name
+                    and install_state["kill_signal"] == True
+                ):
+                    raise exceptions.KillInstallException
+            stage_handler.stage_start("verify_code")
+            code_manifest_url = store_path_builder.module_code_manifest(
+                module_name, version
+            )
+            code_manifest = yaml.safe_load(su.get_file_to_string(code_manifest_url))
+            su.verify_against_manifest(temp_dir, code_manifest)
+            os.remove(zipfile_path)
+            if install_state:
+                if (
+                    install_state["module_name"] == module_name
+                    and install_state["kill_signal"] == True
+                ):
+                    raise exceptions.KillInstallException
+            data_installed = False
             if (
-                install_state["module_name"] == module_name
-                and install_state["kill_signal"] == True
+                not (skip_data)
+                and (remote_data_version is not None)
+                and (remote_data_version != local_data_version or force_data)
             ):
-                raise exceptions.KillInstallException
-        module_dir = os.path.join(modules_dir, module_type + "s", module_name)
-        if os.path.isdir(module_dir):
-            # Module being updated
-            if data_installed:
-                # Overwrite the whole module
-                shutil.rmtree(module_dir)
-                shutil.move(temp_dir, module_dir)
+                data_installed = True
+                data_url = store_path_builder.module_data(module_name, remote_data_version)
+                data_fname = ".".join([module_name, "data", "zip"])
+                data_path = os.path.join(temp_dir, data_fname)
+                stage_handler.stage_start("download_data")
+                r = su.stream_to_file(
+                    data_url,
+                    data_path,
+                    stage_handler=stage_handler.stage_progress,
+                    install_state=install_state,
+                    **kwargs,
+                )
+                if install_state:
+                    if (
+                        install_state["module_name"] == module_name
+                        and install_state["kill_signal"] == True
+                    ):
+                        raise exceptions.KillInstallException
+                if r.status_code == 200:
+                    stage_handler.stage_start("extract_data")
+                    zf = zipfile.ZipFile(data_path)
+                    zf.extractall(temp_dir)
+                    zf.close()
+                    if install_state:
+                        if (
+                            install_state["module_name"] == module_name
+                            and install_state["kill_signal"] == True
+                        ):
+                            raise exceptions.KillInstallException
+                    stage_handler.stage_start("verify_data")
+                    data_manifest_url = store_path_builder.module_data_manifest(
+                        module_name, remote_data_version
+                    )
+                    data_manifest = yaml.safe_load(su.get_file_to_string(data_manifest_url))
+                    su.verify_against_manifest(temp_dir, data_manifest)
+                    os.remove(data_path)
+                    if install_state:
+                        if (
+                            install_state["module_name"] == module_name
+                            and install_state["kill_signal"] == True
+                        ):
+                            raise exceptions.KillInstallException
+                elif r.status_code == 404:
+                    # Probably a private module that does not have data
+                    pass
+                else:
+                    raise (requests.HTTPError(r))
+            if install_state:
+                if (
+                    install_state["module_name"] == module_name
+                    and install_state["kill_signal"] == True
+                ):
+                    raise exceptions.KillInstallException
+            module_dir = os.path.join(modules_dir, module_type + "s", module_name)
+            if os.path.isdir(module_dir):
+                # Module being updated
+                if data_installed:
+                    # Overwrite the whole module
+                    shutil.rmtree(module_dir)
+                    shutil.move(temp_dir, module_dir)
+                else:
+                    # Remove all code items
+                    for item in os.listdir(module_dir):
+                        item_path = os.path.join(module_dir, item)
+                        if item != "data":
+                            if os.path.isdir(item_path):
+                                shutil.rmtree(item_path)
+                            else:
+                                os.remove(item_path)
+                    # Copy in new code items
+                    for item in os.listdir(temp_dir):
+                        old_path = os.path.join(temp_dir, item)
+                        new_path = os.path.join(module_dir, item)
+                        if item != "data":
+                            shutil.move(old_path, new_path)
+                    shutil.rmtree(temp_dir)
             else:
-                # Remove all code items
-                for item in os.listdir(module_dir):
-                    item_path = os.path.join(module_dir, item)
-                    if item != "data":
-                        if os.path.isdir(item_path):
-                            shutil.rmtree(item_path)
-                        else:
-                            os.remove(item_path)
-                # Copy in new code items
-                for item in os.listdir(temp_dir):
-                    old_path = os.path.join(temp_dir, item)
-                    new_path = os.path.join(module_dir, item)
-                    if item != "data":
-                        shutil.move(old_path, new_path)
-                shutil.rmtree(temp_dir)
-        else:
-            # Move the module to the right place
-            shutil.move(temp_dir, module_dir)
-        wf = open(os.path.join(module_dir, "startofinstall"), "w")
-        wf.close()
-        wf = open(os.path.join(module_dir, "endofinstall"), "w")
-        wf.close()
-        mic.update_local()
-        stage_handler.stage_start("finish")
+                # Move the module to the right place
+                shutil.move(temp_dir, module_dir)
+            wf = open(os.path.join(module_dir, "startofinstall"), "w")
+            wf.close()
+            wf = open(os.path.join(module_dir, "endofinstall"), "w")
+            wf.close()
+            mic.update_local()
+            stage_handler.stage_start("finish")
     except (Exception, KeyboardInterrupt, SystemExit) as e:
         shutil.rmtree(temp_dir, ignore_errors=True)
         if type(e) == exceptions.KillInstallException:
@@ -1331,13 +1364,11 @@ def get_install_deps(module_name, version=None, skip_installed=True):
     config = mic.get_remote_config(module_name, version=version)
     req_list = config.get("requires", [])
     deps = {}
-    non_oc_deps = []
     for req_string in req_list:
         req = pkg_resources.Requirement(req_string)
         rem_info = get_remote_module_info(req.name)
         # Skip if module does not exist
         if rem_info is None and get_local_module_info(req.name) is None:
-            non_oc_deps.append(req.name)
             continue
         if skip_installed:
             # Skip if a matching version is installed
@@ -1355,20 +1386,6 @@ def get_install_deps(module_name, version=None, skip_installed=True):
         # Dont include if no matching version exists
         if highest_matching is not None:
             deps[req.name] = highest_matching
-    dep_err = []
-    for dep in non_oc_deps:
-        r = subprocess.run(["pip", "show", dep], stderr=subprocess.DEVNULL)
-        if r.returncode != 0:
-            dep_err.append(dep)
-    if len(dep_err) > 0:
-        print(f"Following non-OpenCRAVAT dependencies should be met before installing {module_name}")
-        for dep in dep_err:
-            print(f"- {dep}")
-        if version is not None:
-            print(f"{module_name} {version} was not installed")
-        else:
-            print(f"{module_name} was not installed")
-        exit()
     return deps
 
 
