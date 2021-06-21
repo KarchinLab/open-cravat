@@ -1,5 +1,0 @@
-2021/06/08 09:50:36 cravat               /Users/rick/miniconda3/envs/oc/bin/oc run example_input -n example_input2 -a clinvar cosmic biogrid gnomad3 esp6500 target -l hg38
-2021/06/08 09:50:36 cravat               started: Tue Jun  8 09:50:36 2021
-2021/06/08 09:50:36 cravat               Invalid module(s): cosmic,gnomad3,esp6500,target
-2021/06/08 09:50:36 cravat               finished with an exception: Tue Jun  8 09:50:36 2021
-2021/06/08 09:50:36 cravat               runtime: 0.290s
