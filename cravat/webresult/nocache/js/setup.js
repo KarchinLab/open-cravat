@@ -1825,6 +1825,23 @@ function onClickWidgetCloseButton (tabName, evt) {
     executeWidgetClose(widgetName, tabName, false);
 }
 
+function onClickWidgetDownloadButton (tabName, evt) {
+    var widgetName = evt.target.getAttribute('widgetname');
+    var generator = widgetGenerators[widgetName][tabName]
+    if (generator['exportdata'] != undefined) {
+        var text = generator['exportdata']()
+        var b = new Blob([text], {type: 'text/csv'})
+        var u = window.URL.createObjectURL(b)
+        var a = document.createElement('a')
+        a.setAttribute('href', u)
+        a.setAttribute('download', jobId + '.' + widgetName + '.csv')
+        a.style.display = 'none'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+    }
+}
+
 function onClickWidgetCameraButton (tabName, evt) {
     var widgetName = evt.target.getAttribute('widgetname');
     saveWidgetContent(widgetName, tabName);

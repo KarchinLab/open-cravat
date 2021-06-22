@@ -483,6 +483,18 @@ function getDetailWidgetDivs (tabName, widgetName, title, maxWidth, maxHeight, s
         addEl(iconDiv, btn);
     }
 
+    // Download button
+    if (widgetGenerators[widgetName][tabName]['exportdata'] != undefined) {
+        var button = getEl('img');
+        button.src = '/result/images/download.svg';
+        button.className = 'detailwidget-downloadbutton';
+        button.setAttribute('widgetname', widgetName);
+        button.addEventListener('click', function (evt) {
+            onClickWidgetDownloadButton(tabName, evt);
+        });
+        addEl(iconDiv, button);
+    }
+
 	// Camera button
 	var button = getEl('img');
 	button.src = '/result/images/camera.svg';

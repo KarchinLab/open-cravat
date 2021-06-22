@@ -129,6 +129,13 @@ body * {
 	background-color: #848484;
 }
 
+.detailwidget-downloadbutton {
+    height: 16px;
+    cursor: pointer;
+    margin: 2px;
+    padding: 2px;
+}
+
 .detailwidget-camerabutton {
     height: 16px;
     cursor: pointer;
