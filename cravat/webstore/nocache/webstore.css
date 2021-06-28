@@ -31,9 +31,12 @@
 }
 
 .modulepanel-title-span {
-    width: 195px;
+    width: 265px;
     word-break: break-word;
     font-family: sourcesanspro-bold;
+    position: absolute;
+    top: 20%; left: 62%;
+    transform: translate(-50%,-50%);
 }
 
 h1 {
@@ -56,30 +59,57 @@ h1 {
 
 .modulepanel-size-span {
     color: black;
+    position: absolute;
+    bottom: 38px;
+    left: 138px;
+    width: 65px;
+    font-size: 10.5px;
 }
+.modulepanel-description-div{
+    width: 292px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 10px;
+    margin: 0;
+    color: black;
+    position: relative;
+    left: 47%;
+    bottom: 63px;
+}
+
 
 .modulepanel-datasource-span {
     color: #467444;
     position: absolute;
-    right: 10px;
-    top: 191px;
-    font-size: 11px;
-    width: 70px;
-    text-align: right;
+    right: 211px;
+    top: 89px;
+    font-size: 10.5px;
+    width: 92px;
     cursor: default;
 }
 
+.modulepanel-datasource-span-other {
+    color: #467444;
+    position: absolute;
+    right: 152px;
+    top: 89px;
+    font-size: 10.5px;
+    width: 92px;
+    cursor: default;
+}
 .modulepanel-divider-span {
     color: #d4d4d4;
 }
 
 .modulepanel-update-button {
     position: absolute;
-    bottom: 3px;
+    bottom: 10px;
     right: 9px;
     height: 25px;
     background-color: #94d1eb;
     height: 24px;
+    border-radius: 9px;
 }
 
 .modulepanel-update-button:focus {
@@ -88,12 +118,13 @@ h1 {
 
 .modulepanel-uninstall-button {
     position: absolute;
-    bottom: 3px;
+    bottom: 12px;
     right: 9px;
     font-size: 13px;
     background-color: #e6e7e8;
     color: #414042;
     height: 24px;
+    border-radius: 9px;
 }
 
 .modulepanel-uninstall-button:focus {
@@ -102,10 +133,12 @@ h1 {
 
 .modulepanel-install-button-div {
     position: absolute;
-    bottom: 3px;
+    bottom: 12px;
     right: 9px;
     font-size: 13px;
+    height: 24px;
     background-color: #d1d3d4;
+    border-radius: 9px;
 }
 
 .modulepanel-install-button {
@@ -113,6 +146,7 @@ h1 {
     background-color: #d1d3d4;
     color: #414042;
     height: 24px;
+    border-radius: 9px;
 }
 
 .modulepanel-install-button:focus {
@@ -153,15 +187,14 @@ h1 {
 
 .moduletile {
     display: inline-block;
-    width: 250px;
-    height: 230px;
-    border-width: 1px;
-    border-color: #dddddd;
-    border-style: groove;
+    width: 430px;
+    height: 100px;
     vertical-align: top;
     margin: 10px;
     padding: 10px;
     position: relative;
+    border-radius: 8px;
+    background-color: #f5f5f7;
 }
 
 .moduletile-title {
@@ -177,12 +210,13 @@ h1 {
 }
 
 .moduletile-logodiv {
-    width: 250px;
-    height: 175px;
+    width: 130px;
+    height: 97px;
     display: flex;
     align-items: center;
     background-color: white;
     cursor: pointer;
+    border-radius: 9px;
 }
 
 .moduletile-logo {
@@ -193,8 +227,9 @@ h1 {
     margin: auto;
     width: auto;
     height: auto;
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 95%;
+    max-height: 95%;
+    border-radius: 9px;
 }
 
 .moduletile-nologo {
@@ -202,12 +237,25 @@ h1 {
 }
 
 .moduletile-typediv {
+    color: #467444;
     position: absolute;
-    top: 233px;
-    left: 117px;
-    color: green;
-    font-size: 10px;
+    right: 228px;
+    top: 89px;
+    font-size: 10.5px;
+    width: 76px;
     font-weight: bold;
+    cursor: default;
+}
+
+.moduletile-group-typediv {
+    color: #467444;
+    position: absolute;
+    right: 228px;
+    top: 53px;
+    font-size: 10.5px;
+    width: 76px;
+    font-weight: bold;
+    cursor: default;
 }
 
 .moduletile[moduletype=webviewerwidget] {
@@ -222,15 +270,12 @@ h1 {
 }
 
 .modulegroup {
-    border: 0px;
-    background-image: url('/store/folder.png');
-    background-size: 270px 250px;
-    background-repeat: no-repeat;
+    background-color: #c5af8d38;
 }
 
 div.modulegroup div.moduletile-nologo {
-    height: 150px;
-    width: 221px;
+    width: 200px;
+    height: 230px;
     top: 24px;
     left: 25px;
     position: absolute;
@@ -238,12 +283,17 @@ div.modulegroup div.moduletile-nologo {
 
 div.modulegroup div.moduletile-logodiv {
     position: absolute;
-    top: 27px;
 }
 
 div.modulegroup div.modulepanel-title-span {
+    width: 265px;
+    word-break: break-word;
+    font-family: sourcesanspro-bold;
     position: absolute;
-    top: 202px;
+    top: 20%;
+    left: 62%;
+    transform: translate(-50%,-50%);
+}
 }
 
 div.modulegroup span.modulepanel-datasource-span {
@@ -270,11 +320,14 @@ div.modulegroup span.modulepanel-datasource-span {
 
 #storemenudiv {
     position: fixed;
-    top: 70px;
-    width: 201px;
-    height: calc(100% - 110px);
+    top: 63px;
+    width: 300px;
+    height: calc(100% - 0px);
     overflow: auto;
-    font-size: 14px;
+    font-size: 25px;
+    background-color: #f5f5f7;
+    padding-left: 6px;
+    left: 1px;
 }
 
 .store-switch {
@@ -347,12 +400,11 @@ input:checked + .store-switch-slider:before {
 #remotemodulepanels {
     display: flex; 
     flex-wrap: wrap; 
-    justify-content: center; 
     position: absolute; 
     top: 36px; 
     background-color: white;
-    left: 0px;
-    width: 100%;
+    left: 100px;
+    max-width: 100%;
 }
 
 #store-allmodule-div {
@@ -370,29 +422,36 @@ input:checked + .store-switch-slider:before {
 }
 
 #store-modulegroup-content-div {
-    display: flex; 
-    flex-wrap: wrap; 
-    justify-content: center; 
-    position: absolute; 
-    top: 76px; 
+    display: flex;
+    flex-wrap: wrap;
+    position: absolute;
+    top: 36px;
     background-color: white;
-    left: 0px;
-    width: 100%;
+    left: 100px;
+    max-width: 100%;
+    margin-top: 30px;
 }
 
 #store-modulegroup-title-span {
     font-size: 27px;
-    position: absolute;
-    top: 40px;
-    left: 50%;
-    transform: translateX(-50%);
+    display:table;
+    margin:0 auto;
+    margin-top: 20px;
 }
-
+.store-modulegroup-type-span {
+    width: 265px;
+    word-break: break-word;
+    font-family: sourcesanspro-bold;
+    position: absolute;
+    top: 20%;
+    left: 62%;
+    transform: translate(-50%,-50%);
+}
 #store-home-div {
     position: absolute;
     top: 40px;
-    left: 240px;
-    width: calc(100% - 240px);
+    left: 310px;
+    width: calc(100% - 310px);
 }
 
 .store-home-sectiontitle {
@@ -402,7 +461,7 @@ input:checked + .store-switch-slider:before {
 }
 
 .store-home-carouseldiv {
-    height: 319px;
+    height: 150px;
     width: calc(100% - 66px);
     overflow: hidden;
     display: inline-block;
@@ -412,14 +471,6 @@ input:checked + .store-switch-slider:before {
 .store-carousel-arrow {
     height: 39px;
     cursor: pointer;
-}
-
-.store-front-all-button-on {
-    background-color: #385487;
-}
-
-.store-front-all-button-off {
-    background-color: #d1d3d4;
 }
 
 .moduledetaildiv {
@@ -442,6 +493,10 @@ input:checked + .store-switch-slider:before {
 
 #store-namefilter {
     width: 180px;
+    position: relative;
+    left: 45px;
+    margin-top: 20px;
+    margin-bottom: 9px;
 }
 
 .moduledetail-output-table {
@@ -491,10 +546,6 @@ input:checked + .store-switch-slider:before {
     max-height: 300px;
     overflow: auto;
     padding: 10px;
-    /*position: absolute;
-    height: calc(100% - 80px);
-    width: calc(100% - 20px);
-    */
 }
 
 #store-systemmodule-div {
@@ -595,7 +646,6 @@ input:checked + .store-switch-slider:before {
     left: 240px;
     top: 13px;
     display: none;
-    /*color: #f7684b;*/
     width: calc(100% - 240px);
 }
 
@@ -609,3 +659,81 @@ input:checked + .store-switch-slider:before {
     z-index: 201;
 }
 
+.checkmark-store {
+    position: absolute;
+    top: 3px;
+    left: 0;
+    height: 25px;
+    width: 25px;
+    background-color: #e5e6e7;
+    border-radius: 5px;
+  }
+.checkbox-store-container {
+    display: block;
+    position: relative;
+    padding-left: 31px;
+    margin-bottom: 2px;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.checkbox-store-container:hover {
+    background-color: #888888;
+}
+
+/* Hide the browser's default checkbox */
+.checkbox-store-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+    top: 0px;
+    left: 0px;
+}
+
+/* On mouse-over, add a grey background color */
+.checkbox-store-container:hover input ~ .checkmark {
+    background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.checkbox-store-container input:checked ~ .checkmark-store {
+    background-color: #5eb4e5;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark-store:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Show the checkmark when checked */
+.checkbox-store-container input:checked ~ .checkmark-store:after {
+    display: block;
+}
+
+/* Style the checkmark/indicator */
+.checkbox-store-container .checkmark-store:after {
+    left: 9px;
+    top: 1px;
+    width: 5px;
+    height: 15px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+.back-arrow {
+    position: absolute;
+    width: 77px;
+    cursor: pointer;
+    left: 112px;
+    top: 14px;
+}
