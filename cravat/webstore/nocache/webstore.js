@@ -15,7 +15,7 @@ var storeurl = $.get('/store/getstoreurl').done(function(response) {
 var newModuleAvailable = false;
 var baseModuleUpdateAvailable = false;
 var storeFirstOpen = true;
-var storeTileWidthStep = 294;
+var storeTileWidthStep = 440;
 var modulesToIgnore = [
     'aggregator',
 ];
@@ -577,7 +577,7 @@ function populateStoreHome() {
     var sdiv = getEl('div');
     var featuredModules = getMostDownloadedModuleNames();
     moduleLists['download'] = featuredModules;
-    sdiv.style.width = (featuredModules.length * storeTileWidthStep) + 'px';
+    sdiv.style.width = (featuredModules.length * storeTileWidthStep) - 160 + 'px';
     for (var i = 0; i < featuredModules.length; i++) {
         var panel = getRemoteModulePanel(featuredModules[i], 'download', i);
         addEl(sdiv, panel);
@@ -589,7 +589,7 @@ function populateStoreHome() {
     var sdiv = getEl('div');
     var newestModules = getNewestModuleNames();
     moduleLists['newest'] = newestModules;
-    sdiv.style.width = (newestModules.length * storeTileWidthStep) + 'px';
+    sdiv.style.width = (featuredModules.length * storeTileWidthStep) - 160 + 'px';
     for (var i = 0; i < newestModules.length; i++) {
         var remoteModuleName = newestModules[i];
         var panel = null;
@@ -618,7 +618,7 @@ function populateStoreHome() {
         }
     }
     moduleLists['cancer'] = cancerModules;
-    sdiv.style.width = (cancerModules.length * storeTileWidthStep) + 'px';
+    sdiv.style.width = (featuredModules.length * storeTileWidthStep) - 160 + 'px';
     for (var i = 0; i < cancerModules.length; i++) {
         var panel = null;
         if (remoteModuleInfo[cancerModules[i]]['type'] != 'group') {
@@ -647,7 +647,7 @@ function populateStoreHome() {
         }
     }
     moduleLists['clinical'] = clinicalModules;
-    sdiv.style.width = (clinicalModules.length * storeTileWidthStep) + 'px';
+    sdiv.style.width = (featuredModules.length * storeTileWidthStep) - 160 + 'px';
     for (var i = 0; i < clinicalModules.length; i++) {
         var panel = null;
         if (remoteModuleInfo[clinicalModules[i]]['type'] != 'group') {
@@ -663,6 +663,13 @@ function populateStoreHome() {
 function onClickStoreHomeLeftArrow(el) {
     var d = el.nextElementSibling;
     var dw = d.offsetWidth;
+    if (dw > 940){
+        var storeTileWidthStep = 708
+    } else if (dw > 480){
+        var storeTileWidthStep = 470
+    } else if (dw == 480){
+        var storeTileWidthStep = 240
+    }
     var s = d.scrollLeft;
     s -= Math.floor(dw / storeTileWidthStep) * storeTileWidthStep;
     $(d).animate({
@@ -674,6 +681,13 @@ function onClickStoreHomeLeftArrow(el) {
 function onClickStoreHomeRightArrow(el) {
     var d = el.previousElementSibling;
     var dw = d.offsetWidth;
+    if (dw > 940){
+        var storeTileWidthStep = 708
+    } else if (dw > 480){
+        var storeTileWidthStep = 470
+    } else if (dw <= 480){
+        var storeTileWidthStep = 470
+    }
     var s = d.scrollLeft;
     s += Math.floor(dw / storeTileWidthStep) * storeTileWidthStep;
     $(d).animate({
