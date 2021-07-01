@@ -471,7 +471,7 @@ parser_install_base.add_argument('-d', '--force-data',
 )
 parser_install_base.add_argument('--install-pypi-dependency',
     action='store_true',
-    default=False,
+    default=True,
     help='Try to install non-OpenCRAVAT package dependency with pip'
 )
 parser_install_base.set_defaults(func=install_base)
@@ -513,7 +513,7 @@ parser_install.add_argument('--skip-data',
 )
 parser_install.add_argument('--install-pypi-dependency',
     action='store_true',
-    default=False,
+    default=True,
     help='Try to install non-OpenCRAVAT package dependency with pip'
 )
 parser_install.set_defaults(func=install_modules)
@@ -547,7 +547,7 @@ parser_update.add_argument('--strategy',
                             )
 parser_update.add_argument('--install-pypi-dependency',
     action='store_true',
-    default=False,
+    default=True,
     help='Try to install non-OpenCRAVAT package dependency with pip'
 )
 parser_update.set_defaults(func=update_modules)
