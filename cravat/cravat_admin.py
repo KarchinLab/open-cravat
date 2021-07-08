@@ -372,8 +372,17 @@ def uninstall_modules (args):
         print('No modules to uninstall found')
 
 def publish_module (args):
+    sys_conf = au.get_system_conf()
+    if args.user is None:
+        if 'publish_username' in sys_conf:
+            args.user = sys_conf['publish_username']
+        else:
+            args.user = input("Username: ")
     if args.password is None:
-        args.password = getpass()
+        if 'publish_password' in sys_conf:
+            args.password = sys_conf['publish_password']
+        else:
+            args.password = getpass()
     au.publish_module(args.module, args.user, args.password, overwrite=args.overwrite, include_data=args.data)
 
 def install_base (args):
@@ -631,11 +640,12 @@ data_group.add_argument('-c',
                         help='publishes module without data.')
 parser_publish.add_argument('-u',
                             '--user',
-                            required=True,
+                            default=None,
                             help='user to publish as. Typically your email.'
                             )
 parser_publish.add_argument('-p',
                             '--password',
+                            default=None,
                             help='password for the user. Enter at prompt if missing.')
 parser_publish.add_argument('--force-yes',
                             default=False,
