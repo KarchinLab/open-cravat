@@ -584,6 +584,9 @@ def get_local_module_info(module_name):
     if module_name in mic.get_local():
         return mic.get_local()[module_name]
     else:
+        if os.path.exists(module_name):
+            module_info = LocalModuleInfo(module_name)
+            return module_info
         return None
 
 
@@ -607,7 +610,22 @@ def get_local_module_infos_by_names(module_names):
     for module_name in module_names:
         module = get_local_module_info(module_name)
         if module is not None:
-            modules[module_name] = module
+            modules[module.name] = module
+    return modules
+
+
+def get_local_module_infos_by_name(module_name):
+    return get_local_module_info(module_name)
+
+
+def get_local_reporter_module_infos_by_names(module_names):
+    modules = {}
+    for module_name in module_names:
+        if not module_name.endswith("reporter"):
+            module_name += "reporter"
+        module = get_local_module_info(module_name)
+        if module is not None:
+            modules[module.name] = module
     return modules
 
 
@@ -1257,7 +1275,13 @@ def module_exists_local(module_name):
     """
     Returns True if a module exists locally. False otherwise.
     """
-    return module_name in mic.get_local()
+    if module_name in mic.get_local():
+        return True
+    else:
+        if os.path.exists(module_name):
+            if os.path.exists(os.path.join(module_name, os.path.basename(module_name) + '.yml')):
+                return True
+    return False
 
 
 def module_exists_remote(module_name, version=None, private=False):

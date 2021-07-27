@@ -76,7 +76,7 @@ cravat_cmd_parser.add_argument(
     + "provide the output sqlite database from the previous run as input instead of a variant input file.",
 )
 cravat_cmd_parser.add_argument(
-    "-a", nargs="+", dest="annotators", help="annotators to run"
+    "-a", nargs="+", dest="annotators", help="Annotator names or annotator module directories"
 )
 cravat_cmd_parser.add_argument(
     "-e", nargs="+", dest="excludes", help="annotators to exclude"
@@ -142,7 +142,7 @@ cravat_cmd_parser.add_argument(
     nargs="+",
     dest="reports",
     default=[],
-    help="report types. If omitted, default one in cravat.yml is used.",
+    help="Reporter types or reporter module directories"
 )
 cravat_cmd_parser.add_argument(
     "-l",
@@ -271,6 +271,7 @@ cravat_cmd_parser.add_argument("--includesample", nargs='+', default=None, help=
 cravat_cmd_parser.add_argument("--excludesample", nargs='+', default=None, help="Sample IDs to exclude")
 cravat_cmd_parser.add_argument("--filter", default=None, help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument("--md", default=None, help="Specify the root directory of OpenCRAVAT modules (annotators, etc)")
+cravat_cmd_parser.add_argument("-m", dest="mapper_name", default=None, help="Mapper module name or mapper module directory")
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -335,12 +336,14 @@ class Cravat(object):
         self.status_writer = self.manager.StatusWriter(self.status_json_path)
 
     def check_valid_modules(self):
+        return
         absent_modules = []
         module_names = self.args.annotators
         if module_names is None:
             module_names = []
-        for report in self.reports:
-            module_name = report + "reporter"
+        for mname, m in self.reports.items():
+            if not module_name.endswith("reporter"):
+                module_name = report + "reporter"
             module_names.append(module_name)
         for module_name in module_names:
             if au.module_exists_local(module_name) == False:
@@ -478,25 +481,18 @@ class Cravat(object):
             os.remove(fn)
 
     def log_versions(self):
-        self.logger.info(f"version: open-cravat {au.get_current_package_version()}")
+        self.logger.info(f"version: open-cravat {au.get_current_package_version()} {os.path.dirname(os.path.abspath(__file__))}")
         if self.package_conf is not None:
             self.logger.info(
                 f'package: {self.args.package} {self.package_conf["version"]}'
             )
         for mname, module in self.annotators.items():
-            if mname in au.mic.local:
-                version = au.mic.local[mname].conf["version"]
-                self.logger.info(f"version: {mname} {version}")
+            self.logger.info(f"version: {module.name} {module.conf['version']} {os.path.dirname(module.script_path)}")
         if "mapper" not in self.args.skip:
-            if self.mapper_name in au.mic.local:
-                self.logger.info(
-                    f'version: {self.mapper_name} {au.mic.local[self.mapper_name].conf["version"]}'
-                )
-        for mname in self.reports:
-            mname = mname + "reporter"
-            if mname in au.mic.local:
-                version = au.mic.local[mname].conf["version"]
-                self.logger.info(f"version: {mname} {version}")
+            module = self.mapper
+            self.logger.info(f'version: {module.name} {module.conf["version"]} {os.path.dirname(module.script_path)}')
+        for mname, module in self.reports.items():
+            self.logger.info(f"version: {module.name} {module.conf['version']} {os.path.dirname(module.script_path)}")
 
     async def main(self):
         no_problem_in_run = True
@@ -748,8 +744,8 @@ class Cravat(object):
         if "package" in supplied_args:
             package_name = supplied_args["package"]
             del supplied_args["package"]
-            if package_name in au.mic.local:
-                self.package_conf = au.mic.local[package_name].conf
+            if package_name in au.mic.get_local():
+                self.package_conf = au.mic.get_local()[package_name].conf
             else:
                 self.package_conf = {}
         else:
@@ -911,8 +907,8 @@ class Cravat(object):
         else:
             self.output_dir = os.path.abspath(self.output_dir)
         # Package
-        if self.args.package is not None and self.args.package in au.mic.local:
-            self.package_conf = au.mic.local[self.args.package].conf
+        if self.args.package is not None and self.args.package in au.mic.get_local():
+            self.package_conf = au.mic.get_local()[self.args.package].conf
         else:
             self.package_conf = None
         self.annotator_names = self.args.annotators
@@ -967,6 +963,7 @@ class Cravat(object):
                     self.reports = []
             else:
                 self.reports = self.args.reports
+        self.reports = au.get_local_reporter_module_infos_by_names(self.reports)
         if self.args.genome is None:
             if constants.default_assembly_key in self.cravat_conf:
                 self.input_assembly = self.cravat_conf[constants.default_assembly_key]
@@ -996,7 +993,11 @@ class Cravat(object):
             self.logmode = "a"
         if self.args.note == None:
             self.args.note = ""
-        self.mapper_name = self.conf.get_cravat_conf()["genemapper"]
+        if self.args.mapper_name is not None:
+            self.mapper_name = self.args.mapper_name
+        else:
+            self.mapper_name = self.conf.get_cravat_conf()["genemapper"]
+        self.mapper = au.get_local_module_infos_by_name(self.mapper_name)
 
     def set_annotators(self, annotator_names):
         self.annotator_names = annotator_names
@@ -1509,10 +1510,13 @@ class Cravat(object):
                 print("finished in {0:.3f}s".format(rtime))
 
     async def run_reporter(self):
-        if self.reports != None:
-            module_names = [v + "reporter" for v in self.reports]
+        if len(self.reports) > 0:
+            module_names = [v for v in list(self.reports.keys())]
         else:
-            module_names = [self.cravat_conf["reporter"]]
+            if "reporter" in self.cravat_conf:
+                module_names = [self.cravat_conf["reporter"]]
+            else:
+                module_names = []
         all_reporters_ran_well = True
         response = {}
         for module_name in module_names:
