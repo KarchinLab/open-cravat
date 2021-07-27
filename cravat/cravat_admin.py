@@ -15,6 +15,7 @@ from getpass import getpass
 from distutils.version import LooseVersion
 from cravat import util
 
+
 class ExampleCommandsFormatter(object,):
     def __init__(self, prefix='',  cmd_indent=' '*2, desc_indent=' '*8, width=70):
         self._prefix = prefix
@@ -173,6 +174,8 @@ def yaml_string(x):
     return s
 
 def print_info(args):
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
     module_name = args.module
     installed = False
     remote_available = False
@@ -252,6 +255,8 @@ def set_modules_dir(args):
     print(au.get_modules_dir())
 
 def install_modules(args):
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
     matching_names = au.search_remote(*args.modules)
     if len(matching_names) > 1 and args.version is not None:
         sys.exit('Version filter cannot be applied to multiple modules')
@@ -319,6 +324,8 @@ def install_modules(args):
             )
 
 def update_modules(args):
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
     if len(args.modules) > 0:
         requested_modules = au.search_local(*args.modules)
     else:
@@ -353,6 +360,8 @@ def update_modules(args):
         install_modules(args)
 
 def uninstall_modules (args):
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
     matching_names = au.search_local(*args.modules)
     if len(matching_names) > 0:
         print('Uninstalling: {:}'.format(', '.join(matching_names)))
@@ -372,6 +381,8 @@ def uninstall_modules (args):
         print('No modules to uninstall found')
 
 def publish_module (args):
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
     sys_conf = au.get_system_conf()
     if args.user is None:
         if 'publish_username' in sys_conf:
@@ -389,15 +400,16 @@ def install_base (args):
     sys_conf = au.get_system_conf()
     base_modules = sys_conf.get(constants.base_modules_key,[])
     args = SimpleNamespace(modules=base_modules,
-                            force_data=args.force_data,
-                            version=None,
-                            yes=True,
-                            private=False,
-                            skip_dependencies=False,
-                            force=args.force,
-                            skip_data=False,
-                            install_pypi_dependency=args.install_pypi_dependency
-                            )
+        force_data=args.force_data,
+        version=None,
+        yes=True,
+        private=False,
+        skip_dependencies=False,
+        force=args.force,
+        skip_data=False,
+        install_pypi_dependency=args.install_pypi_dependency,
+        md=args.md
+    )
     install_modules(args)
 
 def create_account (args):
@@ -419,6 +431,8 @@ def make_example_input (arg):
     au.make_example_input(arg.directory)
 
 def new_annotator (args):
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
     au.new_annotator(args.annotator_name)
     module_info = au.get_local_module_info(args.annotator_name)
     print('Annotator {0} created at {1}'.format(args.annotator_name,
@@ -483,6 +497,10 @@ parser_install_base.add_argument('--install-pypi-dependency',
     default=True,
     help='Try to install non-OpenCRAVAT package dependency with pip'
 )
+parser_install_base.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules'
+)
 parser_install_base.set_defaults(func=install_base)
 
 # install
@@ -525,6 +543,10 @@ parser_install.add_argument('--install-pypi-dependency',
     default=True,
     help='Try to install non-OpenCRAVAT package dependency with pip'
 )
+parser_install.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules'
+)
 parser_install.set_defaults(func=install_modules)
 
 # update
@@ -559,6 +581,10 @@ parser_update.add_argument('--install-pypi-dependency',
     default=True,
     help='Try to install non-OpenCRAVAT package dependency with pip'
 )
+parser_update.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules'
+)
 parser_update.set_defaults(func=update_modules)
 
 # uninstall
@@ -570,6 +596,10 @@ parser_uninstall.add_argument('modules',
 parser_uninstall.add_argument('-y','--yes',
                                 action='store_true',
                                 help='Proceed without prompt')
+parser_uninstall.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules'
+)
 parser_uninstall.set_defaults(func=uninstall_modules)
 
 # info
@@ -581,6 +611,10 @@ parser_info.add_argument('-l','--local',
                             dest='local',
                             help='Include local info',
                             action='store_true')
+parser_info.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules'
+)
 parser_info.set_defaults(func=print_info)
 
 # ls
@@ -621,6 +655,10 @@ parser_ls.add_argument('--bytes',
     dest='raw_bytes',
     help='Machine readable data sizes'
     )
+parser_ls.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules'
+)
 parser_ls.set_defaults(func=list_modules)
 
 # publish
@@ -655,6 +693,10 @@ parser_publish.add_argument('--overwrite',
                             default=False,
                             action='store_true',
                             help='overwrites a published module/version')
+parser_publish.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules'
+)
 parser_publish.set_defaults(func=publish_module)
 
 # create-account
@@ -712,6 +754,10 @@ parser_new_annotator = subparsers.add_parser('new-annotator',
                                             help='creates a new annotator')
 parser_new_annotator.add_argument('annotator_name',
                                 help='Annotator name')
+parser_new_annotator.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules'
+)
 parser_new_annotator.set_defaults(func=new_annotator)
 
 # opens issue report

@@ -62,6 +62,8 @@ class CravatReport:
     def parse_cmd_args(self, inargs, inkwargs):
         parsed_args = cravat.util.get_args(parser, inargs, inkwargs)
         self.parsed_args = parsed_args
+        if parsed_args.md is not None:
+            constants.custom_modules_dir = parsed_args.md
         self.dbpath = parsed_args.dbpath
         self.filterpath = parsed_args.filterpath
         self.filtername = parsed_args.filtername
@@ -99,16 +101,17 @@ class CravatReport:
         if self.filter is None:
             if self.confs is not None and "filter" in self.confs:
                 self.filter = self.confs["filter"]
+            local = au.mic.get_local()
             if (
                 self.filter is None
                 and self.filterpath is None
                 and self.filtername is None
                 and self.filterstring is None
                 and parsed_args.package is not None
-                and parsed_args.package in au.mic.local
-                and "filter" in au.mic.local[parsed_args.package].conf
+                and parsed_args.package in local
+                and "filter" in local[parsed_args.package].conf
             ):
-                self.filter = au.mic.local[parsed_args.package].conf["filter"]
+                self.filter = local[parsed_args.package].conf["filter"]
         self.output_basename = os.path.basename(self.dbpath)[:-7]
         status_fname = "{}.status.json".format(self.output_basename)
         self.status_fpath = os.path.join(self.output_dir, status_fname)
@@ -1014,9 +1017,12 @@ def run_reporter(*inargs, **inkwargs):
             )
         return
     report_types = args.reporttypes
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
+    local = au.mic.get_local()
     if len(report_types) == 0:
-        if args.package is not None and args.package in au.mic.local:
-            package_conf = au.mic.local[args.package].conf
+        if args.package is not None and args.package in local:
+            package_conf = local[args.package].conf
             if "run" in package_conf and "reports" in package_conf["run"]:
                 report_types = package_conf["run"]["reports"]
     if hasattr(args, "output_dir") and args.output_dir is not None:
@@ -1056,9 +1062,13 @@ def run_reporter(*inargs, **inkwargs):
     loop = asyncio.get_event_loop()
     response = {}
     for report_type in report_types:
+        module_info = au.get_local_module_info(report_type + "reporter")
+        if module_info is None:
+            if args.silent == False:
+                print(f"Report module for {report_type} does not exist. Skipping...")
+            continue
         if args.silent == False:
             print(f"Generating {report_type} report... ", end="", flush=True)
-        module_info = au.get_local_module_info(report_type + "reporter")
         module_name = module_info.name
         spec = importlib.util.spec_from_file_location(
             module_name, module_info.script_path
@@ -1109,7 +1119,6 @@ parser.add_argument(
     "-t",
     dest="reporttypes",
     nargs="+",
-    choices=au.report_formats(),
     default=[],
     help="report types",
 )
@@ -1203,4 +1212,9 @@ parser.add_argument(
     help='Sample IDs to exclude',
 )
 parser.add_argument("--package", help="Use filters and report types in a package")
+parser.add_argument(
+    "--md", 
+    default=None, 
+    help="Specify the root directory of OpenCRAVAT modules (annotators, etc)"
+)
 parser.set_defaults(func=run_reporter)

@@ -141,7 +141,7 @@ cravat_cmd_parser.add_argument(
     "-t",
     nargs="+",
     dest="reports",
-    choices=au.report_formats(),
+    default=[],
     help="report types. If omitted, default one in cravat.yml is used.",
 )
 cravat_cmd_parser.add_argument(
@@ -270,7 +270,7 @@ cravat_cmd_parser.add_argument("--filtersql", default=None, help="Filter SQL")
 cravat_cmd_parser.add_argument("--includesample", nargs='+', default=None, help="Sample IDs to include")
 cravat_cmd_parser.add_argument("--excludesample", nargs='+', default=None, help="Sample IDs to exclude")
 cravat_cmd_parser.add_argument("--filter", default=None, help=argparse.SUPPRESS)
-
+cravat_cmd_parser.add_argument("--md", default=None, help="Specify the root directory of OpenCRAVAT modules (annotators, etc)")
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -459,7 +459,8 @@ class Cravat(object):
         logging.shutdown()
 
     def update_status(self, status):
-        self.status_writer.queue_status_update("status", status)
+        if self.args.do_not_change_status != True:
+            self.status_writer.queue_status_update("status", status)
 
     def run(self):
         import asyncio
@@ -503,8 +504,7 @@ class Cravat(object):
         try:
             self.aggregator_ran = False
             self.check_valid_modules()
-            if self.args.do_not_change_status != True:
-                self.update_status("Started cravat")
+            self.update_status("Started cravat")
             if self.pipeinput == False:
                 input_files_str = ", ".join(self.inputs)
             else:
@@ -613,8 +613,7 @@ class Cravat(object):
                 if not self.args.silent:
                     print("Running reporter...")
                 no_problem_in_run, report_response = await self.run_reporter()
-            if self.args.do_not_change_status != True:
-                self.update_status("Finished")
+            self.update_status("Finished")
         except Exception as e:
             self.handle_exception(e)
             no_problem_in_run = False
@@ -635,8 +634,7 @@ class Cravat(object):
                         "Finished with an exception. Runtime: {0:0.3f}s".format(runtime)
                     )
                     print("Check {}".format(self.log_path))
-                if self.args.do_not_change_status != True:
-                    self.update_status("Error")
+                self.update_status("Error")
             self.close_logger()
             if self.args.do_not_change_status != True:
                 self.status_writer.flush()
@@ -981,7 +979,7 @@ class Cravat(object):
                 exit()
         else:
             self.input_assembly = self.args.genome
-        if self.append_mode:
+        if self.append_mode and self.args.endat is None:
             self.args.endat = "aggregator"
         try:
             self.startlevel = self.runlevels[self.args.startat]
@@ -1382,10 +1380,9 @@ class Cravat(object):
         if self.verbose:
             if not self.args.silent:
                 print(" ".join(cmd))
-        if self.args.do_not_change_status != True:
-            self.update_status(
-                "Running {title} ({level})".format(title="Aggregator", level="variant")
-            )
+        self.update_status(
+            "Running {title} ({level})".format(title="Aggregator", level="variant")
+        )
         v_aggregator = Aggregator(cmd, self.status_writer)
         v_aggregator.run()
         rtime = time.time() - stime
@@ -1412,10 +1409,9 @@ class Cravat(object):
         if self.verbose:
             if not self.args.silent:
                 print(" ".join(cmd))
-        if self.args.do_not_change_status != True:
-            self.update_status(
-                "Running {title} ({level})".format(title="Aggregator", level="gene")
-            )
+        self.update_status(
+            "Running {title} ({level})".format(title="Aggregator", level="gene")
+        )
         g_aggregator = Aggregator(cmd, self.status_writer)
         g_aggregator.run()
         rtime = time.time() - stime
@@ -1441,12 +1437,11 @@ class Cravat(object):
             if self.verbose:
                 if not self.args.silent:
                     print(" ".join(cmd))
-            if self.args.do_not_change_status != True:
-                self.update_status(
-                    "Running {title} ({level})".format(
-                        title="Aggregator", level="sample"
-                    )
+            self.update_status(
+                "Running {title} ({level})".format(
+                    title="Aggregator", level="sample"
                 )
+            )
             s_aggregator = Aggregator(cmd, self.status_writer)
             s_aggregator.run()
             rtime = time.time() - stime
@@ -1471,12 +1466,11 @@ class Cravat(object):
             if self.verbose:
                 if not self.args.silent:
                     print(" ".join(cmd))
-            if self.args.do_not_change_status != True:
-                self.update_status(
-                    "Running {title} ({level})".format(
-                        title="Aggregator", level="mapping"
-                    )
+            self.update_status(
+                "Running {title} ({level})".format(
+                    title="Aggregator", level="mapping"
                 )
+            )
             m_aggregator = Aggregator(cmd, self.status_writer)
             m_aggregator.run()
             rtime = time.time() - stime
@@ -1885,10 +1879,9 @@ class Cravat(object):
                 end="",
                 flush=True,
             )
-        if self.args.do_not_change_status != True:
-            self.update_status(
-                "Running {title} ({name})".format(title=module.title, name=module.name)
-            )
+        self.update_status(
+            "Running {title} ({name})".format(title=module.title, name=module.name)
+        )
 
     def clean_up_at_end(self):
         fns = os.listdir(self.output_dir)

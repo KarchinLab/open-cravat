@@ -7,6 +7,10 @@ import platform
 import yaml
 
 # Directories
+custom_modules_dir = None
+custom_system_conf_path = None
+modules_dir_env_key = 'OPENCRAVAT_MD'
+system_conf_path_env_key = 'OPENCRAVAT_SYSTEM_CONF_PATH'
 packagedir = os.path.dirname(os.path.abspath(__file__))
 pl = platform.platform()
 if pl.startswith("Windows"):
