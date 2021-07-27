@@ -340,6 +340,7 @@ async def update_remote (request):
             response = 'notadmin'
             return web.json_response(response)
     au.mic.update_remote(force=True)
+    au.mic.update_local()
     return web.json_response('done')
 
 def handle_modules_changed():

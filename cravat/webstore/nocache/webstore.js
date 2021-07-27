@@ -15,7 +15,8 @@ var storeurl = $.get('/store/getstoreurl').done(function(response) {
 var newModuleAvailable = false;
 var baseModuleUpdateAvailable = false;
 var storeFirstOpen = true;
-var storeTileWidthStep = 440;
+var storeTileWidthStep = 470;
+var storeTileHeight = 140
 var modulesToIgnore = [
     'aggregator',
 ];
@@ -30,6 +31,9 @@ var currentPage = null;
 var installedGroups = {};
 var tagsCollected = [];
 var tagDesc = {};
+var numModulesInHomeSectionCol = 3
+var numModulesInHomeSectionRow = 2
+var numModulesInHomeSectionPage = 3
 
 function getEl(tag) {
     var new_node = document.createElement(tag);
@@ -71,7 +75,7 @@ function onClickStoreUpdateRemoteButton() {
         url: '/store/updateremote',
         success: function(response) {
             hideUpdateRemoteSpinner();
-            getRemote();
+            moduleChange();
         },
     });
 }
@@ -276,9 +280,10 @@ function getLocal() {
                 announceStoreUpdateAllAvailable();
             } else {
                 d.style.display = 'none';
+                disableUpdateAvailable()
             }
             populateStoreTagPanel();
-            showOrHideInstallAllButton();
+            //showOrHideInstallAllButton();
             showOrHideUpdateAllButton();
             showOrHideSystemModuleUpdateButton();
             if (systemReadyObj.online) {
@@ -439,6 +444,7 @@ function getMostDownloadedModuleNames() {
     }
     var top10ModuleNames = [];
     var count = 0;
+    var numModulesInHomeSection = numModulesInHomeSectionRow * numModulesInHomeSectionCol * numModulesInHomeSectionPage
     for (var i = 0; i < moduleNames.length; i++) {
         var moduleName = moduleNames[i];
         if (moduleName == 'base') {
@@ -453,9 +459,15 @@ function getMostDownloadedModuleNames() {
         if (remoteModuleInfo[moduleName].type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
             continue;
         }
+        if (remoteModuleInfo[moduleName].type == 'group') {
+            continue
+        }
+        if (baseModuleNames.indexOf(moduleName) >= 0) {
+            continue
+        }
         top10ModuleNames.push(moduleName);
         count++;
-        if (count == 10) {
+        if (count == numModulesInHomeSection) {
             break;
         }
     }
@@ -542,6 +554,7 @@ function getNewestModuleNames() {
     }
     var top10ModuleNames = [];
     var count = 0;
+    var numModulesInHomeSection = numModulesInHomeSectionRow * numModulesInHomeSectionCol * numModulesInHomeSectionPage
     for (var i = 0; i < moduleNames.length; i++) {
         var moduleName = moduleNames[i];
         if (moduleName == 'base') {
@@ -562,44 +575,46 @@ function getNewestModuleNames() {
         }
         top10ModuleNames.push(moduleName);
         count++;
-        if (count == 10) {
+        if (count == numModulesInHomeSection) {
             break;
         }
     }
     return top10ModuleNames;
 }
 
-function populateStoreHome() {
+function getHomeCarouselContent (modules, type) {
+    var sdiv = getEl('div');
+    sdiv.style.width = (Math.ceil(modules.length / numModulesInHomeSectionRow) * storeTileWidthStep) + 'px'
+    sdiv.style.height = numModulesInHomeSectionRow * storeTileHeight
+    for (var i = 0; i < modules.length; i = i + numModulesInHomeSectionRow) {
+        var ssdiv = getEl('div')
+        ssdiv.classList.add('home-tile-group')
+        for (var j = 0; j < numModulesInHomeSectionRow; j++) {
+            var n = i + j
+            if (n < modules.length) {
+                var panel = getRemoteModulePanel(modules[n], type, n);
+                addEl(ssdiv, panel);
+            }
+        }
+        addEl(sdiv, ssdiv)
+    }
+    return sdiv
+}
 
+function populateStoreHome() {
     // Most Downloaded
     var div = document.getElementById('store-home-featureddiv');
     $(div).empty();
-    var sdiv = getEl('div');
     var featuredModules = getMostDownloadedModuleNames();
     moduleLists['download'] = featuredModules;
-    sdiv.style.width = (featuredModules.length * storeTileWidthStep) - 160 + 'px';
-    for (var i = 0; i < featuredModules.length; i++) {
-        var panel = getRemoteModulePanel(featuredModules[i], 'download', i);
-        addEl(sdiv, panel);
-    }
+    var sdiv = getHomeCarouselContent(featuredModules, 'download')
     addEl(div, sdiv);
     // Newest
     var div = document.getElementById('store-home-newestdiv');
     $(div).empty();
-    var sdiv = getEl('div');
     var newestModules = getNewestModuleNames();
     moduleLists['newest'] = newestModules;
-    sdiv.style.width = (featuredModules.length * storeTileWidthStep) - 160 + 'px';
-    for (var i = 0; i < newestModules.length; i++) {
-        var remoteModuleName = newestModules[i];
-        var panel = null;
-        if (remoteModuleInfo[remoteModuleName]['type'] != 'group') {
-            panel = getRemoteModulePanel(remoteModuleName, 'newest', i);
-        } else {
-            panel = getRemoteModuleGroupPanel(remoteModuleName, 'newest', i);
-        }
-        addEl(sdiv, panel);
-    }
+    var sdiv = getHomeCarouselContent(newestModules, 'newest')
     addEl(div, sdiv);
     // Cancer 
     var div = document.getElementById('store-home-cancerdiv');
@@ -618,17 +633,7 @@ function populateStoreHome() {
         }
     }
     moduleLists['cancer'] = cancerModules;
-    sdiv.style.width = (featuredModules.length * storeTileWidthStep) - 160 + 'px';
-    for (var i = 0; i < cancerModules.length; i++) {
-        var panel = null;
-        if (remoteModuleInfo[cancerModules[i]]['type'] != 'group') {
-            panel = getRemoteModulePanel(cancerModules[i], 'cancer', i);
-        } else {
-            panel = getRemoteModuleGroupPanel(cancerModules[i], 'cancer', i);
-        }
-
-        addEl(sdiv, panel);
-    }
+    var sdiv = getHomeCarouselContent(cancerModules, 'cancer')
     addEl(div, sdiv);
     // Clinical Relevance
     var div = document.getElementById('store-home-clinicaldiv');
@@ -647,53 +652,45 @@ function populateStoreHome() {
         }
     }
     moduleLists['clinical'] = clinicalModules;
-    sdiv.style.width = (featuredModules.length * storeTileWidthStep) - 160 + 'px';
-    for (var i = 0; i < clinicalModules.length; i++) {
-        var panel = null;
-        if (remoteModuleInfo[clinicalModules[i]]['type'] != 'group') {
-            panel = getRemoteModulePanel(clinicalModules[i], 'cancer', i);
-        } else {
-            panel = getRemoteModuleGroupPanel(clinicalModules[i], 'cancer', i);
-        }
-        addEl(sdiv, panel);
-    }
+    var sdiv = getHomeCarouselContent(clinicalModules, 'clinical')
     addEl(div, sdiv);
+}
+
+function getCarouselScrollStep (d) {
+    var dw = d.offsetWidth;
+    var sw = null
+    if (dw >= storeTileWidthStep * 3) {
+        sw = storeTileWidthStep * 3
+    } else if (dw >= storeTileWidthStep * 2) {
+        sw = storeTileWidthStep * 2
+    } else {
+        sw = storeTileWidthStep
+    }
+    return sw
 }
 
 function onClickStoreHomeLeftArrow(el) {
     var d = el.nextElementSibling;
     var dw = d.offsetWidth;
-    if (dw > 940){
-        var storeTileWidthStep = 708
-    } else if (dw > 480){
-        var storeTileWidthStep = 470
-    } else if (dw == 480){
-        var storeTileWidthStep = 240
-    }
+    var sw = getCarouselScrollStep(d)
     var s = d.scrollLeft;
-    s -= Math.floor(dw / storeTileWidthStep) * storeTileWidthStep;
+    s -= Math.floor(dw / sw) * sw;
+    console.log("@", dw, s)
     $(d).animate({
         scrollLeft: s
-    });
-    //d.scrollLeft = s;
+    }, 100);
 }
 
 function onClickStoreHomeRightArrow(el) {
     var d = el.previousElementSibling;
     var dw = d.offsetWidth;
-    if (dw > 940){
-        var storeTileWidthStep = 708
-    } else if (dw > 480){
-        var storeTileWidthStep = 470
-    } else if (dw <= 480){
-        var storeTileWidthStep = 470
-    }
+    var sw = getCarouselScrollStep(d)
     var s = d.scrollLeft;
-    s += Math.floor(dw / storeTileWidthStep) * storeTileWidthStep;
+    s += Math.floor(dw / sw) * sw;
+    console.log("@", dw, s)
     $(d).animate({
         scrollLeft: s
-    });
-    //d.scrollLeft = s;
+    }, 100);
 }
 
 function trimRemote() {
@@ -2701,10 +2698,17 @@ function announceStoreUpdatingAll() {
 }
 
 function announceStoreUpdateAllAvailable() {
-    var span = document.getElementById('store-update-all-span');
+    //var span = document.getElementById('store-update-all-span');
+    //span.textContent = 'Updates to your installed modules are available!';
     var button = document.getElementById('store-update-all-button');
-    span.textContent = 'Updates to your installed modules are available!';
     button.style.display = 'inline';
+    var div = document.getElementById('update-available-div')
+    div.classList.add('active')
+}
+
+function disableUpdateAvailable() {
+    var div = document.getElementById('update-available-div')
+    div.classList.remove('active')
 }
 
 function webstore_run() {

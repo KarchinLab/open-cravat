@@ -172,57 +172,58 @@
     <div id='storebodydiv'>
         <div id='storemenudiv'>
             <input type='text' id='store-namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()'/>
-                <hr />
-                <label class='checkbox-store-container'>Discover
-                    <input type='checkbox' class='store-tag-checkbox' value='frontpage' id='store-tag-checkbox-home' onclick='onClickStoreHome();'/>
-                    <span class='checkmark-store'>
-                </label>
-                <label class='checkbox-store-container'>View All
-                    <input type='checkbox' value='viewall' id='store-tag-checkbox-viewall' onclick='onClickStoreTagResetButton(); '/>
-                    <span class='checkmark-store'>
-                </label>
-                <label class='checkbox-store-container'>Update available
-                    <input type='checkbox' class='store-tag-checkbox' value='newavailable' id='store-tag-checkbox-newavailable' onclick='onStoreTagCheckboxChange();'/>
-                    <span class='checkmark-store'>
-                </label>
-                <hr />
-                <div id='store-tag-custom-div'></div>
-                <hr />
-                <div id='store-install-all-button-div'>
-                    <button id='store-install-all-button' onclick='onClickStoreInstallAllButton();' style='font-size: 18px; display: none;'>Install All</button>
-                <br />
+            <hr />
+            <label class='checkbox-store-container'>Discover
+                <input type='checkbox' class='store-tag-checkbox' value='frontpage' id='store-tag-checkbox-home' onclick='onClickStoreHome();'/>
+                <span class='checkmark-store'>
+            </label>
+            <label class='checkbox-store-container'>View All
+                <input type='checkbox' value='viewall' id='store-tag-checkbox-viewall' onclick='onClickStoreTagResetButton(); '/>
+                <span class='checkmark-store'>
+            </label>
+            <label id='update-available-div' class='checkbox-store-container'>Update available
+                <input type='checkbox' class='store-tag-checkbox' value='newavailable' id='store-tag-checkbox-newavailable' onclick='onStoreTagCheckboxChange();'/>
+                <span class='checkmark-store'>
+            </label>
+            <hr />
+            <div id='bycategory-div'>By Category</div>
+            <div id='store-tag-custom-div'>
             </div>
+            <hr />
+            <!--<div id='store-install-all-button-div'>
+                <button id='store-install-all-button' onclick='onClickStoreInstallAllButton();' style='font-size: 18px; display: none;'>Install All</button>
+            </div>-->
         </div>
         <div style = 'max-width: 100%; overflow-x: hidden'>
-            <div id='store-update-all-div' >
-                <span id='store-update-all-span' style='color: red; font-size: 12px;'>Updates to your installed modules are available!</span>
-                <button id='store-update-all-button' class='butn' onclick='onClickStoreUpdateAllButton();' style='font-size: 12px;'>Update All</button>
-            </div>
             <div id='store-home-div'>
-                <span class='store-home-sectiontitle'>Most Downloaded</span>
-                <br />
-                <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
-                <div id='store-home-featureddiv' class='store-home-carouseldiv'></div>
-                <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
-                <br />
-                <span class='store-home-sectiontitle'>Newest</span>
-                <br />
-                <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
-                <div id='store-home-newestdiv' class='store-home-carouseldiv'></div>
-                <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
-                <br />
-                <span class='store-home-sectiontitle'>Cancer Resources</span>
-                <br />
-                <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
-                <div id='store-home-cancerdiv' class='store-home-carouseldiv'></div>
-                <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
-                <br />
-                <span class='store-home-sectiontitle'>Clinical Relevance</span>
-                <br />
-                <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
-                <div id='store-home-clinicaldiv' class='store-home-carouseldiv'></div>
-                <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
-                <br />
+                <div class='store-home-sectiondiv'>
+                    <div class='store-home-sectiontitle'>Most Downloaded</div>
+                    <div>The most downloaded modules to date!</div>
+                    <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <div id='store-home-featureddiv' class='store-home-carouseldiv'></div>
+                    <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
+                </div>
+                <div class='store-home-sectiondiv'>
+                    <div class='store-home-sectiontitle'>Newest</div>
+                    <div>The newest and greatest!</div>
+                    <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <div id='store-home-newestdiv' class='store-home-carouseldiv'></div>
+                    <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
+                </div>
+                <div class='store-home-sectiondiv'>
+                    <div class='store-home-sectiontitle'>Cancer Resources</div>
+                    <div>Cutting edge resources for cancer research!</div>
+                    <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <div id='store-home-cancerdiv' class='store-home-carouseldiv'></div>
+                    <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
+                </div>
+                <div class='store-home-sectiondiv'>
+                    <div class='store-home-sectiontitle'>Clinical Relevance</div>
+                    <div>Our curation of clinically-relevant resources!</div>
+                    <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <div id='store-home-clinicaldiv' class='store-home-carouseldiv'></div>
+                    <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
+                </div>
             </div>
             <div id='store-allmodule-div'>
                 <div id='store-sort-div'>
@@ -232,6 +233,10 @@
                         <option value='date'>Date</option>
                         <option value='size'>Size</option>
                     </select>
+                </div>
+                <div id='store-update-all-div' >
+                    <!--<span id='store-update-all-span' style='color: red; font-size: 12px;'>Updates to your installed modules are available!</span>-->
+                    <button id='store-update-all-button' class='butn' onclick='onClickStoreUpdateAllButton();' style='font-size: 12px;'>Update All</button>
                 </div>
                 <div id='remotemodulepanels' ></div>
             </div>

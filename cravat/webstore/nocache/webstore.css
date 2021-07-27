@@ -197,6 +197,10 @@ h1 {
     background-color: #f5f5f7;
 }
 
+.moduletile:hover {
+    background-color: #d0d0d7;
+}
+
 .moduletile-title {
     position: absolute;
     font-weight: bold;
@@ -262,6 +266,10 @@ h1 {
     background-color: #f0f6fc;
 }
 
+.moduletile[moduletype=webviewerwidget]:hover {
+    background-color: #d0d6dc;
+}
+
 .moduletile-group-updateavailable-span {
     position: absolute;
     right: 10px;
@@ -324,7 +332,7 @@ div.modulegroup span.modulepanel-datasource-span {
     width: 300px;
     height: calc(100% - 0px);
     overflow: auto;
-    font-size: 25px;
+    font-size: 20px;
     background-color: #f5f5f7;
     padding-left: 6px;
     left: 1px;
@@ -385,8 +393,8 @@ input:checked + .store-switch-slider:before {
 
 #store-sort-div {
     position: absolute;
-    top: 14px;
-    right: -3px;
+    top: 16px;
+    left: 110px;
 }
 
 #store-sort-label {
@@ -401,7 +409,7 @@ input:checked + .store-switch-slider:before {
     display: flex;
     flex-wrap: wrap;
     position: absolute;
-    top: 44px;
+    top: 48px;
     background-color: white;
     left: 100px;
     max-width: 100%;
@@ -449,19 +457,19 @@ input:checked + .store-switch-slider:before {
 }
 #store-home-div {
     position: absolute;
-    top: 40px;
+    top: 16px;
     left: 310px;
     width: calc(100% - 310px);
 }
 
 .store-home-sectiontitle {
-    font-size: 20px;
+    font-size: 30px;
     font-family: sourcesanspro-bold;
     color: #385487;
+    margin-bottom: 6px;
 }
 
 .store-home-carouseldiv {
-    height: 150px;
     width: calc(100% - 56px);
     overflow: hidden;
     display: inline-block;
@@ -472,6 +480,11 @@ input:checked + .store-switch-slider:before {
 .store-carousel-arrow {
     height: 39px;
     cursor: pointer;
+    opacity: 0.2;
+}
+
+.store-carousel-arrow:hover {
+    opacity: 0.5;
 }
 
 .moduledetaildiv {
@@ -643,14 +656,17 @@ input:checked + .store-switch-slider:before {
 }
 
 #store-update-all-div {
-    position: relative;
+    /*position: relative;
     left: 311px;
     top: 3px;
     display: none;
     width: calc(100% - 240px);
     display: inline-block;
     margin-top: 14px;
-    height: 26px;
+    height: 26px;*/
+    position: absolute;
+    left: 220px;
+    top: 16px;
 }
 
 #verdiv {
@@ -665,13 +681,14 @@ input:checked + .store-switch-slider:before {
 
 .checkmark-store {
     position: absolute;
-    top: 6px;
-    left: 0;
+    top: 3px;
+    left: 3px;
     height: 21px;
     width: 21px;
     background-color: #e5e6e7;
     border-radius: 5px;
-  }
+}
+
 .checkbox-store-container {
     display: block;
     position: relative;
@@ -686,6 +703,7 @@ input:checked + .store-switch-slider:before {
 
 .checkbox-store-container:hover {
     background-color: #888888;
+    color: #ffffff;
 }
 
 /* Hide the browser's default checkbox */
@@ -736,7 +754,7 @@ input:checked + .store-switch-slider:before {
 
 .back-arrow {
     position: absolute;
-    width: 77px;
+    width: 40px;
     cursor: pointer;
     left: 112px;
     top: 14px;
@@ -748,3 +766,38 @@ input:checked + .store-switch-slider:before {
   @media screen and (max-width: 1350px) {
     .store-home-carouseldiv {width: 480px}
   }
+
+.home-tile-group {
+    display: inline-block;
+    flex-direction: column;
+    width: 470px;
+}
+
+.store-home-sectiondiv {
+    margin-bottom: 50px;
+}
+
+#store-tag-custom-div {
+    font-size: 16px;
+}
+
+#store-tag-custom-div .checkbox-store-container {
+    height: 27px;
+    text-transform: capitalize;
+}
+
+#update-available-div {
+    pointer-events: none;
+    color: #aaaaaa;
+}
+
+#update-available-div.active {
+    pointer-events: auto;
+    color: #000000;
+}
+
+#bycategory-div {
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
