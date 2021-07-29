@@ -76,10 +76,10 @@ cravat_cmd_parser.add_argument(
     + "provide the output sqlite database from the previous run as input instead of a variant input file.",
 )
 cravat_cmd_parser.add_argument(
-    "-a", nargs="+", dest="annotators", help="Annotator names or annotator module directories"
+    "-a", nargs="+", dest="annotators", default=[], help="Annotator module names or directories"
 )
 cravat_cmd_parser.add_argument(
-    "-e", nargs="+", dest="excludes", help="annotators to exclude"
+    "-e", nargs="+", dest="excludes", default=[], help="annotators to exclude"
 )
 cravat_cmd_parser.add_argument("-n", dest="run_name", help="name of cravat run")
 cravat_cmd_parser.add_argument(
@@ -271,7 +271,8 @@ cravat_cmd_parser.add_argument("--includesample", nargs='+', default=None, help=
 cravat_cmd_parser.add_argument("--excludesample", nargs='+', default=None, help="Sample IDs to exclude")
 cravat_cmd_parser.add_argument("--filter", default=None, help=argparse.SUPPRESS)
 cravat_cmd_parser.add_argument("--md", default=None, help="Specify the root directory of OpenCRAVAT modules (annotators, etc)")
-cravat_cmd_parser.add_argument("-m", dest="mapper_name", default=None, help="Mapper module name or mapper module directory")
+cravat_cmd_parser.add_argument("-m", dest="mapper_name", nargs="+", default=[], help="Mapper module name or mapper module directory")
+cravat_cmd_parser.add_argument("-p", nargs="+", dest="postaggregators", default=[], help="Postaggregators to run. Additionally, tagsampler, casecontrol, varmeta, and vcfinfo will automatically run depending on conditions.")
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -482,7 +483,7 @@ class Cravat(object):
 
     def log_versions(self):
         self.logger.info(f"version: open-cravat {au.get_current_package_version()} {os.path.dirname(os.path.abspath(__file__))}")
-        if self.package_conf is not None:
+        if self.package_conf is not None and len(self.package_conf) > 0:
             self.logger.info(
                 f'package: {self.args.package} {self.package_conf["version"]}'
             )
@@ -740,7 +741,7 @@ class Cravat(object):
             if not self.args.silent:
                 print(exc_str)
 
-    def make_args_namespace(self, supplied_args):
+    def set_package_conf(self, supplied_args):
         if "package" in supplied_args:
             package_name = supplied_args["package"]
             del supplied_args["package"]
@@ -750,6 +751,8 @@ class Cravat(object):
                 self.package_conf = {}
         else:
             self.package_conf = {}
+
+    def make_self_args_considering_package_conf(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
         if "run" in self.package_conf:
             package_conf_run = {k: v for k, v in self.package_conf['run'].items() if v is not None}
@@ -759,9 +762,22 @@ class Cravat(object):
             del supplied_args_no_none['inputs']
         full_args.update(supplied_args_no_none)
         self.args = SimpleNamespace(**full_args)
+        self.make_run_conf_path()
+        self.make_self_conf()
+        self.process_module_options()
+        self.cravat_conf = self.conf.get_cravat_conf()
+        self.run_conf = self.conf._all
+        args_keys = self.args.__dict__.keys()
+        for arg_key in args_keys:
+            if self.args.__dict__[arg_key] is None and arg_key in self.run_conf:
+                self.args.__dict__[arg_key] = self.run_conf[arg_key]
+
+    def make_run_conf_path(self):
         self.run_conf_path = ""
-        if "conf" in full_args and os.path.exists(full_args["conf"]):
-            self.run_conf_path = full_args["conf"]
+        if hasattr(self.args, "conf") and os.path.exists(self.args.conf):
+            self.run_conf_path = self.args.conf
+
+    def make_self_conf(self):
         self.conf = ConfigLoader(job_conf_path=self.run_conf_path)
         if self.args.confs != None:
             conf_bak = self.conf
@@ -772,6 +788,8 @@ class Cravat(object):
                 if not self.args.silent:
                     print("Error in processing cs option. --cs option was not applied.")
                 self.conf = conf_bak
+
+    def process_module_options(self):
         if self.args.module_option is not None:
             for opt_str in self.args.module_option:
                 toks = opt_str.split("=")
@@ -793,16 +811,8 @@ class Cravat(object):
                     self.conf._all[module_name] = {}
                 v = toks[1]
                 self.conf._all[module_name][key] = v
-        self.cravat_conf = self.conf.get_cravat_conf()
-        # run conf
-        self.run_conf = self.conf._all #self.conf.get_run_conf()
-        args_keys = self.args.__dict__.keys()
-        for arg_key in args_keys:
-            if self.args.__dict__[arg_key] is None and arg_key in self.run_conf:
-                self.args.__dict__[arg_key] = self.run_conf[arg_key]
-        if self.args.show_version:
-            au.show_cravat_version()
-            exit()
+
+    def set_self_inputs(self):
         if self.args.inputs is not None and len(self.args.inputs) == 0:
             if "inputs" in self.run_conf:
                 if type(self.run_conf["inputs"]) == list:
@@ -814,7 +824,52 @@ class Cravat(object):
                 cravat_cmd_parser.print_help()
                 print("\nNo input file was given.")
                 exit()
-        first_non_url_input = None
+        self.process_url_and_pipe_inputs()
+        self.num_input = len(self.inputs)
+
+    def download_url_input(self, input_no):
+        ip = self.inputs[input_no]
+        if " " in ip:
+            print(f"Space is not allowed in input file paths ({ip})")
+            exit()
+        if util.is_url(ip):
+            import requests
+            if not self.args.silent:
+                print(f"Fetching {ip}... ")
+            try:
+                r = requests.head(ip)
+                r = requests.get(ip, stream=True)
+                fn = os.path.basename(ip)
+                fpath = fn
+                cur_size = 0.0
+                num_total_star = 40.0
+                total_size = float(r.headers["content-length"])
+                with open(fpath, "wb") as wf:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        wf.write(chunk)
+                        cur_size += float(len(chunk))
+                        perc = cur_size / total_size
+                        cur_star = int(perc * num_total_star)
+                        rem_stars = int(num_total_star - cur_star)
+                        cur_prog = "*" * cur_star
+                        rem_prog = " " * rem_stars
+                        print(
+                            f"[{cur_prog}{rem_prog}] {util.humanize_bytes(cur_size)} / {util.humanize_bytes(total_size)} ({perc * 100.0:.0f}%)",
+                            end="\r",
+                            flush=True,
+                        )
+                        if cur_size == total_size:
+                            print("\n")
+                self.inputs[input_no] = os.path.abspath(fpath)
+            except:
+                print(f"File downloading unsuccessful. Exiting.")
+                exit()
+            return None
+        else:
+            return ip
+
+    def process_url_and_pipe_inputs(self):
+        self.first_non_url_input = None
         if (
             self.args.inputs is not None
             and len(self.args.inputs) == 1
@@ -826,58 +881,24 @@ class Cravat(object):
                 os.path.abspath(x) if not util.is_url(x) and x != "-" else x
                 for x in self.args.inputs
             ]
-            for ip in self.inputs:
-                if " " in ip:
-                    print(f"Space is not allowed in input file paths ({ip})")
-                    exit()
-                for input_no in range(len(self.inputs)):
-                    ip = self.inputs[input_no]
-                    if util.is_url(ip):
-                        import requests
-                        if not self.args.silent:
-                            print(f"Fetching {ip}... ")
-                        try:
-                            r = requests.head(ip)
-                            r = requests.get(ip, stream=True)
-                            fn = os.path.basename(ip)
-                            fpath = fn
-                            cur_size = 0.0
-                            num_total_star = 40.0
-                            total_size = float(r.headers["content-length"])
-                            with open(fpath, "wb") as wf:
-                                for chunk in r.iter_content(chunk_size=8192):
-                                    wf.write(chunk)
-                                    cur_size += float(len(chunk))
-                                    perc = cur_size / total_size
-                                    cur_star = int(perc * num_total_star)
-                                    rem_stars = int(num_total_star - cur_star)
-                                    cur_prog = "*" * cur_star
-                                    rem_prog = " " * rem_stars
-                                    print(
-                                        f"[{cur_prog}{rem_prog}] {util.humanize_bytes(cur_size)} / {util.humanize_bytes(total_size)} ({perc * 100.0:.0f}%)",
-                                        end="\r",
-                                        flush=True,
-                                    )
-                                    if cur_size == total_size:
-                                        print("\n")
-                            self.inputs[input_no] = os.path.abspath(fpath)
-                        except:
-                            print(f"File downloading unsuccessful. Exiting.")
-                            exit()
-                    elif first_non_url_input is None:
-                        first_non_url_input = ip
+            for input_no in range(len(self.inputs)):
+                if self.download_url_input(input_no) is not None and self.first_non_url_input is None:
+                    self.first_non_url_input = self.inputs[input_no]
         else:
             self.inputs = []
-        num_input = len(self.inputs)
+
+    def set_run_name(self):
         self.run_name = self.args.run_name
         if self.run_name == None:
-            if num_input == 0 or self.pipeinput:
+            if self.num_input == 0 or self.pipeinput:
                 self.run_name = "cravat_run"
             else:
                 self.run_name = os.path.basename(self.inputs[0])
-                if num_input > 1:
+                if self.num_input > 1:
                     self.run_name += "_and_" + str(len(self.inputs) - 1) + "_files"
-        if num_input > 0 and self.inputs[0].endswith(".sqlite"):
+
+    def set_append_mode(self):
+        if self.num_input > 0 and self.inputs[0].endswith(".sqlite"):
             self.append_mode = True
             if self.args.skip is None:
                 self.args.skip = ["converter", "mapper"]
@@ -896,86 +917,29 @@ class Cravat(object):
                 self.inputs[0] = target_path
             if self.run_name.endswith(".sqlite"):
                 self.run_name = self.run_name[:-7]
-        if self.args.skip is None:
-            self.args.skip = []
+
+    def set_output_dir(self):
         self.output_dir = self.args.output_dir
         if self.output_dir == None:
-            if num_input == 0 or first_non_url_input is None:
+            if self.num_input == 0 or self.first_non_url_input is None:
                 self.output_dir = os.getcwd()
             else:
-                self.output_dir = os.path.dirname(os.path.abspath(first_non_url_input))
+                self.output_dir = os.path.dirname(os.path.abspath(self.first_non_url_input))
         else:
             self.output_dir = os.path.abspath(self.output_dir)
-        # Package
-        if self.args.package is not None and self.args.package in au.mic.get_local():
-            self.package_conf = au.mic.get_local()[self.args.package].conf
-        else:
-            self.package_conf = None
-        self.annotator_names = self.args.annotators
-        if "annotator" in self.args.skip:
-            self.annotators = {}
-        else:
-            if self.annotator_names == None:
-                if self.package_conf is not None:
-                    if (
-                        "run" in self.package_conf
-                        and "annotators" in self.package_conf["run"]
-                    ):
-                        self.annotators = au.get_local_module_infos_by_names(
-                            self.package_conf["run"]["annotators"]
-                        )
-                    else:
-                        self.annotators = au.get_local_module_infos_of_type("annotator")
-                else:
-                    self.annotators = au.get_local_module_infos_of_type("annotator")
-            else:
-                self.annotators = au.get_local_module_infos_by_names(
-                    self.annotator_names
-                )
-        self.excludes = self.args.excludes
-        if self.excludes == ["*"]:
-            self.annotators = {}
-        elif self.excludes != None:
-            for m in self.excludes:
-                if m in self.annotators:
-                    del self.annotators[m]
-        if os.path.exists(self.output_dir) == False:
-            os.mkdir(self.output_dir)
-        if self.args.verbose == True:
-            self.verbose = True
-        else:
-            self.verbose = False
-        if "reporter" in self.args.skip:
-            self.reports = []
-        else:
-            if self.args.reports is None:
-                if self.package_conf is not None:
-                    if (
-                        "run" in self.package_conf
-                        and "reports" in self.package_conf["run"]
-                    ):
-                        self.reports = self.package_conf["run"]["reports"]
-                elif "reporter" in self.cravat_conf:
-                    self.reports = [
-                        self.cravat_conf["reporter"].replace("reporter", "")
-                    ]
-                else:
-                    self.reports = []
-            else:
-                self.reports = self.args.reports
-        self.reports = au.get_local_reporter_module_infos_by_names(self.reports)
+
+    def set_genome_assembly(self):
         if self.args.genome is None:
             if constants.default_assembly_key in self.cravat_conf:
                 self.input_assembly = self.cravat_conf[constants.default_assembly_key]
             else:
-                msg = "Genome assembly should be given (as one of {}) with -l option or a default genome assembly should be defined in {} as default_assembly.".format(
-                    ", ".join(constants.assembly_choices),
-                    constants.main_conf_path,
-                )
+                msg = "Genome assembly should be given (as one of {}) with -l option or a default genome assembly should be defined in {} as default_assembly.".format(", ".join(constants.assembly_choices), constants.main_conf_path,)
                 print(msg)
                 exit()
         else:
             self.input_assembly = self.args.genome
+
+    def set_start_end_levels(self):
         if self.append_mode and self.args.endat is None:
             self.args.endat = "aggregator"
         try:
@@ -986,6 +950,28 @@ class Cravat(object):
             self.endlevel = self.runlevels[self.args.endat]
         except KeyError:
             self.endlevel = max(self.runlevels.values())
+
+    def make_args_namespace(self, supplied_args):
+        self.set_package_conf(supplied_args)
+        self.make_self_args_considering_package_conf(supplied_args)
+        if self.args.show_version:
+            au.show_cravat_version()
+            exit()
+        self.set_self_inputs()
+        self.set_run_name()
+        self.set_append_mode()
+        if self.args.skip is None:
+            self.args.skip = []
+        self.set_output_dir()
+        self.set_mapper()
+        self.set_annotators()
+        self.set_postaggregators()
+        self.set_reporters()
+        if os.path.exists(self.output_dir) == False:
+            os.mkdir(self.output_dir)
+        self.verbose = self.args.verbose == True
+        self.set_genome_assembly()
+        self.set_start_end_levels()
         self.cleandb = self.args.cleandb
         if self.args.newlog == True:
             self.logmode = "w"
@@ -993,33 +979,68 @@ class Cravat(object):
             self.logmode = "a"
         if self.args.note == None:
             self.args.note = ""
-        if self.args.mapper_name is not None:
-            self.mapper_name = self.args.mapper_name
+
+    def set_annotators(self):
+        self.excludes = self.args.excludes
+        if len(self.args.annotators) > 0:
+            if self.args.annotators == ["all"]:
+                self.annotator_names = sorted(list(au.get_local_module_infos_of_type("annotator").keys()))
+            else:
+                self.annotator_names = self.args.annotators
+        elif self.package_conf is not None and "run" in self.package_conf and "annotators" in self.package_conf["run"]:
+            self.annotator_names = self.package_conf["run"]["annotators"]
+        else:
+            self.annotator_names = []
+        if "annotator" in self.args.skip:
+            self.annotator_names = []
+        elif len(self.excludes) > 0:
+            if "all" in self.excludes:
+                self.annotator_names = []
+            else:
+                for m in self.excludes:
+                    if m in self.annotator_names:
+                        self.annotator_names.remove(m)
+        self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
+
+    def set_mapper(self):
+        if len(self.args.mapper_name) > 0:
+            self.mapper_name = self.args.mapper_name[0]
+        elif self.package_conf is not None and "run" in self.package_conf and "mapper" in self.package_conf["run"]:
+            self.mapper_name = self.package_conf["run"]["mapper"]
         else:
             self.mapper_name = self.conf.get_cravat_conf()["genemapper"]
-        self.mapper = au.get_local_module_infos_by_name(self.mapper_name)
+        self.mapper = au.get_local_module_info_by_name(self.mapper_name)
 
-    def set_annotators(self, annotator_names):
-        self.annotator_names = annotator_names
-        self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
+    def set_postaggregators(self):
+        if len(self.args.postaggregators) > 0:
+            self.postaggregator_names = self.args.postaggregators
+        elif self.package_conf is not None and "run" in self.package_conf and "postaggregators" in self.package_conf["run"]:
+            self.postaggregator_names = sorted(list(au.get_local_module_infos_by_names(self.package_conf["run"]["postaggregators"])))
+        else:
+            self.postaggregator_names = []
+        if "postaggregator" in self.args.skip:
+            self.postaggregators = {}
+        else:
+            self.postaggregator_names = sorted(list(set(self.postaggregator_names).union(set(constants.default_postaggregator_names))))
+            self.postaggregators = au.get_local_module_infos_by_names(self.postaggregator_names)
+
+    def set_reporters(self):
+        if len(self.args.reports) > 0:
+            self.report_names = self.args.reports
+        elif self.package_conf is not None and "run" in self.package_conf and "reports" in self.package_conf["run"]:
+            self.report_names = self.package_conf["run"]["reports"]
+        else:
+            self.report_names = []
+        if "reporter" in self.args.skip:
+            self.reports = {}
+        else:
+            self.reporter_names = [v + 'reporter' for v in self.report_names]
+            self.reports = au.get_local_module_infos_by_names(self.reporter_names)
 
     def set_and_check_input_files(self):
         self.crvinput = os.path.join(self.output_dir, self.run_name + ".crv")
         self.crxinput = os.path.join(self.output_dir, self.run_name + ".crx")
         self.crginput = os.path.join(self.output_dir, self.run_name + ".crg")
-        # if self.input.split('.')[-1] == 'crv':
-        #     self.crvinput = self.input
-        # else:
-        #     self.crvinput = os.path.join(self.output_dir, self.run_name + '.crv')
-        # if self.input.split('.')[-1] == 'crx':
-        #     self.crxinput = self.input
-        # else:
-        #     self.crxinput = os.path.join(self.output_dir, self.run_name + '.crx')
-        # if self.input.split('.')[-1] == 'crg':
-        #     self.crginput = self.input
-        # else:
-        #     self.crginput = os.path.join(self.output_dir, self.run_name + '.crg')
-
         if os.path.exists(self.crvinput):
             self.crv_present = True
         else:
@@ -1481,9 +1502,7 @@ class Cravat(object):
         return v_aggregator.db_path
 
     def run_postaggregators(self):
-        modules = au.get_local_module_infos_of_type("postaggregator")
-        for module_name in modules:
-            module = modules[module_name]
+        for module_name, module in self.postaggregators.items():
             cmd = [module.script_path, "-d", self.output_dir, "-n", self.run_name]
             postagg_conf = {}
             if module.name in self.cravat_conf:

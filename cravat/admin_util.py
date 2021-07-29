@@ -614,7 +614,7 @@ def get_local_module_infos_by_names(module_names):
     return modules
 
 
-def get_local_module_infos_by_name(module_name):
+def get_local_module_info_by_name(module_name):
     return get_local_module_info(module_name)
 
 
