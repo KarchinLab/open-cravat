@@ -315,33 +315,34 @@ class Cravat(object):
         self.annotators = {}
         self.append_mode = False
         self.pipeinput = False
-        self.make_args_namespace(kwargs)
-        if self.args.clean_run:
-            if not self.args.silent:
-                print("Deleting previous output files...")
-            self.delete_output_files()
-        self.get_logger()
-        self.start_time = time.time()
-        self.logger.info(f'{" ".join(sys.argv)}')
-        self.logger.info(
-            "started: {0}".format(time.asctime(time.localtime(self.start_time)))
-        )
-        if self.run_conf_path != "":
-            self.logger.info("conf file: {}".format(self.run_conf_path))
-        self.modules_conf = self.conf.get_modules_conf()
-        self.write_initial_status_json()
-        self.unique_logs = {}
-        self.manager = MyManager()
-        self.manager.register("StatusWriter", StatusWriter)
-        self.manager.start()
-        self.status_writer = self.manager.StatusWriter(self.status_json_path)
+        try:
+            self.make_args_namespace(kwargs)
+            if self.args.clean_run:
+                if not self.args.silent:
+                    print("Deleting previous output files...")
+                self.delete_output_files()
+            self.start_time = time.time()
+            self.logger.info(f'{" ".join(sys.argv)}')
+            self.logger.info(
+                "started: {0}".format(time.asctime(time.localtime(self.start_time)))
+            )
+            if self.run_conf_path != "":
+                self.logger.info("conf file: {}".format(self.run_conf_path))
+            self.modules_conf = self.conf.get_modules_conf()
+            self.write_initial_status_json()
+            self.unique_logs = {}
+            self.manager = MyManager()
+            self.manager.register("StatusWriter", StatusWriter)
+            self.manager.start()
+            self.status_writer = self.manager.StatusWriter(self.status_json_path)
+        except Exception as e:
+            self.handle_exception(e)
 
-    def check_valid_modules(self):
-        return
-        absent_modules = []
-        module_names = self.args.annotators
-        if module_names is None:
-            module_names = []
+    def check_valid_modules(self, module_names):
+        for module_name in module_names:
+            if au.module_exists_local(module_name) == False:
+                raise InvalidModule(module_name)
+        '''
         for mname, m in self.reports.items():
             if not module_name.endswith("reporter"):
                 module_name = report + "reporter"
@@ -354,7 +355,7 @@ class Cravat(object):
             self.logger.info(msg)
             if not self.args.silent:
                 print(msg)
-            raise InvalidReporter
+            raise InvalidModule
         for mname, linfo in self.annotators.items():
             for sec_name in linfo.secondary_module_names:
                 if not au.module_exists_local(sec_name):
@@ -362,7 +363,8 @@ class Cravat(object):
                     self.logger.info(msg)
                     if not self.args.silent:
                         print(msg)
-                    raise InvalidReporter
+                    raise InvalidModule
+        '''
 
     def write_initial_status_json(self):
         status_fname = "{}.status.json".format(self.run_name)
@@ -433,6 +435,10 @@ class Cravat(object):
                 wf.write(json.dumps(self.status_json, indent=2, sort_keys=True))
 
     def get_logger(self):
+        if self.args.newlog == True:
+            self.logmode = "w"
+        else:
+            self.logmode = "a"
         self.logger = logging.getLogger("cravat")
         self.logger.setLevel("INFO")
         self.log_path = os.path.join(self.output_dir, self.run_name + ".log")
@@ -500,7 +506,6 @@ class Cravat(object):
         report_response = None
         try:
             self.aggregator_ran = False
-            self.check_valid_modules()
             self.update_status("Started cravat")
             if self.pipeinput == False:
                 input_files_str = ", ".join(self.inputs)
@@ -731,7 +736,13 @@ class Cravat(object):
     def handle_exception(self, e):
         exc_str = traceback.format_exc()
         exc_class = e.__class__
-        if exc_class in [InvalidData, InvalidReporter]:
+        if exc_class == InvalidModule:
+            if hasattr(self, 'logger'):
+                self.logger.error(str(e))
+            if not self.args.silent:
+                print(e)
+            exit()
+        elif exc_class == InvalidData:
             pass
         elif exc_class == ExpectedException:
             self.logger.exception("An expected exception occurred.")
@@ -958,11 +969,12 @@ class Cravat(object):
             au.show_cravat_version()
             exit()
         self.set_self_inputs()
+        self.set_output_dir()
         self.set_run_name()
+        self.get_logger()
         self.set_append_mode()
         if self.args.skip is None:
             self.args.skip = []
-        self.set_output_dir()
         self.set_mapper()
         self.set_annotators()
         self.set_postaggregators()
@@ -973,10 +985,6 @@ class Cravat(object):
         self.set_genome_assembly()
         self.set_start_end_levels()
         self.cleandb = self.args.cleandb
-        if self.args.newlog == True:
-            self.logmode = "w"
-        else:
-            self.logmode = "a"
         if self.args.note == None:
             self.args.note = ""
 
@@ -1000,6 +1008,7 @@ class Cravat(object):
                 for m in self.excludes:
                     if m in self.annotator_names:
                         self.annotator_names.remove(m)
+        self.check_valid_modules(self.annotator_names)
         self.annotators = au.get_local_module_infos_by_names(self.annotator_names)
 
     def set_mapper(self):
@@ -1009,6 +1018,7 @@ class Cravat(object):
             self.mapper_name = self.package_conf["run"]["mapper"]
         else:
             self.mapper_name = self.conf.get_cravat_conf()["genemapper"]
+        self.check_valid_modules(self.mapper_name)
         self.mapper = au.get_local_module_info_by_name(self.mapper_name)
 
     def set_postaggregators(self):
@@ -1022,6 +1032,7 @@ class Cravat(object):
             self.postaggregators = {}
         else:
             self.postaggregator_names = sorted(list(set(self.postaggregator_names).union(set(constants.default_postaggregator_names))))
+            self.check_valid_modules(self.postaggregator_names)
             self.postaggregators = au.get_local_module_infos_by_names(self.postaggregator_names)
 
     def set_reporters(self):
@@ -1035,6 +1046,7 @@ class Cravat(object):
             self.reports = {}
         else:
             self.reporter_names = [v + 'reporter' for v in self.report_names]
+            self.check_valid_modules(self.reporter_names)
             self.reports = au.get_local_module_infos_by_names(self.reporter_names)
 
     def set_and_check_input_files(self):

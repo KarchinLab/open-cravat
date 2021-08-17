@@ -33,8 +33,12 @@ class KillInstallException(Exception):
     pass
 
 
-class InvalidReporter(Exception):
-    pass
+class InvalidModule(Exception):
+    def __init__(self, module_name):
+        self.msg = "Invalid module: {}".format(module_name)
+
+    def __str__(self):
+        return self.msg
 
 
 class NoVariantError(Exception):
