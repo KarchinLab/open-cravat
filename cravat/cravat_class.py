@@ -76,7 +76,10 @@ cravat_cmd_parser.add_argument(
     + "provide the output sqlite database from the previous run as input instead of a variant input file.",
 )
 cravat_cmd_parser.add_argument(
-    "-a", nargs="+", dest="annotators", default=[], help="Annotator module names or directories"
+    "-a", nargs="+", dest="annotators", default=[], help="Annotator module names or directories. If --package is used also, annotator modules defined with -a will be added."
+)
+cravat_cmd_parser.add_argument(
+    "-A", nargs="+", dest="annotators_replace", default=[], help="Annotator module names or directories. If --package is used also, annotator modules defined with -A will replace those defined with --package."
 )
 cravat_cmd_parser.add_argument(
     "-e", nargs="+", dest="excludes", default=[], help="annotators to exclude"
@@ -742,13 +745,32 @@ class Cravat(object):
 
     def make_self_args_considering_package_conf(self, supplied_args):
         full_args = util.get_argument_parser_defaults(cravat_cmd_parser)
+        # package
         if "run" in self.package_conf:
             package_conf_run = {k: v for k, v in self.package_conf['run'].items() if v is not None}
             full_args.update(package_conf_run)
+        # command-line arguments
         supplied_args_no_none = {k: v for k, v in supplied_args.items() if v is not None}
         if 'inputs' in full_args and full_args['inputs'] is not None and 'inputs' in supplied_args_no_none:
             del supplied_args_no_none['inputs']
+        # -a and -A regarding --package
+        annos_pkg = full_args['annotators']
+        annos_add = supplied_args_no_none.get('annotators')
+        annos_repl = supplied_args_no_none.get('annotators_replace')
+        if len(annos_pkg) > 0:
+            if len(annos_repl) > 0:
+                full_args['annotators'] = annos_repl
+            elif len(annos_add) > 0:
+                full_args['annotators'] = list(set(full_args['annotators']).union(set(annos_add)))
+        else:
+            if len(annos_repl) > 0:
+                full_args['annotators'] = annos_repl
+            elif len(annos_add) > 0:
+                full_args['annotators'] = annos_add
+        # other command-line arguments
         for k, v in supplied_args_no_none.items():
+            if k in ['annotators', 'annotators_replace']:
+                continue
             if full_args.get(k, None) is not None:
                 fv = full_args[k]
                 if fv is None or (type(fv) == list and len(fv) == 0):
