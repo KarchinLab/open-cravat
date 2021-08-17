@@ -748,7 +748,13 @@ class Cravat(object):
         supplied_args_no_none = {k: v for k, v in supplied_args.items() if v is not None}
         if 'inputs' in full_args and full_args['inputs'] is not None and 'inputs' in supplied_args_no_none:
             del supplied_args_no_none['inputs']
-        full_args.update(supplied_args_no_none)
+        for k, v in supplied_args_no_none.items():
+            if full_args.get(k, None) is not None:
+                fv = full_args[k]
+                if fv is None or (type(fv) == list and len(fv) == 0):
+                    full_args[k] = v
+            else:
+                full_args[k] = v
         self.args = SimpleNamespace(**full_args)
         self.make_run_conf_path()
         self.make_self_conf()
