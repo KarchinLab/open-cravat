@@ -342,29 +342,6 @@ class Cravat(object):
         for module_name in module_names:
             if au.module_exists_local(module_name) == False:
                 raise InvalidModule(module_name)
-        '''
-        for mname, m in self.reports.items():
-            if not module_name.endswith("reporter"):
-                module_name = report + "reporter"
-            module_names.append(module_name)
-        for module_name in module_names:
-            if au.module_exists_local(module_name) == False:
-                absent_modules.append(module_name)
-        if len(absent_modules) > 0:
-            msg = "Invalid module(s): {}".format(",".join(absent_modules))
-            self.logger.info(msg)
-            if not self.args.silent:
-                print(msg)
-            raise InvalidModule
-        for mname, linfo in self.annotators.items():
-            for sec_name in linfo.secondary_module_names:
-                if not au.module_exists_local(sec_name):
-                    msg = f"Invalid secondary annotator {sec_name} requested by {mname}"
-                    self.logger.info(msg)
-                    if not self.args.silent:
-                        print(msg)
-                    raise InvalidModule
-        '''
 
     def write_initial_status_json(self):
         status_fname = "{}.status.json".format(self.run_name)
@@ -975,6 +952,7 @@ class Cravat(object):
         self.set_append_mode()
         if self.args.skip is None:
             self.args.skip = []
+        self.set_md()
         self.set_mapper()
         self.set_annotators()
         self.set_postaggregators()
@@ -987,6 +965,10 @@ class Cravat(object):
         self.cleandb = self.args.cleandb
         if self.args.note == None:
             self.args.note = ""
+
+    def set_md(self):
+        if self.args.md is not None:
+            constants.custom_modules_dir = self.args.md
 
     def set_annotators(self):
         self.excludes = self.args.excludes
@@ -1018,7 +1000,7 @@ class Cravat(object):
             self.mapper_name = self.package_conf["run"]["mapper"]
         else:
             self.mapper_name = self.conf.get_cravat_conf()["genemapper"]
-        self.check_valid_modules(self.mapper_name)
+        self.check_valid_modules([self.mapper_name])
         self.mapper = au.get_local_module_info_by_name(self.mapper_name)
 
     def set_postaggregators(self):
