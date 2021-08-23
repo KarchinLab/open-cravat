@@ -163,22 +163,24 @@ h1 {
 
 .modulepanel-stopinstall-button {
     position: absolute;
-    bottom: 3px;
+    bottom: 12px;
     right: 9px;
     font-size: 13px;
     background-color: #414042;
     color: #ffffff;
     height: 24px;
+    border-radius: 9px;
 }
 
 .modulepanel-unqueueinstall-button {
     position: absolute;
-    bottom: 3px;
+    bottom: 12px;
     right: 9px;
     font-size: 13px;
     background-color: #414042;
     color: #ffffff;
     height: 24px;
+    border-radius: 9px;
 }
 
 .modulepanel-unqueueinstall-button:focus {
