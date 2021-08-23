@@ -324,6 +324,7 @@ class Cravat(object):
                 if not self.args.silent:
                     print("Deleting previous output files...")
                 self.delete_output_files()
+            self.get_logger()
             self.start_time = time.time()
             self.logger.info(f'{" ".join(sys.argv)}')
             self.logger.info(
@@ -943,6 +944,8 @@ class Cravat(object):
                 self.output_dir = os.path.dirname(os.path.abspath(self.first_non_url_input))
         else:
             self.output_dir = os.path.abspath(self.output_dir)
+        if os.path.exists(self.output_dir) == False:
+            os.mkdir(self.output_dir)
 
     def set_genome_assembly(self):
         if self.args.genome is None:
@@ -976,7 +979,6 @@ class Cravat(object):
         self.set_self_inputs()
         self.set_output_dir()
         self.set_run_name()
-        self.get_logger()
         self.set_append_mode()
         if self.args.skip is None:
             self.args.skip = []
@@ -985,8 +987,6 @@ class Cravat(object):
         self.set_annotators()
         self.set_postaggregators()
         self.set_reporters()
-        if os.path.exists(self.output_dir) == False:
-            os.mkdir(self.output_dir)
         self.verbose = self.args.verbose == True
         self.set_genome_assembly()
         self.set_start_end_levels()
