@@ -79,7 +79,7 @@ cravat_cmd_parser.add_argument(
     "-a", nargs="+", dest="annotators", default=[], help="Annotator module names or directories. If --package is used also, annotator modules defined with -a will be added."
 )
 cravat_cmd_parser.add_argument(
-    "-A", nargs="+", dest="annotators_replace", default=[], help="Annotator module names or directories. If --package is used also, annotator modules defined with -A will replace those defined with --package."
+    "-A", nargs="+", dest="annotators_replace", default=[], help="Annotator module names or directories. If --package is used also, annotator modules defined with -A will replace those defined with --package. -A has priority over -a."
 )
 cravat_cmd_parser.add_argument(
     "-e", nargs="+", dest="excludes", default=[], help="annotators to exclude"
@@ -448,9 +448,9 @@ class Cravat(object):
         self.error_logger.removeHandler(self.error_log_handler)
         logging.shutdown()
 
-    def update_status(self, status):
+    def update_status(self, status, force=False):
         if self.args.do_not_change_status != True:
-            self.status_writer.queue_status_update("status", status)
+            self.status_writer.queue_status_update("status", status, force=force)
 
     def run(self):
         import asyncio
@@ -486,7 +486,7 @@ class Cravat(object):
         report_response = None
         try:
             self.aggregator_ran = False
-            self.update_status("Started cravat")
+            self.update_status("Started cravat", force=True)
             if self.pipeinput == False:
                 input_files_str = ", ".join(self.inputs)
             else:
@@ -595,7 +595,7 @@ class Cravat(object):
                 if not self.args.silent:
                     print("Running reporter...")
                 no_problem_in_run, report_response = await self.run_reporter()
-            self.update_status("Finished")
+            self.update_status("Finished", force=True)
         except Exception as e:
             self.handle_exception(e)
             no_problem_in_run = False
@@ -616,7 +616,7 @@ class Cravat(object):
                         "Finished with an exception. Runtime: {0:0.3f}s".format(runtime)
                     )
                     print("Check {}".format(self.log_path))
-                self.update_status("Error")
+                self.update_status("Error", force=True)
             self.close_logger()
             if self.args.do_not_change_status != True:
                 self.status_writer.flush()
@@ -1425,7 +1425,8 @@ class Cravat(object):
             if not self.args.silent:
                 print(" ".join(cmd))
         self.update_status(
-            "Running {title} ({level})".format(title="Aggregator", level="variant")
+            "Running {title} ({level})".format(title="Aggregator", level="variant"),
+            force=True
         )
         v_aggregator = Aggregator(cmd, self.status_writer)
         v_aggregator.run()
@@ -1454,7 +1455,8 @@ class Cravat(object):
             if not self.args.silent:
                 print(" ".join(cmd))
         self.update_status(
-            "Running {title} ({level})".format(title="Aggregator", level="gene")
+            "Running {title} ({level})".format(title="Aggregator", level="gene"),
+            force=True
         )
         g_aggregator = Aggregator(cmd, self.status_writer)
         g_aggregator.run()
@@ -1484,7 +1486,7 @@ class Cravat(object):
             self.update_status(
                 "Running {title} ({level})".format(
                     title="Aggregator", level="sample"
-                )
+                ), force=True
             )
             s_aggregator = Aggregator(cmd, self.status_writer)
             s_aggregator.run()
@@ -1513,7 +1515,7 @@ class Cravat(object):
             self.update_status(
                 "Running {title} ({level})".format(
                     title="Aggregator", level="mapping"
-                )
+                ), force=True
             )
             m_aggregator = Aggregator(cmd, self.status_writer)
             m_aggregator.run()
@@ -1883,7 +1885,7 @@ class Cravat(object):
         await cursor.execute(q)
         if self.args.do_not_change_status != True:
             self.status_writer.queue_status_update(
-                "annotator_version", annotator_version
+                "annotator_version", annotator_version, force=True
             )
         q = (
             'insert or replace into info values ("Annotators", "'
@@ -1925,7 +1927,8 @@ class Cravat(object):
                 flush=True,
             )
         self.update_status(
-            "Running {title} ({name})".format(title=module.title, name=module.name)
+            "Running {title} ({name})".format(title=module.title, name=module.name),
+            force=True
         )
 
     def clean_up_at_end(self):
@@ -1958,7 +1961,8 @@ class StatusWriter:
 
     def queue_status_update(self, k, v, force=False):
         self.status_json[k] = v
-        if force == True or (time.time() - self.t > 3 and self.lock == False):
+        tdif = time.time() - self.t
+        if force == True or (tdif > 3 and self.lock == False):
             self.lock = True
             self.update_status_json()
             self.t = time.time()
