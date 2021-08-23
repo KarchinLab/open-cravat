@@ -524,7 +524,7 @@ class MasterCravatConverter(object):
                                     UIDMap.append(UID)
                             self.crs_writer.write_data(wdict)
                     else:
-                        raise ExpectedException("No conversion result")
+                        raise ExpectedException("No valid alternate allele was found in any samples.")
                 except Exception as e:
                     num_errors += 1
                     self._log_conversion_error(read_lnum, l, e)
