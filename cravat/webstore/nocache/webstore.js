@@ -910,6 +910,7 @@ function onClickModuleTileInstallButton(evt) {
     var button = evt.target;
     var moduleName = button.getAttribute('module');
     var installSize = remoteModuleInfo[moduleName].size;
+    writeInstallationMsg(getTimestamp() + " Installing " + moduleName)
     $.ajax({
         url: '/store/freemodulesspace',
         ajax: true,
@@ -1512,6 +1513,26 @@ function populateAllModulesDiv(group) {
     }
 }
 
+function onClickProgressDivCloseIcon() {
+    var progdiv = document.querySelector('#installationprogressmsgdiv')
+    var chatdiv = document.querySelector('#chaticondiv')
+    chatdiv.classList.remove('hide')
+    progdiv.classList.remove('show')
+}
+
+function toggleChatBox() {
+    var progdiv = document.querySelector('#installationprogressmsgdiv')
+    var chatdiv = document.querySelector('#chaticondiv')
+    if (chatdiv.classList.contains('hide')) {
+        chatdiv.classList.remove('hide')
+        progdiv.classList.remove('show')
+    } else {
+        chatdiv.classList.add('hide')
+        chatdiv.classList.remove('new')
+        progdiv.classList.add('show')
+    }
+}
+
 function addLogo(moduleName, sdiv) {
     if (storeLogos[moduleName] != undefined) {
         var img = storeLogos[moduleName].cloneNode(true);
@@ -1668,11 +1689,28 @@ function onClickModuleDetailInstallButton(evt) {
     });
 }
 
+function getTimestamp() {
+    var d = new Date()
+    return "[" + d.getFullYear() + ":" + ("" + d.getMonth()).padStart(2, "0") + ":" + ("" + d.getDate()).padStart(2, "0") + " " + d.getHours() + ":" + ("" + d.getMinutes()).padStart(2, "0") + ":" + ("" + d.getSeconds()).padStart(2, "0") + "]"
+}
+
+function writeInstallationMsg(msg) {
+    var div = document.querySelector("#installationprogressmsgdiv");
+    var tdiv = getEl("div");
+    tdiv.textContent = msg;
+    div.prepend(tdiv);
+    var chaticondiv = document.querySelector('#chaticondiv')
+    if (chaticondiv.classList.contains('hide') == false) {
+        chaticondiv.classList.add('new')
+    }
+}
+
 function onClickModuleDetailUninstallButton(evt) {
     var btn = evt.target;
     btn.textContent = 'Uninstalling...';
     btn.style.color = 'red';
-    uninstallModule(btn.getAttribute('module'));
+    var moduleName = btn.getAttribute("module");
+    uninstallModule(moduleName)
     document.getElementById('moduledetaildiv_store').style.display = 'none';
 }
 
@@ -2261,6 +2299,7 @@ function uninstallModule(moduleName) {
         'msg': 'uninstalling'
     };
     populateAllModulesDiv();
+    writeInstallationMsg(getTimestamp() + " Uninstalling " + moduleName)
     $.ajax({
         type: 'GET',
         url: '/store/uninstall',
@@ -2271,6 +2310,7 @@ function uninstallModule(moduleName) {
             delete installInfo[moduleName];
             moduleChange(response);
             populateAnnotators();
+            writeInstallationMsg(getTimestamp() + " Uninstalled " + moduleName)
         }
     });
 }
@@ -2365,12 +2405,13 @@ function connectWebSocket() {
         if (installstatdiv != null) {
             installstatdiv.textContent = msg;
         }
-        var sdivs = $('div.moduletile[module=' + module + '] .panelinstallprogressspan');
-        for (var i1 = 0; i1 < sdivs.length; i1++) {
-            var sdiv = sdivs[i1];
-            sdiv.style.color = 'black';
-            sdiv.textContent = msg;
-        }
+        //var sdivs = $('div.moduletile[module=' + module + '] .panelinstallprogressspan');
+        //for (var i1 = 0; i1 < sdivs.length; i1++) {
+        //    var sdiv = sdivs[i1];
+        //    sdiv.style.color = 'black';
+        //    sdiv.textContent = msg;
+        //}
+        writeInstallationMsg(msg)
         if (msg.search('Finished installation of') > 0) {
             delete installInfo[module];
             //installQueue = installQueue.filter(e => e != module);

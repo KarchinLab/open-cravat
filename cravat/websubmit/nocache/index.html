@@ -170,6 +170,12 @@
 <div id='storediv' class='appdiv' style='display: none;'>
     <div id='messagediv'></div>
     <div id='storebodydiv'>
+        <div id='installationprogressmsgdiv'>
+            <img id="progressdivcloseicon" src="/store/images/x-lg.svg" onclick="onClickProgressDivCloseIcon()"></img>
+        </div>
+        <div id='chaticondiv'>
+            <img id="chaticon"></img>
+        </div>
         <div id='storemenudiv'>
             <input type='text' id='store-namefilter' name='namefilter' placeholder='Search the Store' oninput='updateFilter()'/>
             <hr />
@@ -199,30 +205,30 @@
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Most Downloaded</div>
                     <div>The most downloaded modules to date!</div>
-                    <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
                     <div id='store-home-featureddiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
                 </div>
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Newest</div>
                     <div>The newest and greatest!</div>
-                    <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
                     <div id='store-home-newestdiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
                 </div>
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Cancer Resources</div>
                     <div>Cutting edge resources for cancer research!</div>
-                    <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
                     <div id='store-home-cancerdiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
                 </div>
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Clinical Relevance</div>
                     <div>Our curation of clinically-relevant resources!</div>
-                    <img src='/store/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeLeftArrow(this);'/>
                     <div id='store-home-clinicaldiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow' onclick='onClickStoreHomeRightArrow(this);'/>
                 </div>
             </div>
             <div id='store-allmodule-div'>
@@ -235,7 +241,6 @@
                     </select>
                 </div>
                 <div id='store-update-all-div' >
-                    <!--<span id='store-update-all-span' style='color: red; font-size: 12px;'>Updates to your installed modules are available!</span>-->
                     <button id='store-update-all-button' class='butn' onclick='onClickStoreUpdateAllButton();' style='font-size: 12px;'>Update All</button>
                 </div>
                 <div id='remotemodulepanels' ></div>

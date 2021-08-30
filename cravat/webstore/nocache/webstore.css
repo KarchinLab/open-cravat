@@ -197,6 +197,7 @@ h1 {
     position: relative;
     border-radius: 8px;
     background-color: #f5f5f7;
+    border: 1px solid #d4d4dc;
 }
 
 .moduletile:hover {
@@ -317,8 +318,8 @@ div.modulegroup span.modulepanel-datasource-span {
 
 .panelinstallprogressspan {
     position: absolute;
-    top: -4px;
-    right: 0px;
+    top: 0px;
+    right: 2px;
     font-size: 12px;
 }
 
@@ -801,5 +802,56 @@ input:checked + .store-switch-slider:before {
 #bycategory-div {
     margin-bottom: 10px;
     font-size: 16px;
+}
+
+#installationprogressmsgdiv {
+    position: fixed;
+    z-index: 1;
+    overflow: auto;
+    font-size: 13px;
+    width: 430px;
+    height: 200px;
+    left: 10px;
+    bottom: 10px;
+    border: 1px solid #bfbdc1;
+    background-color: white;
+    padding: 10px;
+    border-radius: 13px;
+    display: none;
+}
+
+#installationprogressmsgdiv.show {
+    display: block;
+}
+
+#progressdivcloseicon {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+}
+
+#chaticondiv {
+    position: fixed;
+    z-index: 2;
+    bottom: 0px;
+    left: 6px;
+}
+
+#chaticondiv.hide {
+    display: none;
+}
+
+#chaticon {
+    content:url("/store/images/chat-left-text.svg");
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+#chaticondiv.new #chaticon {
+    content:url("/store/images/chat-left-text-fill.svg");
 }
 

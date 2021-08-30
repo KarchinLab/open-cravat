@@ -446,7 +446,20 @@ function populateJobTr (job) {
             addEl(viewTd, button);
         }
     } else {
-        viewTd.textContent = statusC;
+        var span = getEl('span')
+        span.textContent = statusC
+        addEl(viewTd, span)
+        if (statusC == 'Aborted' || statusC == 'Error') {
+            var btn = getEl('button')
+            btn.classList.add('butn')
+            btn.textContent = 'Resubmit'
+            btn.addEventListener('click', function(evt) {
+                $.get('/submit/resubmit', {'job_id': job.id, 'job_dir': job.job_dir}).done(function (response) {
+                    setTimeout(function() {populateJobs()}, 3000)
+                })
+            })
+            addEl(viewTd, btn)
+        }
     }
     addEl(jobTr, viewTd);
     var dbTd = getEl('td');
@@ -1852,6 +1865,7 @@ function addListeners () {
     $('#refresh-jobs-table-btn').click(refreshJobsTable);
     $('.threedotsdiv').click(onClickThreeDots);
     $('.jobsdirinput').change(setJobsDir);
+    $('#chaticondiv').click(toggleChatBox)
     document.addEventListener('click', function (evt) {
         if (evt.target.classList.contains('moduledetaildiv-submit-elem') == false && evt.target.closest('.moduledetailbutton') == null ) {
             var div = document.getElementById('moduledetaildiv_submit');
