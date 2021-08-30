@@ -199,22 +199,30 @@ class MasterCravatConverter(object):
         else:
             self.status_writer = None
 
+    def open_input_file(self, input_path):
+        encoding = detect_encoding(input_path)
+        if input_path.endswith(".gz"):
+            f = gzip.open(input_path, mode="rt", encoding=encoding)
+        else:
+            f = open(input_path, encoding=encoding)
+        return f
+
+    def first_input_file(self):
+        if self.pipeinput == False:
+            input_path = self.input_paths[0]
+            encoding = detect_encoding(input_path)
+            if input_path.endswith(".gz"):
+                f = gzip.open(input_path, mode="rt", encoding=encoding)
+            else:
+                f = open(input_path, encoding=encoding)
+        else:
+            f = sys.stdin
+        return f
+
     def setup(self):
         """ Do necesarry pre-run tasks """
         if self.ready_to_convert:
             return
-        # Open file handle to input path
-        self.input_files = []
-        if self.pipeinput == False:
-            for input_path in self.input_paths:
-                encoding = detect_encoding(input_path)
-                if input_path.endswith(".gz"):
-                    f = gzip.open(input_path, mode="rt", encoding=encoding)
-                else:
-                    f = open(input_path, encoding=encoding)
-                self.input_files.append(f)
-        else:
-            self.input_files = [sys.stdin]
         # Read in the available converters
         self._initialize_converters()
         # Select the converter that matches the input format
@@ -277,7 +285,7 @@ class MasterCravatConverter(object):
         else:
             if self.pipeinput == False:
                 valid_formats = []
-                first_file = self.input_files[0]
+                first_file = self.first_input_file()
                 first_file.seek(0)
                 for converter_name, converter in self.converters.items():
                     check_success = converter.check_format(first_file)
@@ -303,12 +311,13 @@ class MasterCravatConverter(object):
         self.primary_converter = self.converters[self.input_format]
         self._set_converter_properties(self.primary_converter)
         if self.pipeinput == False:
-            if len(self.input_files) > 1:
-                for f in self.input_files[1:]:
+            if len(self.input_paths) > 1:
+                for fn in self.input_paths[1:]:
+                    f = self.open_input_file(fn)
                     if not self.primary_converter.check_format(f):
                         raise ExpectedException("Inconsistent file types")
-                    else:
-                        f.seek(0)
+                    #else:
+                    #    f.seek(0)
         self.logger.info("input format: %s" % self.input_format)
 
     def _set_converter_properties(self, converter):
@@ -390,12 +399,16 @@ class MasterCravatConverter(object):
             "Started {} ({})".format("Converter", self.primary_converter.format_name),
         )
         last_status_update_time = time.time()
-        multiple_files = len(self.input_files) > 1
+        multiple_files = len(self.input_paths) > 1
         fileno = 0
         total_lnum = 0
         base_re = re.compile("^[ATGC]+|[-]+$")
         write_lnum = 0
-        for f in self.input_files:
+        for fn in self.input_paths:
+            if self.pipeinput:
+                f = sys.stdin
+            else:
+                f = self.open_input_file(fn)
             if self.pipeinput == True:
                 fname = STDIN
             else:
@@ -529,6 +542,7 @@ class MasterCravatConverter(object):
                     num_errors += 1
                     self._log_conversion_error(read_lnum, l, e)
                     continue
+            f.close()
             cur_time = time.time()
             if total_lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
                 self.status_writer.queue_status_update(
@@ -643,8 +657,8 @@ class MasterCravatConverter(object):
 
     def _close_files(self):
         """ Close the input and output files. """
-        for f in self.input_files:
-            f.close()
+        #for f in self.input_files:
+        #    f.close()
         self.crv_writer.close()
         self.crm_writer.close()
         self.crs_writer.close()
