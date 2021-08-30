@@ -246,6 +246,69 @@ class WebJob(object):
 def get_next_job_id():
     return datetime.datetime.now().strftime(r'%y%m%d-%H%M%S')
 
+async def resubmit (request):
+    global filerouter
+    global servermode
+    if servermode and server_ready:
+        r = await cravat_multiuser.is_loggedin(request)
+        if r == False:
+            return web.json_response({'status': 'notloggedin'})
+    queries = request.rel_url.query
+    job_id = queries['job_id']
+    job_dir = queries['job_dir']
+    status_json = None
+    status_json_path = None
+    for fn in os.listdir(job_dir):
+        if fn.endswith('.status.json'):
+            status_json_path = os.path.join(job_dir, fn)
+            with open(status_json_path) as f:
+                status_json = json.load(f)
+            break
+    if status_json is None:
+        return web.json_response({'status': 'error', 'msg': 'no status file exists in job folder.'})
+    run_name = status_json['run_name']
+    assembly = status_json['assembly']
+    input_fnames = status_json['orig_input_fname']
+    input_fpaths = status_json['orig_input_path']
+    note = status_json['note']
+    annotators = status_json['annotators']
+    cc_cohorts_path = status_json.get('cc_cohorts_path', '')
+    # Subprocess arguments
+    run_args = ['oc', 'run']
+    for fn in input_fpaths:
+        run_args.append(fn)
+    # Annotators
+    if len(annotators) > 0 and annotators[0] != '':
+        run_args.append('-a')
+        run_args.extend(annotators)
+    else:
+        run_args.append('-e')
+        run_args.append('all')
+    # Liftover assembly
+    run_args.append('-l')
+    run_args.append(assembly)
+    # Reports
+    run_args.extend(['--skip', 'reporter'])
+    # Note
+    if note != '':
+        run_args.append('--note')
+        run_args.append(note)
+    run_args.append('--temp-files')
+    if cc_cohorts_path != '':
+        run_args.extend(['--module-option',f'casecontrol.cohorts={cc_cohorts_path}'])
+    global job_queue
+    global run_jobs_info
+    job_ids = run_jobs_info['job_ids']
+    if job_id not in job_ids:
+        job_ids.append(job_id)
+        run_jobs_info['job_ids'] = job_ids
+    qitem = {'cmd': 'submit', 'job_id': job_id, 'run_args': run_args}
+    job_queue.put(qitem)
+    status_json['status'] = 'Submitted'
+    with open(status_json_path, 'w') as wf:
+        json.dump(status_json, wf, indent=2, sort_keys=True)
+    return web.json_response({'status': 'resubmitted'})
+
 async def submit (request):
     global filerouter
     global servermode
@@ -321,7 +384,7 @@ async def submit (request):
     else:
         annotators = ''
         run_args.append('-e')
-        run_args.append('*')
+        run_args.append('all')
     # Liftover assembly
     run_args.append('-l')
     if 'assembly' in job_options:
@@ -383,6 +446,10 @@ async def submit (request):
     pkg_ver = au.get_current_package_version()
     status_json['open_cravat_version'] = pkg_ver
     status_json['annotators'] = annotators
+    if cc_cohorts_path is not None:
+        status_json['cc_cohorts_path'] = cc_cohorts_path
+    else:
+        status_json['cc_cohorts_path'] = ''
     with open(os.path.join(job_dir, run_name + '.status.json'), 'w') as wf:
         json.dump(status_json, wf, indent=2, sort_keys=True)
     return web.json_response(job.get_info_dict())
@@ -1170,6 +1237,7 @@ routes.append(['GET', '/', redirect_to_index])
 routes.append(['GET', '/submit/jobs/{job_id}/status', get_job_status])
 routes.append(['GET', '/submit/updateresultdb', update_result_db])
 routes.append(['POST','/submit/import',import_job])
+routes.append(['GET', '/submit/resubmit', resubmit])
 
 if __name__ == '__main__':
     app = web.Application()
