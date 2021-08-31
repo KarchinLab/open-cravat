@@ -1627,9 +1627,9 @@ function populateInfoDiv (infoDiv) {
 	var legend = getEl('legend');
 	legend.className = 'section_header';
 	addEl(legend, getTn('Analysis Information\xa0'));
-    var btn = getEl('span');
-    btn.textContent = '\u2a53';
+    var btn = getEl('img');
     btn.style.cursor = 'pointer';
+    btn.src = '/result/images/caret-down.svg'
     btn.addEventListener('click', function (evt) {
         var btn = evt.target;
         var contentDiv = btn.parentElement.nextSibling;
@@ -1637,13 +1637,12 @@ function populateInfoDiv (infoDiv) {
         var btnText = null;
         if (display == 'none') {
             display = 'block';
-            btnText = '\u2a53';
+            btn.src = '/result/images/caret-down.svg'
         } else {
             display = 'none';
-            btnText = '\u2a54';
+            btn.src = '/result/images/caret-right.svg'
         }
         contentDiv.style.display = display;
-        btn.textContent = btnText;
     });
     addEl(legend, btn);
 	addEl(infoDiv, legend);

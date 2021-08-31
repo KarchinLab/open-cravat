@@ -547,7 +547,7 @@ const makeJoinOperatorDiv = function (operator) {
         evt.preventDefault()
     })
     joinOpDiv[0].addEventListener('dragleave', function (evt) {
-        joinOpDiv[0].src = 'result/images/arrow-down-right-circle.svg'
+        joinOpDiv[0].src = '/result/images/arrow-down-right-circle.svg'
         joinOpDiv[0].classList.remove('dragenter')
     })
     joinOpDiv[0].addEventListener('dragover', function (evt) {
@@ -575,6 +575,7 @@ const makeJoinOperatorDiv = function (operator) {
         document.querySelector('#qb-root').querySelectorAll('.filter-join-operator-div').forEach(el => {
             el.classList.remove('dragenter')
         })
+        evt.preventDefault()
     })
     return joinOpDiv
 }
