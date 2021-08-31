@@ -944,11 +944,13 @@ function inputChangeHandler (event) {
 
 function showJobListPage () {
     var jis = GLOBALS.jobs.slice(jobsListCurStart, jobsListCurEnd);
+    document.querySelector("#jobdivspinnerdiv").classList.remove("hide")
     $.ajax({
         url: '/submit/getjobs',
         data: {'ids': JSON.stringify(jis)},
         async: true,
         success: function (response) {
+            document.querySelector("#jobdivspinnerdiv").classList.add("hide")
             for (var i=0; i < response.length; i++) {
                 var job = response[i];
                 addJob(job);
@@ -1028,11 +1030,15 @@ function refreshJobsTable () {
 }
 
 function populateAnnotators () {
+    document.querySelector("#annotdivspinnerdiv").classList.remove("hide")
+    document.querySelector("#annotator-group-select-div").classList.remove("show")
     return new Promise((resolve, reject) => {
         $.ajax({
             url:'/submit/annotators',
             type: 'GET',
             success: function (data) {
+                document.querySelector("#annotdivspinnerdiv").classList.add("hide")
+                document.querySelector("#annotator-group-select-div").classList.add("show")
                 GLOBALS.annotators = data
                 setTimeout(function () {
                     buildAnnotatorsSelector();

@@ -430,6 +430,14 @@ input:checked + .slider:before {
     overflow: hidden;
 }
 
+#annotator-group-select-div {
+    display: none;
+}
+
+#annotator-group-select-div.show {
+    display: block;
+}
+
 #annotator-group-select-div div.pq-select-button {
     background-color: white;
 }
@@ -920,3 +928,28 @@ input:checked + .slider:before {
 .submit-annot-tag.selected {
     background-color:#3175b0;   
 }
+
+#jobdivspinnerdiv {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    left: calc(50% - 30px);
+    top: calc(50% - 30px);
+}
+
+#jobdivspinnerdiv.hide {
+    display: none;
+}
+
+#annotdivspinnerdiv {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    left: calc(50% - 30px);
+    top: 140px;
+}
+
+#annotdivspinnerdiv.hide {
+    display: none;
+}
+
