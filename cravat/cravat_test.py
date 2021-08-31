@@ -8,7 +8,6 @@ from abc import ABC, abstractmethod
 import csv as csv
 import openpyxl as pyxl
 import openpyxl as pyxl
-import vcf
 
 
 # Regression test program for CRAVAT modules.  By default, it will go through all modules and
@@ -257,6 +256,7 @@ class VcfReportReader(ReportReader):
             rows = {}
         else:
             rows = []
+        import vcf
         reader = vcf.Reader(filename=self.rsltFile)
         if headers == None:
             headers = self.readSectionHeader(reader)
