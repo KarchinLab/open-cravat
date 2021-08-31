@@ -654,10 +654,6 @@ input:checked + .store-switch-slider:before {
     background-color: #e6e7e8;
 }
 
-#pageselect {
-    display: none;
-}
-
 #store-update-all-div {
     /*position: relative;
     left: 311px;

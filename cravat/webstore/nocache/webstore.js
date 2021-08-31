@@ -168,6 +168,13 @@ function getLocal() {
         localModuleInfo = data;
         complementRemoteWithLocal();
         populateInputFormats();
+        buildAnnotatorGroupSelector();
+        let annotatorsDone = populateAnnotators();
+        annotatorsDone.then(() => {
+            // Populate cc here to avoid it showing before annotators
+            // and then getting quickly shoved down. Looks bad.
+            populateAddtlAnalysis();
+        })
         $.get('/store/updates').done(function(data) {
             updates = data.updates;
             updateConflicts = data.conflicts;
@@ -292,16 +299,6 @@ function getLocal() {
                 disableStoreTabHead();
             }
             makeInstalledGroup();
-            buildAnnotatorGroupSelector();
-            let annotatorsDone = populateAnnotators();
-            annotatorsDone.then(() => {
-                // Populate cc here to avoid it showing before annotators
-                // and then getting quickly shoved down. Looks bad.
-                populateAddtlAnalysis();
-            })
-            if (servermode == false) {
-                populateJobs();
-            }
         });
     });
 }
@@ -675,7 +672,6 @@ function onClickStoreHomeLeftArrow(el) {
     var sw = getCarouselScrollStep(d)
     var s = d.scrollLeft;
     s -= Math.floor(dw / sw) * sw;
-    console.log("@", dw, s)
     $(d).animate({
         scrollLeft: s
     }, 100);
@@ -687,7 +683,6 @@ function onClickStoreHomeRightArrow(el) {
     var sw = getCarouselScrollStep(d)
     var s = d.scrollLeft;
     s += Math.floor(dw / sw) * sw;
-    console.log("@", dw, s)
     $(d).animate({
         scrollLeft: s
     }, 100);
@@ -744,6 +739,9 @@ function checkSystemReady() {
                 systemReadyObj.online = online;
             }
             if (systemReadyObj.ready) {
+                if (servermode == false) {
+                    populateJobs();
+                }
                 getLocal();
             } else {
                 hidePageselect();
