@@ -163,141 +163,141 @@ function complementRemoteWithLocal() {
     }
 }
 
-function getLocal() {
-    $.get('/store/local').done(function(data) {
-        localModuleInfo = data;
-        complementRemoteWithLocal();
-        populateInputFormats();
-        buildAnnotatorGroupSelector();
-        let annotatorsDone = populateAnnotators();
-        annotatorsDone.then(() => {
-            // Populate cc here to avoid it showing before annotators
-            // and then getting quickly shoved down. Looks bad.
-            populateAddtlAnalysis();
-        })
-        $.get('/store/updates').done(function(data) {
-            updates = data.updates;
-            updateConflicts = data.conflicts;
-            newModuleAvailable = false;
-            updateModuleGroupInfo();
-            var moduleNamesInInstallQueue = Object.keys(installInfo);
-            for (var remoteModuleName in remoteModuleInfo) {
-                var mI = remoteModuleInfo[remoteModuleName];
-                var tags = mI['tags'];
-                if (tags == null) {
-                    tags = [];
-                    mI['tags'] = tags;
-                }
-                if (remoteModuleName in localModuleInfo) {
-                    if (moduleNamesInInstallQueue.indexOf(remoteModuleName) == -1) {
-                        if (updates[remoteModuleName] != undefined) {
-                            var idx = tags.indexOf('newavailable');
-                            if (idx == -1) {
-                                tags.push('newavailable');
-                            }
-                            if (baseModuleNames.includes(remoteModuleName) == false) {
-                                newModuleAvailable = true;
-                            }
-                        } else {
-                            var idx = tags.indexOf('newavailable');
-                            if (idx >= 0) {
-                                tags.splice(idx, 1);
-                            }
-                        }
+function setupJobsTab() {
+    complementRemoteWithLocal();
+    populateInputFormats();
+    buildAnnotatorGroupSelector();
+    let annotatorsDone = populateAnnotators();
+    annotatorsDone.then(() => {
+        // Populate cc here to avoid it showing before annotators
+        // and then getting quickly shoved down. Looks bad.
+        populateAddtlAnalysis();
+    })
+}
+
+function updateRemoteModuleTagwithUpdate() {
+    var moduleNamesInInstallQueue = Object.keys(installInfo);
+    for (var remoteModuleName in remoteModuleInfo) {
+        var mI = remoteModuleInfo[remoteModuleName];
+        var tags = mI['tags'];
+        if (tags == null) {
+            tags = [];
+            mI['tags'] = tags;
+        }
+        if (remoteModuleName in localModuleInfo) {
+            if (moduleNamesInInstallQueue.indexOf(remoteModuleName) == -1) {
+                if (updates[remoteModuleName] != undefined) {
+                    var idx = tags.indexOf('newavailable');
+                    if (idx == -1) {
+                        tags.push('newavailable');
+                    }
+                    if (baseModuleNames.includes(remoteModuleName) == false) {
+                        newModuleAvailable = true;
                     }
                 } else {
-                    var idx = tags.indexOf('installed');
+                    var idx = tags.indexOf('newavailable');
                     if (idx >= 0) {
                         tags.splice(idx, 1);
                     }
                 }
             }
-            for (var mn in localModuleInfo) {
-                var localModule = localModuleInfo[mn];
-                if (!('tags' in localModule)) {
-                    localModule['tags'] = [];
-                }
-                var remoteModule = remoteModuleInfo[mn];
-                if (remoteModule == undefined) {
-                    continue;
-                }
-                var localTags = localModule.tags;
-                var remoteTags = remoteModule.tags;
-                //for (var i = 0; i < localTags.length; i++) {
-                //    var tag = localTags[i];
-                //    if (remoteTags.indexOf(tag) == -1) {
-                //        remoteTags.push(tag);
-                //    }
-                //}
-                remoteModule.tags = remoteTags;
+        } else {
+            var idx = tags.indexOf('installed');
+            if (idx >= 0) {
+                tags.splice(idx, 1);
             }
-            baseInstalled = true;
-            var moduleNamesInInstallQueue = Object.keys(installInfo);
-            baseToInstall = [];
-            for (var i = 0; i < baseModuleNames.length; i++) {
-                var baseModuleName = baseModuleNames[i];
-                if (!(baseModuleName in localModuleInfo)) {
-                    baseInstalled = false;
-                    if (moduleNamesInInstallQueue.indexOf(baseModuleName) == -1) {
-                        baseToInstall.push(baseModuleName);
-                    }
-                }
+        }
+    }
+    for (var mn in localModuleInfo) {
+        var localModule = localModuleInfo[mn];
+        if (!('tags' in localModule)) {
+            localModule['tags'] = [];
+        }
+        var remoteModule = remoteModuleInfo[mn];
+        if (remoteModule == undefined) {
+            continue;
+        }
+        var localTags = localModule.tags;
+        var remoteTags = remoteModule.tags;
+        remoteModule.tags = remoteTags;
+    }
+}
+
+function setBaseInstalled() {
+    baseInstalled = true;
+    var moduleNamesInInstallQueue = Object.keys(installInfo);
+    baseToInstall = [];
+    for (var i = 0; i < baseModuleNames.length; i++) {
+        var baseModuleName = baseModuleNames[i];
+        if (!(baseModuleName in localModuleInfo)) {
+            baseInstalled = false;
+            if (moduleNamesInInstallQueue.indexOf(baseModuleName) == -1) {
+                baseToInstall.push(baseModuleName);
             }
-            var div = document.getElementById('remotemodulepanels');
-            if (div == null) {
-                return;
+        }
+    }
+    var div = document.getElementById('remotemodulepanels');
+    if (div == null) {
+        return;
+    }
+    if (origRemoteModuleInfo == null) {
+        origRemoteModuleInfo = JSON.parse(JSON.stringify(remoteModuleInfo));
+    }
+}
+
+function populateStorePages() {
+    if (baseInstalled) {
+        showPageselect();
+        hideSystemModulePage();
+        trimRemote();
+        var div = document.getElementById('messagediv');
+        div.style.display = 'none';
+        div = document.getElementById('remotemodulepanels');
+        var input = document.getElementById('store-namefilter');
+        input.disabled = false;
+        var div = document.getElementById('moduledetaildiv_store');
+        if (div != null) {
+            if (div.style.display != 'none') {
+                makeModuleDetailDialog(currentDetailModule, null, null);
             }
-            if (origRemoteModuleInfo == null) {
-                origRemoteModuleInfo = JSON.parse(JSON.stringify(remoteModuleInfo));
-            }
+        }
+        populateStoreHome();
+        populateAllModulesDiv();
+        var mg = document.getElementById('store-modulegroup-div').getAttribute('modulegroup');
+        if (mg != undefined && mg != '') {
+            populateModuleGroupDiv(mg);
+        }
+        if (storeFirstOpen) {
+            showStoreHome();
+        }
+        storeFirstOpen = false;
+    } else {
+        hidePageselect();
+        showSystemModulePage();
+    }
+}
+
+function getLocal() {
+    $.get('/store/local').done(function(data) {
+        localModuleInfo = data;
+        setupJobsTab()
+        setBaseInstalled()
+        populateStorePages()
+        populateStoreTagPanel();
+        if (systemReadyObj.online) {
+            enableStoreTabHead();
+        } else {
+            disableStoreTabHead();
+        }
+        $.get('/store/updates').done(function(data) {
+            updates = data.updates;
+            updateConflicts = data.conflicts;
+            newModuleAvailable = false;
+            updateModuleGroupInfo();
+            updateRemoteModuleTagwithUpdate()
             showOrHideSystemModuleUpdateButton();
-            if (baseInstalled) {
-                showPageselect();
-                hideSystemModulePage();
-                trimRemote();
-                var div = document.getElementById('messagediv');
-                div.style.display = 'none';
-                div = document.getElementById('remotemodulepanels');
-                var input = document.getElementById('store-namefilter');
-                input.disabled = false;
-                var div = document.getElementById('moduledetaildiv_store');
-                if (div != null) {
-                    if (div.style.display != 'none') {
-                        makeModuleDetailDialog(currentDetailModule, null, null);
-                    }
-                }
-                populateStoreHome();
-                populateAllModulesDiv();
-                var mg = document.getElementById('store-modulegroup-div').getAttribute('modulegroup');
-                if (mg != undefined && mg != '') {
-                    populateModuleGroupDiv(mg);
-                }
-                if (storeFirstOpen) {
-                    showStoreHome();
-                }
-                storeFirstOpen = false;
-            } else {
-                hidePageselect();
-                showSystemModulePage();
-            }
-            var d = document.getElementById('store-update-all-div');
-            if (newModuleAvailable && (servermode == false || (logged == true && username == 'admin'))) {
-                var modulesInInstallQueue = Object.keys(installInfo);
-                d.style.display = 'block';
-                announceStoreUpdateAllAvailable();
-            } else {
-                d.style.display = 'none';
-                disableUpdateAvailable()
-            }
-            populateStoreTagPanel();
-            //showOrHideInstallAllButton();
             showOrHideUpdateAllButton();
             showOrHideSystemModuleUpdateButton();
-            if (systemReadyObj.online) {
-                enableStoreTabHead();
-            } else {
-                disableStoreTabHead();
-            }
             makeInstalledGroup();
         });
     });
@@ -351,32 +351,15 @@ function showOrHideSystemModuleUpdateButton() {
     }
 }
 
-function showOrHideInstallAllButton() {
-    if (servermode == false || (logged == true && username == 'admin')) {
-        var notInstalledModuleNames = getNotInstalledModuleNames();
-        var div = document.getElementById('store-install-all-button');
-        var display = null;
-        if (notInstalledModuleNames.length == 0) {
-            display = 'none';
-        } else {
-            display = 'inline-block';
-        }
-        div.style.display = display;
-        div.style.borderRadius = '9px';
-    }
-}
-
 function showOrHideUpdateAllButton() {
-    if (servermode == false || (logged == true && username == 'admin')) {
-        var modulesToUpdate = getModulesToUpdate();
-        var div = document.getElementById('store-update-all-button');
-        var display = null;
-        if (modulesToUpdate.length == 0) {
-            display = 'none';
-        } else {
-            display = 'inline-block';
-        }
-        div.style.display = display;
+    var d = document.getElementById('store-update-all-div');
+    if (newModuleAvailable && (servermode == false || (logged == true && username == 'admin'))) {
+        var modulesInInstallQueue = Object.keys(installInfo);
+        d.style.display = 'block';
+        announceStoreUpdateAllAvailable();
+    } else {
+        d.style.display = 'none';
+        disableUpdateAvailable()
     }
 }
 

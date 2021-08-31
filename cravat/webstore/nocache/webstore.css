@@ -655,14 +655,7 @@ input:checked + .store-switch-slider:before {
 }
 
 #store-update-all-div {
-    /*position: relative;
-    left: 311px;
-    top: 3px;
     display: none;
-    width: calc(100% - 240px);
-    display: inline-block;
-    margin-top: 14px;
-    height: 26px;*/
     position: absolute;
     left: 220px;
     top: 16px;

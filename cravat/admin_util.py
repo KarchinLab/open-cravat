@@ -882,7 +882,7 @@ def get_system_conf_info(json=False):
     return system_conf_info
 
 
-def get_updatable(modules=[], strategy="consensus"):
+async def get_updatable(modules=[], strategy="consensus"):
     if strategy not in ("consensus", "force", "skip"):
         raise ValueError('Unknown strategy "{}"'.format(strategy))
     if not modules:
