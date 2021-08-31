@@ -21,6 +21,7 @@ import importlib
 import cravat.cravat_class
 from types import SimpleNamespace
 import nest_asyncio
+from cravat.exceptions import InvalidFilter
 
 nest_asyncio.apply()
 import sys
@@ -1080,9 +1081,9 @@ def run_reporter(*inargs, **inkwargs):
         if module_name in module_options:
             args.conf = module_options[module_name]
         reporter = module.Reporter(args)
-        loop.run_until_complete(reporter.prep())
         response_t = None
         try:
+            loop.run_until_complete(reporter.prep())
             response_t = loop.run_until_complete(reporter.run())
             output_fns = None
             if args.silent == False:
@@ -1093,12 +1094,16 @@ def run_reporter(*inargs, **inkwargs):
                 if output_fns is not None:
                     print(f"report created: {output_fns}")
         except Exception as e:
+            if hasattr(reporter, "cf"):
+                loop.run_until_complete(reporter.cf.close_db())
+            if type(e) == InvalidFilter:
+                print(e)
+            if hasattr(e, "notraceback") and e.notraceback != True:
+                import traceback
+                traceback.print_exc()
             if args.silent == False:
-                print(f"report generation failed.")
+                print("report generation failed for {} report.".format(report_type))
             response_t = None
-            import traceback
-
-            traceback.print_exc()
         response[report_type] = response_t
     if len(report_types) == 1 and len(response) == 1:
         return response[list(response.keys())[0]]

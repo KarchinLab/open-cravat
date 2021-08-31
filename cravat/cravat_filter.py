@@ -10,6 +10,7 @@ import time
 import asyncio
 import platform
 import sys
+from cravat.exceptions import InvalidFilter
 
 if sys.platform == "win32" and sys.version_info >= (3, 8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -446,7 +447,6 @@ class CravatFilter:
         if self.filter:
             pass
         elif self.filtersql is not None:
-            # self.filtersql = self.filtersql.replace("'", '\\"')
             if os.path.exists(self.filtersql):
                 with open(self.filtersql) as f:
                     self.filtersql = "".join(f.readlines())
@@ -473,6 +473,57 @@ class CravatFilter:
                     self.filter = json.load(f)
         if self.filter is None:
             self.filter = {}
+        await self.verify_filter(cursor)
+
+    async def verify_filter(self, cursor):
+        wrong_samples = await self.verify_filter_sample(cursor)
+        wrong_colnames = await self.verify_filter_module(cursor)
+        if len(wrong_samples) > 0 or len(wrong_colnames) > 0:
+            raise InvalidFilter(wrong_samples, wrong_colnames)
+
+    async def check_sample_name(self, sample_id, cursor):
+        await cursor.execute("select base__sample_id from sample where base__sample_id=\"" + sample_id + "\" limit 1")
+        ret = await cursor.fetchone()
+        return ret is not None
+
+    async def verify_filter_sample(self, cursor):
+        if "sample" not in self.filter:
+            return []
+        ft = self.filter["sample"]
+        wrong_samples = set()
+        if "require" in ft:
+            for rq in ft["require"]:
+                if await self.check_sample_name(rq, cursor) == False:
+                    wrong_samples.add(rq)
+        if "reject" in ft:
+            for rq in ft["reject"]:
+                if await self.check_sample_name(rq, cursor) == False:
+                    wrong_samples.add(rq)
+        return wrong_samples
+
+    async def col_name_exists(self, colname, cursor):
+        await cursor.execute("select col_def from variant_header where col_name=\"" + colname + "\" limit 1")
+        ret = await cursor.fetchone()
+        if ret is None:
+            await cursor.execute("select col_def from gene_header where col_name=\"" + colname + "\" limit 1")
+            ret = await cursor.fetchone()
+        return ret is not None
+
+    async def extract_filter_columns(self, rules, colset, cursor):
+        for rule in rules:
+            if "column" in rule:
+                if await self.col_name_exists(rule["column"], cursor) == False:
+                    colset.add(rule["column"])
+            elif "rules" in rule:
+                await self.extract_filter_columns(rule["rules"], colset, cursor)
+
+    async def verify_filter_module(self, cursor):
+        if "variant" not in self.filter:
+            return []
+        wrong_modules = set()
+        if "rules" in self.filter["variant"]:
+            await self.extract_filter_columns(self.filter["variant"]["rules"], wrong_modules, cursor)
+        return wrong_modules
 
     async def delete_filtered_uid_table(self, conn=None, cursor=None):
         await cursor.execute("pragma synchronous=0")
