@@ -765,7 +765,7 @@ class CravatReport:
                 ]:
                     continue
                 if module_name not in local_modules:
-                    if self.args.silent == False:
+                    if self.args.silent == False and module_name != 'original_input':
                         print(
                             "            [{}] module does not exist in the system. Gene level summary for this module is skipped.".format(
                                 module_name
