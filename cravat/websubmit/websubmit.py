@@ -31,6 +31,7 @@ import logging
 
 cfl = ConfigLoader()
 report_generation_ps = {}
+valid_report_types = None
 
 class FileRouter(object):
 
@@ -272,6 +273,8 @@ async def resubmit (request):
     input_fpaths = status_json['orig_input_path']
     note = status_json['note']
     annotators = status_json['annotators']
+    if "original_input" in annotators:
+        annotators.remove("original_input")
     cc_cohorts_path = status_json.get('cc_cohorts_path', '')
     # Subprocess arguments
     run_args = ['oc', 'run']
@@ -509,6 +512,7 @@ async def get_job (request, job_id):
     status_fpath = os.path.join(job_dir, status_fname)
     job = WebJob(job_dir, status_fpath)
     job.read_info_file()
+    '''
     fns = find_files_by_ending(job_dir, '.info.yaml')
     if len(fns) > 0:
         info_fpath = os.path.join(job_dir, fns[0])
@@ -518,6 +522,7 @@ async def get_job (request, job_id):
                 if k == 'status' and 'status' in job.info:
                     continue
                 job.info[k] = v
+    '''
     global run_jobs_info
     global job_statuses
     if 'status' not in job.info:
@@ -662,10 +667,13 @@ async def get_job_log (request):
         return web.Response(text='log file does not exist.')
 
 def get_valid_report_types():
+    global valid_report_types
+    if valid_report_types is not None:
+        return valid_report_types
     reporter_infos = au.get_local_module_infos(types=['reporter'])
-    report_types = [x.name.split('reporter')[0] for x in reporter_infos]
-    report_types = [v for v in report_types if not v in ['text', 'pandas', 'stdout', 'example']]
-    return report_types
+    valid_report_types = [x.name.split('reporter')[0] for x in reporter_infos]
+    valid_report_types = [v for v in valid_report_types if not v in ['text', 'pandas', 'stdout', 'example']]
+    return valid_report_types
 
 async def get_report_types(request):
     valid_types = get_valid_report_types()
@@ -1099,7 +1107,7 @@ async def get_live_annotation (queries):
         count_single_api_access += 1
         t = time.time()
         dt = t - time_of_log_single_api_access
-        if t - time_of_log_single_api_access > interval_log_single_api_access:
+        if dt > interval_log_single_api_access:
             await cravat_multiuser.admindb.write_single_api_access_count_to_db(t, count_single_api_access)
             time_of_log_single_api_access = t
             count_single_api_access = 0

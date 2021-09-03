@@ -399,6 +399,7 @@ class CravatFilter:
     async def close_db(self):
         if self.conn is not None:
             await self.conn.close()
+            self.conn = None
 
     async def create_filtertable(self, conn=None, cursor=None):
         if conn is None:

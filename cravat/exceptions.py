@@ -36,14 +36,14 @@ class KillInstallException(Exception):
 class InvalidFilter(Exception):
     notraceback = True
     def __init__(self, wrong_samples, wrong_colnames):
-        self.msg = ""
+        self.msg = []
         if len(wrong_samples) > 0:
-            self.msg += "\nFilter sample names do not exist: " + " ".join(wrong_samples)
+            self.msg.append("Filter sample names do not exist: " + " ".join(wrong_samples))
         if len(wrong_colnames) > 0:
-            self.msg += "\nFilter column names do not exist: " + " ".join(wrong_colnames)
+            self.msg.append("Filter column names do not exist: " + " ".join(wrong_colnames))
 
     def __str__(self):
-        return self.msg
+        return str(self.msg)
 
 class InvalidModule(Exception):
     def __init__(self, module_name):

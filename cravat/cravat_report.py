@@ -8,6 +8,7 @@ from cravat import admin_util as au
 from cravat.config_loader import ConfigLoader
 from cravat import util
 from cravat.inout import ColumnDefinition
+from cravat.util import write_log_msg
 import subprocess
 import re
 import logging
@@ -21,7 +22,6 @@ import importlib
 import cravat.cravat_class
 from types import SimpleNamespace
 import nest_asyncio
-from cravat.exceptions import InvalidFilter
 
 nest_asyncio.apply()
 import sys
@@ -154,8 +154,21 @@ class CravatReport:
             return False
 
     async def prep(self):
-        await self.connect_db()
-        await self.load_filter()
+        try:
+            await self.connect_db()
+            await self.load_filter()
+        except Exception as e:
+            if hasattr(self, "cf"):
+                await self.cf.close_db()
+            if not hasattr(e, "notraceback") or e.notraceback != True:
+                import traceback
+                traceback.print_exc()
+                self.logger.error(e)
+            else:
+                if hasattr(self, "logger"):
+                    write_log_msg(self.logger, e)
+            e.handled = True
+            raise
 
     def _setup_logger(self):
         if hasattr(self, "no_log") and self.no_log:
@@ -945,6 +958,7 @@ class CravatReport:
     async def close_db(self):
         if hasattr(self, "conn") and self.conn is not None:
             await self.conn.close()
+            self.conn = None
         if self.cf is not None:
             await self.cf.close_db()
             self.cf = None
@@ -1096,11 +1110,13 @@ def run_reporter(*inargs, **inkwargs):
         except Exception as e:
             if hasattr(reporter, "cf"):
                 loop.run_until_complete(reporter.cf.close_db())
-            if type(e) == InvalidFilter:
-                print(e)
-            if hasattr(e, "notraceback") and e.notraceback != True:
-                import traceback
-                traceback.print_exc()
+            if hasattr(e, "handled") and e.handled == True:
+                if not hasattr(e, "notraceback") or e.notraceback != True:
+                    import traceback
+                    traceback.print_exc()
+                else:
+                    if hasattr(reporter, "logger"):
+                        write_log_msg(self.logger, e)
             if args.silent == False:
                 print("report generation failed for {} report.".format(report_type))
             response_t = None

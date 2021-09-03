@@ -5,6 +5,7 @@ import sys
 from cravat import admin_util as au
 from cravat import util
 from cravat.config_loader import ConfigLoader
+from cravat.util import write_log_msg
 import aiosqlite
 import datetime
 from types import SimpleNamespace
@@ -273,6 +274,7 @@ cravat_cmd_parser.add_argument("--filtersql", default=None, help="Filter SQL")
 cravat_cmd_parser.add_argument("--includesample", nargs='+', default=None, help="Sample IDs to include")
 cravat_cmd_parser.add_argument("--excludesample", nargs='+', default=None, help="Sample IDs to exclude")
 cravat_cmd_parser.add_argument("--filter", default=None, help=argparse.SUPPRESS)
+cravat_cmd_parser.add_argument("-f", dest="filterpath", default=None, help="Path to a filter file")
 cravat_cmd_parser.add_argument("--md", default=None, help="Specify the root directory of OpenCRAVAT modules (annotators, etc)")
 cravat_cmd_parser.add_argument("-m", dest="mapper_name", nargs="+", default=[], help="Mapper module name or mapper module directory")
 cravat_cmd_parser.add_argument("-p", nargs="+", dest="postaggregators", default=[], help="Postaggregators to run. Additionally, tagsampler, casecontrol, varmeta, and vcfinfo will automatically run depending on conditions.")
@@ -384,6 +386,8 @@ class Cravat(object):
                 self.status_json["open_cravat_version"] = self.pkg_ver
                 annot_names = list(self.annotators.keys())
                 annot_names.sort()
+                if "original_input" in annot_names:
+                    annot_names.remove("original_input")
                 self.status_json["annotators"] = annot_names
                 with open(self.status_json_path, "w") as wf:
                     wf.write(json.dumps(self.status_json, indent=2, sort_keys=True))
@@ -1604,6 +1608,7 @@ class Cravat(object):
                 arg_dict['includesample'] = self.args.includesample
                 arg_dict['excludesample'] = self.args.excludesample
                 arg_dict["filter"] = self.args.filter
+                arg_dict["filterpath"] = self.args.filterpath
                 Reporter = util.load_class(module.script_path, "Reporter")
                 reporter = Reporter(arg_dict)
                 await reporter.prep()
@@ -1623,8 +1628,19 @@ class Cravat(object):
                 if not self.args.silent:
                     print("finished in {0:.3f}s".format(rtime))
             except Exception as e:
-                traceback.print_exc()
-                self.logger.exception(e)
+                if hasattr(e, "handled") and e.handled == True:
+                    pass
+                else:
+                    if not hasattr(e, "notraceback") or e.notraceback != True:
+                        import traceback
+                        traceback.print_exc()
+                        self.logger.exception(e)
+                    else:
+                        print(e)
+                        if hasattr(self, "logger"):
+                            write_log_msg(self.logger, e)
+                    if "reporter" in locals() and hasattr(reporter, 'close_db'):
+                        await reporter.close_db()
                 all_reporters_ran_well = False
         return all_reporters_ran_well, response
 

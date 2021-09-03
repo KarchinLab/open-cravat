@@ -472,3 +472,17 @@ def humanize_bytes(num, binary=False):
     if exponent == 0:
         quot_str = quot_str.rstrip("0").rstrip(".")
     return "{quotient} {unit}".format(quotient=quot_str, unit=unit)
+
+def write_log_msg(logger, e):
+    if hasattr(e, "msg"):
+        if type(e.msg) == list:
+            for l in e.msg:
+                logger.info(l)
+                print(l)
+        else:
+            logger.info(e)
+            print(e)
+    else:
+        logger.info(e)
+        print(e)
+
