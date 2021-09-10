@@ -99,13 +99,53 @@ class BasePostAggregator(object):
         )
         self.base_setup()
         lnum = 0
+        json_colnames = []
+        table_headers = {}
+        output_columns = self.conf["output_columns"]
+        for col in output_columns:
+            if "table" in col and col["table"] == True:
+                json_colnames.append(col["name"])
+                table_headers[col["name"]] = []
+                for h in col["table_header"]:
+                    table_headers[col["name"]].append(h["name"])
         for input_data in self._get_input():
             try:
                 output_dict = self.annotate(input_data)
+                if output_dict is None:
+                    continue
+                # Handles table-format column data.
+                delflag = False
+                for colname in json_colnames:
+                    json_data = output_dict.get(colname, None)
+                    if json_data is None and "__" in colname:
+                        shortcolname = colname.split("__")[1]
+                        json_data = output_dict.get(shortcolname, None)
+                        delflag = json_data is not None
+                    if json_data is not None:
+                        if type(json_data) is list:
+                            for rowidx in range(len(json_data)):
+                                row = json_data[rowidx]
+                                if type(row) is list:
+                                    pass
+                                elif type(row) is dict:
+                                    tmp = []
+                                    for i in range(len(table_headers[colname])):
+                                        h = table_headers[colname][i]
+                                        if h in row:
+                                            v = row[h]
+                                        else:
+                                            v = None
+                                        tmp.append(v)
+                                    json_data[rowidx] = tmp
+                        json_data = json.dumps(json_data)
+                        out = json_data
+                    else:
+                        out = None
+                    output_dict[colname] = out
+                    if delflag:
+                        del output_dict[shortcolname]
                 fixed_output = {}
-                for k, v in output_dict.items():
-                    fixed_output[self.module_name + "__" + k] = v
-                self.write_output(input_data, fixed_output)
+                self.write_output(input_data, output_dict)
                 cur_time = time.time()
                 lnum += 1
                 if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
@@ -158,7 +198,7 @@ class BasePostAggregator(object):
                     continue
                 col_type = col_def["type"]
                 if col_type in ["string"]:
-                    val = '"' + val + '"'
+                    val = '\'' + val + '\''
                 else:
                     val = str(val)
                 q += col_name + "=" + val + ","
