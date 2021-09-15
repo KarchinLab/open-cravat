@@ -85,6 +85,7 @@ parser.add_argument(
     default=None,
     help="Name of OpenCRAVAT webapp module to run",
 )
+parser.add_argument("--port", dest="port", default=None, help="Port number for OpenCRAVAT graphical user interface")
 
 
 def setup(args):
@@ -198,7 +199,13 @@ def run(args):
             global server_ready
             global servermode
             host = server.get("host")
-            port = server.get("port")
+            if args.port is not None:
+                try:
+                    port = int(args.port)
+                except:
+                    port = None
+            if port is None:
+                port = server.get("port")
             if args.webapp is not None:
                 index_path = os.path.join(
                     modules_dir, "webapps", args.webapp, "index.html"
@@ -234,7 +241,7 @@ def run(args):
                     url = f"{host}:{port}/submit/nocache/index.html"
             global protocol
             url = protocol + url
-        main(url=url)
+        main(url=url, host=host, port=port)
     except Exception as e:
         logger.exception(e)
         if debug:
@@ -509,7 +516,7 @@ async def is_system_ready(request):
 loop = None
 
 
-def main(url=None):
+def main(url=None, host=None, port=None):
     global args
     try:
         global loop
@@ -529,8 +536,10 @@ def main(url=None):
 
         serv = get_server()
         global protocol
-        host = serv.get("host")
-        port = serv.get("port")
+        if host is None:
+            host = serv.get("host")
+        if port is None:
+            port = serv.get("port")
         try:
             sr = s.connect_ex((host, port))
             s.close()
@@ -540,7 +549,7 @@ def main(url=None):
                 )
                 print(
                     "OpenCRAVAT is already running at {}{}:{}.".format(
-                        protocol, serv.get("host"), serv.get("port")
+                        protocol, host, port
                     )
                 )
                 global SERVER_ALREADY_RUNNING
@@ -559,12 +568,10 @@ def main(url=None):
     /_/                                                     
 """
         )
-        print(
-            "OpenCRAVAT is served at {}:{}".format(serv.get("host"), serv.get("port"))
-        )
+        print("OpenCRAVAT is served at {}:{}".format(host, port))
         logger.info(
             "Serving OpenCRAVAT server at {}:{}".format(
-                serv.get("host"), serv.get("port")
+                host, port
             )
         )
         print(
@@ -599,9 +606,9 @@ def main(url=None):
         global ssl_enabled
         if ssl_enabled:
             global sc
-            server = WebServer(loop=loop, ssl_context=sc, url=url)
+            server = WebServer(loop=loop, ssl_context=sc, url=url, host=host, port=port)
         else:
-            server = WebServer(loop=loop, url=url)
+            server = WebServer(loop=loop, url=url, host=host, port=port)
         loop.run_forever()
     except Exception as e:
         logger.exception(e)
