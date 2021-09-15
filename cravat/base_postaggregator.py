@@ -192,8 +192,9 @@ class BasePostAggregator(object):
         q = ""
         for col_def in self.conf["output_columns"]:
             col_name = col_def["name"]
-            if col_name in output_dict:
-                val = output_dict[col_name]
+            shortcol_name = col_name.split("__")[1]
+            if shortcol_name in output_dict:
+                val = output_dict[shortcol_name]
                 if val is None:
                     continue
                 col_type = col_def["type"]
