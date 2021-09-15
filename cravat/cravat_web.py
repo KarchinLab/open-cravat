@@ -199,6 +199,7 @@ def run(args):
             global server_ready
             global servermode
             host = server.get("host")
+            port = None
             if args.port is not None:
                 try:
                     port = int(args.port)
