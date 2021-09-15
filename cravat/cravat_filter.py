@@ -61,7 +61,7 @@ class FilterColumn(object):
                 else:
                     val = str(val)
                 ss.append(f"({self.column} = {val})")
-            s = f" or ".join(ss)
+            s = "(" + f" or ".join(ss) + ")"
         else:
             s = "{col} {opr}".format(col=self.column, opr=self.test2sql[self.test])
             sql_val = None
@@ -99,7 +99,7 @@ class FilterColumn(object):
             ):
                 sql_val = str(self.value)
             if sql_val:
-                s += " " + sql_val
+                s += " (" + sql_val + ")"
         if self.negate:
             s = "not(" + s + ")"
         return s
