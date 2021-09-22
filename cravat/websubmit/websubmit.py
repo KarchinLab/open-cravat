@@ -156,6 +156,8 @@ class FileRouter(object):
             report_path = [run_path + ext]
         else:
             reporter = au.get_local_module_info(report_type + 'reporter')
+            if reporter is None:
+                return None
             conf = reporter.conf
             if 'output_filename_schema' in conf:
                 output_filename_schemas = conf['output_filename_schema']
