@@ -1046,6 +1046,9 @@ class Cravat(object):
             self.postaggregators = {}
         else:
             self.postaggregator_names = sorted(list(set(self.postaggregator_names).union(set(constants.default_postaggregator_names))))
+            if 'casecontrol' in self.postaggregator_names:
+                if au.module_exists_local('casecontrol') == False:
+                    self.postaggregator_names.remove('casecontrol')
             self.check_valid_modules(self.postaggregator_names)
             self.postaggregators = au.get_local_module_infos_by_names(self.postaggregator_names)
 
