@@ -193,20 +193,20 @@ def run(args):
     setup(args)
     try:
         global headless
+        global server_ready
+        global servermode
         url = None
+        server = get_server()
+        host = server.get("host")
+        port = None
+        if args.port is not None:
+            try:
+                port = int(args.port)
+            except:
+                port = None
+        if port is None:
+            port = server.get("port")
         if not headless:
-            server = get_server()
-            global server_ready
-            global servermode
-            host = server.get("host")
-            port = None
-            if args.port is not None:
-                try:
-                    port = int(args.port)
-                except:
-                    port = None
-            if port is None:
-                port = server.get("port")
             if args.webapp is not None:
                 index_path = os.path.join(
                     modules_dir, "webapps", args.webapp, "index.html"
