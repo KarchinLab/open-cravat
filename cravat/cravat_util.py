@@ -955,7 +955,7 @@ async def filtersqlite_async(args):
                         s
                     )
             else:
-                q = "create table sample as select s.* from old_db.sample as s, old_db.variant_filtered as v where s.base__uid=s.base__uid"
+                q = "create table sample as select s.* from old_db.sample as s, old_db.variant_filtered as v where s.base__uid=v.base__uid"
             c.execute(q)
             # Mapping
             c.execute("create table mapping as select m.* from old_db.mapping as m, old_db.variant_filtered as v where m.base__uid=v.base__uid")
