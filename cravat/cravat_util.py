@@ -967,6 +967,11 @@ async def filtersqlite_async(args):
                 if sql is not None:
                     print(f"- {index_name}")
                     c.execute(sql)
+            # Info
+            print("- info")
+            c.execute("select count(*) from variant")
+            n = c.fetchone()[0]
+            c.execute(f"update info set colval={n} where colkey=\"Number of unique input variants\"")
             conn.commit()
             await cf.close_db()
             c.close()
