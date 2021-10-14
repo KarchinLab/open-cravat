@@ -284,6 +284,8 @@ function getLocal() {
         setBaseInstalled()
         populateStorePages()
         populateStoreTagPanel();
+        updateModuleGroupInfo();
+        makeInstalledGroup();
         if (systemReadyObj.online) {
             enableStoreTabHead();
         } else {
@@ -298,7 +300,6 @@ function getLocal() {
             showOrHideSystemModuleUpdateButton();
             showOrHideUpdateAllButton();
             showOrHideSystemModuleUpdateButton();
-            makeInstalledGroup();
         });
     });
 }

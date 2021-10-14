@@ -884,7 +884,7 @@ def get_system_conf_info(json=False):
 
 async def get_updatable_async(modules=[], strategy="consensus"):
     update_vers, resolution_applied, resolution_failed = get_updatable(modules=modules, strategy=strategy)
-    return update_vers, resolution_applied, resolution_failed
+    return [update_vers, resolution_applied, resolution_failed]
 
 def get_updatable(modules=[], strategy="consensus"):
     if strategy not in ("consensus", "force", "skip"):
