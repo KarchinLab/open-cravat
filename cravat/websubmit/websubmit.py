@@ -361,7 +361,13 @@ async def submit (request):
             cc_cohorts_path = os.path.join(job_dir, part.filename)
             with open(cc_cohorts_path,'wb') as wf:
                 wf.write(await part.read())
-    input_fnames = [fp.filename for fp in input_files]
+    use_server_input_files = False
+    if "inputServerFiles" in job_options and len(job_options["inputServerFiles"]) > 0:
+        input_files = job_options["inputServerFiles"]
+        input_fnames = [os.path.basename(fn) for fn in input_files]
+        use_server_input_files = True
+    else:
+        input_fnames = [fp.filename for fp in input_files]
     run_name = input_fnames[0]
     if len(input_fnames) > 1:
         run_name += '_and_'+str(len(input_fnames)-1)+'_files'
@@ -378,8 +384,13 @@ async def submit (request):
     # Subprocess arguments
     input_fpaths = [os.path.join(job_dir, fn) for fn in input_fnames]
     run_args = ['oc', 'run']
-    for fn in input_fnames:
-        run_args.append(os.path.join(job_dir, fn))
+    if use_server_input_files:
+        for fp in input_files:
+            run_args.append(fp)
+        run_args.extend(['-d', job_dir])
+    else:
+        for fn in input_fnames:
+            run_args.append(os.path.join(job_dir, fn))
     # Annotators
     if 'annotators' in job_options and len(job_options['annotators']) > 0 and job_options['annotators'][0] != '':
         annotators = job_options['annotators']

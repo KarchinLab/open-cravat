@@ -37,14 +37,34 @@ function submit () {
     var textInputElem = $('#input-text');
     var textVal = textInputElem.val();
     let inputFiles = [];
+    let inputServerFiles = []
+    if (inputFileList.length > 0 && textVal.length > 0) {
+        var alertDiv = getEl('div');
+        var span = getEl('span');
+        span.textContent = 'Use only one of "Add input files" and the input box'
+        addEl(alertDiv, span);
+        showYesNoDialog(alertDiv, null, false, true);
+        return
+    }
     if (textVal.length > 0) {
-        var textBlob = new Blob([textVal], {type:'text/plain'})
-        inputFiles.push(new File([textBlob], 'input'));
+        if (textVal.indexOf("/") >= 0) {
+            let toks = textVal.split("\n")
+            for (var i = 0; i < toks.length; i++) {
+                let tok = toks[i]
+                if (tok == "") {
+                    continue
+                }
+                inputServerFiles.push(tok)
+            }
+        } else {
+            var textBlob = new Blob([textVal], {type:'text/plain'})
+            inputFiles.push(new File([textBlob], 'input'));
+        }
     } else {
         inputFiles = inputFileList;
     }
-    if (inputFiles.length === 0) {
-        alert('Choose a input variant files, enter variants, or click an input example button.');
+    if (inputFiles.length === 0 && inputServerFiles.length == 0) {
+        alert('Choose a input variant files, enter variants/server input file paths, or click an input example button.');
         return;
     }
     for (var i=0; i<inputFiles.length; i++) {
@@ -83,6 +103,7 @@ function submit () {
     submitOpts.forcedinputformat = $('#submit-input-format-select').val();
     var note = document.getElementById('jobnoteinput').value;
     submitOpts.note = note;
+    submitOpts.inputServerFiles = inputServerFiles
     document.querySelector('#submit-job-button').disabled = true;
     formData.append('options',JSON.stringify(submitOpts));
     // AddtlAnalysis
