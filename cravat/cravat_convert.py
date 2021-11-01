@@ -419,20 +419,17 @@ class MasterCravatConverter(object):
             converter.setup(f)
             if self.pipeinput == False:
                 f.seek(0)
-            read_lnum = 0
             num_errors = 0
             if self.pipeinput:
                 cur_fname = STDIN
             else:
                 cur_fname = os.path.basename(f.name)
-            for l in f:
+            for read_lnum, l, all_wdicts in converter.convert_file(f):
                 samp_prefix = cur_fname
-                read_lnum += 1
                 try:
                     # all_wdicts is a list, since one input line can become
                     # multiple output lines. False is returned if converter
                     # decides line is not an input line.
-                    all_wdicts = converter.convert_line(l)
                     if all_wdicts is BaseConverter.IGNORE:
                         continue
                     total_lnum += 1
@@ -540,7 +537,10 @@ class MasterCravatConverter(object):
                         raise ExpectedException("No valid alternate allele was found in any samples.")
                 except Exception as e:
                     num_errors += 1
-                    self._log_conversion_error(read_lnum, l, e)
+                    if hasattr(e, "ln") and hasattr(e, "line"):
+                         self._log_conversion_error(e.ln, e.line, e)
+                    else:
+                        self._log_conversion_error(read_lnum, l, e)
                     continue
             f.close()
             cur_time = time.time()
