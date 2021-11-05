@@ -54,7 +54,7 @@ function submit () {
                 if (tok == "") {
                     continue
                 }
-                inputServerFiles.push(tok)
+                inputServerFiles.push(tok.trim())
             }
         } else {
             var textBlob = new Blob([textVal], {type:'text/plain'})
