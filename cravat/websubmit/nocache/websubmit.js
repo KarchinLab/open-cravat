@@ -47,9 +47,9 @@ function submit () {
         return
     }
     if (textVal.length > 0) {
-        if (textVal.indexOf("/") >= 0) {
+        if (textVal.startsWith("#serverfile")) {
             let toks = textVal.split("\n")
-            for (var i = 0; i < toks.length; i++) {
+            for (var i = 1; i < toks.length; i++) {
                 let tok = toks[i]
                 if (tok == "") {
                     continue
