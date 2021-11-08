@@ -288,7 +288,10 @@ class MasterCravatConverter(object):
                 first_file = self.first_input_file()
                 first_file.seek(0)
                 for converter_name, converter in self.converters.items():
-                    check_success = converter.check_format(first_file)
+                    try:
+                        check_success = converter.check_format(first_file)
+                    except:
+                        check_success = False
                     first_file.seek(0)
                     if check_success:
                         valid_formats.append(converter_name)
