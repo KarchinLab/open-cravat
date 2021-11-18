@@ -99,6 +99,7 @@ class MasterCravatConverter(object):
         self.vtracker = VTracker(deduplicate=not (self.unique_variants))
         self.wgsreader = cravat.get_wgs_reader(assembly="hg38")
         self.crs_def = constants.crs_def.copy()
+        self.error_lines = 0
 
     def _parse_cmd_args(self, inargs, inkwargs):
         """ Parse the arguments in sys.argv """
@@ -422,12 +423,11 @@ class MasterCravatConverter(object):
             converter.setup(f)
             if self.pipeinput == False:
                 f.seek(0)
-            num_errors = 0
             if self.pipeinput:
                 cur_fname = STDIN
             else:
                 cur_fname = os.path.basename(f.name)
-            for read_lnum, l, all_wdicts in converter.convert_file(f):
+            for read_lnum, l, all_wdicts in converter.convert_file(f, exc_handler=self._log_conversion_error):
                 samp_prefix = cur_fname
                 try:
                     # all_wdicts is a list, since one input line can become
@@ -522,7 +522,7 @@ class MasterCravatConverter(object):
                                             wdict, no_unique_var
                                         )
                                     except Exception as e:
-                                        self._log_conversion_error(read_lnum, l, e)
+                                        self._log_conversion_error(read_lnum, l, e, full_line_error=False)
                                     no_unique_var += 1
                                 if UID not in UIDMap:
                                     # For this input line, only write to the .crm if the UID has not yet been written to the map file.
@@ -539,11 +539,7 @@ class MasterCravatConverter(object):
                     else:
                         raise ExpectedException("No valid alternate allele was found in any samples.")
                 except Exception as e:
-                    num_errors += 1
-                    if hasattr(e, "ln") and hasattr(e, "line"):
-                         self._log_conversion_error(e.ln, e.line, e)
-                    else:
-                        self._log_conversion_error(read_lnum, l, e)
+                    self._log_conversion_error(read_lnum, l, e)
                     continue
             f.close()
             cur_time = time.time()
@@ -555,13 +551,13 @@ class MasterCravatConverter(object):
                     ),
                 )
                 last_status_update_time = cur_time
-        self.logger.info("error lines: %d" % num_errors)
+        self.logger.info("error lines: %d" % self.error_lines)
         self._close_files()
         self.end()
         if self.status_writer is not None:
             self.status_writer.queue_status_update("num_input_var", total_lnum)
             self.status_writer.queue_status_update("num_unique_var", write_lnum)
-            self.status_writer.queue_status_update("num_error_input", num_errors)
+            self.status_writer.queue_status_update("num_error_input", self.error_lines)
         end_time = time.time()
         self.logger.info("finished: %s" % time.asctime(time.localtime(end_time)))
         runtime = round(end_time - start_time, 3)
@@ -641,12 +637,14 @@ class MasterCravatConverter(object):
             newalt = alt
         return [newchrom, newpos, newref, newalt]
 
-    def _log_conversion_error(self, ln, line, e):
+    def _log_conversion_error(self, ln, line, e, full_line_error=True):
         """Log exceptions thrown by primary converter.
         All exceptions are written to the .err file with the exception type
         and message. Exceptions are also written to the log file once, with the
         traceback.
         """
+        if full_line_error:
+            self.error_lines += 1
         err_str = traceback.format_exc().rstrip()
         if err_str not in self.unique_excs:
             self.unique_excs.append(err_str)
