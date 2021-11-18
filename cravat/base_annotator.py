@@ -209,6 +209,51 @@ class BaseAnnotator(object):
         except Exception as e:
             self._log_exception(e)
 
+    def handle_jsondata(self, output_dict):
+        for colname in self.json_colnames:
+            json_data = output_dict.get(colname, None)
+            if json_data is not None:
+                json_data = json.dumps(json_data)
+            output_dict[colname] = json_data
+        return output_dict
+
+    def log_progress(self, lnum):
+        if self.update_status_json_flag and self.status_writer is not None:
+            cur_time = time.time()
+            if lnum % 10000 == 0 or cur_time - self.last_status_update_time > 3:
+                self.status_writer.queue_status_update(
+                    "status",
+                    "Running {} ({}): line {}".format(
+                        self.conf["title"], self.module_name, lnum
+                    ),
+                )
+                self.last_status_update_time = cur_time
+
+    def is_star_allele(self, input_data):
+        return (
+            self.conf["level"] == "variant"
+            and input_data.get("alt_base", "") == "*"
+        )
+
+    def should_skip_chrom(self, input_data):
+        return (
+            self.conf["level"] == "variant"
+            and not input_data.get("chrom") in self.supported_chroms
+        )
+
+    def fill_empty_output(self, output_dict):
+        for output_col in self.conf["output_columns"]:
+            col_name = output_col["name"]
+            if col_name not in output_dict:
+                output_dict[col_name] = ""
+        return output_dict
+
+    def make_json_colnames(self):
+        self.json_colnames = []
+        for col in self.output_columns:
+            if "table" in col and col["table"] == True:
+                self.json_colnames.append(col["name"])
+
     # Runs the annotator.
     def run(self):
         if self.update_status_json_flag and self.status_writer is not None:
@@ -225,37 +270,16 @@ class BaseAnnotator(object):
                     )
                 )
             self.base_setup()
-            last_status_update_time = time.time()
-            output_columns = self.conf["output_columns"]
-            json_colnames = []
-            for col in output_columns:
-                if "table" in col and col["table"] == True:
-                    json_colnames.append(col["name"])
+            self.last_status_update_time = time.time()
+            self.output_columns = self.conf["output_columns"]
+            self.make_json_colnames()
             for lnum, line, input_data, secondary_data in self._get_input():
                 try:
-                    if self.update_status_json_flag and self.status_writer is not None:
-                        cur_time = time.time()
-                        if lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
-                            self.status_writer.queue_status_update(
-                                "status",
-                                "Running {} ({}): line {}".format(
-                                    self.conf["title"], self.module_name, lnum
-                                ),
-                            )
-                            last_status_update_time = cur_time
-                    # VCF format * allele gets empty annotation.
-                    if (
-                        self.conf["level"] == "variant"
-                        and input_data.get("alt_base", "") == "*"
-                    ):
-                        output_dict = None
-                    # Skip alt chroms by default
-                    elif (
-                        self.conf["level"] == "variant"
-                        and not input_data.get("chrom") in self.supported_chroms
-                    ):
-                        output_dict = None
-                    elif secondary_data == {}:
+                    self.log_progress(lnum)
+                    # * allele and undefined non-canonical chroms are skipped.
+                    if self.is_star_allele(input_data) or self.should_skip_chrom(input_data):
+                        continue
+                    if secondary_data == {}:
                         output_dict = self.annotate(input_data)
                     else:
                         output_dict = self.annotate(input_data, secondary_data)
@@ -263,18 +287,12 @@ class BaseAnnotator(object):
                     if output_dict is None:
                         continue
                     # Handles empty table-format column data.
-                    for colname in json_colnames:
-                        json_data = output_dict.get(colname, None)
-                        if json_data is not None:
-                            json_data = json.dumps(json_data)
-                        output_dict[colname] = json_data
+                    output_dict = self.handle_jsondata(output_dict)
                     # Preserves the first column
                     output_dict[self._id_col_name] = input_data[self._id_col_name]
                     # Fill absent columns with empty strings
-                    for output_col in self.conf["output_columns"]:
-                        col_name = output_col["name"]
-                        if col_name not in output_dict:
-                            output_dict[col_name] = ""
+                    output_dict = self.fill_empty_output(output_dict)
+                    # Writes output.
                     self.output_writer.write_data(output_dict)
                 except Exception as e:
                     self._log_runtime_exception(lnum, line, input_data, e)
