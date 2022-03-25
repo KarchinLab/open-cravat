@@ -333,7 +333,7 @@ function disableStoreTabHead() {
 }
 
 function showOrHideSystemModuleUpdateButton() {
-    if (servermode == false || (logged == true && username == 'admin')) {
+    if (servermode == false || (logged == true && adminMode == true)) {
         baseModuleUpdateAvailable = false;
         var moduleNames = Object.keys(updates);
         for (var i = 0; i < moduleNames.length; i++) {
@@ -353,7 +353,7 @@ function showOrHideSystemModuleUpdateButton() {
 
 function showOrHideUpdateAllButton() {
     var d = document.getElementById('store-update-all-div');
-    if (newModuleAvailable && (servermode == false || (logged == true && username == 'admin'))) {
+    if (newModuleAvailable && (servermode == false || (logged == true && adminMode == true))) {
         var modulesInInstallQueue = Object.keys(installInfo);
         d.style.display = 'block';
         announceStoreUpdateAllAvailable();
@@ -1170,7 +1170,7 @@ function getRemoteModuleGroupPanel(moduleName, moduleListName, moduleListPos) {
             }
         }
     }
-    if (updateAvail && (servermode == false || (logged == true && username == 'admin'))) {
+    if (updateAvail && (servermode == false || (logged == true && adminMode == true))) {
         var span = getEl('span');
         span.className = 'moduletile-group-updateavailable-span';
         span.textContent = 'Update available';
@@ -1304,7 +1304,7 @@ function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
     var span = getEl('div');
     span.id = 'panelinstallstatus_' + moduleName;
     addEl(div, span);
-    if (servermode == false || (logged == true && username == 'admin')) {
+    if (servermode == false || (logged == true && adminMode == true)) {
         if (installStatus == 'Queued') {
             var button = getModuleTileUnqueueButton(moduleName);
             addEl(div, button);
@@ -1791,7 +1791,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
     td.style.textAlign = 'right';
     var sdiv = getEl('div');
     var buttonDiv = getEl('div');
-    if (currentTab == 'store' && (servermode == false || (logged == true && username == 'admin'))) {
+    if (currentTab == 'store' && (servermode == false || (logged == true && adminMode == true))) {
         var button = getModuleDetailInstallButton(moduleName, td, buttonDiv);
         addEl(sdiv, button);
         addEl(td, sdiv);

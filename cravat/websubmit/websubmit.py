@@ -54,7 +54,7 @@ class FileRouter(object):
             username = await cravat_multiuser.get_username(request)
         else:
             username = 'default'
-        if username == 'admin':
+        if await cravat_multiuser.is_admin_loggedin(request):
             jobs_dirs = []
             fns = os.listdir(root_jobs_dir)
             for fn in fns:
@@ -83,7 +83,7 @@ class FileRouter(object):
                 if username is None:
                     job_dir = None
                 else:
-                    if username != 'admin':
+                    if not await cravat_multiuser.is_admin_loggedin(request):
                         job_dir = os.path.join(os.path.dirname(jobs_dirs[0]), username, job_id)
                         #job_dir = os.path.join(jobs_dirs[0], job_id)
                     else:
@@ -743,11 +743,7 @@ async def get_system_conf_info (request):
 async def update_system_conf (request):
     global servermode
     if servermode and server_ready:
-        username = await cravat_multiuser.get_username(request)
-        if username != 'admin':
-            return web.json_response({'success': False, 'msg': 'Only admin can change the settings.'})
-        r = await cravat_multiuser.is_loggedin(request)
-        if r == False:
+        if not await cravat_multiuser.is_admin_loggedin(request):
             return web.json_response({'success': False, 'mgs': 'Only logged-in admin can change the settings.'})
     queries = request.rel_url.query
     sysconf = json.loads(queries['sysconf'])
