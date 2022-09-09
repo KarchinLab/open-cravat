@@ -1625,6 +1625,9 @@ def write_system_conf_file(d):
     """
     with open(constants.system_conf_path, "w") as wf:
         wf.write(yaml.dump(d, default_flow_style=False))
+    #Clear the cached system conf information    
+    au_conf = None
+    au_conf_file_only = None    
 
 
 def update_mic():
