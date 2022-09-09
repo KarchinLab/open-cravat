@@ -1021,7 +1021,7 @@ function showJobListPage () {
                             console.error(e);
                         }
                     });
-                }, 1000);
+                }, 5000);
             }
         }
     });
