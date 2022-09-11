@@ -215,11 +215,25 @@ feedback_p = root_sp.add_parser(
 
 
 def main():
-    args = root_p.parse_args()
-    if hasattr(args, "func"):
-        args.func(args)
-    else:
-        root_p.parse_args(sys.argv[1:] + ["--help"])
+    try:
+        # Global parser silently consumes the --debug option
+        # --debug is used below in case of exceptions
+        global_parser = argparse.ArgumentParser(add_help=False)
+        global_parser.add_argument('--debug', action='store_true')
+        global_args, cmd_toks = global_parser.parse_known_args()
+        args = root_p.parse_args(cmd_toks)
+        if hasattr(args, "func"):
+            args.func(args)
+        else:
+            root_p.parse_args(sys.argv[1:] + ["--help"])
+    except Exception as e:
+        if '--debug' in sys.argv[1:]:
+            import traceback
+            traceback.print_exc()
+        else:
+            print('ERROR', file=sys.stderr)
+            print(e, file=sys.stderr)
+            print('Repeat command with --debug for more details', file=sys.stderr)
 
 
 if __name__ == "__main__":
