@@ -22,7 +22,7 @@ import importlib
 import traceback
 import signal
 import subprocess
-
+from urllib.error import HTTPError
 
 class InstallProgressHandler(object):
     def __init__(self, module_name, module_version):
@@ -241,8 +241,7 @@ class ModuleInfoCache(object):
         if force or not (self._counts_fetched):
             counts_url = self._store_path_builder.download_counts()
             counts_str = su.get_file_to_string(counts_url)
-            if counts_str != "":
-                self.download_counts = yaml.safe_load(counts_str).get("modules", {})
+            self.download_counts = yaml.safe_load(counts_str).get("modules", {})
             self._counts_fetched = True
 
     def update_local(self):
@@ -278,20 +277,17 @@ class ModuleInfoCache(object):
         if force or not (self._remote_fetched):
             if self._remote_url is None:
                 self._remote_url = self._store_path_builder.manifest()
-                manifest_str = su.get_file_to_string(self._remote_url)
-                # Current version may not have a manifest if it's a dev version
-                if not manifest_str:
-                    self._remote_url = self._store_path_builder.manifest_nover()
+                try:
                     manifest_str = su.get_file_to_string(self._remote_url)
+                except HTTPError as e:
+                    # Current version may not have a manifest if it's a dev version
+                    if e.code == 404:
+                        self._remote_url = self._store_path_builder.manifest_nover()
+                        manifest_str = su.get_file_to_string(self._remote_url)
             else:
                 manifest_str = su.get_file_to_string(self._remote_url)
-            self.remote = {}
-            if manifest_str != "":
-                self.remote = yaml.safe_load(manifest_str)
-                self.remote.pop("hgvs", None)  # deprecate hgvs annotator
-            else:
-                msg = f"WARNING: Could not list modules from {self._remote_url}. Check internet connection."
-                print(msg, file=sys.stderr)
+            self.remote = yaml.safe_load(manifest_str)
+            self.remote.pop("hgvs", None)  # deprecate hgvs annotator
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
