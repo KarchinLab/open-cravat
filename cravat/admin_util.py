@@ -1623,6 +1623,8 @@ def write_system_conf_file(d):
     """
     Fully overwrite the system config file with a new system config.
     """
+    global au_conf
+    global au_conf_file_only
     with open(constants.system_conf_path, "w") as wf:
         wf.write(yaml.dump(d, default_flow_style=False))
     #Clear the cached system conf information    
