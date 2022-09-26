@@ -466,7 +466,7 @@ class Cravat(object):
         return response
 
     def delete_output_files(self):
-        fns = glob.glob(os.path.join(self.output_dir, self.run_name + ".*"))
+        fns = glob.glob(glob.escape(os.path.join(self.output_dir, self.run_name) + ".*"))
         for fn in fns:
             if not self.args.silent:
                 print(f"  Removing {fn}")
@@ -1319,7 +1319,7 @@ class Cravat(object):
         # collects crx.
         crx_path = os.path.join(self.output_dir, f"{self.run_name}.crx")
         wf = open(crx_path, "w")
-        fns = sorted(glob.glob(crx_path + "[.]*"))
+        fns = sorted(glob.glob(glob.escape(crx_path) + "[.]*"))
         fn = fns[0]
         f = open(fn)
         for line in f:
@@ -1338,7 +1338,7 @@ class Cravat(object):
         crg_path = os.path.join(self.output_dir, f"{self.run_name}.crg")
         wf = open(crg_path, "w")
         unique_hugos = {}
-        fns = sorted(glob.glob(crg_path + "[.]*"))
+        fns = sorted(glob.glob(glob.escape(crg_path) + "[.]*"))
         fn = fns[0]
         f = open(fn)
         for line in f:
@@ -1374,7 +1374,7 @@ class Cravat(object):
         wf = open(crt_path, 'w')
         """
         unique_trs = {}
-        fns = sorted(glob.glob(crt_path + "[.]*"))
+        fns = sorted(glob.glob(glob.escape(crt_path) + "[.]*"))
         fn = fns[0]
         """
         f = open(fn)
