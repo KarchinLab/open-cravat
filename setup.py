@@ -93,7 +93,7 @@ setup(
         'nest-asyncio',
         'psutil',
         'mpmath',
-        'pyvcf',
+        'PyVCF3',
         ],
     python_requires='>=3.8',
 )
