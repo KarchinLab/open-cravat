@@ -188,14 +188,16 @@ def stream_to_file(
 
 
 def get_file_to_string(url):
-    try:
-        r = requests.get(url, timeout=(3, None))
-        if r.status_code == 200:
-            return r.text
-        else:
-            raise HTTPError(url, r.status_code, "", None, None)
-    except:
-        return ""
+    """
+    Sends a GET request to the given url and returns the response body as a string
+
+    Errors during the GET request are unhandled by this method
+    """
+    r = requests.get(url, timeout=(3, None))
+    if r.status_code == 200:
+        return r.text
+    else:
+        raise HTTPError(url, r.status_code, "", None, None)
 
 
 def file_checksum(path):
