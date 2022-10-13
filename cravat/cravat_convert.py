@@ -90,8 +90,7 @@ class MasterCravatConverter(object):
         self.chromdict = {
             "chrx": "chrX",
             "chry": "chrY",
-            "chrMT": "chrM",
-            "chrMt": "chrM",
+            "chrMt": "chrMT",
             "chr23": "chrX",
             "chr24": "chrY",
         }
@@ -446,6 +445,9 @@ class MasterCravatConverter(object):
                             if chrom is not None:
                                 if not chrom.startswith("chr"):
                                     chrom = "chr" + chrom
+                                if not self.do_liftover:
+                                    if chrom.lower() == "chrmt":
+                                        chrom = "chrM"
                                 wdict["chrom"] = self.chromdict.get(chrom, chrom)
                                 if multiple_files:
                                     if wdict["sample_id"]:
@@ -572,7 +574,10 @@ class MasterCravatConverter(object):
     def liftover(self, chrom, pos, ref, alt):
         reflen = len(ref)
         altlen = len(alt)
-        if reflen == 1 and altlen == 1:
+        if chrom == "chrMT":
+            newchrom = "chrM"
+            newpos = pos
+        elif reflen == 1 and altlen == 1:
             res = self.lifter.convert_coordinate(chrom, pos - 1)
             if res is None or len(res) == 0:
                 raise LiftoverFailure("Liftover failure")
