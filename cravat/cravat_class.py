@@ -1648,6 +1648,10 @@ class Cravat(object):
         return all_reporters_ran_well, response
 
     def run_annotators_mp(self):
+        """
+        Run annotators in multiple worker processes.
+        """
+        # Determine number of worker processes
         num_workers = au.get_max_num_concurrent_annotators_per_job()
         if self.args.mp is not None:
             try:
@@ -1657,9 +1661,10 @@ class Cravat(object):
             except:
                 self.logger.exception("error handling mp argument:")
         self.logger.info("num_workers: {}".format(num_workers))
+        # Create arguments for each annotator
         run_args = {}
         for module in self.run_annotators.values():
-            # Make command
+            # Select correct input file for annotator
             if module.level == "variant":
                 if "input_format" in module.conf:
                     input_format = module.conf["input_format"]
@@ -1669,12 +1674,11 @@ class Cravat(object):
                         inputpath = self.crxinput
                     else:
                         raise Exception("Incorrect input_format value")
-                        # inputpath = self.input
                 else:
                     inputpath = self.crvinput
             elif module.level == "gene":
                 inputpath = self.crginput
-            # secondary_opts = []
+            # Assign secondary inputs from sub-annotators
             secondary_inputs = []
             if "secondary_inputs" in module.conf:
                 secondary_module_names = module.conf["secondary_inputs"]
@@ -1690,6 +1694,7 @@ class Cravat(object):
                             "=", r"\="
                         )
                     )
+            # Assemble argument dictionary
             kwargs = {
                 "script_path": module.script_path,
                 "input_file": inputpath,
@@ -1704,11 +1709,20 @@ class Cravat(object):
             if module.name in self.cravat_conf:
                 kwargs["conf"] = self.cravat_conf[module.name]
             run_args[module.name] = (module, kwargs)
+        # Run annotator workers
+        # Annotator workers receive annotators to run in start_queue. When an 
+        # annotator is finished, it's name is placed in end_queue. This process
+        # schedules annotators to run by placing them in start_queue. Annotators
+        # that depend on other annotators results are not placed in start_queue 
+        # until the dependent annotators are finished. When all annotators have 
+        # been placed in start_queue, the queue_populated semaphore is set to 
+        # True. Once queue_populated is True and start_queue is empty, the 
+        # workers will exit. 
         self.logger.removeHandler(self.log_handler)
         start_queue = self.manager.Queue()
         end_queue = self.manager.Queue()
         all_mnames = set(self.run_annotators)
-        assigned_mnames = set()
+        queued_mnames = set()
         done_mnames = set(self.done_annotators)
         queue_populated = self.manager.Value("c_bool", False)
         pool_args = [
@@ -1722,24 +1736,24 @@ class Cravat(object):
             )
             pool.close()
             for mname, module in self.run_annotators.items():
-                if (
-                    mname not in assigned_mnames
-                    and set(module.secondary_module_names) <= done_mnames
-                ):
+                annotator_not_queue = mname not in queued_mnames
+                secondaries_done = set(module.secondary_module_names) <= done_mnames
+                if (annotator_not_queue and secondaries_done):
                     start_queue.put(run_args[mname])
-                    assigned_mnames.add(mname)
-            while (
-                assigned_mnames != all_mnames
-            ):  # TODO not handling case where parent module errors out
+                    queued_mnames.add(mname)
+            # Loop until all annotators are put in start_queue
+            # TODO not handling case where parent annotator errors out
+            while (queued_mnames != all_mnames):  
+                # Block until item availble in end_queue
                 finished_module = end_queue.get()
                 done_mnames.add(finished_module)
+                # Queue any annotators that now have requirements complete
                 for mname, module in self.run_annotators.items():
-                    if (
-                        mname not in assigned_mnames
-                        and set(module.secondary_module_names) <= done_mnames
-                    ):
+                    annotator_not_queue = mname not in queued_mnames
+                    secondaries_done = set(module.secondary_module_names) <= done_mnames
+                    if (annotator_not_queue and secondaries_done):
                         start_queue.put(run_args[mname])
-                        assigned_mnames.add(mname)
+                        queued_mnames.add(mname)
             queue_populated = True
             pool.join()
         self.log_path = os.path.join(self.output_dir, self.run_name + ".log")
