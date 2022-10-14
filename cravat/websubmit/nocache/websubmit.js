@@ -182,7 +182,7 @@ function submit () {
                 addEl(alertDiv,getEl('br'));
                 addEl(alertDiv,getEl('br'));
                 var span = getEl('span');
-                span.innerHTML = 'If you think this was caused by an error, <a href="mailto:support@cravat.us">let us know</a>'
+                span.innerHTML = 'If you think this was caused by an error, <a href="mailto:support@opencravat.org">let us know</a>'
                 addEl(alertDiv,span);
                 addEl(alertDiv,getEl('br'));
                 addEl(alertDiv,getEl('br'));
