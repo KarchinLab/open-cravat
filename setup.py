@@ -61,8 +61,8 @@ setup(
     description='OpenCRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='RyangGuk Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
-    author_email='rkim@oakbioinformatics.com',
-    url='http://www.opencravat.org',
+    author_email='support@opencravat.org',
+    url='https://www.opencravat.org',
     license='',
     package_data={
         'cravat': data_files
