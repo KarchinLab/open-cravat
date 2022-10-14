@@ -279,7 +279,8 @@ async def get_module_updates (request):
         modules = smodules.split(',')
     else:
         modules = []
-    updates, _, conflicts = await au.get_updatable_async(modules=modules)
+    ret = await au.get_updatable_async(modules=modules)
+    [updates, _, conflicts] = ret
     sconflicts = {}
     for mname, reqd in conflicts.items():
         sconflicts[mname] = {}

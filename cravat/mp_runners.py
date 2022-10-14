@@ -13,6 +13,20 @@ def init_worker():
 
 
 def annot_from_queue(start_queue, end_queue, queue_populated, status_writer):
+    """
+    Annotator worker. Multiple workers are run by Cravat class. Receives annotator
+    to run, and arguments in start_queue. On completion, puts message in end_queue.
+
+    Some annotators depend on the output of others and cannot start until the
+    required annotator is finished. So, a case could arise where a desired annotator 
+    is blocked from starting. In that case the main process will hold the annotator
+    out from start_queue until it can be safely started. When all desired annotators
+    have been placed in start_queue, the queue_populated semaphore is set to True. When
+    start_queue is empty, and queue_populated is true, this worker will exit.
+
+    Annotators place status updates (% completed) into status_writer, where they are
+    sent to the main process and displayed to the user. 
+    """
     while True:
         try:
             task = start_queue.get(True, 1)

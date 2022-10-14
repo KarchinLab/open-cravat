@@ -402,11 +402,11 @@ button {
     visibility: visible;
 }
 
-.filter-group-elements-div[join-operator="and"] .filter-join-operator-div:after {
+.filter-group-elements-div[join-operator="and"]>.filter-join-operator-div:after {
     content: 'and';
 }
 
-.filter-group-elements-div[join-operator="or"] .filter-join-operator-div:after {
+.filter-group-elements-div[join-operator="or"]>.filter-join-operator-div:after {
     content: 'or';
 }
 

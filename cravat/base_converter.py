@@ -23,5 +23,18 @@ class BaseConverter(object):
         )
         raise NotImplementedError(err_msg)
 
+    def convert_file(self, file, *args, exc_handler=None, **kwargs):
+        ln = 0
+        for line in file:
+            ln += 1
+            try:
+                yield ln, line, self.convert_line(line)
+            except Exception as e:
+                if exc_handler:
+                    exc_handler(ln, line, e)
+                    continue
+                else:
+                    raise e
+
     def addl_operation_for_unique_variant(self, wdict, wdict_no):
         pass

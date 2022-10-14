@@ -57,7 +57,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='2.2.7',
+    version='2.2.8',
     description='OpenCRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='RyangGuk Kim, Kyle Moad, Mike Ryan, and Rachel Karchin',
@@ -93,7 +93,7 @@ setup(
         'nest-asyncio',
         'psutil',
         'mpmath',
-        'pyvcf',
+        'PyVCF3',
         ],
-    python_requires='>=3.6',
+    python_requires='>=3.8',
 )

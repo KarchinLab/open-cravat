@@ -83,19 +83,18 @@
                         <td valign='top' class='variant-input-border-bottom' title="Upload file(s). Select multiple files using ctrl and shift keys">
                                 <br />
                             <input type="file" name="input-file" id="input-file" multiple/>
-                            <label for="input-file">Add input file(s)</label>
+                            <label for="input-file">Add input files</label>
                             <button id='clear_inputfilelist_button' class='butn' onclick='onClearInputFileList()' style='display: none;'>Clear file(s)</button>
                             <div id="mult-inputs-message" style="display: none; margin-top: 4px;">
-                                File(s):
                                 <div id="mult-inputs-list"></div>
                             </div>
-                            
                         </td>
-                    </tr><tr>
+                    </tr>
+                    <tr>
                         <td valign='top' class='variant-input-border-bottom' style='text-align: left;'>
                             <br />
                             <div style='text-align: left;'>
-                                <textarea rows="1" id="input-text" style='' placeholder="Enter variants" onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
+                                <textarea rows="3" id="input-text" style='' placeholder="Enter variants in a supported input format such as VCF or TSV, or type a list of the paths to input files in the server." onclick='onClickInputTextArea();' onblur='onBlurInputTextArea();'></textarea>
                             </div>
                             <select id='submit-input-format-select' disabled style='display: none;'>
                                 <option value=''>Detect</option>

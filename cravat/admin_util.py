@@ -22,7 +22,7 @@ import importlib
 import traceback
 import signal
 import subprocess
-
+from urllib.error import HTTPError
 
 class InstallProgressHandler(object):
     def __init__(self, module_name, module_version):
@@ -241,8 +241,7 @@ class ModuleInfoCache(object):
         if force or not (self._counts_fetched):
             counts_url = self._store_path_builder.download_counts()
             counts_str = su.get_file_to_string(counts_url)
-            if counts_str != "":
-                self.download_counts = yaml.safe_load(counts_str).get("modules", {})
+            self.download_counts = yaml.safe_load(counts_str).get("modules", {})
             self._counts_fetched = True
 
     def update_local(self):
@@ -278,20 +277,17 @@ class ModuleInfoCache(object):
         if force or not (self._remote_fetched):
             if self._remote_url is None:
                 self._remote_url = self._store_path_builder.manifest()
-                manifest_str = su.get_file_to_string(self._remote_url)
-                # Current version may not have a manifest if it's a dev version
-                if not manifest_str:
-                    self._remote_url = self._store_path_builder.manifest_nover()
+                try:
                     manifest_str = su.get_file_to_string(self._remote_url)
+                except HTTPError as e:
+                    # Current version may not have a manifest if it's a dev version
+                    if e.code == 404:
+                        self._remote_url = self._store_path_builder.manifest_nover()
+                        manifest_str = su.get_file_to_string(self._remote_url)
             else:
                 manifest_str = su.get_file_to_string(self._remote_url)
-            self.remote = {}
-            if manifest_str != "":
-                self.remote = yaml.safe_load(manifest_str)
-                self.remote.pop("hgvs", None)  # deprecate hgvs annotator
-            else:
-                msg = f"WARNING: Could not list modules from {self._remote_url}. Check internet connection."
-                print(msg, file=sys.stderr)
+            self.remote = yaml.safe_load(manifest_str)
+            self.remote.pop("hgvs", None)  # deprecate hgvs annotator
             self._remote_fetched = True
 
     def get_remote_readme(self, module_name, version=None):
@@ -826,43 +822,54 @@ def get_remote_module_readme(module_name, version=None):
     return mic.get_remote_readme(module_name, version=version)
 
 
+au_conf = None
+au_conf_file_only = None
 def get_system_conf(file_only=False):
-    """
-    Get the system config. Fill in the default modules dir if not set.
-    """
-    if constants.custom_system_conf_path is not None:
-        conf = load_yml_conf(constants.custom_system_conf_path)
-    elif os.environ.get(constants.system_conf_path_env_key) is not None:
-        conf = load_yml_conf(os.environ.get(constants.system_conf_path_env_key))
-    else:
-        conf = load_yml_conf(constants.system_conf_path)
-    if file_only:
-        return conf
-    if constants.modules_dir_key not in conf:
-        conf[constants.modules_dir_key] = constants.default_modules_dir
-    if constants.conf_dir_key not in conf:
-        conf[constants.conf_dir_key] = constants.default_conf_dir
-    if constants.jobs_dir_key not in conf:
-        conf[constants.jobs_dir_key] = constants.default_jobs_dir
-    if constants.log_dir_key not in conf:
-        conf[constants.log_dir_key] = constants.default_log_dir
-    key = "num_input_line_warning_cutoff"
-    if key not in conf:
-        conf[key] = constants.default_num_input_line_warning_cutoff
-    key = "gui_input_size_limit"
-    if key not in conf:
-        conf[key] = constants.default_settings_gui_input_size_limit
-    key = "max_num_concurrent_jobs"
-    if key not in conf:
-        conf[key] = constants.default_max_num_concurrent_jobs
-    key = "max_num_concurrent_annotators_per_job"
-    if key not in conf:
-        conf[key] = constants.default_max_num_concurrent_annotators_per_job
-    if "custom_system_conf" in globals():
-        global custom_system_conf
-        for k, v in custom_system_conf.items():
-            conf[k] = v
-    return conf
+    global au_conf
+    global au_conf_file_only
+    if au_conf is None:
+        """
+        Get the system config. Fill in the default modules dir if not set.
+        """
+        if constants.custom_system_conf_path is not None:
+            conf = load_yml_conf(constants.custom_system_conf_path)
+        elif os.environ.get(constants.system_conf_path_env_key) is not None:
+            conf = load_yml_conf(os.environ.get(constants.system_conf_path_env_key))
+        else:
+            conf = load_yml_conf(constants.system_conf_path)
+        au_conf_file_only = conf
+
+
+        if constants.modules_dir_key not in conf:
+            conf[constants.modules_dir_key] = constants.default_modules_dir
+        if constants.conf_dir_key not in conf:
+            conf[constants.conf_dir_key] = constants.default_conf_dir
+        if constants.jobs_dir_key not in conf:
+            conf[constants.jobs_dir_key] = constants.default_jobs_dir
+        if constants.log_dir_key not in conf:
+            conf[constants.log_dir_key] = constants.default_log_dir
+        key = "num_input_line_warning_cutoff"
+        if key not in conf:
+            conf[key] = constants.default_num_input_line_warning_cutoff
+        key = "gui_input_size_limit"
+        if key not in conf:
+            conf[key] = constants.default_settings_gui_input_size_limit
+        key = "max_num_concurrent_jobs"
+        if key not in conf:
+            conf[key] = constants.default_max_num_concurrent_jobs
+        key = "max_num_concurrent_annotators_per_job"
+        if key not in conf:
+            conf[key] = constants.default_max_num_concurrent_annotators_per_job
+        if "custom_system_conf" in globals():
+            global custom_system_conf
+            for k, v in custom_system_conf.items():
+                conf[k] = v
+        au_conf = conf
+        
+    if file_only == True:
+        return au_conf_file_only
+    else:    
+        return au_conf
 
 
 def get_system_conf_info(json=False):
@@ -884,7 +891,7 @@ def get_system_conf_info(json=False):
 
 async def get_updatable_async(modules=[], strategy="consensus"):
     update_vers, resolution_applied, resolution_failed = get_updatable(modules=modules, strategy=strategy)
-    return update_vers, resolution_applied, resolution_failed
+    return [update_vers, resolution_applied, resolution_failed]
 
 def get_updatable(modules=[], strategy="consensus"):
     if strategy not in ("consensus", "force", "skip"):
@@ -1612,8 +1619,13 @@ def write_system_conf_file(d):
     """
     Fully overwrite the system config file with a new system config.
     """
+    global au_conf
+    global au_conf_file_only
     with open(constants.system_conf_path, "w") as wf:
         wf.write(yaml.dump(d, default_flow_style=False))
+    #Clear the cached system conf information    
+    au_conf = None
+    au_conf_file_only = None    
 
 
 def update_mic():
