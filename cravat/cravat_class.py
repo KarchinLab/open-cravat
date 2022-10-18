@@ -2,6 +2,7 @@ import time
 import argparse
 import os
 import sys
+from cravat import cravat_metrics as metrics
 from cravat import admin_util as au
 from cravat import util
 from cravat.config_loader import ConfigLoader
@@ -28,6 +29,7 @@ from cravat.inout import CravatWriter
 from cravat.inout import CravatReader
 import glob
 import nest_asyncio
+from queue import Empty
 
 nest_asyncio.apply()
 import re
@@ -489,6 +491,7 @@ class Cravat(object):
     async def main(self):
         no_problem_in_run = True
         report_response = None
+        jobcontent = metrics.get_job_metrics_obj()        
         try:
             self.aggregator_ran = False
             self.update_status("Started cravat", force=True)
@@ -499,6 +502,7 @@ class Cravat(object):
             if not self.args.silent:
                 print("Input file(s): {}".format(input_files_str))
                 print("Genome assembly: {}".format(self.input_assembly))
+            jobcontent['genome'] = self.input_assembly
             self.logger.info("input files: {}".format(input_files_str))
             self.logger.info("input assembly: {}".format(self.input_assembly))
             self.log_versions()
@@ -516,6 +520,7 @@ class Cravat(object):
                 rtime = time.time() - stime
                 if not self.args.silent:
                     print("finished in {0:.3f}s".format(rtime))
+                jobcontent['modules']['converter']['runtime'] = "{0:.3f}s".format(rtime)
                 converter_ran = True
                 if self.numinput == 0:
                     msg = "No variant found in input"
@@ -540,6 +545,7 @@ class Cravat(object):
                 else:
                     self.run_genemapper()
                 rtime = time.time() - stime
+                jobcontent['modules']['mapper']['runtime'] = "{0:.3f}s".format(rtime)
                 if not self.args.silent:
                     print("finished in {0:.3f}s".format(rtime))
                 self.mapper_ran = True
@@ -562,7 +568,7 @@ class Cravat(object):
                 if not self.args.silent:
                     print("Running annotators...")
                 stime = time.time()
-                self.run_annotators_mp()
+                self.run_annotators_mp(jobcontent)
                 rtime = time.time() - stime
                 if not self.args.silent:
                     print("\tannotator(s) finished in {0:.3f}s".format(rtime))
@@ -579,7 +585,7 @@ class Cravat(object):
                 if not self.args.silent:
                     print("Running aggregator...")
                 self.result_path = self.run_aggregator()
-                await self.write_job_info()
+                await self.write_job_info(jobcontent)
                 self.write_smartfilters()
                 self.aggregator_ran = True
             if (
@@ -608,6 +614,8 @@ class Cravat(object):
             end_time = time.time()
             display_time = time.asctime(time.localtime(end_time))
             runtime = end_time - self.start_time
+            jobcontent['job_runtime'] = "{0:0.3f}s".format(runtime)
+            success = "Finished Normally"
             if no_problem_in_run:
                 self.logger.info("finished: {0}".format(display_time))
                 self.logger.info("runtime: {0:0.3f}s".format(runtime))
@@ -616,12 +624,16 @@ class Cravat(object):
             else:
                 self.logger.info("finished with an exception: {0}".format(display_time))
                 self.logger.info("runtime: {0:0.3f}s".format(runtime))
+                success = "Finished with an exception"
+                await cursor.execute(q)
                 if not self.args.silent:
                     print(
                         "Finished with an exception. Runtime: {0:0.3f}s".format(runtime)
                     )
                     print("Check {}".format(self.log_path))
                 self.update_status("Error", force=True)
+            jobcontent['success'] = success
+            await metrics.do_metrics(self,jobcontent)
             self.close_logger()
             if self.args.do_not_change_status != True:
                 self.status_writer.flush()
@@ -656,6 +668,18 @@ class Cravat(object):
         await db.commit()
         await cursor.close()
         await db.close()
+
+    def get_job_metrics_obj(self):
+        jobcontent = {}
+        jobmodules = {}
+        jobmapper = {}
+        jobconverter = {}
+        jobannotators = []
+        jobmodules['mapper'] = jobmapper
+        jobmodules['converter'] = jobconverter
+        jobmodules['annotators'] = jobannotators
+        jobcontent['modules'] = jobmodules
+        return jobcontent
 
     def write_smartfilters(self):
         if not self.args.silent:
@@ -1647,7 +1671,7 @@ class Cravat(object):
                 all_reporters_ran_well = False
         return all_reporters_ran_well, response
 
-    def run_annotators_mp(self):
+    def run_annotators_mp(self,jobcontent):
         """
         Run annotators in multiple worker processes.
         """
@@ -1745,7 +1769,6 @@ class Cravat(object):
             # TODO not handling case where parent annotator errors out
             while (queued_mnames != all_mnames):  
                 # Block until item availble in end_queue
-                finished_module = end_queue.get()
                 done_mnames.add(finished_module)
                 # Queue any annotators that now have requirements complete
                 for mname, module in self.run_annotators.items():
@@ -1756,6 +1779,19 @@ class Cravat(object):
                         queued_mnames.add(mname)
             queue_populated = True
             pool.join()
+            annots = []
+            # Retrieve metric values from annotator execution that have been placed in the ene_queue
+            while True:
+                try:
+                    retval = end_queue.get(False)
+                    annotator = {}
+                    annotator['name'] = retval['module']
+                    annotator['version'] = retval['version']
+                    annotator['runtime'] = retval['runtime']
+                    annots.append(annotator)
+                except Empty:
+                    break
+            jobcontent['modules']['annotators'] = annots
         self.log_path = os.path.join(self.output_dir, self.run_name + ".log")
         self.log_handler = logging.FileHandler(self.log_path, "a")
         formatter = logging.Formatter(
@@ -1766,6 +1802,11 @@ class Cravat(object):
         if len(self.run_annotators) > 0:
             self.annotator_ran = True
 
+    # callback function
+    def calculate_worker(x,y):
+        print("IN CUSTOM CALLBACK1")
+        print("IN CUSTOM CALLBACK3 result_iterable" + y)
+            
     def table_exists(self, cursor, table):
         sql = (
             'select name from sqlite_master where type="table" and '
@@ -1810,7 +1851,7 @@ class Cravat(object):
             f.close()
         return title, version, modulename
 
-    async def write_job_info(self):
+    async def write_job_info(self,jobcontent):
         dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
         conn = await aiosqlite.connect(dbpath)
         cursor = await conn.cursor()
@@ -1820,6 +1861,7 @@ class Cravat(object):
             q = "create table info (colkey text primary key, colval text)"
             await cursor.execute(q)
         modified = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        jobcontent['resultModifiedAt'] = modified
         q = (
             'insert or replace into info values ("Result modified at", "'
             + modified
@@ -1829,6 +1871,8 @@ class Cravat(object):
         if not self.append_mode:
             created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             q = 'insert into info values ("Result created at", "' + created + '")'
+            jobcontent['numInputFiles'] = len(self.inputs)
+            jobcontent['resultCreatedAt'] = created
             await cursor.execute(q)
             q = 'insert into info values ("Input file name", "{}")'.format(
                 ";".join(self.inputs)
@@ -1844,23 +1888,28 @@ class Cravat(object):
             await cursor.execute(q)
             r = await cursor.fetchone()
             no_input = str(r[0])
+            jobcontent['numVariants'] = no_input
             q = (
                 'insert into info values ("Number of unique input variants", "'
                 + no_input
                 + '")'
             )
             await cursor.execute(q)
+            jobcontent['ocVersion'] = self.pkg_ver
             q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
             await cursor.execute(q)
-            q = 'insert into info values ("_converter_format", "{}")'.format(
-                await self.get_converter_format_from_crv()
-            )
+            converterFormat = await self.get_converter_format_from_crv()
+            q = 'insert into info values ("_converter_format", "{}")'.format(converterFormat)
             await cursor.execute(q)
+            jobcontent['converterFormat'] = converterFormat
+            jobcontent['modules']['converter']['name'] = converterFormat
             (
                 mapper_title,
                 mapper_version,
                 mapper_modulename,
             ) = await self.get_mapper_info_from_crx()
+            jobcontent['modules']['mapper']['name'] = mapper_modulename
+            jobcontent['modules']['mapper']['version'] = mapper_version
             genemapper_str = "{} ({})".format(mapper_title, mapper_version)
             q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
             await cursor.execute(q)
@@ -1879,6 +1928,7 @@ class Cravat(object):
                     )
                     await cursor.execute(q)
             q = f'insert into info values ("primary_transcript", "{",".join(self.args.primary_transcript)}")'
+            jobcontent['primaryTranscript'] = "#".join(self.args.primary_transcript)
             await cursor.execute(q)
         q = 'select colval from info where colkey="annotators_desc"'
         await cursor.execute(q)

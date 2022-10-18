@@ -52,7 +52,8 @@ def annot_from_queue(start_queue, end_queue, queue_populated, status_writer):
             logger.error(e)
             raise
         annotator.run()
-        end_queue.put(module.name)
+        annotes = annotator.run()
+        end_queue.put({'module': module.name, 'runtime': annotes['runtime'], 'version': annotes['version']})
 
 
 def mapper_runner(

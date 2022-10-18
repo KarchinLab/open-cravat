@@ -327,6 +327,7 @@ class BaseAnnotator(object):
         if self.output_basename == '__dummy__':
             os.remove(self.log_path)
         """
+        return {'runtime': "{0:0.3f}s".format(run_time),'version': self.annotator_version}
 
     def postprocess(self):
         pass
