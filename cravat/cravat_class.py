@@ -633,7 +633,7 @@ class Cravat(object):
                     print("Check {}".format(self.log_path))
                 self.update_status("Error", force=True)
             jobcontent['success'] = success
-            await metrics.do_metrics(self,jobcontent)
+            await metrics.do_job_metrics(self,jobcontent)
             self.close_logger()
             if self.args.do_not_change_status != True:
                 self.status_writer.flush()

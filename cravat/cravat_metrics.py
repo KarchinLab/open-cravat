@@ -3,8 +3,8 @@ import json
 import sys
 import sqlite3
 import aiosqlite
-
-runtimes = []
+import requests
+from cravat import admin_util as au
 
 def get_job_metrics_obj():
     jobcontent = {}
@@ -18,7 +18,7 @@ def get_job_metrics_obj():
     jobcontent['modules'] = jobmodules
     return jobcontent
 
-async def do_metrics(cc,jobcontent):
+async def do_job_metrics(cc,jobcontent):
     dbpath = os.path.join(cc.output_dir, cc.run_name + ".sqlite")
     conn = await aiosqlite.connect(dbpath)
     cursor = await conn.cursor()
@@ -34,3 +34,9 @@ async def do_metrics(cc,jobcontent):
     await cursor.execute(q)
     await conn.commit()
     json_obj = json.loads(json_dump)
+    post_metrics(json_obj)
+    
+def post_metrics(json_obj):
+    sys_conf = au.get_system_conf()
+    metrics_url = sys_conf["metrics_url"] + "/job"
+    requests.post(metrics_url, json=json_obj)
