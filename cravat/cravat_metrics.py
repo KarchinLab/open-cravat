@@ -2,7 +2,6 @@ import os
 import json
 import sys
 import sqlite3
-import aiosqlite
 import requests
 from cravat import admin_util as au
 
@@ -18,25 +17,26 @@ def get_job_metrics_obj():
     jobcontent['modules'] = jobmodules
     return jobcontent
 
-async def do_job_metrics(cc,jobcontent):
+def do_job_metrics(cc,jobcontent):
     dbpath = os.path.join(cc.output_dir, cc.run_name + ".sqlite")
-    conn = await aiosqlite.connect(dbpath)
-    cursor = await conn.cursor()
+    conn = sqlite3.connect(dbpath)
+    cursor = conn.cursor()
     json_dump = json.dumps(jobcontent, indent = 3)
-    print("IN DO METRICS json_dump: " + json_dump)
+    # save the run success value to the info table
     q = 'insert or replace into info values ("runsuccess", "'+ jobcontent['success']+'")'
-    await cursor.execute(q)
+    cursor.execute(q)
+    # save the runtime value to the info table
     q = (
         'insert or replace into info values ("runtime", "'
         +  jobcontent['job_runtime']
         + '")'
     )
-    await cursor.execute(q)
-    await conn.commit()
+    cursor.execute(q)
+    conn.commit()
     json_obj = json.loads(json_dump)
     post_metrics(json_obj)
     
 def post_metrics(json_obj):
     sys_conf = au.get_system_conf()
     metrics_url = sys_conf["metrics_url"] + "/job"
-    requests.post(metrics_url, json=json_obj)
+    requests.post(metrics_url, json=json_obj)  #write json to a file (hardcoded dir)

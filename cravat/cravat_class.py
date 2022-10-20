@@ -633,7 +633,7 @@ class Cravat(object):
                     print("Check {}".format(self.log_path))
                 self.update_status("Error", force=True)
             jobcontent['success'] = success
-            await metrics.do_job_metrics(self,jobcontent)
+            metrics.do_job_metrics(self,jobcontent)
             self.close_logger()
             if self.args.do_not_change_status != True:
                 self.status_writer.flush()
@@ -1802,11 +1802,6 @@ class Cravat(object):
         if len(self.run_annotators) > 0:
             self.annotator_ran = True
 
-    # callback function
-    def calculate_worker(x,y):
-        print("IN CUSTOM CALLBACK1")
-        print("IN CUSTOM CALLBACK3 result_iterable" + y)
-            
     def table_exists(self, cursor, table):
         sql = (
             'select name from sqlite_master where type="table" and '
