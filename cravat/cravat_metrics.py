@@ -70,8 +70,6 @@ def save_metrics_local(json_obj):
 
  #resend any saved local metrics files.    
 def resend_local_metrics():
-    homeDir = os.getcwd()
-    print("HOMEDIR: ") + homeDir
     metricsPath = os.getcwd() +"\\metrics"
     if os.path.exists(metricsPath):
          for filename in os.listdir(metricsPath):
