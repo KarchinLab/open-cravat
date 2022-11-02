@@ -222,7 +222,7 @@ function showUpdateRemoteSpinner () {
 
 function hideUpdateRemoteSpinner () {
     document.querySelector('#update-remote-spinner-div').classList.remove('show');
-    document.querySelector('#update-remote-spinner-div').classList.add('hide');
+    document.querySelector('#update-remote-spinner-div').classList.add('hide'); 
 }
 
 function sortJobs () {
@@ -1632,6 +1632,20 @@ function openSubmitDiv () {
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
         systemConf = response.content;
+        var s = document.getElementById('settings_save_metrics');
+        if (systemConf.save_metrics === 'empty') {
+        	console.log("IN NOT YET SET")
+            var alertDiv = getEl('div');
+            var span = getEl('span');
+            span.textContent = 'OpenCRAVAT gathers metrics to measure usage and improve the tool. No private data is collected. To opt-out visit the hamburger menu at the top right of the OpenCRAVAT screen.'
+            addEl(alertDiv, span);
+            showYesNoDialog(alertDiv, null, false, true);
+            s.value = 'Y';
+            updateSystemConf(true);
+        } else {
+        	s.value = response['content']['save_metrics']
+           	console.log("metrics setting already exists: " + response['content']['save_metrics']);
+        }
         var s = document.getElementById('sysconfpathspan');
         s.value = response['path'];
         var s = document.getElementById('settings_jobs_dir_input');
@@ -1659,7 +1673,7 @@ function onClickSaveSystemConf () {
     updateSystemConf();
 }
 
-function updateSystemConf () {
+function updateSystemConf (setMetrics) {
     $.get('/submit/getsystemconfinfo').done(function (response) {
         var s = document.getElementById('sysconfpathspan');
         response['path'] = s.value;
@@ -1673,20 +1687,24 @@ function updateSystemConf () {
         response['content']['max_num_concurrent_jobs'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
         response['content']['max_num_concurrent_annotators_per_job'] = parseInt(s.value);
+        var s = document.getElementById('settings_save_metrics');
+        response['content']['save_metrics'] = s.value;
         $.ajax({
             url:'/submit/updatesystemconf',
             data: {'sysconf': JSON.stringify(response['content'])},
             type: 'GET',
             success: function (response) {
                 if (response['success'] == true) {
-                    var mdiv = getEl('div');
-                    var span = getEl('span');
-                    span.textContent = 'System configuration has been updated.';
-                    addEl(mdiv, span);
-                    addEl(mdiv, getEl('br'));
-                    addEl(mdiv, getEl('br'));
-                    var justOk = true;
-                    showYesNoDialog(mdiv, null, false, justOk);
+                	if (typeof setMetrics === 'undefined') {
+	                    var mdiv = getEl('div');
+	                    var span = getEl('span');
+	                    span.textContent = 'System configuration has been updated.';
+	                    addEl(mdiv, span);
+	                    addEl(mdiv, getEl('br'));
+	                    addEl(mdiv, getEl('br'));
+	                    var justOk = true;
+	                    showYesNoDialog(mdiv, null, false, justOk);
+                	}
                 } else {
                     var mdiv = getEl('div');
                     var span = getEl('span');

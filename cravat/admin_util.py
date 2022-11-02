@@ -860,6 +860,8 @@ def get_system_conf(file_only=False):
         key = "max_num_concurrent_annotators_per_job"
         if key not in conf:
             conf[key] = constants.default_max_num_concurrent_annotators_per_job
+        if constants.metrics_conf_key not in conf:
+            conf[constants.metrics_conf_key] = "empty"
         if "custom_system_conf" in globals():
             global custom_system_conf
             for k, v in custom_system_conf.items():
@@ -1559,6 +1561,19 @@ def set_modules_dir(path, overwrite=False):
             overwrite_conf_path = get_main_default_path()
         shutil.copy(overwrite_conf_path, get_main_conf_path())
 
+def set_metrics_config(value, overwrite=False):
+    """
+    Set the save_metrics configuration in the system conf file.
+    """
+    update_system_conf_file({constants.metrics_conf_key: value})
+
+def get_metrics_config():
+    """
+    Get the current modules directory
+    """
+    conf = get_system_conf()
+    metrics_conf = conf[constants.metrics_conf_key]
+    return metrics_conf
 
 # return a list of module types (e.g. annotators) in the local install
 def show_cravat_conf():

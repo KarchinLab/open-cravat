@@ -12,16 +12,16 @@ import socket
 import uuid    
 
 class cravatMetrics:
-    machinedata = {}
-    jobdata = {}
-    jobmodules = {}
-    jobmapper = {}
-    jobconverter = {}
-    jobaggregator = {}
-    jobannotators = []
-    jobpostaggregators = []
 
     def __init__(self):
+        self.machinedata = {}
+        self.jobdata = {}
+        self.jobmodules = {}
+        self.jobmapper = {}
+        self.jobconverter = {}
+        self.jobaggregator = {}
+        self.jobannotators = []
+        self.jobpostaggregators = []
         self.gather_machine_data()
 
     def gather_machine_data(self):
@@ -95,7 +95,7 @@ class cravatMetrics:
         json_obj = json.loads(json_dump)
         sys_conf = au.get_system_conf()
         saveMetrics = sys_conf["save_metrics"]
-        if saveMetrics:
+        if saveMetrics == 'Y':
             metrics_url = sys_conf["metrics_url"] + "/job"
             try:
 #                raise requests.exceptions.Timeout("Connection Timed Out") #use to simulate timeout

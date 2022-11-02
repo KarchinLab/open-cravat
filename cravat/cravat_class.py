@@ -325,6 +325,7 @@ class Cravat(object):
         self.append_mode = False
         self.pipeinput = False
         try:
+            self.metricObj = metrics.cravatMetrics()
             self.make_args_namespace(kwargs)
             if self.args.clean_run:
                 if not self.args.silent:
@@ -493,11 +494,10 @@ class Cravat(object):
     async def main(self):
         no_problem_in_run = True
         report_response = None
-        metricObj = metrics.cravatMetrics()
         try:
-            sys_conf = au.get_system_conf()
-            if sys_conf.get('save_metrics') == None:
-                au.update_system_conf_file({"save_metrics": True})
+            if au.get_metrics_config() == "empty":
+                print("NOTICE: OpenCRAVAT gathers metrics to measure usage and improve the tool. No private data is collected. To opt out issue command: oc config metrics.")
+                au.update_system_conf_file({"save_metrics": "Y"})
             self.aggregator_ran = False
             self.update_status("Started cravat", force=True)
             if self.pipeinput == False:
@@ -507,7 +507,7 @@ class Cravat(object):
             if not self.args.silent:
                 print("Input file(s): {}".format(input_files_str))
                 print("Genome assembly: {}".format(self.input_assembly))
-            metricObj.set_job_data('genome',self.input_assembly)
+            self.metricObj.set_job_data('genome',self.input_assembly)
             self.logger.info("input files: {}".format(input_files_str))
             self.logger.info("input assembly: {}".format(self.input_assembly))
             self.log_versions()
@@ -525,7 +525,7 @@ class Cravat(object):
                 rtime = time.time() - stime
                 if not self.args.silent:
                     print("finished in {0:.3f}s".format(rtime))
-                metricObj.set_job_converter('runtime',round(rtime,3))
+                self.metricObj.set_job_converter('runtime',round(rtime,3))
                 converter_ran = True
                 if self.numinput == 0:
                     msg = "No variant found in input"
@@ -550,7 +550,7 @@ class Cravat(object):
                 else:
                     self.run_genemapper()
                 rtime = time.time() - stime
-                metricObj.set_job_mapper('runtime',round(rtime,3))
+                self.metricObj.set_job_mapper('runtime',round(rtime,3))
                 if not self.args.silent:
                     print("finished in {0:.3f}s".format(rtime))
                 self.mapper_ran = True
@@ -573,7 +573,7 @@ class Cravat(object):
                 if not self.args.silent:
                     print("Running annotators...")
                 stime = time.time()
-                self.run_annotators_mp(metricObj)
+                self.run_annotators_mp()
                 rtime = time.time() - stime
                 if not self.args.silent:
                     print("\tannotator(s) finished in {0:.3f}s".format(rtime))
@@ -589,9 +589,9 @@ class Cravat(object):
             ):
                 if not self.args.silent:
                     print("Running aggregator...")
-                self.result_path = self.run_aggregator(metricObj)
-                await self.write_job_info(metricObj)
-                self.write_smartfilters(metricObj)
+                self.result_path = self.run_aggregator()
+                await self.write_job_info()
+                self.write_smartfilters()
                 self.aggregator_ran = True
             if (
                 self.endlevel >= self.runlevels["postaggregator"]
@@ -600,7 +600,7 @@ class Cravat(object):
             ):
                 if not self.args.silent:
                     print("Running postaggregators...")
-                self.run_postaggregators(metricObj)
+                self.run_postaggregators()
             if (
                 self.endlevel >= self.runlevels["reporter"]
                 and self.startlevel <= self.runlevels["reporter"]
@@ -619,7 +619,7 @@ class Cravat(object):
             end_time = time.time()
             display_time = time.asctime(time.localtime(end_time))
             runtime = end_time - self.start_time
-            metricObj.set_job_data('jobRuntime',round(runtime,3))
+            self.metricObj.set_job_data('jobRuntime',round(runtime,3))
             success = "Finished Normally"
             if no_problem_in_run:
                 self.logger.info("finished: {0}".format(display_time))
@@ -637,8 +637,8 @@ class Cravat(object):
                     )
                     print("Check {}".format(self.log_path))
                 self.update_status("Error", force=True)
-            metricObj.set_job_data('success',success)
-            metricObj.do_job_metrics(self)
+            self.metricObj.set_job_data('success',success)
+            self.metricObj.do_job_metrics(self)
             self.close_logger()
             if self.args.do_not_change_status != True:
                 self.status_writer.flush()
@@ -674,7 +674,7 @@ class Cravat(object):
         await cursor.close()
         await db.close()
 
-    def write_smartfilters(self,metricObj):
+    def write_smartfilters(self):
         ttime = time.time()
         if not self.args.silent:
             print("Indexing")
@@ -726,7 +726,7 @@ class Cravat(object):
                         print(f"\tfinished in {time.time()-st:.3f}s")
 
             rtime = time.time() - ttime
-            metricObj.set_job_data('indexingRuntime',round(rtime,3))
+            self.metricObj.set_job_data('indexingRuntime',round(rtime,3))
         # Package filter
         if hasattr(self.args, "filter") and self.args.filter is not None:
             q = "create table if not exists viewersetup (datatype text, name text, viewersetup text, unique (datatype, name))"
@@ -1428,7 +1428,7 @@ class Cravat(object):
         wf.close()
         del unique_trs
 
-    def run_aggregator(self,metricObj):
+    def run_aggregator(self):
         # Variant level
         if not self.args.silent:
             print("\t{0:30s}\t".format("Variants"), end="", flush=True)
@@ -1462,7 +1462,7 @@ class Cravat(object):
         if not self.args.silent:
             print("finished in {0:.3f}s".format(rtime))
         variants = {'runtime': round(rtime,3)}
-        metricObj.set_job_aggregator('variants',variants)
+        self.metricObj.set_job_aggregator('variants',variants)
         # Gene level
         if not self.args.silent:
             print("\t{0:30s}\t".format("Genes"), end="", flush=True)
@@ -1493,7 +1493,7 @@ class Cravat(object):
         if not self.args.silent:
             print("finished in {0:.3f}s".format(rtime))
         genes = {'runtime': round(rtime,3)}
-        metricObj.set_job_aggregator('genes',genes)
+        self.metricObj.set_job_aggregator('genes',genes)
 
         # Sample level
         if not self.append_mode:
@@ -1525,7 +1525,7 @@ class Cravat(object):
             if not self.args.silent:
                 print("finished in {0:.3f}s".format(rtime))
             samples = {'runtime': round(rtime,3)}
-            metricObj.set_job_aggregator('samples',samples)
+            self.metricObj.set_job_aggregator('samples',samples)
 
         # Mapping level
         if not self.append_mode:
@@ -1556,14 +1556,14 @@ class Cravat(object):
             if not self.args.silent:
                 print("finished in {0:.3f}s".format(rtime))
             tags = {'runtime': round(rtime,3)}
-            metricObj.set_job_aggregator('tags',tags)
+            self.metricObj.set_job_aggregator('tags',tags)
 
         rtime = time.time() - ttime
         total = {'runtime': round(rtime,3)}
-        metricObj.set_job_aggregator('total',total)
+        self.metricObj.set_job_aggregator('total',total)
         return v_aggregator.db_path
 
-    def run_postaggregators(self,metricObj):
+    def run_postaggregators(self):
         for module_name, module in self.postaggregators.items():
             cmd = [module.script_path, "-d", self.output_dir, "-n", self.run_name]
             postagg_conf = {}
@@ -1592,7 +1592,7 @@ class Cravat(object):
                 postagg['name'] = module.name
                 postagg['version'] = module.conf['version']
                 postagg['runtime'] = round(rtime,3)
-                metricObj.set_job_post_aggregator(postagg)
+                self.metricObj.set_job_post_aggregator(postagg)
                 print("finished in {0:.3f}s".format(rtime))
 
     async def run_reporter(self):
@@ -1683,7 +1683,7 @@ class Cravat(object):
                 all_reporters_ran_well = False
         return all_reporters_ran_well, response
 
-    def run_annotators_mp(self,metricObj):
+    def run_annotators_mp(self):
         """
         Run annotators in multiple worker processes.
         """
@@ -1799,7 +1799,7 @@ class Cravat(object):
                     annotator['name'] = retval['module']
                     annotator['version'] = retval['version']
                     annotator['runtime'] = retval['runtime']
-                    metricObj.set_job_annotator(annotator)
+                    self.metricObj.set_job_annotator(annotator)
                 except Empty:
                     break
         self.log_path = os.path.join(self.output_dir, self.run_name + ".log")
@@ -1856,7 +1856,7 @@ class Cravat(object):
             f.close()
         return title, version, modulename
 
-    async def write_job_info(self,metricObj):
+    async def write_job_info(self):
         dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
         conn = await aiosqlite.connect(dbpath)
         cursor = await conn.cursor()
@@ -1866,7 +1866,7 @@ class Cravat(object):
             q = "create table info (colkey text primary key, colval text)"
             await cursor.execute(q)
         modified = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        metricObj.set_job_data('resultModifiedAt',modified)
+        self.metricObj.set_job_data('resultModifiedAt',modified)
         q = (
             'insert or replace into info values ("Result modified at", "'
             + modified
@@ -1876,8 +1876,8 @@ class Cravat(object):
         if not self.append_mode:
             created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             q = 'insert into info values ("Result created at", "' + created + '")'
-            metricObj.set_job_data('numInputFiles',len(self.inputs))
-            metricObj.set_job_data('resultCreatedAt',created)
+            self.metricObj.set_job_data('numInputFiles',len(self.inputs))
+            self.metricObj.set_job_data('resultCreatedAt',created)
             await cursor.execute(q)
             q = 'insert into info values ("Input file name", "{}")'.format(
                 ";".join(self.inputs)
@@ -1893,28 +1893,28 @@ class Cravat(object):
             await cursor.execute(q)
             r = await cursor.fetchone()
             no_input = r[0]
-            metricObj.set_job_data('numVariants',no_input)
+            self.metricObj.set_job_data('numVariants',no_input)
             q = (
                 'insert into info values ("Number of unique input variants", "'
                 + str(no_input)
                 + '")'
             )
             await cursor.execute(q)
-            metricObj.set_job_data('ocVersion',self.pkg_ver)
+            self.metricObj.set_job_data('ocVersion',self.pkg_ver)
             q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
             await cursor.execute(q)
             converterFormat = await self.get_converter_format_from_crv()
             q = 'insert into info values ("_converter_format", "{}")'.format(converterFormat)
             await cursor.execute(q)
-            metricObj.set_job_data('converterFormat',converterFormat)
-            metricObj.set_job_converter('name',converterFormat)
+            self.metricObj.set_job_data('converterFormat',converterFormat)
+            self.metricObj.set_job_converter('name',converterFormat)
             (
                 mapper_title,
                 mapper_version,
                 mapper_modulename,
             ) = await self.get_mapper_info_from_crx()
-            metricObj.set_job_mapper('name',mapper_modulename)
-            metricObj.set_job_mapper('version',mapper_version)
+            self.metricObj.set_job_mapper('name',mapper_modulename)
+            self.metricObj.set_job_mapper('version',mapper_version)
             genemapper_str = "{} ({})".format(mapper_title, mapper_version)
             q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
             await cursor.execute(q)
@@ -1933,7 +1933,7 @@ class Cravat(object):
                     )
                     await cursor.execute(q)
             q = f'insert into info values ("primary_transcript", "{",".join(self.args.primary_transcript)}")'
-            metricObj.set_job_data('primaryTranscript',"#".join(self.args.primary_transcript))
+            self.metricObj.set_job_data('primaryTranscript',"#".join(self.args.primary_transcript))
             await cursor.execute(q)
         q = 'select colval from info where colkey="annotators_desc"'
         await cursor.execute(q)
