@@ -95,7 +95,7 @@ class cravatMetrics:
         json_obj = json.loads(json_dump)
         sys_conf = au.get_system_conf()
         saveMetrics = sys_conf["save_metrics"]
-        if saveMetrics == 'Y':
+        if saveMetrics == True:
             metrics_url = sys_conf["metrics_url"] + "/job"
             try:
 #                raise requests.exceptions.Timeout("Connection Timed Out") #use to simulate timeout

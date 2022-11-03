@@ -1573,7 +1573,10 @@ def get_metrics_config():
     """
     conf = get_system_conf()
     metrics_conf = conf[constants.metrics_conf_key]
-    return metrics_conf
+    if metrics_conf == True:
+        return 'Y'
+    else:
+        return 'N'
 
 # return a list of module types (e.g. annotators) in the local install
 def show_cravat_conf():

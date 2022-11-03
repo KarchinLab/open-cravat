@@ -257,7 +257,10 @@ def set_modules_dir(args):
 def set_metrics_config(args):
     metrics_value = args.save_metrics.upper()
     if metrics_value == 'Y' or metrics_value == 'N':
-        au.set_metrics_config(metrics_value)
+        if metrics_value == 'Y':
+            au.set_metrics_config(True)
+        else:
+            au.set_metrics_config(False)
         print("Collect Metrics value set to: " + au.get_metrics_config())
     else:
         print("Error: Collect metrics value must by Y/N. You entered: " + args.save_metrics)

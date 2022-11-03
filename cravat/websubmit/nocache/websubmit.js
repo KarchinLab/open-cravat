@@ -33,6 +33,9 @@ function submit () {
         alert('Log in before submitting a job.');
         return;
     }
+    if (systemConf.save_metrics === 'empty') {
+    	informMetrics()
+    }
     formData = new FormData();
     var textInputElem = $('#input-text');
     var textVal = textInputElem.val();
@@ -136,7 +139,7 @@ function submit () {
     } else {
         commitSubmit();
     }
-
+    
     function enableSubmitButton () {
         document.querySelector('#submit-job-button').disabled = false;
     }
@@ -349,6 +352,18 @@ function getAnnotatorVersionForJob (jobid) {
         }
     }
     return anns;
+}
+
+function informMetrics () {
+    var alertDiv = getEl('div');
+    var span = getEl('span');
+    span.textContent = 'OpenCRAVAT gathers metrics to measure usage and improve the tool. No private data is collected. To opt-out, visit the hamburger menu at the top right of the OpenCRAVAT screen.'
+    addEl(alertDiv, span);
+    showYesNoDialog(alertDiv, null, false, true);
+    var s = document.getElementById('settings_save_metrics');
+    s.checked = true;
+    updateSystemConf(true);
+    systemConf.save_metrics = true;
 }
 
 function onClickJobTableMainTr (evt) {
@@ -1634,18 +1649,10 @@ function loadSystemConf () {
         systemConf = response.content;
         var s = document.getElementById('settings_save_metrics');
         if (systemConf.save_metrics === 'empty') {
-        	console.log("IN NOT YET SET")
-            var alertDiv = getEl('div');
-            var span = getEl('span');
-            span.textContent = 'OpenCRAVAT gathers metrics to measure usage and improve the tool. No private data is collected. To opt-out visit the hamburger menu at the top right of the OpenCRAVAT screen.'
-            addEl(alertDiv, span);
-            showYesNoDialog(alertDiv, null, false, true);
-            s.value = 'Y';
-            updateSystemConf(true);
+        	s.checked = true;
         } else {
-        	s.value = response['content']['save_metrics']
-           	console.log("metrics setting already exists: " + response['content']['save_metrics']);
-        }
+        	s.checked = response['content']['save_metrics']
+        } 
         var s = document.getElementById('sysconfpathspan');
         s.value = response['path'];
         var s = document.getElementById('settings_jobs_dir_input');
@@ -1688,7 +1695,7 @@ function updateSystemConf (setMetrics) {
         var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
         response['content']['max_num_concurrent_annotators_per_job'] = parseInt(s.value);
         var s = document.getElementById('settings_save_metrics');
-        response['content']['save_metrics'] = s.value;
+        response['content']['save_metrics'] = s.checked;
         $.ajax({
             url:'/submit/updatesystemconf',
             data: {'sysconf': JSON.stringify(response['content'])},
