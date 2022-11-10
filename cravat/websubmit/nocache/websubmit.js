@@ -1695,10 +1695,14 @@ function updateSystemConf (setMetrics) {
         var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
         response['content']['max_num_concurrent_annotators_per_job'] = parseInt(s.value);
         var s = document.getElementById('settings_save_metrics');
+        var optout = false;
+        if ((response['content']['save_metrics'] !== false) && (s.checked === false)) {
+            optout = true;
+        }
         response['content']['save_metrics'] = s.checked;
         $.ajax({
             url:'/submit/updatesystemconf',
-            data: {'sysconf': JSON.stringify(response['content'])},
+            data: {'sysconf': JSON.stringify(response['content']), 'optout': optout},
             type: 'GET',
             success: function (response) {
                 if (response['success'] == true) {

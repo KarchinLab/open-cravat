@@ -7,6 +7,7 @@ import json
 from cravat import admin_util as au
 from cravat.config_loader import ConfigLoader
 from cravat.cravat_class import run_cravat_job
+from cravat import cravat_metrics as metrics
 import sys
 import traceback
 import shutil
@@ -762,6 +763,10 @@ async def update_system_conf (request):
             return web.json_response({'success': False, 'mgs': 'Only logged-in admin can change the settings.'})
     queries = request.rel_url.query
     sysconf = json.loads(queries['sysconf'])
+    optout = queries['optout']
+    if optout == 'true':
+        metricObj = metrics.cravatMetrics()
+        metricObj.do_opt_out()
     try:
         success = au.update_system_conf_file(sysconf)
         if 'modules_dir' in sysconf:

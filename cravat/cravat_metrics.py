@@ -5,7 +5,7 @@ import sqlite3
 import requests
 import fnmatch
 from cravat import admin_util as au
-from datetime import datetime
+from datetime import datetime, timezone
 import psutil
 import platform
 import socket
@@ -55,7 +55,7 @@ class cravatMetrics:
     def set_job_annotator(self,value):
         self.jobannotators.append(value)
     
-    def build_metrics_json(self):
+    def build_job_metrics_json(self):
         jsoncontent = {}
         jobmodules = {}
         jobmodules['mapper'] = self.jobmapper
@@ -68,14 +68,40 @@ class cravatMetrics:
         jsoncontent['jobData'] = self.jobdata
         jsoncontent['machineData'] = self.machinedata
         json_dump = json.dumps(jsoncontent, indent = 4)
-#        print("metrics2: " + json_dump)
+#        print(json_dump)
         return json_dump
+
+    def build_opt_metrics_json(self):
+        jsoncontent = {}
+        dt = datetime.now(timezone.utc)
+        utc_time = dt.replace(tzinfo=timezone.utc)    
+        dt_string = utc_time.strftime("%Y/%m/%d %H:%M:%S")
+        jsoncontent['machineData'] = self.machinedata
+        jsoncontent['currDate'] = dt_string
+        json_dump = json.dumps(jsoncontent, indent = 4)
+#        print(json_dump)
+        return json_dump
+
+    def do_opt_out(self):
+        json_dump = self.build_opt_metrics_json()
+        self.post_opt_metrics(json_dump)
+        
+    #post metrics from current execution AND any previous failed executions to the metrics server    
+    def post_opt_metrics(self,json_dump):
+        json_obj = json.loads(json_dump)
+        sys_conf = au.get_system_conf()
+        metrics_url = sys_conf["metrics_url"] + "/opt"
+        try:
+            requests.post(metrics_url, json=json_obj)  #write json to a file (hardcoded dir)
+        except Exception as e: 
+            return False
+        return True
 
     def do_job_metrics(self,cc):
         dbpath = os.path.join(cc.output_dir, cc.run_name + ".sqlite")
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()
-        json_dump = self.build_metrics_json()
+        json_dump = self.build_job_metrics_json()
         # save the run success value to the info table
         q = 'insert or replace into info values ("runsuccess", "'+ self.jobdata['success']+'")'
         cursor.execute(q)
@@ -88,10 +114,10 @@ class cravatMetrics:
         cursor.execute(q)
     #    print(json_dump)
         conn.commit()
-        self.post_metrics(json_dump,True)
+        self.post_job_metrics(json_dump,True)
         
     #post metrics from current execution AND any previous failed executions to the metrics server    
-    def post_metrics(self,json_dump,is_new):
+    def post_job_metrics(self,json_dump,is_new):
         json_obj = json.loads(json_dump)
         sys_conf = au.get_system_conf()
         saveMetrics = sys_conf["save_metrics"]
@@ -128,7 +154,7 @@ class cravatMetrics:
              for filename in os.listdir(metricsPath):
                 with open(os.path.join(metricsPath, filename)) as f:
                     json_dump = f.read()
-                    successful = self.post_metrics(json_dump,False)
+                    successful = self.post_job_metrics(json_dump,False)
                     f.close()
                     if successful == True:
                         os.remove(metricsPath+"\\"+filename)

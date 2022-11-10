@@ -8,7 +8,7 @@ from cravat import util
 from cravat.config_loader import ConfigLoader
 from cravat.util import write_log_msg
 import aiosqlite
-import datetime
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from cravat import constants
 import json
@@ -380,7 +380,7 @@ class Cravat(object):
                 self.status_json["orig_input_path"] = self.inputs
                 self.status_json[
                     "submission_time"
-                ] = datetime.datetime.now().isoformat()
+                ] = datetime.now().isoformat()
                 self.status_json["viewable"] = False
                 self.status_json["note"] = self.args.note
                 self.status_json["status"] = "Starting"
@@ -409,7 +409,7 @@ class Cravat(object):
                 os.path.basename(x) for x in self.inputs
             ]
             self.status_json["orig_input_path"] = self.inputs
-            self.status_json["submission_time"] = datetime.datetime.now().isoformat()
+            self.status_json["submission_time"] = datetime.now().isoformat()
             self.status_json["viewable"] = False
             self.status_json["note"] = self.args.note
             self.status_json["status"] = "Starting"
@@ -1860,13 +1860,16 @@ class Cravat(object):
         dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
         conn = await aiosqlite.connect(dbpath)
         cursor = await conn.cursor()
+        dt = datetime.now(timezone.utc)
+        utc_time = dt.replace(tzinfo=timezone.utc)    
+        utc_dt_string = utc_time.strftime("%Y/%m/%d %H:%M:%S")
         if not self.append_mode:
             q = "drop table if exists info"
             await cursor.execute(q)
             q = "create table info (colkey text primary key, colval text)"
             await cursor.execute(q)
-        modified = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.metricObj.set_job_data('resultModifiedAt',modified)
+        modified = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.metricObj.set_job_data('resultModifiedAt',utc_dt_string)
         q = (
             'insert or replace into info values ("Result modified at", "'
             + modified
@@ -1874,10 +1877,10 @@ class Cravat(object):
         )
         await cursor.execute(q)
         if not self.append_mode:
-            created = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             q = 'insert into info values ("Result created at", "' + created + '")'
             self.metricObj.set_job_data('numInputFiles',len(self.inputs))
-            self.metricObj.set_job_data('resultCreatedAt',created)
+            self.metricObj.set_job_data('resultCreatedAt',utc_dt_string)
             await cursor.execute(q)
             q = 'insert into info values ("Input file name", "{}")'.format(
                 ";".join(self.inputs)
