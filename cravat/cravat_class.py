@@ -1618,7 +1618,10 @@ class Cravat(object):
                 arg_dict["filtersql"] = self.args.filtersql
                 arg_dict['includesample'] = self.args.includesample
                 arg_dict['excludesample'] = self.args.excludesample
-                arg_dict["filter"] = self.args.filter
+                if self.args.filter is not None:
+                    arg_dict["filter"] = json.loads(self.args.filter)["filterSet"]
+                else:
+                    arg_dict["filter"] = self.args.filter
                 arg_dict["filterpath"] = self.args.filterpath
                 Reporter = util.load_class(module.script_path, "Reporter")
                 reporter = Reporter(arg_dict)
