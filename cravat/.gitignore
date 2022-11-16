@@ -8,3 +8,4 @@ pyliftover.tar
 conf
 req.cnf
 logs
+/temp/

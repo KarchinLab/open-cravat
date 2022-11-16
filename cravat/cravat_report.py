@@ -1007,6 +1007,25 @@ def clean_args(cmd_args):
         cmd_args = cmd_args[1:]
     return cmd_args
 
+#If reports are run with oc report command, update the job database _reports entry in the info table.
+def update_reports_info(dbpath, report_types):
+    db = sqlite3.connect(dbpath)
+    cur = db.cursor()
+
+    q = 'select colval from info where colkey="_reports"'
+    cur.execute(q)
+    r = cur.fetchone()
+    if r is None or r[0] == '':
+        reports = []
+    else:
+        reports = r[0].split(',')
+    for rep in report_types:
+        if not rep in reports:
+            reports.append(rep)
+    q = 'insert or replace into info values ("_reports", "{}")'.format(",".join(reports))
+    cur.execute(q)
+    db.commit()
+    db.close()
 
 def run_reporter(*inargs, **inkwargs):
     args = cravat.util.get_args(parser, inargs, inkwargs)
@@ -1121,6 +1140,7 @@ def run_reporter(*inargs, **inkwargs):
                 print("report generation failed for {} report.".format(report_type))
             response_t = None
         response[report_type] = response_t
+    update_reports_info(dbpath, report_types)
     if len(report_types) == 1 and len(response) == 1:
         return response[list(response.keys())[0]]
     else:

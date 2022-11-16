@@ -707,13 +707,21 @@ class Cravat(object):
                     if not self.args.silent:
                         print(f"\tfinished in {time.time()-st:.3f}s")
 
-        # Package filter
+        # Package filter and viewer settings
         if hasattr(self.args, "filter") and self.args.filter is not None:
             q = "create table if not exists viewersetup (datatype text, name text, viewersetup text, unique (datatype, name))"
             cursor.execute(q)
-            filter_set = json.dumps({"filterSet": self.args.filter})
+            #filter_set = json.dumps({"filterSet": self.args.filter})
+            filter_set = self.args.filter
             q = f'insert or replace into viewersetup values ("filter", "quicksave-name-internal-use", \'{filter_set}\')'
             cursor.execute(q)
+        if hasattr(self.args, "viewer") and self.args.viewer is not None:
+            q = "create table if not exists viewersetup (datatype text, name text, viewersetup text, unique (datatype, name))"
+            cursor.execute(q)
+            viewer_setting = self.args.viewer
+            q = f'insert or replace into viewersetup values ("layout", "quicksave-name-internal-use", \'{viewer_setting}\')'
+            cursor.execute(q)
+
         conn.commit()
         cursor.close()
         conn.close()
@@ -1928,8 +1936,26 @@ class Cravat(object):
         await cursor.execute(q)
         q = 'insert or replace into info values ("_annotators", "{}")'.format(
             ",".join(annotators)
+        )  
+        await cursor.execute(q)
+        
+        #Save reports run.  If job was run before, add new reports to previously run reports.        
+        q = 'select colval from info where colkey="_reports"'
+        await cursor.execute(q)
+        r = await cursor.fetchone()
+        if r is None or r[0] == '':
+            reports = []
+        else:
+            reports = r[0].split(',')
+        for rep in self.report_names:
+            if not rep in reports:
+                reports.append(rep)
+        q = 'insert or replace into info values ("_reports", "{}")'.format(
+            ",".join(reports)
         )
         await cursor.execute(q)
+        await cursor.execute(q)
+
         await conn.commit()
         await cursor.close()
         await conn.close()

@@ -196,6 +196,12 @@ util_showsqliteinfo_p = util_sp.add_parser(
     add_help=False,
     help="Show SQLite result file information",
 )
+util_jobtopackage_p = util_sp.add_parser(
+    "jobtopackage",
+    parents=[cravat_util.parser_jobtopackage],
+    add_help=False,
+    help="Create a package from a previously run job",
+)
 
 # version
 version_p = root_sp.add_parser(
