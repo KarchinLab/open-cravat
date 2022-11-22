@@ -1941,23 +1941,6 @@ class Cravat(object):
             ",".join(annotators)
         )  
         await cursor.execute(q)
-        
-        #Save reports run.  If job was run before, add new reports to previously run reports.        
-        q = 'select colval from info where colkey="_reports"'
-        await cursor.execute(q)
-        r = await cursor.fetchone()
-        if r is None or r[0] == '':
-            reports = []
-        else:
-            reports = r[0].split(',')
-        for rep in self.report_names:
-            if not rep in reports:
-                reports.append(rep)
-        q = 'insert or replace into info values ("_reports", "{}")'.format(
-            ",".join(reports)
-        )
-        await cursor.execute(q)
-        await cursor.execute(q)
 
         await conn.commit()
         await cursor.close()
