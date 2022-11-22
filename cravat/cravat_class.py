@@ -290,6 +290,7 @@ cravat_cmd_parser.add_argument("-f", dest="filterpath", default=None, help="Path
 cravat_cmd_parser.add_argument("--md", default=None, help="Specify the root directory of OpenCRAVAT modules (annotators, etc)")
 cravat_cmd_parser.add_argument("-m", dest="mapper_name", nargs="+", default=[], help="Mapper module name or mapper module directory")
 cravat_cmd_parser.add_argument("-p", nargs="+", dest="postaggregators", default=[], help="Postaggregators to run. Additionally, tagsampler, casecontrol, varmeta, and vcfinfo will automatically run depending on conditions.")
+cravat_cmd_parser.add_argument('--cohorts', help='Cohort definitions file')
 
 def run(cmd_args):
     au.ready_resolution_console()
@@ -600,6 +601,7 @@ class Cravat(object):
                 self.result_path = self.run_aggregator()
                 await self.write_job_info()
                 self.write_smartfilters()
+                self.write_cohorts()
                 self.aggregator_ran = True
             if (
                 self.endlevel >= self.runlevels["postaggregator"]
@@ -2029,6 +2031,25 @@ class Cravat(object):
         summarizer_cls = util.load_class(module.script_path, "")
         summarizer = summarizer_cls(cmd)
         summarizer.run()
+
+    def write_cohorts(self):
+        dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+        cursor.execute('create table cohorts (sample text, cohort text);')
+        cohort_pairs = []
+        with open(self.args.cohorts) as f:
+            for l in f:
+                sample, cohorts = l.strip().split()
+                cohorts = cohorts.split(',')
+                for cohort in cohorts:
+                    cohort_pairs.append((sample, cohort))
+        cursor.executemany('insert into cohorts (sample, cohort) values (?,?)', cohort_pairs)
+        cursor.execute('create index cohorts_cohort on cohorts (cohort);')
+        cursor.execute('create index cohorts_sample on cohorts (sample);')
+        cursor.close()
+        conn.commit()
+        conn.close()
 
     def announce_module(self, module):
         if not self.args.silent:
