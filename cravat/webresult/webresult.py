@@ -392,6 +392,7 @@ async def get_result_levels (request):
             content = [v[0].split('_')[0] for v in ret]
             content.insert(0, 'info')
             content.insert(1,'filter')
+            content.insert(2,'cohort')
         else:
             content = []
         content.remove('sample')

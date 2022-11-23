@@ -22,6 +22,7 @@ function setupTab (tabName) {
 	}
 	
 	// Populates the right panel.
+    console.log(tabName);
 	if (tabName == 'info') {
         makeInfoTab(rightDiv);
         resetTab[tabName] = false;
@@ -33,7 +34,9 @@ function setupTab (tabName) {
         resetTab[tabName] = false;
 	} else if (tabName == 'filter') {
         resetTab[tabName] = !makeFilterTab(rightDiv);
-	}
+	} else if (tabName == 'cohort') {
+        resetTab[tabName] = !makeCohortTab(rightDiv);
+    }
 	addEl(tabDiv, rightDiv);
 	
 	setupEvents(tabName);
@@ -1029,6 +1032,7 @@ function makeFilterTab (rightDiv) {
     return true;
 }
 
+
 function importFilter(file) {
     var reader = new FileReader();
     reader.readAsText(file, 'utf-8');
@@ -1219,6 +1223,10 @@ function pullSfValue(selectorDiv) {
 	} else if (selectorType === 'empty') {
 		return null;
 	}
+}
+
+function makeCohortTab(rightDiv) {
+    console.log('makeCohortTab')
 }
 
 function changeTableDetailMaxButtonText () {
