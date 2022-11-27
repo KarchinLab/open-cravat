@@ -41,7 +41,7 @@ function setupTab (tabName) {
 	
 	setupEvents(tabName);
 	
-	if (tabName != 'info' && tabName != 'filter') {
+	if (tabName != 'info' && tabName != 'filter' && tabName != 'cohort') {
 		var stat = infomgr.getStat(tabName);
 		var columns = infomgr.getColumns(tabName);
 		var data = infomgr.getData(tabName);

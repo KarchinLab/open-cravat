@@ -18,6 +18,7 @@ from aiohttp import web
 import time
 from concurrent.futures import ProcessPoolExecutor
 from cravat.cravat_util import jobtopackage
+from collections import defaultdict
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -801,6 +802,21 @@ async def jobpackage (request):
         print("Error - " + str(e))   
     content = 'saved'
     return web.json_response(content)
+async def get_cohorts (request):
+    _, dbpath = await get_jobid_dbpath(request)
+    conn = await get_db_conn(dbpath)
+    cursor = await conn.cursor()
+    cohort_table = 'cohorts'
+    cohorts = defaultdict(list)
+    if await table_exists(cursor, cohort_table):
+        q = f'select cohort, sample from {cohort_table};'
+        await cursor.execute(q)
+        rows = await cursor.fetchall()
+        for cohort, sample in rows:
+            cohorts[cohort].append(sample)
+    await cursor.close()
+    await conn.close()
+    return web.json_response(cohorts)
 
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
@@ -827,4 +843,5 @@ routes.append(['GET', '/result/service/smartfilters', load_smartfilters])
 routes.append(['GET', '/result/service/samples', get_samples])
 routes.append(['GET', '/webapps/{module}/widgets/{widget}', serve_webapp_runwidget])
 routes.append(['GET', '/result/service/jobpackage', jobpackage])
+routes.append(['GET', '/result/service/cohorts', get_cohorts])
 
