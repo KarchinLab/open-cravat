@@ -30,9 +30,8 @@ from cravat.inout import CravatReader
 import glob
 import nest_asyncio
 from queue import Empty
-    
 import sys
-
+from cravat import cohort
 nest_asyncio.apply()
 import re
 import sys
@@ -2035,20 +2034,7 @@ class Cravat(object):
     def write_cohorts(self):
         dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
         conn = sqlite3.connect(dbpath)
-        cursor = conn.cursor()
-        cursor.execute('create table cohorts (sample text, cohort text);')
-        cohort_pairs = []
-        with open(self.args.cohorts) as f:
-            for l in f:
-                sample, cohorts = l.strip().split()
-                cohorts = cohorts.split(',')
-                for cohort in cohorts:
-                    cohort_pairs.append((sample, cohort))
-        cursor.executemany('insert into cohorts (sample, cohort) values (?,?)', cohort_pairs)
-        cursor.execute('create index cohorts_cohort on cohorts (cohort);')
-        cursor.execute('create index cohorts_sample on cohorts (sample);')
-        cursor.close()
-        conn.commit()
+        cohort.write_cohorts(self.args.cohorts, conn)
         conn.close()
 
     def announce_module(self, module):
