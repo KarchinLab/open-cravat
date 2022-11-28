@@ -1050,6 +1050,81 @@ def status_from_db(dbpath):
     return d
 
 
+#Get metadata about a previously run job from its sqlite DB and use that to create a package
+#that can be used as a template to analyze additional data files in the same way.
+def jobtopackage(args):
+
+    try:
+        # Connect to job database
+        db = sqlite3.connect(args.db)
+        cursor = db.cursor()
+            
+        # check for overwrite setting
+        overwrite = True
+        if args.ov is None:
+            overwrite = False
+    
+        q = 'select colval from info where colkey = "_annotators"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        annots = r[0]
+            
+        annotators = []
+        for a in annots.split(','):
+            if a.startswith('extra_vcf_info') or a.startswith('original_input'):
+                continue
+            # Currently throwing away version number - preserve it??
+            annotators.append(a.split(':')[0]) 
+                
+         
+        reports = []
+        q = 'select colval from info where colkey = "_reports"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is not None:
+            for rep in r[0].split(','):
+                reports.append(rep)
+            
+            
+        filter = ""
+        q = 'select viewersetup from viewersetup where datatype = "filter" and name = "quicksave-name-internal-use"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is not None:
+            filter = r[0]
+    
+        viewer = ""
+        q = 'select viewersetup from viewersetup where datatype = "layout" and name = "quicksave-name-internal-use"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is not None:
+            viewer = r[0]
+               
+        name = args.name
+        package_conf = {}
+        package_conf['type'] = 'package'
+        package_conf['description'] = 'Package ' + name + " created from user job with --saveaspackage"
+        package_conf['title'] = name
+        package_conf['version'] = '1.0'
+        package_conf['requires'] = annotators.copy()
+            
+        run = {}
+        run['annotators'] = annotators.copy()
+        run['reports'] = reports
+        if filter != "":
+            run['filter'] = filter 
+        if viewer != "":
+            run['viewer'] = viewer
+            
+        package_conf['run'] = run
+           
+        au.create_package(name, package_conf, overwrite)
+            
+        print("Successfully created package " + name + ".  Package can now be used to run jobs or published for other users.")        
+    
+    except ValueError as e: 
+        print("Error - " + str(e))    
+
 parser = argparse.ArgumentParser()
 # converts db coordinate to hg38
 subparsers = parser.add_subparsers(title="Commands")
@@ -1145,6 +1220,12 @@ parser_filtersqlite.add_argument(
     help='Sample IDs to exclude',
 )
 parser_filtersqlite.set_defaults(func=filtersqlite)
+
+parser_jobtopackage = subparsers.add_parser("jobtopackage", help="Creates a package from a previously run job.  Packages are a set of annotations, reports, and filters that can be applied to new data.")
+parser_jobtopackage.add_argument("--name", required=True, help="name of package to create")
+parser_jobtopackage.add_argument("--db", required=True, help="sqlite file of job to turn into a package")
+parser_jobtopackage.add_argument("--ov", "--overwrite", action='store_true', help="overwrite existing package")
+parser_jobtopackage.set_defaults(func=jobtopackage)
 
 def main():
     args = get_args()

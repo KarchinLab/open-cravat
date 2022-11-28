@@ -1635,3 +1635,23 @@ def update_mic():
 
 
 mic = ModuleInfoCache()
+
+#Used to create an oc package from a user job.  The details (like annotators run) from that job are 
+#provided in a dictionary.  A package is created and then can be used for future jobs with the --package option
+def create_package(name, pkg_details, overwrite):
+    pkg_dir = os.path.join(get_modules_dir(), "packages")
+    if not (os.path.exists(pkg_dir)):    
+        os.mkdir(pkg_dir)
+    pkg_path = os.path.join(pkg_dir, name)
+    
+    #if package already exists, error out
+    if (os.path.exists(pkg_path) and overwrite == False):
+        raise ValueError('Duplicate package already exists')
+    
+    #create the package directory, an empty package python file and the package yml file
+    if not (os.path.join(pkg_dir, name)): 
+        os.mkdir(os.path.join(pkg_dir, name))
+    open(os.path.join(pkg_path, name + ".py"), 'a').close()
+    with open(os.path.join(pkg_path, name + ".yml"), "w") as wf:
+        wf.write(yaml.dump(pkg_details, default_flow_style=False))
+

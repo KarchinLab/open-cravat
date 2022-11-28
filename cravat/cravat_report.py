@@ -584,6 +584,9 @@ class CravatReport:
                 run_time = end_time - start_time
                 self.logger.info("runtime: {0:0.3f}".format(run_time))
             ret = self.end()
+            
+            #Record running of report in info table
+            self.update_reports_info()
         except:
             await self.close_db()
             if self.module_conf is not None and self.status_writer is not None:
@@ -991,6 +994,25 @@ class CravatReport:
             ret = True
         return ret
 
+    #If reports are run with oc report command, update the job database _reports entry in the info table.
+    def update_reports_info(self):
+        db = sqlite3.connect(self.dbpath)
+        cur = db.cursor()
+
+        q = 'select colval from info where colkey="_reports"'
+        cur.execute(q)
+        r = cur.fetchone()
+        if r is None or r[0] == '':
+            reports = []
+        else:
+            reports = r[0].split(',')
+        for rep in self.report_types:
+            if not rep in reports:
+                reports.append(rep)
+        q = 'insert or replace into info values ("_reports", "{}")'.format(",".join(reports))
+        cur.execute(q)
+        db.commit()
+        db.close() 
 
 def clean_args(cmd_args):
     if len(cmd_args[0]) == 0:
@@ -1006,7 +1028,6 @@ def clean_args(cmd_args):
     elif cmd_args[0].endswith(".py"):
         cmd_args = cmd_args[1:]
     return cmd_args
-
 
 def run_reporter(*inargs, **inkwargs):
     args = cravat.util.get_args(parser, inargs, inkwargs)

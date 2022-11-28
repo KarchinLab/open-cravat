@@ -707,13 +707,21 @@ class Cravat(object):
                     if not self.args.silent:
                         print(f"\tfinished in {time.time()-st:.3f}s")
 
-        # Package filter
+        # Package filter and viewer settings
         if hasattr(self.args, "filter") and self.args.filter is not None:
             q = "create table if not exists viewersetup (datatype text, name text, viewersetup text, unique (datatype, name))"
             cursor.execute(q)
-            filter_set = json.dumps({"filterSet": self.args.filter})
+            #filter_set = json.dumps({"filterSet": self.args.filter})
+            filter_set = self.args.filter
             q = f'insert or replace into viewersetup values ("filter", "quicksave-name-internal-use", \'{filter_set}\')'
             cursor.execute(q)
+        if hasattr(self.args, "viewer") and self.args.viewer is not None:
+            q = "create table if not exists viewersetup (datatype text, name text, viewersetup text, unique (datatype, name))"
+            cursor.execute(q)
+            viewer_setting = self.args.viewer
+            q = f'insert or replace into viewersetup values ("layout", "quicksave-name-internal-use", \'{viewer_setting}\')'
+            cursor.execute(q)
+
         conn.commit()
         cursor.close()
         conn.close()
@@ -1610,7 +1618,10 @@ class Cravat(object):
                 arg_dict["filtersql"] = self.args.filtersql
                 arg_dict['includesample'] = self.args.includesample
                 arg_dict['excludesample'] = self.args.excludesample
-                arg_dict["filter"] = self.args.filter
+                if self.args.filter is not None:
+                    arg_dict["filter"] = json.loads(self.args.filter)["filterSet"]
+                else:
+                    arg_dict["filter"] = self.args.filter
                 arg_dict["filterpath"] = self.args.filterpath
                 Reporter = util.load_class(module.script_path, "Reporter")
                 reporter = Reporter(arg_dict)
@@ -1928,8 +1939,9 @@ class Cravat(object):
         await cursor.execute(q)
         q = 'insert or replace into info values ("_annotators", "{}")'.format(
             ",".join(annotators)
-        )
+        )  
         await cursor.execute(q)
+
         await conn.commit()
         await cursor.close()
         await conn.close()
