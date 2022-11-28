@@ -1061,7 +1061,7 @@ def jobtopackage(args):
             
         # check for overwrite setting
         overwrite = True
-        if args.ov is None:
+        if args.ov is None or args.ov == False:
             overwrite = False
     
         q = 'select colval from info where colkey = "_annotators"'

@@ -1645,9 +1645,12 @@ def create_package(name, pkg_details, overwrite):
     pkg_path = os.path.join(pkg_dir, name)
     
     #if package already exists, error out
-    if (os.path.exists(pkg_path) and overwrite == False):
-        raise ValueError('Duplicate package already exists')
-    
+    if os.path.exists(pkg_path):
+        if overwrite == False:
+            raise ValueError('Duplicate package already exists')
+    else:
+        os.mkdir(pkg_path)
+        
     #create the package directory, an empty package python file and the package yml file
     if not (os.path.join(pkg_dir, name)): 
         os.mkdir(os.path.join(pkg_dir, name))
