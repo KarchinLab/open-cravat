@@ -357,8 +357,13 @@ function getAnnotatorVersionForJob (jobid) {
 function informMetrics () {
     var alertDiv = getEl('div');
     var span = getEl('span');
-    span.textContent = 'OpenCRAVAT gathers metrics to measure usage and improve the tool. No private data is collected. To opt-out, visit the hamburger menu at the top right of the OpenCRAVAT screen.'
+    var a = getEl('a');
+    a.href = 'https://open-cravat.readthedocs.io/en/latest/Metrics.html';
+    a.target = '_blank';
+    a.textContent = 'visit OC Metric documentation';
+    span.textContent = 'OpenCRAVAT gathers metrics to report usage to funders and improve the tool. No private data is collected. For more details, visit our documentation at '
     addEl(alertDiv, span);
+    addEl(alertDiv, a);
     showYesNoDialog(alertDiv, null, false, true);
     var s = document.getElementById('settings_save_metrics');
     s.checked = true;

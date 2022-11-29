@@ -496,7 +496,7 @@ class Cravat(object):
         report_response = None
         try:
             if au.get_metrics_config() == "empty":
-                print("NOTICE: OpenCRAVAT gathers metrics to measure usage and improve the tool. No private data is collected. To opt out, issue command: oc config metrics.")
+                print("NOTICE: OpenCRAVAT gathers metrics to report usage to funders, and improve the tool. No private data is collected. For more details, visit our documentation at: https://open-cravat.readthedocs.io/en/latest/Metrics.html.")
                 au.update_system_conf_file({"save_metrics": True})
             self.aggregator_ran = False
             self.update_status("Started cravat", force=True)

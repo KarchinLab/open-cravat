@@ -10,6 +10,7 @@ import psutil
 import platform
 import socket
 import uuid    
+import re
 
 class cravatMetrics:
 
@@ -34,7 +35,7 @@ class cravatMetrics:
         self.machinedata['swapMemory'] = psutil.swap_memory().total
         self.machinedata['numCPU'] = len(psutil.Process().cpu_affinity())
         self.machinedata['fileSystem'] = psutil.disk_partitions()[0].fstype
-        self.machinedata['machineId'] = str(uuid.UUID(int=uuid.getnode()))
+        self.machinedata['machineId'] = hex(uuid.getnode())
         self.machinedata['pythonVersion'] = platform.python_version()
 
     def set_job_data(self,param,value):
