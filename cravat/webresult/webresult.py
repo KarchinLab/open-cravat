@@ -19,6 +19,9 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from cravat.cravat_util import jobtopackage
 from collections import defaultdict
+from cravat import StatusWriter
+from pathlib import Path
+from cravat import util
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -846,6 +849,27 @@ async def post_cohorts (request):
     await conn.close()
     return web.Response()
 
+async def run_cohort_compare(request):
+    _, dbpath = await get_jobid_dbpath(request)
+    # output_dir = '/home/kyle/a/jobs/lihc-maf'
+    # run_name = 'LIHC_maf_hg38_1000.txt'
+    output_dir = str(Path(dbpath).parent)
+    run_name = Path(dbpath).stem
+
+    module = au.get_local_module_info('cohortcompare')
+
+    cmd = [module.script_path, "-d", output_dir, "-n", run_name]
+
+    status_path = '/tmp/ocstatus.json'
+    with open(status_path,'w') as f:
+        f.write('{}')
+    status_writer = StatusWriter('/tmp/ocstatus.json')
+
+    post_agg_cls = util.load_class(module.script_path, "CravatPostAggregator")
+    post_agg = post_agg_cls(cmd, status_writer)
+    post_agg.run()
+    return web.Response()
+
 
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
@@ -874,5 +898,7 @@ routes.append(['GET', '/webapps/{module}/widgets/{widget}', serve_webapp_runwidg
 routes.append(['GET', '/result/service/jobpackage', jobpackage])
 routes.append(['GET', '/result/service/cohorts', get_cohorts])
 routes.append(['POST', '/result/service/cohorts', post_cohorts])
+routes.append(['GET', '/result/service/cohortcompare', run_cohort_compare])
+
 
 
