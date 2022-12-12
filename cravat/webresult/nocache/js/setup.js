@@ -1226,7 +1226,42 @@ function pullSfValue(selectorDiv) {
 }
 
 function makeCohortTab(rightDiv) {
-    console.log('makeCohortTab')
+    const controlDiv = getEl('div');
+    addEl(rightDiv, controlDiv);
+    const cohortsFileSel = getEl('input');
+    addEl(controlDiv, cohortsFileSel);
+    cohortsFileSel.id = 'cohorts-file-sel';
+    cohortsFileSel.type = 'file';
+    const cohortsSubmit = getEl('button');
+    addEl(controlDiv, cohortsSubmit);
+    addEl(cohortsSubmit, getTn('Submit cohorts'));
+    cohortsSubmit.addEventListener('click',event=>{
+        const data = new FormData()
+        data.append('cohorts', cohortsFileSel.files[0]);
+        fetch('/result/service/cohorts'+window.location.search,{
+            method: 'POST',
+            body: data,
+        }).then(()=>{getCohorts();})
+
+    })
+    const tblDiv = getEl('div');
+    tblDiv.id = 'cohorts-table';
+    addEl(rightDiv, tblDiv)
+    getCohorts();
+    return true;
+}
+
+function getCohorts() {
+    var table = new Tabulator("#cohorts-table", {
+        // maxHeight:'100%', // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
+        ajaxURL:"/result/service/cohorts"+window.location.search, //assign data to table
+        layout:"fitDataTable", //fit columns to width of table (optional)
+        columns:[ //Define Table Columns
+            {title:"Cohort", field:"cohort", width:150},
+            {title:"Sample", field:"sample", width:150},
+        ],
+        groupBy:"cohort",
+    });
 }
 
 function changeTableDetailMaxButtonText () {
