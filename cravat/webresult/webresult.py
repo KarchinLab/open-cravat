@@ -807,16 +807,45 @@ async def get_cohorts (request):
     conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     cohort_table = 'cohorts'
-    cohorts = defaultdict(list)
     if await table_exists(cursor, cohort_table):
         q = f'select cohort, sample from {cohort_table};'
         await cursor.execute(q)
         rows = await cursor.fetchall()
-        for cohort, sample in rows:
-            cohorts[cohort].append(sample)
+    r = [{'cohort':_[0],'sample':_[1]} for _ in rows]
     await cursor.close()
     await conn.close()
-    return web.json_response(cohorts)
+    return web.json_response(r)
+
+async def post_cohorts (request):
+    queries = request.rel_url.query
+    dbpath = queries.get('dbpath')
+    conn = await get_db_conn(dbpath)
+    post = await request.post()
+    file = post['cohorts']
+    print(file.name)
+    print(file.filename)
+    cohorts_text = file.file.read().decode('utf-8')
+    cursor = await conn.cursor()
+    await cursor.execute('create table if not exists cohorts (sample text, cohort text);')
+    cohort_pairs = []
+    for l in cohorts_text.split('\n'):
+        l = l.strip()
+        if len(l) == 0:
+            break
+        sample, cohorts = l.strip().split()
+        cohorts = cohorts.split(',')
+        for cohort in cohorts:
+            cohort_pairs.append((sample, cohort))
+    await cursor.execute('delete from cohorts;')
+    await cursor.executemany('insert into cohorts (sample, cohort) values (?,?)', cohort_pairs)
+    await cursor.execute('create index if not exists cohorts_cohort on cohorts (cohort);')
+    await cursor.execute('create index if not exists cohorts_sample on cohorts (sample);')
+    await cursor.close()
+    await conn.commit()
+    await cursor.close()
+    await conn.close()
+    return web.Response()
+
 
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
@@ -844,4 +873,6 @@ routes.append(['GET', '/result/service/samples', get_samples])
 routes.append(['GET', '/webapps/{module}/widgets/{widget}', serve_webapp_runwidget])
 routes.append(['GET', '/result/service/jobpackage', jobpackage])
 routes.append(['GET', '/result/service/cohorts', get_cohorts])
+routes.append(['POST', '/result/service/cohorts', post_cohorts])
+
 
