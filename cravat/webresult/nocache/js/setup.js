@@ -1244,6 +1244,14 @@ function makeCohortTab(rightDiv) {
         }).then(()=>{getCohorts();})
 
     })
+    const compareDiv = getEl('div');
+    addEl(rightDiv, compareDiv);
+    const compareButton = getEl('button');
+    addEl(compareDiv, compareButton);
+    addEl(compareButton, getTn('Compare cohorts'));
+    compareButton.addEventListener('click',event=>{
+        fetch('/result/service/cohortcompare'+window.location.search);
+    });
     const tblDiv = getEl('div');
     tblDiv.id = 'cohorts-table';
     addEl(rightDiv, tblDiv)
