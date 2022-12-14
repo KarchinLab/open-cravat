@@ -33,6 +33,9 @@ function submit () {
         alert('Log in before submitting a job.');
         return;
     }
+    if (systemConf.save_metrics === 'empty') {
+    	informMetrics()
+    }
     formData = new FormData();
     var textInputElem = $('#input-text');
     var textVal = textInputElem.val();
@@ -136,7 +139,7 @@ function submit () {
     } else {
         commitSubmit();
     }
-
+    
     function enableSubmitButton () {
         document.querySelector('#submit-job-button').disabled = false;
     }
@@ -222,7 +225,7 @@ function showUpdateRemoteSpinner () {
 
 function hideUpdateRemoteSpinner () {
     document.querySelector('#update-remote-spinner-div').classList.remove('show');
-    document.querySelector('#update-remote-spinner-div').classList.add('hide');
+    document.querySelector('#update-remote-spinner-div').classList.add('hide'); 
 }
 
 function sortJobs () {
@@ -349,6 +352,23 @@ function getAnnotatorVersionForJob (jobid) {
         }
     }
     return anns;
+}
+
+function informMetrics () {
+    var alertDiv = getEl('div');
+    var span = getEl('span');
+    var a = getEl('a');
+    a.href = 'https://open-cravat.readthedocs.io/en/latest/Metrics.html';
+    a.target = '_blank';
+    a.textContent = 'visit OC Metric documentation';
+    span.textContent = 'OpenCRAVAT gathers metrics to report usage to funders and improve the tool. No private data is collected. For more details, visit our documentation at '
+    addEl(alertDiv, span);
+    addEl(alertDiv, a);
+    showYesNoDialog(alertDiv, null, false, true);
+    var s = document.getElementById('settings_save_metrics');
+    s.checked = true;
+    updateSystemConf(true);
+    systemConf.save_metrics = true;
 }
 
 function onClickJobTableMainTr (evt) {
@@ -1632,6 +1652,12 @@ function openSubmitDiv () {
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
         systemConf = response.content;
+        var s = document.getElementById('settings_save_metrics');
+        if (systemConf.save_metrics === 'empty') {
+        	s.checked = true;
+        } else {
+        	s.checked = response['content']['save_metrics']
+        } 
         var s = document.getElementById('sysconfpathspan');
         s.value = response['path'];
         var s = document.getElementById('settings_jobs_dir_input');
@@ -1659,7 +1685,7 @@ function onClickSaveSystemConf () {
     updateSystemConf();
 }
 
-function updateSystemConf () {
+function updateSystemConf (setMetrics) {
     $.get('/submit/getsystemconfinfo').done(function (response) {
         var s = document.getElementById('sysconfpathspan');
         response['path'] = s.value;
@@ -1673,20 +1699,28 @@ function updateSystemConf () {
         response['content']['max_num_concurrent_jobs'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
         response['content']['max_num_concurrent_annotators_per_job'] = parseInt(s.value);
+        var s = document.getElementById('settings_save_metrics');
+        var optout = false;
+        if ((response['content']['save_metrics'] !== false) && (s.checked === false)) {
+            optout = true;
+        }
+        response['content']['save_metrics'] = s.checked;
         $.ajax({
             url:'/submit/updatesystemconf',
-            data: {'sysconf': JSON.stringify(response['content'])},
+            data: {'sysconf': JSON.stringify(response['content']), 'optout': optout},
             type: 'GET',
             success: function (response) {
                 if (response['success'] == true) {
-                    var mdiv = getEl('div');
-                    var span = getEl('span');
-                    span.textContent = 'System configuration has been updated.';
-                    addEl(mdiv, span);
-                    addEl(mdiv, getEl('br'));
-                    addEl(mdiv, getEl('br'));
-                    var justOk = true;
-                    showYesNoDialog(mdiv, null, false, justOk);
+                	if (typeof setMetrics === 'undefined') {
+	                    var mdiv = getEl('div');
+	                    var span = getEl('span');
+	                    span.textContent = 'System configuration has been updated.';
+	                    addEl(mdiv, span);
+	                    addEl(mdiv, getEl('br'));
+	                    addEl(mdiv, getEl('br'));
+	                    var justOk = true;
+	                    showYesNoDialog(mdiv, null, false, justOk);
+                	}
                 } else {
                     var mdiv = getEl('div');
                     var span = getEl('span');

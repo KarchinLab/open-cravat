@@ -41,6 +41,8 @@ f = open(system_conf_path)
 conf = yaml.safe_load(f)
 f.close()
 # modules dir
+metrics_conf_key = "save_metrics"
+# modules dir
 modules_dir_key = "modules_dir"
 modules_dir_name = "modules"
 if not modules_dir_key in conf:

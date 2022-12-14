@@ -97,6 +97,12 @@ config_system_p = config_sp.add_parser(
     add_help=False,
     help="Show cravat config",
 )
+config_system_p = config_sp.add_parser(
+    "metrics",
+    parents=[cravat_admin.parser_metrics],
+    add_help=False,
+    help="set metric collection configuration",
+)
 
 # new
 new_p = root_sp.add_parser(
