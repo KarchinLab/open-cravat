@@ -33,7 +33,7 @@ class cravatMetrics:
         self.machinedata['freeMemory'] = psutil.virtual_memory().free
         self.machinedata['amountRAM'] = psutil.virtual_memory().total
         self.machinedata['swapMemory'] = psutil.swap_memory().total
-        self.machinedata['numCPU'] = len(psutil.Process().cpu_affinity())
+        self.machinedata['numCPU'] = os.cpu_count()
         self.machinedata['fileSystem'] = psutil.disk_partitions()[0].fstype
         self.machinedata['machineId'] = hex(uuid.getnode())
         self.machinedata['pythonVersion'] = platform.python_version()
@@ -138,19 +138,19 @@ class cravatMetrics:
     #perform temporary save to user local metrics directory    
     def save_metrics_local(self,json_obj):
         homeDir = os.getcwd()
-        metricsPath = os.getcwd() +"\\metrics"
+        metricsPath = os.getcwd() + "/metrics"
         now = datetime.now()    
         timestamp = str(datetime.timestamp(now)).replace(".","")
         if not os.path.exists(metricsPath):
             os.mkdir(metricsPath)
-        outFileName= metricsPath +"\\ocmetric_"+timestamp
+        outFileName= metricsPath +"/ocmetric_"+timestamp
         outFile=open(outFileName, "w")
         outFile.write(json.dumps(json_obj))
         outFile.close()
     
      #resend any saved local metrics files.    
     def resend_local_metrics(self):
-        metricsPath = os.getcwd() +"\\metrics"
+        metricsPath = os.getcwd() +"/metrics"
         if os.path.exists(metricsPath):
              for filename in os.listdir(metricsPath):
                 with open(os.path.join(metricsPath, filename)) as f:
@@ -158,7 +158,7 @@ class cravatMetrics:
                     successful = self.post_job_metrics(json_dump,False)
                     f.close()
                     if successful == True:
-                        os.remove(metricsPath+"\\"+filename)
+                        os.remove(metricsPath+"/"+filename)
                     else:
                         break;
 
