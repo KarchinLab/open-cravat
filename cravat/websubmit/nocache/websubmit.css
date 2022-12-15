@@ -678,6 +678,16 @@ input:checked + .slider:before {
     background-color: #8c8780;
 }
 
+#packagechoosediv {
+    background-color: #96b6c6;
+	color: white;
+    margin-top: 15px;
+}
+
+#packagechoosediv .div-header {
+	color: white;
+}
+
 #annotchoosediv {
     background-color: #96b6c6;
 	color: white;
