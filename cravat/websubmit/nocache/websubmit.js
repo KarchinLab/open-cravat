@@ -75,14 +75,25 @@ function submit () {
     }
     var submitOpts = {
         annotators: [],
-        reports: []
+        reports: [],
+    	packages: ''
     }
-    var annotChecks = $('#annotator-select-div').find('input[type=checkbox][kind=module]');
-    for (var i = 0; i<annotChecks.length; i++){
-        var cb = annotChecks[i];
-        if (cb.checked) {
-            submitOpts.annotators.push(cb.value);
-        }
+    var allAnnotsDiv = document.getElementById('annotchoosediv');
+    if (allAnnotsDiv.style.display !== 'none') {
+	    var annotChecks = $('#annotator-select-div').find('input[type=checkbox][kind=module]');
+	    for (var i = 0; i<annotChecks.length; i++){
+	        var cb = annotChecks[i];
+	        if (cb.checked) {
+	            submitOpts.annotators.push(cb.value);
+	        }
+	    }
+    }
+    var allPackagesDiv = document.getElementById('packagechoosediv');
+    if (allPackagesDiv.style.display !== 'none') {
+    	var selPackage = document.getElementById('package-select-dropdown').value;
+    	if (selPackage !== 'none') {
+    		submitOpts.packages = selPackage;
+    	}
     }
     var reportChecks = $('#report-select-div')
                          .find('.checkbox-group-check');
@@ -1090,6 +1101,26 @@ function populateAnnotators () {
     });
 }
 
+function populatePackages () {
+    document.querySelector("#packagesdivspinnerdiv").classList.remove("hide")
+    document.querySelector("#package-select-div").classList.remove("show")
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url:'/submit/packages',
+            type: 'GET',
+            success: function (data) {
+                document.querySelector("#packagesdivspinnerdiv").classList.add("hide")
+                document.querySelector("#package-select-div").classList.add("show")
+                GLOBALS.packages = data
+                setTimeout(function () {
+                    buildPackagesSelector();
+                    resolve();
+                }, 100);
+            }
+        })
+    });
+}
+
 function titleCase(str) {
     return str.replace(
       /\w\S*/g,
@@ -1100,6 +1131,19 @@ function titleCase(str) {
   }
 
 function buildAnnotatorGroupSelector () {
+    var checkboxDiv = document.createElement('div');
+    checkboxDiv.id = "annotatorCheckboxDiv"
+    var checkbox = document.createElement('input');
+    checkbox.type = "checkbox";
+    checkbox.name = "showPackages";
+    checkbox.checked = false;
+    checkbox.id = "showPackages";
+    var label = document.createElement('label')
+    label.htmlFor = "showPackages";
+    label.appendChild(document.createTextNode('Select from existing packages instead'));
+    addEl(checkboxDiv, checkbox);
+    addEl(checkboxDiv, label);
+    checkboxDiv.style.display = 'none'
     tagsCollectedForSubmit = [];
     tagMembership = {};
     for (var module in localModuleInfo) {
@@ -1120,6 +1164,12 @@ function buildAnnotatorGroupSelector () {
     tagsCollectedForSubmit.sort((a,b)=>{return tagMembership[b]-tagMembership[a]});
     var annotCheckDiv = document.getElementById('annotator-group-select-div');
     $(annotCheckDiv).empty();
+    addEl(annotCheckDiv, checkboxDiv);
+    checkbox.addEventListener("change", e => {
+  	  if (event.currentTarget.checked) {
+  		annotatorsDeselected();
+  	  }
+	})
     var annotCheckTitleDiv = getEl('div');
     addEl(annotCheckDiv, annotCheckTitleDiv);
     annotCheckTitleDiv.style.display = 'flex';
@@ -1249,6 +1299,101 @@ function buildAnnotatorGroupSelector () {
         }
         onChangeAnnotatorGroupCheckbox(['selected']);
     });
+}
+
+function buildPackagesSelector () {
+    var packages = GLOBALS.packages;
+    var packageDiv = document.getElementById('package-select-div');
+    var space = getEl('br');
+
+    
+    var checkboxDiv = document.createElement('div');
+    checkboxDiv.id = "packageCheckboxDiv"
+    var checkbox = document.createElement('input');
+    checkbox.type = "checkbox";
+    checkbox.name = "showAnnots";
+    checkbox.checked = false;
+    checkbox.id = "showAnnotators";
+    var label = document.createElement('label')
+    label.htmlFor = "showAnnotators";
+    label.appendChild(document.createTextNode('Select individual annotators instead'));
+    addEl(checkboxDiv, checkbox);
+    addEl(checkboxDiv, label);
+    addEl(packageDiv, checkboxDiv);
+    checkboxDiv.style.display = 'none'
+    
+    
+    
+    var packageDropdown = getEl('select');
+    packageDropdown.id = 'package-select-dropdown';
+	var elnone= getEl('option');
+	elnone.textContent= 'None Selected';
+	elnone.value= 'none';
+	addEl(packageDropdown, elnone);
+
+    for (const [key, value] of Object.entries(packages)) {
+    	var packageKey = `${key}`
+  		var el= getEl('option');
+		el.textContent= packageKey.length > 35 ? packageKey.substring(0,35)+'...' : packageKey;
+		el.value= packageKey;
+		addEl(packageDropdown, el);
+  	}
+    var labelDiv = getEl('div');
+    labelDiv.innerText = 'Available Packages';
+    labelDiv.style['font-size'] = '1.2em';
+    labelDiv.style['font-weight'] = 'bold';
+    addEl(packageDiv, space);
+    addEl(packageDiv, labelDiv);
+    addEl(packageDiv, packageDropdown);
+    addEl(packageDiv, space);
+    packageDropdown.addEventListener("change", e => {
+	   packageSelected();
+	})
+    checkbox.addEventListener("change", e => {
+	  if (event.currentTarget.checked) {
+		  packageDeselected();
+	  }
+	})
+}
+
+function packageSelected() {
+	var packageCheckDiv = document.getElementById('packageCheckboxDiv')
+    var packageDiv = document.getElementById('package-select-div');
+    var dropBox = document.getElementById('package-select-dropdown');
+    var selection = dropBox.options[dropBox.options.selectedIndex].value;
+    var annotChooser = document.getElementById('annotchoosediv');
+    annotChooser.style.display = 'none';
+    packageCheckDiv.style.display = '';
+}
+
+function packageDeselected() {
+	var annotatorCheckDiv = document.getElementById('annotatorCheckboxDiv')
+    var packageChooser = document.getElementById('packagechoosediv');
+    var annotChooser = document.getElementById('annotchoosediv');
+    var dropBox = document.getElementById('package-select-dropdown');
+    dropBox.options.selectedIndex = "0"
+    annotChooser.style.display = '';
+    packageChooser.style.display = 'none';
+	document.getElementById('showPackages').checked = false;
+	annotatorCheckDiv.style.display = '';
+}
+
+function annotatorsDeselected() {
+    var packageChooser = document.getElementById('packagechoosediv');
+	var packageCheckDiv = document.getElementById('packageCheckboxDiv')
+    var annotChooser = document.getElementById('annotchoosediv');
+    annotChooser.style.display = 'none';
+    packageChooser.style.display = '';
+    packageCheckDiv.style.display = '';
+	document.getElementById('showAnnotators').checked = false;
+}
+
+function annotatorSelected() {
+	var annotatorCheckDiv = document.getElementById('annotatorCheckboxDiv')
+    var packageChooser = document.getElementById('packagechoosediv');
+	packageChooser.style.display = 'none';
+	annotatorCheckDiv.style.display = '';
+	annotatorCheckDiv.style.display = '';
 }
 
 function buildAnnotatorsSelector () {

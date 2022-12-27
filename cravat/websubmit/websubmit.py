@@ -392,16 +392,22 @@ async def submit (request):
     else:
         for fn in input_fnames:
             run_args.append(os.path.join(job_dir, fn))
-    # Annotators
-    if 'annotators' in job_options and len(job_options['annotators']) > 0 and job_options['annotators'][0] != '':
-        annotators = job_options['annotators']
-        annotators.sort()
-        run_args.append('-a')
-        run_args.extend(annotators)
+            
+    ''' Packages or Annotators '''
+    if 'packages' in job_options and job_options['packages'] != '':
+        packs = job_options['packages'] 
+        run_args.append('--package')
+        run_args.append(packs)
     else:
-        annotators = ''
-        run_args.append('-e')
-        run_args.append('all')
+        if 'annotators' in job_options and len(job_options['annotators']) > 0 and job_options['annotators'][0] != '':
+            annotators = job_options['annotators']
+            annotators.sort()
+            run_args.append('-a')
+            run_args.extend(annotators)
+        else:
+            annotators = ''
+            run_args.append('-e')
+            run_args.append('all')
     # Liftover assembly
     run_args.append('-l')
     if 'assembly' in job_options:
@@ -462,7 +468,7 @@ async def submit (request):
     status_json['reports'] = []
     pkg_ver = au.get_current_package_version()
     status_json['open_cravat_version'] = pkg_ver
-    status_json['annotators'] = annotators
+#    status_json['annotators'] = annotators
     if cc_cohorts_path is not None:
         status_json['cc_cohorts_path'] = cc_cohorts_path
     else:
@@ -490,6 +496,21 @@ def get_annotators(request):
         if local_info.type == 'annotator':
             out[module_name] = {
                                 'name':module_name,
+                                'version':local_info.version,
+                                'type':local_info.type,
+                                'title':local_info.title,
+                                'description':local_info.description,
+                                'developer': local_info.developer
+                                }
+    return web.json_response(out)
+
+def get_packages(request):
+    out = {}
+    for local_info in au.get_local_module_infos(types=['package']):
+        package_name = local_info.name
+        if local_info.type == 'package':
+            out[package_name] = {
+                                'name':package_name,
                                 'version':local_info.version,
                                 'type':local_info.type,
                                 'title':local_info.title,
@@ -1238,6 +1259,7 @@ interval_log_single_api_access = 60
 routes = []
 routes.append(['POST','/submit/submit',submit])
 routes.append(['GET','/submit/annotators',get_annotators])
+routes.append(['GET','/submit/packages',get_packages])
 routes.append(['GET','/submit/jobs',get_all_jobs])
 routes.append(['GET','/submit/jobs/{job_id}',view_job])
 routes.append(['DELETE','/submit/jobs/{job_id}',delete_job])

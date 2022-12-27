@@ -442,6 +442,11 @@ input:checked + .slider:before {
     background-color: white;
 }
 
+#package-select-dropdown {
+    max-width: 300px;
+    min-width: 300px;
+}
+
 .ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight {
     background-color: #c5af8d;
 }

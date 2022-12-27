@@ -168,6 +168,7 @@ function setupJobsTab() {
     populateInputFormats();
     buildAnnotatorGroupSelector();
     let annotatorsDone = populateAnnotators();
+    let packagesDone = populatePackages();
     annotatorsDone.then(() => {
         // Populate cc here to avoid it showing before annotators
         // and then getting quickly shoved down. Looks bad.
