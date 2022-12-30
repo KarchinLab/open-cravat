@@ -494,14 +494,14 @@ button {
     height: 15px;
     top: 5px;
     position: absolute;
-    right: 30px;
+    right: 60px;
 }
 
 .question-icon {
     height: 17px;
     top: 4px;
     position: absolute;
-    right: 62px;
+    right: 92px;
 }
 
 div.pq-select-button {

@@ -1019,6 +1019,53 @@ function quicksave () {
     //saveFilterSetting(quickSaveName, true);
 }
 
+function invokePackage () {
+	document.getElementById('packageSubmit').style.display = ''
+}
+
+function cancelPackage () {
+	document.getElementById('packageSubmit').style.display = 'none'
+}
+
+function saveAndPackage () {
+	var packageName = document.getElementById('packageName').value;
+	if (packageName === '') {
+        var alertDiv = getEl('div');
+        var span = getEl('span');
+        span.textContent = 'A package was not provided. Please enter a name for this package.'
+        addEl(alertDiv, span);
+        showYesNoDialog(alertDiv, null, false, true);
+        return;
+	}
+    for (const [key, value] of Object.entries(existingPackages)) {
+    	var packageKey = `${key}`
+    	if (packageKey === packageName) {
+    		matchFound = true;
+            var alertDiv = getEl('div');
+            var span = getEl('span');
+            span.textContent = 'A package with the name ('+packageName + ') already exists. Please select a new name for this package.'
+            addEl(alertDiv, span);
+            showYesNoDialog(alertDiv, null, false, true);
+    		return;
+    	}
+  	}
+	document.getElementById('packageSubmit').style.display = 'none'
+	saveLayoutSetting(quickSaveName, 'package');
+}
+
+var existingPackages = null;
+function getPackages () {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url:'/submit/packages',
+            type: 'GET',
+            success: function (data) {
+                existingPackages = data
+            }
+        })
+    });
+}
+
 function afterGetResultLevels () {
     addTabHeadsAndTabContentDivs();
     lockTabs();
@@ -1071,6 +1118,7 @@ function selectTab (tabName) {
 }
 
 function webresult_run () {
+	getPackages();
     var urlParams = new URLSearchParams(window.location.search);
     username = urlParams.get('username');
     jobId = urlParams.get('job_id');
