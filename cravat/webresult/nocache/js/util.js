@@ -111,7 +111,6 @@ function saveFilterSetting (name, useFilterJson, doPackage) {
 }
 
 function createJobPackage() {
-	console.log("CREATING JOB PACKAGE FOR: " + document.getElementById('packageName').value);
 	var packageName = document.getElementById('packageName').value;
 	return new Promise((resolve, reject) => {
 		$.ajax({
@@ -120,7 +119,7 @@ function createJobPackage() {
 			url: '/result/service/jobpackage', 
 			data: {'packagename': packageName, 'job_id': jobId, 'dbpath': dbPath},
 			success: function (response) {
-				writeLogDiv('package created?');
+				writeLogDiv(packageName +'package created');
 			}
 		});
 	})

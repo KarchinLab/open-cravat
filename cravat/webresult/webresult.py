@@ -732,22 +732,15 @@ async def jobpackage (request):
     try:
         queries = request.rel_url.query
         job_id, dbpath = await get_jobid_dbpath(request)
-        dbpath2 = 'LIHC_maf_hg38.txt.sqlite' 
         packageName = queries['packagename']
-        '''EVERYTHING AFTER THIS POINT IS CODE PULLED IN FROM CRAVAT_UTIL WHERE PACKAGES ARE BUILT OFF THE COMMAND LINE
-        That functionality uses sqlite3 to connect.  I tried that PLUS aiosqlite to connect to the SQLITE results of the
-        job but neither seemed to work for various reasons.  This is where package creation could be finished'''
-        # Connect to job database
-        db = sqlite3.connect(dbpath2)
-#        conn = await aiosqlite.connect(dbpath)
-#        cursor = await conn.cursor()
+        db = sqlite3.connect(dbpath)
         cursor = db.cursor()
             
         # check for overwrite setting
         overwrite = True
     
         q = 'select colval from info where colkey = "_annotators"'
-        await cursor.execute(q)
+        cursor.execute(q)
         r = cursor.fetchone()
         annots = r[0]
             
@@ -805,7 +798,9 @@ async def jobpackage (request):
         print("Successfully created package " + name + ".  Package can now be used to run jobs or published for other users.")        
     
     except (Exception, ValueError) as e:
-        print("Error - " + str(e))        
+        print("Error - " + str(e))   
+    content = 'saved'
+    return web.json_response(content)
 
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
