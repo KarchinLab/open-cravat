@@ -1226,15 +1226,30 @@ function pullSfValue(selectorDiv) {
 }
 
 function makeCohortTab(rightDiv) {
-    const controlDiv = getEl('div');
-    addEl(rightDiv, controlDiv);
+    //temp
+    detailWidgetOrder['cohort'] = {0:'topgenessummary_cohort'};
+    const controlsDiv = getEl('div');
+    addEl(rightDiv, controlsDiv);
+    controlsDiv.id = 'cohorts-controls';
+    const widgetsDiv = getEl('div');
+    addEl(rightDiv, widgetsDiv);
+    widgetsDiv.id = 'cohorts-widgets';
+    addEl(controlsDiv, addEl(getEl('h2'),getTn('Current Cohorts')));
+    const tblDiv = getEl('div');
+    tblDiv.id = 'cohorts-table';
+    addEl(controlsDiv, tblDiv)
+    getCohorts();
+    addEl(controlsDiv, addEl(getEl('h2'),getTn('Change Cohorts')));
+    const modifyDiv = getEl('div');
+    addEl(controlsDiv, modifyDiv);
     const cohortsFileSel = getEl('input');
-    addEl(controlDiv, cohortsFileSel);
+    addEl(modifyDiv, cohortsFileSel);
     cohortsFileSel.id = 'cohorts-file-sel';
     cohortsFileSel.type = 'file';
     const cohortsSubmit = getEl('button');
-    addEl(controlDiv, cohortsSubmit);
-    addEl(cohortsSubmit, getTn('Submit cohorts'));
+    addEl(modifyDiv, cohortsSubmit);
+    cohortsSubmit.style['display'] = 'block';
+    addEl(cohortsSubmit, getTn('Set cohorts'));
     cohortsSubmit.addEventListener('click',event=>{
         const data = new FormData()
         data.set('cohorts', cohortsFileSel.files[0]);
@@ -1243,22 +1258,152 @@ function makeCohortTab(rightDiv) {
         fetch('/result/service/cohorts'+window.location.search,{
             method: 'POST',
             body: data,
-        }).then(()=>{getCohorts();})
-
+        }).then(()=>{
+            getCohorts();
+            emptyElement(widgetsDiv);
+            populateCohortWidgetDiv();
+        })
+        
     })
+    addEl(controlsDiv, addEl(getEl('h2'),getTn('Compare Cohorts')));
     const compareDiv = getEl('div');
-    addEl(rightDiv, compareDiv);
+    addEl(controlsDiv, compareDiv);
     const compareButton = getEl('button');
     addEl(compareDiv, compareButton);
     addEl(compareButton, getTn('Compare cohorts'));
     compareButton.addEventListener('click',event=>{
         fetch('/result/service/cohortcompare'+window.location.search);
     });
-    const tblDiv = getEl('div');
-    tblDiv.id = 'cohorts-table';
-    addEl(rightDiv, tblDiv)
-    getCohorts();
+    populateCohortWidgetDiv();
     return true;
+}
+
+function populateCohortWidgetDiv () {
+	var tabName = 'cohort';
+	var outerDiv = document.getElementById('cohorts-widgets');
+	var widgetDivs = outerDiv.children;
+	var reuseWidgets = true;
+	if (widgetDivs.length == 0) {
+		reuseWidgets = false;
+		$(widgetDiv).packery('destroy');
+		emptyElement(outerDiv);
+	} else {
+		widgetDivs = $(outerDiv).packery('getItemElements');
+	}
+	var widgetNames = Object.keys(widgetGenerators);
+	if (widgetNames.length == 0) {
+		return;
+	} else {
+		var orderNums = Object.keys(detailWidgetOrder[tabName]);
+		for (var i = 0; i < orderNums.length; i++) {
+			var colGroupKey = detailWidgetOrder[tabName][orderNums[i]];
+			if (widgetGenerators[colGroupKey] == undefined) {
+				continue;
+			}
+			var colGroupTitle = infomgr.colgroupkeytotitle[colGroupKey];
+			if (colGroupTitle == undefined) {
+				colGroupTitle = widgetGenerators[colGroupKey]['name'];
+			}
+			if (widgetGenerators[colGroupKey][tabName] != undefined && 
+				widgetGenerators[colGroupKey][tabName]['function'] != undefined) {
+				var generator = widgetGenerators[colGroupKey][tabName];
+				var widgetDiv = null;
+				var widgetContentDiv = null;
+				if (reuseWidgets) {
+					widgetDiv = document.getElementById(
+							'detailwidget_' + tabName + '_' + widgetName);
+					widgetContentDiv = document.getElementById(
+						'widgetcontentdiv_' + colGroupKey + '_' + tabName);
+					if (generator['donterase'] != true) {
+						$(widgetContentDiv).empty();
+					}
+				} else {
+					[widgetDiv, widgetContentDiv] = 
+						getDetailWidgetDivs(tabName, colGroupKey, colGroupTitle);
+                    generator['variables']['parentdiv'] = widgetContentDiv;
+				}
+				if (reuseWidgets != true) {
+					widgetDiv.clientWidth = generator['width'];
+					widgetDiv.clientHeight = generator['height'];
+					widgetDiv.style.width = generator['width'] + 'px';
+					widgetDiv.style.height = generator['height'] + 'px';
+				}
+                // var outerDiv = document.getElementById('detailcontainerdiv_cohort');
+				addEl(outerDiv, widgetDiv);
+                try {
+                    drawSummaryWidget(colGroupKey, 'cohort');
+                } catch (err) {
+                    console.log(err);
+                    console.log('### continuing to the next widget ###');
+                }
+			}
+		}
+	}
+	$outerDiv = $(outerDiv);
+	$outerDiv.packery({
+		columnWidth: widgetGridSize,
+		rowHeight: widgetGridSize
+	});
+	var $widgets = $($outerDiv.packery('getItemElements'));
+	$widgets.draggable({
+		grid: [widgetGridSize, widgetGridSize],
+		handle: '.detailwidgettitle',
+        stop: function (evt, ui) {
+            $outerDiv.packery();
+            loadedViewerWidgetSettings[currentTab] = undefined;
+        },
+	}).resizable({
+		grid: [widgetGridSize, widgetGridSize],
+        autoHide: true,
+        handles: 'all',
+        start: function (evt, ui) {
+            var widgetName = evt.target.getAttribute('widgetkey');
+            var generator = widgetGenerators[widgetName][currentTab];
+            var v = generator['variables'];
+            var parentDiv = v['parentdiv'];
+            if (generator['beforeresize'] != undefined) {
+                generator['beforeresize']();
+            }
+        },
+        stop: function (evt, ui) {
+            var widgetName = evt.target.getAttribute('widgetkey');
+            var generator = widgetGenerators[widgetName][currentTab];
+            var v = generator['variables'];
+            var parentDiv = v['parentdiv'];
+            if (generator['confirmonresize'] == true) {
+                $(parentDiv).empty();
+                var div = getEl('div');
+                div.className = 'widget-redraw-confirm';
+                var span = getEl('span');
+                span.textContent = 'Click to redraw';
+                addEl(div, span);
+                addEl(parentDiv, div);
+                div.addEventListener('click', function () {
+                    generator['function']();
+                });
+            } else if (generator['onresize'] != undefined) {
+                $(parentDiv).empty();
+                if (resizeTimeout) {
+                    clearTimeout(resizeTimeout);
+                }
+                resizeTimeout = setTimeout(function () {
+                    var widgetDiv = parentDiv.parentElement;
+                    parentDiv.style.height = (widgetDiv.offsetHeight - 38) + 'px';
+                    parentDiv.style.width = (widgetDiv.offsetWidth - 17) + 'px';
+                    generator['onresize']();
+                }, 100);
+            }
+            var sEvt = evt;
+            var sUi = ui;
+            $(sEvt.target.parentElement).packery('fit', sUi.element[0]);
+            loadedViewerWidgetSettings[currentTab] = undefined;
+        },
+	});
+	$outerDiv.packery('bindUIDraggableEvents', $widgets);
+	var resizeTimeout;
+	if (reuseWidgets != true) {
+		applyWidgetSetting('cohort');
+	}
 }
 
 function getCohorts() {
@@ -2005,10 +2150,11 @@ function drawSummaryWidgetGivenData (widgetName, widgetContentDiv, generator, da
     }
 }
 
-function drawSummaryWidget (widgetName) {
-    var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
+function drawSummaryWidget (widgetName, destName) {
+    if (destName === undefined) destName = 'info';
+    var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_' + destName);
     emptyElement(widgetContentDiv);
-    var generator = widgetGenerators[widgetName]['info'];
+    var generator = widgetGenerators[widgetName][destName];
     var requestmethod = generator['requestmethod'];
     if (requestmethod != undefined && requestmethod.toLowerCase() == 'post') {
         requestmethod = 'POST';
@@ -2035,7 +2181,7 @@ function drawSummaryWidget (widgetName) {
                 '/result/runwidget/' + widgetName, 
                 {'username': username, 'job_id': jobId, dbpath: dbPath, params: params},
                 function (response) {
-                    var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
+                    var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_' + destName);
                     var spinner = widgetContentDiv.getElementsByClassName('widgetspinner')[0];
                     $(spinner).remove();
                     var data = response['data'];
@@ -2049,7 +2195,7 @@ function drawSummaryWidget (widgetName) {
                 async: true,
                 method: requestmethod,
                 success: function (response) {
-                    var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_info');
+                    var widgetContentDiv = document.getElementById('widgetcontentdiv_' + widgetName + '_' + destName);
                     var spinner = widgetContentDiv.getElementsByClassName('widgetspinner')[0];
                     $(spinner).remove();
                     var data = response['data'];

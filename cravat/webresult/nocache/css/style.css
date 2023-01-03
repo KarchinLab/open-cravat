@@ -1227,3 +1227,12 @@ input:checked + .sample-rd-rej::before {
     right: 2px;
 }
 
+#rightdiv_cohort {
+    display: flex;
+}
+
+#cohorts-controls {
+    padding-right: 10px;
+    margin-right: 10px;
+    border-right: 1px solid black;
+}
