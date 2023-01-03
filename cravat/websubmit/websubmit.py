@@ -981,21 +981,26 @@ def fetch_job_queue (job_queue, run_jobs_info):
 
     async def job_worker_main ():
         while True:
-            job_tracker.clean_jobs(None)
-            job_tracker.run_available_jobs()
             try:
-                qitem = job_queue.get_nowait()
-                cmd = qitem['cmd']
-                if cmd == 'submit':
-                    job_tracker.add_job(qitem)
-                elif cmd == 'delete':
-                    await job_tracker.delete_job(qitem)
-                elif cmd == 'set_max_num_concurrent_jobs':
-                    job_tracker.set_max_num_concurrent_jobs(qitem)
-            except Empty:
-                pass
-            finally:
-                await asyncio.sleep(1)
+                job_tracker.clean_jobs(None)
+                job_tracker.run_available_jobs()
+                try:
+                    qitem = job_queue.get_nowait()
+                    cmd = qitem['cmd']
+                    if cmd == 'submit':
+                        job_tracker.add_job(qitem)
+                    elif cmd == 'delete':
+                        await job_tracker.delete_job(qitem)
+                    elif cmd == 'set_max_num_concurrent_jobs':
+                        job_tracker.set_max_num_concurrent_jobs(qitem)
+                except Empty:
+                    pass
+                finally:
+                    await asyncio.sleep(1)
+            except:
+                import traceback
+                print('Exception in job fetch loop')
+                traceback.print_exc()
 
     main_loop = asyncio.new_event_loop()
     job_tracker = JobTracker(main_loop)
