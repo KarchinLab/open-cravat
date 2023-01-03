@@ -734,18 +734,18 @@ async def get_cohorts (request):
     conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
     cohort_table = 'cohorts'
+    r = []
     if await table_exists(cursor, cohort_table):
         q = f'select cohort, sample from {cohort_table};'
         await cursor.execute(q)
         rows = await cursor.fetchall()
-    r = [{'cohort':_[0],'sample':_[1]} for _ in rows]
+        r = [{'cohort':_[0],'sample':_[1]} for _ in rows]
     await cursor.close()
     await conn.close()
     return web.json_response(r)
 
 async def post_cohorts (request):
-    queries = request.rel_url.query
-    dbpath = queries.get('dbpath')
+    _, dbpath = await get_jobid_dbpath(request)
     conn = await get_db_conn(dbpath)
     post = await request.post()
     file = post['cohorts']
