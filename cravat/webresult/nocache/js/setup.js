@@ -1237,7 +1237,9 @@ function makeCohortTab(rightDiv) {
     addEl(cohortsSubmit, getTn('Submit cohorts'));
     cohortsSubmit.addEventListener('click',event=>{
         const data = new FormData()
-        data.append('cohorts', cohortsFileSel.files[0]);
+        data.set('cohorts', cohortsFileSel.files[0]);
+        if (jobId !== null) data.set('job_id',jobId);
+        if (dbPath !== null) data.set('dbpath',dbPath);
         fetch('/result/service/cohorts'+window.location.search,{
             method: 'POST',
             body: data,
