@@ -1225,6 +1225,17 @@ function pullSfValue(selectorDiv) {
 	}
 }
 
+// Either move or generalize this
+const defOptLambda = (selName) => {
+    const opt = getEl('option');
+    addEl(opt, getTn(`Pick ${selName} cohort`));
+    opt.hidden = true;
+    opt.value = '';
+    opt.disabled = true;
+    opt.selected = true;
+    return opt
+}
+
 function makeCohortTab(rightDiv) {
     //temp
     detailWidgetOrder['cohort'] = {0:'topgenessummary_cohort'};
@@ -1238,7 +1249,6 @@ function makeCohortTab(rightDiv) {
     const tblDiv = getEl('div');
     tblDiv.id = 'cohorts-table';
     addEl(controlsDiv, tblDiv)
-    getCohorts();
     addEl(controlsDiv, addEl(getEl('h2'),getTn('Change Cohorts')));
     const modifyDiv = getEl('div');
     addEl(controlsDiv, modifyDiv);
@@ -1268,23 +1278,82 @@ function makeCohortTab(rightDiv) {
     addEl(controlsDiv, addEl(getEl('h2'),getTn('Compare Cohorts')));
     const compareDiv = getEl('div');
     addEl(controlsDiv, compareDiv);
+    const cohortPickDiv = getEl('div');
+    addEl(compareDiv, cohortPickDiv);
+    const caseSel = getEl('select');
+    const contSel = getEl('select');
+    addEl(compareDiv, caseSel);
+    addEl(compareDiv, contSel);
+    caseSel.id = 'cohort-compare-case-sel';
+    contSel.id = 'cohort-compare-cont-sel';
+    addEl(caseSel, defOptLambda('case'));
+    addEl(contSel, defOptLambda('control'));
     const compareButton = getEl('button');
     addEl(compareDiv, compareButton);
     addEl(compareButton, getTn('Compare cohorts'));
+    compareButton.style.display = 'block';
     compareButton.addEventListener('click',event=>{
-        fetch('/result/service/cohortcompare'+window.location.search);
+        const data = new FormData();
+        if (jobId !== null) data.set('job_id',jobId);
+        if (dbPath !== null) data.set('dbpath',dbPath);
+        
+        const caseCohort = 'case';
+        const contCohort = 'control';
+        data.set('case_cohort', caseSel.value);
+        data.set('cont_cohort', contCohort);
+        fetch('/result/service/cohortcompare',{
+            method: 'POST',
+            body: data,
+        });
     });
+    getCohorts();
     populateCohortWidgetDiv();
     return true;
 }
 
+function getCohorts() {
+    var table = new Tabulator("#cohorts-table", {
+        // maxHeight:'100%', // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
+        ajaxURL:"/result/service/cohorts"+window.location.search, //assign data to table
+        layout:"fitDataTable", //fit columns to width of table (optional)
+        columns:[ //Define Table Columns
+            {title:"Cohort", field:"cohort", width:150},
+            {title:"Sample", field:"sample", width:150},
+        ],
+        groupBy:"cohort",
+    });
+    fetch("/result/service/cohorts"+window.location.search)
+        .then((response) => response.json())
+        .then((data) => {
+            var tmp = new Object();
+            for (let row of data) {
+                tmp[row.cohort] = null;
+            }
+            const cohorts = Object.keys(tmp);
+            const caseSel = document.querySelector('#cohort-compare-case-sel');
+            const contSel = document.querySelector('#cohort-compare-cont-sel');
+            emptyElement(caseSel);
+            emptyElement(contSel);
+            addEl(caseSel, defOptLambda('case'));
+            addEl(contSel, defOptLambda('control'));
+            for (let sel of [caseSel, contSel]) {
+                for (let cohort of cohorts) {
+                    let opt = getEl('option');
+                    addEl(sel, opt);
+                    addEl(opt, getTn(cohort));
+                    opt.value = cohort;
+                }
+            }
+        });
+}
+
 function populateCohortWidgetDiv () {
-	var tabName = 'cohort';
+    var tabName = 'cohort';
 	var outerDiv = document.getElementById('cohorts-widgets');
 	var widgetDivs = outerDiv.children;
 	var reuseWidgets = true;
 	if (widgetDivs.length == 0) {
-		reuseWidgets = false;
+        reuseWidgets = false;
 		$(widgetDiv).packery('destroy');
 		emptyElement(outerDiv);
 	} else {
@@ -1404,19 +1473,6 @@ function populateCohortWidgetDiv () {
 	if (reuseWidgets != true) {
 		applyWidgetSetting('cohort');
 	}
-}
-
-function getCohorts() {
-    var table = new Tabulator("#cohorts-table", {
-        // maxHeight:'100%', // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
-        ajaxURL:"/result/service/cohorts"+window.location.search, //assign data to table
-        layout:"fitDataTable", //fit columns to width of table (optional)
-        columns:[ //Define Table Columns
-            {title:"Cohort", field:"cohort", width:150},
-            {title:"Sample", field:"sample", width:150},
-        ],
-        groupBy:"cohort",
-    });
 }
 
 function changeTableDetailMaxButtonText () {
