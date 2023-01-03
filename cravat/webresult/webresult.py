@@ -784,6 +784,13 @@ async def run_cohort_compare(request):
 
     cmd = [module.script_path, "-d", output_dir, "-n", run_name]
 
+    queries = await request.post()
+
+    case_cohort = queries.get('case_cohort')
+    cont_cohort = queries.get('cont_cohort')
+    confs = json.dumps({'case_cohort':case_cohort,'cont_cohort':cont_cohort})
+    cmd.extend(['--confs', confs])
+
     status_path = '/tmp/ocstatus.json'
     with open(status_path,'w') as f:
         f.write('{}')
@@ -821,7 +828,7 @@ routes.append(['GET', '/result/service/samples', get_samples])
 routes.append(['GET', '/webapps/{module}/widgets/{widget}', serve_webapp_runwidget])
 routes.append(['GET', '/result/service/cohorts', get_cohorts])
 routes.append(['POST', '/result/service/cohorts', post_cohorts])
-routes.append(['GET', '/result/service/cohortcompare', run_cohort_compare])
+routes.append(['POST', '/result/service/cohortcompare', run_cohort_compare])
 
 
 
