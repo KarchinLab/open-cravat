@@ -18,7 +18,6 @@ from aiohttp import web
 import time
 from concurrent.futures import ProcessPoolExecutor
 from cravat.cravat_util import jobtopackage
-from _overlapped import NULL
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
