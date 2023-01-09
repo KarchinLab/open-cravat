@@ -294,7 +294,7 @@ async def resubmit (request):
     run_args.append('-l')
     run_args.append(assembly)
     # Reports
-    run_args.extend(['--skip', 'reporter'])
+    #run_args.extend(['--skip', 'reporter'])
     # Note
     if note != '':
         run_args.append('--note')
@@ -423,8 +423,8 @@ async def submit (request):
     if 'reports' in job_options and len(job_options['reports']) > 0:
         run_args.append('-t')
         run_args.extend(job_options['reports'])
-    else:
-        run_args.extend(['--skip', 'reporter'])
+    #else:
+    #    run_args.extend(['--skip', 'reporter'])
     # Note
     if 'note' in job_options:
         note = job_options['note']
