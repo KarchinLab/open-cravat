@@ -746,7 +746,7 @@ function firstLoadData () {
 	var infoReset = resetTab['info'];
 	resetTab = {'info': infoReset};
 	var loadWidgets = function () {
-		detailWidgetOrder = {'variant': {}, 'gene': {}, 'info': {}};
+		detailWidgetOrder = {'variant': {}, 'gene': {}, 'info': {}, 'cohort':{}};
 		$.get('/result/service/widgetlist', {}).done(function (jsonResponseData) {
             widgetInfo = {};
 	    	var widgets = jsonResponseData;
@@ -1114,11 +1114,13 @@ function afterGetResultLevels () {
         var cols = jsonResponseData['columns']['variant'];
         usedAnnotators['variant'] = [];
         usedAnnotators['info'] = [];
+        usedAnnotators['cohort'] = [];
         for (var i = 0; i < cols.length; i++) {
             var col = cols[i];
             var annotator = col.colModel[0].colgroupkey;
             usedAnnotators['variant'].push(annotator);
             usedAnnotators['info'].push(annotator);
+            usedAnnotators['cohort'].push(annotator);
         }
         if (jsonResponseData['columns']['gene']) {
             var cols = jsonResponseData['columns']['gene'];
@@ -1133,6 +1135,7 @@ function afterGetResultLevels () {
                 var annotator = col.colModel[0].colgroupkey;
                 usedAnnotators['gene'].push(annotator);
                 usedAnnotators['info'].push(annotator);
+                usedAnnotators['cohort'].push(annotator);
             }
         }
         firstLoadData();
