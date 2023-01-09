@@ -1237,8 +1237,6 @@ const defOptLambda = (selName) => {
 }
 
 function makeCohortTab(rightDiv) {
-    //temp
-    detailWidgetOrder['cohort'] = {0:'topgenessummary_cohort'};
     const controlsDiv = getEl('div');
     addEl(rightDiv, controlsDiv);
     controlsDiv.id = 'cohorts-controls';

@@ -1236,3 +1236,7 @@ input:checked + .sample-rd-rej::before {
     margin-right: 10px;
     border-right: 1px solid black;
 }
+
+#cohorts-widgets {
+    flex-grow: 1;
+}
