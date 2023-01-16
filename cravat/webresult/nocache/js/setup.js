@@ -22,7 +22,6 @@ function setupTab (tabName) {
 	}
 	
 	// Populates the right panel.
-    console.log(tabName);
 	if (tabName == 'info') {
         makeInfoTab(rightDiv);
         resetTab[tabName] = false;
@@ -1369,10 +1368,10 @@ function buildCohortSavedSelection(cohortSets, shownSet) {
         const setCohorts = cohortSets[pickedSet];
         for (let row of cohortTable.getRows()) {
             if (setCohorts.indexOf(row.getData().cohort) >= 0) {
-                cohortTable.selectRow(row);
+                row.select();
             } else {
-                cohortTable.deselectRow(row);
-                }
+                row.deselect();
+            }
         }
     }
     pickSetSelect.addEventListener('change',cohortPickSetListener);
@@ -1412,9 +1411,17 @@ function saveCohortSet() {
 }
 
 function showCohortSet() {
-    const selData = cohortTable.getSelectedData();
+    emptyElement(widgetsDiv);
+    populateCohortWidgetDiv();
+}
+
+function getSelectedCohorts() {
+    var selData = cohortTable.getSelectedData();
+    if (selData.length === 0) {
+        selData = cohortTable.getData();
+    }
     const unqCohorts = [... new Set(selData.map(row => row.cohort))];
-    alert(`Show cohorts: ${unqCohorts.join(', ')}`)
+    return unqCohorts;
 }
 
 function getCohorts() {
