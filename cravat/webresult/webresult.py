@@ -851,8 +851,6 @@ async def post_cohorts (request):
 
 async def run_cohort_compare(request):
     _, dbpath = await get_jobid_dbpath(request)
-    # output_dir = '/home/kyle/a/jobs/lihc-maf'
-    # run_name = 'LIHC_maf_hg38_1000.txt'
     output_dir = str(Path(dbpath).parent)
     run_name = Path(dbpath).stem
 
@@ -877,6 +875,47 @@ async def run_cohort_compare(request):
     post_agg.run()
     return web.Response()
 
+async def save_cohort_set(request):
+    _, dbpath = await get_jobid_dbpath(request)
+    conn = await get_db_conn(dbpath)
+    cursor = await conn.cursor()
+    post = await request.post()
+    data = json.loads(post['data'])
+    set_name = data['setName']
+    cohorts = data['setCohorts']
+    await make_cohort_set_table(dbpath)
+    cohorts_delim = ';'.join(cohorts)
+    q = f'insert into cohort_set (set_name, cohorts) values ("{set_name}", "{cohorts_delim}") on conflict do update set cohorts="{cohorts_delim}" where set_name="{set_name}";'
+    await cursor.execute(q)
+    await cursor.close()
+    cohort_sets = await read_cohort_sets(conn)
+    await conn.commit()
+    await conn.close()
+    return web.json_response(cohort_sets)
+
+async def get_cohort_sets(request):
+    _, dbpath = await get_jobid_dbpath(request)
+    await make_cohort_set_table(dbpath)
+    conn = await get_db_conn(dbpath)
+    cohort_sets = await read_cohort_sets(conn)
+    await conn.close()
+    return web.json_response(cohort_sets)
+
+async def read_cohort_sets(conn):
+    cursor = await conn.cursor()
+    q = f'select set_name, cohorts from cohort_set;'
+    await cursor.execute(q)
+    cohort_sets = {}
+    for row in await cursor.fetchall():
+        cohort_sets[row[0]] = row[1].split(';')
+    await cursor.close()
+    return cohort_sets    
+
+async def make_cohort_set_table(dbpath):
+    conn = await get_db_conn(dbpath)
+    await conn.execute('create table if not exists cohort_set (set_name text primary key unique not null, cohorts text not null);')
+    await conn.commit()
+    await conn.close()
 
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
@@ -906,6 +945,5 @@ routes.append(['GET', '/result/service/jobpackage', jobpackage])
 routes.append(['GET', '/result/service/cohorts', get_cohorts])
 routes.append(['POST', '/result/service/cohorts', post_cohorts])
 routes.append(['POST', '/result/service/cohortcompare', run_cohort_compare])
-
-
-
+routes.append(['POST','/result/service/savecohortset', save_cohort_set])
+routes.append(['GET','/result/service/cohortsets', get_cohort_sets])
