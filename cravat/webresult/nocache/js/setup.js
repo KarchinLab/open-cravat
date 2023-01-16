@@ -1221,7 +1221,7 @@ function pullSfValue(selectorDiv) {
 			return $(selOpts[0]).prop('typedValue');
 		}
 	} else if (selectorType === 'empty') {
-		return null;
+        return null;
 	}
 }
 
@@ -1236,6 +1236,9 @@ const defOptLambda = (selName) => {
     return opt
 }
 
+var cohortTable;
+//TODO: temporary
+var cohortPickSetListener;
 function makeCohortTab(rightDiv) {
     const controlsDiv = getEl('div');
     addEl(rightDiv, controlsDiv);
@@ -1243,10 +1246,43 @@ function makeCohortTab(rightDiv) {
     const widgetsDiv = getEl('div');
     addEl(rightDiv, widgetsDiv);
     widgetsDiv.id = 'cohorts-widgets';
+    // Current Cohorts
     addEl(controlsDiv, addEl(getEl('h2'),getTn('Current Cohorts')));
+    // Display set
+    const displaySetDiv = getEl('div');
+    addEl(controlsDiv, displaySetDiv);
+    const pickSetSelect = getEl('select');
+    addEl(displaySetDiv, pickSetSelect);
+    pickSetSelect.id = 'cohort-pick-set';
+    pickSetSelect.disabled = true;
+    fetch("/result/service/cohortsets"+window.location.search)
+        .then((response) => response.json())
+        .then((data) => {
+            buildCohortSavedSelection(data);
+    });
+    // Table
     const tblDiv = getEl('div');
     tblDiv.id = 'cohorts-table';
-    addEl(controlsDiv, tblDiv)
+    addEl(controlsDiv, tblDiv);
+    // Save set
+    const saveDiv = getEl('div');
+    addEl(controlsDiv,saveDiv);
+    const setNameInput = getEl('input');
+    addEl(saveDiv, setNameInput);
+    setNameInput.id = 'cohort-set-name'
+    const setNameButton = getEl('button');
+    addEl(saveDiv, setNameButton);
+    setNameButton.addEventListener('click',e=>{saveCohortSet()});
+    addEl(setNameButton, getTn('Save selection'));
+    
+    // Show cohorts
+    const showDiv = getEl('div');
+    addEl(controlsDiv,showDiv);
+    const showCohortsButton = getEl('button');
+    addEl(showDiv,showCohortsButton);
+    addEl(showCohortsButton, getTn('Show Cohorts'));
+    showCohortsButton.addEventListener('click',e=>{showCohortSet()});
+    // Change cohorts
     addEl(controlsDiv, addEl(getEl('h2'),getTn('Change Cohorts')));
     const modifyDiv = getEl('div');
     addEl(controlsDiv, modifyDiv);
@@ -1268,11 +1304,11 @@ function makeCohortTab(rightDiv) {
             body: data,
         }).then(()=>{
             getCohorts();
-            emptyElement(widgetsDiv);
-            populateCohortWidgetDiv();
-        })
-        
+        emptyElement(widgetsDiv);
+        populateCohortWidgetDiv();
+        })  
     })
+    // Compare Cohorts
     addEl(controlsDiv, addEl(getEl('h2'),getTn('Compare Cohorts')));
     const compareDiv = getEl('div');
     addEl(controlsDiv, compareDiv);
@@ -1309,20 +1345,113 @@ function makeCohortTab(rightDiv) {
     return true;
 }
 
+function buildCohortSavedSelection(cohortSets, shownSet) {
+    const pickSetSelect = document.querySelector('#cohort-pick-set');
+    emptyElement(pickSetSelect);
+    const pickSetDefault = getEl('option');
+    addEl(pickSetSelect,pickSetDefault);
+    addEl(pickSetDefault,getTn('Pick a selection'));
+    pickSetDefault.selected = true;
+    pickSetDefault.disabled = true;
+    pickSetDefault.hidden = true;
+    const options = []
+    for (let setName in cohortSets) {
+        let opt = getEl('option');
+        opt.value = setName;
+        addEl(opt, getTn(setName));
+        addEl(pickSetSelect, opt);
+        options.push(opt);
+    }
+    pickSetSelect.disabled = options.length === 0;
+    pickSetSelect.removeEventListener('change',cohortPickSetListener);
+    cohortPickSetListener = (e) => {
+        const pickedSet = e.target.value;
+        const setCohorts = cohortSets[pickedSet];
+        for (let row of cohortTable.getRows()) {
+            if (setCohorts.indexOf(row.getData().cohort) >= 0) {
+                cohortTable.selectRow(row);
+            } else {
+                cohortTable.deselectRow(row);
+                }
+        }
+    }
+    pickSetSelect.addEventListener('change',cohortPickSetListener);
+    let showSet = false;
+    for (let opt of options) {
+        opt.selected = opt.value === shownSet;
+        showSet = showSet || opt.selected
+    }
+    if (showSet) {
+        pickSetSelect.dispatchEvent(new Event('change'));
+    }
+}
+
+function saveCohortSet() {
+    const tableRows = cohortTable.getSelectedData();
+    const setNameInput = document.querySelector('#cohort-set-name');
+    const setName = setNameInput.value;
+    if (setName === '') return;
+    const unqCohorts = {};
+    for (let row of tableRows) {
+        unqCohorts[row.cohort] = null;
+    }
+    const setCohorts = Object.keys(unqCohorts);
+    if (setCohorts.length === 0) return;
+    const data = new FormData();
+    if (jobId !== null) data.set('job_id',jobId);
+    if (dbPath !== null) data.set('dbpath',dbPath);
+    data.set('data', JSON.stringify({setName:setName,setCohorts:setCohorts}));
+    fetch('/result/service/savecohortset',{
+        method: 'POST',
+        body: data,
+    }).then((response) => response.json())
+    .then((resp_data) => {
+        buildCohortSavedSelection(resp_data, setName);
+    })
+        
+}
+
+function showCohortSet() {
+    const selData = cohortTable.getSelectedData();
+    const unqCohorts = [... new Set(selData.map(row => row.cohort))];
+    alert(`Show cohorts: ${unqCohorts.join(', ')}`)
+}
+
 function getCohorts() {
-    var table = new Tabulator("#cohorts-table", {
-        // maxHeight:'100%', // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
-        ajaxURL:"/result/service/cohorts"+window.location.search, //assign data to table
-        layout:"fitDataTable", //fit columns to width of table (optional)
-        columns:[ //Define Table Columns
-            {title:"Cohort", field:"cohort", width:150},
-            {title:"Sample", field:"sample", width:150},
-        ],
-        groupBy:"cohort",
-    });
     fetch("/result/service/cohorts"+window.location.search)
         .then((response) => response.json())
         .then((data) => {
+            var cohortGroups = {};
+            for (let row of data) {
+                let cohortName = row.cohort;
+                if (cohortGroups.hasOwnProperty(cohortName)) {
+
+                    cohortGroups[cohortName].push({'cohort':null,'sample':row.sample});
+                } else {
+                    cohortGroups[cohortName] = [{'cohort':null,'sample':row.sample}];
+                }
+            }
+            var tableData = [];
+            for (let cohortName in cohortGroups) {
+                tableData.push({
+                    'cohort':cohortName,
+                    'sample':null,
+                    '_children':cohortGroups[cohortName]
+                })
+            }
+            cohortTable = new Tabulator("#cohorts-table", {
+                // maxHeight:'100%', // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
+                // ajaxURL:"/result/service/cohorts"+window.location.search, //assign data to table
+                layout:"fitDataTable", //fit columns to width of table (optional)
+                data:tableData,
+                dataTree:true,
+                dataTreeStartExpanded:false,
+                columns:[ //Define Table Columns
+                    {title:"Cohort", field:"cohort", width:150},
+                    {title:"Sample", field:"sample", width:150},
+                ],
+                selectable:true,
+            });
             var tmp = new Object();
             for (let row of data) {
                 tmp[row.cohort] = null;
