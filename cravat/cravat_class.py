@@ -1770,6 +1770,7 @@ class Cravat(object):
         end_queue = self.manager.Queue()
         all_mnames = set(self.run_annotators)
         queued_mnames = set()
+        done_annots = []
         done_mnames = set(self.done_annotators)
         queue_populated = self.manager.Value("c_bool", False)
         pool_args = [
@@ -1792,8 +1793,9 @@ class Cravat(object):
             # TODO not handling case where parent annotator errors out
             while (queued_mnames != all_mnames):  
                 # Block until item availble in end_queue
-                done_mnames.add(finished_module)
+                done_annots.append(end_queue.get(True))
                 # Queue any annotators that now have requirements complete
+                done_mnames.add(done_annots[-1]['module'])
                 for mname, module in self.run_annotators.items():
                     annotator_not_queue = mname not in queued_mnames
                     secondaries_done = set(module.secondary_module_names) <= done_mnames
@@ -1802,17 +1804,19 @@ class Cravat(object):
                         queued_mnames.add(mname)
             queue_populated = True
             pool.join()
-            # Retrieve metric values from annotator execution that have been placed in the ene_queue
+            # Retrieve finished annotators from end_queue
             while True:
                 try:
-                    retval = end_queue.get(False)
-                    annotator = {}
-                    annotator['name'] = retval['module']
-                    annotator['version'] = retval['version']
-                    annotator['runtime'] = retval['runtime']
-                    self.metricObj.set_job_annotator(annotator)
+                    done_annots.append(end_queue.get(False))
                 except Empty:
                     break
+            # Write annotator metrics
+            for done_annot in done_annots:
+                annotator = {}
+                annotator['name'] = done_annot['module']
+                annotator['version'] = done_annot['version']
+                annotator['runtime'] = done_annot['runtime']
+                self.metricObj.set_job_annotator(annotator)
         self.log_path = os.path.join(self.output_dir, self.run_name + ".log")
         self.log_handler = logging.FileHandler(self.log_path, "a")
         formatter = logging.Formatter(
