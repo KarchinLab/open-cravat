@@ -1411,6 +1411,7 @@ function saveCohortSet() {
 }
 
 function showCohortSet() {
+    const widgetsDiv = document.querySelector('#cohorts-widgets');
     emptyElement(widgetsDiv);
     populateCohortWidgetDiv();
 }
