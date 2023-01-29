@@ -848,6 +848,8 @@ def get_system_conf(file_only=False):
             conf[constants.jobs_dir_key] = constants.default_jobs_dir
         if constants.log_dir_key not in conf:
             conf[constants.log_dir_key] = constants.default_log_dir
+        if constants.metrics_dir_key not in conf:
+            conf[constants.metrics_dir_key] = constants.default_metrics_dir
         key = "num_input_line_warning_cutoff"
         if key not in conf:
             conf[key] = constants.default_num_input_line_warning_cutoff
@@ -860,8 +862,10 @@ def get_system_conf(file_only=False):
         key = "max_num_concurrent_annotators_per_job"
         if key not in conf:
             conf[key] = constants.default_max_num_concurrent_annotators_per_job
-        if constants.metrics_conf_key not in conf:
-            conf[constants.metrics_conf_key] = "empty"
+        if constants.save_metrics_key not in conf:
+            conf[constants.save_metrics_key] = constants.default_save_metrics
+        if constants.metrics_url_key not in conf:
+            conf[constants.metrics_url_key] = constants.default_metrics_url
         if "custom_system_conf" in globals():
             global custom_system_conf
             for k, v in custom_system_conf.items():
@@ -1565,14 +1569,14 @@ def set_metrics_config(value, overwrite=False):
     """
     Set the save_metrics configuration in the system conf file.
     """
-    update_system_conf_file({constants.metrics_conf_key: value})
+    update_system_conf_file({constants.save_metrics_key: value})
 
 def get_metrics_config():
     """
     Get the current modules directory
     """
     conf = get_system_conf()
-    metrics_conf = conf[constants.metrics_conf_key]
+    metrics_conf = conf[constants.save_metrics_key]
     if metrics_conf == True:
         return 'Y'
     elif metrics_conf == False:

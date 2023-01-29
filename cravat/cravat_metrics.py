@@ -5,6 +5,7 @@ import sqlite3
 import requests
 import fnmatch
 from cravat import admin_util as au
+from cravat import constants
 from datetime import datetime, timezone
 import psutil
 import platform
@@ -69,7 +70,6 @@ class cravatMetrics:
         jsoncontent['jobData'] = self.jobdata
         jsoncontent['machineData'] = self.machinedata
         json_dump = json.dumps(jsoncontent, indent = 4)
-#        print(json_dump)
         return json_dump
 
     def build_opt_metrics_json(self):
@@ -80,7 +80,6 @@ class cravatMetrics:
         jsoncontent['machineData'] = self.machinedata
         jsoncontent['currDate'] = dt_string
         json_dump = json.dumps(jsoncontent, indent = 4)
-#        print(json_dump)
         return json_dump
 
     def do_opt_out(self):
@@ -91,7 +90,7 @@ class cravatMetrics:
     def post_opt_metrics(self,json_dump):
         json_obj = json.loads(json_dump)
         sys_conf = au.get_system_conf()
-        metrics_url = sys_conf["metrics_url"] + "/opt"
+        metrics_url = sys_conf[constants.metrics_url_key] + "/opt"
         try:
             requests.post(metrics_url, json=json_obj)  #write json to a file (hardcoded dir)
         except Exception as e: 
@@ -113,7 +112,6 @@ class cravatMetrics:
             + '")'
         )
         cursor.execute(q)
-    #    print(json_dump)
         conn.commit()
         self.post_job_metrics(json_dump,True)
         
@@ -121,9 +119,9 @@ class cravatMetrics:
     def post_job_metrics(self,json_dump,is_new):
         json_obj = json.loads(json_dump)
         sys_conf = au.get_system_conf()
-        saveMetrics = sys_conf["save_metrics"]
+        saveMetrics = sys_conf[constants.save_metrics_key]
         if saveMetrics == True:
-            metrics_url = sys_conf["metrics_url"] + "/job"
+            metrics_url = sys_conf[constants.metrics_url_key] + "/job"
             try:
 #                raise requests.exceptions.Timeout("Connection Timed Out") #use to simulate timeout
                 requests.post(metrics_url, json=json_obj)  #write json to a file (hardcoded dir)
@@ -137,20 +135,19 @@ class cravatMetrics:
     
     #perform temporary save to user local metrics directory    
     def save_metrics_local(self,json_obj):
-        homeDir = os.getcwd()
-        metricsPath = os.getcwd() + "/metrics"
         now = datetime.now()    
         timestamp = str(datetime.timestamp(now)).replace(".","")
-        if not os.path.exists(metricsPath):
-            os.mkdir(metricsPath)
-        outFileName= metricsPath +"/ocmetric_"+timestamp
+        sys_conf = au.get_system_conf()
+        metricsPath = sys_conf[constants.metrics_dir_key]
+        outFileName= os.path.join(metricsPath, f'ocmetric_{timestamp}.json')
         outFile=open(outFileName, "w")
         outFile.write(json.dumps(json_obj))
         outFile.close()
     
      #resend any saved local metrics files.    
     def resend_local_metrics(self):
-        metricsPath = os.getcwd() +"/metrics"
+        sys_conf = au.get_system_conf()
+        metricsPath = sys_conf[constants.metrics_dir_key]
         if os.path.exists(metricsPath):
              for filename in os.listdir(metricsPath):
                 with open(os.path.join(metricsPath, filename)) as f:
@@ -158,7 +155,7 @@ class cravatMetrics:
                     successful = self.post_job_metrics(json_dump,False)
                     f.close()
                     if successful == True:
-                        os.remove(metricsPath+"/"+filename)
+                        os.remove(os.path.join(metricsPath, filename))
                     else:
-                        break;
+                        break
 

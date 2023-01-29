@@ -40,8 +40,12 @@ if os.path.exists(system_conf_path) == False:
 f = open(system_conf_path)
 conf = yaml.safe_load(f)
 f.close()
-# modules dir
-metrics_conf_key = "save_metrics"
+# metrics dir
+metrics_dir_key = "metrics_dir"
+metrics_dir_name = "metrics"
+default_metrics_dir = os.path.join(oc_root_dir, metrics_dir_name)
+if os.path.exists(default_metrics_dir) == False:
+    os.mkdir(default_metrics_dir)
 # modules dir
 modules_dir_key = "modules_dir"
 modules_dir_name = "modules"
@@ -77,6 +81,13 @@ main_conf_fname = "cravat.yml"
 main_conf_path = os.path.join(default_conf_dir, main_conf_fname)
 if os.path.exists(main_conf_path) == False:
     shutil.copyfile(os.path.join(packagedir, main_conf_fname), main_conf_path)
+
+
+# metrics
+save_metrics_key = 'save_metrics'
+default_save_metrics = True
+metrics_url_key = 'metrics_url'
+default_metrics_url = 'https://metrics.opencravat.org'
 
 # liftover
 liftover_chains_dir = os.path.join(packagedir, "liftover")

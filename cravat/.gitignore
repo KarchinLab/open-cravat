@@ -9,3 +9,4 @@ conf
 req.cnf
 logs
 /temp/
+metrics
