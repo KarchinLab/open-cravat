@@ -683,24 +683,39 @@ input:checked + .slider:before {
     background-color: #8c8780;
 }
 
-#packagechoosediv {
+#modchoose {
     background-color: #96b6c6;
 	color: white;
     margin-top: 15px;
 }
 
-#packagechoosediv .div-header {
+#modchoose .div-header {
 	color: white;
 }
 
-#annotchoosediv {
-    background-color: #96b6c6;
-	color: white;
-    margin-top: 15px;
+#modchoose-header {
+    display: flex;
+    justify-content: space-between;
 }
 
-#annotchoosediv .div-header {
-	color: white;
+#show-annotator {
+    text-align: left;
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+#show-annotator:hover {
+    text-decoration: underline;
+}
+
+#show-package {
+    text-align: right;
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+#show-package:hover {
+    text-decoration: underline;
 }
 
 .chevron {
@@ -967,4 +982,3 @@ input:checked + .slider:before {
 #annotdivspinnerdiv.hide {
     display: none;
 }
-

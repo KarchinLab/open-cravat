@@ -46,7 +46,7 @@
     Version: <span class="curverspan" style="font-family: monospace;"></span>
 </div>
 
-<div class = 'headerdiv' />
+<div class='headerdiv'>
     <div style='position: absolute; left: calc(50% - 65px); top: 2px;'>
         <img src='/submit/logo.png' class='logo' />
     </div>
@@ -118,17 +118,19 @@
                 <div class='chevrondiv'><div class='chevron chevron1to2'></div></div>
             </div>
   
-            <div id='packagechoosediv' class='container'>
-                <span class='divtitle'>Packages</span>
-                <div id="packagesdivspinnerdiv" class="spinnerdiv"><img src="/submit/nocache/broken_wheel.gif"></img></div> 
-                <div id="package-select-div"></div>
-                <div class='divbanner' style='background-color: #3175b0;'></div>
-            </div>  
-            <div id='annotchoosediv' class='container' onclick='annotatorSelected()'>
-                <span class='divtitle'>Annotations</span>
+            <div id='modchoose' class='container'>
+                <div id="modchoose-header">
+                    <div id='show-annotator' class='divtitle'>Annotations</div>
+                    <div id='show-package' class='divtitle' style="color:#96b6c6;">Packages</div>
+                </div>
                 <div id="annotdivspinnerdiv" class="spinnerdiv"><img src="/submit/nocache/broken_wheel.gif"></img></div>
-                <div id="annotator-group-select-div"></div>
-                <div id="annotator-select-div"></div>
+                <div id="annotchoosediv">
+                    <div id="annotator-group-select-div"></div>
+                    <div id="annotator-select-div"></div>
+                </div>
+                <div id='packagechoosediv' style="display:none;">
+                    <div id="package-select-div"></div>
+                </div> 
                 <div class='divbanner' style='background-color: #3175b0;'></div>
             </div>
             <div id='addtl-analysis-div' class='container' style='display:none'>
