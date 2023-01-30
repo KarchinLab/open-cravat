@@ -197,6 +197,14 @@ cravat_cmd_parser.add_argument(
     default=None,
     help="Leave temporary files after run is complete.",
 )
+# For GUI use only. Not shown in help text
+cravat_cmd_parser.add_argument(
+    "--keep-status",
+    dest="keep_status",
+    action="store_true",
+    default=None,
+    help=argparse.SUPPRESS,
+)
 cravat_cmd_parser.add_argument(
     "--writeadmindb",
     dest="writeadmindb",
@@ -2048,7 +2056,7 @@ class Cravat(object):
                 fn_end = fn.split(".")[-1]
                 if fn_end in ["var", "gen", "crv", "crx", "crg", "crs", "crm", "crt"]:
                     os.remove(os.path.join(self.output_dir, fn))
-                if fn.split(".")[-2:] == ["status", "json"]:
+                if not self.args.keep_status and fn.split(".")[-2:] == ["status", "json"]:
                     os.remove(os.path.join(self.output_dir, fn))
 
 

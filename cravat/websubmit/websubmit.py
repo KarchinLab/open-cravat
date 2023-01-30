@@ -299,7 +299,7 @@ async def resubmit (request):
     if note != '':
         run_args.append('--note')
         run_args.append(note)
-    run_args.append('--temp-files')
+    run_args.append('--keep-status')
     if cc_cohorts_path != '':
         run_args.extend(['--module-option',f'casecontrol.cohorts={cc_cohorts_path}'])
     global job_queue
@@ -432,7 +432,7 @@ async def submit (request):
     if servermode:
         run_args.append('--writeadmindb')
         run_args.extend(['--jobid', job_id])
-    run_args.append('--temp-files')
+    run_args.append('--keep-status')
     if cc_cohorts_path is not None:
         run_args.extend(['--module-option',f'casecontrol.cohorts={cc_cohorts_path}'])
     global job_queue
