@@ -517,7 +517,7 @@ def get_download_counts():
     return counts
 
 
-def get_install_deps(module_name, version=None, skip_installed=True):
+def get_install_deps(module_name, version=None, skip_installed=True, recursive_depth=0):
     mic.update_remote()
     # If input module version not provided, set to highest
     if version is None:
@@ -547,6 +547,15 @@ def get_install_deps(module_name, version=None, skip_installed=True):
         # Dont include if no matching version exists
         if highest_matching is not None:
             deps[req.name] = highest_matching
+            # Recursively get dependencies
+            if (recursive_depth < 3):
+                deps = dict(get_install_deps(
+                                module_name=req.name, 
+                                version=highest_matching,
+                                skip_installed=skip_installed,
+                                recursive_depth=recursive_depth + 1
+                            ), **deps)
+
     return deps
 
 
