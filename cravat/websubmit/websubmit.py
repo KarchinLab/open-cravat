@@ -1193,8 +1193,8 @@ async def update_result_db (request):
     job_dir = await filerouter.job_dir(request, job_id)
     fns = find_files_by_ending(job_dir, '.sqlite')
     db_path = os.path.join(job_dir, fns[0])
-    cmd = ['oc', 'util', 'update-result', db_path]
-    p = await asyncio.create_subprocess_shell(' '.join(cmd))
+    cmd = ['util', 'update-result', db_path]
+    p = await asyncio.create_subprocess_exec('oc', *cmd)
     await p.wait()
     compatible_version, db_version, oc_version = cravat.util.is_compatible_version(db_path)
     if compatible_version:
