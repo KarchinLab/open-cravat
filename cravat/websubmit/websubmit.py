@@ -698,7 +698,7 @@ async def generate_report(request):
     job_id = request.match_info['job_id']
     report_type = request.match_info['report_type']
     job_db_path = await filerouter.job_db(request, job_id)
-    run_args = ['oc', 'report', job_db_path]
+    run_args = ['report', job_db_path]
     run_args.extend(['-t', report_type])
     if job_id not in report_generation_ps:
         report_generation_ps[job_id] = {}
@@ -707,7 +707,7 @@ async def generate_report(request):
     wf = open(tmp_flag_path, 'w')
     wf.write(report_type)
     wf.close()
-    p = await asyncio.create_subprocess_shell(' '.join(run_args), stderr=asyncio.subprocess.PIPE)
+    p = await asyncio.create_subprocess_exec('oc', *run_args, stderr=asyncio.subprocess.PIPE)
     out, err = await p.communicate()
     os.remove(tmp_flag_path)
     if report_type in report_generation_ps[job_id]:

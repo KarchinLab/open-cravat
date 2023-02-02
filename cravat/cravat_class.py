@@ -886,9 +886,6 @@ class Cravat(object):
 
     def download_url_input(self, input_no):
         ip = self.inputs[input_no]
-        if " " in ip:
-            print(f"Space is not allowed in input file paths ({ip})")
-            exit()
         if util.is_url(ip):
             import requests
             if not self.args.silent:
