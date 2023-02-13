@@ -75,14 +75,25 @@ function submit () {
     }
     var submitOpts = {
         annotators: [],
-        reports: []
+        reports: [],
+    	packages: ''
     }
-    var annotChecks = $('#annotator-select-div').find('input[type=checkbox][kind=module]');
-    for (var i = 0; i<annotChecks.length; i++){
-        var cb = annotChecks[i];
-        if (cb.checked) {
-            submitOpts.annotators.push(cb.value);
-        }
+    var allAnnotsDiv = document.getElementById('annotchoosediv');
+    if (allAnnotsDiv.style.display !== 'none') {
+	    var annotChecks = $('#annotator-select-div').find('input[type=checkbox][kind=module]');
+	    for (var i = 0; i<annotChecks.length; i++){
+	        var cb = annotChecks[i];
+	        if (cb.checked) {
+	            submitOpts.annotators.push(cb.value);
+	        }
+	    }
+    }
+    var allPackagesDiv = document.getElementById('packagechoosediv');
+    if (allPackagesDiv.style.display !== 'none') {
+    	var selPackage = document.getElementById('package-select-dropdown').value;
+    	if (selPackage !== 'none') {
+    		submitOpts.packages = selPackage;
+    	}
     }
     var reportChecks = $('#report-select-div')
                          .find('.checkbox-group-check');
@@ -1090,6 +1101,24 @@ function populateAnnotators () {
     });
 }
 
+function populatePackages () {
+    document.querySelector("#package-select-div").classList.remove("show")
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url:'/submit/packages',
+            type: 'GET',
+            success: function (data) {
+                document.querySelector("#package-select-div").classList.add("show")
+                GLOBALS.packages = data
+                setTimeout(function () {
+                    buildPackagesSelector();
+                    resolve();
+                }, 100);
+            }
+        })
+    });
+}
+
 function titleCase(str) {
     return str.replace(
       /\w\S*/g,
@@ -1120,6 +1149,7 @@ function buildAnnotatorGroupSelector () {
     tagsCollectedForSubmit.sort((a,b)=>{return tagMembership[b]-tagMembership[a]});
     var annotCheckDiv = document.getElementById('annotator-group-select-div');
     $(annotCheckDiv).empty();
+
     var annotCheckTitleDiv = getEl('div');
     addEl(annotCheckDiv, annotCheckTitleDiv);
     annotCheckTitleDiv.style.display = 'flex';
@@ -1251,6 +1281,53 @@ function buildAnnotatorGroupSelector () {
     });
 }
 
+function buildPackagesSelector () {
+    var packages = GLOBALS.packages;
+    var packageDiv = document.getElementById('package-select-div');
+    var space = getEl('br');
+    
+    var packageDropdown = getEl('select');
+    packageDropdown.id = 'package-select-dropdown';
+	var elnone= getEl('option');
+	elnone.textContent= 'None Selected';
+	elnone.value= 'none';
+	addEl(packageDropdown, elnone);
+
+    for (const [key, value] of Object.entries(packages)) {
+    	var packageKey = `${key}`
+  		var el= getEl('option');
+		el.textContent= packageKey.length > 35 ? packageKey.substring(0,35)+'...' : packageKey;
+		el.value= packageKey;
+		addEl(packageDropdown, el);
+  	}
+    var labelDiv = getEl('div');
+    labelDiv.innerText = 'Available Packages';
+    labelDiv.style['font-size'] = '1.2em';
+    labelDiv.style['font-weight'] = 'bold';
+    addEl(packageDiv, space);
+    addEl(packageDiv, labelDiv);
+    addEl(packageDiv, packageDropdown);
+    addEl(packageDiv, space);
+    document.querySelector('#show-package').addEventListener('click',event=>{
+        packageSelected();
+    })
+}
+
+function packageSelected() {
+    document.getElementById('annotchoosediv').style.display = 'none';
+    document.getElementById('show-annotator').style.color = '#96b6c6';
+    document.getElementById('packagechoosediv').style.display = '';
+    document.getElementById('show-package').style.color = '';
+
+}
+
+function annotatorSelected() {
+    document.getElementById('annotchoosediv').style.display = '';
+    document.getElementById('show-annotator').style.color = '';
+    document.getElementById('packagechoosediv').style.display = 'none';
+    document.getElementById('show-package').style.color = '#96b6c6';
+}
+
 function buildAnnotatorsSelector () {
     var annotCheckDiv = document.getElementById('annotator-select-div');
     var annotators = GLOBALS.annotators;
@@ -1299,6 +1376,9 @@ function buildAnnotatorsSelector () {
         })
     }
     buildCheckBoxGroup(checkDatas, annotCheckDiv);
+    document.querySelector('#show-annotator').addEventListener('click',event=>{
+        annotatorSelected();
+    })
 }
 
 function buildCheckBoxGroup (checkDatas, parentDiv) {

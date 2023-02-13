@@ -2,6 +2,7 @@ import os
 import webbrowser
 import multiprocessing
 import aiosqlite
+import sqlite3
 import urllib.parse
 import json
 import sys
@@ -16,6 +17,7 @@ from cravat.constants import base_smartfilters
 from aiohttp import web
 import time
 from concurrent.futures import ProcessPoolExecutor
+from cravat.cravat_util import jobtopackage
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -725,6 +727,80 @@ async def get_samples (request):
     await conn.close()
     return web.json_response(samples)
 
+async def jobpackage (request):
+    try:
+        queries = request.rel_url.query
+        job_id, dbpath = await get_jobid_dbpath(request)
+        packageName = queries['packagename']
+        db = sqlite3.connect(dbpath)
+        cursor = db.cursor()
+            
+        # check for overwrite setting
+        overwrite = True
+    
+        q = 'select colval from info where colkey = "_annotators"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        annots = r[0]
+            
+        annotators = []
+        for a in annots.split(','):
+            if a.startswith('extra_vcf_info') or a.startswith('original_input'):
+                continue
+            # Currently throwing away version number - preserve it??
+            annotators.append(a.split(':')[0]) 
+                
+         
+        reports = []
+        q = 'select colval from info where colkey = "_reports"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is not None:
+            for rep in r[0].split(','):
+                reports.append(rep)
+            
+            
+        filter = ""
+        q = 'select viewersetup from viewersetup where datatype = "filter" and name = "quicksave-name-internal-use"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is not None:
+            filter = r[0]
+    
+        viewer = ""
+        q = 'select viewersetup from viewersetup where datatype = "layout" and name = "quicksave-name-internal-use"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is not None:
+            viewer = r[0]
+               
+        name = packageName
+        package_conf = {}
+        package_conf['type'] = 'package'
+        package_conf['description'] = 'Package ' + name + " created from user job with --saveaspackage"
+        package_conf['title'] = name
+        package_conf['version'] = '1.0'
+        package_conf['requires'] = annotators.copy()
+            
+        run = {}
+        run['annotators'] = annotators.copy()
+        run['reports'] = reports
+        if filter != "":
+            run['filter'] = filter 
+        if viewer != "":
+            run['viewer'] = viewer
+            
+        package_conf['run'] = run
+           
+        au.create_package(name, package_conf, overwrite)
+            
+        print("Successfully created package " + name + ".  Package can now be used to run jobs or published for other users.")        
+    
+    except (Exception, ValueError) as e:
+        print("Error - " + str(e))   
+    content = 'saved'
+    return web.json_response(content)
+
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
 routes.append(['GET', '/result/service/getsummarywidgetnames', get_summary_widget_names])
@@ -749,4 +825,5 @@ routes.append(['GET', '/result/service/deletefiltersetting', delete_filter_setti
 routes.append(['GET', '/result/service/smartfilters', load_smartfilters])
 routes.append(['GET', '/result/service/samples', get_samples])
 routes.append(['GET', '/webapps/{module}/widgets/{widget}', serve_webapp_runwidget])
+routes.append(['GET', '/result/service/jobpackage', jobpackage])
 
