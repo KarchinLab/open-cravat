@@ -76,3 +76,6 @@ var smartFilters = {};
 var showFilterTabContent = false;
 
 var lastUsedFilterName = null;
+
+var servermode = false;
+var adminMode = false;

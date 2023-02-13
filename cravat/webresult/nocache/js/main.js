@@ -1119,6 +1119,7 @@ function selectTab (tabName) {
 
 function webresult_run () {
 	getPackages();
+    getServermode();
     var urlParams = new URLSearchParams(window.location.search);
     username = urlParams.get('username');
     jobId = urlParams.get('job_id');
@@ -1179,4 +1180,21 @@ function webresult_run () {
         }
     });
     checkConnection();
+}
+
+function getServermode () {
+    fetch('/submit/servermode').then(response=>response.json())
+    .then(response=>{
+        servermode = response['servermode'];
+        if (servermode) {
+            fetch('/server/checklogged').then(response=>response.json())
+            .then(response=>{
+                console.log(response);
+                adminMode = response['admin'];
+                if (! adminMode) {
+                    document.querySelector('#save-pkg-btn').style.display = 'none';
+                }
+            })
+        }
+    })
 }
