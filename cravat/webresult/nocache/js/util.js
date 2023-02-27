@@ -522,7 +522,10 @@ function applyTableSetting (level) {
 						}
 					}
 				}
-                newColModel[i].colModel = newColGroupColModel;
+				//Need to check if columns are there in this job result.  In special case when applying package settings to new data files - some column groups may not be present (like vcf info)
+				if (newColModel[i] != undefined) {
+					newColModel[i].colModel = newColGroupColModel;
+				}
 			}
 		}
 	}
