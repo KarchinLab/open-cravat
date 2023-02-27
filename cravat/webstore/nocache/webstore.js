@@ -892,40 +892,87 @@ function onClickModuleTileAbortButton(evt) {
     });
 }
 
-function onClickModuleTileInstallButton(evt) {
-    var button = evt.target;
-    var moduleName = button.getAttribute('module');
-    var installSize = remoteModuleInfo[moduleName].size;
-    writeInstallationMsg(getTimestamp() + " Installing " + moduleName)
-    $.ajax({
-        url: '/store/freemodulesspace',
-        ajax: true,
-        success: function(response) {
-            var freeSpace = response;
-            var noSpace = false;
-            if (installSize > freeSpace) {
-                noSpace = true;
-            }
+function prettyBytes(num, precision = 3, addSpace = true) {
+    const UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    if (Math.abs(num) < 1) return num + (addSpace ? ' ' : '') + UNITS[0];
+    const exponent = Math.min(Math.floor(Math.log10(num < 0 ? -num : num) / 3), UNITS.length - 1);
+    const n = Number(((num < 0 ? -num : num) / 1000 ** exponent).toPrecision(precision));
+    return (num < 0 ? '-' : '') + n + (addSpace ? ' ' : '') + UNITS[exponent];
+};
+
+function onClickModuleInstallButton(evt) {
+    const button = evt.target;
+    const moduleName = button.getAttribute('module');
+    const doInstall = () => {
+        queueInstall(moduleName);
+        const storeDetailDiv = document.querySelector('#moduledetaildiv_store')
+        if (storeDetailDiv !== null) storeDetailDiv.style.display = 'none';
+        if (installQueue.length == 0) {
+            setModuleTileAbortButton(moduleName);
+        } else {
+            setModuleTileUnqueueButton(moduleName);
+        }
+        writeInstallationMsg(getTimestamp() + " Installing " + moduleName)
+    }
+    const installConfirmLimit = 1000**3;
+    const preflightRequests = Promise.all([
+        fetch('/store/freemodulesspace'),
+        fetch('/store/moduledependencies?'+new URLSearchParams([
+            ['module', moduleName]
+        ]))
+    ])
+    preflightRequests.then(resps=>Promise.all(resps.map(r=>r.json())))
+    .then(values=>{
+        const [freeSpace, deps] = values;
+        const neededSpace = Object.keys(deps).reduce(
+            (a, depName) => a + remoteModuleInfo[depName].size,
+            remoteModuleInfo[moduleName].size
+        );
+        const moduleSizeSpan = (moduleName, moduleSize) => {
+            return addEl(getEl('span'), getTn(`${moduleName}: ${prettyBytes(moduleSize)}`))
+        };
+        const noSpace = neededSpace > freeSpace;
+        const aboveConfirmSize = neededSpace > installConfirmLimit
+        if (noSpace || aboveConfirmSize) {
+            const mdiv = getEl('div');
+            var topSpan;
+            var botSpan;
             if (noSpace) {
-                var mdiv = getEl('div');
-                var span = getEl('span');
-                span.textContent = 'Not enough space for installing the module!';
-                addEl(mdiv, span);
-                addEl(mdiv, getEl('br'));
-                addEl(mdiv, getEl('br'));
-                var justOk = true;
-                showYesNoDialog(mdiv, null, noSpace, justOk);
-                return;
+                topSpan = addEl(getEl('span'), getTn(
+                    `Not enough disk space. ${prettyBytes(neededSpace)} required, ${prettyBytes(freeSpace)} available.`
+                ));
+                botSpan = addEl(getEl('span'), getTn(`Free ${prettyBytes(neededSpace-freeSpace)} install.`));
             } else {
-                queueInstall(moduleName);
-                if (installQueue.length == 0) {
-                    setModuleTileAbortButton(moduleName);
-                } else {
-                    setModuleTileUnqueueButton(moduleName);
+                topSpan = addEl(getEl('span'), getTn(
+                    `Installation requires ${prettyBytes(neededSpace)}.`
+                ));
+                botSpan = addEl(getEl('span'), getTn('Install?'));
+            }
+            addEl(mdiv, topSpan);
+            if (Object.keys(deps).length > 0) {
+                addEl(mdiv, getEl('br'));
+                addEl(mdiv, getEl('br'));
+                addEl(mdiv, addEl(getEl('span'), getTn('Installing:')));
+                addEl(mdiv, getEl('br'));
+                addEl(mdiv, moduleSizeSpan(moduleName, remoteModuleInfo[moduleName].size));
+                for (let depName in deps) {
+                    addEl(mdiv, getEl('br'));
+                    addEl(mdiv, moduleSizeSpan(depName, remoteModuleInfo[depName].size));
                 }
             }
-        },
-    });
+            addEl(mdiv, getEl('br'));
+            addEl(mdiv, getEl('br'));
+            addEl(mdiv, botSpan);
+            addEl(mdiv, getEl('br'));
+            showYesNoDialog(mdiv, userConfirm=>{
+                if (userConfirm) {
+                    doInstall();
+                }
+            }, noSpace, noSpace);
+        } else {
+            doInstall();
+        }
+    })
 }
 
 function setModuleTileUnqueueButton(moduleName) {
@@ -1033,7 +1080,7 @@ function getModuleTileInstallButton(moduleName) {
     button.classList.add('modulepanel-install-button');
     button.textContent = '\xa0INSTALL';
     button.setAttribute('module', moduleName);
-    button.addEventListener('click', onClickModuleTileInstallButton);
+    button.addEventListener('click', onClickModuleInstallButton);
     addEl(div, button);
     return div;
 }
@@ -1044,7 +1091,7 @@ function getModuleTileAbortButton(moduleName) {
     button.classList.add('modulepanel-stopinstall-button');
     button.textContent = 'Cancel download';
     button.setAttribute('module', moduleName);
-    button.removeEventListener('click', onClickModuleTileInstallButton);
+    button.removeEventListener('click', onClickModuleInstallButton);
     button.addEventListener('click', onClickModuleTileAbortButton);
     return button;
 }
@@ -1630,51 +1677,6 @@ function getModuleDetailUpdateButton(moduleName) {
     return button;
 }
 
-function onClickModuleDetailInstallButton(evt) {
-    $.ajax({
-        url: '/store/freemodulesspace',
-        ajax: true,
-        success: function(response) {
-            var freeSpace = response;
-            var btn = evt.target;
-            var btnModuleName = btn.getAttribute('module');
-            var installSize = remoteModuleInfo[btnModuleName].size;
-            var noSpace = false;
-            if (installSize > freeSpace) {
-                noSpace = true;
-            }
-            if (noSpace) {
-                var mdiv = getEl('div');
-                var span = getEl('span');
-                span.textContent = 'Not enough space for installing the module!';
-                addEl(mdiv, span);
-                addEl(mdiv, getEl('br'));
-                addEl(mdiv, getEl('br'));
-                var justOk = true;
-                showYesNoDialog(mdiv, null, noSpace, justOk);
-                return;
-            } else {
-                var buttonText = null;
-                if (installQueue.length == 0) {
-                    buttonText = 'Installing...';
-                } else {
-                    buttonText = 'Queued';
-                }
-                queueInstall(btnModuleName);
-                btn.textContent = buttonText;
-                btn.style.color = 'red';
-                document.getElementById('moduledetaildiv_store').style.display = 'none';
-                var moduleName = btn.getAttribute('module');
-                if (installQueue.length == 0) {
-                    setModuleTileAbortButton(moduleName);
-                } else {
-                    setModuleTileUnqueueButton(moduleName);
-                }
-            }
-        },
-    });
-}
-
 function getTimestamp() {
     var d = new Date()
     return "[" + d.getFullYear() + ":" + ("" + d.getMonth()).padStart(2, "0") + ":" + ("" + d.getDate()).padStart(2, "0") + " " + d.getHours() + ":" + ("" + d.getMinutes()).padStart(2, "0") + ":" + ("" + d.getSeconds()).padStart(2, "0") + "]"
@@ -1691,15 +1693,6 @@ function writeInstallationMsg(msg) {
     }
 }
 
-function onClickModuleDetailUninstallButton(evt) {
-    var btn = evt.target;
-    btn.textContent = 'Uninstalling...';
-    btn.style.color = 'red';
-    var moduleName = btn.getAttribute("module");
-    uninstallModule(moduleName)
-    document.getElementById('moduledetaildiv_store').style.display = 'none';
-}
-
 function getModuleDetailInstallButton(moduleName, td, buttonDiv) {
     var button = getEl('button');
     button.id = 'installbutton';
@@ -1708,11 +1701,15 @@ function getModuleDetailInstallButton(moduleName, td, buttonDiv) {
     if (localInfo != undefined && localInfo.exists) {
         buttonText = 'Uninstall';
         button.style.backgroundColor = '#ffd3be';
-        button.addEventListener('click', onClickModuleDetailUninstallButton);
+        button.addEventListener('click', ()=>{
+            uninstallModule(moduleName);
+            const storeDetailDiv = document.querySelector('#moduledetaildiv_store');
+            if (storeDetailDiv !== null) storeDetailDiv.style.display = 'none';
+        });
     } else {
         buttonText = 'Install';
         button.style.backgroundColor = '#beeaff';
-        button.addEventListener('click', onClickModuleDetailInstallButton);
+        button.addEventListener('click', onClickModuleInstallButton);
     }
     button.textContent = buttonText;
     button.style.padding = '8px';
@@ -2263,21 +2260,6 @@ function queueInstall(moduleName, version) {
             }
         }
     );
-}
-
-function installModule(moduleName) {
-    var version = remoteModuleInfo[moduleName]['latest_version'];
-    $.ajax({
-        type: 'GET',
-        url: '/store/install',
-        data: {
-            name: moduleName,
-            version: version
-        },
-        success: function(response) {
-            getLocal();
-        }
-    });
 }
 
 function uninstallModule(moduleName) {

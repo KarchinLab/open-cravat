@@ -394,6 +394,14 @@ async def get_local_module_logo (request):
     logo_path = os.path.join(module_dir, 'logo.png')
     return web.FileResponse(logo_path)
 
+async def get_module_dependencies (request):
+    queries = request.rel_url.query
+    module = queries.get('module')
+    if module is None:
+        return web.Response(status=400)
+    deps = au.get_install_deps(module)
+    return web.json_response(deps)
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/installwidgetsformodule', install_widgets_for_module])
@@ -415,3 +423,4 @@ routes.append(['GET', '/store/tagdesc', get_tag_desc])
 routes.append(['GET', '/store/updateremote', update_remote])
 routes.append(['GET', '/store/localasremote', get_remote_manifest_from_local])
 routes.append(['GET', '/store/locallogo', get_local_module_logo])
+routes.append(['GET', '/store/moduledependencies', get_module_dependencies])
