@@ -914,7 +914,7 @@ function onClickModuleInstallButton(evt) {
         }
         writeInstallationMsg(getTimestamp() + " Installing " + moduleName)
     }
-    const installConfirmLimit = 1000**3;
+    const installConfirmLimit = 5*1000**3;
     const preflightRequests = Promise.all([
         fetch('/store/freemodulesspace'),
         fetch('/store/moduledependencies?'+new URLSearchParams([
