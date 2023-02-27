@@ -52,7 +52,7 @@ code {
     background-color: #94d1eb;
     height: 20px;
     border-radius: 2px 2px 0px 0px;
-    border: 1px solid #939393
+    border: 1px solid #939393;
     border-bottom: 0px;
     margin-left: 2px;
     font-family: roboto-medium;
@@ -138,6 +138,10 @@ code {
     border-radius: 4px 4px 0px 0px;
 }
 
+#modchoose .divbanner {
+    background-color: transparent;
+}
+
 button {
     font-family: 'roboto-bold';
     background-color: #fbfbfb;
@@ -203,9 +207,6 @@ button {
     font-weight: bold;
     border-bottom: 1px solid #cccccc;
     /*box-shadow: 0px 0px 10px 0px #c7c7c7;*/
-}
-
-#annotator-select-div span {
 }
 
 .logo {
@@ -702,6 +703,7 @@ input:checked + .slider:before {
     text-align: left;
     flex-grow: 1;
     cursor: pointer;
+    /* width: 50%; */
 }
 
 #show-annotator:hover {
@@ -709,9 +711,10 @@ input:checked + .slider:before {
 }
 
 #show-package {
-    text-align: right;
+    text-align: center;
     flex-grow: 1;
     cursor: pointer;
+    /* width: 50%; */
 }
 
 #show-package:hover {
@@ -982,3 +985,17 @@ input:checked + .slider:before {
 #annotdivspinnerdiv.hide {
     display: none;
 }
+
+.divbanner-split {
+    /* min-width: 50%; */
+    flex-grow: 1;
+    /* border-radius: 4px 4px 0px 0px; */
+}
+
+/* #divbanner-annot {
+    background-color: green;
+}
+
+#divbanner-pkg {
+    background-color: red;
+} */

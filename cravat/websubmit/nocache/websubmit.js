@@ -1284,6 +1284,16 @@ function buildAnnotatorGroupSelector () {
 function buildPackagesSelector () {
     var packages = GLOBALS.packages;
     var packageDiv = document.getElementById('package-select-div');
+    if (packages && Object.keys(packages).length===0) {
+        packageDiv.style.display = 'none';
+        document.querySelector('#show-package').style.display = 'none';
+        document.querySelector('#divbanner-annot').style.display = 'none'
+    } else {
+        packageDiv.style.display = '';
+        document.querySelector('#show-package').style.display = '';
+        document.querySelector('#divbanner-annot').style.display = ''
+    }
+    $(packageDiv).empty();
     var space = getEl('br');
     
     var packageDropdown = getEl('select');
@@ -1296,7 +1306,7 @@ function buildPackagesSelector () {
     for (const [key, value] of Object.entries(packages)) {
     	var packageKey = `${key}`
   		var el= getEl('option');
-		el.textContent= packageKey.length > 35 ? packageKey.substring(0,35)+'...' : packageKey;
+		el.textContent = value.title;
 		el.value= packageKey;
 		addEl(packageDropdown, el);
   	}
@@ -1315,17 +1325,16 @@ function buildPackagesSelector () {
 
 function packageSelected() {
     document.getElementById('annotchoosediv').style.display = 'none';
-    document.getElementById('show-annotator').style.color = '#96b6c6';
+    document.getElementById('divbanner-annot').style['background-color'] = '#3175b0';
     document.getElementById('packagechoosediv').style.display = '';
-    document.getElementById('show-package').style.color = '';
-
+    document.getElementById('divbanner-pkg').style['background-color'] = 'transparent';
 }
 
 function annotatorSelected() {
     document.getElementById('annotchoosediv').style.display = '';
-    document.getElementById('show-annotator').style.color = '';
+    document.getElementById('divbanner-annot').style['background-color'] = 'transparent';
     document.getElementById('packagechoosediv').style.display = 'none';
-    document.getElementById('show-package').style.color = '#96b6c6';
+    document.getElementById('divbanner-pkg').style['background-color'] = '#3175b0';
 }
 
 function buildAnnotatorsSelector () {

@@ -121,7 +121,7 @@
             <div id='modchoose' class='container'>
                 <div id="modchoose-header">
                     <div id='show-annotator' class='divtitle'>Annotations</div>
-                    <div id='show-package' class='divtitle' style="color:#96b6c6;">Packages</div>
+                    <div id='show-package' class='divtitle' style="display:none;">Packages</div>
                 </div>
                 <div id="annotdivspinnerdiv" class="spinnerdiv"><img src="/submit/nocache/broken_wheel.gif"></img></div>
                 <div id="annotchoosediv">
@@ -131,7 +131,10 @@
                 <div id='packagechoosediv' style="display:none;">
                     <div id="package-select-div"></div>
                 </div> 
-                <div class='divbanner' style='background-color: #3175b0;'></div>
+                <div class='divbanner' style="display:flex;">
+                    <div id="divbanner-annot" class="divbanner-split" style="display:none;"></div>
+                    <div id="divbanner-pkg" class="divbanner-split" style="background-color:#3175b0"></div>
+                </div>
             </div>
             <div id='addtl-analysis-div' class='container' style='display:none'>
                 <span class='divtitle'>Additional Analysis</span>
