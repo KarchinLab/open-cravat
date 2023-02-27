@@ -748,6 +748,9 @@ function getRemote() {
                 if (!('tags' in moduleInfo) || moduleInfo['tags'] == null) {
                     moduleInfo.tags = [];
                 }
+                if (moduleInfo.type === 'package') {
+                    moduleInfo.tags.push('package');
+                }
             }
             var modules = Object.keys(remoteModuleInfo);
             for (var i = 0; i < modules.length; i++) {
