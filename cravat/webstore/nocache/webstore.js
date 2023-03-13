@@ -925,7 +925,13 @@ function onClickModuleInstallButton(evt) {
     .then(values=>{
         const [freeSpace, deps] = values;
         const neededSpace = Object.keys(deps).reduce(
-            (a, depName) => a + remoteModuleInfo[depName].size,
+            (a, depName) => {
+                if (remoteModuleInfo.hasOwnProperty(depName)) {
+                    return a + remoteModuleInfo[depName].size;
+                } else {
+                    return a;
+                }
+            },
             remoteModuleInfo[moduleName].size
         );
         const moduleSizeSpan = (moduleName, moduleSize) => {
@@ -956,8 +962,10 @@ function onClickModuleInstallButton(evt) {
                 addEl(mdiv, getEl('br'));
                 addEl(mdiv, moduleSizeSpan(moduleName, remoteModuleInfo[moduleName].size));
                 for (let depName in deps) {
-                    addEl(mdiv, getEl('br'));
-                    addEl(mdiv, moduleSizeSpan(depName, remoteModuleInfo[depName].size));
+                    if (remoteModuleInfo.hasOwnProperty(depName)) {
+                        addEl(mdiv, getEl('br'));
+                        addEl(mdiv, moduleSizeSpan(depName, remoteModuleInfo[depName].size));
+                    }
                 }
             }
             addEl(mdiv, getEl('br'));
