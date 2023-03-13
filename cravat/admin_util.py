@@ -1690,4 +1690,5 @@ def create_package(name, pkg_details, overwrite):
     open(os.path.join(pkg_path, name + ".py"), 'a').close()
     with open(os.path.join(pkg_path, name + ".yml"), "w") as wf:
         wf.write(yaml.dump(pkg_details, default_flow_style=False))
+    mic.update_local()
 
