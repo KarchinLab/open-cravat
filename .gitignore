@@ -15,3 +15,4 @@ cravat/modules/**
 .DS*
 __dummy__*
 /cravat/jobs
+build
