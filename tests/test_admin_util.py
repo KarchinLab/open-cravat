@@ -20,6 +20,9 @@ circle_back = {"name": "circle_back", "requires": ["circular_dependencies"]}
 multi_version_dependencies = {"name": "multi", "requires": ["multi_a", "multi_b"]}
 multi_a = {"name": "multi_a", "requires": ["a>1.0"]}
 multi_b = {"name": "multi_b", "requires": ["a<1.2"]}
+pin_a = {"name": "pin_a", "requires":["pin_b==1.0","pin_c"]}
+pin_b = {"name": "pin_b", "requires":["pin_c==1.1"]}
+pin_c = {"name": "pin_c", "requires":[]}
 
 
 def mic_get_remote_info_mock(*args, **kwargs):
@@ -51,6 +54,12 @@ def mic_get_remote_info_mock(*args, **kwargs):
             return multi_a
         case 'multi_b':
             return multi_b
+        case 'pin_a':
+            return pin_a
+        case 'pin_b':
+            return pin_b
+        case 'pin_c':
+            return pin_c
         case _:
             return None
 
@@ -122,6 +131,18 @@ class TestAdminUtil(unittest.TestCase):
                 "a": "1.1"
             }, deps)
 
+    @patch('cravat.admin_util.get_remote_module_info')
+    @patch('cravat.admin_util.mic')
+    def test_get_import_deps_pinned_version(self, mock_mic, mock_get_remote_module_info):
+        mock_mic.update_remote()
+        mock_mic.get_remote_config.side_effect = mic_get_remote_info_mock
+        mock_get_remote_module_info.return_value = remote_module_info_three_versions
+        deps = get_install_deps(module_name='pin_a')
+        self.assertEqual(
+            {
+                'pin_b': '1.0',
+                'pin_c': '1.1',
+            }, deps)
 
 if __name__ == '__main__':
     unittest.main()
