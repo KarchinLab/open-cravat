@@ -1311,11 +1311,20 @@ function buildPackagesSelector () {
 		addEl(packageDropdown, el);
   	}
     var labelDiv = getEl('div');
-    labelDiv.innerText = 'Available Packages';
+    labelDiv.innerText = 'Available Packages (beta)';
     labelDiv.style['font-size'] = '1.2em';
     labelDiv.style['font-weight'] = 'bold';
     addEl(packageDiv, space);
     addEl(packageDiv, labelDiv);
+    const pkgHelpLink = getEl('a');
+    pkgHelpLink.href = 'https://open-cravat.readthedocs.io/en/latest/Package.html';
+    pkgHelpLink.target = '_blank';
+    addEl(labelDiv, pkgHelpLink);
+    const pkgHelpImg = getEl('img');
+    pkgHelpImg.src = '/submit/help.png';
+    pkgHelpImg.classList.add('help-img');
+    pkgHelpImg.title = 'Packages are groups of annotators, reports, and filters run together. Click for more information.';
+    addEl(pkgHelpLink, pkgHelpImg);
     addEl(packageDiv, packageDropdown);
     addEl(packageDiv, space);
     document.querySelector('#show-package').addEventListener('click',event=>{
@@ -2222,8 +2231,8 @@ function populateCaseControl (outer) {
     let helpIcon = $(getEl('a'))
         .attr('id','case-control-help')
         .attr('target','_blank')
-        .attr('href','https://github.com/KarchinLab/open-cravat/wiki/Case-Control')
-        .append($(getEl('img')).attr('src','../help.png').attr('id','case-control-help-img'));
+        .attr('href','https://open-cravat.readthedocs.io/en/latest/Case-Control.html')
+        .append($(getEl('img')).attr('src','../help.png').attr('class','help-img'));
     d1.append(helpIcon);
     let d2 = $(getEl('div'))
     wrapper.append(d2);
