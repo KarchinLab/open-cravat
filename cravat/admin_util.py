@@ -548,7 +548,6 @@ def get_install_deps(module_name, version=None, skip_installed=True):
     config = mic.get_remote_config(module_name, version=version)
     deps_to_check = config.get("requires", [])[:]
     checked = []
-    required_by = {}
     reqs_to_install = {}
     deps = {}
     while deps_to_check:
@@ -567,12 +566,10 @@ def get_install_deps(module_name, version=None, skip_installed=True):
 
         if req.name in reqs_to_install:
             # TODO: Add some logging about a duplicate dependency:
-            # print(f"Repeat dependency detected: [{req}], required by {','.join(required_by.get(req.name, []))}")
-            reqs_to_install[req.name].specs += req.specs
+            # print(f"Repeat dependency detected: [{req}]")
+            reqs_to_install[req.name] += [str(req.specifier)] if str(req.specifier) else []
         else:
-            reqs_to_install[req.name] = req
-
-        req = reqs_to_install[req.name]
+            reqs_to_install[req.name] = [str(req.specifier)] if str(req.specifier) else []
 
         # Select the highest matching version
         highest_matching = __get_highest_matching_version(req, rem_info.versions)
@@ -584,16 +581,14 @@ def get_install_deps(module_name, version=None, skip_installed=True):
 
         config = mic.get_remote_config(req.name, version=highest_matching)
         child_reqs = config.get("requires", [])[:]
-        for child in child_reqs:
-            if child not in required_by:
-                required_by[child] = []
-            required_by[child] += parent
         deps_to_check += child_reqs
 
     # convert the requirements list to the correct format
-    for name, req in reqs_to_install.items():
+    for name, spec_list in reqs_to_install.items():
         rem_info = get_remote_module_info(name)
-        version = __get_highest_matching_version(req, rem_info.versions)
+        full_req_string = f"{name}{','.join(spec_list)}"
+        r = pkg_resources.Requirement(full_req_string)
+        version = __get_highest_matching_version(r, rem_info.versions)
         if version is None:
             raise ValueError(f"Could not find appropriate version for module [{name}]")
         deps[name] = version

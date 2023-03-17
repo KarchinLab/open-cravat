@@ -20,9 +20,9 @@ circle_back = {"name": "circle_back", "requires": ["circular_dependencies"]}
 multi_version_dependencies = {"name": "multi", "requires": ["multi_a", "multi_b"]}
 multi_a = {"name": "multi_a", "requires": ["a>1.0"]}
 multi_b = {"name": "multi_b", "requires": ["a<1.2"]}
-pin_a = {"name": "pin_a", "requires":["pin_b==1.0","pin_c"]}
-pin_b = {"name": "pin_b", "requires":["pin_c==1.1"]}
-pin_c = {"name": "pin_c", "requires":[]}
+pin_a = {"name": "pin_a", "requires": ["pin_b==1.0", "pin_c"]}
+pin_b = {"name": "pin_b", "requires": ["pin_c==1.1"]}
+pin_c = {"name": "pin_c", "requires": []}
 
 
 def mic_get_remote_info_mock(*args, **kwargs):
@@ -100,7 +100,7 @@ class TestAdminUtil(unittest.TestCase):
 
         deps = get_install_deps(module_name="deep_dependencies", version="1.0")
         self.assertEqual({"w": "1.0", "x": "1.0", "y": "1.0",
-                         "z": "1.0", "a": "1.0"}, deps)
+                          "z": "1.0", "a": "1.0"}, deps)
 
     @patch('cravat.admin_util.get_remote_module_info')
     @patch('cravat.admin_util.mic')
@@ -113,7 +113,7 @@ class TestAdminUtil(unittest.TestCase):
         deps = get_install_deps(
             module_name="circular_dependencies", version="1.0")
         self.assertEqual({"circular_dependencies": "1.0",
-                         "circle_back": "1.0"}, deps)
+                          "circle_back": "1.0"}, deps)
 
     @patch('cravat.admin_util.get_remote_module_info')
     @patch('cravat.admin_util.mic')
@@ -143,6 +143,7 @@ class TestAdminUtil(unittest.TestCase):
                 'pin_b': '1.0',
                 'pin_c': '1.1',
             }, deps)
+
 
 if __name__ == '__main__':
     unittest.main()
