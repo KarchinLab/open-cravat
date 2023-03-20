@@ -853,6 +853,7 @@ function firstLoadData () {
 	}
 	loadWidgets();
 	setupTab('info');
+    setupTab('cohort');
 	loadFilterSetting(quickSaveName, afterLoadDefaultFilter, true);
 }
 
