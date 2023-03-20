@@ -998,6 +998,7 @@ class CravatReport:
     def update_reports_info(self):
         db = sqlite3.connect(self.dbpath)
         cur = db.cursor()
+        new_report = False
 
         q = 'select colval from info where colkey="_reports"'
         cur.execute(q)
@@ -1009,9 +1010,12 @@ class CravatReport:
         for rep in self.report_types:
             if not rep in reports:
                 reports.append(rep)
-        q = 'insert or replace into info values ("_reports", "{}")'.format(",".join(reports))
-        cur.execute(q)
-        db.commit()
+                new_report = True
+        
+        if new_report:        
+            q = 'insert or replace into info values ("_reports", "{}")'.format(",".join(reports))
+            cur.execute(q)
+            b.commit()
         db.close() 
 
 def clean_args(cmd_args):
