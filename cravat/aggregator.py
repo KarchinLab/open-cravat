@@ -437,9 +437,9 @@ class Aggregator(object):
         self.dbconn.commit()
 
     def _setup_io(self):
-        self.base_reader = CravatReader(self.base_fpath, encoding='utf-8')
+        self.base_reader = CravatReader(self.base_fpath)
         for annot_name in self.annotators:
-            self.readers[annot_name] = CravatReader(self.ipaths[annot_name], encoding='utf-8')
+            self.readers[annot_name] = CravatReader(self.ipaths[annot_name])
         self.db_fname = self.output_base_fname + ".sqlite"
         self.db_path = os.path.join(self.output_dir, self.db_fname)
         if self.delete and os.path.exists(self.db_path):

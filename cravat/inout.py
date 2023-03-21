@@ -38,7 +38,7 @@ class CravatFile(object):
 
 
 class CravatReader(CravatFile):
-    def __init__(self, path, seekpos=None, chunksize=None, encoding=None):
+    def __init__(self, path, seekpos=None, chunksize=None, encoding='utf-8'):
         super().__init__(path)
         self.seekpos = seekpos
         self.chunksize = chunksize
