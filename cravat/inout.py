@@ -38,11 +38,14 @@ class CravatFile(object):
 
 
 class CravatReader(CravatFile):
-    def __init__(self, path, seekpos=None, chunksize=None):
+    def __init__(self, path, seekpos=None, chunksize=None, encoding='utf-8'):
         super().__init__(path)
         self.seekpos = seekpos
         self.chunksize = chunksize
-        self.encoding = detect_encoding(self.path)
+        if encoding is None:
+            self.encoding = detect_encoding(self.path)
+        else:
+            self.encoding = encoding
         self.annotator_name = ""
         self.annotator_displayname = ""
         self.annotator_version = ""
