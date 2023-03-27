@@ -49,7 +49,7 @@ protocol = None
 http_only = None
 sc = None
 loop = None
-debug = False
+server_traceback = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -72,8 +72,8 @@ parser.add_argument(
     help="Force not to accept https connection",
 )
 parser.add_argument(
-    "--debug",
-    dest="debug",
+    "--server-traceback",
+    dest="server_traceback",
     action="store_true",
     default=False,
     help="Console echoes exceptions written to log file.",
@@ -100,8 +100,8 @@ def setup(args):
         headless = args.headless
         global servermode
         servermode = args.servermode
-        global debug
-        debug = args.debug
+        global server_traceback
+        server_traceback = args.server_traceback
         if servermode and importlib.util.find_spec("cravat_multiuser") is not None:
             try:
                 global cravat_multiuser
@@ -162,7 +162,7 @@ def setup(args):
             protocol = "http://"
     except Exception as e:
         logger.exception(e)
-        if debug:
+        if server_traceback:
             traceback.print_exc()
         logger.info("Exiting...")
         print(
@@ -245,7 +245,7 @@ def run(args):
         main(url=url, host=host, port=port)
     except Exception as e:
         logger.exception(e)
-        if debug:
+        if server_traceback:
             traceback.print_exc()
         logger.info("Exiting...")
         print(
@@ -299,7 +299,7 @@ def get_server():
         return server
     except Exception as e:
         logger.exception(e)
-        if debug:
+        if server_traceback:
             traceback.print_exc()
         logger.info("Exiting...")
         print(
@@ -382,7 +382,7 @@ async def middleware(request, handler):
     except Exception as e:
         logger.info("Exception occurred at request={}".format(request))
         logger.exception(e)
-        if debug:
+        if server_traceback:
             traceback.print_exc()
         return web.HTTPInternalServerError(
             text=json.dumps({"status": "error", "msg": str(e)})
@@ -598,7 +598,7 @@ def main(url=None, host=None, port=None):
                     await asyncio.sleep(interval)
             except Exception as e:
                 logger.exception(e)
-                if debug:
+                if server_traceback:
                     traceback.print_exc()
 
         if servermode and server_ready:
@@ -613,7 +613,7 @@ def main(url=None, host=None, port=None):
         loop.run_forever()
     except Exception as e:
         logger.exception(e)
-        if debug:
+        if server_traceback:
             traceback.print_exc()
         logger.info("Exiting...")
         print(

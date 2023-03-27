@@ -154,7 +154,7 @@ crv_def = [
         "width": 50,
         "filterable": False,
     },
-    {"name": "note", "title": "Note", "type": "string", "width": 50},
+    {"name": "note_variant", "title": "Variant Note", "type": "string", "width": 50},
 ]
 crv_idx = [["uid"]]
 crx_def = crv_def + [
@@ -221,7 +221,7 @@ crg_def = [
         "width": 70,
         "filterable": True,
     },
-    {"name": "note", "title": "Note", "type": "string", "width": 50},
+    {"name": "note_gene", "title": "Gene Note", "type": "string", "width": 50},
 ]
 crg_idx = [["hugo"]]
 crt_def = [

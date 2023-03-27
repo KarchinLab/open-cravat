@@ -1107,6 +1107,11 @@ function afterGetResultLevels () {
             usedAnnotators['gene'] = [];
             for (var i = 0; i < cols.length; i++) {
                 var col = cols[i];
+                if (col.name === 'base') {
+                    for (let subCol of col.colModel) {
+                        if (subCol.col === 'base__note_gene') {filterCols[0].colModel.push(subCol)}
+                      }
+                }
                 var annotator = col.colModel[0].colgroupkey;
                 usedAnnotators['gene'].push(annotator);
                 usedAnnotators['info'].push(annotator);
