@@ -1365,6 +1365,7 @@ function buildCohortSavedSelection(cohortSets, shownSet) {
     pickSetDefault.selected = true;
     pickSetDefault.disabled = true;
     pickSetDefault.hidden = true;
+    pickSetDefault.value = '';
     const options = []
     for (let setName in cohortSets) {
         let opt = getEl('option');
@@ -1620,6 +1621,37 @@ function populateCohortWidgetDiv () {
 	if (reuseWidgets != true) {
 		applyWidgetSetting('cohort');
 	}
+}
+
+function saveCohortSetting() {
+    return new Promise((resolve, reject) =>{
+        const selCohorts = getSelectedCohorts();
+        const setSelector = document.querySelector('#cohort-pick-set');
+        const selSet = setSelector.value.length !== 0 ? setSelector.value : null;
+        const data = new FormData();
+        if (jobId !== null) data.set('job_id',jobId);
+        if (dbPath !== null) data.set('dbpath',dbPath);
+        data.set('name', quickSaveName)
+        data.set('setting', JSON.stringify({
+            selCohorts: selCohorts,
+            selSet: selSet,
+        }))
+        // const 
+        fetch('/result/service/cohortsetting', {
+            method: 'POST',
+            body: data
+        }).then(()=>{resolve()});
+    })
+}
+
+function loadCohortSetting() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('name', quickSaveName)
+    fetch(`/result/service/cohortsetting?${params.toString()}`)
+        .then((response) => response.json())
+        .then((data) => {
+            console.log(data);
+        })
 }
 
 function changeTableDetailMaxButtonText () {
