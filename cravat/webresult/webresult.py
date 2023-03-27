@@ -841,6 +841,39 @@ async def make_cohort_set_table(dbpath):
     await conn.commit()
     await conn.close()
 
+async def save_cohort_setting(request):
+    _, dbpath = await get_jobid_dbpath(request)
+    post = await request.post()
+    setting = post['setting']
+    name = post['name']
+    conn = await get_db_conn(dbpath)
+    cursor = await conn.cursor()
+    table = 'viewersetup'
+    r = await table_exists(cursor, table)
+    if r == False:
+        q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
+        await cursor.execute(q)
+    q = f'replace into {table} (datatype, name, viewersetup) values ("cohort", "{name}", ?);'
+    await cursor.execute(q, (setting,))
+    await cursor.close()
+    await conn.commit()
+    await conn.close()
+    return web.Response()
+
+async def get_cohort_setting(request):
+    _, dbpath = await get_jobid_dbpath(request)
+    queries = request.rel_url.query
+    name = queries.get('name')
+    q = 'select viewersetup from viewersetup where datatype="cohort" and name=?'
+    conn = await get_db_conn(dbpath)
+    cursor = await conn.cursor()
+    await cursor.execute(q, (name,))
+    r = await cursor.fetchone()
+    await cursor.close()
+    await conn.close()
+    return web.json_response(json.loads(r[0]))
+    
+
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
 routes.append(['GET', '/result/service/getsummarywidgetnames', get_summary_widget_names])
@@ -870,3 +903,5 @@ routes.append(['POST', '/result/service/cohorts', post_cohorts])
 routes.append(['POST', '/result/service/cohortcompare', run_cohort_compare])
 routes.append(['POST','/result/service/savecohortset', save_cohort_set])
 routes.append(['GET','/result/service/cohortsets', get_cohort_sets])
+routes.append(['POST','/result/service/cohortsetting', save_cohort_setting])
+routes.append(['GET','/result/service/cohortsetting', get_cohort_setting])
