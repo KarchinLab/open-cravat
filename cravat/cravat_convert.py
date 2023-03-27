@@ -137,6 +137,12 @@ class MasterCravatConverter(object):
             action="store_true",
             help=argparse.SUPPRESS,
         )
+        parser.add_argument(
+            '--no-sample',
+            dest='no_sample',
+            action='store_true',
+            help='Skip processing of sample information and sample-variant associations',
+        )
         parsed_args = cravat.util.get_args(parser, inargs, inkwargs)
         self.input_format = None
         if parsed_args.format:
@@ -198,6 +204,7 @@ class MasterCravatConverter(object):
             self.status_writer = parsed_args.status_writer
         else:
             self.status_writer = None
+        self.process_samples = not parsed_args.no_sample
 
     def open_input_file(self, input_path):
         encoding = detect_encoding(input_path)
@@ -537,7 +544,8 @@ class MasterCravatConverter(object):
                                         }
                                     )
                                     UIDMap.append(UID)
-                            self.crs_writer.write_data(wdict)
+                            if self.process_samples:
+                                self.crs_writer.write_data(wdict)
                     else:
                         raise ExpectedException("No valid alternate allele was found in any samples.")
                 except Exception as e:
@@ -667,7 +675,8 @@ class MasterCravatConverter(object):
         #    f.close()
         self.crv_writer.close()
         self.crm_writer.close()
-        self.crs_writer.close()
+        if self.process_samples:
+            self.crs_writer.close()
 
     def end(self):
         pass
