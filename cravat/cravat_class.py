@@ -291,8 +291,8 @@ cravat_cmd_parser.add_argument("--md", default=None, help="Specify the root dire
 cravat_cmd_parser.add_argument("-m", dest="mapper_name", nargs="+", default=[], help="Mapper module name or mapper module directory")
 cravat_cmd_parser.add_argument("-p", nargs="+", dest="postaggregators", default=[], help="Postaggregators to run. Additionally, tagsampler, casecontrol, varmeta, and vcfinfo will automatically run depending on conditions.")
 cravat_cmd_parser.add_argument(
-    '--no-sample',
-    dest='no_sample',
+    '--vcfanno',
+    dest='vcfanno',
     action='store_true',
     default=None,
     help='Skip processing of sample information and sample-variant associations',
@@ -1275,7 +1275,7 @@ class Cravat(object):
             if not self.args.silent:
                 print(" ".join([str(k) + "=" + str(v) for k, v in arg_dict.items()]))
         arg_dict["status_writer"] = self.status_writer
-        arg_dict['no_sample'] = self.args.no_sample
+        arg_dict['vcfanno'] = self.args.vcfanno
         converter_class = util.load_class(module.script_path, "MasterCravatConverter")
         converter = converter_class(arg_dict)
         self.numinput, self.converter_format = converter.run()

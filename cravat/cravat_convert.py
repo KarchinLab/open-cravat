@@ -138,8 +138,8 @@ class MasterCravatConverter(object):
             help=argparse.SUPPRESS,
         )
         parser.add_argument(
-            '--no-sample',
-            dest='no_sample',
+            '--vcfanno',
+            dest='vcfanno',
             action='store_true',
             help='Skip processing of sample information and sample-variant associations',
         )
@@ -204,7 +204,12 @@ class MasterCravatConverter(object):
             self.status_writer = parsed_args.status_writer
         else:
             self.status_writer = None
-        self.process_samples = not parsed_args.no_sample
+        self.vcfanno = parsed_args.vcfanno
+        self.process_samples = not self.vcfanno
+        if self.vcfanno:
+            self.conf['vcf-converter'] = {'vcfanno':True}
+            self.input_format = 'vcf'
+            self.unique_variants = True
 
     def open_input_file(self, input_path):
         encoding = detect_encoding(input_path)
@@ -404,10 +409,11 @@ class MasterCravatConverter(object):
         """ Convert input file to a .crv file using the primary converter."""
         self.setup()
         start_time = time.time()
-        self.status_writer.queue_status_update(
-            "status",
-            "Started {} ({})".format("Converter", self.primary_converter.format_name),
-        )
+        if self.status_writer is not None:
+            self.status_writer.queue_status_update(
+                "status",
+                "Started {} ({})".format("Converter", self.primary_converter.format_name),
+            )
         last_status_update_time = time.time()
         multiple_files = len(self.input_paths) > 1
         fileno = 0
@@ -524,7 +530,8 @@ class MasterCravatConverter(object):
                                     #if self.do_liftover:
                                     #if wdict["pos"] != prelift_wdict["pos"] or wdict["ref_base"] != prelift_wdict["ref_base"] or wdict["alt_base"] != prelift_wdict["alt_base"]:
                                     prelift_wdict["uid"] = UID
-                                    self.crl_writer.write_data(prelift_wdict)
+                                    if not(self.vcfanno):
+                                        self.crl_writer.write_data(prelift_wdict)
                                     # addl_operation errors shouldnt prevent variant from writing
                                     try:
                                         converter.addl_operation_for_unique_variant(
@@ -553,13 +560,14 @@ class MasterCravatConverter(object):
                     continue
             f.close()
             cur_time = time.time()
-            if total_lnum % 10000 == 0 or cur_time - last_status_update_time > 3:
-                self.status_writer.queue_status_update(
-                    "status",
-                    "Running {} ({}): line {}".format(
-                        "Converter", cur_fname, read_lnum
-                    ),
-                )
+            if total_lnum % 1000 == 0 or cur_time - last_status_update_time > 3:
+                if self.status_writer is not None:
+                    self.status_writer.queue_status_update(
+                        "status",
+                        "Running {} ({}): line {}".format(
+                            "Converter", cur_fname, read_lnum
+                        ),
+                    )
                 last_status_update_time = cur_time
         self.logger.info("error lines: %d" % self.error_lines)
         self._close_files()
@@ -573,10 +581,11 @@ class MasterCravatConverter(object):
         runtime = round(end_time - start_time, 3)
         self.logger.info("num input lines: {}".format(total_lnum))
         self.logger.info("runtime: %s" % runtime)
-        self.status_writer.queue_status_update(
-            "status",
-            "Finished {} ({})".format("Converter", self.primary_converter.format_name),
-        )
+        if self.status_writer is not None:
+            self.status_writer.queue_status_update(
+                "status",
+                "Finished {} ({})".format("Converter", self.primary_converter.format_name),
+            )
         return total_lnum, self.primary_converter.format_name
 
     def liftover(self, chrom, pos, ref, alt):
