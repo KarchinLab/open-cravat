@@ -238,7 +238,6 @@ class BasePostAggregator(object):
             self.dbconn = sqlite3.connect(self.db_path)
             self.cursor = self.dbconn.cursor()
             self.cursor_w = self.dbconn.cursor()
-            self.cursor_w.execute('pragma journal_mode="wal"')
         else:
             msg = self.db_path + " not found"
             if self.logger:

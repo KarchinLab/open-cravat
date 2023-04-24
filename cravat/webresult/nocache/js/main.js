@@ -640,7 +640,10 @@ function loadData (alertFlag, finalcallback) {
             }
             if (filterJson.length != 0) {
                 infomgr.count(dbPath, 'variant', function (numvar) {
-                    if (numvar > NUMVAR_LIMIT) {
+                	if (numvar.includes('Error')){
+                		removeLoadingDiv();
+                		alert(numvar);
+                	} else if (numvar > NUMVAR_LIMIT) {
                         lockTabs();
                         flagNotifyToUseFilter = true;
                         if (document.getElementById('infonoticediv')) {
@@ -659,7 +662,7 @@ function loadData (alertFlag, finalcallback) {
                         //removeLoadingDiv();
                         callLoadVariant();
                     }
-                });
+                }, 5);
             } else {
                 if (flagNotifyToUseFilter) {
                     notifyOfReadyToLoad();

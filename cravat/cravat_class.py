@@ -624,17 +624,6 @@ class Cravat(object):
             self.handle_exception(e)
             no_problem_in_run = False
         finally:
-            dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
-
-            # Set journal_mode
-            dbconn = sqlite3.connect(dbpath)
-            try:
-                dbconn.execute('pragma journal_mode="delete"')
-            except sqlite3.Error as e:
-                pass
-            finally:
-                dbconn.close()
-
             end_time = time.time()
             display_time = time.asctime(time.localtime(end_time))
             runtime = end_time - self.start_time

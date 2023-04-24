@@ -557,7 +557,7 @@ class CravatFilter:
         return count
 
     async def getcount(self, level="variant", conn=None, cursor=None):
-        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
+        bypassfilter = not(self.filter or self.filtersql or self.includesample or self.excludesample)
         level = "variant"
         await self.exec_db(self.make_filtered_uid_table)
         if bypassfilter:
@@ -646,7 +646,7 @@ class CravatFilter:
         return it
 
     async def get_filtered_iterator(self, level="variant", conn=None, cursor=None):
-        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
+        bypassfilter = not(self.filter or self.filtersql or self.includesample or self.excludesample)
         if level == "variant":
             kcol = "base__uid"
             if bypassfilter:
@@ -755,7 +755,7 @@ class CravatFilter:
 
     async def make_filtered_uid_table(self, conn=None, cursor=None):
         t = time.time()
-        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
+        bypassfilter = not(self.filter or self.filtersql or self.includesample or self.excludesample)
         if bypassfilter == False:
             level = "variant"
             vtable = level
@@ -823,7 +823,7 @@ class CravatFilter:
             return False
 
     async def make_filtered_hugo_table(self, conn=None, cursor=None):
-        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
+        bypassfilter = not(self.filter or self.filtersql or self.includesample or self.excludesample)
         if bypassfilter == False:
             await cursor.execute("pragma synchronous=0")
             level = "gene"
@@ -957,7 +957,7 @@ class CravatFilter:
     ):
         if cols[0] == "base__uid":
             cols[0] = "v." + cols[0]
-        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
+        bypassfilter = not(self.filter or self.filtersql or self.includesample or self.excludesample)
         q = "select " + ",".join(cols) + " from variant as v"
         if bypassfilter == False:
             q += " inner join variant_filtered as f on v.base__uid=f.base__uid"
@@ -970,7 +970,7 @@ class CravatFilter:
             yield d
 
     async def get_filtered_hugo_list(self, conn=None, cursor=None):
-        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
+        bypassfilter = not(self.filter or self.filtersql or self.includesample or self.excludesample)
         if bypassfilter:
             q = "select distinct variant.base__hugo from gene, variant where gene.base__hugo==variant.base__hugo"
         else:
@@ -981,7 +981,7 @@ class CravatFilter:
         return hugos
 
     async def get_variant_data_for_cols(self, cols, conn=None, cursor=None):
-        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
+        bypassfilter = not(self.filter or self.filtersql or self.includesample or self.excludesample)
         if cols[0] == "base__uid":
             cols[0] = "v.base__uid"
         q = "select {},base__hugo from variant as v".format(",".join(cols))
@@ -994,7 +994,7 @@ class CravatFilter:
         return rows
 
     async def get_variant_data_for_hugo(self, hugo, cols, conn=None, cursor=None):
-        bypassfilter = self.filter == {} and self.filtersql is None and self.includesample is None and self.excludesample is None
+        bypassfilter = not(self.filter or self.filtersql or self.includesample or self.excludesample)
         if cols[0] == "base__uid":
             cols[0] = "v.base__uid"
         q = "select {} from variant as v".format(",".join(cols))

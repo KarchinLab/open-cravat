@@ -20,7 +20,7 @@ InfoMgr.prototype.getStatus = function (jobId) {
 	self.jobId = jobId;
 }
 
-InfoMgr.prototype.count = function (dbPath, tabName, callback) {
+InfoMgr.prototype.count = function (dbPath, tabName, callback, retries) {
 	const data = {
 		username: username, 
 		job_id: jobId, 
@@ -31,6 +31,15 @@ InfoMgr.prototype.count = function (dbPath, tabName, callback) {
 	$.post('/result/service/count', data).done(function (jsonResponseData) {
 		var msg = jsonResponseData['n'] + ' variants meet the criteria';
 		callback(msg, jsonResponseData);
+	})
+	.fail(function(jsonResponseData) {
+		var msg = JSON.parse(jsonResponseData.responseText)['msg']
+		if (msg === 'database is locked' && retries !== undefined && retries > 0){
+			retries = retries - 1;
+			infomgr.count(dbPath, tabName, callback, retries);
+		} else {
+			callback('Error ' + msg + ' Please try again in a few minutes.');
+		}
 	});	
 }
 

@@ -994,10 +994,11 @@ class CravatReport:
             ret = True
         return ret
 
-    #If reports are run with oc report command, update the job database _reports entry in the info table.
+    #If reports are run with oc report command or oc run, update the job database _reports entry in the info table.
     def update_reports_info(self):
         db = sqlite3.connect(self.dbpath)
         cur = db.cursor()
+        new_report = False
 
         q = 'select colval from info where colkey="_reports"'
         cur.execute(q)
@@ -1007,11 +1008,17 @@ class CravatReport:
         else:
             reports = r[0].split(',')
         for rep in self.report_types:
+            if rep == 'text':
+                continue
+            
             if not rep in reports:
                 reports.append(rep)
-        q = 'insert or replace into info values ("_reports", "{}")'.format(",".join(reports))
-        cur.execute(q)
-        db.commit()
+                new_report = True
+        
+        if new_report:        
+            q = 'insert or replace into info values ("_reports", "{}")'.format(",".join(reports))
+            cur.execute(q)
+            db.commit()
         db.close() 
 
 def clean_args(cmd_args):

@@ -166,7 +166,6 @@ class Aggregator(object):
             self.dbconn.commit()
         self.fill_categories()
         self.cursor.execute("pragma synchronous=2;")
-        self.cursor.execute("pragma journal_mode=delete;")
         end_time = time.time()
         self.logger.info("finished: %s" % time.asctime(time.localtime(end_time)))
         runtime = end_time - start_time
