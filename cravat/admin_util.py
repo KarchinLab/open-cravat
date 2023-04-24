@@ -517,44 +517,85 @@ def get_download_counts():
     return counts
 
 
-def get_install_deps(module_name, version=None, skip_installed=True, recursive_depth=0):
+def __get_highest_matching_version(requirement: pkg_resources.Requirement, versions: list) -> str:
+    """Return the highest matching version in 'versions' that satisfies the 'requirement'"""
+    lvers = [LooseVersion(v) for v in versions]
+    lvers.sort(reverse=True)
+    for lv in lvers:
+        if lv.vstring in requirement:
+            return lv.vstring
+    # no matching version found
+    return None
+
+
+def __remove_locally_installed_deps(deps: dict) -> None:
+    to_delete = []
+    # find locally installed packages that match version requirements
+    for name, version in deps.items():
+        v_string = f"{name}>={version}"
+        req = pkg_resources.Requirement(v_string)
+        local_info = get_local_module_info(name)
+        if local_info and local_info.version in req:
+            to_delete += deps[name]
+    
+    # remove those matches
+    for name in to_delete:
+        del deps[name]
+
+    
+def get_install_deps(module_name, version=None, skip_installed=True):
     mic.update_remote()
-    # If input module version not provided, set to highest
-    if version is None:
-        version = get_remote_latest_version(module_name)
     config = mic.get_remote_config(module_name, version=version)
-    req_list = config.get("requires", [])
+    deps_to_check = config.get("requires", [])[:]
+    checked = []
+    reqs_to_install = {}
     deps = {}
-    for req_string in req_list:
+    while deps_to_check:
+        req_string = deps_to_check.pop()
+        if req_string in checked:
+            continue
+
+        checked.append(req_string)
         req = pkg_resources.Requirement(req_string)
+        parent = req.name
         rem_info = get_remote_module_info(req.name)
         # Skip if module does not exist
         if rem_info is None and get_local_module_info(req.name) is None:
+            print(f"Could not find module [{req}]")
             continue
-        if skip_installed:
-            # Skip if a matching version is installed
-            local_info = get_local_module_info(req.name)
-            if local_info and local_info.version in req:
-                continue
+
+        if req.name in reqs_to_install:
+            # TODO: Add some logging about a duplicate dependency:
+            # print(f"Repeat dependency detected: [{req}]")
+            reqs_to_install[req.name] += [str(req.specifier)] if str(req.specifier) else []
+        else:
+            reqs_to_install[req.name] = [str(req.specifier)] if str(req.specifier) else []
+
         # Select the highest matching version
-        lvers = [LooseVersion(v) for v in rem_info.versions]
-        lvers.sort(reverse=True)
-        highest_matching = None
-        for lv in lvers:
-            if lv.vstring in req:
-                highest_matching = lv.vstring
-                break
-        # Dont include if no matching version exists
-        if highest_matching is not None:
-            deps[req.name] = highest_matching
-            # Recursively get dependencies
-            if (recursive_depth < 3):
-                deps = dict(get_install_deps(
-                                module_name=req.name, 
-                                version=highest_matching,
-                                skip_installed=skip_installed,
-                                recursive_depth=recursive_depth + 1
-                            ), **deps)
+        highest_matching = __get_highest_matching_version(req, rem_info.versions)
+
+        if highest_matching is None:
+            # TODO: Add some logging about no matching version:
+            # print(f"Could not find a matching version for module [{req}]")
+            continue
+
+        config = mic.get_remote_config(req.name, version=highest_matching)
+        child_reqs = config.get("requires", [])[:]
+        deps_to_check += child_reqs
+
+    # convert the requirements list to the correct format
+    for name, spec_list in reqs_to_install.items():
+        rem_info = get_remote_module_info(name)
+        full_req_string = f"{name}{','.join(spec_list)}"
+        r = pkg_resources.Requirement(full_req_string)
+        version = __get_highest_matching_version(r, rem_info.versions)
+        if version is None:
+            raise ValueError(f"Could not find appropriate version for module [{name}]")
+        deps[name] = version
+
+    # Skip if a matching version is installed
+    if skip_installed:
+        __remove_locally_installed_deps(deps)
 
     return deps
 
