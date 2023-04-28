@@ -229,8 +229,8 @@ class BasePostAggregator(object):
     # Setup function for the base_annotator, different from self.setup()
     # which is intended to be for the derived annotator.
     def base_setup(self):
-        self._alter_tables()
         self.setup()
+        self._alter_tables()
 
     def _open_db_connection(self):
         self.db_path = os.path.join(self.output_dir, self.run_name + ".sqlite")
