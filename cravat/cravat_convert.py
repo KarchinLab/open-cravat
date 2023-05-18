@@ -405,7 +405,7 @@ class MasterCravatConverter(object):
         multiple_files = len(self.input_paths) > 1
         fileno = 0
         total_lnum = 0
-        base_re = re.compile("^[ATGC]+|[-]+$")
+        base_re = re.compile("^[ATGCatgc]+|[-]+$")
         write_lnum = 0
         for fn in self.input_paths:
             if self.pipeinput:
