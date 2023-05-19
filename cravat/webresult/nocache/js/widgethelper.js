@@ -495,6 +495,22 @@ function getDetailWidgetDivs (tabName, widgetName, title, maxWidth, maxHeight, s
         addEl(iconDiv, button);
     }
 
+
+	// Info button
+	var button = getEl('img');
+	button.src = '/result/images/info.svg';
+	button.className = 'detailwidget-infobutton';
+	button.setAttribute('widgetname', widgetName);
+	button.setAttribute('widgetdesc', widgetInfo[widgetName])
+	var span = getEl("span")
+	span.innerHTML = "The percentage and / or the number of samples found in each cohort that have at least 1 mutation in the gene."
+	span.className = "tooltiptext"
+	var infoDiv = getEl("div")
+	infoDiv.className = "widgetinfodiv"
+	addEl(infoDiv, button)
+	addEl(infoDiv, span)
+	addEl(iconDiv, infoDiv)
+
 	// Camera button
 	var button = getEl('img');
 	button.src = '/result/images/camera.svg';
@@ -558,7 +574,7 @@ function getWidgetData (tabName, moduleName, row, col) {
         return row[moduleName + '__' + col];
     } else {
         return infomgr.getRowValue(tabName, row, moduleName + '__' + col);
-    }
+	}
 }
 
 function getSpinner () {
