@@ -163,3 +163,58 @@ body * {
     color: #cccccc;
 }
 
+.detailwidget-infobutton {
+    height: 16px;
+    cursor: pointer;
+    margin: 2px;
+    padding: 2px;
+}
+
+.detailwidget-infobutton:hover .tooltiptext{
+    visibility: visible;
+}
+
+.tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    color: black;
+    position: absolute;
+    display: flex;
+    border: 1px solid black;
+    word-break: normal;
+    padding: 4px;
+    text-align: left;
+    z-index: 100;
+    
+}
+
+.widgetinfodiv:hover .tooltiptext {
+    visibility: visible;
+}
+
+.cohorts-toggle {
+    display: flex;
+    position: relative;
+    justify-content: end;
+    bottom: 20%;
+}
+
+.cohorts-radio {
+    flex-direction: row;
+    width: 71px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.cohorts-radio input {
+    margin-right: 2px;
+    margin-bottom: 4px;
+}
+
+.cohorts-radio label {
+    margin-bottom: 4px;
+}
+
