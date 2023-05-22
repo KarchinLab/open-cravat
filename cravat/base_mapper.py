@@ -375,6 +375,20 @@ class BaseMapper(object):
             if coldef["name"] != "cchange"
         ]
         cols.extend(["tagsampler__numsample"])
+        async def get_database_version(conn=None, cursor=None):
+            q = 'select colval from info where colkey="open-cravat"'
+            await cursor.execute(q)
+            return await cursor.fetchone()
+        result = await cf.exec_db(get_database_version)
+        dbver = result[0]
+        if au.compare_version(dbver, '2.3.0') <= 0:
+            tmp = []
+            for col in cols:
+                if col == 'base__note_variant':
+                    tmp.append('base__note')
+                    continue
+                tmp.append(col)
+            cols = tmp
         data = {}
         t = time.time()
         rows = await cf.exec_db(cf.get_variant_data_for_cols, cols)
