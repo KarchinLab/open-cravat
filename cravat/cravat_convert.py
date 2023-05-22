@@ -675,6 +675,8 @@ class MasterCravatConverter(object):
     def standardize_pos_ref_alt(self, strand, pos, ref, alt):
         reflen = len(ref)
         altlen = len(alt)
+        ref = ref.upper()
+        alt = alt.upper()
         # Returns without change if same single nucleotide for ref and alt.
         if reflen == 1 and altlen == 1 and ref == alt:
             return pos, ref, alt
