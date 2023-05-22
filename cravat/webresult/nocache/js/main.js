@@ -1091,7 +1091,25 @@ function afterGetResultLevels () {
     });
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
     $.get('/result/service/variantcols', {job_id: jobId, username: username, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
-        filterCols = jsonResponseData['columns']['variant'];
+        allVarCols = JSON.parse(JSON.stringify(jsonResponseData['columns']['variant']));
+        filterCols = [];
+        for (let colGroup of allVarCols) {
+            if (colGroup.name === 'vcfinfo') {
+                let filterableCols = [];
+                for (let col of colGroup.colModel) {
+                    if (col.filterable) {
+                        filterableCols.push(col);
+                    }
+                }
+                if (filterableCols.length > 0) {
+                    filterCols.push(colGroup);
+                    filterCols.slice(-1)[0].colModel = filterableCols;
+                }
+            } else {
+                filterCols.push(colGroup)
+            }
+            
+        }
         usedAnnotators = {};
         var cols = jsonResponseData['columns']['variant'];
         usedAnnotators['variant'] = [];
