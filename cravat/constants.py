@@ -211,6 +211,22 @@ crx_def = crv_def + [
         "hidden": True,
         "filterable": False,
     },
+    {
+        "name": "exonno",
+        "title": "Exon Number",
+        "type": "int",
+        "width": 100,
+        "hidden": False,
+        "filterable": True,
+    },
+    {
+        "name": "gposend",
+        "title": "End Position",
+        "type": "int",
+        "width": 100,
+        "hidden": False,
+        "filterable": True,
+    },
 ]
 crx_idx = [["uid"]]
 crg_def = [
