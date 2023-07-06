@@ -2032,10 +2032,11 @@ class Cravat(object):
         summarizer.run()
 
     def write_cohorts(self):
-        dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
-        conn = sqlite3.connect(dbpath)
-        cohort.write_cohorts(self.args.cohorts, conn)
-        conn.close()
+        if self.args.cohorts is not None:
+            dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
+            conn = sqlite3.connect(dbpath)
+            cohort.write_cohorts(self.args.cohorts, conn)
+            conn.close()
 
     def announce_module(self, module):
         if not self.args.silent:
