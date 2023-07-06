@@ -190,6 +190,14 @@ crx_def = crv_def + [
         "filterable": True,
     },
     {
+        "name": "exonno",
+        "title": "Exon Number",
+        "type": "int",
+        "width": 100,
+        "hidden": False,
+        "filterable": True,
+    },
+    {
         "name": "cchange",
         "title": "cDNA change",
         "type": "string",
@@ -212,19 +220,11 @@ crx_def = crv_def + [
         "filterable": False,
     },
     {
-        "name": "exonno",
-        "title": "Exon Number",
-        "type": "int",
-        "width": 100,
-        "hidden": False,
-        "filterable": True,
-    },
-    {
         "name": "gposend",
         "title": "End Position",
         "type": "int",
         "width": 100,
-        "hidden": False,
+        "hidden": True,
         "filterable": True,
     },
 ]
