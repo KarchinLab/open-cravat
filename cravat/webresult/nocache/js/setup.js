@@ -998,6 +998,18 @@ function makeFilterTab (rightDiv) {
 		}
 	);
     loadControls.append(filterApply);
+    let buildCohort = $(getEl('button'))
+		.attr('id', 'filter_cohort_build')
+		.addClass('butn')
+		.append('Create Cohort')
+		.click(function(evt) {
+            makeFilterJson();
+            var msg = 'Enter cohort name.';
+            var cohortName = prompt(msg, lastUsedLayoutName);
+            buildCohortFilter(cohortName)
+		}
+	);
+    loadControls.append(buildCohort);
 	let saveIcon = $(getEl('img'))
 		.attr('id','filter-save')
 		.attr('src','images/save.png')
@@ -3250,3 +3262,38 @@ function addTextToInfonoticediv (lines) {
     }
 }
 
+function cohortFilter() {
+    const data = new FormData();
+    if (jobId !== null) data.set('job_id',jobId);
+    if (dbPath !== null) data.set('dbpath',dbPath);
+    data.set('filter',JSON.stringify(filterJson))
+    fetch('/result/service/cohortfilter',{
+        method: 'POST',
+        body: data,
+    }).then((response) => response.json())
+    .then((resp_data) => {
+        console.log(resp_data);
+    })
+        
+}
+
+function buildCohortFilter(cohortName) {
+    const data = new FormData();
+    if (jobId !== null) data.set('job_id',jobId);
+    if (dbPath !== null) data.set('dbpath',dbPath);
+    data.set('filter',JSON.stringify(filterJson))
+    data.set('cohort_name',cohortName);
+    fetch('/result/service/buildcohortfilter',{
+        method: 'POST',
+        body: data,
+    }).then((response) => response.json())
+    .then((resp_data) => {
+        let samples = [];
+        for (let row of resp_data) {
+            samples.push(row[0]);
+        }
+        console.log(samples);
+        alert(`Created cohort ${cohortName} including samples: ${samples.join(', ')}`)
+    })
+        
+}

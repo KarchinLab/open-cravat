@@ -908,6 +908,68 @@ async def make_cohort_set_table(dbpath):
     await conn.commit()
     await conn.close()
 
+async def cohortfilter(request):
+    queries = await request.post()
+    job_id, dbpath = await get_jobid_dbpath(request)
+    filterstring = queries['filter']
+    cf = await CravatFilter.create(dbpath = dbpath, mode='sub', filterstring=filterstring)
+    q = f'''
+    select 
+	s.base__sample_id,
+	count(s.base__uid)
+from 
+	variant as v 
+	join gene as g 
+		on v.base__hugo = g.base__hugo
+	join sample as s
+		on v.base__uid = s.base__uid
+	{cf.getwhere("variant")}
+group by
+	s.base__sample_id
+;
+    '''
+    conn = await get_db_conn(dbpath)
+    cursor = await conn.cursor()
+    await cursor.execute(q)
+    r = await cursor.fetchall()
+    return web.json_response(r)
+
+async def buildcohortfilter(request):
+    queries = await request.post()
+    job_id, dbpath = await get_jobid_dbpath(request)
+    filterstring = queries['filter']
+    cohort_name = queries['cohort_name']
+    cf = await CravatFilter.create(dbpath = dbpath, mode='sub', filterstring=filterstring)
+    q = f'''
+    select 
+	s.base__sample_id,
+	count(s.base__uid)
+from 
+	variant as v 
+	join gene as g 
+		on v.base__hugo = g.base__hugo
+	join sample as s
+		on v.base__uid = s.base__uid
+	{cf.getwhere("variant")}
+group by
+	s.base__sample_id
+;
+    '''
+    conn = await get_db_conn(dbpath)
+    cursor = await conn.cursor()
+    await cursor.execute(q)
+    r = await cursor.fetchall()
+    await cursor.execute('create table if not exists cohorts (sample text, cohort text);')
+    cohort_pairs = [(_[0], cohort_name) for _ in r]
+    await cursor.executemany('insert into cohorts (sample, cohort) values (?,?)', cohort_pairs)
+    await cursor.execute('create index if not exists cohorts_cohort on cohorts (cohort);')
+    await cursor.execute('create index if not exists cohorts_sample on cohorts (sample);')
+    await cursor.close()
+    await conn.commit()
+    await cursor.close()
+    await conn.close()
+    return web.json_response(r)
+
 routes = []
 routes.append(['GET', '/result/service/variantcols', get_variant_cols])
 routes.append(['GET', '/result/service/getsummarywidgetnames', get_summary_widget_names])
@@ -938,3 +1000,6 @@ routes.append(['POST', '/result/service/cohorts', post_cohorts])
 routes.append(['POST', '/result/service/cohortcompare', run_cohort_compare])
 routes.append(['POST','/result/service/savecohortset', save_cohort_set])
 routes.append(['GET','/result/service/cohortsets', get_cohort_sets])
+routes.append(['POST', '/result/service/cohortfilter', cohortfilter])
+routes.append(['POST', '/result/service/buildcohortfilter', buildcohortfilter])
+
