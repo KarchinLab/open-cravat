@@ -897,10 +897,6 @@ function downloadFile (url) {
     $('#download-area').attr('src', url);
 }
 
-function getEl (tag) {
-    return document.createElement(tag);
-}
-
 function jobDeleteButtonHandler (event) {
     event.stopPropagation();
     var jobId = $(event.target).attr('jobId');
