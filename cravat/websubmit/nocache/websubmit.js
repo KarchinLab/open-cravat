@@ -1347,7 +1347,7 @@ function buildAnnotatorsSelector () {
     var annotCheckDiv = document.getElementById('annotator-select-div');
     var annotators = OC.GLOBALS.annotators;
     var annotInfos = Object.values(annotators);
-    var groupNames = Object.keys(installedGroups);
+    var groupNames = Object.keys(OC.installedGroups);
     for (var i = 0; i < groupNames.length; i++) {
         var name = groupNames[i];
         var module = OC.localModuleInfo[name];
