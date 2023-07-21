@@ -96,12 +96,12 @@ function onClickInstallBaseComponents() {
 
 function showSystemModulePage() {
     document.getElementById('store-systemmodule-div').style.display = 'block';
-    if (systemReadyObj.ready == false) {
+    if (OC.systemReadyObj.ready == false) {
         document.getElementById('store-systemmodule-systemnotready-div').style.display = 'block';
         var span = document.getElementById('store-systemmodule-systemnotready-span');
         var span2 = document.getElementById('store-systemmodule-systemnotready-span2');
-        span.textContent = systemReadyObj['message'];
-        if (systemReadyObj['code'] == 1) {
+        span.textContent = OC.systemReadyObj['message'];
+        if (OC.systemReadyObj['code'] == 1) {
             span2.textContent = 'Please use the settings menu at top right to set the correct modules directory.';
         }
     } else {
@@ -274,7 +274,7 @@ function getLocal() {
         populateStoreTagPanel();
         updateModuleGroupInfo();
         makeInstalledGroup();
-        if (systemReadyObj.online) {
+        if (OC.systemReadyObj.online) {
             enableStoreTabHead();
         } else {
             disableStoreTabHead();
@@ -322,7 +322,7 @@ function disableStoreTabHead() {
 }
 
 function showOrHideSystemModuleUpdateButton() {
-    if (servermode == false || (logged == true && username == 'admin')) {
+    if (OC.servermode == false || (OC.logged == true && OC.username == 'admin')) {
         OC.baseModuleUpdateAvailable = false;
         var moduleNames = Object.keys(OC.updates);
         for (var i = 0; i < moduleNames.length; i++) {
@@ -342,7 +342,7 @@ function showOrHideSystemModuleUpdateButton() {
 
 function showOrHideUpdateAllButton() {
     var d = document.getElementById('store-update-all-div');
-    if (OC.newModuleAvailable && (servermode == false || (logged == true && username == 'admin'))) {
+    if (OC.newModuleAvailable && (OC.servermode == false || (OC.logged == true && OC.username == 'admin'))) {
         var modulesInInstallQueue = Object.keys(OC.installInfo);
         d.style.display = 'block';
         announceStoreUpdateAllAvailable();
@@ -705,13 +705,13 @@ function checkSystemReady() {
         url: '/issystemready',
         async: true,
         success: function(response) {
-            var online = systemReadyObj.online;
-            systemReadyObj = response;
+            var online = OC.systemReadyObj.online;
+            OC.systemReadyObj = response;
             if (online != undefined) {
-                systemReadyObj.online = online;
+                OC.systemReadyObj.online = online;
             }
-            if (systemReadyObj.ready) {
-                if (servermode == false) {
+            if (OC.systemReadyObj.ready) {
+                if (OC.servermode == false) {
                     populateJobs();
                 }
                 getLocal();
@@ -1217,7 +1217,7 @@ function getRemoteModuleGroupPanel(moduleName, moduleListName, moduleListPos) {
             }
         }
     }
-    if (updateAvail && (servermode == false || (logged == true && username == 'admin'))) {
+    if (updateAvail && (OC.servermode == false || (OC.logged == true && OC.username == 'admin'))) {
         var span = getEl('span');
         span.className = 'moduletile-group-updateavailable-span';
         span.textContent = 'Update available';
@@ -1351,7 +1351,7 @@ function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
     var span = getEl('div');
     span.id = 'panelinstallstatus_' + moduleName;
     addEl(div, span);
-    if (servermode == false || (logged == true && username == 'admin')) {
+    if (OC.servermode == false || (OC.logged == true && OC.username == 'admin')) {
         if (installStatus == 'Queued') {
             var button = getModuleTileUnqueueButton(moduleName);
             addEl(div, button);
@@ -1717,22 +1717,22 @@ function getModuleDetailInstallButton(moduleName, td, buttonDiv) {
 
 function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
     var mInfo = null;
-    if (currentTab == 'store') {
+    if (OC.currentTab == 'store') {
         if (OC.localModuleInfo[moduleName] != undefined && OC.localModuleInfo[moduleName].conf.uselocalonstore) {
             mInfo = OC.localModuleInfo[moduleName].conf;
         } else {
             mInfo = OC.remoteModuleInfo[moduleName];
         }
-    } else if (currentTab == 'submit') {
+    } else if (OC.currentTab == 'submit') {
         mInfo = OC.localModuleInfo[moduleName];
         mInfo.latest_version = OC.remoteModuleInfo[moduleName].latest_version
     }
-    var div = document.getElementById('moduledetaildiv_' + currentTab);
+    var div = document.getElementById('moduledetaildiv_' + OC.currentTab);
     if (div) {
         emptyElement(div);
     } else {
         div = getEl('div');
-        div.id = 'moduledetaildiv_' + currentTab;
+        div.id = 'moduledetaildiv_' + OC.currentTab;
         div.className = 'moduledetaildiv';
     }
     if (moduleListName != null) {
@@ -1788,7 +1788,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
     td.style.textAlign = 'right';
     var sdiv = getEl('div');
     var buttonDiv = getEl('div');
-    if (currentTab == 'store' && (servermode == false || (logged == true && username == 'admin'))) {
+    if (OC.currentTab == 'store' && (OC.servermode == false || (OC.logged == true && OC.username == 'admin'))) {
         var button = getModuleDetailInstallButton(moduleName, td, buttonDiv);
         addEl(sdiv, button);
         addEl(td, sdiv);
@@ -1801,7 +1801,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
             sdiv.textContent = OC.installInfo[moduleName]['msg'];
         }
         addEl(td, sdiv);
-    } else if (currentTab == 'submit') {
+    } else if (OC.currentTab == 'submit') {
         var sdiv = getEl('div');
         sdiv.id = 'installstatdiv_' + moduleName;
         sdiv.style.marginTop = '10px';
@@ -1847,9 +1847,9 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         var $mdhtml = $(mdhtml);
         var localRoot = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
         for (let img of $mdhtml.children('img')) {
-            if (currentTab == 'store') {
-                var storeRoot = `${systemConf.store_url}/modules/${moduleName}/${mInfo.latest_version}`
-            } else if (currentTab == 'submit') {
+            if (OC.currentTab == 'store') {
+                var storeRoot = `${OC.systemConf.store_url}/modules/${moduleName}/${mInfo.latest_version}`
+            } else if (OC.currentTab == 'submit') {
                 var storeRoot = `/modules/annotators/${moduleName}`
             }
             img.src = img.src.replace(localRoot, storeRoot);
@@ -1860,7 +1860,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         $(mdDiv).append($mdhtml);
         // output column description
         var d = getEl('div');
-        d.id = 'moduledetail-output-column-div-' + currentTab;
+        d.id = 'moduledetail-output-column-div-' + OC.currentTab;
         d.style.display = 'none';
         var h2 = getEl('h2');
         h2.textContent = 'Output Columns';
@@ -1878,15 +1878,15 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         addEl(othead, otr);
         addEl(otable, othead);
         var otbody = getEl('tbody');
-        otbody.id = 'moduledetail-' + currentTab + '-output-tbody';
+        otbody.id = 'moduledetail-' + OC.currentTab + '-output-tbody';
         addEl(otable, otbody);
         addEl(d, otable);
         addEl(mdDiv, d);
-        addClassRecursive(mdDiv, 'moduledetaildiv-' + currentTab + '-elem');
+        addClassRecursive(mdDiv, 'moduledetaildiv-' + OC.currentTab + '-elem');
         if (OC.localModuleInfo[moduleName] != undefined && OC.localModuleInfo[moduleName].conf.uselocalonstore) {
             var data = mInfo;
-            var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
-            var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + currentTab);
+            var otbody = document.getElementById('moduledetail-' + OC.currentTab + '-output-tbody');
+            var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + OC.currentTab);
             var outputs = data['output_columns'];
             if (outputs != undefined) {
                 var descs = [];
@@ -1925,8 +1925,8 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
                     'module': moduleName
                 },
                 success: function(data) {
-                    var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
-                    var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + currentTab);
+                    var otbody = document.getElementById('moduledetail-' + OC.currentTab + '-output-tbody');
+                    var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + OC.currentTab);
                     var outputs = data['output_columns'];
                     if (outputs == undefined) {
                         return;
@@ -1995,7 +1995,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
     var remoteVersion = mInfo['latest_version'];
     span.textContent = remoteVersion;
     addEl(d, span);
-    if (currentTab == 'store' && OC.localModuleInfo[moduleName] != undefined) {
+    if (OC.currentTab == 'store' && OC.localModuleInfo[moduleName] != undefined) {
         var localVersion = OC.localModuleInfo[moduleName].version;
         if (localVersion != remoteVersion) {
             var span = getEl('span');
@@ -2012,7 +2012,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
             }
         }
     }
-    if (currentTab == 'store') {
+    if (OC.currentTab == 'store') {
         addEl(infodiv, d);
         d = getEl('div');
         span = getEl('span');
@@ -2111,7 +2111,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
     span.style.wordBreak = 'break-all';
     addEl(d, span);
     addEl(infodiv, d);
-    if (currentTab == 'store') {
+    if (OC.currentTab == 'store') {
         d = getEl('div');
         span = getEl('span');
         span.style.fontWeight = 'bold';
@@ -2159,8 +2159,8 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         pel.parentElement.removeChild(pel);
     });
     addEl(div, el);
-    addClassRecursive(div, 'moduledetaildiv-' + currentTab + '-elem');
-    storeModuleDivClicked = true;
+    addClassRecursive(div, 'moduledetaildiv-' + OC.currentTab + '-elem');
+    OC.storeModuleDivClicked = true;
     return div;
 }
 
