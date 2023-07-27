@@ -1983,10 +1983,11 @@ function populateMultInputsMessage() {
     document.querySelector('#input-file').value = '';
 }
 
+//TODO: change the event listeners that talk between pages to use the mediator
 function addListeners () {
-    document.getElementById('submitdiv_tabhead').addEventListener('click', changePage('submitdiv'));
-    document.getElementById('storediv_tabhead').addEventListener('click', changePage('storediv'));
-    document.getElementById('admindiv_tabhead').addEventListener('click', changePage('admindiv'));
+    document.getElementById('submitdiv_tabhead').addEventListener('click', () => changePage('submitdiv'));
+    document.getElementById('storediv_tabhead').addEventListener('click', () => changePage('storediv'));
+    document.getElementById('admindiv_tabhead').addEventListener('click', () => changePage('admindiv'));
     $('#submit-job-button').click(submit);
     $('#input-text').change(inputChangeHandler);
     $('#input-file').change(inputChangeHandler);
