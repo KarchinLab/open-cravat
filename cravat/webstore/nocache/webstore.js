@@ -36,6 +36,9 @@ OC.numModulesInHomeSectionPage = 3
 $.get('/store/getstoreurl').done(function(response) {
     OC.storeUrl = response;
 });
+if (!OC.mediator) {
+    OC.mediator = new PubSub();
+}
 
 function onClickStoreHome() {
     $('.store-tag-checkbox').each(function() {
@@ -2728,3 +2731,8 @@ function webstore_run() {
     getBaseModuleNames();
     getRemote();
 }
+
+// Bind events to the mediator
+$(document).ready(function () {
+    OC.mediator.subscribe('system.update', onClickSystemModuleUpdateButton);
+});
