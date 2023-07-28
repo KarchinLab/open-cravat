@@ -28,6 +28,9 @@ OC.JOB_IDS = []
 OC.jobListUpdateIntervalFn = null;
 OC.reportRunning = {};
 OC.systemConf;
+if (!OC.mediator) {
+    OC.mediator = new PubSub();
+}
 
 function submit () {
     if (OC.servermode && OC.logged == false) {
@@ -1985,9 +1988,7 @@ function populateMultInputsMessage() {
 
 //TODO: change the event listeners that talk between pages to use the mediator
 function addListeners () {
-    document.getElementById('submitdiv_tabhead').addEventListener('click', () => changePage('submitdiv'));
-    document.getElementById('storediv_tabhead').addEventListener('click', () => changePage('storediv'));
-    document.getElementById('admindiv_tabhead').addEventListener('click', () => changePage('admindiv'));
+    addMediatorListeners();
     $('#submit-job-button').click(submit);
     $('#input-text').change(inputChangeHandler);
     $('#input-file').change(inputChangeHandler);
@@ -2068,6 +2069,10 @@ function addListeners () {
             }
         }
     });
+}
+
+function addMediatorListeners() {
+    OC.mediator.subscribe('navigate', changePage);
 }
 
 function setLastAssembly () {
