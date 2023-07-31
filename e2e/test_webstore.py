@@ -1,11 +1,11 @@
-'''
+"""
 End-to-end playwright tests for websubmit
 
 These are some simple end to end tests for major functionality (i.e. things are being displayed and clicking on them does
 something). Currently, we need to run `oc gui` first to launch a local instance to test.
 TODO: Figure out how to use the configuration to launch the webserver before running tests
 TODO: Set up fixtures to get consistent data for testing (installed modules, jobs, etc)
-'''
+"""
 import re
 from playwright.sync_api import Page, expect
 
