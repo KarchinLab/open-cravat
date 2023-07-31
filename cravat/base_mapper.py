@@ -389,6 +389,13 @@ class BaseMapper(object):
                     continue
                 tmp.append(col)
             cols = tmp
+        if au.compare_version(dbver, '2.4.0') <= 0:
+            tmp = []
+            for col in cols:
+                if col in ('base__exonno','base__gposend'):
+                    continue
+                tmp.append(col)
+            cols = tmp
         data = {}
         t = time.time()
         rows = await cf.exec_db(cf.get_variant_data_for_cols, cols)
