@@ -1,3 +1,5 @@
+'use strict';
+
 var OC = OC || {};
 OC.servermode = false;
 OC.logged = false;
@@ -818,11 +820,11 @@ function buildJobsTable () {
 
 function fillJobTable (allJobs, start, end, jobsTable) {
     for (let i = start; i < Math.min(end, allJobs.length); i++) {
-        job = OC.GLOBALS.idToJob[allJobs[i]];
+        const job = OC.GLOBALS.idToJob[allJobs[i]];
         if (job == undefined) {
             continue;
         }
-        ji = job.id;
+        const ji = job.id;
         if (ji == undefined) {
             continue;
         }
@@ -893,7 +895,7 @@ function jobReportDownloadButtonHandler (evt) {
 }
 
 function downloadReport (jobId, reportType) {
-    url = '/submit/jobs/'+jobId+'/reports/'+reportType;
+    const url = '/submit/jobs/'+jobId+'/reports/'+reportType;
     downloadFile(url);
 }
 
@@ -1130,7 +1132,7 @@ function titleCase(str) {
 
 function buildAnnotatorGroupSelector () {
     OC.tagsCollectedForSubmit = [];
-    tagMembership = {};
+    const tagMembership = {};
     for (var module in OC.localModuleInfo) {
         if (OC.localModuleInfo[module].type != 'annotator') {
             continue;
@@ -2127,7 +2129,7 @@ function onClearInputFileList () {
 function populateInputFormats () {
     let inputSel = $('#submit-input-format-select');
     inputSel.prop('disabled',true);
-    for (moduleName in OC.localModuleInfo) {
+    for (let moduleName in OC.localModuleInfo) {
         if (moduleName.endsWith('-converter')) {
             let inputName = moduleName.split('-')[0];
             let opt = $(getEl('option'))
