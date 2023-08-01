@@ -74,7 +74,7 @@ class PubSub {
         if (!this.channels.hasOwnProperty(channel)) {
             this.channels[channel] = [];
         }
-				for (let callback of this.channels[channel]) {
+        for (let callback of this.channels[channel]) {
             callback(...args);
         }
     }
