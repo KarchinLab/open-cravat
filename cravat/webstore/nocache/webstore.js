@@ -716,7 +716,8 @@ function checkSystemReady() {
             }
             if (OC.systemReadyObj.ready) {
                 if (OC.servermode == false) {
-                    populateJobs();
+                    // populateJobs();
+                    OC.mediator.publish('populateJobs');
                 }
                 getLocal();
             } else {
@@ -2736,4 +2737,5 @@ function webstore_run() {
 // Bind events to the mediator
 $(document).ready(function () {
     OC.mediator.subscribe('system.update', onClickSystemModuleUpdateButton);
+    OC.mediator.subscribe('getRemote', getRemote);
 });

@@ -1891,7 +1891,8 @@ function populatePackageVersions () {
                     addEl(curverspan, a);
                 }
             }
-            getRemote();
+            // getRemote();
+            OC.mediator.publish('getRemote');
         });
     });
 }
@@ -2075,6 +2076,7 @@ function addListeners () {
 
 function addMediatorListeners() {
     OC.mediator.subscribe('navigate', changePage);
+    OC.mediator.subscribe('populateJobs', populateJobs);
 }
 
 function setLastAssembly () {
