@@ -1992,6 +1992,20 @@ function populateMultInputsMessage() {
 //TODO: change the event listeners that talk between pages to use the mediator
 function addListeners () {
     addMediatorListeners();
+
+    // index.html handlers
+    $('#clear_inputfilelist_button').on('click', onClearInputFileList);
+    $('#input-text')
+        .on('click', onClickInputTextArea)
+        .on('blur', onBlurInputTextArea);
+    $('#jobs-table-pagination-prev-button').on('click', onClickJobsListPrevPage);
+    $('#jobs-table-pagination-next-button').on('click', onClickJobsListNextPage);
+    $('#job-import-file').on('change', importJob);
+    $('#system-conf-save-button').on('click', onClickSaveSystemConf);
+    $('#system-conf-reset-button').on('click', resetSystemConf);
+    $('#report_generation_generate_button').on('click', createJobReport);
+    $('#report_generation_close_button').on('click', closeReportGenerationDiv);
+
     $('#submit-job-button').click(submit);
     $('#input-text').change(inputChangeHandler);
     $('#input-file').change(inputChangeHandler);
