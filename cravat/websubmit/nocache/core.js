@@ -180,3 +180,17 @@ function getSizeText(size) {
     return size;
 }
 
+
+/************** OC ****************/
+
+const OC = {};
+OC.mediator =   new PubSub();
+export {
+    getEl,
+    getTn,
+    addEl,
+    changePage,
+    PubSub,
+    OC
+};
+

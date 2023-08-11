@@ -12,20 +12,16 @@
     <link rel="stylesheet" href="/store/nocache/webstore.css">
     <script type='text/javascript' src='/submit/pqselect.dev.customforsubmit.js'></script>
     <link rel='stylesheet' href='/result/css/pqselect.min.css' />
-    <script src="/submit/nocache/core.js"></script>
-    <script src="/submit/nocache/websubmit.js"></script>
-    <script src='/store/nocache/webstore.js'></script>
-    <script src='/submit/nocache/header.js'></script>
-    <script src='/submit/nocache/moduleinfo.js'></script>
+<!--    <script src='/submit/nocache/moduleinfo.js'></script>-->
+<!--    <script src="/submit/nocache/core.js"></script>-->
+<!--    <script src="/submit/nocache/websubmit.js"></script>-->
+<!--    <script src='/store/nocache/webstore.js'></script>-->
+<!--    <script src='/submit/nocache/header.js'></script>-->
+    <script src='/submit/nocache/main.js' type='module' />
     <script src='/submit/Chart.bundle.min.js'></script>
     <script src='/store/js/showdown-1.9.1.min.js'></script>
     <!-- Google Analytics -->
     <script async src='/submit/googleAnalytics.js'></script>
-    <script>
-        $(document).ready(function() {
-            websubmit_run();
-        });
-    </script> 
 </head>
 
 <body>
@@ -199,7 +195,7 @@
             <input type='text' id='store-namefilter' name='namefilter' placeholder='Search the Store'/>
             <hr />
             <label class='checkbox-store-container'>Discover
-                <input type='checkbox' class='store-tag-checkbox' value='frontpage' id='store-tag-checkbox-home'/>
+                <input type='checkbox' class='store-tag-checkbox' value='frontpage' id='store-tag-checkbox-home' />
                 <span class='checkmark-store'>
             </label>
             <label class='checkbox-store-container'>View All
@@ -225,30 +221,30 @@
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Most Downloaded</div>
                     <div>The most downloaded modules to date!</div>
-                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' />
                     <div id='store-home-featureddiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' />
                 </div>
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Newest</div>
                     <div>The newest and greatest!</div>
-                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' />
                     <div id='store-home-newestdiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' />
                 </div>
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Cancer Resources</div>
                     <div>Cutting edge resources for cancer research!</div>
-                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' />
                     <div id='store-home-cancerdiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' />
                 </div>
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Clinical Relevance</div>
                     <div>Our curation of clinically-relevant resources!</div>
-                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' />
                     <div id='store-home-clinicaldiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' />
                 </div>
             </div>
             <div id='store-allmodule-div'>
@@ -267,7 +263,7 @@
             </div>
             <div id='store-modulegroup-div'>
                 <div>
-                    <img src='/result/images/back_arrow.png' id='module-group-back-arrow' class='back-arrow'>
+                    <img id="store-module-back-arrow" src='/result/images/back_arrow.png' class='back-arrow'>
                     <span id='store-modulegroup-title-span'></span>
                 </div>
                 <div id='store-modulegroup-content-div'></div>
@@ -317,15 +313,15 @@
     <br />
     <span class="settingsdiv-elem">Allow collection of CRAVAT metrics: </span><input type="checkbox" id="settings_save_metrics" onclick='event.stopPropagation();'>
     <br />
-    <button id="store-update-remote-button" class="settingdsiv-elem butn">Refresh store</button>
+    <button id="update-store-button" class="settingdsiv-elem butn" >Refresh store</button>
     <p>
         <button id='job-import' class='butn' onclick="document.getElementById('job-import-file').click()">
             Import Job
             <input type="file" id="job-import-file" style='display:none;'>
         </button>
     </p>
-    <button id="system-conf-save-button" class="settingsdiv-elem butn">Save</button>
-    <button id="system-conf-reset-button" class="settingsdiv-elem butn">Reset</button>
+    <button id="save-settings-button" class="settingsdiv-elem butn" onclick='onClickSaveSystemConf();'>Save</button>
+    <button id="reset-settings-button" class="settingsdiv-elem butn" onclick='resetSystemConf();'>Reset</button>
 </div> <!-- settingsdiv -->
 
 <div id='store-noconnect-div'>

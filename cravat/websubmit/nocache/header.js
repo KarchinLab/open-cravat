@@ -1,12 +1,15 @@
 'use strict';
-// import * as core from './core'
+import {
+    getTn, addEl, getEl, changePage, PubSub, OC
+} from './core.js'
 
-var OC = OC || {};
-if (!OC.mediator) {
-    OC.mediator = new PubSub();
-}
+// var OC = OC || {};
+// if (!OC.mediator) {
+//     OC.mediator = new PubSub();
+// }
 
 function addHeaderEventHandlers() {
+    console.log('header.addHeaderEventHandlers');
     // on tab click, publish navigate event to mediator
     document.getElementById('submitdiv_tabhead').addEventListener('click', () => OC.mediator.publish('navigate', 'submitdiv'));
     document.getElementById('storediv_tabhead').addEventListener('click', () => OC.mediator.publish('navigate', 'storediv'));
@@ -58,7 +61,7 @@ function loadSystemConf () {
         	s.checked = true;
         } else {
         	s.checked = response['content']['save_metrics']
-        } 
+        }
         var s = document.getElementById('sysconfpathspan');
         s.value = response['path'];
         var s = document.getElementById('settings_jobs_dir_input');
@@ -206,3 +209,7 @@ function showYesNoDialog(content, yescallback, noSpace, justOk) {
     addEl(div, btnDiv);
     addEl(document.body, div);
 }
+
+$(document).ready(() => addHeaderEventHandlers());
+
+export {addHeaderEventHandlers};

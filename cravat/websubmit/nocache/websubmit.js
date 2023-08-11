@@ -1,6 +1,12 @@
 'use strict';
+import {
+getTn, addEl, getEl, changePage, PubSub, OC
+} from './core.js'
+import {
+    connectWebSocket, checkConnection, getBaseModuleNames, toggleChatBox
+} from '../../store/nocache/webstore.js';
 
-var OC = OC || {};
+// var OC = OC || {};
 OC.servermode = false;
 OC.logged = false;
 OC.username = null;
@@ -1842,6 +1848,9 @@ function addListeners () {
     $('#report_generation_generate_button').on('click', createJobReport);
     $('#report_generation_close_button').on('click', closeReportGenerationDiv);
 
+    $('#save-settings-button').click(onClickSaveSystemConf);
+    $('#reset-settings-button').click(resetSystemConf);
+
     $('#submit-job-button').click(submit);
     $('#input-text').change(inputChangeHandler);
     $('#input-file').change(inputChangeHandler);
@@ -1927,6 +1936,8 @@ function addMediatorListeners() {
     OC.mediator.subscribe('navigate', changePage);
     OC.mediator.subscribe('populateJobs', populateJobs);
     OC.mediator.subscribe('moduleinfo.annotators', buildAnnotatorsSelector);
+
+    OC.mediator.subscribe('setupJobs', handleSetupJobsTab);
 }
 
 function setLastAssembly () {
@@ -2047,6 +2058,21 @@ function populateAddtlAnalysis () {
     }
 }
 
+/***
+ * Mediator handler called by setupJobsTab() from webstore.js
+ */
+function handleSetupJobsTab() {
+        populateInputFormats();
+    buildAnnotatorGroupSelector();
+    let annotatorsDone = populateAnnotators();
+    let packagesDone = populatePackages();
+    annotatorsDone.then(() => {
+        // Populate cc here to avoid it showing before annotators
+        // and then getting quickly shoved down. Looks bad.
+        populateAddtlAnalysis();
+    });
+}
+
 function populateCaseControl (outer) {
     if ( ! OC.localModuleInfo.hasOwnProperty('casecontrol')) {
         return false
@@ -2107,3 +2133,5 @@ function populateCaseControl (outer) {
     }    
     return true
 }
+
+export { websubmit_run };
