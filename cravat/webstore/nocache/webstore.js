@@ -1,5 +1,9 @@
 'use strict';
-var OC = OC || {};
+import {
+    getTn, addEl, getEl, changePage, PubSub, OC
+} from '../../submit/nocache/core.js'
+
+// var OC = OC || {};
 
 OC.currentDetailModule = null;
 OC.remoteModuleInfo = {};
@@ -156,15 +160,7 @@ function complementRemoteWithLocal() {
 
 function setupJobsTab() {
     complementRemoteWithLocal();
-    populateInputFormats();
-    buildAnnotatorGroupSelector();
-    let annotatorsDone = populateAnnotators();
-    let packagesDone = populatePackages();
-    annotatorsDone.then(() => {
-        // Populate cc here to avoid it showing before annotators
-        // and then getting quickly shoved down. Looks bad.
-        populateAddtlAnalysis();
-    })
+    OC.mediator.publish('setupJobs');
 }
 
 function updateRemoteModuleTagwithUpdate() {
@@ -2735,7 +2731,33 @@ function webstore_run() {
 }
 
 // Bind events to the mediator
-$(document).ready(function () {
+function addWebstoreEventHandlers() {
+    console.log('store.addWebstoreEventHandlers')
     OC.mediator.subscribe('system.update', onClickSystemModuleUpdateButton);
     OC.mediator.subscribe('getRemote', getRemote);
-});
+
+    // index.html handlers for webstore
+    $('#progressdivcloseicon').click(onClickProgressDivCloseIcon); //webstore
+    $('#store-tag-checkbox-home').click(onClickStoreHome); //webstore
+    $('#store-tag-checkbox-viewall').click(onClickStoreTagResetButton); //webstore
+    $('#store-tag-checkbox-newavailable').click(onStoreTagCheckboxChange); //webstore
+    $('#store-tag-checkbox-packages').click(onStoreTagCheckboxChange); //webstore
+    $('#store-update-all-button').click(onClickStoreUpdateAllButton); //webstore
+    $('#update-store-button').click(onClickStoreUpdateRemoteButton); //webstore
+    $('#store-sort-select').change(() => populateAllModulesDiv(true)); //webstore
+    $('#store-systemmodule-install-button').click(onClickInstallBaseComponents); //webstore
+    $('.carousel-left').click((event) => onClickStoreHomeLeftArrow(event.currentTarget)); //webstore
+    $('.carousel-right').click((event) => onClickStoreHomeRightArrow(event.currentTarget)); //webstore
+    $('#store-module-back-arrow').click(onClickModuleGroupDivBackArrow); //webstore
+    $('#store-namefilter').on('input', updateFilter); //webstore
+}
+
+$(document).ready(() => addWebstoreEventHandlers());
+
+export {
+    addWebstoreEventHandlers,
+    connectWebSocket,
+    checkConnection,
+    getBaseModuleNames,
+    toggleChatBox
+};

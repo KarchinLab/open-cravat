@@ -74,8 +74,23 @@ class PubSub {
         if (!this.channels.hasOwnProperty(channel)) {
             this.channels[channel] = [];
         }
+        console.log(`MEDIATOR: ${channel} published to ${this.channels[channel].length} subscribers.`);
         for (let callback of this.channels[channel]) {
             callback(...args);
         }
     }
 }
+
+/************** OC ****************/
+
+const OC = {};
+OC.mediator =   new PubSub();
+export {
+    getEl,
+    getTn,
+    addEl,
+    changePage,
+    PubSub,
+    OC
+};
+
