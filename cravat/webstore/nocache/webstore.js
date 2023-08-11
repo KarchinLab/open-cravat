@@ -2738,4 +2738,19 @@ function webstore_run() {
 $(document).ready(function () {
     OC.mediator.subscribe('system.update', onClickSystemModuleUpdateButton);
     OC.mediator.subscribe('getRemote', getRemote);
+
+    // index.html webstore events
+    $('#progressdivcloseicon').on('click', onClickProgressDivCloseIcon);
+    $('#store-namefilter').on('input', updateFilter);
+    $('#store-tag-checkbox-home').on('click', onClickStoreHome);
+    $('#store-tag-checkbox-viewall').on('click', onClickStoreTagResetButton);
+    $('#store-tag-checkbox-newavailable').on('click', onStoreTagCheckboxChange);
+    $('#store-tag-checkbox-packages').on('click', onStoreTagCheckboxChange);
+    $('.carousel-left').on('click', onClickStoreHomeLeftArrow);
+    $('.carousel-right').on('click', onClickStoreHomeRightArrow);
+    $('#store-sort-select').on('change', () => populateAllModulesDiv(true));
+    $('#store-update-all-button').on('click', onClickStoreUpdateAllButton);
+    $('#module-group-back-arrow').on('click', onClickModuleGroupDivBackArrow);
+    $('#store-systemmodule-install-button').on('click', onClickInstallBaseComponents);
+    $('#store-update-remote-button').on('click', onClickStoreUpdateRemoteButton);
 });
