@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description=textwrap.dedent('''\
 
-Turn UCSC's gencode bed file into two interval trees, one for exons and another for genes. 
+Turn UCSC's gencode bed file into two interval trees, one for exons and another for genes.
 This bed file has several extra fields, one of which contains a gene name.
 
         '''))
@@ -46,14 +46,14 @@ class chromGeneRanges():
     def makeTrees(self):
         '''IntervalTree merges identical intervals while keeping all transcript names'''
         [val.makeInterval() for val in self.genedict.values()]
-        self.geneTree = IntervalTree([gene.interval for gene in self.genedict.values()]) 
-        self.exonTree = IntervalTree(self.exonIV) 
+        self.geneTree = IntervalTree([gene.interval for gene in self.genedict.values()])
+        self.exonTree = IntervalTree(self.exonIV)
 
 class bedObj():
     '''Extracts info from the gencode (v43) bed file from UCSC, which has a gene name in field 17'''
     def __init__(self, line):
         fields = line.strip().split("\t")
-        self.chrom      = fields[0] 
+        self.chrom      = fields[0]
         self.chromStart = int(fields[1])
         self.chromEnd   = int(fields[2])
         self.name       = fields[3]
@@ -62,7 +62,6 @@ class bedObj():
         self.gene       = fields[17]
         self.starts     = [int(start) + self.chromStart for start in blockStarts.rstrip(',').split(',')]
         self.sizes      = [int(size) for size in blockSizes.rstrip(',').split(',')]
-    
 
 def chromIntervalTreesFromBed(bedfile, genefield=False):
     '''Returns two dictionaries of chromosome interval trees with gene name tuples.
@@ -92,7 +91,7 @@ def chromIntervalTreesFromBed(bedfile, genefield=False):
                 chromGenes = chromGeneRanges(curChrom)
             # add bed line to current chromosome object
             chromGenes.add(tx)
-            
+
     f.close
     chromGenes.makeTrees()
     chromExonTree[curChrom] = chromGenes.exonTree
@@ -106,3 +105,4 @@ if __name__ == "__main__":
         sys.exit(1)
     args = parser.parse_args()
     chromIntervalTreesFromBed(args.bedfile)
+

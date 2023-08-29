@@ -20,20 +20,17 @@ group.add_argument('bedfile', type=str, help='Bed file')
 
 # TODO: deal with chr vs nonchr
 
-if __name__ == "__main__":
-    if len(sys.argv)==1:
-        parser.print_help()
-        sys.exit(1)
-    args = parser.parse_args()
-    bedExonTree, bedTxTree = chromIntervalTreesFromBed(args.bedfile)
+def vcfOverlap(bedfile, vcffile):
+    bedExonTree, bedTxTree = chromIntervalTreesFromBed(bedfile)
 #    with open('bedfile.pkl', 'wb') as pfile:
 #        pickle.dump([bedExonTree, bedTxTree], pfile)
 #    with open('bedfile.pkl', 'rb') as pfile:
 #        [bedExonTree, bedTxTree] = pickle.load(pfile)
     chroms = bedTxTree.keys()
+    print(chroms)
     # attempt to speed up lookups (VCF is generally in chr order)
     curChrom, exonTree, txTree = None, None, None
-    with open(args.vcffile, 'r') as f:
+    with open(vcffile, 'r') as f:
         reader = vcf.Reader(f)
         for variant in reader:
              if not variant.CHROM in chroms:
@@ -52,3 +49,12 @@ if __name__ == "__main__":
 #             print(sorted(bedIntervalTreesByChrom[variant.CHROM][variant.POS]]))
 #             print(variant.INFO, variant.var_type)
 #             sys.exit()
+
+
+if __name__ == "__main__":
+    if len(sys.argv)==1:
+        parser.print_help()
+        sys.exit(1)
+    args = parser.parse_args()
+    vcfOverlap(args.bedfile, args.vcffile)
+
