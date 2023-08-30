@@ -4,7 +4,7 @@ import sys, os, re, argparse, textwrap
 import vcf
 from bedparse import chromIntervalTreesFromBed
 from intervaltree import IntervalTree
-import pickle
+#import pickle
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -27,28 +27,30 @@ def vcfOverlap(bedfile, vcffile):
 #    with open('bedfile.pkl', 'rb') as pfile:
 #        [bedExonTree, bedTxTree] = pickle.load(pfile)
     chroms = bedTxTree.keys()
-    print(chroms)
     # attempt to speed up lookups (VCF is generally in chr order)
     curChrom, exonTree, txTree = None, None, None
     with open(vcffile, 'r') as f:
         reader = vcf.Reader(f)
         for variant in reader:
              if not variant.CHROM in chroms:
+                 print('WARNING, chromosome not found in bed file:', variant.CHROM)
                  continue
              if variant.CHROM != curChrom:
                  exonTree = bedExonTree[variant.CHROM]
                  txTree = bedTxTree[variant.CHROM]
                  curChrom = variant.CHROM
+                 print(curChrom)
+             # the loop below first prints all genes that are overlapped 
+             # and then all the exons (with their transcript IDs). 
+             # We might want to return a dict of exontrees from bedparse with gene ID as keys instead.
              if txTree[variant.POS]:
-                 print(variant.POS, variant.CHROM, variant.ALT, variant.REF)
-                 [print(x) for x in txTree[variant.POS]]
+                 print('Variant:',variant.POS, variant.CHROM, variant.ALT, variant.REF)
+                 [print(f'Gene: {x.begin}, {x.end}, {x.data}') for x in txTree[variant.POS]]
                  if exonTree[variant.POS]:
-                     print('exons:')
-                     [print(x) for x in exonTree[variant.POS]]
-                     #print(exonTree[variant.POS])
+                     [print(f'\tExon: {x.begin}, {x.end}, {x.data}') for x in exonTree[variant.POS]]
+			
 #             print(sorted(bedIntervalTreesByChrom[variant.CHROM][variant.POS]]))
 #             print(variant.INFO, variant.var_type)
-#             sys.exit()
 
 
 if __name__ == "__main__":
@@ -57,4 +59,5 @@ if __name__ == "__main__":
         sys.exit(1)
     args = parser.parse_args()
     vcfOverlap(args.bedfile, args.vcffile)
+
 
