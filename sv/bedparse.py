@@ -16,38 +16,50 @@ group.add_argument('bedfile', type=str, help='Input bed file')
 
 class geneObj():
     '''A gene coordinate object that can be updated with additional transcripts'''
-    def __init__(self, name, start, end):
-        self.name = name
-        self.chromstart = start
-        self.chromend = end
-    def update(self, start, end):
-        self.start = min(self.chromstart, start)
-        self.end = max(self.chromend, end)
+    def __init__(self, tx):
+        self.name = tx.name
+        self.chromstart = tx.chromStart
+        self.chromend = tx.chromEnd
+        self.exonIV = []
+    def update(self, tx):
+        self.start = min(self.chromstart, tx.chromStart)
+        self.end = max(self.chromend, tx.chromEnd)
+        # exons are kept with the transcript ID
+        for start, size in zip(tx.starts, tx.sizes):
+            end = start+size
+            self.exonIV.append(Interval(start, end, tx.name))
     def makeInterval(self):
         '''This interval should only be created when all transcripts have been added'''
         self.interval = Interval(self.chromstart, self.chromend, self.name)
+        self.exonTree = IntervalTree(self.exonIV)
+        # merge identical exons, keeping all transcript IDs
+        # NOTE: merge_equals automatically sends the data (=name) for the existing and the new intervals
+        # to whatever function you specify as the data_reducer. This is only explained
+        # in help(IntervalTree.merge_equals) - this in case someone else spends a morning figuring this out
+        # also lambda simply means 'unnamed function'
+        self.exonTree.merge_equals(data_reducer=lambda currentdata, newdata: f'{currentdata};{newdata}')      
 
 class chromGeneRanges():
     '''Contains gene objects for a single chromosome'''
     def __init__(self, chrom):
         self.genedict = dict()
         self.chrom = chrom
-        self.exonIV = []
+#        self.exonIV = []
     def add(self, tx):
         '''Adds all exons for a transcript and extends gene boundaries if necessary.'''
         if tx.gene in self.genedict:
-            self.genedict[tx.gene].update(tx.chromStart, tx.chromEnd)
+            self.genedict[tx.gene].update(tx)
         else:
-            self.genedict[tx.gene] = geneObj(tx.gene, tx.chromStart, tx.chromEnd)
-        # exons are kept with the transcript ID
-        for start, size in zip(tx.starts, tx.sizes):
-            end = start+size
-            self.exonIV.append(Interval(start, end, tx.name))
+            self.genedict[tx.gene] = geneObj(tx)
     def makeTrees(self):
         '''IntervalTree merges identical intervals while keeping all transcript names'''
         [val.makeInterval() for val in self.genedict.values()]
         self.geneTree = IntervalTree([gene.interval for gene in self.genedict.values()])
-        self.exonTree = IntervalTree(self.exonIV)
+        # the exons are already intervaltrees so we must concatenate them without merging
+        self.exonTree = IntervalTree()
+        trees = [gene.exonTree for gene in self.genedict.values()]
+        for tree in trees:
+                self.exonTree |= tree
 
 class bedObj():
     '''Extracts info from the gencode (v43) bed file from UCSC, which has a gene name in field 17'''
