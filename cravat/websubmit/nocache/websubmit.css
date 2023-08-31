@@ -523,7 +523,6 @@ input:checked + .slider:before {
     background-color: #de6342;
     position: absolute;
     left: 1px;
-    bottom: -2px;
 }
 
 .launch-button {
