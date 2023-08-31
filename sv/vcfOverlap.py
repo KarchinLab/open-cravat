@@ -33,6 +33,9 @@ def vcfOverlap(bedfile, vcffile):
     with open(vcffile, 'r') as f:
         reader = vcf.Reader(f)
         for variant in reader:
+             if variant.ID in is_paired:
+                 # we already have info for this variant (this may not remain true, deal with later)
+                 continue
              if not variant.CHROM in chroms:
                  print('WARNING, chromosome not found in bed file:', variant.CHROM, file=sys.stderr)
                  continue
@@ -44,37 +47,66 @@ def vcfOverlap(bedfile, vcffile):
              # the loop below first prints all genes that are overlapped 
              # and then all the exons (with their transcript IDs). 
              # We might want to return a dict of exontrees from bedparse with gene ID as keys instead.
-             if txTree[variant.POS]:
-                 print_info(variant, txTree, exonTree)
+                 mate_id = print_info(variant, txTree, exonTree)
+                 if mate_id:
+                     is_paired.append(mate_id)
 
+# TODO: see if ALT and ID ever have more entries
+# SVTYPE ID MATEID CHROM POS1 POS2 SIZE DEL_GENES BROKEN_GENES
 def print_info(variant, txTree, exonTree):
-     '''Extract information from variant and overlapping genes for printing'''
-     # if this variant has a mate we must add its info
-     # currently we only use info we extract from the variant, and mark the mate ID
-     # for skipping once we encounter it
-     # TODO: see if ALT ever has more entries
-     print('Variant:', variant.ID, variant.POS, variant.CHROM, variant.ALT[0], variant.REF)
-     # get all overlapping genes
-     [print(f'Gene: {x.begin}, {x.end}, {x.data}') for x in txTree[variant.POS]]
-     mate = mateinfo(variant)
-     if mate: # and mate.POS in txTree:
-         [print(f'Gene: {x.begin}, {x.end}, {x.data} for mate {mate.ID[0]}') for x in txTree[mate.POS]]
-     # get all overlapping exons
-     if exonTree[variant.POS]:
-         [print(f'\tExon: {x.begin}, {x.end}, {x.data}') for x in exonTree[variant.POS]]
- # with translocations and larger deletions we can get information from the ALT field
- # this is important with GRIDSS because all its SVTYPE are BND (Manta has DEL, etc)
+    '''Extract information from variant and overlapping genes for printing. Returns mate.ID if one is found'''
+    # if this variant has a mate we must add its info
+    # currently we only use info we extract from the variant, and mark the mate ID
+    # for skipping once we encounter it
+    interrupted_genes = IntervalTree()
+    interrupted_genes.update(txTree[variant.POS])
+#    if not interrupted_genes:
+#       return False
+    mate = mateinfo(variant, txTree)
+    # check exons
+    if mate:
+        # the mate only removed its own interrupted genes from the deleted set
+        mate.deleted_genes.difference_update(interrupted_genes)
+        if interrupted_genes == mate.interrupted_genes:
+            # the deletion is fully inside one (or several overlapping) gene(s)
+            pass
+        else:
+            interrupted_genes.update(mate.interrupted_genes)
+            del_genes = ';'.join([x.data for x in mate.deleted_genes])
+            if not del_genes:
+                del_genes = 'None'
+            broken_genes = ';'.join([x.data for x in interrupted_genes])
+            if not broken_genes:
+                broken_genes = 'None'
+            interr_genes = [(f'{x.data} {variant.CHROM}:{x.begin}-{x.end}') for x in interrupted_genes]
+            print(f"{mate.SVTYPE}\t{variant.ID}\t{mate.ID}\t{variant.CHROM}\t{variant.POS}\t{mate.POS}\t", end='')
+            print(f"{mate.POS-variant.POS}\t{del_genes}\t{broken_genes}")
+            return mate.ID
+    else:
+        # do other stuff
+        pass
+    return False    
+     
+#    if exonTree[variant.POS]:
+#         [print(f'\tExon: {x.begin}, {x.end}, {x.data}') for x in exonTree[variant.POS]]
 
 class mateObject():
     '''mate information extraced from variant'''
-    def __init__(self, name, pos, svtype):
-        self.ID = name
-        self.POS = pos
+    def __init__(self, name, startpos, endpos, svtype, txTree):
+        self.ID = name[0]
+        # NOTE: if this is not a DEL, endpos is not the appropriate name
+        self.POS = endpos
         self.SVTYPE = svtype
+        # check for overlaps
+        self.interrupted_genes = txTree[self.POS]
+        if self.SVTYPE == 'DEL':
+            # NOTE: we may want to create a DEL object instead
+            self.deleted_genes = txTree[startpos:self.POS]
+            self.deleted_genes.difference_update(self.interrupted_genes)
 
 
 # NOTE currently only returns True if the mate is a deletion with the other end downstream
-def mateinfo(variant):
+def mateinfo(variant, txTree):
     '''get type of SV from ALT field info if the variant has a mate'''
     if not 'MATEID' in variant.INFO:
         return False
@@ -83,7 +115,7 @@ def mateinfo(variant):
     match = re.match(simple_del, str(variant.ALT[0]))
     if match:
         chrom_coord = int(match.group(1))
-        mate = mateObject(variant.INFO['MATEID'], chrom_coord, 'DEL')
+        mate = mateObject(variant.INFO['MATEID'], variant.POS, chrom_coord, 'DEL', txTree)
         return mate
     return False
     
@@ -97,7 +129,6 @@ def mateinfo(variant):
 #s ]p]t piece extending to the left of p is joined before t
 #s [p[t reverse comp piece extending right of p is joined before t
 
-			
 #             print(sorted(bedIntervalTreesByChrom[variant.CHROM][variant.POS]]))
 #             print(variant.INFO, variant.var_type)
 
