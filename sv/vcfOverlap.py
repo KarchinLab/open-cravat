@@ -35,10 +35,10 @@ def vcfOverlap(bedfile, vcffile):
     with open(vcffile, 'r') as f:
         reader = vcf.Reader(f)
         for variant in reader:
-             print(variant.ID)
              if variant.ID in is_paired:
                  # we already have info for this variant (this may not remain true, deal with later)
                  continue
+             print(variant.ID)
              if not variant.CHROM in chroms:
                  print('WARNING, chromosome not found in bed file:', variant.CHROM, file=sys.stderr)
                  continue
@@ -55,6 +55,9 @@ def vcfOverlap(bedfile, vcffile):
                  is_paired.append(mate_id)
 
 # TODO: see if ALT and ID ever have more entries
+# ALT can have multiple entries in complex rearrangements, see p24 in
+# https://samtools.github.io/hts-specs/VCFv4.4.pdf
+# we might want to skip those
 def print_info(variant, txTree, exonTree):
     '''Extract information from variant and overlapping genes for printing. Returns mate.ID if one is found'''
     # if this variant has a mate we must add its info
@@ -80,16 +83,18 @@ def print_info(variant, txTree, exonTree):
 
 class mateObject():
     '''mate information extraced from variant'''
-    def __init__(self, name, chrom, coord, txTree):
+    def __init__(self, name, chrom, coord, txTree, allele):
         self.ID = name[0]
         self.CHROM = chrom
         self.POS = coord
-        self.SVTYPE = 'TODO'
+        self.SVTYPE = allele
         self.interrupted_genes = txTree[self.POS]
     def add_deltype(self, variant, txTree):
         self.SVTYPE = 'SVDEL'
         # check for region overlaps
-        self.deleted_genes = txTree[variant.POS:self.POS]
+        start = min(variant.POS, self.POS)
+        end = max(variant.POS, self.POS)
+        self.deleted_genes = txTree[start:end]
         self.deleted_genes.difference_update(self.interrupted_genes)
         if variant.interrupted_genes == self.interrupted_genes:
             # the deletion is fully inside one (or several overlapping) gene(s)
@@ -116,17 +121,20 @@ def mateinfo(variant, txTree):
         print("No match found, cannot make MATE.", variant.ALT)
         sys.exit()
         return False
-    mate = mateObject(variant.INFO['MATEID'], chrom, coord, txTree)
+    mate = mateObject(variant.INFO['MATEID'], chrom, coord, txTree, variant.ALT[0])
     # NOTE must add other types
     add_info_if_del(variant, mate, txTree)
     return mate
 
 # could add this as a mate.function()
+# simplified this from an earlier version: consider this a DEL if
+# there is [chr:pos[ or ]chr:pos]. TODO: figure out what every combination is
 def add_info_if_del(variant, mate, txTree):
     '''See if the variant and mate are a deletion on a single chromosome'''
-    # this regexp captures the chromosome position with \d+
-    simple_del = f"{variant.REF}\\[{variant.CHROM}:{mate.POS}\\["
-    match = re.match(simple_del, str(variant.ALT[0]))
+    # we're currently ignoring any inserts, which are strings before [ or after ]
+#    simple_del = f"{variant.REF}\\[{variant.CHROM}:{mate.POS}\\["
+    pattern = f"[\\[\\]]{variant.CHROM}:{mate.POS}[\\[\\]]"
+    match = re.search(pattern, str(variant.ALT[0]))
     if match:
         mate.add_deltype(variant, txTree)
         return True
