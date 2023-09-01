@@ -35,6 +35,9 @@ def vcfOverlap(bedfile, vcffile):
     with open(vcffile, 'r') as f:
         reader = vcf.Reader(f)
         for variant in reader:
+#             if variant.ID.endswith('b'):
+#                 print(variant.ID, variant.REF, variant.ALT[0])
+#             continue
              if variant.ID in is_paired:
                  # we already have info for this variant (this may not remain true, deal with later)
                  continue
@@ -67,15 +70,22 @@ def print_info(variant, txTree, exonTree):
     variant.interrupted_genes.update(txTree[variant.POS])
     if 'MATEID' in variant.INFO:
         mate = mateinfo(variant, txTree)
-        print(f"{mate.SVTYPE}\t{variant.ID}\t{mate.ID}\t{variant.CHROM}\t{variant.POS}\t{mate.POS}\t", end='')
+        print(f"{mate.SVTYPE}\t{variant.ID}\t{mate.ID}\t{variant.CHROM}\t{variant.POS}\t{mate.POS}", end='')
         if mate.SVTYPE == 'SVDEL':
-            print(f"{mate.POS-variant.POS}\t{mate.del_genes}\t{mate.broken_genes}")
+            print(f"\t{mate.POS-variant.POS}\t{mate.del_genes}\t{mate.broken_genes}")
         else:
             print('')
         return mate.ID
-#    else:
-#        # do other stuff
-        pass
+    else:
+        # small insertion
+        pattern = r'^\.*[ACTGN]+\.*$'
+        if re.match(pattern, str(variant.ALT[0])):
+            interrupted_genes = ';'.join([x.data for x in variant.interrupted_genes])
+            print(f"SVINS\t{variant.ID}\tNA\t{variant.CHROM}\t{variant.POS}\tNA", end='')
+            print(f"\tNA\tNA\t{interrupted_genes}")
+        else:
+            sys.stderr.print('WARNING, do not understand', variant.ID, variant.ALT)
+            return False
     return False    
      
 #    if exonTree[variant.POS]:
