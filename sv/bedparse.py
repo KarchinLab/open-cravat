@@ -17,7 +17,9 @@ group.add_argument('bedfile', type=str, help='Input bed file')
 class geneObj():
     '''A gene coordinate object that can be updated with additional transcripts'''
     def __init__(self, tx):
-        self.name = tx.name
+        self.name = tx.gene
+        if not self.name:
+            self.name = tx.name  # use transcript ID
         self.chromstart = tx.chromStart
         self.chromend = tx.chromEnd
         self.exonIV = []
@@ -27,7 +29,7 @@ class geneObj():
         # exons are kept with the transcript ID
         for start, size in zip(tx.starts, tx.sizes):
             end = start+size
-            self.exonIV.append(Interval(start, end, tx.name))
+            self.exonIV.append(Interval(start, end, tx.gene))
     def makeInterval(self):
         '''This interval should only be created when all transcripts have been added'''
         self.interval = Interval(self.chromstart, self.chromend, self.name)
@@ -62,8 +64,9 @@ class chromGeneRanges():
                 self.exonTree |= tree
 
 class bedObj():
-    '''Extracts info from the gencode (v43) bed file from UCSC, which has a gene name in field 17'''
-    def __init__(self, line):
+    '''Extracts transcript info from a bed file. By default expects gencode from UCSC, which has
+       a gene name in field 17. To change this behavior, set genefield=3.'''
+    def __init__(self, line, genefield=17):
         fields = line.strip().split("\t")
         self.chrom      = fields[0]
         self.chromStart = int(fields[1])
@@ -71,11 +74,15 @@ class bedObj():
         self.name       = fields[3]
         blockSizes      = fields[10]
         blockStarts     = fields[11]
-        self.gene       = fields[17]
         self.starts     = [int(start) + self.chromStart for start in blockStarts.rstrip(',').split(',')]
         self.sizes      = [int(size) for size in blockSizes.rstrip(',').split(',')]
+        # use the transcript ID by default
+        self.gene = self.name 
+        # but try to get the gene ID
+        if genefield and genefield != '':
+            self.gene = fields[genefield]
 
-def chromIntervalTreesFromBed(bedfile, genefield=False):
+def chromIntervalTreesFromBed(bedfile, genefield=17):
     '''Returns two dictionaries of chromosome interval trees with gene name tuples.
        One tree contains exons, the other transcript boundaries'''
     curChrom = False
@@ -84,7 +91,7 @@ def chromIntervalTreesFromBed(bedfile, genefield=False):
     chromTxTree = dict()
     with open(bedfile, 'r') as f:
         for line in f:
-            tx = bedObj(line)
+            tx = bedObj(line, genefield)
             if not curChrom:
                 curChrom = tx.chrom
                 chromGenes = chromGeneRanges(curChrom)
@@ -116,5 +123,6 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args()
-    chromIntervalTreesFromBed(args.bedfile)
+    chromExonTree, chromTxTree = chromIntervalTreesFromBed(args.bedfile)
+    print(chromTxTree)
 
