@@ -60,16 +60,7 @@ function onClickStoreTagResetButton() {
     document.getElementById('store-tag-checkbox-viewall').checked = true;
 }
 
-function onClickStoreUpdateRemoteButton() {
-    showUpdateRemoteSpinner();
-    $.ajax({
-        url: '/store/updateremote',
-        success: function(response) {
-            hideUpdateRemoteSpinner();
-            moduleChange();
-        },
-    });
-}
+
 
 function clickTab(value) {
     var tabs = document.getElementById('pageselect').children;
@@ -2752,5 +2743,5 @@ $(document).ready(function () {
     $('#store-update-all-button').on('click', onClickStoreUpdateAllButton);
     $('#module-group-back-arrow').on('click', onClickModuleGroupDivBackArrow);
     $('#store-systemmodule-install-button').on('click', onClickInstallBaseComponents);
-    $('#store-update-remote-button').on('click', onClickStoreUpdateRemoteButton);
+    
 });
