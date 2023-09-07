@@ -403,12 +403,6 @@ function onClickJobTableMainTr (evt) {
     }
 }
 
-function emptyElement (elem) {
-    while (elem.firstChild) {
-        elem.removeChild(elem.firstChild);
-    }
-}
-
 function populateJobTr (job) {
     var jobTr = $('tr.job-table-main-tr[jobid=' + job.id + ']')[0];
     emptyElement(jobTr);
@@ -1121,15 +1115,6 @@ function populatePackages () {
     });
 }
 
-function titleCase(str) {
-    return str.replace(
-      /\w\S*/g,
-      function(txt) {
-        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-      }
-    );
-  }
-
 function buildAnnotatorGroupSelector () {
     OC.tagsCollectedForSubmit = [];
     const tagMembership = {};
@@ -1650,13 +1635,6 @@ function onChangeAnnotatorGroupCheckbox (tags) {
     }
 }
 
-function checkVisible(elm) {
-    // https://stackoverflow.com/questions/5353934/check-if-element-is-visible-on-screen
-    var rect = elm.getBoundingClientRect();
-    var viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
-    return !(rect.bottom < 0 || rect.top - viewHeight >= 0);
-}
-
 function checkBoxGroupAllNoneHandler (event) {
     var $elem = $(event.target);
     let checked;
@@ -1803,14 +1781,6 @@ function onClickInputTextArea () {
 function onBlurInputTextArea () {
     let input = document.getElementById('input-text');
     input.rows = 1;
-}
-
-
-
-function openTerminal () {
-    $.ajax({
-        url: '/submit/openterminal',
-    });
 }
 
 function resizePage () {

@@ -79,3 +79,103 @@ class PubSub {
         }
     }
 }
+
+
+function titleCase(str) {
+    return str.replace(
+        /\w\S*/g,
+        function(txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        }
+    );
+}
+
+function emptyElement(elem) {
+    var last = null;
+    while (last = elem.lastChild) {
+        elem.removeChild(last);
+    }
+}
+
+function checkVisible(elm) {
+    // https://stackoverflow.com/questions/5353934/check-if-element-is-visible-on-screen
+    var rect = elm.getBoundingClientRect();
+    var viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
+    return !(rect.bottom < 0 || rect.top - viewHeight >= 0);
+}
+
+function removeElementFromArrayByValue(a, e) {
+    var idx = a.indexOf(e);
+    if (idx >= 0) {
+        a.splice(idx, 1);
+    }
+}
+
+function prettyBytes(num, precision = 3, addSpace = true) {
+    const UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    if (Math.abs(num) < 1) return num + (addSpace ? ' ' : '') + UNITS[0];
+    const exponent = Math.min(Math.floor(Math.log10(num < 0 ? -num : num) / 3), UNITS.length - 1);
+    const n = Number(((num < 0 ? -num : num) / 1000 ** exponent).toPrecision(precision));
+    return (num < 0 ? '-' : '') + n + (addSpace ? ' ' : '') + UNITS[exponent];
+};
+
+function getTimestamp() {
+    var d = new Date()
+    return "[" + d.getFullYear() + ":" + ("" + d.getMonth()).padStart(2, "0") + ":" + ("" + d.getDate()).padStart(2, "0") + " " + d.getHours() + ":" + ("" + d.getMinutes()).padStart(2, "0") + ":" + ("" + d.getSeconds()).padStart(2, "0") + "]"
+}
+
+function addClassRecursive(elem, className) {
+    elem.classList.add(className);
+    $(elem).children().each(
+        function() {
+            $(this).addClass(className);
+            addClassRecursive(this, className);
+        }
+    );
+}
+
+function compareVersion(ver1, ver2) {
+    var tok1 = ver1.split('.');
+    var tok2 = ver2.split('.');
+    var l = Math.min(tok1.length, tok2.length);
+    for (var i = 0; i < l; i++) {
+        var v1 = tok1[i];
+        var v2 = tok2[i];
+        var v1N = parseInt(v1);
+        var v2N = parseInt(v2);
+        if (isNaN(v1N) == false && isNaN(v2N) == false) {
+            var diff = v1N - v2N;
+            if (diff != 0) {
+                return diff;
+            }
+        } else {
+            if (v1 > v2) {
+                return 1;
+            } else if (v1 < v2) {
+                return -1;
+            }
+        }
+    }
+    return tok1.length - tok2.length;
+}
+
+function getSizeText(size) {
+    size = parseInt(size);
+    if (size < 1024) {
+        size = size + ' bytes';
+    } else {
+        size = size / 1024;
+        if (size < 1024) {
+            size = size.toFixed(0) + ' KB';
+        } else {
+            size = size / 1024;
+            if (size < 1024) {
+                size = size.toFixed(0) + ' MB';
+            } else {
+                size = size / 1024;
+                size = size.toFixed(0) + ' GB';
+            }
+        }
+    }
+    return size;
+}
