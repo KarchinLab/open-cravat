@@ -1728,108 +1728,6 @@ function openSubmitDiv () {
     div.style.display = 'block';
 }
 
-function loadSystemConf () {
-    $.get('/submit/getsystemconfinfo').done(function (response) {
-        OC.systemConf = response.content;
-        var s = document.getElementById('settings_save_metrics');
-        if (OC.systemConf.save_metrics === 'empty') {
-        	s.checked = true;
-        } else {
-        	s.checked = response['content']['save_metrics']
-        } 
-        var s = document.getElementById('sysconfpathspan');
-        s.value = response['path'];
-        var s = document.getElementById('settings_jobs_dir_input');
-        s.value = response['content']['jobs_dir'];
-        var span = document.getElementById('server_user_span');
-        if (! OC.servermode) {
-            span.textContent = '/default';
-        } else {
-            span.textContent = '';
-        }
-        var s = document.getElementById('settings_modules_dir_input');
-        s.value = response['content']['modules_dir'];
-        var s = document.getElementById('settings_gui_input_size_limit');
-        var cutoff = parseInt(response['content']['gui_input_size_limit']);
-        s.value = cutoff;
-        var s = document.getElementById('settings_max_num_concurrent_jobs');
-        s.value = parseInt(response['content']['max_num_concurrent_jobs']);
-        var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
-        s.value = parseInt(response['content']['max_num_concurrent_annotators_per_job']);
-    });
-}
-
-function onClickSaveSystemConf () {
-    document.getElementById('settingsdiv').style.display = 'none';
-    updateSystemConf();
-}
-
-function updateSystemConf (setMetrics) {
-    $.get('/submit/getsystemconfinfo').done(function (response) {
-        var s = document.getElementById('sysconfpathspan');
-        response['path'] = s.value;
-        var s = document.getElementById('settings_jobs_dir_input');
-        response['content']['jobs_dir'] = s.value;
-        var s = document.getElementById('settings_modules_dir_input');
-        response['content']['modules_dir'] = s.value;
-        var s = document.getElementById('settings_gui_input_size_limit');
-        response['content']['gui_input_size_limit'] = parseInt(s.value);
-        var s = document.getElementById('settings_max_num_concurrent_jobs');
-        response['content']['max_num_concurrent_jobs'] = parseInt(s.value);
-        var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
-        response['content']['max_num_concurrent_annotators_per_job'] = parseInt(s.value);
-        var s = document.getElementById('settings_save_metrics');
-        var optout = false;
-        if ((response['content']['save_metrics'] !== false) && (s.checked === false)) {
-            optout = true;
-        }
-        response['content']['save_metrics'] = s.checked;
-        $.ajax({
-            url:'/submit/updatesystemconf',
-            data: {'sysconf': JSON.stringify(response['content']), 'optout': optout},
-            type: 'GET',
-            success: function (response) {
-                if (response['success'] == true) {
-                	if (typeof setMetrics === 'undefined') {
-	                    var mdiv = getEl('div');
-	                    var span = getEl('span');
-	                    span.textContent = 'System configuration has been updated.';
-	                    addEl(mdiv, span);
-	                    addEl(mdiv, getEl('br'));
-	                    addEl(mdiv, getEl('br'));
-	                    var justOk = true;
-	                    showYesNoDialog(mdiv, null, false, justOk);
-                	}
-                } else {
-                    var mdiv = getEl('div');
-                    var span = getEl('span');
-                    span.textContent = 'System configuration was not successful';
-                    addEl(mdiv, span);
-                    addEl(mdiv, getEl('br'));
-                    addEl(mdiv, getEl('br'));
-                    var span = getEl('span');
-                    span.textContent = response['msg'];
-                    addEl(mdiv, span);
-                    addEl(mdiv, getEl('br'));
-                    addEl(mdiv, getEl('br'));
-                    var justOk = true;
-                    showYesNoDialog(mdiv, null, false, justOk);
-                    return;
-                }
-                if (response['sysconf']['jobs_dir'] != undefined) {
-                    populateJobs();
-                    getLocal();
-                    populateAnnotators();
-                }
-            }
-        });
-    });
-}
-
-function resetSystemConf () {
-    loadSystemConf();
-}
-
 function getServermode () {
     $.ajax({
         url: '/submit/servermode',
@@ -1907,17 +1805,7 @@ function onBlurInputTextArea () {
     input.rows = 1;
 }
 
-function onClickThreeDots (evt) {
-    var div = document.getElementById('settingsdiv');
-    var display = div.style.display;
-    if (display == 'block') {
-        display = 'none';
-    } else {
-        display = 'block';
-    }
-    div.style.display = display;
-    evt.stopPropagation();
-}
+
 
 function openTerminal () {
     $.ajax({
@@ -2001,8 +1889,6 @@ function addListeners () {
     $('#jobs-table-pagination-prev-button').on('click', onClickJobsListPrevPage);
     $('#jobs-table-pagination-next-button').on('click', onClickJobsListNextPage);
     $('#job-import-file').on('change', importJob);
-    $('#system-conf-save-button').on('click', onClickSaveSystemConf);
-    $('#system-conf-reset-button').on('click', resetSystemConf);
     $('#report_generation_generate_button').on('click', createJobReport);
     $('#report_generation_close_button').on('click', closeReportGenerationDiv);
 
@@ -2013,7 +1899,6 @@ function addListeners () {
     $('#no-annotators-button').click(allNoAnnotatorsHandler);
     $('.input-example-button').click(inputExampleChangeHandler)
     $('#refresh-jobs-table-btn').click(refreshJobsTable);
-    $('.threedotsdiv').click(onClickThreeDots);
     $('.jobsdirinput').change(setJobsDir);
     $('#chaticondiv').click(toggleChatBox)
     document.addEventListener('click', function (evt) {
