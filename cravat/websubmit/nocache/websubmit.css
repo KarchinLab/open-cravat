@@ -809,10 +809,6 @@ input:checked + .slider:before {
     vertical-align: text-bottom;
 }
 
-#submit-form {
-    overflow-y: scroll;
-}
-
 .strikenout {
   text-decoration: line-through;
 }
