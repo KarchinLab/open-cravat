@@ -1943,15 +1943,6 @@ function openTerminal () {
     });
 }
 
-function resizePage () {
-    var div = document.getElementById('submit-form');
-    var h = window.innerHeight - 148;
-    div.style.height = h + 'px';
-    var div = document.getElementById('jobdiv');
-    var h = window.innerHeight - 85;
-    div.style.height = h + 'px';
-}
-
 function clearInputFiles () {
     inputFileList = [];
     document.querySelector('#mult-inputs-message').style.display = 'none';
@@ -2165,10 +2156,6 @@ function websubmit_run () {
     populatePackageVersions();
     getBaseModuleNames();
     addListeners();
-    resizePage();
-    window.onresize = function (evt) {
-        resizePage();
-    }
     loadSystemConf();
     populateMultInputsMessage();
 };
