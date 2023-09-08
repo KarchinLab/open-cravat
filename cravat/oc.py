@@ -232,6 +232,9 @@ vcfanno_p = root_sp.add_parser(
     help = 'annotate a vcf',
 )
 vcfanno_p.add_argument('input_path')
+vcfanno_p.add_argument('--annotators','-a',
+					   nargs='*',
+)
 vcfanno_p.set_defaults(func=vcfanno)
 
 def main():
