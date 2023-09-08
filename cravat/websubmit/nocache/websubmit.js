@@ -1902,7 +1902,7 @@ function populatePackageVersions () {
                 if (data.update) {
                     s.textContent = s.textContent + '\xa0';
                     var a = getEl('a');
-                    a.href = 'https://github.com/KarchinLab/open-cravat/wiki/Update-Instructions';
+                    a.href = 'https://open-cravat.readthedocs.io/en/latest/Update-Instructions.html';
                     a.target = '_blank';
                     //a.textContent = '(' + data.latest + ')';
                     a.textContent = 'new release available';
