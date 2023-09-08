@@ -12,6 +12,9 @@ import pathlib
 from io import StringIO
 from collections import OrderedDict
 import cravat
+import vcf
+import json
+from Bio import bgzf
 
 # from vcf_line_processor import VCFLineProcessor
 
@@ -205,7 +208,8 @@ class VCFAnnotator(object):
         """Read the file to find out where the data starts, return the line number of the first data"""
         header_path = pathlib.Path(self.temp_dir)
         header_file_name = header_path / next(self.temp_file_name_gen)
-        with gzip.open(filename=header_file_name, mode='wt', compresslevel=9) as header_file:
+        header_path.mkdir(exist_ok=True)
+        with bgzf.open(filename=header_file_name, mode='wt') as header_file:
             for line in file:
                 if line.startswith('##'):
                     self.header_lines.append(line)
@@ -223,7 +227,7 @@ class VCFAnnotator(object):
         """Annotate a chunk of lines and output to a temporary file"""
         out_path = os.path.join(self.temp_dir, identifier)
         try:
-            with gzip.open(filename=out_path, mode='wt', compresslevel=9) as out:
+            with bgzf.open(filename=out_path, mode='wt') as out:
                 for line in data:
                     try:
                         annotated = self.line_processor.annotate_line(line)
@@ -357,7 +361,7 @@ def vcfanno(args):
         processors=16,
         chunk_size=10**4,
         chunk_log_frequency=50,
-        annotators=['clinvar', 'dbsnp'])
+        annotators=args.annotators)
     anno.process()
 
 if __name__ == '__main__':
@@ -377,5 +381,5 @@ if __name__ == '__main__':
         processors=16,
         chunk_size=10**4,
         chunk_log_frequency=50,
-        annotators=['clinvar', 'dbsnp'])
+        annotators=['clinvar','dbsnp_common'])
     anno.process()
