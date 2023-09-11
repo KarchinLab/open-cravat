@@ -1077,26 +1077,6 @@ function refreshJobsTable () {
     populateJobs();
 }
 
-function populateAnnotators () {
-    document.querySelector("#annotdivspinnerdiv").classList.remove("hide")
-    document.querySelector("#annotator-group-select-div").classList.remove("show")
-    return new Promise((resolve, reject) => {
-        $.ajax({
-            url:'/submit/annotators',
-            type: 'GET',
-            success: function (data) {
-                document.querySelector("#annotdivspinnerdiv").classList.add("hide")
-                document.querySelector("#annotator-group-select-div").classList.add("show")
-                OC.GLOBALS.annotators = data
-                setTimeout(function () {
-                    buildAnnotatorsSelector();
-                    resolve();
-                }, 100);
-            }
-        })
-    });
-}
-
 function populatePackages () {
     document.querySelector("#package-select-div").classList.remove("show")
     return new Promise((resolve, reject) => {
@@ -1385,6 +1365,7 @@ function buildAnnotatorsSelector () {
         annotatorSelected();
     })
 }
+OC.mediator.subscribe('moduleinfo.annotators', buildAnnotatorsSelector);
 
 function buildCheckBoxGroup (checkDatas, parentDiv) {
     parentDiv = (parentDiv === undefined) ? getEl('div') : parentDiv;
