@@ -19,8 +19,7 @@ function populateAnnotators () {
                 OC.GLOBALS.annotators = data;
 				//TODO: remove timeout and see what breaks
                 setTimeout(function () {
-                    buildAnnotatorsSelector();
-					// OC.mediator.publish('moduleinfo.annotators');
+					OC.mediator.publish('moduleinfo.annotators');
                     resolve();
                 }, 100);
             }
