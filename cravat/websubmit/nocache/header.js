@@ -15,11 +15,11 @@ function addHeaderEventHandlers() {
     // system update button
     document.getElementById('store-systemmoduleupdate-button').addEventListener('click', () => OC.mediator.publish('system.update'));
 
-    document.getElementsByClassName('threedotsdiv')[0].addEventListener('click', (event) => OC.mediator.publish('header.threedotsclick', event));
+    document.getElementsByClassName('threedotsdiv')[0].addEventListener('click', onClickThreeDots);
 
-    document.getElementById('system-conf-save-button').addEventListener('click', () => OC.mediator.publish('conf.save'));
-    document.getElementById('system-conf-reset-button').addEventListener('click', () => OC.mediator.publish('conf.reset'));
-    document.getElementById('store-update-remote-button').addEventListener('click', () => OC.mediator.publish('remote.update'));
+    document.getElementById('system-conf-save-button').addEventListener('click', onClickSaveSystemConf);
+    document.getElementById('system-conf-reset-button').addEventListener('click', resetSystemConf);
+    document.getElementById('store-update-remote-button').addEventListener('click', onClickStoreUpdateRemoteButton);
 }
 
 $(document).ready(() => addHeaderEventHandlers());
@@ -34,8 +34,6 @@ function onClickStoreUpdateRemoteButton() {
         },
     });
 }
-OC.mediator.subscribe('remote.update', onClickStoreUpdateRemoteButton);
-
 
 function onClickThreeDots (evt) {
     var div = document.getElementById('settingsdiv');
@@ -48,7 +46,6 @@ function onClickThreeDots (evt) {
     div.style.display = display;
     evt.stopPropagation();
 }
-OC.mediator.subscribe('header.threedotsclick', onClickThreeDots);
 
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
@@ -84,7 +81,6 @@ function loadSystemConf () {
 function resetSystemConf () {
     loadSystemConf();
 }
-OC.mediator.subscribe('conf.reset', resetSystemConf);
 
 function updateSystemConf (setMetrics) {
     $.get('/submit/getsystemconfinfo').done(function (response) {
@@ -152,7 +148,3 @@ function onClickSaveSystemConf () {
     document.getElementById('settingsdiv').style.display = 'none';
     updateSystemConf();
 }
-OC.mediator.subscribe('conf.save', onClickSaveSystemConf);
-
-
-
