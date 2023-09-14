@@ -7,7 +7,34 @@ TODO: Figure out how to use the configuration to launch the webserver before run
 TODO: Set up fixtures to get consistent data for testing (installed modules, jobs, etc)
 """
 import re
+import time
+
 from playwright.sync_api import Page, expect
+import pytest
+from xprocess import ProcessStarter
+
+
+@pytest.fixture(autouse=True, scope='session')
+def test_server(xprocess):
+    class Starter(ProcessStarter):
+        # startup pattern
+        pattern = "OpenCRAVAT is served at"
+
+        # command to start process
+        args = ['oc', 'gui', '--headless']
+
+    # ensure process is running and return its logfile
+    logfile = xprocess.ensure("test_server", Starter)
+
+    conn = True
+    yield conn
+
+    # clean up whole process tree afterward
+    xprocess.getinfo("test_server").terminate()
+
+
+def add_complete_response(response, completed_set):
+    completed_set.append(response.url)
 
 
 def test_websubmit(page: Page):
@@ -23,8 +50,24 @@ def test_websubmit_has_title(page: Page):
 
 
 def test_websubmit_click_variant_annotation_category_shows_aloft(page: Page):
+    timeout = 10
+    poll_time = 0.25
+    packages_loaded = False
+    completed = list()
+    page.on("response", lambda response: add_complete_response(response, completed))
     page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
-    page.wait_for_timeout(2000) # auto-wait didn't seem to wait for the click handler to be attached
+    t = time.time()
+    max_time = t + timeout
+
+    print('starting loop')
+    while t < max_time and not packages_loaded:
+        print(len(completed))
+        packages_loaded = any(url.endswith('submit/packages') for url in completed)
+        if packages_loaded:
+            print('packages loaded.')
+        t = time.time()
+        # time.sleep(poll_time)
+
     page.locator(".submit-annot-tag").get_by_text("Variants", exact=True).click()
     aloft_checkbox = page.locator("#annotator-select-div").get_by_text("ALoFT", exact=True)
     expect(aloft_checkbox).to_be_visible()
@@ -32,7 +75,7 @@ def test_websubmit_click_variant_annotation_category_shows_aloft(page: Page):
 
 def test_websubmit_click_store_tab_navigates_to_store(page: Page):
     page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
-    page.wait_for_timeout(2000) # auto-wait didn't seem to wait for the click handler to be attached
+    # page.wait_for_timeout(2000) # auto-wait didn't seem to wait for the click handler to be attached
     page.get_by_text("STORE", exact=True).click()
     store_div = page.locator("#store-home-div")
     expect(store_div).to_be_visible()
