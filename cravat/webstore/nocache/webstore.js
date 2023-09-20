@@ -155,7 +155,6 @@ function setupJobsTab() {
         populateAddtlAnalysis();
     })
 }
-OC.mediator.subscribe('moduleinfo.local', setupJobsTab);
 
 
 
@@ -180,7 +179,6 @@ function setBaseInstalled() {
         OC.origRemoteModuleInfo = JSON.parse(JSON.stringify(OC.remoteModuleInfo));
     }
 }
-OC.mediator.subscribe('moduleinfo.local', setBaseInstalled);
 
 function populateStorePages() {
     if (OC.baseInstalled) {
@@ -213,7 +211,6 @@ function populateStorePages() {
         showSystemModulePage();
     }
 }
-OC.mediator.subscribe('moduleinfo.local', populateStorePages);
 
 
 
@@ -235,7 +232,6 @@ function showOrHideSystemModuleUpdateButton() {
         }
     }
 }
-OC.mediator.subscribe('moduleinfo.updates', showOrHideSystemModuleUpdateButton);
 
 
 function showOrHideUpdateAllButton() {
@@ -249,7 +245,6 @@ function showOrHideUpdateAllButton() {
         disableUpdateAvailable()
     }
 }
-OC.mediator.subscribe('moduleinfo.updates', showOrHideUpdateAllButton);
 
 
 function showStoreHome() {
@@ -622,7 +617,6 @@ function populateStoreTagPanel() {
         addEl(div, label);
     }
 }
-OC.mediator.subscribe('moduleinfo.local', populateStoreTagPanel);
 
 
 function installBaseComponents() {
@@ -2410,6 +2404,12 @@ function webstore_run() {
 $(document).ready(function () {
     OC.mediator.subscribe('system.update', onClickSystemModuleUpdateButton);
     OC.mediator.subscribe('getRemote', getRemote);
+    OC.mediator.subscribe('moduleinfo.local', setupJobsTab);
+    OC.mediator.subscribe('moduleinfo.local', setBaseInstalled);
+    OC.mediator.subscribe('moduleinfo.local', populateStorePages);
+    OC.mediator.subscribe('moduleinfo.updates', showOrHideSystemModuleUpdateButton);
+    OC.mediator.subscribe('moduleinfo.updates', showOrHideUpdateAllButton);
+    OC.mediator.subscribe('moduleinfo.local', populateStoreTagPanel);
 
     // index.html webstore events
     $('#progressdivcloseicon').on('click', onClickProgressDivCloseIcon);

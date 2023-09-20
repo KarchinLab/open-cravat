@@ -1365,7 +1365,6 @@ function buildAnnotatorsSelector () {
         annotatorSelected();
     })
 }
-OC.mediator.subscribe('moduleinfo.annotators', buildAnnotatorsSelector);
 
 function buildCheckBoxGroup (checkDatas, parentDiv) {
     parentDiv = (parentDiv === undefined) ? getEl('div') : parentDiv;
@@ -1927,6 +1926,7 @@ function addListeners () {
 function addMediatorListeners() {
     OC.mediator.subscribe('navigate', changePage);
     OC.mediator.subscribe('populateJobs', populateJobs);
+    OC.mediator.subscribe('moduleinfo.annotators', buildAnnotatorsSelector);
 }
 
 function setLastAssembly () {
