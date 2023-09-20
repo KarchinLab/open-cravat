@@ -52,7 +52,7 @@ function submit () {
         var span = getEl('span');
         span.textContent = 'Use only one of "Add input files" and the input box'
         addEl(alertDiv, span);
-        showYesNoDialog(alertDiv, null, false, true);
+        OC.mediator.publish('showyesnodialog', alertDiv, null, false, true);
         return
     }
     if (textVal.length > 0) {
@@ -114,7 +114,7 @@ function submit () {
     if (assembly !== null) {
         submitOpts.assembly = assembly;
     } else {
-        showYesNoDialog('Please select a genome version', ()=>{
+        OC.mediator.publish('showyesnodialog', 'Please select a genome version', ()=>{
             $('#assembly-select-div').css('border', '2px solid red');
             setTimeout(()=>{$('#assembly-select-div').css('border', 'none');},2000);
         }, false, true);
@@ -127,7 +127,7 @@ function submit () {
     document.querySelector('#submit-job-button').disabled = true;
     OC.formData.append('options',JSON.stringify(submitOpts));
     // AddtlAnalysis
-    for (addtlName of addtlAnalysis.names) {
+    for (let addtlName of addtlAnalysis.names) {
         let addtlData = addtlAnalysis.fetchers[addtlName]();
         if (addtlData != undefined) {
             OC.formData.append(addtlName, addtlAnalysis.fetchers[addtlName]());
@@ -152,7 +152,7 @@ function submit () {
             addEl(alertDiv, span);
             addEl(alertDiv,getEl('br'));
         }
-        showYesNoDialog(alertDiv, enableSubmitButton, false, true);
+        OC.mediator.publish('showyesnodialog', alertDiv, enableSubmitButton, false, true);
     } else {
         commitSubmit();
     }
@@ -209,7 +209,7 @@ function submit () {
                 var span = getEl('span');
                 span.innerText = 'Details: '+response.msg;
                 addEl(alertDiv,span);
-                showYesNoDialog(alertDiv, null, false, true);
+                OC.mediator.publish('showyesnodialog', alertDiv, null, false, true);
 
             }
         };
@@ -334,7 +334,7 @@ function generateReport (jobId, reportType, callback) {
                 var span = getEl('span');
                 span.textContent = 'Check your system\'s wcravat.log for details.';
                 addEl(mdiv, span);
-                showYesNoDialog(mdiv, null, false, true);
+                OC.mediator.publish('showyesnodialog', mdiv, null, false, true);
             }
             callback();
         }
@@ -381,7 +381,7 @@ function informMetrics () {
     span.textContent = 'OpenCRAVAT gathers metrics to report usage to funders and improve the tool. No private data is collected. For more details, visit our documentation at '
     addEl(alertDiv, span);
     addEl(alertDiv, a);
-    showYesNoDialog(alertDiv, null, false, true);
+    OC.mediator.publish('showyesnodialog', alertDiv, null, false, true);
     var s = document.getElementById('settings_save_metrics');
     s.checked = true;
     updateSystemConf(true);
