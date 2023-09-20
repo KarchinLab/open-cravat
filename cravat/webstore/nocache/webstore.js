@@ -747,7 +747,7 @@ function onClickModuleInstallButton(evt) {
             addEl(mdiv, getEl('br'));
             addEl(mdiv, botSpan);
             addEl(mdiv, getEl('br'));
-            showYesNoDialog(mdiv, userConfirm=>{
+            OC.mediator.publish('showyesnodialog', mdiv, userConfirm=>{
                 if (userConfirm) {
                     doInstall();
                 }
@@ -808,7 +808,7 @@ function onClickModuleTileUpdateButton(evt) {
                 addEl(mdiv, getEl('br'));
                 addEl(mdiv, getEl('br'));
                 var justOk = true;
-                showYesNoDialog(mdiv, null, noSpace, justOk);
+                OC.mediator.publish('showyesnodialog', mdiv, null, noSpace, justOk);
                 return;
             } else {
                 queueInstall(moduleName, OC.updates[moduleName].version);
@@ -1414,7 +1414,7 @@ function onClickModuleDetailUpdateButton(evt) {
                 addEl(mdiv, getEl('br'));
                 addEl(mdiv, getEl('br'));
                 var justOk = true;
-                showYesNoDialog(mdiv, null, noSpace, justOk);
+                OC.mediator.publish('showyesnodialog', mdiv, null, noSpace, justOk);
                 return;
             } else {
                 var buttonText = null;
@@ -2150,57 +2150,7 @@ function onStoreTagCheckboxChange() {
     updateFilter();
 }
 
-function showYesNoDialog(content, yescallback, noSpace, justOk) {
-    var div = document.getElementById('yesnodialog');
-    if (div != undefined) {
-        $(div).remove();
-    }
-    var div = getEl('div');
-    div.id = 'yesnodialog';
-    if (typeof content === 'string') {
-        content = getTn(content);
-    }
-    content.id = 'yesnodialog-contentdiv'
-    addEl(div, content);
-    addEl(div, getEl('br'));
-    var btnDiv = getEl('div');
-    if (justOk) {
-        btnDiv.className = 'buttondiv';
-        var btn = getEl('button');
-        btn.textContent = 'Ok';
-        btn.addEventListener('click', function(evt) {
-            if (yescallback == undefined || yescallback == null) {
-                $('#yesnodialog').remove();
-            } else {
-                $('#yesnodialog').remove();
-                yescallback();
-            }
-        });
-        addEl(btnDiv, btn);
-    } else {
-        btnDiv.className = 'buttondiv';
-        var btn = getEl('button');
-        btn.textContent = 'Yes';
-        btn.addEventListener('click', function(evt) {
-            $('#yesnodialog').remove();
-            yescallback(true);
-        });
-        if (noSpace) {
-            btn.disabled = true;
-            btn.style.backgroundColor = '#e0e0e0';
-        }
-        addEl(btnDiv, btn);
-        var btn = getEl('button');
-        btn.textContent = 'No';
-        btn.addEventListener('click', function(evt) {
-            $('#yesnodialog').remove();
-            yescallback(false);
-        });
-        addEl(btnDiv, btn);
-    }
-    addEl(div, btnDiv);
-    addEl(document.body, div);
-}
+
 
 function onClickStoreInstallAllButton() {
     $.ajax({
@@ -2264,7 +2214,7 @@ function onClickStoreInstallAllButton() {
                     }
                 }
             };
-            showYesNoDialog(div, yescallback, noSpace);
+            OC.mediator.publish('showyesnodialog', div, yescallback, noSpace);
         },
     });
 }
@@ -2346,7 +2296,7 @@ function onClickSystemModuleUpdateButton() {
                     }
                 };
             }
-            showYesNoDialog(div, yescallback, noSpace);
+            OC.mediator.publish('showyesnodialog', div, yescallback, noSpace);
         },
     });
 }
@@ -2416,7 +2366,7 @@ function onClickStoreUpdateAllButton() {
                     }
                 };
             }
-            showYesNoDialog(div, yescallback, noSpace);
+            OC.mediator.publish('showyesnodialog', div, yescallback, noSpace);
         },
     });
 }
