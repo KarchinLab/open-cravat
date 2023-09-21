@@ -49,28 +49,23 @@ def test_websubmit_has_title(page: Page):
     expect(page).to_have_title("open-cravat submit")
 
 
-def test_websubmit_click_variant_annotation_category_shows_aloft(page: Page):
-    timeout = 10
-    poll_time = 0.25
+def test_websubmit_click_gene_annotation_category_shows_go(page: Page):
+    # Ensure packages are loaded before testing
     packages_loaded = False
-    completed = list()
-    page.on("response", lambda response: add_complete_response(response, completed))
-    page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
-    t = time.time()
-    max_time = t + timeout
+    retries = 3
+    while not packages_loaded and retries > 0:
+        with page.expect_response('http://0.0.0.0:8080/submit/annotators') as response:
+            page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
+        body = response.value.body()
+        packages_loaded = body is not None and body != b'{}'
+        print(f'packages_loaded: {packages_loaded}\nsubmit/packages:\n{response.value.body()}')
+        retries -= 1
 
-    print('starting loop')
-    while t < max_time and not packages_loaded:
-        print(len(completed))
-        packages_loaded = any(url.endswith('submit/packages') for url in completed)
-        if packages_loaded:
-            print('packages loaded.')
-        t = time.time()
-        # time.sleep(poll_time)
+    # Click the Genes category, then make sure GO is visible
+    page.locator("div").filter(has_text=re.compile(r"^Genes$")).click()
+    go_checkbox = page.locator("#annotator-select-div").get_by_text("Gene Ontology", exact=True)
 
-    page.locator(".submit-annot-tag").get_by_text("Variants", exact=True).click()
-    aloft_checkbox = page.locator("#annotator-select-div").get_by_text("ALoFT", exact=True)
-    expect(aloft_checkbox).to_be_visible()
+    expect(go_checkbox).to_be_visible()
 
 
 def test_websubmit_click_store_tab_navigates_to_store(page: Page):
