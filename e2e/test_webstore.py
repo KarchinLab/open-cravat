@@ -51,14 +51,14 @@ def test_websubmit_has_title(page: Page):
 
 def test_websubmit_click_gene_annotation_category_shows_go(page: Page):
     # Ensure packages are loaded before testing
-    packages_loaded = False
+    annotators_loaded = False
     retries = 3
-    while not packages_loaded and retries > 0:
+    while not annotators_loaded and retries > 0:
         with page.expect_response('http://0.0.0.0:8080/submit/annotators') as response:
             page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
         body = response.value.body()
-        packages_loaded = body is not None and body != b'{}'
-        print(f'packages_loaded: {packages_loaded}\nsubmit/packages:\n{response.value.body()}')
+        annotators_loaded = body is not None and body != b'{}'
+        print(f'packages_loaded: {annotators_loaded}\nsubmit/packages:\n{response.value.body()}')
         retries -= 1
 
     # Click the Genes category, then make sure GO is visible
@@ -74,3 +74,32 @@ def test_websubmit_click_store_tab_navigates_to_store(page: Page):
     page.get_by_text("STORE", exact=True).click()
     store_div = page.locator("#store-home-div")
     expect(store_div).to_be_visible()
+
+
+def test_webstore_search_for_annotator_and_click_shows_info_modal(page: Page) -> None:
+    annotators_loaded = False
+    retries = 3
+    while not annotators_loaded and retries > 0:
+        with page.expect_response('http://0.0.0.0:8080/store/remote') as response:
+            page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
+        body = str(response.value.body())
+        annotators_loaded = body is not None and body != '{}' and 'clinvar' in body
+        print(f'packages_loaded contains "clinvar": {"clinvar" in body}')
+        retries -= 1
+
+    page.get_by_text("STORE", exact=True).click()
+
+    # TODO: something is weird with the initial load of the store filter
+    # The first filter does not load, so we filter, clear, and re-filter
+    page.get_by_placeholder("Search the Store").focus()
+    page.get_by_placeholder("Search the Store").fill("clinvar")
+    page.get_by_placeholder("Search the Store").fill("")
+    page.get_by_placeholder("Search the Store").fill("clinvar")
+
+    # check clinvar logo is visible
+    logo = page.locator("#remotemodulepanels #logodiv_clinvar").get_by_role("img")
+    expect(logo).to_be_visible()
+    #check clinvar title is visible
+    title = page.get_by_role("cell", name="ClinVar annotator | NCBI")
+    expect(logo).to_be_visible()
+
