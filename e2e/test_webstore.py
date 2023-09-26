@@ -2,9 +2,8 @@
 End-to-end playwright tests for websubmit
 
 These are some simple end to end tests for major functionality (i.e. things are being displayed and clicking on them does
-something). Currently, we need to run `oc gui` first to launch a local instance to test.
+something). Uses pytest-xprocess to launch the web server.
 TODO: Figure out how to use the configuration to launch the webserver before running tests
-TODO: Set up fixtures to get consistent data for testing (installed modules, jobs, etc)
 """
 import re
 import time
@@ -70,7 +69,6 @@ def test_websubmit_click_gene_annotation_category_shows_go(page: Page):
 
 def test_websubmit_click_store_tab_navigates_to_store(page: Page):
     page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
-    # page.wait_for_timeout(2000) # auto-wait didn't seem to wait for the click handler to be attached
     page.get_by_text("STORE", exact=True).click()
     store_div = page.locator("#store-home-div")
     expect(store_div).to_be_visible()
