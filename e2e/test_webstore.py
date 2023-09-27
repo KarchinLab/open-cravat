@@ -1,35 +1,16 @@
 """
 End-to-end playwright tests for websubmit
 
-These are some simple end to end tests for major functionality (i.e. things are being displayed and clicking on them does
+These are some simple end-to-end tests for major functionality (i.e. things are being displayed and clicking on them does
 something). Uses pytest-xprocess to launch the web server.
-TODO: Figure out how to use the configuration to launch the webserver before running tests
 """
 import re
-import time
 
 from playwright.sync_api import Page, expect
 import pytest
 from xprocess import ProcessStarter
+from server_fixture import test_server
 
-
-@pytest.fixture(autouse=True, scope='session')
-def test_server(xprocess):
-    class Starter(ProcessStarter):
-        # startup pattern
-        pattern = "OpenCRAVAT is served at"
-
-        # command to start process
-        args = ['oc', 'gui', '--headless']
-
-    # ensure process is running and return its logfile
-    logfile = xprocess.ensure("test_server", Starter)
-
-    conn = True
-    yield conn
-
-    # clean up whole process tree afterward
-    xprocess.getinfo("test_server").terminate()
 
 
 def add_complete_response(response, completed_set):
