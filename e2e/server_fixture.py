@@ -27,7 +27,13 @@ def test_server(xprocess):
 
     # get current module directory
     module_dir = str(subprocess.getoutput('oc config md'))
+
     base_dir = get_base_dir()
+    # get copy of config file
+    config_path = os.path.join(base_dir, 'cravat', 'cravat.yml')
+    with open(config_path, 'r', encoding='utf-8') as f:
+        original_config = f.read()
+
     # check that the e2e dir is in the working directory
     e2e_path = os.path.join(base_dir, 'e2e')
     if not os.path.isdir(e2e_path):
@@ -70,4 +76,6 @@ def test_server(xprocess):
     xprocess.getinfo("test_server").terminate()
 
     # restore original config
+    with open(config_path, 'w', encoding='utf-8') as f:
+        f.write(original_config)
     subprocess.run(['oc', 'config', 'md', module_dir])
