@@ -9,9 +9,9 @@ function setupTab (tabName) {
 	if (resetTab[tabName] == false) {
 		return;
 	}
-	
+
 	var tabDiv = document.getElementById("tab_" + tabName);
-	
+    
 	var rightDivId = 'rightdiv_' + tabName;
 	var rightDiv = document.getElementById(rightDivId);
 	if (rightDiv == null) {
@@ -1976,6 +1976,10 @@ function drawSummaryWidget (widgetName) {
         var spinner = getSpinner();
         spinner.className = 'widgetspinner';
         addEl(widgetContentDiv, spinner);
+        let filterApplied = 'False';
+	    if (Object.keys(filterJson).length !== 0) {
+            filterApplied = 'True'
+        }
         if (requestmethod == 'POST') {
             var params = JSON.stringify(callServerParams);
             $.post(
@@ -1992,7 +1996,7 @@ function drawSummaryWidget (widgetName) {
         } else {
             $.ajax({
                 url: '/result/runwidget/' + widgetName, 
-                data: {'username': username, 'job_id': jobId, dbpath: dbPath, params: JSON.stringify(callServerParams)},
+                data: {'username': username, 'job_id': jobId, dbpath: dbPath, params: JSON.stringify(callServerParams), 'use_filtered': filterApplied},
                 async: true,
                 method: requestmethod,
                 success: function (response) {
