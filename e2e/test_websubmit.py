@@ -3,7 +3,6 @@ End-to-end playwright tests for websubmit
 
 These are some simple end to end tests for major functionality (i.e. things are being displayed and clicking on them does
 something). Uses pytest-xprocess to launch the web server.
-TODO: Figure out how to use the configuration to launch the webserver before running tests
 """
 import re
 

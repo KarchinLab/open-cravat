@@ -44,6 +44,10 @@ def test_websubmit_click_gene_annotation_category_shows_go(page: Page):
     # Click the Genes category, then make sure GO is visible
     # page.locator("div").filter(has_text=re.compile(r"^Genes$")).click()
     container = page.locator("div").filter(has_text=re.compile(r"^Genes$"))
+    # TODO: The annotators widget has a similar issue to the module filter, needs to be refreshed before it works
+    #       Find a way to fix this
+    container.get_by_text("Genes", exact=True).click()
+    container.get_by_text("Genes", exact=True).click()
     container.get_by_text("Genes", exact=True).click()
     go_checkbox = page.locator("#annotator-select-div").get_by_text("Gene Ontology", exact=True)
 
