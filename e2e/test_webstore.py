@@ -42,7 +42,9 @@ def test_websubmit_click_gene_annotation_category_shows_go(page: Page):
         retries -= 1
 
     # Click the Genes category, then make sure GO is visible
-    page.locator("div").filter(has_text=re.compile(r"^Genes$")).click()
+    # page.locator("div").filter(has_text=re.compile(r"^Genes$")).click()
+    container = page.locator("div").filter(has_text=re.compile(r"^Genes$"))
+    container.get_by_text("Genes", exact=True).click()
     go_checkbox = page.locator("#annotator-select-div").get_by_text("Gene Ontology", exact=True)
 
     expect(go_checkbox).to_be_visible()

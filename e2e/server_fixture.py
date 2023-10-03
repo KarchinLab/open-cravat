@@ -75,6 +75,8 @@ def test_server(xprocess):
     # clean up whole process tree afterward
     xprocess.getinfo("test_server").terminate()
 
+    # change the working directory back to original
+    os.chdir(base_dir)
     # restore original config
     with open(config_path, 'w', encoding='utf-8') as f:
         f.write(original_config)
