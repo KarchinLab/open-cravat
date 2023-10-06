@@ -36,3 +36,12 @@ def test_websubmit_config_change_module_dir_persists(page: Page):
     expect(value).to_have_value(re.compile('.*test$'))
 
 
+def test_websubmit_existing_job_is_displayed(page: Page):
+    with page.expect_response('http://0.0.0.0:8080/submit/jobs') as jobs_response:
+        page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
+
+    job_label = page.get_by_role("cell", name="fake test job", exact=True)
+    expect(job_label).to_be_visible()
+    # page.get_by_role("cell", name="2023.10.04 11:25:36", exact=True).click()
+    # page.get_by_role("cell", name="test one line", exact=True).click()
+

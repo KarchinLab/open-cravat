@@ -4,6 +4,42 @@ import pytest
 from xprocess import ProcessStarter
 import subprocess
 import os
+from playwright.sync_api import Page, APIRequestContext, Playwright
+
+import cravat.admin_util as au
+
+
+test_job_json = """
+{
+  "annotator_version": {
+    "original_input": ""
+  },
+  "annotators": [
+    "original_input"
+  ],
+  "assembly": "hg38",
+  "cc_cohorts_path": "",
+  "db_path": "/home/user/example/path/12345-67890/input.sqlite",
+  "id": "12345-67890",
+  "job_dir": "/home/user/example/path/12345-67890",
+  "note": "fake test job",
+  "num_error_input": 0,
+  "num_input_var": 1,
+  "num_unique_var": 1,
+  "open_cravat_version": "2.4.1",
+  "orig_input_fname": [
+    "input"
+  ],
+  "orig_input_path": [
+    "/home/user/example/path/12345-67890/input"
+  ],
+  "reports": [],
+  "run_name": "input",
+  "status": "Finished",
+  "submission_time": "2023-10-04T11:25:36.372592",
+  "viewable": false
+}
+"""
 
 
 def get_base_dir() -> str:
@@ -27,12 +63,14 @@ def test_server(xprocess):
 
     # get current module directory
     module_dir = str(subprocess.getoutput('oc config md'))
+    admin_config = au.get_system_conf()
+    orig_jobs_dir = admin_config['jobs_dir']
 
     base_dir = get_base_dir()
-    # get copy of config file
-    config_path = os.path.join(base_dir, 'cravat', 'cravat.yml')
-    with open(config_path, 'r', encoding='us-ascii') as f:
-        original_config = f.read()
+    # # get copy of config file
+    # config_path = os.path.join(base_dir, 'cravat', 'cravat.yml')
+    # with open(config_path, 'r', encoding='us-ascii') as f:
+    #     original_config = f.read()
 
     # check that the e2e dir is in the working directory
     e2e_path = os.path.join(base_dir, 'e2e')
@@ -48,8 +86,7 @@ def test_server(xprocess):
     if not os.path.isdir(test_jobs_dir):
         os.makedirs(test_jobs_dir)
 
-    # change the working directory to test_jobs for clean tests, delete any jobs that exist
-    os.chdir(test_jobs_dir)
+    # clean the test_jobs directory
     for f in os.listdir(test_jobs_dir):
         path = os.path.join(test_jobs_dir, f)
         try:
@@ -60,6 +97,17 @@ def test_server(xprocess):
         except OSError as e:
             print(f'Could not delete {path}. Reason: {e}')
 
+    # create a test job
+    test_job_path = os.path.join(test_jobs_dir, 'default', '12345-67890')
+    os.makedirs(test_job_path)
+    test_job_file = os.path.join(test_job_path, 'input.status.json')
+    with open(test_job_file, 'w') as f:
+        f.write(test_job_json)
+
+    # change the config to new test jobs dir
+    admin_config['jobs_dir'] = test_jobs_dir
+    au.update_system_conf_file(admin_config)
+
     # change oc module directory to test modules and make sure that the base modules are installed
     subprocess.run(['oc', 'config', 'md', test_module_dir])
     modules = str(subprocess.getoutput(f'oc module ls'))
@@ -69,6 +117,8 @@ def test_server(xprocess):
     # ensure process is running and return its logfile
     logfile = xprocess.ensure("test_server", Starter)
 
+    # request conf file
+
     conn = True
     yield conn
 
@@ -76,8 +126,12 @@ def test_server(xprocess):
     xprocess.getinfo("test_server").terminate()
 
     # change the working directory back to original
-    os.chdir(base_dir)
+    # os.chdir(base_dir)
     # restore original config
-    with open(config_path, 'w', encoding='us-ascii') as f:
-        f.write(original_config)
+    # with open(config_path, 'w', encoding='us-ascii') as f:
+    #     f.write(original_config)
     subprocess.run(['oc', 'config', 'md', module_dir])
+
+    admin_config['jobs_dir'] = orig_jobs_dir
+    au.update_system_conf_file(admin_config)
+
