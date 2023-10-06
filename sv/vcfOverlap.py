@@ -18,10 +18,22 @@ group.add_argument('bedfile', type=str, help='Bed file')
 group.add_argument('vcffile', type=str, help='VCF file')
 
 # TODO: deal with chr vs nonchr
+# TODO  bed is 0 based and VCF is 1 based
 
-is_paired = [] # translocation/deletion mates do not need to get parsed again
+def vcfType(vcffile):
+    '''Try to determine program that was used to create this VCF'''
+    # manta gives a lot more information than gridss, so it
+    # might be useful to know this ahead of time so we don't have to 
+    # do all the work
+    # on the other hand, this might lead to different results
+    pass
+
+# see https://bioconductor.org/packages/release/bioc/vignettes/StructuralVariantAnnotation/inst/doc/vignettes.html
+# todo: make sure we ignore SNPs
+
 def vcfOverlap(bedfile, vcffile):
     bedExonTree, bedTxTree = chromIntervalTreesFromBed(bedfile)
+    is_paired = [] # translocation/deletion mates do not need to get parsed again
     # header
     print('SVTYPE\tID\tMATEID\tCHROM\tMATECHROM\tPOS1\tPOS2\tSIZE\tDEL_GENES\tBROKEN_GENES')
     with open(vcffile, 'r') as f:
@@ -30,6 +42,7 @@ def vcfOverlap(bedfile, vcffile):
             if variant.ID in is_paired:
                  # we already have info for this variant (this may not remain true, deal with later)
                  continue
+#            if variant['INFO']['SVTYPE'] != 'BND'
             hasMate = add_mateinfo(variant, bedTxTree)
             brokenGenes, deletedGenes = geneOverlap(variant, bedTxTree)
             if brokenGenes == False:
@@ -76,6 +89,9 @@ def vcfOverlap(bedfile, vcffile):
                     f"{brokenGenes}"
                 )
                 
+# gridss within chromosome deletions can be inferred from the ALT field
+# and they have a MATEID
+# manta actually calls DEL
 
 def geneOverlap(variant, bedTxTree):
     '''Find interrupted and deleted genes for the input variant and a gene startpos-endpos intervaltree'''
@@ -119,9 +135,16 @@ def add_mateinfo(variant, bedTxTree):
     if match:
         variant.INFO['MATECHROM'] = match.group(1)
         variant.INFO['MATEPOS'] = int(match.group(2))
+	# it's only a deletion when the first mate has [ brackets,
+        # and the ref allele comes before those brackets
+        # and the chromosome is the same
+        delpattern = f".\]{variant.CHROM}:{variant.INFO['MATEPOS']}\]"
+        delmatch = re.match(delpattern, str(variant.ALT[0]))
+        if delmatch:
         # gridss calls all SVTYPEs BND, overwrite. TODO: for manta, check if the type agrees
-        if variant.INFO['MATECHROM'] == variant.CHROM:
             variant.SVTYPE = 'SVDEL'
+        elif variant.CHROM == variant.INFO['MATECHROM']:
+            variant.SVTYPE = 'SAMECHR_TRANSLOC'	# TODO: replace this back to BND
         # default is translocation
         else:
             variant.SVTYPE = 'TRANSLOC' # should be BND, TODO replace later

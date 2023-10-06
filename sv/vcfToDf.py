@@ -38,6 +38,8 @@ def vcfToDf(vcffile):
             # todo? Split format and sample fields (see potential code below)
             else:
                 vcfrow[attribute] = value
+        if not isinstance(vcfrow['ALT'][0], (vcf.model._SingleBreakend, vcf.model._Breakend)):
+            print(vcfrow, 'AND', str(vcfrow['ALT'][0]))
         data.append(vcfrow)
     return pd.DataFrame(data)
 
