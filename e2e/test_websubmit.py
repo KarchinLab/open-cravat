@@ -45,3 +45,16 @@ def test_websubmit_existing_job_is_displayed(page: Page):
     # page.get_by_role("cell", name="2023.10.04 11:25:36", exact=True).click()
     # page.get_by_role("cell", name="test one line", exact=True).click()
 
+
+def test_websubmit_new_job_is_displayed(page: Page):
+    with page.expect_response('http://0.0.0.0:8080/submit/jobs') as jobs_response:
+        page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
+
+    input_field = page.get_by_placeholder("Enter variants in a supported input format such as VCF or TSV, or type a list of the paths to input files in the server.")
+    input_field.fill("chr1\t114716160\t-\tA\tT\ts3\tvar016")
+    name_field = page.get_by_placeholder("Enter a note for the analysis (optional)")
+    name_field.fill("auto_run")
+    page.get_by_role("button", name="ANNOTATE").click()
+    job_label = page.get_by_role("cell", name="auto_run", exact=True)
+    expect(job_label).to_be_visible()
+
