@@ -48,12 +48,16 @@ def annot_from_queue(start_queue, end_queue, queue_populated, status_writer):
             annotator_class = util.load_class(module.script_path, "CravatAnnotator")
             annotator = annotator_class(kwargs)
         except Exception as e:
-            print(f"        Error with {module.name}: {e}")
+            print(f"        Error initializing {module.name}: {e}")
             logger.error(e)
-            raise
-        annotator.run()
-        annotes = annotator.run()
-        end_queue.put({'module': module.name, 'runtime': annotes['runtime'], 'version': annotes['version']})
+        try:
+            annotes = annotator.run()
+            run_time = annotes['runtime']
+        except Exception as e:
+            print(f"        Error running {module.name}: {e}")
+            logger.error(e)
+            run_time = 0.0
+        end_queue.put({'module': module.name, 'runtime': run_time, 'version': annotator.annotator_version})
 
 
 def mapper_runner(
