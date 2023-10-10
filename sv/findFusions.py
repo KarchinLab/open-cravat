@@ -31,7 +31,6 @@ def vcfType(vcffile):
 # todo: make sure we ignore SNPs
 
 def vcfOverlap(bedfile, vcffile):
-    sys.stdout = AutoFlush(sys.stdout)
     bedGeneTree, bedTxTree, bedExonTree = make_pyranges(bedfile)
     isPaired = [] # translocation/deletion mates do not need to get parsed again
     # header
@@ -62,13 +61,15 @@ def vcfOverlap(bedfile, vcffile):
                 # insertion, small deletion - we only care about this one location
                 inExon, transcripts = annotOverlap(txRanges=bedTxTree, exonRanges=bedExonTree, 
                     chrom=vcfrow['CHROM'], pos=vcfrow['POS'])
-                if len(transcripts) > 0:
+                if transcripts:
                     geneList = ';'.join(transcripts.df['geneName'].unique())
-                    print('Single breakend found in:' geneList)
+                    print('Single breakend found in:', geneList)
             elif isinstance(ALT, (vcf.model._Breakend)):
+                #print('YO', vcfrow['ID'], vcfrow['INFO.MATEID'][0], isPaired)
                 if vcfrow['ID'] in isPaired:
+                    print('Skipping')
                     continue
-                isPaired.append(vcfrow['INFO.MATEID'])
+                isPaired.append(vcfrow['INFO.MATEID'][0])
                 # paired breakend, now we care about both sides and their directions
                 print('here', ALT.orientation, 'there', ALT.remoteOrientation)
                 inExon, transcripts = annotOverlap(txRanges=bedTxTree, exonRanges=bedExonTree, 
@@ -76,19 +77,21 @@ def vcfOverlap(bedfile, vcffile):
                 # skip partner if it's in a non-genome contig
                 if ALT.withinMainAssembly:
                     # note: may also be able to get this from MATEPOS in INFO
-                    pattern = r'(chr\w+):(\d+)'
+                    pattern = r'[\]\[]?(\w+):(\d+)' 
                     match = re.search(pattern, str(ALT))
                     if not match:
                         print(f'WARNING, do not understand {str(ALT)}, skipping mate analysis', file=sys.stderr)
                         continue
                     matechrom = match.group(1)
                     matepos = int(match.group(2))
+                    if matechrom.isdigit() or matechrom == 'M':
+                        matechrom = 'chr'+matechrom
                     inExon, mateTranscripts = annotOverlap(txRanges=bedTxTree, exonRanges=bedExonTree, 
                         chrom=matechrom, pos=matepos)
                     if transcripts is not False and mateTranscripts is not False:
                         if transcripts.df.equals(mateTranscripts.df):
                             geneList = ';'.join(transcripts.df['geneName'].unique())
-                            print('Paired breakpoints are in the same gene(s):' geneList)
+                            print('Paired breakpoints are in the same gene(s):', geneList)
                         else:
                             print('Paired breakpoints not in same gene.')
                             fusionObjects = fusion_possible(ALT, transcripts, mateTranscripts)
@@ -96,25 +99,17 @@ def vcfOverlap(bedfile, vcffile):
                                 print(f.geneCombis)
                     elif transcripts is not False:
                         geneList = ';'.join(transcripts.df['geneName'].unique())
-                        print('Local breakpoint in:' geneList)
+                        print('Local breakpoint in:', geneList)
                     elif mateTranscripts is not False:
                         geneList = ';'.join(mateTranscripts.df['geneName'].unique())
-                        print('Mate breakpoint in:' geneList)
+                        print('Mate breakpoint in:', geneList)
                 else:
                     if len(transcripts) > 0:
                         geneList = ';'.join(transcripts.df['geneName'].unique())
-                        print('Breakend found in:' geneList)
+                        print('Breakend found in:', geneList)
             else:
                 # sanity check - make sure all input vcfs are either one
                 print('WARNING, do not understand SV annotation', vcfrow, 'AND', str(ALT))
-
-class AutoFlush:
-    def __init__(self, stream):
-        self.stream = stream
-
-    def write(self, data):
-        self.stream.write(data)
-        self.stream.flush()
 
 
 def fusion_possible(ALT, txRangesLocal, txRangesRemote):
@@ -161,7 +156,6 @@ class fusionObject():
         self.geneCombis = 'fusion genes possible'
         for gene in txLocalGenes:
             for rgene in txRemoteGenes:
-                print('have', gene, rgene)
                 self.geneCombis += f' between local {gene} and remote {rgene};'
         
 
@@ -181,7 +175,7 @@ def annotOverlap(txRanges, exonRanges, chrom, pos):
         if len(exons) > 0:
             genes = exons.df['geneName'].unique()
             if len(genes) > 1:
-                print('TODO: overlapping more than one gene, please check', pos, file=sys.stderr)
+                print('TODO: overlapping more than one gene, please check', pos)
             else:
                 # return only the transcripts that contain this exon
                 return(True, transcripts[transcripts.Name.isin(exons.df['Name'])])
