@@ -56,24 +56,36 @@ def vcfOverlap(bedfile, vcffile):
                 else:
                     vcfrow[attribute] = value
             # vcfrow['INFO.MATEID']
-            print(vcfrow['ID'])
+            ID = vcfrow['ID']
+            POS = vcfrow['POS']-1 # go to zero-based
             if isinstance(ALT, (vcf.model._SingleBreakend)):
                 # insertion, small deletion - we only care about this one location
-                inExon, transcripts = annotOverlap(txRanges=bedTxTree, exonRanges=bedExonTree, 
-                    chrom=vcfrow['CHROM'], pos=vcfrow['POS'])
-                if transcripts:
+                # pyranges is open ended, meaning the end coordinate is not included in the range
+                transcripts = bedTxTree[vcfrow['CHROM'], POS:POS+1]
+                if not transcripts.empty:
+                    # is the breakpoint in an exon?
+                    location = 'INTRON'
+                    exons = bedExonTree[vcfrow['CHROM'], POS:POS+1]
+                    if not exons.empty:
+                        # does it overlap a cds?
+                        transcripts = transcripts[transcripts.Name.isin(exons.df['Name'])]
+                        inCds = transcripts[(transcripts.thickStart<= POS) & (transcripts.thickEnd > POS)]
+                        if inCds.empty:
+                            location = 'NONCODING EXON'
+                        else:
+                            location = 'CODING EXON'
+                            transcripts = inCds
                     geneList = ';'.join(transcripts.df['geneName'].unique())
-                    print('Single breakend found in:', geneList)
+                    print(ID, POS, 'Single breakend found in', location, 'of', geneList)
             elif isinstance(ALT, (vcf.model._Breakend)):
-                #print('YO', vcfrow['ID'], vcfrow['INFO.MATEID'][0], isPaired)
-                if vcfrow['ID'] in isPaired:
-                    print('Skipping')
+                continue
+                if ID in isPaired:
+                    print(ID, 'Skipping')
                     continue
                 isPaired.append(vcfrow['INFO.MATEID'][0])
                 # paired breakend, now we care about both sides and their directions
                 print('here', ALT.orientation, 'there', ALT.remoteOrientation)
-                inExon, transcripts = annotOverlap(txRanges=bedTxTree, exonRanges=bedExonTree, 
-                    chrom=vcfrow['CHROM'], pos=vcfrow['POS'])
+                transcripts = bedTxTree[vcfrow['CHROM'], POS:POS+1]
                 # skip partner if it's in a non-genome contig
                 if ALT.withinMainAssembly:
                     # note: may also be able to get this from MATEPOS in INFO
@@ -86,21 +98,22 @@ def vcfOverlap(bedfile, vcffile):
                     matepos = int(match.group(2))
                     if matechrom.isdigit() or matechrom == 'M':
                         matechrom = 'chr'+matechrom
-                    inExon, mateTranscripts = annotOverlap(txRanges=bedTxTree, exonRanges=bedExonTree, 
-                        chrom=matechrom, pos=matepos)
-                    if transcripts is not False and mateTranscripts is not False:
+                    mateTranscripts = bedTxTree[matechrom, matepos-1:matepos]
+                    if not transcripts.empty and not mateTranscripts.empty:
                         if transcripts.df.equals(mateTranscripts.df):
+                            # same gene(s)
                             geneList = ';'.join(transcripts.df['geneName'].unique())
                             print('Paired breakpoints are in the same gene(s):', geneList)
+                            # are any exons involved?
                         else:
                             print('Paired breakpoints not in same gene.')
                             fusionObjects = fusion_possible(ALT, transcripts, mateTranscripts)
                             for f in fusionObjects:
                                 print(f.geneCombis)
-                    elif transcripts is not False:
+                    elif not transcripts.empty:
                         geneList = ';'.join(transcripts.df['geneName'].unique())
                         print('Local breakpoint in:', geneList)
-                    elif mateTranscripts is not False:
+                    elif not mateTranscripts.empty:
                         geneList = ';'.join(mateTranscripts.df['geneName'].unique())
                         print('Mate breakpoint in:', geneList)
                 else:
@@ -124,7 +137,7 @@ def fusion_possible(ALT, txRangesLocal, txRangesRemote):
              and if both are True (or False), strands must not match
              see also print(gr.set_intersect(gr2, strandedness="opposite"))
     '''
-    if len(txRangesLocal) == 0 or len(txRangesRemote)==0:
+    if txRangesLocal.empty or txRangesRemote.empty:
         return False 
     # it is possible that the transcripts belong to multiple genes on different strands
     fusionObjects = []
@@ -160,10 +173,31 @@ class fusionObject():
         
 
 
-# TODO: list type of gene.  e.g ENST00000454360.1 is a pseudogene
-def annotOverlap(txRanges, exonRanges, chrom, pos):
-    '''find overlaps in transcript and exon pyranges object. Returns True if an exon pyrange 
-    was found, and the transcript dataframe'''
+def txOverlap(txRanges, chrom, pos):
+    '''find overlaps in pyranges object. Returns the resulting pyranges object'''
+    # vcf is one based, pyranges is zero based
+    transcripts = txRanges[chrom, pos-1:pos]
+    return transcripts
+    # even though we're only checking 1 nt, we can still hit different genes
+    # an example is ENSG00000285314 and LZTR1, where the former is a lncRNA of the latter
+    # with mostly identical exons
+    if len(transcripts) > 0:
+        # note: we could check exons first but that is a much larger dataset
+        exons = exonRanges[chrom, pos-1:pos]
+        if len(exons) > 0:
+            genes = exons.df['geneName'].unique()
+            if len(genes) > 1:
+                print('TODO: overlapping more than one gene, please check', pos)
+            else:
+                # return only the transcripts that contain this exon
+                return(True, transcripts[transcripts.Name.isin(exons.df['Name'])])
+        else:
+            return(False, transcripts)
+    return(False, False) # todo: this ain't pretty
+
+
+def exonOverlap(exonRanges, chrom, pos):
+    '''find overlaps in exon pyranges object. Returns the exon dataframe'''
     # vcf is one based, pyranges is zero based
     transcripts = txRanges[chrom, pos-1:pos]
     # even though we're only checking 1 nt, we can still hit different genes
@@ -184,62 +218,6 @@ def annotOverlap(txRanges, exonRanges, chrom, pos):
     return(False, False) # todo: this ain't pretty
 
 
-
-
-#def oldoverlap():
-#            if variant.ID in is_paired:
-#                 # we already have info for this variant (this may not remain true, deal with later)
-#                 continue
-##            if variant['INFO']['SVTYPE'] != 'BND'
-#            hasMate = add_mateinfo(variant, bedTxTree)
-#            brokenGenes, deletedGenes = geneOverlap(variant, bedTxTree)
-#            if brokenGenes == False:
-#                # chromosome not in bed file, we can't say anything about this variant
-#                continue
-#            if hasMate:
-#                is_paired.append(variant.INFO['MATEID'])
-#                print(
-#                    f"{variant.SVTYPE}\t"
-#                    f"{variant.ID}\t"
-#                    f"{variant.INFO['MATEID']}\t"
-#                    f"{variant.CHROM}\t"
-#                    f"{variant.INFO['MATECHROM']}\t"
-#                    f"{variant.POS}\t"
-#                    f"{variant.INFO['MATEPOS']}\t",
-#                    end=''
-#                )
-#                if variant.SVTYPE == 'SVDEL':
-#                    print(
-#                        f"{variant.INFO['MATEPOS'] - variant.POS}\t"
-#                        f"{deletedGenes}\t"
-#                        f"{brokenGenes}"
-#                    )
-#                elif variant.SVTYPE in ['BND', 'TRANSLOC']:
-#                    print(
-#                        f"NA\t"
-#                        f"NA\t"
-#                        f"{brokenGenes}"
-#                    )
-#                else:
-#                    print('NOT SURE THIS IS RIGHT')
-#            else:    
-#                # Insertion
-#                print(
-#                    f"{variant.SVTYPE}\t"
-#                    f"{variant.ID}\t"
-#                    f"NA\t"
-#                    f"{variant.CHROM}\t"
-#                    f"NA\t"
-#                    f"{variant.POS}\t"
-#                    f"NA\t",
-#                    f"NA\t"
-#                    f"NA\t"
-#                    f"{brokenGenes}"
-#                )
-#                
-# gridss within chromosome deletions can be inferred from the ALT field
-# and they have a MATEID
-# manta actually calls DEL
 
 def geneOverlap(variant, bedTxTree):
     '''Find interrupted and deleted genes for the input variant and a gene startpos-endpos intervaltree'''
