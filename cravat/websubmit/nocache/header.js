@@ -1,12 +1,15 @@
 'use strict';
-// import * as core from './core'
+import {
+    getTn, addEl, getEl, changePage, PubSub, OC
+} from './core.js'
 
-var OC = OC || {};
-if (!OC.mediator) {
-    OC.mediator = new PubSub();
-}
+// var OC = OC || {};
+// if (!OC.mediator) {
+//     OC.mediator = new PubSub();
+// }
 
 function addHeaderEventHandlers() {
+    console.log('header.addHeaderEventHandlers');
     // on tab click, publish navigate event to mediator
     document.getElementById('submitdiv_tabhead').addEventListener('click', () => OC.mediator.publish('navigate', 'submitdiv'));
     document.getElementById('storediv_tabhead').addEventListener('click', () => OC.mediator.publish('navigate', 'storediv'));
@@ -206,3 +209,7 @@ function showYesNoDialog(content, yescallback, noSpace, justOk) {
     addEl(div, btnDiv);
     addEl(document.body, div);
 }
+
+$(document).ready(() => addHeaderEventHandlers());
+
+export {addHeaderEventHandlers};

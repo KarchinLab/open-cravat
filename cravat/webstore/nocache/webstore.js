@@ -1,5 +1,9 @@
 'use strict';
-var OC = OC || {};
+import {
+    getTn, addEl, getEl, changePage, PubSub, OC
+} from '../../submit/nocache/core.js'
+
+// var OC = OC || {};
 
 OC.currentDetailModule = null;
 OC.remoteModuleInfo = {};
@@ -145,15 +149,7 @@ function complementRemoteWithLocal() {
 
 function setupJobsTab() {
     complementRemoteWithLocal();
-    populateInputFormats();
-    buildAnnotatorGroupSelector();
-    let annotatorsDone = populateAnnotators();
-    let packagesDone = populatePackages();
-    annotatorsDone.then(() => {
-        // Populate cc here to avoid it showing before annotators
-        // and then getting quickly shoved down. Looks bad.
-        populateAddtlAnalysis();
-    })
+    OC.mediator.publish('setupJobs');
 }
 
 
@@ -2401,7 +2397,8 @@ function webstore_run() {
 }
 
 // Bind events to the mediator
-$(document).ready(function () {
+function addWebstoreEventHandlers() {
+    console.log('store.addWebstoreEventHandlers')
     OC.mediator.subscribe('system.update', onClickSystemModuleUpdateButton);
     OC.mediator.subscribe('getRemote', getRemote);
     OC.mediator.subscribe('moduleinfo.local', setupJobsTab);
@@ -2424,5 +2421,15 @@ $(document).ready(function () {
     $('#store-update-all-button').on('click', onClickStoreUpdateAllButton);
     $('#module-group-back-arrow').on('click', onClickModuleGroupDivBackArrow);
     $('#store-systemmodule-install-button').on('click', onClickInstallBaseComponents);
-    
+
 });
+
+$(document).ready(() => addWebstoreEventHandlers());
+
+export {
+    addWebstoreEventHandlers,
+    connectWebSocket,
+    checkConnection,
+    getBaseModuleNames,
+    toggleChatBox
+};

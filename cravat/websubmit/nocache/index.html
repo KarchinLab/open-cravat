@@ -12,20 +12,16 @@
     <link rel="stylesheet" href="/store/nocache/webstore.css">
     <script type='text/javascript' src='/submit/pqselect.dev.customforsubmit.js'></script>
     <link rel='stylesheet' href='/result/css/pqselect.min.css' />
-    <script src="/submit/nocache/core.js"></script>
-    <script src="/submit/nocache/websubmit.js"></script>
-    <script src='/store/nocache/webstore.js'></script>
-    <script src='/submit/nocache/header.js'></script>
-    <script src='/submit/nocache/moduleinfo.js'></script>
+<!--    <script src='/submit/nocache/moduleinfo.js'></script>-->
+<!--    <script src="/submit/nocache/core.js"></script>-->
+<!--    <script src="/submit/nocache/websubmit.js"></script>-->
+<!--    <script src='/store/nocache/webstore.js'></script>-->
+<!--    <script src='/submit/nocache/header.js'></script>-->
+    <script src='/submit/nocache/main.js' type='module' />
     <script src='/submit/Chart.bundle.min.js'></script>
     <script src='/store/js/showdown-1.9.1.min.js'></script>
     <!-- Google Analytics -->
     <script async src='/submit/googleAnalytics.js'></script>
-    <script>
-        $(document).ready(function() {
-            websubmit_run();
-        });
-    </script> 
 </head>
 
 <body>
@@ -225,30 +221,30 @@
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Most Downloaded</div>
                     <div>The most downloaded modules to date!</div>
-                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' />
                     <div id='store-home-featureddiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' />
                 </div>
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Newest</div>
                     <div>The newest and greatest!</div>
-                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' />
                     <div id='store-home-newestdiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' />
                 </div>
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Cancer Resources</div>
                     <div>Cutting edge resources for cancer research!</div>
-                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' />
                     <div id='store-home-cancerdiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' />
                 </div>
                 <div class='store-home-sectiondiv'>
                     <div class='store-home-sectiontitle'>Clinical Relevance</div>
                     <div>Our curation of clinically-relevant resources!</div>
-                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' onclick='onClickStoreHomeLeftArrow(this);'/>
+                    <img src='/store/images/left_arrow.png' class='store-carousel-arrow carousel-left' />
                     <div id='store-home-clinicaldiv' class='store-home-carouseldiv'></div>
-                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' onclick='onClickStoreHomeRightArrow(this);'/>
+                    <img src='/store/images/right_arrow.png' class='store-carousel-arrow carousel-right' />
                 </div>
             </div>
             <div id='store-allmodule-div'>
