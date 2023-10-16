@@ -32,7 +32,11 @@ def vcfType(vcffile):
 # todo: make sure we ignore SNPs
 
 def vcfOverlap(bedfile, vcffile):
+    '''Create pyranges objects from input bed (expects ucsc gencode format), then loop through vcf to find overlaps.
+    Specify type of overlap (intron, coding/noncoding exon).
+    Keep in mind that multiple genes may overlap the same nucleotide (TODO: order by priority)'''
     bedGeneTree, bedTxTree, bedExonTree = make_pyranges(bedfile)
+    # TODO: we actually only use bedTxTree currently, must cleanup
     bedExonTree = pr.PyRanges()
     isPaired = [] # translocation/deletion mates do not need to get parsed again
     with open(vcffile, 'r') as f:
@@ -59,7 +63,7 @@ def vcfOverlap(bedfile, vcffile):
 
             # Now that we have a dict, extract relevant info and do overlaps
             if not isinstance(ALT, (vcf.model._SingleBreakend, vcf.model._Breakend)):
-                print(vcfrow['ID'], 'does not look like a BND annotation, skipping')
+                print(vcfrow['ID'], 'does not look like an SV annotation, skipping')
                 continue
             # for every breakend we want to know the local overlap
             # Note: we're trying to be clever here and only create exon trees if we need them
