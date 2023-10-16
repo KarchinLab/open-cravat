@@ -36,26 +36,27 @@ def make_pyranges(bedfile):
     
     geneRanges = pr.PyRanges(gene_df)
     
-    # Exons must be extracted from chromStarts and blockSizes
-    # Initialize an empty list to store the transformed data
-    exon_data = []
-    
-    # Iterate through each row and split the data into separate rows
-    # TODO: add cds info or create separate track
-    for index, row in df.iterrows():
-        Name = row['Name']
-        chrom = row['Chromosome']
-        chrstart = int(row['Start'])
-        starts = [chrstart+int(start) for start in row['chromStarts'].rstrip(',').split(',')]
-        bsizes = [int(bsize) for bsize in row['blockSizes'].rstrip(',').split(',')]
-        
-        # Create rows for each exon
-        for start, bsize in zip(starts, bsizes):
-            exon_data.append([row['Name'], row['geneName'], row['Chromosome'], start, start+bsize, row['Strand']])
-    
-    # Create a new DataFrame from the transformed data
-    exon_df = pd.DataFrame(exon_data, columns=['Name', 'geneName', 'Chromosome', 'Start', 'End', 'Strand'])
-    exonRanges = pr.PyRanges(exon_df)
+#    # Exons must be extracted from chromStarts and blockSizes
+#    # Initialize an empty list to store the transformed data
+#    exon_data = []
+#    
+#    # Iterate through each row and split the data into separate rows
+#    # TODO: add cds info or create separate track
+#    for index, row in df.iterrows():
+#        Name = row['Name']
+#        chrom = row['Chromosome']
+#        chrstart = int(row['Start'])
+#        starts = [chrstart+int(start) for start in row['chromStarts'].rstrip(',').split(',')]
+#        bsizes = [int(bsize) for bsize in row['blockSizes'].rstrip(',').split(',')]
+#        
+#        # Create rows for each exon
+#        for start, bsize in zip(starts, bsizes):
+#            exon_data.append([row['Name'], row['geneName'], row['Chromosome'], start, start+bsize, row['Strand']])
+#    
+#    # Create a new DataFrame from the transformed data
+#    exon_df = pd.DataFrame(exon_data, columns=['Name', 'geneName', 'Chromosome', 'Start', 'End', 'Strand'])
+#    exonRanges = pr.PyRanges(exon_df)
+    exonRanges = pr.PyRanges()
     return geneRanges, transcriptRanges, exonRanges
 
 if __name__ == "__main__":
