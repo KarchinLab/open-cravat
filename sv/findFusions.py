@@ -69,7 +69,13 @@ def vcfOverlap(bedfile, vcffile):
             if not localBND.newExons.empty:
                 bedExonTree = pr.concat([bedExonTree, localBND.newExons])
 
-            if isinstance(ALT, (vcf.model._Breakend)):
+            if isinstance(ALT, (vcf.model._SingleBreakend)):
+                if localBND.location == 'INTERGENIC':
+                    print(vcfrow['ID'], 'Single breakpoint is intergenic')
+                else:
+                    print(vcfrow['ID'], 'Single breakpoint in', localBND.location, 
+                          'of', localBND.geneList)
+            elif isinstance(ALT, (vcf.model._Breakend)):
                 if vcfrow['ID'] in isPaired:
                     print(vcfrow['ID'], 'part of a previous pair, skipping')
                     continue
@@ -92,8 +98,8 @@ def vcfOverlap(bedfile, vcffile):
                         print(vcfrow['ID'], status)
                 else:
                     # we can't say anything about the remote breakend
-                    if localBND.location = 'INTERGENIC':
-                        print(vcfrow['ID'], 'remote breakpoint not in reference, local breakpoint is intergenic'
+                    if localBND.location == 'INTERGENIC':
+                        print(vcfrow['ID'], 'remote breakpoint not in reference, local breakpoint is intergenic')
                     else:
                         print(vcfrow['ID'], 'remote breakpoint not in reference, local breakpoint in', localBND.location, 
                               'of', localBND.geneList)
@@ -189,7 +195,17 @@ def pairInfo(localBND, remoteBND, bedExonTree):
     status = 'Unknown'
     if localBND.location == 'INTERGENIC' or remoteBND.location == 'INTERGENIC':
         return False
-    if localBND.transcripts.df.equals(remoteBND.transcripts.df):
+    # are there any identical transcripts?
+    intersection_df = pd.merge(localBND.transcripts.df, remoteBND.transcripts.df, how='inner')
+    if intersection_df.empty:
+        # TODO: check for gene names as well, since two different tx of the same gene can be affected
+        geneString1 = ';'.join(localBND.transcripts.df['geneName'].unique())
+        geneString2 = ';'.join(remoteBND.transcripts.df['geneName'].unique())
+        status = 'Paired breakpoints located in different genes. Local: ' + geneString1 + ' Remote: ' + geneString2
+        return status
+    #if localBND.transcripts.df.equals(remoteBND.transcripts.df):
+    else:
+        # TODO: reduce this to shared tx only
         # same gene(s)
         # subtract self.exons from the contained ones
         containedExons = bedExonTree[localBND.CHROM, localBND.POS:remoteBND.POS].subtract(localBND.exons)
@@ -216,11 +232,16 @@ def pairInfo(localBND, remoteBND, bedExonTree):
                 status = 'Paired breakpoints are in the same exon of the same gene(s): ' + geneString #, localBND.location, remoteBND.location)
             else: 
                 status = 'Paired breakpoints affect at least one exon of gene(s): ' + geneString  
+                print(localBND.location, remoteBND.location)
 
-    else:
-        geneString1 = ';'.join(localBND.transcripts.df['geneName'].unique())
-        geneString2 = ';'.join(remoteBND.transcripts.df['geneName'].unique())
-        status = 'Paired breakpoints located in different genes. Local: ' + geneString1 + ' Remote: ' + geneString2
+#    else:
+#        # are there any identical transcripts?
+#        intersection_df = pd.merge(localBND.transcripts.df, remoteBND.transcripts.df, how='inner')
+#        if intersection_df.empty:
+#            # TODO: check for gene names as well, since two different tx of the same gene can be affected
+#            geneString1 = ';'.join(localBND.transcripts.df['geneName'].unique())
+#            geneString2 = ';'.join(remoteBND.transcripts.df['geneName'].unique())
+#            status = 'Paired breakpoints located in different genes. Local: ' + geneString1 + ' Remote: ' + geneString2
         # skip finding fusion genes, there are annotators for that
         #fusionObjects = fusion_possible(self.ALT, self.transcripts, self.mateTranscripts)
         #for f in fusionObjects:
