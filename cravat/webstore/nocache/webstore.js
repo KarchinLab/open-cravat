@@ -1,7 +1,8 @@
 'use strict';
 import {
-    getTn, addEl, getEl, changePage, PubSub, OC
+    getTn, addEl, getEl, changePage, PubSub, OC, emptyElement, getSizeText, removeElementFromArrayByValue
 } from '../../submit/nocache/core.js'
+import { getRemote } from "../../submit/nocache/moduleinfo.js";
 
 // var OC = OC || {};
 
@@ -530,28 +531,6 @@ function trimRemote() {
     }
 }
 
-function checkSystemReady() {
-    $.ajax({
-        url: '/issystemready',
-        async: true,
-        success: function(response) {
-            var online = OC.systemReadyObj.online;
-            OC.systemReadyObj = response;
-            if (online != undefined) {
-                OC.systemReadyObj.online = online;
-            }
-            if (OC.systemReadyObj.ready) {
-                if (OC.servermode == false) {
-                    OC.mediator.publish('populateJobs');
-                }
-                getLocal();
-            } else {
-                hidePageselect();
-                showSystemModulePage();
-            }
-        },
-    });
-}
 
 function getNotInstalledModuleNames() {
     var notInstalledModuleNames = [];
@@ -2398,7 +2377,7 @@ function webstore_run() {
 
 // Bind events to the mediator
 function addWebstoreEventHandlers() {
-    console.log('store.addWebstoreEventHandlers')
+    console.log('store.addWebstoreEventHandlers');
     OC.mediator.subscribe('system.update', onClickSystemModuleUpdateButton);
     OC.mediator.subscribe('getRemote', getRemote);
     OC.mediator.subscribe('moduleinfo.local', setupJobsTab);
@@ -2422,7 +2401,7 @@ function addWebstoreEventHandlers() {
     $('#module-group-back-arrow').on('click', onClickModuleGroupDivBackArrow);
     $('#store-systemmodule-install-button').on('click', onClickInstallBaseComponents);
 
-});
+}
 
 $(document).ready(() => addWebstoreEventHandlers());
 

@@ -192,6 +192,10 @@ export {
     addEl,
     changePage,
     PubSub,
-    OC
+    OC,
+    titleCase,
+    getSizeText,
+    emptyElement,
+    removeElementFromArrayByValue
 };
 
