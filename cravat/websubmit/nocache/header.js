@@ -212,4 +212,4 @@ function showYesNoDialog(content, yescallback, noSpace, justOk) {
 
 $(document).ready(() => addHeaderEventHandlers());
 
-export {addHeaderEventHandlers};
+export { addHeaderEventHandlers, loadSystemConf };

@@ -1,7 +1,9 @@
 'use strict';
-// import * as core from './core'
+import {
+    OC, PubSub
+} from './core.js'
 
-var OC = OC || {};
+// var OC = OC || {};
 if (!OC.mediator) {
     OC.mediator = new PubSub();
 }
@@ -217,4 +219,39 @@ function makeInstalledGroup() {
             }
         }
     }
+}
+
+
+function checkSystemReady() {
+    $.ajax({
+        url: '/issystemready',
+        async: true,
+        success: function(response) {
+            var online = OC.systemReadyObj.online;
+            OC.systemReadyObj = response;
+            if (online != undefined) {
+                OC.systemReadyObj.online = online;
+            }
+            if (OC.systemReadyObj.ready) {
+                if (OC.servermode == false) {
+                    OC.mediator.publish('populateJobs');
+                }
+                getLocal();
+            } else {
+                hidePageselect();
+                showSystemModulePage();
+            }
+        },
+    });
+}
+
+export {
+    getRemote,
+    populateAnnotators,
+    getLocal,
+    enableStoreTabHead,
+    disableStoreTabHead,
+    updateRemoteModuleTagwithUpdate,
+    updateModuleGroupInfo,
+    makeInstalledGroup
 }
