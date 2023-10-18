@@ -22,20 +22,6 @@ def test_websubmit_config_menu_is_visible(page: Page):
     expect(refresh_btn).to_be_visible()
 
 
-def test_websubmit_config_change_module_dir_persists(page: Page):
-    page.goto("http://localhost:8080/submit/nocache/index.html")
-    page.get_by_role("img").nth(3).click()
-    page.locator("#settings_modules_dir_input").click()
-    page.locator("#settings_modules_dir_input").fill("test")
-    page.locator("#settings_modules_dir_input").press("Tab")
-    page.get_by_role("button", name="Save").click()
-    page.get_by_role("button", name="Ok").click()
-    page.goto("http://localhost:8080/submit/nocache/index.html")
-    page.get_by_role("img").nth(3).click()
-    value = page.locator("#settings_modules_dir_input")
-    expect(value).to_have_value(re.compile('.*test$'))
-
-
 def test_websubmit_existing_job_is_displayed(page: Page):
     with page.expect_response('http://0.0.0.0:8080/submit/jobs') as jobs_response:
         page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
@@ -58,3 +44,24 @@ def test_websubmit_new_job_is_displayed(page: Page):
     job_label = page.get_by_role("cell", name="auto_run", exact=True)
     expect(job_label).to_be_visible()
 
+
+"""
+# TODO: Consider updating the server configuration code to restore original settings before every test
+
+This test alters the system configuration by changing the module directory, so any tests that require even
+the base modules to be installed will fail if they run after this one. i.e.
+
+RUN THIS TEST LAST
+"""
+def test_websubmit_config_change_module_dir_persists(page: Page):
+    page.goto("http://localhost:8080/submit/nocache/index.html")
+    page.get_by_role("img").nth(3).click()
+    page.locator("#settings_modules_dir_input").click()
+    page.locator("#settings_modules_dir_input").fill("test")
+    page.locator("#settings_modules_dir_input").press("Tab")
+    page.get_by_role("button", name="Save").click()
+    page.get_by_role("button", name="Ok").click()
+    page.goto("http://localhost:8080/submit/nocache/index.html")
+    page.get_by_role("img").nth(3).click()
+    value = page.locator("#settings_modules_dir_input")
+    expect(value).to_have_value(re.compile('.*test$'))
