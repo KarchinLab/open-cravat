@@ -263,7 +263,7 @@
             </div>
             <div id='store-modulegroup-div'>
                 <div>
-                    <img id="store-module-back-arrow" src='/result/images/back_arrow.png' class='back-arrow'>
+                    <img src='/result/images/back_arrow.png' id='module-group-back-arrow' class='back-arrow'>
                     <span id='store-modulegroup-title-span'></span>
                 </div>
                 <div id='store-modulegroup-content-div'></div>
@@ -313,15 +313,15 @@
     <br />
     <span class="settingsdiv-elem">Allow collection of CRAVAT metrics: </span><input type="checkbox" id="settings_save_metrics" onclick='event.stopPropagation();'>
     <br />
-    <button id="update-store-button" class="settingdsiv-elem butn" >Refresh store</button>
+    <button id="store-update-remote-button" class="settingdsiv-elem butn">Refresh store</button>
     <p>
         <button id='job-import' class='butn' onclick="document.getElementById('job-import-file').click()">
             Import Job
             <input type="file" id="job-import-file" style='display:none;'>
         </button>
     </p>
-    <button id="save-settings-button" class="settingsdiv-elem butn" onclick='onClickSaveSystemConf();'>Save</button>
-    <button id="reset-settings-button" class="settingsdiv-elem butn" onclick='resetSystemConf();'>Reset</button>
+    <button id="system-conf-save-button" class="settingsdiv-elem butn">Save</button>
+    <button id="system-conf-reset-button" class="settingsdiv-elem butn">Reset</button>
 </div> <!-- settingsdiv -->
 
 <div id='store-noconnect-div'>

@@ -468,7 +468,8 @@ function getCarouselScrollStep (d) {
 }
 
 function onClickStoreHomeLeftArrow(el) {
-    var d = el.nextElementSibling;
+    let target = el.target;
+    var d = target.nextElementSibling;
     var dw = d.offsetWidth;
     var sw = getCarouselScrollStep(d)
     var s = d.scrollLeft;
@@ -479,7 +480,8 @@ function onClickStoreHomeLeftArrow(el) {
 }
 
 function onClickStoreHomeRightArrow(el) {
-    var d = el.previousElementSibling;
+    let target = el.target;
+    var d = target.previousElementSibling;
     var dw = d.offsetWidth;
     var sw = getCarouselScrollStep(d)
     var s = d.scrollLeft;

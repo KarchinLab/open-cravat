@@ -1852,9 +1852,6 @@ function addListeners () {
     $('#report_generation_generate_button').on('click', createJobReport);
     $('#report_generation_close_button').on('click', closeReportGenerationDiv);
 
-    $('#save-settings-button').click(onClickSaveSystemConf);
-    $('#reset-settings-button').click(resetSystemConf);
-
     $('#submit-job-button').click(submit);
     $('#input-text').change(inputChangeHandler);
     $('#input-file').change(inputChangeHandler);
