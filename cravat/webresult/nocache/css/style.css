@@ -497,6 +497,13 @@ button {
     right: 5px;
 }
 
+.house-icon {
+	height: 15px;
+	top: 4px;
+	position: absolute;
+	right: 100px;
+}
+
 .question-icon {
     height: 17px;
     top: 4px;
