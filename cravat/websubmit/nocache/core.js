@@ -195,6 +195,11 @@ export {
     titleCase,
     getSizeText,
     emptyElement,
-    removeElementFromArrayByValue
+    removeElementFromArrayByValue,
+    addClassRecursive,
+    prettyBytes,
+    getTimestamp,
+    compareVersion,
+    checkVisible
 };
 

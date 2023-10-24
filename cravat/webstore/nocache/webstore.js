@@ -1,8 +1,12 @@
 'use strict';
 import {
-    getTn, addEl, getEl, changePage, PubSub, OC, emptyElement, getSizeText, removeElementFromArrayByValue
-} from '../../submit/nocache/core.js'
-import { getRemote } from "../../submit/nocache/moduleinfo.js";
+    getTn, addEl, getEl, changePage, PubSub, OC,
+    emptyElement, getSizeText, removeElementFromArrayByValue, getTimestamp,
+    addClassRecursive, compareVersion, prettyBytes
+} from '../../submit/nocache/core.js';
+import {
+    getRemote, getLocal, populateAnnotators
+} from "../../submit/nocache/moduleinfo.js";
 
 // var OC = OC || {};
 

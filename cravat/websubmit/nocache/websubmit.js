@@ -1,6 +1,6 @@
 'use strict';
 import {
-    getTn, addEl, getEl, changePage, PubSub, OC, titleCase, emptyElement
+    getTn, addEl, getEl, changePage, PubSub, OC, titleCase, emptyElement, checkVisible
 } from './core.js'
 import {
     connectWebSocket, checkConnection, getBaseModuleNames, toggleChatBox
