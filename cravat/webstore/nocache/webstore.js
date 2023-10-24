@@ -2380,7 +2380,6 @@ function webstore_run() {
 
 // Bind events to the mediator
 function addWebstoreEventHandlers() {
-    console.log('store.addWebstoreEventHandlers');
     OC.mediator.subscribe('system.update', onClickSystemModuleUpdateButton);
     OC.mediator.subscribe('getRemote', getRemote);
     OC.mediator.subscribe('moduleinfo.local', setupJobsTab);

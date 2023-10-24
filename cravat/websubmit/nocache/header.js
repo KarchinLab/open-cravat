@@ -9,7 +9,6 @@ import {
 // }
 
 function addHeaderEventHandlers() {
-    console.log('header.addHeaderEventHandlers');
     // on tab click, publish navigate event to mediator
     document.getElementById('submitdiv_tabhead').addEventListener('click', () => OC.mediator.publish('navigate', 'submitdiv'));
     document.getElementById('storediv_tabhead').addEventListener('click', () => OC.mediator.publish('navigate', 'storediv'));
