@@ -6,11 +6,10 @@ import {
     connectWebSocket, checkConnection, getBaseModuleNames, toggleChatBox
 } from '../../store/nocache/webstore.js';
 import {
-    getRemote, populateAnnotators
+    populateAnnotators,
 } from './moduleinfo.js';
 import { loadSystemConf } from './header.js'
 
-// var OC = OC || {};
 OC.servermode = false;
 OC.logged = false;
 OC.username = null;
@@ -40,9 +39,6 @@ OC.JOB_IDS = []
 OC.jobListUpdateIntervalFn = null;
 OC.reportRunning = {};
 OC.systemConf;
-if (!OC.mediator) {
-    OC.mediator = new PubSub();
-}
 
 function submit () {
     if (OC.servermode && OC.logged == false) {

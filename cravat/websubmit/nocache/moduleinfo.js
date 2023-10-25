@@ -1,12 +1,7 @@
 'use strict';
 import {
-    OC, PubSub
+    OC,
 } from './core.js'
-
-// var OC = OC || {};
-if (!OC.mediator) {
-    OC.mediator = new PubSub();
-}
 
 function populateAnnotators () {
     document.querySelector("#annotdivspinnerdiv").classList.remove("hide")

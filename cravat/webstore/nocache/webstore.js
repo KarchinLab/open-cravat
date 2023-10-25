@@ -1,14 +1,12 @@
 'use strict';
 import {
-    getTn, addEl, getEl, changePage, PubSub, OC,
+    getTn, addEl, getEl, PubSub, OC,
     emptyElement, getSizeText, removeElementFromArrayByValue, getTimestamp,
     addClassRecursive, compareVersion, prettyBytes
 } from '../../submit/nocache/core.js';
 import {
     getRemote, getLocal, populateAnnotators
 } from "../../submit/nocache/moduleinfo.js";
-
-// var OC = OC || {};
 
 OC.currentDetailModule = null;
 OC.remoteModuleInfo = {};

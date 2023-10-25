@@ -1,12 +1,7 @@
 'use strict';
 import {
-    getTn, addEl, getEl, changePage, PubSub, OC
+    getTn, addEl, getEl, OC
 } from './core.js'
-
-// var OC = OC || {};
-// if (!OC.mediator) {
-//     OC.mediator = new PubSub();
-// }
 
 function addHeaderEventHandlers() {
     // on tab click, publish navigate event to mediator
