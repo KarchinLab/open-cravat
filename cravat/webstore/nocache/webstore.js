@@ -1,53 +1,51 @@
-var currentDetailModule = null;
-var remoteModuleInfo = {};
-var origRemoteModuleInfo = null;
-var localModuleInfo = {};
-var updates = {};
-var updateConflicts;
-var filter = {};
-var installQueue = [];
-var installInfo = {};
-var baseModuleNames = [];
-var storeUrl = null;
-var storeurl = $.get('/store/getstoreurl').done(function(response) {
-    storeUrl = response;
-});
-var newModuleAvailable = false;
-var baseModuleUpdateAvailable = false;
-var storeFirstOpen = true;
-var storeTileWidthStep = 470;
-var storeTileHeight = 140
-var modulesToIgnore = [
+'use strict';
+import {
+    getTn, addEl, getEl, PubSub, OC,
+    emptyElement, getSizeText, removeElementFromArrayByValue, getTimestamp,
+    addClassRecursive, compareVersion, prettyBytes
+} from '../../submit/nocache/core.js';
+import {
+    getRemote, getLocal, populateAnnotators
+} from "../../submit/nocache/moduleinfo.js";
+
+OC.currentDetailModule = null;
+OC.remoteModuleInfo = {};
+OC.origRemoteModuleInfo = null;
+OC.localModuleInfo = {};
+OC.updates = {};
+OC.updateConflicts = null;
+OC.filter = {};
+OC.installQueue = [];
+OC.installInfo = {};
+OC.baseModuleNames = [];
+OC.storeUrl = null;
+OC.newModuleAvailable = false;
+OC.baseModuleUpdateAvailable = false;
+OC.storeFirstOpen = true;
+OC.storeTileWidthStep = 470;
+OC.storeTileHeight = 140
+OC.modulesToIgnore = [
     'aggregator',
 ];
-var storeLogos = {};
-var moduleLists = {};
-var baseToInstall = [];
-var baseInstalled = false;
-var defaultWidgetNames = [];
-var uninstalledModules = [];
-var moduleGroupMembers = {};
-var currentPage = null;
-var installedGroups = {};
-var tagsCollected = [];
-var tagDesc = {};
-var numModulesInHomeSectionCol = 3
-var numModulesInHomeSectionRow = 2
-var numModulesInHomeSectionPage = 3
-
-function getEl(tag) {
-    var new_node = document.createElement(tag);
-    return new_node;
-}
-
-function getTn(text) {
-    var new_text_node = document.createTextNode(text);
-    return new_text_node;
-}
-
-function addEl(pelem, child) {
-    pelem.appendChild(child);
-    return pelem;
+OC.storeLogos = {};
+OC.moduleLists = {};
+OC.baseToInstall = [];
+OC.baseInstalled = false;
+OC.defaultWidgetNames = [];
+OC.uninstalledModules = [];
+OC.moduleGroupMembers = {};
+OC.currentPage = null;
+OC.installedGroups = {};
+OC.tagsCollected = [];
+OC.tagDesc = {};
+OC.numModulesInHomeSectionCol = 3
+OC.numModulesInHomeSectionRow = 2
+OC.numModulesInHomeSectionPage = 3
+$.get('/store/getstoreurl').done(function(response) {
+    OC.storeUrl = response;
+});
+if (!OC.mediator) {
+    OC.mediator = new PubSub();
 }
 
 function onClickStoreHome() {
@@ -67,17 +65,6 @@ function onClickStoreTagResetButton() {
     updateFilter();
     document.getElementById('store-tag-checkbox-home').checked = false;
     document.getElementById('store-tag-checkbox-viewall').checked = true;
-}
-
-function onClickStoreUpdateRemoteButton() {
-    showUpdateRemoteSpinner();
-    $.ajax({
-        url: '/store/updateremote',
-        success: function(response) {
-            hideUpdateRemoteSpinner();
-            moduleChange();
-        },
-    });
 }
 
 function clickTab(value) {
@@ -109,22 +96,22 @@ function onClickInstallBaseComponents() {
 
 function showSystemModulePage() {
     document.getElementById('store-systemmodule-div').style.display = 'block';
-    if (systemReadyObj.ready == false) {
+    if (OC.systemReadyObj.ready == false) {
         document.getElementById('store-systemmodule-systemnotready-div').style.display = 'block';
         var span = document.getElementById('store-systemmodule-systemnotready-span');
         var span2 = document.getElementById('store-systemmodule-systemnotready-span2');
-        span.textContent = systemReadyObj['message'];
-        if (systemReadyObj['code'] == 1) {
+        span.textContent = OC.systemReadyObj['message'];
+        if (OC.systemReadyObj['code'] == 1) {
             span2.textContent = 'Please use the settings menu at top right to set the correct modules directory.';
         }
     } else {
-        if (baseInstalled == false) {
+        if (OC.baseInstalled == false) {
             document.getElementById('store-systemmodule-missing-div').style.display = 'block';
         } else {
             document.getElementById('store-systemmodule-missing-div').style.display = 'none';
         }
         document.getElementById('store-systemmodule-update-div').style.display = 'none';
-        if (baseToInstall.length == 0) {
+        if (OC.baseToInstall.length == 0) {
             document.getElementById('store-systemmodule-install-button').disabled = true;
         }
     }
@@ -135,14 +122,14 @@ function hideSystemModulePage() {
 }
 
 function complementRemoteWithLocal() {
-    var localModuleNames = Object.keys(localModuleInfo);
+    var localModuleNames = Object.keys(OC.localModuleInfo);
     for (var i = 0; i < localModuleNames.length; i++) {
         var localModuleName = localModuleNames[i];
         if (localModuleName == 'example_annotator') {
             continue;
         }
-        var localModule = localModuleInfo[localModuleName];
-        var remoteModule = remoteModuleInfo[localModuleName];
+        var localModule = OC.localModuleInfo[localModuleName];
+        var remoteModule = OC.remoteModuleInfo[localModuleName];
         var check2 = localModule.conf.uselocalonstore;
         var check3 = localModule.conf['private'];
         if (check2 == true && check3 != true) {
@@ -153,7 +140,7 @@ function complementRemoteWithLocal() {
                 if (moduleInfo.private == true) {
                     return;
                 }
-                remoteModuleInfo[localModuleName] = moduleInfo;
+                OC.remoteModuleInfo[localModuleName] = moduleInfo;
             };
             xhr.onerror = function(e) {
                 console.error(xhr.statusText);
@@ -165,75 +152,21 @@ function complementRemoteWithLocal() {
 
 function setupJobsTab() {
     complementRemoteWithLocal();
-    populateInputFormats();
-    buildAnnotatorGroupSelector();
-    let annotatorsDone = populateAnnotators();
-    let packagesDone = populatePackages();
-    annotatorsDone.then(() => {
-        // Populate cc here to avoid it showing before annotators
-        // and then getting quickly shoved down. Looks bad.
-        populateAddtlAnalysis();
-    })
+    OC.mediator.publish('setupJobs');
 }
 
-function updateRemoteModuleTagwithUpdate() {
-    var moduleNamesInInstallQueue = Object.keys(installInfo);
-    for (var remoteModuleName in remoteModuleInfo) {
-        var mI = remoteModuleInfo[remoteModuleName];
-        var tags = mI['tags'];
-        if (tags == null) {
-            tags = [];
-            mI['tags'] = tags;
-        }
-        if (remoteModuleName in localModuleInfo) {
-            if (moduleNamesInInstallQueue.indexOf(remoteModuleName) == -1) {
-                if (updates[remoteModuleName] != undefined) {
-                    var idx = tags.indexOf('newavailable');
-                    if (idx == -1) {
-                        tags.push('newavailable');
-                    }
-                    if (baseModuleNames.includes(remoteModuleName) == false) {
-                        newModuleAvailable = true;
-                    }
-                } else {
-                    var idx = tags.indexOf('newavailable');
-                    if (idx >= 0) {
-                        tags.splice(idx, 1);
-                    }
-                }
-            }
-        } else {
-            var idx = tags.indexOf('installed');
-            if (idx >= 0) {
-                tags.splice(idx, 1);
-            }
-        }
-    }
-    for (var mn in localModuleInfo) {
-        var localModule = localModuleInfo[mn];
-        if (!('tags' in localModule)) {
-            localModule['tags'] = [];
-        }
-        var remoteModule = remoteModuleInfo[mn];
-        if (remoteModule == undefined) {
-            continue;
-        }
-        var localTags = localModule.tags;
-        var remoteTags = remoteModule.tags;
-        remoteModule.tags = remoteTags;
-    }
-}
+
 
 function setBaseInstalled() {
-    baseInstalled = true;
-    var moduleNamesInInstallQueue = Object.keys(installInfo);
-    baseToInstall = [];
-    for (var i = 0; i < baseModuleNames.length; i++) {
-        var baseModuleName = baseModuleNames[i];
-        if (!(baseModuleName in localModuleInfo)) {
-            baseInstalled = false;
+    OC.baseInstalled = true;
+    var moduleNamesInInstallQueue = Object.keys(OC.installInfo);
+    OC.baseToInstall = [];
+    for (var i = 0; i < OC.baseModuleNames.length; i++) {
+        var baseModuleName = OC.baseModuleNames[i];
+        if (!(baseModuleName in OC.localModuleInfo)) {
+            OC.baseInstalled = false;
             if (moduleNamesInInstallQueue.indexOf(baseModuleName) == -1) {
-                baseToInstall.push(baseModuleName);
+                OC.baseToInstall.push(baseModuleName);
             }
         }
     }
@@ -241,13 +174,13 @@ function setBaseInstalled() {
     if (div == null) {
         return;
     }
-    if (origRemoteModuleInfo == null) {
-        origRemoteModuleInfo = JSON.parse(JSON.stringify(remoteModuleInfo));
+    if (OC.origRemoteModuleInfo == null) {
+        OC.origRemoteModuleInfo = JSON.parse(JSON.stringify(OC.remoteModuleInfo));
     }
 }
 
 function populateStorePages() {
-    if (baseInstalled) {
+    if (OC.baseInstalled) {
         showPageselect();
         hideSystemModulePage();
         trimRemote();
@@ -259,7 +192,7 @@ function populateStorePages() {
         var div = document.getElementById('moduledetaildiv_store');
         if (div != null) {
             if (div.style.display != 'none') {
-                makeModuleDetailDialog(currentDetailModule, null, null);
+                makeModuleDetailDialog(OC.currentDetailModule, null, null);
             }
         }
         populateStoreHome();
@@ -268,84 +201,30 @@ function populateStorePages() {
         if (mg != undefined && mg != '') {
             populateModuleGroupDiv(mg);
         }
-        if (storeFirstOpen) {
+        if (OC.storeFirstOpen) {
             showStoreHome();
         }
-        storeFirstOpen = false;
+        OC.storeFirstOpen = false;
     } else {
         hidePageselect();
         showSystemModulePage();
     }
 }
 
-function getLocal() {
-    $.get('/store/local').done(function(data) {
-        localModuleInfo = data;
-        setupJobsTab()
-        setBaseInstalled()
-        populateStorePages()
-        populateStoreTagPanel();
-        updateModuleGroupInfo();
-        makeInstalledGroup();
-        if (systemReadyObj.online) {
-            enableStoreTabHead();
-        } else {
-            disableStoreTabHead();
-        }
-        $.get('/store/updates').done(function(data) {
-            updates = data.updates;
-            updateConflicts = data.conflicts;
-            newModuleAvailable = false;
-            updateModuleGroupInfo();
-            updateRemoteModuleTagwithUpdate()
-            showOrHideSystemModuleUpdateButton();
-            showOrHideUpdateAllButton();
-            showOrHideSystemModuleUpdateButton();
-        });
-    });
-}
 
-function makeInstalledGroup() {
-    var localModules = Object.keys(localModuleInfo);
-    var groupNames = Object.keys(moduleGroupMembers);
-    installedGroups = {};
-    for (var i = 0; i < groupNames.length; i++) {
-        var groupName = groupNames[i];
-        var members = moduleGroupMembers[groupName];
-        for (var j = 0; j < members.length; j++) {
-            var member = members[j];
-            if (localModuleInfo[member] != undefined) {
-                if (installedGroups[groupName] == undefined) {
-                    installedGroups[groupName] = [];
-                }
-                installedGroups[groupName].push(member);
-            }
-        }
-    }
-}
-
-function enableStoreTabHead() {
-    document.getElementById('storediv_tabhead').setAttribute('disabled', 'f');
-}
-
-function disableStoreTabHead() {
-    document.getElementById('storediv_tabhead').setAttribute('disabled', 't');
-    document.getElementById('storediv_tabhead').classList.add('disabled');
-    document.getElementById('storediv_tabhead').title = 'Internet connection not available';
-}
 
 function showOrHideSystemModuleUpdateButton() {
-    if (servermode == false || (logged == true && username == 'admin')) {
-        baseModuleUpdateAvailable = false;
-        var moduleNames = Object.keys(updates);
+    if (OC.servermode == false || (OC.logged == true && OC.username == 'admin')) {
+        OC.baseModuleUpdateAvailable = false;
+        var moduleNames = Object.keys(OC.updates);
         for (var i = 0; i < moduleNames.length; i++) {
-            if (baseModuleNames.includes(moduleNames[i])) {
-                baseModuleUpdateAvailable = true;
+            if (OC.baseModuleNames.includes(moduleNames[i])) {
+                OC.baseModuleUpdateAvailable = true;
                 break;
             }
         }
         var btn = document.getElementById('store-systemmoduleupdate-announce-div');
-        if (baseModuleUpdateAvailable) {
+        if (OC.baseModuleUpdateAvailable) {
             btn.style.display = 'inline-block';
         } else {
             btn.style.display = 'none';
@@ -355,8 +234,8 @@ function showOrHideSystemModuleUpdateButton() {
 
 function showOrHideUpdateAllButton() {
     var d = document.getElementById('store-update-all-div');
-    if (newModuleAvailable && (servermode == false || (logged == true && username == 'admin'))) {
-        var modulesInInstallQueue = Object.keys(installInfo);
+    if (OC.newModuleAvailable && (OC.servermode == false || (OC.logged == true && OC.username == 'admin'))) {
+        var modulesInInstallQueue = Object.keys(OC.installInfo);
         d.style.display = 'block';
         announceStoreUpdateAllAvailable();
     } else {
@@ -402,21 +281,21 @@ function hideStoreModuleGroup() {
 }
 
 function onClickModuleGroupDivBackArrow(evt) {
-    if (currentPage == 'store-home-div') {
+    if (OC.currentPage == 'store-home-div') {
         showStoreHome();
-    } else if (currentPage == 'store-allmodule-div') {
+    } else if (OC.currentPage == 'store-allmodule-div') {
         showAllModulesDiv();
-    } else if (currentPage == 'store-modulegroup-div') {
+    } else if (OC.currentPage == 'store-modulegroup-div') {
         showStoreModuleGroup();
     }
 }
 
 function getMostDownloadedModuleNames() {
-    var moduleNames = Object.keys(remoteModuleInfo);
+    var moduleNames = Object.keys(OC.remoteModuleInfo);
     for (var i = 0; i < moduleNames.length; i++) {
         for (var j = i + 1; j < moduleNames.length - 1; j++) {
-            var d1 = remoteModuleInfo[moduleNames[i]].downloads;
-            var d2 = remoteModuleInfo[moduleNames[j]].downloads;
+            var d1 = OC.remoteModuleInfo[moduleNames[i]].downloads;
+            var d2 = OC.remoteModuleInfo[moduleNames[j]].downloads;
             if (d1 < d2) {
                 var tmp = moduleNames[i];
                 moduleNames[i] = moduleNames[j];
@@ -426,25 +305,25 @@ function getMostDownloadedModuleNames() {
     }
     var top10ModuleNames = [];
     var count = 0;
-    var numModulesInHomeSection = numModulesInHomeSectionRow * numModulesInHomeSectionCol * numModulesInHomeSectionPage
+    var numModulesInHomeSection = OC.numModulesInHomeSectionRow * OC.numModulesInHomeSectionCol * OC.numModulesInHomeSectionPage
     for (var i = 0; i < moduleNames.length; i++) {
         var moduleName = moduleNames[i];
         if (moduleName == 'base') {
             continue;
         }
-        if (baseModuleNames.indexOf(moduleName) >= 0) {
+        if (OC.baseModuleNames.indexOf(moduleName) >= 0) {
             continue;
         }
-        if (remoteModuleInfo[moduleName].hidden == true) {
+        if (OC.remoteModuleInfo[moduleName].hidden == true) {
             continue;
         }
-        if (remoteModuleInfo[moduleName].type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
+        if (OC.remoteModuleInfo[moduleName].type == 'webviewerwidget' && OC.defaultWidgetNames.includes(moduleName)) {
             continue;
         }
-        if (remoteModuleInfo[moduleName].type == 'group') {
+        if (OC.remoteModuleInfo[moduleName].type == 'group') {
             continue
         }
-        if (baseModuleNames.indexOf(moduleName) >= 0) {
+        if (OC.baseModuleNames.indexOf(moduleName) >= 0) {
             continue
         }
         top10ModuleNames.push(moduleName);
@@ -456,75 +335,14 @@ function getMostDownloadedModuleNames() {
     return top10ModuleNames;
 }
 
-function updateModuleGroupInfo() {
-    moduleGroupMembers = {};
-    for (var mn in remoteModuleInfo) {
-        var groups = remoteModuleInfo[mn]['groups'];
-        if (groups != undefined && groups.length > 0) {
-            for (var i = 0; i < groups.length; i++) {
-                var group = groups[i];
-                if (remoteModuleInfo[group] == undefined && localModuleInfo[group] == undefined) {
-                    return;
-                }
-                if (moduleGroupMembers[group] == undefined) {
-                    moduleGroupMembers[group] = [];
-                }
-                moduleGroupMembers[group].push(mn);
-            }
-        }
-    }
-    for (var mn in localModuleInfo) {
-        var groups = localModuleInfo[mn]['groups'];
-        if (groups != undefined && groups.length > 0) {
-            for (var i = 0; i < groups.length; i++) {
-                var group = groups[i];
-                if (remoteModuleInfo[group] == undefined && localModuleInfo[group] == undefined) {
-                    return;
-                }
-                if (moduleGroupMembers[group] == undefined) {
-                    moduleGroupMembers[group] = [];
-                }
-                if (moduleGroupMembers[group].indexOf(mn) == -1) {
-                    moduleGroupMembers[group].push(mn);
-                }
-            }
-        }
-    }
-    var groupNames = Object.keys(moduleGroupMembers);
-    for (var i = 0; i < groupNames.length; i++) {
-        var gn = groupNames[i];
-        var mns = moduleGroupMembers[gn];
-        var group = remoteModuleInfo[gn];
-        if (group == undefined) {
-            group = localModuleInfo[gn];
-        }
-        if (group == undefined) {
-            delete moduleGroupMembers[gn];
-            continue;
-        }
-        for (var j = 0; j < mns.length; j++) {
-            var mn = mns[j];
-            var m = remoteModuleInfo[mn];
-            if (m === undefined) { // Work if no internet
-                continue;
-            }
-            var d1 = new Date(group.publish_time);
-            var d2 = new Date(m.publish_time);
-            if (d1 < d2) {
-                group.publish_time = m.publish_time;
-            }
-        }
-    }
-}
-
 function getNewestModuleNames() {
-    var moduleNames = Object.keys(remoteModuleInfo);
+    var moduleNames = Object.keys(OC.remoteModuleInfo);
     for (var i = 0; i < moduleNames.length; i++) {
         for (var j = i + 1; j < moduleNames.length - 1; j++) {
             var n1 = moduleNames[i];
             var n2 = moduleNames[j];
-            var m1 = remoteModuleInfo[n1];
-            var m2 = remoteModuleInfo[n2];
+            var m1 = OC.remoteModuleInfo[n1];
+            var m2 = OC.remoteModuleInfo[n2];
             var d1 = new Date(m1.publish_time);
             var d2 = new Date(m2.publish_time);
             if (d1 < d2) {
@@ -536,20 +354,20 @@ function getNewestModuleNames() {
     }
     var top10ModuleNames = [];
     var count = 0;
-    var numModulesInHomeSection = numModulesInHomeSectionRow * numModulesInHomeSectionCol * numModulesInHomeSectionPage
+    var numModulesInHomeSection = OC.numModulesInHomeSectionRow * OC.numModulesInHomeSectionCol * OC.numModulesInHomeSectionPage
     for (var i = 0; i < moduleNames.length; i++) {
         var moduleName = moduleNames[i];
         if (moduleName == 'base') {
             continue;
         }
-        if (baseModuleNames.indexOf(moduleName) >= 0) {
+        if (OC.baseModuleNames.indexOf(moduleName) >= 0) {
             continue;
         }
-        var m = remoteModuleInfo[moduleName];
+        var m = OC.remoteModuleInfo[moduleName];
         if (m.hidden == true) {
             continue;
         }
-        if (m.type == 'webviewerwidget' && defaultWidgetNames.includes(moduleName)) {
+        if (m.type == 'webviewerwidget' && OC.defaultWidgetNames.includes(moduleName)) {
             continue;
         }
         if (m.groups.length > 0) {
@@ -566,12 +384,12 @@ function getNewestModuleNames() {
 
 function getHomeCarouselContent (modules, type) {
     var sdiv = getEl('div');
-    sdiv.style.width = (Math.ceil(modules.length / numModulesInHomeSectionRow) * storeTileWidthStep) + 'px'
-    sdiv.style.height = numModulesInHomeSectionRow * storeTileHeight
-    for (var i = 0; i < modules.length; i = i + numModulesInHomeSectionRow) {
+    sdiv.style.width = (Math.ceil(modules.length / OC.numModulesInHomeSectionRow) * OC.storeTileWidthStep) + 'px'
+    sdiv.style.height = OC.numModulesInHomeSectionRow * OC.storeTileHeight
+    for (var i = 0; i < modules.length; i = i + OC.numModulesInHomeSectionRow) {
         var ssdiv = getEl('div')
         ssdiv.classList.add('home-tile-group')
-        for (var j = 0; j < numModulesInHomeSectionRow; j++) {
+        for (var j = 0; j < OC.numModulesInHomeSectionRow; j++) {
             var n = i + j
             if (n < modules.length) {
                 var panel = getRemoteModulePanel(modules[n], type, n);
@@ -588,14 +406,14 @@ function populateStoreHome() {
     var div = document.getElementById('store-home-featureddiv');
     $(div).empty();
     var featuredModules = getMostDownloadedModuleNames();
-    moduleLists['download'] = featuredModules;
+    OC.moduleLists['download'] = featuredModules;
     var sdiv = getHomeCarouselContent(featuredModules, 'download')
     addEl(div, sdiv);
     // Newest
     var div = document.getElementById('store-home-newestdiv');
     $(div).empty();
     var newestModules = getNewestModuleNames();
-    moduleLists['newest'] = newestModules;
+    OC.moduleLists['newest'] = newestModules;
     var sdiv = getHomeCarouselContent(newestModules, 'newest')
     addEl(div, sdiv);
     // Cancer 
@@ -603,10 +421,10 @@ function populateStoreHome() {
     $(div).empty();
     var sdiv = getEl('div');
     var cancerModules = [];
-    var remoteModuleNames = Object.keys(remoteModuleInfo);
+    var remoteModuleNames = Object.keys(OC.remoteModuleInfo);
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
-        var remoteModule = remoteModuleInfo[remoteModuleName];
+        var remoteModule = OC.remoteModuleInfo[remoteModuleName];
         if (remoteModule['groups'].length > 0) {
             continue;
         }
@@ -614,7 +432,7 @@ function populateStoreHome() {
             cancerModules.push(remoteModuleName);
         }
     }
-    moduleLists['cancer'] = cancerModules;
+    OC.moduleLists['cancer'] = cancerModules;
     var sdiv = getHomeCarouselContent(cancerModules, 'cancer')
     addEl(div, sdiv);
     // Clinical Relevance
@@ -622,10 +440,10 @@ function populateStoreHome() {
     $(div).empty();
     var sdiv = getEl('div');
     var clinicalModules = [];
-    var remoteModuleNames = Object.keys(remoteModuleInfo);
+    var remoteModuleNames = Object.keys(OC.remoteModuleInfo);
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
-        var remoteModule = remoteModuleInfo[remoteModuleName];
+        var remoteModule = OC.remoteModuleInfo[remoteModuleName];
         if (remoteModule['groups'].length > 0) {
             continue;
         }
@@ -633,7 +451,7 @@ function populateStoreHome() {
             clinicalModules.push(remoteModuleName);
         }
     }
-    moduleLists['clinical'] = clinicalModules;
+    OC.moduleLists['clinical'] = clinicalModules;
     var sdiv = getHomeCarouselContent(clinicalModules, 'clinical')
     addEl(div, sdiv);
 }
@@ -641,18 +459,19 @@ function populateStoreHome() {
 function getCarouselScrollStep (d) {
     var dw = d.offsetWidth;
     var sw = null
-    if (dw >= storeTileWidthStep * 3) {
-        sw = storeTileWidthStep * 3
-    } else if (dw >= storeTileWidthStep * 2) {
-        sw = storeTileWidthStep * 2
+    if (dw >= OC.storeTileWidthStep * 3) {
+        sw = OC.storeTileWidthStep * 3
+    } else if (dw >= OC.storeTileWidthStep * 2) {
+        sw = OC.storeTileWidthStep * 2
     } else {
-        sw = storeTileWidthStep
+        sw = OC.storeTileWidthStep
     }
     return sw
 }
 
 function onClickStoreHomeLeftArrow(el) {
-    var d = el.nextElementSibling;
+    let target = el.target;
+    var d = target.nextElementSibling;
     var dw = d.offsetWidth;
     var sw = getCarouselScrollStep(d)
     var s = d.scrollLeft;
@@ -663,7 +482,8 @@ function onClickStoreHomeLeftArrow(el) {
 }
 
 function onClickStoreHomeRightArrow(el) {
-    var d = el.previousElementSibling;
+    let target = el.target;
+    var d = target.previousElementSibling;
     var dw = d.offsetWidth;
     var sw = getCarouselScrollStep(d)
     var s = d.scrollLeft;
@@ -674,110 +494,50 @@ function onClickStoreHomeRightArrow(el) {
 }
 
 function trimRemote() {
-    var remoteModuleNames = Object.keys(remoteModuleInfo);
-    defaultWidgetNames = [];
+    var remoteModuleNames = Object.keys(OC.remoteModuleInfo);
+    OC.defaultWidgetNames = [];
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
-        var remoteModule = remoteModuleInfo[remoteModuleName];
+        var remoteModule = OC.remoteModuleInfo[remoteModuleName];
         if (remoteModule.type == 'annotator') {
-            defaultWidgetNames.push('wg' + remoteModuleName);
+            OC.defaultWidgetNames.push('wg' + remoteModuleName);
         }
     }
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
-        var remoteModule = remoteModuleInfo[remoteModuleName];
+        var remoteModule = OC.remoteModuleInfo[remoteModuleName];
         if (remoteModule.tags == null) {
             remoteModule.tags = [];
         }
-        if (modulesToIgnore.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false) {
-            delete remoteModuleInfo[remoteModuleName];
+        if (OC.modulesToIgnore.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false) {
+            delete OC.remoteModuleInfo[remoteModuleName];
             continue;
         }
-        if (baseModuleNames.includes(remoteModuleName)) {
-            delete remoteModuleInfo[remoteModuleName];
+        if (OC.baseModuleNames.includes(remoteModuleName)) {
+            delete OC.remoteModuleInfo[remoteModuleName];
             if (remoteModule.tags.includes('newavailable')) {
-                baseModuleUpdateAvailable = true;
+                OC.baseModuleUpdateAvailable = true;
             }
             continue;
         }
-        var remoteModule = remoteModuleInfo[remoteModuleName];
+        var remoteModule = OC.remoteModuleInfo[remoteModuleName];
         if (remoteModule.type == 'webviewerwidget' &&
-            defaultWidgetNames.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false) {
-            delete remoteModuleInfo[remoteModuleName];
+            OC.defaultWidgetNames.includes(remoteModuleName) && remoteModule.tags.includes('newavailable') == false) {
+            delete OC.remoteModuleInfo[remoteModuleName];
             continue;
         }
         if (remoteModule.hidden == true && remoteModule.tags.includes('newavailable') == false) {
-            delete remoteModuleInfo[remoteModuleName];
+            delete OC.remoteModuleInfo[remoteModuleName];
             continue;
         }
     }
 }
 
-function checkSystemReady() {
-    $.ajax({
-        url: '/issystemready',
-        async: true,
-        success: function(response) {
-            var online = systemReadyObj.online;
-            systemReadyObj = response;
-            if (online != undefined) {
-                systemReadyObj.online = online;
-            }
-            if (systemReadyObj.ready) {
-                if (servermode == false) {
-                    populateJobs();
-                }
-                getLocal();
-            } else {
-                hidePageselect();
-                showSystemModulePage();
-            }
-        },
-    });
-}
-
-function getRemote() {
-    $.ajax({
-        url: '/store/remote',
-        async: true,
-        success: function(data) {
-            remoteModuleInfo = data['data'];
-            tagDesc = data['tagdesc'];
-            for (var moduleName in remoteModuleInfo) {
-                var moduleInfo = remoteModuleInfo[moduleName];
-                if (!('tags' in moduleInfo) || moduleInfo['tags'] == null) {
-                    moduleInfo.tags = [];
-                }
-                if (moduleInfo.type === 'package') {
-                    moduleInfo.tags.push('package');
-                }
-            }
-            var modules = Object.keys(remoteModuleInfo);
-            for (var i = 0; i < modules.length; i++) {
-                var module = modules[i];
-                var moduleInfo = remoteModuleInfo[module];
-                if (moduleInfo['queued'] == true) {
-                    installInfo[module] = {
-                        'msg': 'queued'
-                    };
-                }
-            }
-            checkSystemReady();
-        }
-    });
-}
-
-function removeElementFromArrayByValue(a, e) {
-    var idx = a.indexOf(e);
-    if (idx >= 0) {
-        a.splice(idx, 1);
-    }
-}
 
 function getNotInstalledModuleNames() {
     var notInstalledModuleNames = [];
-    for (var module in remoteModuleInfo) {
-        var tags = remoteModuleInfo[module].tags;
+    for (var module in OC.remoteModuleInfo) {
+        var tags = OC.remoteModuleInfo[module].tags;
         var installedTagFound = false;
         for (var i = 0; i < tags.length; i++) {
             var tag = tags[i];
@@ -794,31 +554,31 @@ function getNotInstalledModuleNames() {
 }
 
 function populateStoreTagPanel() {
-    tagsCollected = [];
-    for (var module in remoteModuleInfo) {
-        var tags = remoteModuleInfo[module].tags;
+    OC.tagsCollected = [];
+    for (var module in OC.remoteModuleInfo) {
+        var tags = OC.remoteModuleInfo[module].tags;
         for (var i = 0; i < tags.length; i++) {
             var tag = tags[i];
             if (tag == 'gene-level' || tag == 'variant-level') {}
-            if (tagsCollected.indexOf(tag) == -1) {
-                tagsCollected.push(tag);
+            if (OC.tagsCollected.indexOf(tag) == -1) {
+                OC.tagsCollected.push(tag);
             }
         }
     }
 
-    removeElementFromArrayByValue(tagsCollected, 'frontpage');
-    removeElementFromArrayByValue(tagsCollected, 'viewall');
-    removeElementFromArrayByValue(tagsCollected, 'newavailable');
-    tagsCollected.sort();
+    removeElementFromArrayByValue(OC.tagsCollected, 'frontpage');
+    removeElementFromArrayByValue(OC.tagsCollected, 'viewall');
+    removeElementFromArrayByValue(OC.tagsCollected, 'newavailable');
+    OC.tagsCollected.sort();
     var div = document.getElementById('store-tag-custom-div');
     $(div).empty();
-    for (var i = 0; i < tagsCollected.length; i++) {
-        var tag = tagsCollected[i];
+    for (var i = 0; i < OC.tagsCollected.length; i++) {
+        var tag = OC.tagsCollected[i];
         var label = getEl('label');
         label.className = 'checkbox-store-container';
         label.textContent = tag;
-        if (tagDesc[tag] != undefined) {
-            label.title = tagDesc[tag];
+        if (OC.tagDesc[tag] != undefined) {
+            label.title = OC.tagDesc[tag];
         }
         var input = getEl('input');
         input.type = 'checkbox';
@@ -836,29 +596,22 @@ function populateStoreTagPanel() {
 }
 
 function installBaseComponents() {
-    for (var i = 0; i < baseModuleNames.length; i++) {
-        var module = baseModuleNames[i];
-        if (localModuleInfo[module] == undefined || localModuleInfo[module]['exists'] == false) {
+    for (var i = 0; i < OC.baseModuleNames.length; i++) {
+        var module = OC.baseModuleNames[i];
+        if (OC.localModuleInfo[module] == undefined || OC.localModuleInfo[module]['exists'] == false) {
             queueInstall(module);
         }
-    }
-}
-
-function emptyElement(elem) {
-    var last = null;
-    while (last = elem.lastChild) {
-        elem.removeChild(last);
     }
 }
 
 function updateFilter() {
     var nameinput = document.getElementById('store-namefilter');
     var nameStr = nameinput.value;
-    filter = {};
+    OC.filter = {};
     var filterHasValue = false;
     // Name filter
     if (nameStr != '') {
-        filter['name'] = [nameStr];
+        OC.filter['name'] = [nameStr];
         filterHasValue = true;
     }
     // Tag filter
@@ -869,7 +622,7 @@ function updateFilter() {
         filterHasValue = true;
     }
     if (tags.length > 0) {
-        filter['tags'] = tags;
+        OC.filter['tags'] = tags;
     }
     populateAllModulesDiv();
     showAllModulesDiv();
@@ -892,14 +645,6 @@ function onClickModuleTileAbortButton(evt) {
     });
 }
 
-function prettyBytes(num, precision = 3, addSpace = true) {
-    const UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    if (Math.abs(num) < 1) return num + (addSpace ? ' ' : '') + UNITS[0];
-    const exponent = Math.min(Math.floor(Math.log10(num < 0 ? -num : num) / 3), UNITS.length - 1);
-    const n = Number(((num < 0 ? -num : num) / 1000 ** exponent).toPrecision(precision));
-    return (num < 0 ? '-' : '') + n + (addSpace ? ' ' : '') + UNITS[exponent];
-};
-
 function onClickModuleInstallButton(evt) {
     const button = evt.target;
     const moduleName = button.getAttribute('module');
@@ -907,7 +652,7 @@ function onClickModuleInstallButton(evt) {
         queueInstall(moduleName);
         const storeDetailDiv = document.querySelector('#moduledetaildiv_store')
         if (storeDetailDiv !== null) storeDetailDiv.style.display = 'none';
-        if (installQueue.length == 0) {
+        if (OC.installQueue.length == 0) {
             setModuleTileAbortButton(moduleName);
         } else {
             setModuleTileUnqueueButton(moduleName);
@@ -926,13 +671,13 @@ function onClickModuleInstallButton(evt) {
         const [freeSpace, deps] = values;
         const neededSpace = Object.keys(deps).reduce(
             (a, depName) => {
-                if (remoteModuleInfo.hasOwnProperty(depName)) {
-                    return a + remoteModuleInfo[depName].size;
+                if (OC.remoteModuleInfo.hasOwnProperty(depName)) {
+                    return a + OC.remoteModuleInfo[depName].size;
                 } else {
                     return a;
                 }
             },
-            remoteModuleInfo[moduleName].size
+            OC.remoteModuleInfo[moduleName].size
         );
         const moduleSizeSpan = (moduleName, moduleSize) => {
             return addEl(getEl('span'), getTn(`${moduleName}: ${prettyBytes(moduleSize)}`))
@@ -960,11 +705,11 @@ function onClickModuleInstallButton(evt) {
                 addEl(mdiv, getEl('br'));
                 addEl(mdiv, addEl(getEl('span'), getTn('Installing:')));
                 addEl(mdiv, getEl('br'));
-                addEl(mdiv, moduleSizeSpan(moduleName, remoteModuleInfo[moduleName].size));
+                addEl(mdiv, moduleSizeSpan(moduleName, OC.remoteModuleInfo[moduleName].size));
                 for (let depName in deps) {
-                    if (remoteModuleInfo.hasOwnProperty(depName)) {
+                    if (OC.remoteModuleInfo.hasOwnProperty(depName)) {
                         addEl(mdiv, getEl('br'));
-                        addEl(mdiv, moduleSizeSpan(depName, remoteModuleInfo[depName].size));
+                        addEl(mdiv, moduleSizeSpan(depName, OC.remoteModuleInfo[depName].size));
                     }
                 }
             }
@@ -972,7 +717,7 @@ function onClickModuleInstallButton(evt) {
             addEl(mdiv, getEl('br'));
             addEl(mdiv, botSpan);
             addEl(mdiv, getEl('br'));
-            showYesNoDialog(mdiv, userConfirm=>{
+            OC.mediator.publish('showyesnodialog', mdiv, userConfirm=>{
                 if (userConfirm) {
                     doInstall();
                 }
@@ -1015,7 +760,7 @@ function getModuleTileUnqueueButton(moduleName) {
 function onClickModuleTileUpdateButton(evt) {
     var button = evt.target;
     var moduleName = button.getAttribute('module');
-    var installSize = updates[moduleName].size;
+    var installSize = OC.updates[moduleName].size;
     $.ajax({
         url: '/store/freemodulesspace',
         ajax: true,
@@ -1033,11 +778,11 @@ function onClickModuleTileUpdateButton(evt) {
                 addEl(mdiv, getEl('br'));
                 addEl(mdiv, getEl('br'));
                 var justOk = true;
-                showYesNoDialog(mdiv, null, noSpace, justOk);
+                OC.mediator.publish('showyesnodialog', mdiv, null, noSpace, justOk);
                 return;
             } else {
-                queueInstall(moduleName, updates[moduleName].version);
-                if (installQueue.length == 0) {
+                queueInstall(moduleName, OC.updates[moduleName].version);
+                if (OC.installQueue.length == 0) {
                     setModuleTileAbortButton(moduleName);
                 } else {
                     setModuleTileUnqueueButton(moduleName);
@@ -1053,10 +798,10 @@ function getModuleTileUpdateButton(moduleName) {
     button.classList.add('modulepanel-update-button');
     button.textContent = 'UPDATE';
     button.setAttribute('module', moduleName);
-    if (updateConflicts.hasOwnProperty(moduleName)) {
+    if (OC.updateConflicts.hasOwnProperty(moduleName)) {
         button.setAttribute('disabled', 'true');
         var blockList = [];
-        for (blockName in updateConflicts[moduleName]) {
+        for (blockName in OC.updateConflicts[moduleName]) {
             blockList.push(blockName);
         }
         blockString = blockList.join(', ');
@@ -1105,21 +850,21 @@ function getModuleTileAbortButton(moduleName) {
 }
 
 function populateModuleGroupDiv(moduleGroupName) {
-    document.getElementById('store-modulegroup-title-span').textContent = remoteModuleInfo[moduleGroupName]['title'];
+    document.getElementById('store-modulegroup-title-span').textContent = OC.remoteModuleInfo[moduleGroupName]['title'];
     var div = document.getElementById('store-modulegroup-content-div');
     emptyElement(div);
     div.parentElement.setAttribute('modulegroup', moduleGroupName);
-    var remoteModuleNames = moduleGroupMembers[moduleGroupName];
+    var remoteModuleNames = OC.moduleGroupMembers[moduleGroupName];
     if (remoteModuleNames == undefined) {
         var panel = getEl('div');
         panel.classList.add('no-group-member-msg-div');
         panel.textContent = 'No module in this group';
         addEl(div, panel);
     } else {
-        moduleLists['modulegroup'] = remoteModuleNames;
+        OC.moduleLists['modulegroup'] = remoteModuleNames;
         for (var i = 0; i < remoteModuleNames.length; i++) {
             var remoteModuleName = remoteModuleNames[i];
-            var remoteModule = remoteModuleInfo[remoteModuleName];
+            var remoteModule = OC.remoteModuleInfo[remoteModuleName];
             if (remoteModule == undefined) {
                 continue;
             }
@@ -1139,14 +884,14 @@ function saveCurrentPage() {
     for (var i = 0; i < divIds.length; i++) {
         var divId = divIds[i];
         if (document.getElementById(divId).style.display != 'none') {
-            currentPage = divId;
+            OC.currentPage = divId;
             break;
         }
     }
 }
 
 function getRemoteModuleGroupPanel(moduleName, moduleListName, moduleListPos) {
-    var moduleInfo = remoteModuleInfo[moduleName];
+    var moduleInfo = OC.remoteModuleInfo[moduleName];
     var div = getEl('div');
     div.className = 'moduletile';
     div.classList.add('modulegroup');
@@ -1216,21 +961,21 @@ function getRemoteModuleGroupPanel(moduleName, moduleListName, moduleListPos) {
         sdiv.textContent = t;
         addEl(div, sdiv);
     }
-    var members = moduleGroupMembers[moduleName];
+    var members = OC.moduleGroupMembers[moduleName];
     var updateAvail = false;
     if (members != undefined) {
         for (var i = 0; i < members.length; i++) {
             var member = members[i];
-            if (remoteModuleInfo[member] == undefined) {
+            if (OC.remoteModuleInfo[member] == undefined) {
                 continue;
             }
-            if (remoteModuleInfo[member].tags.indexOf('newavailable') != -1) {
+            if (OC.remoteModuleInfo[member].tags.indexOf('newavailable') != -1) {
                 updateAvail = true;
                 break;
             }
         }
     }
-    if (updateAvail && (servermode == false || (logged == true && username == 'admin'))) {
+    if (updateAvail && (OC.servermode == false || (OC.logged == true && OC.username == 'admin'))) {
         var span = getEl('span');
         span.className = 'moduletile-group-updateavailable-span';
         span.textContent = 'Update available';
@@ -1240,7 +985,7 @@ function getRemoteModuleGroupPanel(moduleName, moduleListName, moduleListPos) {
 }
 
 function makeModuleDescUrlTitle(moduleName, text) {
-    var moduleInfo = remoteModuleInfo[moduleName];
+    var moduleInfo = OC.remoteModuleInfo[moduleName];
     var text = moduleInfo['description']
     var div = getEl('div')
     var el = getEl('div')
@@ -1249,7 +994,7 @@ function makeModuleDescUrlTitle(moduleName, text) {
     }
     el.classList.add('modulepanel-description-div')
     addEl(div, el)
-    var annotators = remoteModuleInfo[moduleName]['annotators']
+    var annotators = OC.remoteModuleInfo[moduleName]['annotators']
     if (annotators == undefined) {
         annotators = moduleName
     }
@@ -1257,7 +1002,7 @@ function makeModuleDescUrlTitle(moduleName, text) {
 }
 
 function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
-    var moduleInfo = remoteModuleInfo[moduleName];
+    var moduleInfo = OC.remoteModuleInfo[moduleName];
     var titleEl = makeModuleDescUrlTitle(moduleName, moduleName)
     var div = getEl('div');
     div.className = 'moduletile';
@@ -1333,8 +1078,8 @@ function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
     addEl(div, getEl('br'));
     var installStatus = '';
     var btnAddedFlag = false;
-    if (installInfo[moduleName] != undefined) {
-        var msg = installInfo[moduleName]['msg'];
+    if (OC.installInfo[moduleName] != undefined) {
+        var msg = OC.installInfo[moduleName]['msg'];
         if (msg == 'uninstalling') {
             installStatus = 'Uninstalling...';
         } else if (msg == 'installing') {
@@ -1348,7 +1093,7 @@ function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
             installStatus = 'Installing...';
         }
     } else {
-        if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName]['exists']) {
+        if (OC.localModuleInfo[moduleName] != undefined && OC.localModuleInfo[moduleName]['exists']) {
             installStatus = 'Installed';
         } else {
             installStatus = '';
@@ -1357,14 +1102,14 @@ function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
     var progSpan = getEl('div');
     progSpan.id = 'panelinstallprogress_' + moduleName;
     progSpan.className = 'panelinstallprogressspan';
-    if (installInfo[moduleName] != undefined && installStatus == 'Installing...') {
-        progSpan.textContent = installInfo[moduleName]['msg'];
+    if (OC.installInfo[moduleName] != undefined && installStatus == 'Installing...') {
+        progSpan.textContent = OC.installInfo[moduleName]['msg'];
     }
     addEl(div, progSpan);
     var span = getEl('div');
     span.id = 'panelinstallstatus_' + moduleName;
     addEl(div, span);
-    if (servermode == false || (logged == true && username == 'admin')) {
+    if (OC.servermode == false || (OC.logged == true && OC.username == 'admin')) {
         if (installStatus == 'Queued') {
             var button = getModuleTileUnqueueButton(moduleName);
             addEl(div, button);
@@ -1372,7 +1117,7 @@ function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
             var button = getModuleTileAbortButton(moduleName);
             addEl(div, button);
         } else if (installStatus == 'Installed') {
-            if (remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
+            if (OC.remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
                 var button = getModuleTileUpdateButton(moduleName);
                 addEl(div, button);
             } else {
@@ -1380,14 +1125,14 @@ function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
                 addEl(div, button);
             }
         } else {
-            var tags = remoteModuleInfo[moduleName].tags;
+            var tags = OC.remoteModuleInfo[moduleName].tags;
             if (tags.indexOf('installed') >= 0) {
                 var button = getModuleTileUninstallButton(moduleName);
                 addEl(div, button);
             } else {
                 var button = getModuleTileInstallButton(moduleName);
                 addEl(div, button);
-                uninstalledModules.push(moduleName);
+                OC.uninstalledModules.push(moduleName);
             }
         }
     }
@@ -1412,17 +1157,17 @@ function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
 
 function getFilteredRemoteModules() {
     var filteredRemoteModules = {};
-    var remoteModuleNames = Object.keys(remoteModuleInfo);
-    var localModuleNames = Object.keys(localModuleInfo);
-    var hasFilter = Object.keys(filter).length > 0;
+    var remoteModuleNames = Object.keys(OC.remoteModuleInfo);
+    var localModuleNames = Object.keys(OC.localModuleInfo);
+    var hasFilter = Object.keys(OC.filter).length > 0;
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
         var remoteModuleNameLower = remoteModuleName.toLowerCase();
-        var remoteModule = remoteModuleInfo[remoteModuleName];
+        var remoteModule = OC.remoteModuleInfo[remoteModuleName];
         var newCheck = document.getElementById('store-tag-checkbox-newavailable').checked;
         if (remoteModule['groups'].length > 0) {
             var pass = false;
-            if (currentPage == 'storediv-modulegroup-div') {
+            if (OC.currentPage == 'storediv-modulegroup-div') {
                 pass = true;
             } else if (remoteModule['tags'].indexOf('newavailable') != -1 && newCheck == true) {
                 pass = true;
@@ -1438,9 +1183,9 @@ function getFilteredRemoteModules() {
             var nameYes = false;
             var tagYes = false;
             typeYes = true;
-            if (filter['name'] != undefined && filter['name'] != '') {
-                for (var j = 0; j < filter['name'].length; j++) {
-                    var queryStr = filter['name'][j].toLowerCase();
+            if (OC.filter['name'] != undefined && OC.filter['name'] != '') {
+                for (var j = 0; j < OC.filter['name'].length; j++) {
+                    var queryStr = OC.filter['name'][j].toLowerCase();
                     var descStr = remoteModule['description'];
                     if (remoteModule['title'].toLowerCase().includes(queryStr) || (descStr != undefined && descStr.toLowerCase().includes(queryStr))) {
                         nameYes = true;
@@ -1450,10 +1195,10 @@ function getFilteredRemoteModules() {
             } else {
                 nameYes = true;
             }
-            if (filter['tags'] != undefined && filter['tags'].length > 0) {
+            if (OC.filter['tags'] != undefined && OC.filter['tags'].length > 0) {
                 tagYes = false;
-                for (var j = 0; j < filter['tags'].length; j++) {
-                    if (remoteModule['tags'].indexOf(filter['tags'][j]) >= 0) {
+                for (var j = 0; j < OC.filter['tags'].length; j++) {
+                    if (remoteModule['tags'].indexOf(OC.filter['tags'][j]) >= 0) {
                         tagYes = true;
                         break;
                     }
@@ -1528,12 +1273,12 @@ function populateAllModulesDiv(group) {
     var div = document.getElementById('remotemodulepanels');
     emptyElement(div);
     var remoteModuleNames = getSortedFilteredRemoteModuleNames();
-    moduleLists['all'] = remoteModuleNames;
+    OC.moduleLists['all'] = remoteModuleNames;
     for (var i = 0; i < remoteModuleNames.length; i++) {
         var remoteModuleName = remoteModuleNames[i];
-        var remoteModule = remoteModuleInfo[remoteModuleName];
+        var remoteModule = OC.remoteModuleInfo[remoteModuleName];
         if (group == 'basetoinstall') {
-            if (baseModuleNames.indexOf(remoteModuleName) == -1) {
+            if (OC.baseModuleNames.indexOf(remoteModuleName) == -1) {
                 continue;
             }
             if (remoteModule.tags.indexOf('installed') > -1) {
@@ -1575,12 +1320,12 @@ function toggleChatBox() {
 }
 
 function addLogo(moduleName, sdiv) {
-    if (storeLogos[moduleName] != undefined) {
-        var img = storeLogos[moduleName].cloneNode(true);
+    if (OC.storeLogos[moduleName] != undefined) {
+        var img = OC.storeLogos[moduleName].cloneNode(true);
         addEl(sdiv, img);
         return img;
     }
-    var moduleInfo = remoteModuleInfo[moduleName];
+    var moduleInfo = OC.remoteModuleInfo[moduleName];
     var img = null;
     if (moduleInfo.has_logo == true) {
         img = getEl('img');
@@ -1588,10 +1333,10 @@ function addLogo(moduleName, sdiv) {
         if (moduleInfo.uselocalonstore) {
             img.src = '/store/locallogo?module=' + moduleName;
         } else {
-            img.src = storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
+            img.src = OC.storeUrl + '/modules/' + moduleName + '/' + moduleInfo['latest_version'] + '/logo.png';
         }
         addEl(sdiv, img);
-        storeLogos[moduleName] = img;
+        OC.storeLogos[moduleName] = img;
     } else {
         sdiv.classList.add('moduletile-nologo');
         var span = getEl('div');
@@ -1621,7 +1366,7 @@ function onClicModuleDetailAbortButton(evt) {
 function onClickModuleDetailUpdateButton(evt) {
     var btn = evt.target;
     var btnModuleName = btn.getAttribute('module');
-    var installSize = updates[btnModuleName].size;
+    var installSize = OC.updates[btnModuleName].size;
     $.ajax({
         url: '/store/freemodulesspace',
         ajax: true,
@@ -1639,20 +1384,20 @@ function onClickModuleDetailUpdateButton(evt) {
                 addEl(mdiv, getEl('br'));
                 addEl(mdiv, getEl('br'));
                 var justOk = true;
-                showYesNoDialog(mdiv, null, noSpace, justOk);
+                OC.mediator.publish('showyesnodialog', mdiv, null, noSpace, justOk);
                 return;
             } else {
                 var buttonText = null;
-                if (installQueue.length == 0) {
+                if (OC.installQueue.length == 0) {
                     buttonText = 'Updating...';
                 } else {
                     buttonText = 'Queued';
                 }
-                queueInstall(btnModuleName, updates[btnModuleName].version);
+                queueInstall(btnModuleName, OC.updates[btnModuleName].version);
                 btn.textContent = buttonText;
                 btn.style.color = 'red';
                 document.getElementById('moduledetaildiv_store').style.display = 'none';
-                if (installQueue.length == 0) {
+                if (OC.installQueue.length == 0) {
                     setModuleTileAbortButton(btnModuleName);
                 } else {
                     setModuleTileUnqueueButton(btnModuleName);
@@ -1671,10 +1416,10 @@ function getModuleDetailUpdateButton(moduleName) {
     button.style.fontSize = '18px';
     button.style.fontWeight = 'bold';
     button.setAttribute('module', moduleName);
-    if (updateConflicts.hasOwnProperty(moduleName)) {
+    if (OC.updateConflicts.hasOwnProperty(moduleName)) {
         button.setAttribute('disabled', 'true');
         var blockList = [];
-        for (blockName in updateConflicts[moduleName]) {
+        for (blockName in OC.updateConflicts[moduleName]) {
             blockList.push(blockName);
         }
         blockString = blockList.join(', ');
@@ -1683,11 +1428,6 @@ function getModuleDetailUpdateButton(moduleName) {
     }
     button.addEventListener('click', onClickModuleDetailUpdateButton);
     return button;
-}
-
-function getTimestamp() {
-    var d = new Date()
-    return "[" + d.getFullYear() + ":" + ("" + d.getMonth()).padStart(2, "0") + ":" + ("" + d.getDate()).padStart(2, "0") + " " + d.getHours() + ":" + ("" + d.getMinutes()).padStart(2, "0") + ":" + ("" + d.getSeconds()).padStart(2, "0") + "]"
 }
 
 function writeInstallationMsg(msg) {
@@ -1704,7 +1444,7 @@ function writeInstallationMsg(msg) {
 function getModuleDetailInstallButton(moduleName, td, buttonDiv) {
     var button = getEl('button');
     button.id = 'installbutton';
-    var localInfo = localModuleInfo[moduleName];
+    var localInfo = OC.localModuleInfo[moduleName];
     var buttonText = null;
     if (localInfo != undefined && localInfo.exists) {
         buttonText = 'Uninstall';
@@ -1730,22 +1470,22 @@ function getModuleDetailInstallButton(moduleName, td, buttonDiv) {
 
 function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
     var mInfo = null;
-    if (currentTab == 'store') {
-        if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName].conf.uselocalonstore) {
-            mInfo = localModuleInfo[moduleName].conf;
+    if (OC.currentTab == 'store') {
+        if (OC.localModuleInfo[moduleName] != undefined && OC.localModuleInfo[moduleName].conf.uselocalonstore) {
+            mInfo = OC.localModuleInfo[moduleName].conf;
         } else {
-            mInfo = remoteModuleInfo[moduleName];
+            mInfo = OC.remoteModuleInfo[moduleName];
         }
-    } else if (currentTab == 'submit') {
-        mInfo = localModuleInfo[moduleName];
-        mInfo.latest_version = remoteModuleInfo[moduleName].latest_version
+    } else if (OC.currentTab == 'submit') {
+        mInfo = OC.localModuleInfo[moduleName];
+        mInfo.latest_version = OC.remoteModuleInfo[moduleName].latest_version
     }
-    var div = document.getElementById('moduledetaildiv_' + currentTab);
+    var div = document.getElementById('moduledetaildiv_' + OC.currentTab);
     if (div) {
         emptyElement(div);
     } else {
         div = getEl('div');
-        div.id = 'moduledetaildiv_' + currentTab;
+        div.id = 'moduledetaildiv_' + OC.currentTab;
         div.className = 'moduledetaildiv';
     }
     if (moduleListName != null) {
@@ -1754,7 +1494,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
     if (moduleListPos != null) {
         div.setAttribute('modulelistpos', moduleListPos);
     }
-    currentDetailModule = moduleName;
+    OC.currentDetailModule = moduleName;
     div.style.display = 'block';
     var table = getEl('table');
     table.style.height = '100px';
@@ -1801,7 +1541,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
     td.style.textAlign = 'right';
     var sdiv = getEl('div');
     var buttonDiv = getEl('div');
-    if (currentTab == 'store' && (servermode == false || (logged == true && username == 'admin'))) {
+    if (OC.currentTab == 'store' && (OC.servermode == false || (OC.logged == true && OC.username == 'admin'))) {
         var button = getModuleDetailInstallButton(moduleName, td, buttonDiv);
         addEl(sdiv, button);
         addEl(td, sdiv);
@@ -1810,17 +1550,17 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         sdiv.id = 'installstatdiv_' + moduleName;
         sdiv.style.marginTop = '10px';
         sdiv.style.fontSize = '12px';
-        if (installInfo[moduleName] != undefined) {
-            sdiv.textContent = installInfo[moduleName]['msg'];
+        if (OC.installInfo[moduleName] != undefined) {
+            sdiv.textContent = OC.installInfo[moduleName]['msg'];
         }
         addEl(td, sdiv);
-    } else if (currentTab == 'submit') {
+    } else if (OC.currentTab == 'submit') {
         var sdiv = getEl('div');
         sdiv.id = 'installstatdiv_' + moduleName;
         sdiv.style.marginTop = '10px';
         sdiv.style.fontSize = '12px';
-        if (installInfo[moduleName] != undefined) {
-            sdiv.textContent = installInfo[moduleName]['msg'];
+        if (OC.installInfo[moduleName] != undefined) {
+            sdiv.textContent = OC.installInfo[moduleName]['msg'];
         }
         addEl(td, sdiv);
     }
@@ -1860,9 +1600,9 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         var $mdhtml = $(mdhtml);
         var localRoot = window.location.origin + window.location.pathname.split('/').slice(0, -1).join('/');
         for (let img of $mdhtml.children('img')) {
-            if (currentTab == 'store') {
-                var storeRoot = `${systemConf.store_url}/modules/${moduleName}/${mInfo.latest_version}`
-            } else if (currentTab == 'submit') {
+            if (OC.currentTab == 'store') {
+                var storeRoot = `${OC.systemConf.store_url}/modules/${moduleName}/${mInfo.latest_version}`
+            } else if (OC.currentTab == 'submit') {
                 var storeRoot = `/modules/annotators/${moduleName}`
             }
             img.src = img.src.replace(localRoot, storeRoot);
@@ -1873,7 +1613,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         $(mdDiv).append($mdhtml);
         // output column description
         var d = getEl('div');
-        d.id = 'moduledetail-output-column-div-' + currentTab;
+        d.id = 'moduledetail-output-column-div-' + OC.currentTab;
         d.style.display = 'none';
         var h2 = getEl('h2');
         h2.textContent = 'Output Columns';
@@ -1891,15 +1631,15 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         addEl(othead, otr);
         addEl(otable, othead);
         var otbody = getEl('tbody');
-        otbody.id = 'moduledetail-' + currentTab + '-output-tbody';
+        otbody.id = 'moduledetail-' + OC.currentTab + '-output-tbody';
         addEl(otable, otbody);
         addEl(d, otable);
         addEl(mdDiv, d);
-        addClassRecursive(mdDiv, 'moduledetaildiv-' + currentTab + '-elem');
-        if (localModuleInfo[moduleName] != undefined && localModuleInfo[moduleName].conf.uselocalonstore) {
+        addClassRecursive(mdDiv, 'moduledetaildiv-' + OC.currentTab + '-elem');
+        if (OC.localModuleInfo[moduleName] != undefined && OC.localModuleInfo[moduleName].conf.uselocalonstore) {
             var data = mInfo;
-            var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
-            var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + currentTab);
+            var otbody = document.getElementById('moduledetail-' + OC.currentTab + '-output-tbody');
+            var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + OC.currentTab);
             var outputs = data['output_columns'];
             if (outputs != undefined) {
                 var descs = [];
@@ -1938,8 +1678,8 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
                     'module': moduleName
                 },
                 success: function(data) {
-                    var otbody = document.getElementById('moduledetail-' + currentTab + '-output-tbody');
-                    var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + currentTab);
+                    var otbody = document.getElementById('moduledetail-' + OC.currentTab + '-output-tbody');
+                    var outputColumnDiv = document.getElementById('moduledetail-output-column-div-' + OC.currentTab);
                     var outputs = data['output_columns'];
                     if (outputs == undefined) {
                         return;
@@ -2008,8 +1748,8 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
     var remoteVersion = mInfo['latest_version'];
     span.textContent = remoteVersion;
     addEl(d, span);
-    if (currentTab == 'store' && localModuleInfo[moduleName] != undefined) {
-        var localVersion = localModuleInfo[moduleName].version;
+    if (OC.currentTab == 'store' && OC.localModuleInfo[moduleName] != undefined) {
+        var localVersion = OC.localModuleInfo[moduleName].version;
         if (localVersion != remoteVersion) {
             var span = getEl('span');
             span.textContent = ' (' + localVersion + ' installed)';
@@ -2025,7 +1765,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
             }
         }
     }
-    if (currentTab == 'store') {
+    if (OC.currentTab == 'store') {
         addEl(infodiv, d);
         d = getEl('div');
         span = getEl('span');
@@ -2124,7 +1864,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
     span.style.wordBreak = 'break-all';
     addEl(d, span);
     addEl(infodiv, d);
-    if (currentTab == 'store') {
+    if (OC.currentTab == 'store') {
         d = getEl('div');
         span = getEl('span');
         span.style.fontWeight = 'bold';
@@ -2172,48 +1912,13 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         pel.parentElement.removeChild(pel);
     });
     addEl(div, el);
-    addClassRecursive(div, 'moduledetaildiv-' + currentTab + '-elem');
-    storeModuleDivClicked = true;
+    addClassRecursive(div, 'moduledetaildiv-' + OC.currentTab + '-elem');
+    OC.storeModuleDivClicked = true;
     return div;
 }
 
-function addClassRecursive(elem, className) {
-    elem.classList.add(className);
-    $(elem).children().each(
-        function() {
-            $(this).addClass(className);
-            addClassRecursive(this, className);
-        }
-    );
-}
-
-function compareVersion(ver1, ver2) {
-    var tok1 = ver1.split('.');
-    var tok2 = ver2.split('.');
-    var l = Math.min(tok1.length, tok2.length);
-    for (var i = 0; i < l; i++) {
-        var v1 = tok1[i];
-        var v2 = tok2[i];
-        var v1N = parseInt(v1);
-        var v2N = parseInt(v2);
-        if (isNaN(v1N) == false && isNaN(v2N) == false) {
-            var diff = v1N - v2N;
-            if (diff != 0) {
-                return diff;
-            }
-        } else {
-            if (v1 > v2) {
-                return 1;
-            } else if (v1 < v2) {
-                return -1;
-            }
-        }
-    }
-    return tok1.length - tok2.length;
-}
-
 function getHighestVersionForRemoteModule(module) {
-    var versions = remoteModuleInfo[module].versions;
+    var versions = OC.remoteModuleInfo[module].versions;
     var highestVersion = '0.0.0';
     for (var i = 0; i < versions.length; i++) {
         var version = versions[i];
@@ -2225,45 +1930,24 @@ function getHighestVersionForRemoteModule(module) {
     return highestVersion;
 }
 
-function getSizeText(size) {
-    size = parseInt(size);
-    if (size < 1024) {
-        size = size + ' bytes';
-    } else {
-        size = size / 1024;
-        if (size < 1024) {
-            size = size.toFixed(0) + ' KB';
-        } else {
-            size = size / 1024;
-            if (size < 1024) {
-                size = size.toFixed(0) + ' MB';
-            } else {
-                size = size / 1024;
-                size = size.toFixed(0) + ' GB';
-            }
-        }
-    }
-    return size;
-}
-
 function queueInstall(moduleName, version) {
     $.get('/store/queueinstall', {
         'module': moduleName,
         'version': version
     }).done(
         function(response) {
-            var keys = Object.keys(installInfo);
+            var keys = Object.keys(OC.installInfo);
             if (keys.length == 0) {
-                installInfo[moduleName] = {
+                OC.installInfo[moduleName] = {
                     'msg': 'installing'
                 };
             } else {
-                installInfo[moduleName] = {
+                OC.installInfo[moduleName] = {
                     'msg': 'queued'
                 };
             }
-            installQueue.push(moduleName);
-            if (baseInstalled) {
+            OC.installQueue.push(moduleName);
+            if (OC.baseInstalled) {
                 populateAllModulesDiv();
             }
         }
@@ -2271,7 +1955,7 @@ function queueInstall(moduleName, version) {
 }
 
 function uninstallModule(moduleName) {
-    installInfo[moduleName] = {
+    OC.installInfo[moduleName] = {
         'msg': 'uninstalling'
     };
     populateAllModulesDiv();
@@ -2283,7 +1967,7 @@ function uninstallModule(moduleName) {
             name: moduleName
         },
         complete: function(response) {
-            delete installInfo[moduleName];
+            delete OC.installInfo[moduleName];
             moduleChange(response);
             populateAnnotators();
             writeInstallationMsg(getTimestamp() + " Uninstalled " + moduleName)
@@ -2314,9 +1998,9 @@ function setModuleTileInstallButton(module) {
 }
 
 function unqueue(moduleName) {
-    var idx = installQueue.indexOf(moduleName);
+    var idx = OC.installQueue.indexOf(moduleName);
     if (idx >= 0) {
-        installQueue.splice(idx, 1);
+        OC.installQueue.splice(idx, 1);
     }
 }
 
@@ -2367,12 +2051,12 @@ function connectWebSocket() {
         var module = data['module'];
         var msg = data['msg'];
         var isbase = data['isbase'];
-        if (installInfo[module] == undefined) {
-            installInfo[module] = {};
+        if (OC.installInfo[module] == undefined) {
+            OC.installInfo[module] = {};
         }
-        installInfo[module]['msg'] = msg;
+        OC.installInfo[module]['msg'] = msg;
         var installstatdiv = null;
-        if (baseToInstall.length > 0 || baseInstalled == false) {
+        if (OC.baseToInstall.length > 0 || OC.baseInstalled == false) {
             installstatdiv = document.getElementById('store-systemmodule-msg-div');
         } else {
             var divModuleName = module;
@@ -2389,30 +2073,30 @@ function connectWebSocket() {
         //}
         writeInstallationMsg(msg)
         if (msg.search('Finished installation of') > 0) {
-            delete installInfo[module];
+            delete OC.installInfo[module];
             //installQueue = installQueue.filter(e => e != module);
             unqueue(module);
             moduleChange(null);
             populateAnnotators();
-            if (installQueue.length > 0) {
-                var module = installQueue.shift();
-                installInfo[module] = {
+            if (OC.installQueue.length > 0) {
+                var module = OC.installQueue.shift();
+                OC.installInfo[module] = {
                     'msg': 'installing'
                 };
             }
         } else if (msg.search('Aborted') > 0) {
-            delete installInfo[module];
+            delete OC.installInfo[module];
             unqueue(module);
             setModuleTileInstallButton(module);
         } else if (msg.search('Unqueued') > 0) {
-            delete installInfo[module];
+            delete OC.installInfo[module];
             unqueue(module);
             setModuleTileInstallButton(module);
         } else {
-            var idx = uninstalledModules.indexOf(module);
+            var idx = OC.uninstalledModules.indexOf(module);
             if (idx >= 0) {
                 setModuleTileAbortButton(module);
-                uninstalledModules.splice(idx, 1);
+                OC.uninstalledModules.splice(idx, 1);
             }
         }
     }
@@ -2428,7 +2112,7 @@ function setModuleTileAbortButton(module) {
 
 function getBaseModuleNames() {
     $.get('/store/getbasemodules').done(function(response) {
-        baseModuleNames = response;
+        OC.baseModuleNames = response;
     });
 }
 
@@ -2436,57 +2120,7 @@ function onStoreTagCheckboxChange() {
     updateFilter();
 }
 
-function showYesNoDialog(content, yescallback, noSpace, justOk) {
-    var div = document.getElementById('yesnodialog');
-    if (div != undefined) {
-        $(div).remove();
-    }
-    var div = getEl('div');
-    div.id = 'yesnodialog';
-    if (typeof content === 'string') {
-        content = getTn(content);
-    }
-    content.id = 'yesnodialog-contentdiv'
-    addEl(div, content);
-    addEl(div, getEl('br'));
-    var btnDiv = getEl('div');
-    if (justOk) {
-        btnDiv.className = 'buttondiv';
-        var btn = getEl('button');
-        btn.textContent = 'Ok';
-        btn.addEventListener('click', function(evt) {
-            if (yescallback == undefined || yescallback == null) {
-                $('#yesnodialog').remove();
-            } else {
-                $('#yesnodialog').remove();
-                yescallback();
-            }
-        });
-        addEl(btnDiv, btn);
-    } else {
-        btnDiv.className = 'buttondiv';
-        var btn = getEl('button');
-        btn.textContent = 'Yes';
-        btn.addEventListener('click', function(evt) {
-            $('#yesnodialog').remove();
-            yescallback(true);
-        });
-        if (noSpace) {
-            btn.disabled = true;
-            btn.style.backgroundColor = '#e0e0e0';
-        }
-        addEl(btnDiv, btn);
-        var btn = getEl('button');
-        btn.textContent = 'No';
-        btn.addEventListener('click', function(evt) {
-            $('#yesnodialog').remove();
-            yescallback(false);
-        });
-        addEl(btnDiv, btn);
-    }
-    addEl(div, btnDiv);
-    addEl(document.body, div);
-}
+
 
 function onClickStoreInstallAllButton() {
     $.ajax({
@@ -2503,7 +2137,7 @@ function onClickStoreInstallAllButton() {
             addEl(div, getEl('br'));
             var totalSizeN = 0;
             for (var i = 0; i < notInstalledModuleNames.length; i++) {
-                totalSizeN += remoteModuleInfo[notInstalledModuleNames[i]].size;
+                totalSizeN += OC.remoteModuleInfo[notInstalledModuleNames[i]].size;
                 var span = getEl('span');
                 span.textContent = notInstalledModuleNames[i];
                 span.style.fontWeight = 'bold';
@@ -2550,18 +2184,18 @@ function onClickStoreInstallAllButton() {
                     }
                 }
             };
-            showYesNoDialog(div, yescallback, noSpace);
+            OC.mediator.publish('showyesnodialog', div, yescallback, noSpace);
         },
     });
 }
 
 function getSystemModulesToUpdate() {
     var modulesToUpdate = [];
-    for (var i = 0; i < baseModuleNames.length; i++) {
-        var moduleName = baseModuleNames[i];
-        var module = origRemoteModuleInfo[moduleName];
+    for (var i = 0; i < OC.baseModuleNames.length; i++) {
+        var moduleName = OC.baseModuleNames[i];
+        var module = OC.origRemoteModuleInfo[moduleName];
         if (module['tags'].indexOf('newavailable') >= 0) {
-            if (!updateConflicts.hasOwnProperty(moduleName)) {
+            if (!OC.updateConflicts.hasOwnProperty(moduleName)) {
                 modulesToUpdate.push(moduleName);
             }
         }
@@ -2571,10 +2205,10 @@ function getSystemModulesToUpdate() {
 
 function getModulesToUpdate() {
     var modulesToUpdate = [];
-    for (var moduleName in updates) {
-        if (remoteModuleInfo[moduleName] != undefined) {
-            if (remoteModuleInfo[moduleName]['tags'].indexOf('newavailable') >= 0) {
-                if (!updateConflicts.hasOwnProperty(moduleName)) {
+    for (var moduleName in OC.updates) {
+        if (OC.remoteModuleInfo[moduleName] != undefined) {
+            if (OC.remoteModuleInfo[moduleName]['tags'].indexOf('newavailable') >= 0) {
+                if (!OC.updateConflicts.hasOwnProperty(moduleName)) {
                     modulesToUpdate.push(moduleName);
                 }
             }
@@ -2586,14 +2220,14 @@ function getModulesToUpdate() {
 function onClickSystemModuleUpdateButton() {
     var modulesToUpdate = getSystemModulesToUpdate();
     var div = getEl('div');
-    var updateModuleNames = Object.keys(updates);
+    var updateModuleNames = Object.keys(OC.updates);
     var totalSizeN = 0;
-    baseToInstall = [];
+    OC.baseToInstall = [];
     for (var i = 0; i < updateModuleNames.length; i++) {
         var moduleName = updateModuleNames[i];
-        var module = updates[moduleName];
-        if (baseModuleNames.includes(moduleName)) {
-            baseToInstall.push(moduleName);
+        var module = OC.updates[moduleName];
+        if (OC.baseModuleNames.includes(moduleName)) {
+            OC.baseToInstall.push(moduleName);
             totalSizeN += module['size'];
         }
     }
@@ -2632,7 +2266,7 @@ function onClickSystemModuleUpdateButton() {
                     }
                 };
             }
-            showYesNoDialog(div, yescallback, noSpace);
+            OC.mediator.publish('showyesnodialog', div, yescallback, noSpace);
         },
     });
 }
@@ -2641,8 +2275,8 @@ function startUpdatingSystemModules() {
     document.getElementById('store-systemmodule-msg-div').textContent = '';
     showSystemModulePage();
     document.getElementById('store-systemmodule-update-div').style.display = 'block';
-    for (var i = 0; i < baseToInstall.length; i++) {
-        queueInstall(baseToInstall[i]);
+    for (var i = 0; i < OC.baseToInstall.length; i++) {
+        queueInstall(OC.baseToInstall[i]);
     }
 }
 
@@ -2656,7 +2290,7 @@ function onClickStoreUpdateAllButton() {
     addEl(div, getEl('br'));
     var totalSizeN = 0;
     for (var i = 0; i < modulesToUpdate.length; i++) {
-        totalSizeN += updates[modulesToUpdate[i]].size;
+        totalSizeN += OC.updates[modulesToUpdate[i]].size;
         var span = getEl('span');
         span.textContent = modulesToUpdate[i];
         span.style.fontWeight = 'bold';
@@ -2702,7 +2336,7 @@ function onClickStoreUpdateAllButton() {
                     }
                 };
             }
-            showYesNoDialog(div, yescallback, noSpace);
+            OC.mediator.publish('showyesnodialog', div, yescallback, noSpace);
         },
     });
 }
@@ -2741,3 +2375,40 @@ function webstore_run() {
     getBaseModuleNames();
     getRemote();
 }
+
+// Bind events to the mediator
+function addWebstoreEventHandlers() {
+    OC.mediator.subscribe('system.update', onClickSystemModuleUpdateButton);
+    OC.mediator.subscribe('getRemote', getRemote);
+    OC.mediator.subscribe('moduleinfo.local', setupJobsTab);
+    OC.mediator.subscribe('moduleinfo.local', setBaseInstalled);
+    OC.mediator.subscribe('moduleinfo.local', populateStorePages);
+    OC.mediator.subscribe('moduleinfo.updates', showOrHideSystemModuleUpdateButton);
+    OC.mediator.subscribe('moduleinfo.updates', showOrHideUpdateAllButton);
+    OC.mediator.subscribe('moduleinfo.local', populateStoreTagPanel);
+
+    // index.html webstore events
+    $('#progressdivcloseicon').on('click', onClickProgressDivCloseIcon);
+    $('#store-namefilter').on('input', updateFilter);
+    $('#store-tag-checkbox-home').on('click', onClickStoreHome);
+    $('#store-tag-checkbox-viewall').on('click', onClickStoreTagResetButton);
+    $('#store-tag-checkbox-newavailable').on('click', onStoreTagCheckboxChange);
+    $('#store-tag-checkbox-packages').on('click', onStoreTagCheckboxChange);
+    $('.carousel-left').on('click', onClickStoreHomeLeftArrow);
+    $('.carousel-right').on('click', onClickStoreHomeRightArrow);
+    $('#store-sort-select').on('change', () => populateAllModulesDiv(true));
+    $('#store-update-all-button').on('click', onClickStoreUpdateAllButton);
+    $('#module-group-back-arrow').on('click', onClickModuleGroupDivBackArrow);
+    $('#store-systemmodule-install-button').on('click', onClickInstallBaseComponents);
+
+}
+
+$(document).ready(() => addWebstoreEventHandlers());
+
+export {
+    addWebstoreEventHandlers,
+    connectWebSocket,
+    checkConnection,
+    getBaseModuleNames,
+    toggleChatBox
+};
