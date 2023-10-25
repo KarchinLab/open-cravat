@@ -523,7 +523,6 @@ input:checked + .slider:before {
     background-color: #de6342;
     position: absolute;
     left: 1px;
-    bottom: -2px;
 }
 
 .launch-button {
@@ -808,10 +807,6 @@ input:checked + .slider:before {
     margin-left: 1ch;
     height: 1.5em;
     vertical-align: text-bottom;
-}
-
-#submit-form {
-    overflow-y: scroll;
 }
 
 .strikenout {
