@@ -23,9 +23,12 @@ Once all dependencies are installed, all tests can be run with:
 pytest
 ```
 
+During the end-to-end tests, the module and jobs directories will be changed to `e2e/test_modules` and `e2e/test_jobs`, respectively. They will be restored when the tests are finished.
+Note that the first time tests are run, the base modules will be installed, which may take minutes to complete.
+
 ## Installing and Running Only Unit Tests (No End-To-End)
 
-If you are interested in running the Open Cravat unit tests without the end-to-end tests of the web interface, you do not need to install all of the test requirements. All you need is `pytest`, so you could run:
+If you are interested in running the Open Cravat unit tests without the end-to-end tests of the web interface, you do not need to install all the test requirements. All you need is `pytest`, so you could run:
 ```shell
 pip install pytest
 ```
