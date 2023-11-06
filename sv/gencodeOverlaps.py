@@ -44,31 +44,8 @@ def insert_many(sql, recordList, conn):
         print("Failed to update", error, file=sys.stderr)
         sys.exit(1)
 
-def vcfOverlap(bedfile, vcffile, dbpath='./', dbname='test'):
-    '''Create pyranges objects from input bed (expects ucsc gencode format), then loop through vcf to find overlaps.
-    Specify type of overlap (intron, coding/noncoding exon).
-    Keep in mind that multiple genes may overlap the same nucleotide (TODO: order by priority)'''
-
-    if not bedfile.endswith('.bed'):
-        print(f'ERROR, {bedfile} does not look like a bed file', file=sys.stderr)
-        sys.exit()
-
-    # setup a database and table insert statements
-    conn = create_tables(dbpath, dbname)
-    structuralvariants_insert = "INSERT OR REPLACE INTO structuralvariants (START_ID, END_ID) VALUES (?, ?);"
-    structuralvariants_entries = []
-    breakpoints_insert = "INSERT OR REPLACE INTO breakpoints (STRUCTURAL_VARIANT_ID, CHROM, POS) values (?, ?, ?);"
-    breakpoints_entries = []
-    affectedgenes_insert = "INSERT OR REPLACE INTO affectedgenes (STRUCTURAL_VARIANT_ID, GENE_NAME, LOCATION, SCORE) values (?, ?, ?, ?);" 
-    affectedgenes_entries = []
-
-    # turn the bed file into a pyranges intervaltree
-    bedTxTree = make_pyranges(bedfile)
-    annotChroms = bedTxTree.df['Chromosome'].unique()
-    bedExonTree = pr.PyRanges()
-    isPaired = [] # translocation/deletion mates do not need to get parsed again
-
-    # loop over the vcf file
+def generate_vcfdict(vcffile, chroms_in_annot):
+    '''Generator function turns a single vcf line into a dict using pyvcf'''
     with open(vcffile, 'r') as f:
         reader = vcf.Reader(f)
         for variant in reader:  
@@ -80,9 +57,8 @@ def vcfOverlap(bedfile, vcffile, dbpath='./', dbname='test'):
                 # keep in mind that ALT, FILTER and samples are lists
                 if attribute == 'ALT':
                     if len(value) >1:
-                        sys.stderr.write('Complex rearrangement, skipping %s' % value)
-                        status = 'Complex rearrangement, skipping'
-                        continue
+                        sys.stdout.write('%s skipping: Complex rearrangement\n' % value)
+                        return False
                     else:
                         vcfrow['ALT'] = value[0]
                 # INFO is a dict; split it
@@ -92,78 +68,28 @@ def vcfOverlap(bedfile, vcffile, dbpath='./', dbname='test'):
                 # TODO? Split format and sample fields
                 else:
                     vcfrow[attribute] = value
-
             if not 'INFO.SVTYPE' in vcfrow:
-                sys.stderr.write('Does not appear to be SV' % svrow['ID'])
-                status = 'Does not appear to be SV, skipping'
-            elif not vcfrow['CHROM'] in annotChroms:
-                status = 'Local breakpoint not in reference'
-            if status is not False:
-                print(vcfrow['ID'], status)
-                continue
-                
-            # Now that we have a dict, extract relevant info and do overlaps
-
-            localOnly = False
-            endPos = False
-            status = ''
-            # gridss calls everything a BND
+                sys.stdout.write('%s skipping: Does not appear to be SV\n' % vcfrow['ID'])
+                return False
+            if not vcfrow['CHROM'] in chroms_in_annot:
+                sys.stdout.write('%s skipping: Breakpoint not in reference\n' % vcfrow['ID'])
+                return False
+            # by default we assume a remote breakpoint
+            vcfrow['localOnly'] = False
             if isinstance(vcfrow['ALT'], vcf.model._SingleBreakend):
-                localOnly = True
-                status = 'Unpaired breakend; '
-            # skip partner if it's in a non-genome contig
+                vcfrow['localOnly'] = 'Unpaired breakend; '
             elif isinstance(vcfrow['ALT'], (vcf.model._Breakend)):
                 if not vcfrow['ALT'].withinMainAssembly:
-                    localOnly = True
-                    status = 'Remote breakpoint not in reference; '
+                    vcfrow['localOnly'] = 'Remote breakpoint not in reference; '
+            # manta does not assign BNDs the way GRIDSS does, and pyVCF expects
+            # use INFO field as alternative, but only if necessary
             elif 'INFO.END' in vcfrow:
-                endPos = vcfrow['INFO.END']
+                vcfrow['endPos'] = vcfrow['INFO.END']
             else:
                 localOnly = True
- 
-            if vcfrow['ID'] in isPaired:
-                status = 'part of a previous pair, skipping'
-                print(vcfrow['ID'], status)
-                continue
+            yield vcfrow
 
-            # for every breakend we want to know the local overlap
-            # Note: we're trying to be clever here and only create exon trees if we need them
-            # so bedExonTree gets larger during the run (but will never come close to a full genome
-            # version)
-            localBND = breakPoint(vcfrow, bedTxTree, bedExonTree)
-            breakpoints_entries.append((localBND.ID, localBND.CHROM, localBND.POS))
-            for gene in localBND.geneinfo:
-                affectedgenes_entries.append((localBND.ID, gene.Name, gene.location, 0.5))
 
-            if not localBND.newExons.empty:
-                bedExonTree = pr.concat([bedExonTree, localBND.newExons])
-            if localOnly == True:
-                status += makeStatus(localBND.geneinfo, location='local')
-                print(vcfrow['ID'], status)
-                continue
-
-            # paired breakpoints have a local and a remote location;
-            # single breakends or mates in non-reference locations are localOnly
-            if 'INFO.MATEID' in vcfrow:
-                isPaired.append(vcfrow['INFO.MATEID'][0])
-            if endPos:
-                remoteBND = breakPoint(vcfrow, bedTxTree, bedExonTree, alt='OTHERSV')
-            else:
-                remoteBND = breakPoint(vcfrow, bedTxTree, bedExonTree, alt='MATE')
-            if remoteBND.CHROM not in annotChroms:
-                status += 'Remote breakpoint not in reference; '
-                status += makeStatus(localBND.geneinfo, location='local')
-            else:
-                status = pairInfo(localBND, remoteBND, bedExonTree)
-            breakpoints_entries.append((remoteBND.ID, remoteBND.CHROM, remoteBND.POS))
-            structuralvariants_entries.append((localBND.ID, remoteBND.ID))
-            for gene in remoteBND.geneinfo:
-                affectedgenes_entries.append((remoteBND.ID, gene.Name, gene.location, 0.5))
-            print(vcfrow['ID'], status)
-    insert_many(structuralvariants_insert, structuralvariants_entries, conn)
-    insert_many(breakpoints_insert, breakpoints_entries, conn)
-    insert_many(affectedgenes_insert, affectedgenes_entries, conn)
-    conn.close()
 
 
 def make_pyranges(bedfile):
@@ -206,7 +132,6 @@ def makeExonRanges(transcripts, bedExonTree):
     return exonRanges # , txIntrons
 
 
-
 class breakPoint:
     def __init__(self, vcfrow, bedTxTree, bedExonTree, alt=False):
         '''
@@ -214,22 +139,21 @@ class breakPoint:
         if the overlap occurs in an intron or (coding) exon.
         vcfrow: pyvcf object
         bedTxTree, bedExonTree: PyRanges objects of gencode transcripts and exons
-        alt: MATE (This breakend is a mate (derived from the ALT column in the VCF))
-             or OTHERSV (non translocation but annotated with SVTYPE)
+        alt: This breakend is a mate (derived from the ALT column in the VCF))
         '''
         self.geneinfo = []
         self.newExons = pr.PyRanges()
-#    self.structuralvariants_entry = (ID, MATE)
-#    self.affectedgenes_entry = (ID, GeneName, 0.5)
         if alt == False:
             self.ID = vcfrow['ID']
             self.CHROM = vcfrow['CHROM']
             self.POS = vcfrow['POS']-1 # go to zero-based
-        elif alt == 'OTHERSV':
+        elif 'endPos' in vcfrow:
+            # if it is not a translocation but annotated with SVTYPE
+            # we infer the mate from the INFO field
             self.ID = vcfrow['ID']+'.END'
             self.CHROM = vcfrow['CHROM']
             self.POS = int(vcfrow['INFO.END'])-1 # go to zero-based
-        elif alt == 'MATE':
+        else: 
             alt = vcfrow['ALT']
             self.ID = vcfrow['INFO.MATEID'][0]
             pattern = r'[\]\[]?(\w+):(\d+)' 
@@ -255,7 +179,7 @@ class breakPoint:
     def checkExons(self, bedExonTree):
         '''Determines if the breakpoint overlaps a coding or noncoding exon. Since this function only gets
            called if a transcript was already found, the default is intron.'''
-        self.location = 'INTRON'
+        #self.location = 'INTRON'
         self.exons = bedExonTree[self.CHROM, self.POS:self.POS+1]
         if len(self.exons) == 0:
             return
@@ -363,6 +287,86 @@ def makeStatus(genelist, location):
         status += 'INTERGENIC '
     return status
 
+
+def vcfOverlap(bedfile, vcffile, dbpath='./', dbname='test'):
+    '''Create pyranges objects from input bed (expects ucsc gencode format), then loop through vcf to find overlaps.
+    Specify type of overlap (intron, coding/noncoding exon).
+    Keep in mind that multiple genes may overlap the same nucleotide (TODO: order by priority)'''
+
+    if not bedfile.endswith('.bed'):
+        print(f'ERROR, {bedfile} does not look like a bed file', file=sys.stderr)
+        sys.exit()
+
+    # setup a database and table insert statements
+    conn = create_tables(dbpath, dbname)
+    # table entries will be added during the run and committed at the end
+    structuralvariants_entries = []
+    breakpoints_entries = []
+    affectedgenes_entries = []
+
+    # turn the bed file into a pyranges intervaltree
+    bedTxTree = make_pyranges(bedfile)
+    annotChroms = bedTxTree.df['Chromosome'].unique()
+    bedExonTree = pr.PyRanges()
+    isPaired = [] # translocation/deletion mates do not need to get parsed again
+
+    # loop over the vcf file
+    for vcfrow in generate_vcfdict(args.vcffile, annotChroms):
+        if vcfrow == False:
+            continue
+
+        if vcfrow['ID'] in isPaired:
+            status = 'part of a previous pair, skipping'
+            print(vcfrow['ID'], status)
+            continue
+
+        # for every breakend we want to know the local overlap
+        # Note: we're trying to be clever here and only create exon trees if we need them
+        # so bedExonTree gets larger during the run (but will never come close to a full genome
+        # version)
+        localBND = breakPoint(vcfrow, bedTxTree, bedExonTree)
+        breakpoints_entries.append((localBND.ID, localBND.CHROM, localBND.POS))
+        for gene in localBND.geneinfo:
+            affectedgenes_entries.append((localBND.ID, gene.Name, gene.location, 0.5))
+
+        if not localBND.newExons.empty:
+            bedExonTree = pr.concat([bedExonTree, localBND.newExons])
+        if vcfrow['localOnly'] is not False:
+            status = vcfrow['localOnly']
+            status += makeStatus(localBND.geneinfo, location='local')
+            print(vcfrow['ID'], status)
+            continue
+
+        # paired breakpoints have a local and a remote location, and in e.g. GRIDSS the
+        # remote location is listed as a separate entry with the same info so skip that
+        if 'INFO.MATEID' in vcfrow:
+            isPaired.append(vcfrow['INFO.MATEID'][0])
+        remoteBND = breakPoint(vcfrow, bedTxTree, bedExonTree, alt=True)
+        if not remoteBND.newExons.empty:
+            bedExonTree = pr.concat([bedExonTree, remoteBND.newExons])
+
+        # if the remote location is not in the annotation genome we want to print that info
+        # Note: Remove this once we get rid of status messages
+        if remoteBND.CHROM not in annotChroms:
+            status += 'Remote breakpoint not in reference; '
+            status += makeStatus(localBND.geneinfo, location='local')
+        else:
+            status = pairInfo(localBND, remoteBND, bedExonTree)
+        # add info to the table entries
+        breakpoints_entries.append((remoteBND.ID, remoteBND.CHROM, remoteBND.POS))
+        structuralvariants_entries.append((localBND.ID, remoteBND.ID))
+        for gene in remoteBND.geneinfo:
+            affectedgenes_entries.append((remoteBND.ID, gene.Name, gene.location, 0.5))
+        print(vcfrow['ID'], status)
+
+    # commit all new entries to the database
+    structuralvariants_insert = "INSERT OR REPLACE INTO structuralvariants (START_ID, END_ID) VALUES (?, ?);"
+    breakpoints_insert = "INSERT OR REPLACE INTO breakpoints (STRUCTURAL_VARIANT_ID, CHROM, POS) values (?, ?, ?);"
+    affectedgenes_insert = "INSERT OR REPLACE INTO affectedgenes (STRUCTURAL_VARIANT_ID, GENE_NAME, LOCATION, SCORE) values (?, ?, ?, ?);" 
+    insert_many(structuralvariants_insert, structuralvariants_entries, conn)
+    insert_many(breakpoints_insert, breakpoints_entries, conn)
+    insert_many(affectedgenes_insert, affectedgenes_entries, conn)
+    conn.close()
 
 if __name__ == "__main__":
     if len(sys.argv)==1:
