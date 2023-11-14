@@ -10,7 +10,9 @@ import time
 import asyncio
 import platform
 import sys
+
 from cravat.exceptions import InvalidFilter
+from cravat.filter_levels import LevelQueries
 
 if sys.platform == "win32" and sys.version_info >= (3, 8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -647,44 +649,9 @@ class CravatFilter:
 
     async def get_filtered_iterator(self, level="variant", conn=None, cursor=None):
         bypassfilter = not(self.filter or self.filtersql or self.includesample or self.excludesample)
-        if level == "variant":
-            kcol = "base__uid"
-            if bypassfilter:
-                ftable = "variant"
-            else:
-                ftable = "variant_filtered"
-        elif level == "gene":
-            kcol = "base__hugo"
-            if bypassfilter:
-                ftable = "gene"
-            else:
-                ftable = "gene_filtered"
-        elif level == "sample":
-            kcol = "base__uid"
-            if bypassfilter:
-                ftable = "variant"
-            else:
-                ftable = "variant_filtered"
-        elif level == "mapping":
-            kcol = "base__uid"
-            if bypassfilter:
-                ftable = "variant"
-            else:
-                ftable = "variant_filtered"
-        table = level
-        if level in ["variant", "gene", "sample", "mapping"]:
-            if level == "gene" and bypassfilter:
-                sql = "pragma table_info(gene)"
-                await cursor.execute(sql)
-                rs = await cursor.fetchall()
-                colnames = ["gene." + r[1] for r in rs if r[1] != "base__hugo"]
-                sql = "select distinct variant.base__hugo, {} from variant inner join gene on variant.base__hugo==gene.base__hugo".format(
-                    ", ".join(colnames)
-                )
-            else:
-                sql = "select v.* from " + table + " as v"
-                if bypassfilter == False:
-                    sql += " inner join " + ftable + " as f on v." + kcol + "=f." + kcol
+        level_strategy = LevelQueries[level]
+        sql = level_strategy.filtered_sql if not bypassfilter else level_strategy.unfiltered_sql
+
         await cursor.execute(sql)
         cols = [v[0] for v in cursor.description]
         rows = await cursor.fetchall()
