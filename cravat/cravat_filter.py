@@ -713,9 +713,8 @@ class CravatFilter:
         return cols, rows
 
     def build_sample_exclusions(self):
-        # this may actually be redundant.  I'm leaving it in for now, but in my current testing
-        # it doesn't actually filter anything additional because the join back to the
-        # sample table matches nothing.
+        # this is needed because joining back to the sample table causes is to
+        # re-include sample data that was excluded at the variant level.
         sample_filters = ""
         req, rej = self.required_and_rejected_samples()
         if req:
