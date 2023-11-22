@@ -646,34 +646,27 @@ class CravatFilter:
         return it
 
     @staticmethod
-    def reaggregate_column(base_alias, column):
-        reagg_template = "group_concat(sample.{}, ';') OVER (PARTITION BY {}.base__uid ORDER BY sample.base__sample_id ROWS BETWEEN UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING) {}"
+    def reaggregate_column(base_alias, meta):
+        column = meta['name']
+        function = meta['filter_reagg_function'] if 'filter_reagg_function' in meta else None
+        reagg_args = meta['filter_reagg_function_args'] if 'filter_reagg_function_args' in meta else []
+        reagg_source = meta['filter_reagg_source_column'] if 'filter_reagg_source_column' in meta else None
 
-        module_remaps = [
-            'vcfinfo'
-        ]
-
-        column_remaps = {
-            'tagsampler__samples': 'base__sample_id'
-        }
-
-        mod, relative_column = column.split('__')
-        if column == 'tagsampler__numsample':
-            return "count(sample.base__sample_id) OVER (PARTITION BY {}.base__uid) tagsampler__numsample".format(base_alias)
-        elif mod in module_remaps:
-            return reagg_template.format("base__{}".format(relative_column), base_alias, column)
-        elif column in column_remaps:
-            return reagg_template.format(column_remaps[column], base_alias, column)
-        else:
+        if not function:
             return "{}.{}".format(base_alias, column)
 
+        reagg_template = "{}({}{}) OVER (PARTITION BY {}.base__uid ORDER BY sample.base__sample_id ROWS BETWEEN UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING) {}"
+        quoted_args = ["'{}'".format(x) for x in reagg_args]
+        formatted_args = ",{}".format(",".join(quoted_args)) if reagg_args else ""
+        return reagg_template.format(function, reagg_source, formatted_args, base_alias, column)
+
     @staticmethod
-    async def level_colum_definitions(cursor, level):
+    async def level_column_definitions(cursor, level):
         await cursor.execute("select col_name, col_def from {}_header".format(level))
         return {k: json.loads(v) for k, v in await cursor.fetchall()}
 
     async def make_sample_filter_group(self, cursor, sample_filter):
-        sample_columns = await self.level_colum_definitions(cursor, 'sample')
+        sample_columns = await self.level_column_definitions(cursor, 'sample')
         prefixes = {k: 'sample' for k in sample_columns.keys()}
         filter_group = FilterGroup(sample_filter)
         filter_group.add_prefixes(prefixes)
@@ -684,10 +677,9 @@ class CravatFilter:
 
         if self.filter and 'samplefilter' in self.filter:
             sample_filter = self.filter['samplefilter']
-            await cursor.execute(sql)
-            variant_columns = [c[0] for c in cursor.description]
+            variant_columns = await self.level_column_definitions(cursor, 'variant')
 
-            reaggregated_columns = [self.reaggregate_column('v', col) for col in variant_columns]
+            reaggregated_columns = [self.reaggregate_column('v', meta) for col, meta in variant_columns.items()]
             sample_filters = self.build_sample_exclusions()
             filter_group = await self.make_sample_filter_group(cursor, sample_filter)
 
@@ -704,7 +696,6 @@ class CravatFilter:
                 join scoped_sample sample on sample.base__uid = v.base__uid
                 where {}
             """.format(sql, sample_filters, ",".join(reaggregated_columns), filter_group.get_sql())
-
 
         await cursor.execute(sql)
         cols = [v[0] for v in cursor.description]
