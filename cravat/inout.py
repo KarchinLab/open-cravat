@@ -543,6 +543,9 @@ class ColumnDefinition(object):
         self.filterable = bool(d.get("filterable", True))
         self.link_format = d.get("link_format")
         self.genesummary = d.get("genesummary", False)
+        self.filter_reagg_function = d.get("filter_reagg_function", None)
+        self.filter_reagg_function_args = d.get("filter_reagg_function_args", [])
+        self.filter_reagg_source_column = d.get("filter_reagg_source_column", None)
         self.table = d.get("table", False)
 
     def from_row(self, row, order=None):
