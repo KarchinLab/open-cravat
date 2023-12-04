@@ -648,9 +648,9 @@ class CravatFilter:
     @staticmethod
     def reaggregate_column(base_alias, meta):
         column = meta['name']
-        function = meta['filter_reagg_function'] if 'filter_reagg_function' in meta else None
-        reagg_args = meta['filter_reagg_function_args'] if 'filter_reagg_function_args' in meta else []
-        reagg_source = meta['filter_reagg_source_column'] if 'filter_reagg_source_column' in meta else None
+        function = meta.get('filter_reagg_function', None)
+        reagg_args = meta.get('filter_reagg_function_args', [])
+        reagg_source = meta.get('filter_reagg_source_column', None)
 
         if not function:
             return "{}.{}".format(base_alias, column)
@@ -781,17 +781,10 @@ class CravatFilter:
             return False
 
     def required_and_rejected_samples(self):
-        req = []
-        rej = []
-        if "sample" in self.filter:
-            if "require" in self.filter["sample"]:
-                req = self.filter["sample"]["require"]
-            if "reject" in self.filter["sample"]:
-                rej = self.filter["sample"]["reject"]
-        if self.includesample is not None:
-            req = self.includesample
-        if self.excludesample is not None:
-            rej = self.excludesample
+        sample = self.filter.get("sample", {})
+        req = sample.get("require", self.includesample or [])
+        rej = sample.get("reject",  self.excludesample or [])
+
         return req, rej
 
     async def make_filter_where(self, conn=None, cursor=None):
