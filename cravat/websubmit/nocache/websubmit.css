@@ -1001,3 +1001,17 @@ input:checked + .slider:before {
 #divbanner-pkg {
     background-color: red;
 } */
+
+#single_var_link_div {
+    position: fixed;
+    top: 43px;
+    right: 10px;
+}
+#single_var_button {
+    font-size: 15px;
+    /* position: relative; */
+    position: fixed;
+    top: 38px;
+    right: 105px;
+    padding: 2px 10px 2px 10px;
+}
