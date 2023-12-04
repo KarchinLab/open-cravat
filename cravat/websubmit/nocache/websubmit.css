@@ -281,6 +281,13 @@ button {
     right: 40px;
 }
 
+.house-icon {
+    height: 15px;
+    top: 9px;
+    position: absolute;
+    right: 100px;
+}
+
 .question-icon {
     height: 15px;
     top: 9px;
