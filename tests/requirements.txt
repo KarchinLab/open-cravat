@@ -1,0 +1,8 @@
+playwright
+pytest
+pytest-asyncio
+pytest-base-url
+pytest-playwright
+pytest-xprocess
+typing_extensions
+urllib3

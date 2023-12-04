@@ -352,7 +352,6 @@ class TCPSitePatched(web_runner.BaseSite):
 
     async def start(self):
         await super().start()
-        # await super().prepare()
         self._server = await self.loop.create_server(
             self._runner.server,
             self._host,
@@ -379,12 +378,6 @@ async def middleware(request, handler):
             nocache = True
         if nocache:
             response.headers["Cache-Control"] = "no-cache"
-        if 'webstore.js' in request.path:
-            print('webstore.js')
-            response.headers["Content-Type"] = "application/javascript"
-        if '.js' in request.path:
-            print(repr(request))
-            response.headers["Content-Type"] = "application/javascript"
         return response
     except Exception as e:
         logger.info("Exception occurred at request={}".format(request))
@@ -394,12 +387,6 @@ async def middleware(request, handler):
         return web.HTTPInternalServerError(
             text=json.dumps({"status": "error", "msg": str(e)})
         )
-
-
-async def on_prepare(self, request, response):
-    print(f'on_prepare: {request.path}')
-    if request.path.endswith('.js'):
-        response.headers['Content-Type'] = 'application/javascript'
 
 
 class WebServer(object):
@@ -442,7 +429,6 @@ class WebServer(object):
             loop=self.loop,
             ssl_context=self.ssl_context,
         )
-        # self.app.on_response_prepare.append(on_prepare)
         await self.site.start()
         self.server_started = True
 

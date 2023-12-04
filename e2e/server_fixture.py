@@ -67,10 +67,6 @@ def test_server(xprocess):
     orig_jobs_dir = admin_config['jobs_dir']
 
     base_dir = get_base_dir()
-    # # get copy of config file
-    # config_path = os.path.join(base_dir, 'cravat', 'cravat.yml')
-    # with open(config_path, 'r', encoding='us-ascii') as f:
-    #     original_config = f.read()
 
     # check that the e2e dir is in the working directory
     e2e_path = os.path.join(base_dir, 'e2e')
@@ -126,10 +122,6 @@ def test_server(xprocess):
     xprocess.getinfo("test_server").terminate()
 
     # change the working directory back to original
-    # os.chdir(base_dir)
-    # restore original config
-    # with open(config_path, 'w', encoding='us-ascii') as f:
-    #     f.write(original_config)
     subprocess.run(['oc', 'config', 'md', module_dir])
 
     admin_config['jobs_dir'] = orig_jobs_dir
