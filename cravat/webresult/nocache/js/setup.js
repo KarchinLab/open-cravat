@@ -1239,32 +1239,60 @@ function pullSfValue(selectorDiv) {
 // Either move or generalize this
 const defOptLambda = (selName) => {
     const opt = getEl('option');
-    addEl(opt, getTn(`Pick ${selName} cohort`));
+    addEl(opt, getTn(`Pick cohort ${selName}`));
     opt.hidden = true;
     opt.value = '';
     opt.disabled = true;
     opt.selected = true;
     return opt
 }
-
-var cohortTable;
 //TODO: temporary
 var cohortPickSetListener;
+var cohortTable;
+
+const cohortTabSection = (title, message) => {
+        var h2 = getEl('h2')
+        var controlsDiv = document.getElementById("cohorts-controls")
+        addEl(controlsDiv, addEl(h2,getTn(title)));
+        var infoIcon = getEl('img');
+        infoIcon.style.cursor = 'pointer';
+        infoIcon.title = message
+        infoIcon.src = '/result/images/info_icon_black.svg'
+        addEl(h2, infoIcon)
+}
+
 function makeCohortTab(rightDiv) {
+    const controlsDivContainer = getEl('div');
     const controlsDiv = getEl('div');
-    addEl(rightDiv, controlsDiv);
+    addEl(controlsDivContainer, controlsDiv);
+    controlsDivContainer.id = 'cohorts-controls-container'
     controlsDiv.id = 'cohorts-controls';
     const widgetsDiv = getEl('div');
+    if (cohortPickSetListener === undefined) {
+        addEl(rightDiv, controlsDivContainer)
+    }
     addEl(rightDiv, widgetsDiv);
     widgetsDiv.id = 'cohorts-widgets';
+
+    // Upload cohorts
+    cohortTabSection('Upload Cohorts', 'upload a text file to initialize or update cohorts. The file format is ....')
+    const modifyDiv = getEl('div');
+    modifyDiv.classList = "cohorts-control-section"
+    addEl(controlsDiv, modifyDiv);
+    const cohortsFileSel = getEl('input');
+    addEl(modifyDiv, cohortsFileSel);
+    cohortsFileSel.id = 'cohorts-file-sel';
+    cohortsFileSel.type = 'file';
+
     // Current Cohorts
-    addEl(controlsDiv, addEl(getEl('h2'),getTn('Current Cohorts')));
+    cohortTabSection('Current Cohorts', 'All cohorts are selected and shown by default. Select which cohorts you would like displayed.')
     // Display set
+    const pickSetSelect = getEl('select');
     const displaySetDiv = getEl('div');
     addEl(controlsDiv, displaySetDiv);
-    const pickSetSelect = getEl('select');
+    displaySetDiv.classList = "cohorts-pick-select cohorts-control-section"
     addEl(displaySetDiv, pickSetSelect);
-    pickSetSelect.id = 'cohort-pick-set';
+    pickSetSelect.id = 'cohorts-pick-set';
     pickSetSelect.disabled = true;
     fetch("/result/service/cohortsets"+window.location.search)
         .then((response) => response.json())
@@ -1274,34 +1302,37 @@ function makeCohortTab(rightDiv) {
     // Table
     const tblDiv = getEl('div');
     tblDiv.id = 'cohorts-table';
-    addEl(controlsDiv, tblDiv);
-    // Save set
+    addEl(displaySetDiv, tblDiv);
+    // Define Phenotypes
     const saveDiv = getEl('div');
+    cohortTabSection('Define Phenotypes', "Define a phenotype such as 'age' by selecting cohorts from the list and entering a name.")
     addEl(controlsDiv,saveDiv);
     const setNameInput = getEl('input');
-    addEl(saveDiv, setNameInput);
-    setNameInput.id = 'cohort-set-name'
+    const setSaveDiv = getEl('div')
+    setSaveDiv.classList = "cohorts-control-section"
+    addEl(setSaveDiv, setNameInput);
+    setNameInput.id = 'cohorts-set-name'
+    setNameInput.placeholder = 'enter phenotype'
     const setNameButton = getEl('button');
-    addEl(saveDiv, setNameButton);
+    addEl(setSaveDiv, setNameButton);
+    addEl(saveDiv, setSaveDiv)
+    setNameButton.disabled = true;
+    var setNameInputListener;
+    setNameInput.removeEventListener('input',setNameInputListener);
+    setNameInputListener = (e) => {
+        if (e.target.value.length > 0 ){
+            setNameButton.disabled = false
+        }else {
+            setNameButton.disabled = true
+        }
+        
+    }
+    setNameInput.addEventListener('input', setNameInputListener);
+    setNameButton.classList = "cohorts-solid-button"
     setNameButton.addEventListener('click',e=>{saveCohortSet()});
     addEl(setNameButton, getTn('Save selection'));
-    
-    // Show cohorts
-    const showDiv = getEl('div');
-    addEl(controlsDiv,showDiv);
-    const showCohortsButton = getEl('button');
-    addEl(showDiv,showCohortsButton);
-    addEl(showCohortsButton, getTn('Show Cohorts'));
-    showCohortsButton.addEventListener('click',e=>{showCohortSet()});
-    // Change cohorts
-    addEl(controlsDiv, addEl(getEl('h2'),getTn('Change Cohorts')));
-    const modifyDiv = getEl('div');
-    addEl(controlsDiv, modifyDiv);
-    const cohortsFileSel = getEl('input');
-    addEl(modifyDiv, cohortsFileSel);
-    cohortsFileSel.id = 'cohorts-file-sel';
-    cohortsFileSel.type = 'file';
     const cohortsSubmit = getEl('button');
+    cohortsSubmit.classList = "cohorts-solid-button"
     addEl(modifyDiv, cohortsSubmit);
     cohortsSubmit.style['display'] = 'block';
     addEl(cohortsSubmit, getTn('Set cohorts'));
@@ -1319,10 +1350,13 @@ function makeCohortTab(rightDiv) {
         populateCohortWidgetDiv();
         })  
     })
-    // Compare Cohorts
-    addEl(controlsDiv, addEl(getEl('h2'),getTn('Compare Cohorts')));
+    
+    // Compare Cohorts - not implemented yet
+    // cohortTabSection('Compare Cohorts', "...")
+
     const compareDiv = getEl('div');
-    addEl(controlsDiv, compareDiv);
+    compareDiv.classList = "cohorts-control-section"
+    // addEl(controlsDiv, compareDiv);
     const cohortPickDiv = getEl('div');
     addEl(compareDiv, cohortPickDiv);
     const caseSel = getEl('select');
@@ -1336,7 +1370,7 @@ function makeCohortTab(rightDiv) {
     const compareButton = getEl('button');
     addEl(compareDiv, compareButton);
     addEl(compareButton, getTn('Compare cohorts'));
-    compareButton.style.display = 'block';
+    compareButton.classList = 'cohorts-solid-button';
     compareButton.addEventListener('click',event=>{
         const data = new FormData();
         if (jobId !== null) data.set('job_id',jobId);
@@ -1351,17 +1385,26 @@ function makeCohortTab(rightDiv) {
             body: data,
         });
     });
+    // Show cohorts
+    const showDiv = getEl('div');
+    addEl(controlsDivContainer,showDiv);
+    const showCohortsButton = getEl('button');
+    showCohortsButton.classList = "cohorts-show-cohorts-button"
+    showDiv.classList = "show-cohorts-div"
+    addEl(showDiv,showCohortsButton);
+    addEl(showCohortsButton, getTn('Show Cohorts'));
+    showCohortsButton.addEventListener('click',e=>{showCohortSet()});
     getCohorts();
     populateCohortWidgetDiv();
     return true;
 }
 
 function buildCohortSavedSelection(cohortSets, shownSet) {
-    const pickSetSelect = document.querySelector('#cohort-pick-set');
+    const pickSetSelect = document.querySelector('#cohorts-pick-set');
     emptyElement(pickSetSelect);
     const pickSetDefault = getEl('option');
     addEl(pickSetSelect,pickSetDefault);
-    addEl(pickSetDefault,getTn('Pick a selection'));
+    addEl(pickSetDefault,getTn('Select saved phenotype'));
     pickSetDefault.selected = true;
     pickSetDefault.disabled = true;
     pickSetDefault.hidden = true;
@@ -1400,7 +1443,7 @@ function buildCohortSavedSelection(cohortSets, shownSet) {
 
 function saveCohortSet() {
     const tableRows = cohortTable.getSelectedData();
-    const setNameInput = document.querySelector('#cohort-set-name');
+    const setNameInput = document.querySelector('#cohorts-set-name');
     const setName = setNameInput.value;
     if (setName === '') return;
     const unqCohorts = {};
@@ -1433,9 +1476,38 @@ function getSelectedCohorts() {
     var selData = cohortTable.getSelectedData();
     if (selData.length === 0) {
         selData = cohortTable.getData();
-    }
+    }    
     const unqCohorts = [... new Set(selData.map(row => row.cohort))];
-    return unqCohorts;
+    for (let row of cohortTable.getRows()) {
+        if (unqCohorts.includes(row.getData().cohort)) {
+            row.select();
+        } else {
+            row.deselect();
+        }
+    }
+    return unqCohorts.sort();
+}
+
+function getCohortColors() {
+    var selData = cohortTable.getSelectedData();
+    if (selData.length === 0) {
+        selData = cohortTable.getData();
+    }    
+    const unqCohorts = [... new Set(selData.map(row => row.cohort))];
+    const cohortColorPalette = [
+        '#B2182B', 
+        '#D6604D', 
+        '#5AAE61', 
+        '#F4A582', 
+        '#FDDBC7', 
+        '#1B7837', 
+        '#D1E5F0',
+        '#F7F7F7',
+        '#92C5DE',
+        '#5AAE61',
+        '#ACD39E'
+    ]
+    return cohortColorPalette.slice(0, unqCohorts.length)
 }
 
 function getCohorts() {
@@ -1466,13 +1538,30 @@ function getCohorts() {
                 layout:"fitDataTable", //fit columns to width of table (optional)
                 data:tableData,
                 dataTree:true,
+                responsiveLayout:"collapse",
+                dataTreeElementColumn:"sample",
                 dataTreeStartExpanded:false,
-                columns:[ //Define Table Columns
-                    {title:"Cohort", field:"cohort", width:150},
-                    {title:"Sample", field:"sample", width:150},
+
+                columns: [{
+                    formatter:"rowSelection", 
+                    titleFormatter:"rowSelection", 
+                    hozAlign:"center", 
+                    headerSort:false, 
+                    cellClick:function(e, cell){
+                        cell.getRow().toggleSelect();
+                }},{
+                            title: 'Cohort',
+                            field: 'cohort',
+                            width: 250,
+                        },{
+                            title: 'Samples',
+                            field: 'sample',
+                            width: 100
+                        }
                 ],
-                selectable:true,
+                
             });
+            cohortTable.className = 'cohort-table';
             var tmp = new Object();
             for (let row of data) {
                 tmp[row.cohort] = null;
@@ -1482,8 +1571,8 @@ function getCohorts() {
             const contSel = document.querySelector('#cohort-compare-cont-sel');
             emptyElement(caseSel);
             emptyElement(contSel);
-            addEl(caseSel, defOptLambda('case'));
-            addEl(contSel, defOptLambda('control'));
+            addEl(caseSel, defOptLambda('1'));
+            addEl(contSel, defOptLambda('2'));
             for (let sel of [caseSel, contSel]) {
                 for (let cohort of cohorts) {
                     let opt = getEl('option');
@@ -1545,7 +1634,7 @@ function populateCohortWidgetDiv () {
 					widgetDiv.style.width = generator['width'] + 'px';
 					widgetDiv.style.height = generator['height'] + 'px';
 				}
-                // var outerDiv = document.getElementById('detailcontainerdiv_cohort');
+                // var outerDiv = document.getElementById('cohorts-widgets');
 				addEl(outerDiv, widgetDiv);
                 try {
                     drawSummaryWidget(colGroupKey, 'cohort');
@@ -1557,76 +1646,77 @@ function populateCohortWidgetDiv () {
 		}
 	}
 	$outerDiv = $(outerDiv);
-	$outerDiv.packery({
-		columnWidth: widgetGridSize,
-		rowHeight: widgetGridSize
-	});
-	var $widgets = $($outerDiv.packery('getItemElements'));
-	$widgets.draggable({
-		grid: [widgetGridSize, widgetGridSize],
-		handle: '.detailwidgettitle',
-        stop: function (evt, ui) {
-            $outerDiv.packery();
-            loadedViewerWidgetSettings[currentTab] = undefined;
-        },
-	}).resizable({
-		grid: [widgetGridSize, widgetGridSize],
-        autoHide: true,
-        handles: 'all',
-        start: function (evt, ui) {
-            var widgetName = evt.target.getAttribute('widgetkey');
-            var generator = widgetGenerators[widgetName][currentTab];
-            var v = generator['variables'];
-            var parentDiv = v['parentdiv'];
-            if (generator['beforeresize'] != undefined) {
-                generator['beforeresize']();
-            }
-        },
-        stop: function (evt, ui) {
-            var widgetName = evt.target.getAttribute('widgetkey');
-            var generator = widgetGenerators[widgetName][currentTab];
-            var v = generator['variables'];
-            var parentDiv = v['parentdiv'];
-            if (generator['confirmonresize'] == true) {
-                $(parentDiv).empty();
-                var div = getEl('div');
-                div.className = 'widget-redraw-confirm';
-                var span = getEl('span');
-                span.textContent = 'Click to redraw';
-                addEl(div, span);
-                addEl(parentDiv, div);
-                div.addEventListener('click', function () {
-                    generator['function']();
-                });
-            } else if (generator['onresize'] != undefined) {
-                $(parentDiv).empty();
-                if (resizeTimeout) {
-                    clearTimeout(resizeTimeout);
-                }
-                resizeTimeout = setTimeout(function () {
-                    var widgetDiv = parentDiv.parentElement;
-                    parentDiv.style.height = (widgetDiv.offsetHeight - 38) + 'px';
-                    parentDiv.style.width = (widgetDiv.offsetWidth - 17) + 'px';
-                    generator['onresize']();
-                }, 100);
-            }
-            var sEvt = evt;
-            var sUi = ui;
-            $(sEvt.target.parentElement).packery('fit', sUi.element[0]);
-            loadedViewerWidgetSettings[currentTab] = undefined;
-        },
-	});
-	$outerDiv.packery('bindUIDraggableEvents', $widgets);
-	var resizeTimeout;
-	if (reuseWidgets != true) {
-		applyWidgetSetting('cohort');
-	}
+    // *** following commented out so cohort widgets cannot be dragged or resized 
+	// $outerDiv.packery({
+	// 	columnWidth: widgetGridSize,
+	// 	rowHeight: widgetGridSize
+	// });
+	//var $widgets = $($outerDiv.packery('getItemElements'));
+	// $widgets.draggable({
+	// 	grid: [widgetGridSize, widgetGridSize],
+	// 	handle: '.detailwidgettitle',
+    //     stop: function (evt, ui) {
+    //         $outerDiv.packery();
+    //         loadedViewerWidgetSettings[currentTab] = undefined;
+    //     },
+	// }).resizable({
+	// 	grid: [widgetGridSize, widgetGridSize],
+    //     autoHide: true,
+    //     handles: 'all',
+    //     start: function (evt, ui) {
+    //         var widgetName = evt.target.getAttribute('widgetkey');
+    //         var generator = widgetGenerators[widgetName][currentTab];
+    //         var v = generator['variables'];
+    //         var parentDiv = v['parentdiv'];
+    //         if (generator['beforeresize'] != undefined) {
+    //             generator['beforeresize']();
+    //         }
+    //     },
+    //     stop: function (evt, ui) {
+    //         var widgetName = evt.target.getAttribute('widgetkey');
+    //         var generator = widgetGenerators[widgetName][currentTab];
+    //         var v = generator['variables'];
+    //         var parentDiv = v['parentdiv'];
+    //         if (generator['confirmonresize'] == true) {
+    //             $(parentDiv).empty();
+    //             var div = getEl('div');
+    //             div.className = 'widget-redraw-confirm';
+    //             var span = getEl('span');
+    //             span.textContent = 'Click to redraw';
+    //             addEl(div, span);
+    //             addEl(parentDiv, div);
+    //             div.addEventListener('click', function () {
+    //                 generator['function']();
+    //             });
+    //         } else if (generator['onresize'] != undefined) {
+    //             $(parentDiv).empty();
+    //             if (resizeTimeout) {
+    //                 clearTimeout(resizeTimeout);
+    //             }
+    //             resizeTimeout = setTimeout(function () {
+    //                 var widgetDiv = parentDiv.parentElement;
+    //                 parentDiv.style.height = (widgetDiv.offsetHeight - 38) + 'px';
+    //                 parentDiv.style.width = (widgetDiv.offsetWidth - 17) + 'px';
+    //                 generator['onresize']();
+    //             }, 100);
+    //         }
+    //         var sEvt = evt;
+    //         var sUi = ui;
+    //         $(sEvt.target.parentElement).packery('fit', sUi.element[0]);
+    //         loadedViewerWidgetSettings[currentTab] = undefined;
+    //     },
+	// });
+	// $outerDiv.packery('bindUIDraggableEvents', $widgets);
+	// var resizeTimeout;
+	// if (reuseWidgets != true) {
+	// 	applyWidgetSetting('cohort');
+	// }
 }
 
 function saveCohortSetting() {
     return new Promise((resolve, reject) =>{
         const selCohorts = getSelectedCohorts();
-        const setSelector = document.querySelector('#cohort-pick-set');
+        const setSelector = document.querySelector('#cohorts-pick-set');
         const selSet = setSelector.value.length !== 0 ? setSelector.value : null;
         const data = new FormData();
         if (jobId !== null) data.set('job_id',jobId);
@@ -1685,6 +1775,11 @@ function changeMenu () {
 		}
     } else if (currentTab == 'info') {
 		turnOffMenu('layout_columns_menu');
+        turnOnMenu('layout_widgets_menu');
+        populateWidgetSelectorPanel();
+    } else if (currentTab == "cohort") {
+        showCohortSet()
+        turnOffMenu('layout_columns_menu');
         turnOnMenu('layout_widgets_menu');
         populateWidgetSelectorPanel();
 	} else {
@@ -2410,6 +2505,10 @@ function drawSummaryWidget (widgetName, destName) {
         var spinner = getSpinner();
         spinner.className = 'widgetspinner';
         addEl(widgetContentDiv, spinner);
+        let filterApplied = 'False';
+	    if (Object.keys(filterJson).length !== 0) {
+            filterApplied = 'True'
+        }
         if (requestmethod == 'POST') {
             var params = JSON.stringify(callServerParams);
             $.post(
@@ -2426,7 +2525,7 @@ function drawSummaryWidget (widgetName, destName) {
         } else {
             $.ajax({
                 url: '/result/runwidget/' + widgetName, 
-                data: {'username': username, 'job_id': jobId, dbpath: dbPath, params: JSON.stringify(callServerParams)},
+                data: {'username': username, 'job_id': jobId, dbpath: dbPath, params: JSON.stringify(callServerParams), 'use_filtered': filterApplied},
                 async: true,
                 method: requestmethod,
                 success: function (response) {

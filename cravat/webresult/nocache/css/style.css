@@ -1229,14 +1229,165 @@ input:checked + .sample-rd-rej::before {
 
 #rightdiv_cohort {
     display: flex;
+    overflow: unset;
 }
 
-#cohorts-controls {
-    padding-right: 10px;
-    margin-right: 10px;
-    border-right: 1px solid black;
+#cohorts-controls img{
+    margin-left: 8px;
+    width: 14px;
+
+}
+
+#cohorts-controls h2 {
+    background-color: #c6e1f1;
+    color: black;
+    padding-left: 8px;
+    font-size: 22px;
+    border-radius: 4px;
+    margin-top: 16px;
+    padding-top: 4px;
+    padding-bottom: 4px;
 }
 
 #cohorts-widgets {
-    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 16px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* no "move" cursor for cohort widgets */
+#cohorts-widgets .detailwidget .detailwidgetheader .detailwidgettitle {
+    cursor: auto !important;
+}
+
+#cohorts-controls-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-right: 16px;
+    padding-left: 16px;
+    margin-right: 10px;
+    border-right: 1px solid darkgray;
+    box-shadow: 0px 2px 4px darkgray;
+    position: sticky;
+    top: 0px;
+    background-color: #f1f3f7;
+    max-width: 409px;
+    
+}
+
+.cohorts-toggle {
+    display: flex;
+    position: relative;
+    justify-content: end;
+    bottom: 20%;
+    margin-bottom: 32px;
+}
+
+.cohorts-radio {
+    flex-direction: row;
+    width: 71px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.cohorts-radio input {
+    margin-right: 2px;
+    margin-bottom: 4px;
+}
+
+.cohorts-radio label {
+    margin-bottom: 4px;
+}
+
+.show-cohorts-div {
+    padding-top: 18px;
+    padding-bottom: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.cohorts-solid-button {
+    background-color: #194a75;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    height: 28px;
+    padding-left: 16px;
+    padding-right: 16px;
+    &:disabled {
+        background-color: lightgrey;
+        color: darkgray;
+        border: 2px solid  darkgray;
+    }
+}
+
+#cohorts-set-name {
+    width: 180px;
+    margin-right: 16px;
+}
+
+#cohorts-file-sel {
+    margin-bottom: 12px;
+}
+
+.cohorts-pick-select select {
+    width: 180px;
+    margin-bottom: 16px;
+}
+
+.cohorts-show-cohorts-button {
+    height: 44px;
+    width: 330px;
+    display: flex;
+    justify-content: center;
+    border-radius: 23px;
+    align-items: center;
+    font-weight: 700;
+    font-size: 22px;
+    background-color: #5eb6e7;
+    color: white;
+    border-color: rgb(255, 255, 255);
+    border: none;
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+.cohorts-control-section {
+    background-color: white;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+
+.clinvar-cohort-chart {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid lightgray;
+    padding-bottom: 12px;
+}
+
+.clinvar-cohort-chart span {
+    font-size: 15px;
+    width: 75px;
+    word-break: normal;
+    font-weight: bold;
+    left: 24px;
+    position: relative;
+}
+
+.cohorts-nodata{
+    color: #cccccc;
+    padding-top: 4px;
+    padding-bottom: 46px;
+    display: block;
 }

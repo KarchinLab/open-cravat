@@ -876,7 +876,7 @@ async def save_cohort_set(request):
     cohorts = data['setCohorts']
     await make_cohort_set_table(dbpath)
     cohorts_delim = ';'.join(cohorts)
-    q = f'insert into cohort_set (set_name, cohorts) values ("{set_name}", "{cohorts_delim}") on conflict do update set cohorts="{cohorts_delim}" where set_name="{set_name}";'
+    q = f'insert into cohort_set (set_name, cohorts) values ("{set_name}", "{cohorts_delim}") on conflict (set_name) do update set cohorts="{cohorts_delim}" where set_name="{set_name}";'
     await cursor.execute(q)
     await cursor.close()
     cohort_sets = await read_cohort_sets(conn)
