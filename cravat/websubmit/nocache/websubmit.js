@@ -154,7 +154,7 @@ function submit () {
         if (!OC.servermode) {
             addEl(alertDiv,getEl('br'));
             var span = getEl('span');
-            span.textContent = 'The limit can be changed at the settings menu.';
+            span.textContent = 'The limit can be changed in the settings menu at the top right.';
             addEl(alertDiv, span);
             addEl(alertDiv,getEl('br'));
         }
