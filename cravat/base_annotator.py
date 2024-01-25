@@ -254,6 +254,21 @@ class BaseAnnotator(object):
             if "table" in col and col["table"] == True:
                 self.json_colnames.append(col["name"])
 
+    def annotate_input(self, input_iterator):
+        for lnum, line, input_data, secondary_data in input_iterator:
+            try:
+                self.log_progress(lnum)
+                # * allele and undefined non-canonical chroms are skipped.
+                if self.is_star_allele(input_data) or self.should_skip_chrom(input_data):
+                    continue
+                if secondary_data == {}:
+                    output_dict = self.annotate(input_data)
+                else:
+                    output_dict = self.annotate(input_data, secondary_data)
+                yield output_dict, lnum, line, input_data
+            except Exception as e:
+                self._log_runtime_exception(lnum, line, input_data, e)
+
     # Runs the annotator.
     def run(self):
         if self.update_status_json_flag and self.status_writer is not None:
@@ -273,16 +288,8 @@ class BaseAnnotator(object):
             self.last_status_update_time = time.time()
             self.output_columns = self.conf["output_columns"]
             self.make_json_colnames()
-            for lnum, line, input_data, secondary_data in self._get_input():
+            for output_dict, lnum, line, input_data in self.annotate_input(self._get_input()):
                 try:
-                    self.log_progress(lnum)
-                    # * allele and undefined non-canonical chroms are skipped.
-                    if self.is_star_allele(input_data) or self.should_skip_chrom(input_data):
-                        continue
-                    if secondary_data == {}:
-                        output_dict = self.annotate(input_data)
-                    else:
-                        output_dict = self.annotate(input_data, secondary_data)
                     # This enables summarizing without writing for now.
                     if output_dict is None:
                         continue
