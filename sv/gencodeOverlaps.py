@@ -5,6 +5,7 @@ import vcf
 import sqlite3
 import pandas as pd
 import pyranges as pr
+import datetime
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -21,8 +22,8 @@ group.add_argument('vcffile', type=str, help='VCF file')
 
 def create_tables(dbpath, dbname):
     '''Create sqlite db and tables'''
-    if not dbname.endswith('\.sql'):
-        dbname += '.sql'
+    if not dbname.endswith('\.db'):
+        dbname += '.db'
     dbpath = os.path.join(dbpath, dbname)
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
@@ -292,6 +293,7 @@ def vcfOverlap(bedfile, vcffile, dbpath='./', dbname='test'):
     '''Create pyranges objects from input bed (expects ucsc gencode format), then loop through vcf to find overlaps.
     Specify type of overlap (intron, coding/noncoding exon).
     Keep in mind that multiple genes may overlap the same nucleotide (TODO: order by priority)'''
+    print(f'Starting {datetime.datetime.now().strftime("%H:%M:%S")}', file=sys.stderr)
 
     if not bedfile.endswith('.bed'):
         print(f'ERROR, {bedfile} does not look like a bed file', file=sys.stderr)
@@ -329,8 +331,8 @@ def vcfOverlap(bedfile, vcffile, dbpath='./', dbname='test'):
         for gene in localBND.geneinfo:
             affectedgenes_entries.append((localBND.ID, gene.Name, gene.location, 0.5))
 
-        if not localBND.newExons.empty:
-            bedExonTree = pr.concat([bedExonTree, localBND.newExons])
+#        if not localBND.newExons.empty:
+#            bedExonTree = pr.concat([bedExonTree, localBND.newExons])
         if vcfrow['localOnly'] is not False:
             status = vcfrow['localOnly']
             status += makeStatus(localBND.geneinfo, location='local')
@@ -342,8 +344,8 @@ def vcfOverlap(bedfile, vcffile, dbpath='./', dbname='test'):
         if 'INFO.MATEID' in vcfrow:
             isPaired.append(vcfrow['INFO.MATEID'][0])
         remoteBND = breakPoint(vcfrow, bedTxTree, bedExonTree, alt=True)
-        if not remoteBND.newExons.empty:
-            bedExonTree = pr.concat([bedExonTree, remoteBND.newExons])
+#        if not remoteBND.newExons.empty:
+#            bedExonTree = pr.concat([bedExonTree, remoteBND.newExons])
 
         # if the remote location is not in the annotation genome we want to print that info
         # Note: Remove this once we get rid of status messages
@@ -363,9 +365,12 @@ def vcfOverlap(bedfile, vcffile, dbpath='./', dbname='test'):
     structuralvariants_insert = "INSERT OR REPLACE INTO structuralvariants (START_ID, END_ID) VALUES (?, ?);"
     breakpoints_insert = "INSERT OR REPLACE INTO breakpoints (STRUCTURAL_VARIANT_ID, CHROM, POS) values (?, ?, ?);"
     affectedgenes_insert = "INSERT OR REPLACE INTO affectedgenes (STRUCTURAL_VARIANT_ID, GENE_NAME, LOCATION, SCORE) values (?, ?, ?, ?);" 
+
+    print(f'inserting into db {datetime.datetime.now().strftime("%H:%M:%S")}', file=sys.stderr)
     insert_many(structuralvariants_insert, structuralvariants_entries, conn)
     insert_many(breakpoints_insert, breakpoints_entries, conn)
     insert_many(affectedgenes_insert, affectedgenes_entries, conn)
+    print(f'Done {datetime.datetime.now().strftime("%H:%M:%S")}', file=sys.stderr)
     conn.close()
 
 if __name__ == "__main__":
