@@ -413,15 +413,7 @@ async def get_jobid_dbpath (request):
     if dbpath == '':
         if 'job_id' != '':
             global wu
-            if given_username != '':
-                job_dir = await wu.filerouter.job_dir(request, job_id, given_username=given_username)
-            else:
-                job_dir = await wu.filerouter.job_dir(request, job_id)
-            status_json = wu.get_status_json_in_dir(job_dir)
-            if status_json is not None and 'db_path' in status_json:
-                dbpath = status_json['db_path']
-            else:
-                dbpath = None
+            dbpath = await wu.filerouter.job_db(request, job_id, given_username=given_username)
         else:
             return web.json_response({})
     return job_id, dbpath

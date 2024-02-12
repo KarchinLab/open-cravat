@@ -73,7 +73,7 @@ class FileRouter(object):
         return jobs_dirs
 
     async def job_dir(self, request, job_id, given_username=None):
-        jobs_dirs = await self.get_jobs_dirs(request)
+        jobs_dirs = await self.get_jobs_dirs(request, given_username=given_username)
         job_dir = None
         if jobs_dirs is not None:
             if self.servermode and self.server_ready:
@@ -113,8 +113,8 @@ class FileRouter(object):
             orig_input_path = None
         return orig_input_path
     
-    async def job_run_name(self, request, job_id):
-        job_dir, statusjson = await self.job_status(request, job_id)
+    async def job_run_name(self, request, job_id, given_username=None):
+        job_dir, statusjson = await self.job_status(request, job_id, given_username=given_username)
         run_name = statusjson.get('run_name')
         if run_name is None:
             fns = os.listdir(job_dir)
@@ -124,20 +124,20 @@ class FileRouter(object):
                     break
         return run_name
 
-    async def job_run_path(self, request, job_id):
-        job_dir, _ = await self.job_status(request, job_id)
+    async def job_run_path(self, request, job_id, given_username=None):
+        job_dir, _ = await self.job_status(request, job_id, given_username=given_username)
         if job_dir is None:
             run_path = None
         else:
-            run_name = await self.job_run_name(request, job_id)
+            run_name = await self.job_run_name(request, job_id, given_username=given_username)
             if run_name is not None:
                 run_path = os.path.join(job_dir, run_name)
             else:
                 run_path = None
         return run_path
 
-    async def job_db(self, request, job_id):
-        run_path = await self.job_run_path(request, job_id)
+    async def job_db(self, request, job_id, given_username=None):
+        run_path = await self.job_run_path(request, job_id, given_username=given_username)
         output_fname = run_path + self.db_extension
         return output_fname
 
@@ -168,9 +168,9 @@ class FileRouter(object):
                     report_path.append(output_filename)
         return report_path
 
-    async def job_status (self, request, job_id):
+    async def job_status (self, request, job_id, given_username=None):
         try:
-            job_dir = await self.job_dir(request, job_id)
+            job_dir = await self.job_dir(request, job_id, given_username=given_username)
             fns = os.listdir(job_dir)
             statusjson = {}
             for fn in fns:
