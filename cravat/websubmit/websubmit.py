@@ -29,6 +29,10 @@ import gzip
 from cravat.cravat_util import max_version_supported_for_migration, status_from_db
 import cravat.util
 import logging
+try:
+    import cravat_multiuser
+except ImportError:
+    pass
 
 cfl = ConfigLoader()
 report_generation_ps = {}

@@ -1713,8 +1713,8 @@ function setupNoServerMode () {
 
 function setupServerMode () {
     $('head').append('<link rel="stylesheet" type="text/css" href="/server/nocache/cravat_multiuser.css">');
-    $.getScript('/server/nocache/cravat_multiuser.js', function () {
-        checkLogged(OC.username)
+    import('/server/nocache/cravat_multiuser_module.js').then((multiuser) => {
+        multiuser.checkLogged(OC.username);
     });
     document.getElementById('settingsdiv').style.display = 'none';
     document.querySelector('.threedotsdiv').style.display = 'none';

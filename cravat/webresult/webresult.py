@@ -9,6 +9,10 @@ from cravat import CravatFilter
 from cravat.constants import base_smartfilters
 from aiohttp import web
 import time
+try:
+    import cravat_multiuser
+except ImportError:
+    pass
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -402,6 +406,8 @@ async def get_jobid_dbpath (request):
         given_username = queries['username']
     else:
         given_username = ''
+    if not(given_username) and servermode and server_ready:
+        given_username = await cravat_multiuser.get_username(request)
     if 'job_id' in queries:
         job_id = queries['job_id']
     else:
