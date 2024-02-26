@@ -939,8 +939,7 @@ function deleteJob (jobId) {
 function inputExampleChangeHandler (event) {
     var elem = $(event.target);
     var format = elem.val();
-    var assembly = $('#assembly-select').val();
-    assembly = assembly === null ? 'hg38' : assembly;
+    var assembly = 'hg38';
     var formatAssembly = format + '.' + assembly;
     var getExampleText = new Promise((resolve, reject) => {
         var cachedText = OC.GLOBALS.inputExamples[formatAssembly];
@@ -965,6 +964,7 @@ function inputExampleChangeHandler (event) {
         var inputArea = $('#input-text');
         inputArea.val(text);
         inputArea.change();
+        $('#assembly-select').val(assembly);
     })
 }
 
