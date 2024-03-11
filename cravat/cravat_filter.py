@@ -675,7 +675,7 @@ class CravatFilter:
     async def get_filtered_iterator(self, level="variant", conn=None, cursor=None):
         sql = await self.build_base_sql(cursor, level)
 
-        if self.filter and 'samplefilter' in self.filter:
+        if level == 'variant' and self.filter and 'samplefilter' in self.filter and len(self.filter['samplefilter']['rules']) > 0:
             sample_filter = self.filter['samplefilter']
             variant_columns = await self.level_column_definitions(cursor, 'variant')
 
