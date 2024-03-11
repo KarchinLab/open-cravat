@@ -15,144 +15,152 @@ import cravat
 import vcf
 import json
 from Bio import bgzf
+from cravat.inout import AllMappingsParser
 
 # from vcf_line_processor import VCFLineProcessor
 
 class VCFLineProcessor(object):
 
-	perc_encode = [
-		[r'%', r'%25'],
-		[r':', r'%3A'],
-		[r';', r'%3B'],
-		[r'=', r'%3D'],
-		[r',', r'%2C'],
-		[r'\n', r'%0A'],
-		[r'\t', r'%09'],
-		[r'\r', r'%0D'],
-	]
+    perc_encode = [
+        [r'%', r'%25'],
+        [r':', r'%3A'],
+        [r';', r'%3B'],
+        [r'=', r'%3D'],
+        [r',', r'%2C'],
+        [r'\n', r'%0A'],
+        [r'\t', r'%09'],
+        [r'\r', r'%0D'],
+    ]
 
-	skip_cnames = set(['uid','note','note_variant','note_gene','chrom','pos','ref_base','alt_base'])
+    valid_alt_bases = set('ATGC')
 
-	type_oc2vcf = {
-		'string':'String',
-		'int':'Integer',
-		'float':'Float',
-	}
+    skip_cnames = set(['uid','note','note_variant','note_gene','chrom','pos','ref_base','alt_base'])
 
-	def __init__(self, annotator_names = []):
-		self._buffer = StringIO()
-		self._reader = None
-		self.reader_ready = False
-		self._mapper = cravat.get_live_mapper('hg38')
-		self._annotators = OrderedDict()
-		for aname in annotator_names:
-			self._annotators[aname] = cravat.get_live_annotator(aname)
+    type_oc2vcf = {
+        'string':'String',
+        'int':'Integer',
+        'float':'Float',
+    }
+    
 
-		self.oc_headers = []
-		for column in cravat.constants.crx_def:
-			if column['name'] in self.skip_cnames:
-				continue
-			self.oc_headers.append(self.get_info_line(None, column))
-		for aname, annotator in self._annotators.items():
-			for column in annotator.conf['output_columns']:
-				self.oc_headers.append(self.get_info_line(aname, column))
-		
-	def initialize_reader(self, header_lines):
-		for l in header_lines:
-			if l.startswith('##'):
-				self._buffer.write(l)
-			elif l.startswith('#CHROM'):
-				toks = l.strip().split('\t')
-				nsl = '\t'.join(toks[:8])
-				self._buffer.write(nsl+'\n')
-				self._buffer.seek(0)
-				self._reader = vcf.Reader(self._buffer)
-				self._buffer.seek(0)
-				self._buffer.truncate()
-		self.reader_ready = True
-	
-	def annotate_line(self, input_line):
-		toks = input_line.strip().split('\t')
-		nsl = '\t'.join(toks[:8])
-		info = toks[7]
-		self._buffer.seek(0)
-		self._buffer.truncate()
-		self._buffer.write(nsl+'\n')
-		self._buffer.seek(0)
-		variant = next(self._reader)
-		annots = self.get_oc_info_annotations(variant)
-		info = ';'.join([info]+annots)
-		wtoks = toks[:7]+[info]+toks[8:]
-		return '\t'.join(wtoks)+'\n'
+    def __init__(self, annotator_names = []):
+        self._buffer = StringIO()
+        self._reader = None
+        self.reader_ready = False
+        self._mapper = cravat.get_live_mapper('hg38')
+        self._annotators = OrderedDict()
+        for aname in annotator_names:
+            self._annotators[aname] = cravat.get_live_annotator(aname)
 
-	def get_oc_infoname(self, modname, colname):
-		toks = ['OC']
-		if modname is not None:
-			toks.append(modname)
-		toks.append(colname)
-		return '_'.join(toks).upper()
+        self.oc_headers = []
+        for column in cravat.constants.crx_def:
+            if column['name'] in self.skip_cnames:
+                continue
+            self.oc_headers.append(self.get_info_line(None, column))
+        for aname, annotator in self._annotators.items():
+            for column in annotator.conf['output_columns']:
+                self.oc_headers.append(self.get_info_line(aname, column))
+        
+    def initialize_reader(self, header_lines):
+        for l in header_lines:
+            if l.startswith('##'):
+                self._buffer.write(l)
+            elif l.startswith('#CHROM'):
+                toks = l.strip().split('\t')
+                nsl = '\t'.join(toks[:8])
+                self._buffer.write(nsl+'\n')
+                self._buffer.seek(0)
+                self._reader = vcf.Reader(self._buffer)
+                self._buffer.seek(0)
+                self._buffer.truncate()
+        self.reader_ready = True
+    
+    def annotate_line(self, input_line):
+        toks = input_line.strip().split('\t')
+        nsl = '\t'.join(toks[:8])
+        info = toks[7]
+        self._buffer.seek(0)
+        self._buffer.truncate()
+        self._buffer.write(nsl+'\n')
+        self._buffer.seek(0)
+        variant = next(self._reader)
+        annots = self.get_oc_info_annotations(variant)
+        info = ';'.join([info]+annots)
+        wtoks = toks[:7]+[info]+toks[8:]
+        return '\t'.join(wtoks)+'\n'
 
-	def get_info_line(self, modname, oc_coldef):
-		info_name = self.get_oc_infoname(modname, oc_coldef['name'])
-		info_type = self.type_oc2vcf[oc_coldef['type']]
-		info_desc = oc_coldef.get('desc','')
-		info_line = '##INFO=<ID={},Number=A,Type={},Description="{}">'.format(
-			info_name,
-			info_type,
-			info_desc
-		)
-		return info_line
-	
-	def vcf_encode(self, orig):
-		new = orig
-		if type(new) == str:
-			for k,v in self.perc_encode:
-				new = new.replace(k,v)
-		return new
-	
-	def make_info_entry(self, mname, cname, value):
-		info_cname = self.get_oc_infoname(mname, cname)
-		info_value = self.vcf_encode(value)
-		info_text = f'{info_cname}={info_value}'
-		return info_text
-	
-	def get_oc_info_annotations(self, variant):
-		info_toks = []
-		if not variant.CHROM.startswith('chr'):
-			chrom = 'chr'+str(variant.CHROM)
-		else:
-			chrom = variant.CHROM
-		pos = variant.POS
-		ref = variant.REF
-		try:
-			alt = variant.ALT[0].sequence
-		except:
-			return info_toks
-		crv = {'chrom':chrom,'pos':pos,'ref_base':ref,'alt_base':alt}
-		mapping = self._mapper.map(crv)
-		for cname, value in mapping.items():
-			if cname in self.skip_cnames:
-				continue
-			if value == '':
-				continue
-			if cname == 'all_mappings':
-				if value=='{}':
-					continue
-				else:
-					value = json.dumps(json.loads(value), separators=(',', ':'))
-			info_entry = self.make_info_entry(None, cname, value)
-			info_toks.append(info_entry)
-		annotations = {aname: annotator.annotate(crv) for aname, annotator in self._annotators.items()}
-		for aname in self._annotators:
-			annot_out = annotations[aname]
-			if type(annot_out) != dict:
-				continue
-			for cname, value in annot_out.items():
-				if value is None:
-					continue
-				info_entry = self.make_info_entry(aname, cname, value)
-				info_toks.append(info_entry)
-		return info_toks
+    def get_oc_infoname(self, modname, colname):
+        toks = ['OC']
+        if modname is not None:
+            toks.append(modname)
+        toks.append(colname)
+        return '_'.join(toks).upper()
+
+    def get_info_line(self, modname, oc_coldef):
+        info_name = self.get_oc_infoname(modname, oc_coldef['name'])
+        info_type = self.type_oc2vcf[oc_coldef['type']]
+        info_desc = oc_coldef.get('desc','')
+        info_line = '##INFO=<ID={},Number=A,Type={},Description="{}">'.format(
+            info_name,
+            info_type,
+            info_desc
+        )
+        return info_line
+    
+    def vcf_encode(self, orig):
+        new = orig
+        if type(new) == str:
+            for k,v in self.perc_encode:
+                new = new.replace(k,v)
+        return new
+    
+    def make_info_entry(self, mname, cname, value):
+        info_cname = self.get_oc_infoname(mname, cname)
+        info_value = self.vcf_encode(value)
+        info_text = f'{info_cname}={info_value}'
+        return info_text
+    
+    def get_oc_info_annotations(self, variant):
+        info_toks = []
+        if not variant.CHROM.startswith('chr'):
+            chrom = 'chr'+str(variant.CHROM)
+        else:
+            chrom = variant.CHROM
+        pos = variant.POS
+        ref = variant.REF
+        try:
+            alt = variant.ALT[0].sequence
+        except:
+            return info_toks
+        if not(set(alt.upper()) <= self.valid_alt_bases):
+            return info_toks
+        crv = {'chrom':chrom,'pos':pos,'ref_base':ref,'alt_base':alt}
+        mapping = self._mapper.map(crv)
+        for cname, value in mapping.items():
+            if cname in self.skip_cnames:
+                continue
+            if value == '':
+                continue
+            if cname == 'all_mappings':
+                if value=='{}':
+                    continue
+                else:
+                    value = json.dumps(json.loads(value), separators=(',', ':'))
+            info_entry = self.make_info_entry(None, cname, value)
+            info_toks.append(info_entry)
+        crx = mapping
+        crx['mapping_parser'] = AllMappingsParser(crx['all_mappings'])
+        annotations = {aname: annotator.annotate(crx) for aname, annotator in self._annotators.items()}
+        for aname in self._annotators:
+            annot_out = annotations[aname]
+            if type(annot_out) != dict:
+                continue
+            for cname, value in annot_out.items():
+                if value is None:
+                    continue
+                info_entry = self.make_info_entry(aname, cname, value)
+                info_toks.append(info_entry)
+        return info_toks
 
 class VCFAnnotator(object):
     """Annotate a VCF using the VCFLineProcessor to output.
@@ -233,7 +241,10 @@ class VCFAnnotator(object):
                         annotated = self.line_processor.annotate_line(line)
                         out.write(annotated)
                     except Exception as e:
+                        out.write(line)
                         self.logger.error(f'Exception occurred annotating line. \n  {line}\n  {e.args}')
+                        import traceback
+                        traceback.print_exc(e)
         except IOError:
             return False
 
@@ -358,28 +369,28 @@ def vcfanno(args):
         input_path=str(input_path),
         output_path=str(output_path),
         temp_dir='temp',
-        processors=16,
+        processors=4,
         chunk_size=10**4,
         chunk_log_frequency=50,
         annotators=args.annotators)
     anno.process()
 
-if __name__ == '__main__':
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[handler]
-    )
-    anno = VCFAnnotator(
-        input_path='/home/ska/data/gnomad.1.vcf.bgz',
-        output_path='gnomad.1.out.vcf.gz',
-        temp_dir='temp',
-        processors=16,
-        chunk_size=10**4,
-        chunk_log_frequency=50,
-        annotators=['clinvar','dbsnp_common'])
-    anno.process()
+# if __name__ == '__main__':
+#     handler = logging.StreamHandler(sys.stdout)
+#     handler.setLevel(logging.DEBUG)
+#     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#     handler.setFormatter(formatter)
+#     logging.basicConfig(
+#         level=logging.DEBUG,
+#         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#         handlers=[handler]
+#     )
+#     anno = VCFAnnotator(
+#         input_path='/home/ska/data/gnomad.1.vcf.bgz',
+#         output_path='gnomad.1.out.vcf.gz',
+#         temp_dir='temp',
+#         processors=16,
+#         chunk_size=10**4,
+#         chunk_log_frequency=50,
+#         annotators=['clinvar','dbsnp_common'])
+#     anno.process()
