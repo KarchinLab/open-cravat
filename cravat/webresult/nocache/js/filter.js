@@ -98,7 +98,7 @@ const makeDragHandle = function () {
     return moveDiv
 }
 
-const makeFilterColDiv = (filter) => {
+const makeFilterColDiv = (filter, sampfilt) => {
     const colDiv = $(getEl('div'))
         .addClass('filter-column-div')
         .addClass('filter-element-div');
@@ -111,10 +111,17 @@ const makeFilterColDiv = (filter) => {
     colDiv.append(groupSel);
     for (let i=0; i<filterCols.length; i++) {
         var colGroup = filterCols[i];
-        let groupOpt = $(getEl('option'))
-            .val(colGroup.title)
-            .append(colGroup.title);
-        groupSel.append(groupOpt);
+        if (sampfilt === true && colGroup.name === 'vcfinfo') {
+            let groupOpt = $(getEl('option'))
+                .val(colGroup.title)
+                .append(colGroup.title);
+            groupSel.append(groupOpt);
+        } else if (sampfilt !== true && colGroup.name !== 'vcfinfo') {
+            let groupOpt = $(getEl('option'))
+                .val(colGroup.title)
+                .append(colGroup.title);
+            groupSel.append(groupOpt);
+        }
     };
     // Column select
     const colSel = $(getEl('select'))
@@ -419,7 +426,7 @@ function makeFilterRootGroupDiv (filter, name, filterLevel) {
     return filterRootGroupDiv;
 }
 
-const makeFilterGroupDiv = (filter) => {
+const makeFilterGroupDiv = (filter, sampfilt) => {
     // Group div
     const groupDiv = $(getEl('div'))
         .addClass('filter-group-div')
@@ -459,7 +466,7 @@ const makeFilterGroupDiv = (filter) => {
         .addClass('addrule')
         .addClass('hovercontrol')
         .click(function (evt) {
-            addFilterRuleHandler(evt);
+            addFilterRuleHandler(evt, sampfilt);
         })
         .attr('title','Add rule');
     groupDiv.append(addRuleBtn);
@@ -470,7 +477,7 @@ const makeFilterGroupDiv = (filter) => {
         .addClass('addgroup')
         .addClass('hovercontrol')
         .click(function (evt) {
-            addFilterGroupHandler(evt);
+            addFilterGroupHandler(evt), sampfilt;
         })
         .attr('title','Add group');
     groupDiv.append(addGroupBtn);
@@ -487,9 +494,9 @@ const makeFilterGroupDiv = (filter) => {
             for (let i=0; i<filter.rules.length; i++) {
                 let rule = filter.rules[i];
                 if (rule.hasOwnProperty('operator')) {
-                    addFilterElement($(elemsDiv),'group', rule, undefined);
+                    addFilterElement($(elemsDiv),'group', rule, undefined, sampfilt);
                 } else {
-                    addFilterElement($(elemsDiv),'rule', rule, undefined);
+                    addFilterElement($(elemsDiv),'rule', rule, undefined, sampfilt);
                 }
             }
             // Check negate
@@ -498,7 +505,7 @@ const makeFilterGroupDiv = (filter) => {
             }
         }
     } else {
-        addFilterElement($(elemsDiv),'rule', undefined);
+        addFilterElement($(elemsDiv),'rule', undefined, sampfilt);
     }
     return groupDiv;
 }
@@ -525,16 +532,16 @@ const removeFilterElem = (elemDiv) => {
     elemDiv.remove();
 }
 
-const addFilterRuleHandler = (event) => {
+const addFilterRuleHandler = (event, sampfilt) => {
     const button = event.target
     const elemsDiv = $(button.closest('.filter-group-div').querySelector('div.filter-group-elements-div'))
-    addFilterElement(elemsDiv, 'rule', undefined);
+    addFilterElement(elemsDiv, 'rule', undefined, sampfilt);
 }
 
-const addFilterGroupHandler = (event) => {
+const addFilterGroupHandler = (event, sampfilt) => {
     const button = event.target
     const elemsDiv = $(button.closest('.filter-group-div').querySelector('div.filter-group-elements-div'))
-    addFilterElement(elemsDiv, 'group', undefined);
+    addFilterElement(elemsDiv, 'group', undefined, sampfilt);
 }
 
 const makeJoinOperatorDiv = function (operator) {
@@ -580,12 +587,12 @@ const makeJoinOperatorDiv = function (operator) {
     return joinOpDiv
 }
 
-const addFilterElement = (allElemsDiv, elementType, filter) => {
+const addFilterElement = (allElemsDiv, elementType, filter, sampfilt) => {
     let elemDiv;
     if (elementType === 'group') {
-        elemDiv = makeFilterGroupDiv(filter);
+        elemDiv = makeFilterGroupDiv(filter, sampfilt);
     } else if (elementType === 'rule') {
-        elemDiv = makeFilterColDiv(filter);
+        elemDiv = makeFilterColDiv(filter, sampfilt);
     }
     elemDiv[0].id = 'filter-element-' + filterElemCount
     filterElemCount += 1

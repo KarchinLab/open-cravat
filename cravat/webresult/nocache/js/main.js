@@ -1094,20 +1094,21 @@ function afterGetResultLevels () {
         allVarCols = JSON.parse(JSON.stringify(jsonResponseData['columns']['variant']));
         filterCols = [];
         for (let colGroup of allVarCols) {
-            if (colGroup.name === 'vcfinfo') {
-                let filterableCols = [];
-                for (let col of colGroup.colModel) {
-                    if (col.filterable) {
-                        filterableCols.push(col);
-                    }
-                }
-                if (filterableCols.length > 0) {
-                    filterCols.push(colGroup);
-                    filterCols.slice(-1)[0].colModel = filterableCols;
-                }
-            } else {
-                filterCols.push(colGroup)
-            }
+            // if (colGroup.name === 'vcfinfo') {
+            //     let filterableCols = [];
+            //     for (let col of colGroup.colModel) {
+            //         if (col.filterable) {
+            //             filterableCols.push(col);
+            //         }
+            //     }
+            //     if (filterableCols.length > 0) {
+            //         filterCols.push(colGroup);
+            //         filterCols.slice(-1)[0].colModel = filterableCols;
+            //     }
+            // } else {
+            //     filterCols.push(colGroup)
+            // }
+            filterCols.push(colGroup);
             
         }
         usedAnnotators = {};

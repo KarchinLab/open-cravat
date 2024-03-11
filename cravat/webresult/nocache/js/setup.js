@@ -82,7 +82,7 @@ class FilterManager {
         this.sampleContId = 'filter-cont-sample';
         this.geneContId = 'filter-cont-gene';
         this.variantContId = 'filter-cont-variant'
-
+        this.sampFiltContId = 'filter-cont-sampfilt';
         this.sampleControlClass = 'sample-control'
         this.sampleFilterId = 'sample-select-filt';
         this.sampleFileId = 'sample-list-file';
@@ -100,7 +100,8 @@ class FilterManager {
 		this.vpropSelectId = 'vprop-sel';
 		this.vpropSfId = 'vprop-sf';
 		this.vpropQbId = 'vprop-qb';
-        this.qbRootId = 'qb-root';
+        this.qbVarRootId = 'qb-root';
+        this.qbSampRootId = 'qb-samp-root';
 		this.qbBannedColumns = [
 			//'base__numsample',
 			'base__samples',
@@ -527,6 +528,56 @@ class FilterManager {
         }
 	}
 
+    addSPropUI (sPropCont, filter) {
+        filter = new CravatFilter(filter);
+		sPropCont.attr('id', this.sampFiltContId);
+		// sPropCont.append($(getEl('div'))
+		// 	.text('Select variants by applying filters or building a query'))
+		// let fTypeDiv = $(getEl('div'));
+		// sPropCont.append(fTypeDiv);
+		// let vPropSel = $(getEl('select'))
+		// 	.attr('id', this.vpropSelectId)
+		// 	.append($(getEl('option')).val('sf').text('sf'))
+		// 	.append($(getEl('option')).val('qb').text('qb'))
+		// 	.css('display','none')
+		// 	.change(this.vPropSelectChange.bind(this));
+		// fTypeDiv.append(vPropSel);
+		// let sfHeader = $(getEl('span'))
+		// 	.addClass('vprop-option')
+		// 	.text('Smart Filters')
+		// 	.addClass('title')
+		// 	.click(this.vPropOptionClick)
+		// 	.attr('value','sf');
+		// fTypeDiv.append(sfHeader);
+		// let qbHeader = $(getEl('span'))
+		// 	.addClass('vprop-option')
+		// 	.text('Query Builder')
+		// 	.addClass('title')
+		// 	.click(this.vPropOptionClick)
+		// 	.attr('value','qb');
+		// fTypeDiv.append(qbHeader);
+		// let sfContent = $(getEl('div'))
+		// 	.attr('id', this.vpropSfId);
+		// sPropCont.append(sfContent);
+		// this.addSfUI(sfContent, filter);
+		// let qbContent = $(getEl('div'))
+		// 	.attr('id', this.vpropQbId);
+		// sPropCont.append(qbContent);
+		this.addQbUI(sPropCont, filter, 'sample');
+
+		// Activate the correct vProp type
+		// let sfValued = Object.keys(filter.smartfilter).length !== 0;
+		// let qbValued = filter.variant.rules!==undefined && filter.variant.rules.length>0;
+		// if (sfValued || !qbValued) {
+		// 	vPropSel.val('sf');
+		// 	sfHeader.addClass('active');
+		// } else {
+		// 	vPropSel.val('qb');
+		// 	qbHeader.addClass('active');
+		// }
+		// vPropSel.change();
+	}
+
 	addVpropUI (vPropCont, filter) {
         filter = new CravatFilter(filter);
 		vPropCont.attr('id', this.variantContId);
@@ -607,15 +658,23 @@ class FilterManager {
 		}
 	}
 
-	addQbUI (outerDiv, filter) {
+	addQbUI (outerDiv, filter, QbType) {
 		filter = new CravatFilter(filter);
-		outerDiv.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
-		let qbDiv = makeFilterGroupDiv(filter.variant);
+        if (QbType === 'sample') {
+        } else {
+            outerDiv.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
+        }
+        if (QbType === 'sample') {
+            var qbDiv = makeFilterGroupDiv(filter.samplefilter, true);
+        } else {
+            var qbDiv = makeFilterGroupDiv(filter.variant);
+        }
 		qbDiv.children('.filter-element-control-div').remove()
         qbDiv[0].querySelector('.addrule').style.visibility = 'visible'
         qbDiv[0].querySelector('.addgroup').style.visibility = 'visible'
         qbDiv[0].querySelector('.passthrough').remove()
-		qbDiv.attr('id', this.qbRootId);
+        let divId = QbType==='sample' ? this.qbSampRootId : this.qbVarRootId
+		qbDiv.attr('id', divId);
 		outerDiv.append(qbDiv);
         //addFilterElement(qbDiv, 'rule', undefined)
 	}
@@ -671,6 +730,7 @@ class CravatFilter {
 		this.smartfilter = f.smartfilter!==undefined ? f.smartfilter : {};
 		this.genes = f.genes!==undefined ? f.genes : [];
 		this.sample = f.sample!==undefined ? f.sample : {require:[],reject:[]};
+        this.samplefilter = f.samplefilter!==undefined ? f.samplefilter : {operator:'and',rules:[]}
 	}
 }
 
@@ -948,7 +1008,13 @@ function makeFilterTab (rightDiv) {
 	let geneContent = geneSection.find('.filter-content');
 	filterMgr.addGeneSelect(geneContent);
 
-	// Smartfilters
+    // Sample properties
+    let sPropSection = filterMgr.getFilterSection('Sample Properties',false);
+    rightPanel.append(sPropSection);
+    let sPropContent = sPropSection.find('.filter-content');
+    filterMgr.addSPropUI(sPropContent);
+	
+    // Smartfilters
 	let vPropSection = filterMgr.getFilterSection('Variant Properties', true);
 	rightPanel.append(vPropSection);
 	let vPropContent = vPropSection.find('.filter-content');
@@ -1111,7 +1177,7 @@ function makeFilterJson () {
         .map(s=>s.toUpperCase())
         .filter(s=>s);
 	fjs.genes = geneList;
-	// Variant Properties
+	// Variant properties
 	let activeVprop = $('#'+filterMgr.vpropSelectId).val();
 	if (activeVprop === 'sf') {
 		let sfWrapDiv = $('#'+filterMgr.vpropSfId);
@@ -1138,10 +1204,19 @@ function makeFilterJson () {
 		fjs.variant = fullSf;
 		fjs.smartfilter = sfState;
 	} else if (activeVprop === 'qb') {
-		let qbRoot = $('#'+filterMgr.qbRootId);
+		let qbRoot = $('#'+filterMgr.qbVarRootId);
 		fjs.variant = makeGroupFilter(qbRoot);
 		fjs.smartfilter = {};
 	}
+    // Sample filter
+    let spropRoot = $('#'+filterMgr.qbSampRootId);
+    fjs.samplefilter = makeGroupFilter(spropRoot);
+    for (let rule of fjs.samplefilter.rules) {
+        console.log(rule);
+        rule.column = rule.column.replace('vcfinfo__','base__')
+    }
+
+    // Set global
 	filterJson = fjs;
 }
 
