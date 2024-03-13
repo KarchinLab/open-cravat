@@ -450,7 +450,7 @@ class MasterCravatConverter(object):
                                         chrom = "chrM"
                                 wdict["chrom"] = self.chromdict.get(chrom, chrom)
                                 if multiple_files:
-                                    if wdict["sample_id"]:
+                                    if "sample_id" in wdict:
                                         wdict["sample_id"] = "__".join(
                                             [samp_prefix, wdict["sample_id"]]
                                         )
