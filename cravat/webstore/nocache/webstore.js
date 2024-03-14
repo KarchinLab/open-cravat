@@ -2342,9 +2342,7 @@ function onClickStoreUpdateAllButton() {
 }
 
 function announceStoreUpdatingAll() {
-    var span = document.getElementById('store-update-all-span');
     var button = document.getElementById('store-update-all-button');
-    span.textContent = 'Updating all available modules...';
     button.style.display = 'none';
 }
 
