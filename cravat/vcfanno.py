@@ -33,7 +33,24 @@ class VCFLineProcessor(object):
         [r' ', r'%20']
     ]
 
-    valid_alt_bases = set('ATGC')
+    so_full = {
+                "PTR": "processed_transcript", "TU1": "transcribed_unprocessed_pseudogene", "UNP": "unprocessed_pseudogene",
+                "MIR": "miRNA", "LNC": "lnc_RNA", "PPS": "processed_pseudogene", "SNR": "snRNA", "TPR": "transcribed_processed_pseudogene",
+                "RTI": "retained_intron", "NMD": "NMD_transcript_variant", "MCR": "misc_RNA", "UNT": "unconfirmed_transcript",
+                "PSE": "pseudogene", "TU2": "transcribed_unitary_pseudogene", "NSD": "NSD_transcript", "SNO": "snoRNA", "SCA": "scaRNA",
+                "PRR": "pseudogene_rRNA", "UPG": "unitary_pseudogene", "PPG": "polymorphic_pseudogene", "RRN": "rRNA", "IVP": "IG_V_pseudogene",
+                "RIB": "ribozyme", "SRN": "sRNA", "TVG": "TR_V_gene", "TVP": "TR_V_pseudogene", "TDG": "TR_D_gene", "TJG": "TR_J_gene",
+                "TCG": "TR_C_gene", "TJP": "TR_J_pseudogene", "ICG": "IG_C_gene", "ICP": "IG_C_pseudogene", "IJG": "IG_J_gene",
+                "IJP": "IG_J_pseudogene", "IDG": "IG_D_gene", "IVG": "IG_V_gene", "IGP": "IG_pseudogene", "TPP": "translated_processed_pseudogene",
+                "SCR": "scRNA", "VLR": "vault_RNA", "TUP": "translated_unprocessed_pseudogene", "MTR": "Mt_tRNA", "MRR": "Mt_rRNA",
+                "2KD": "2kb_downstream_variant", "2KU": "2kb_upstream_variant", "UT3": "3_prime_UTR_variant", "UT5": "5_prime_UTR_variant",
+                "INT": "intron_variant", "UNK": "unknown", "SYN": "synonymous_variant", "MRT": "start_retained_variant", "STR": "stop_retained_variant",
+                "MIS": "missense_variant", "CSS": "complex_substitution", "STL": "stop_lost", "SPL": "splice_site_variant", "STG": "stop_gained",
+                "FSD": "frameshift_truncation", "FSI": "frameshift_elongation", "INI": "inframe_insertion", "IND": "inframe_deletion",
+                "MLO": "start_lost", "EXL": "exon_loss_variant", "TAB": "transcript_ablation"
+                }
+
+    valid_bases = set('ATGC')
 
     skip_cnames = set(['uid','note','note_variant','note_gene','chrom','pos','ref_base','alt_base'])
 
@@ -132,26 +149,37 @@ class VCFLineProcessor(object):
             chrom = variant.CHROM
         pos = variant.POS
         ref = variant.REF
+        alt = None
         try:
             alt = variant.ALT[0].sequence
         except:
-            info_toks.append(f'OC_ERROR=Cannot annotate ALT "{variant.ALT[0]}"')
+            info_toks.append(f'OC_ERROR=Cannot_annotate_ALT_"{variant.ALT[0]}"')
             return info_toks, False
-        if not(set(alt.upper()) <= self.valid_alt_bases):
-            info_toks.append(f'OC_ERROR=Cannot annotate ALT "{alt}"')
+        if not(set(alt.upper()).issubset(self.valid_bases)):
+            info_toks.append(f'OC_ERROR=Cannot_annotate_ALT_"{alt}"')
+            return info_toks, False
+        if not(set(ref.upper()).issubset(self.valid_bases)):
+            info_toks.append(f'OC_ERROR=Cannot_annotate_REF_"{ref}"')
             return info_toks, False
         crv = {'chrom':chrom,'pos':pos,'ref_base':ref,'alt_base':alt}
         mapping = self._mapper.map(crv)
+        mapping['so'] = self.so_full.get(mapping['so'], mapping['so'])
         for cname, value in mapping.items():
             if cname in self.skip_cnames:
                 continue
             if value == '':
                 continue
+            elif value is None:
+                continue
             if cname == 'all_mappings':
                 if value=='{}':
                     continue
                 else:
-                    value = json.dumps(json.loads(value), separators=(',', ':'))
+                    value = json.loads(value)
+                    for gene in value:
+                        for hit in value[gene]:
+                            hit[2] = self.so_full.get(hit[2], hit[2])
+                    value = json.dumps(value, separators=(',', ':'))
             info_entry = self.make_info_entry(None, cname, value)
             info_toks.append(info_entry)
         crx = mapping
@@ -369,7 +397,7 @@ class VCFAnnotator(object):
 
 def vcfanno(args):
     input_path = pathlib.Path(args.input_path)
-    output_path = pathlib.Path(str(input_path)+'.oc.vcf.bgz')
+    output_path = pathlib.Path(str(input_path)+'.oc.vcf.gz')
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
