@@ -61,7 +61,7 @@ class VCFLineProcessor(object):
     }
     
     oc_base_headers = [
-        '##INFO=<ID=OC_ERROR,Number=1,Type=String,Description="Error message for failed OpenCRAVAT annotation"'
+        '##INFO=<ID=OC_ERROR,Number=1,Type=String,Description="Error message for failed OpenCRAVAT annotation">'
     ]
 
     def __init__(self, annotator_names = []):
