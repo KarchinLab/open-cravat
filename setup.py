@@ -94,6 +94,8 @@ setup(
         'psutil',
         'mpmath',
         'PyVCF3',
+        'flask',
+        'waitress'
         ],
     python_requires='>=3.8',
 )
