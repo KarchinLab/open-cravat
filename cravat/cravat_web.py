@@ -58,6 +58,15 @@ parser.add_argument(
     default=False,
     help="Runs in multiuser mode",
 )
+
+parser.add_argument(
+    "--aiohttp",
+    dest="aiohttp",
+    action="store_true",
+    default=False,
+    help="Starts aiohttp server instead of Flask"
+)
+
 parser.add_argument(
     "--headless",
     action="store_true",
@@ -178,6 +187,19 @@ def wcravat_entrypoint():
 
 
 def run(args):
+    if args.aiohttp:
+        run_aiohttp(args)
+    else:
+        run_flask(args)
+
+
+def run_flask(args):
+    from . import gui
+    server_config = get_server()
+    gui.start_server(server_config['host'], server_config['port'])
+
+
+def run_aiohttp(args):
     log_handler = logging.handlers.TimedRotatingFileHandler(
         log_path, when="d", backupCount=30
     )
@@ -262,7 +284,6 @@ parser.set_defaults(func=run)
 
 
 def get_server():
-    global args
     try:
         server = {}
         pl = platform.platform()

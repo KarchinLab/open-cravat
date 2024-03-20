@@ -94,7 +94,9 @@ setup(
         'psutil',
         'mpmath',
         'PyVCF3',
-        'pandas',
+		'pandas',
+        'flask',
+        'waitress'
         ],
-    python_requires='>=3.9',
+    python_requires='>=3.8',
 )
