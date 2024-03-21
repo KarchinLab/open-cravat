@@ -560,15 +560,13 @@ input:checked + .slider:before {
 .inactive-download-button {
   background-color: white;
   color: #c5af8d;
-  background-color: white;
   border: 1px solid #c5af8d;
   position: relative;
 }
 
 .inactive-download-button:hover {
-    background-color: #6e593a;
-    border: 1px solid #6e593a;
-    color: white;
+    background-color: white;
+    cursor: default;
 }
 
 .checkbox-container {

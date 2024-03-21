@@ -571,15 +571,20 @@ function populateJobTr (job) {
     addEl(jobTr, dbTd);
     // Err
     var errLink = getEl('a');
-    errLink.setAttribute('href','/submit/jobs/' + job.id + '/err');
-    errLink.setAttribute('target', '_blank');
-    errLink.setAttribute('title', 'Check for per-variant errors.');
-    var errButton = getEl('button');
-    errButton.classList.add('butn');
-    errButton.classList.add('active-download-button');
-    addEl(errButton, getTn('Errors'));
-    addEl(errLink, errButton);
     addEl(dbTd, errLink);
+    var errButton = getEl('button');
+    addEl(errLink, errButton);
+    errButton.classList.add('butn');
+    if (job.num_error_input > 0) {
+        errButton.classList.add('active-download-button');
+        errLink.setAttribute('href','/submit/jobs/' + job.id + '/err');
+        errLink.setAttribute('target', '_blank');
+        errLink.setAttribute('title', 'View per-variant errors.');
+    } else {
+        errButton.classList.add('inactive-download-button');
+        errLink.setAttribute('title', 'No errors.');
+    }
+    addEl(errButton, getTn('Errors'));
     addEl(jobTr, dbTd);
     // + button
     var btn = getEl('button');
