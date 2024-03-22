@@ -54,11 +54,14 @@ class FileRouter(object):
         self.job_statuses = {}
 
     async def get_jobs_dirs (self, request, given_username=None):
-        root_jobs_dir = au.get_jobs_dir()
         if self.servermode and self.server_ready:
             username = await cravat_multiuser.get_username(request)
         else:
             username = 'default'
+        return self.job_dirs_for_user(username)
+
+    def job_dirs_for_user(self, username):
+        root_jobs_dir = au.get_jobs_dir()
         if username == 'admin':
             jobs_dirs = []
             fns = os.listdir(root_jobs_dir)

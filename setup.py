@@ -95,7 +95,10 @@ setup(
         'mpmath',
         'PyVCF3',
         'flask',
-        'waitress'
+        'waitress',
+        'whitenoise',
+        'Flask-Session',
+        'cachelib',
         ],
     python_requires='>=3.8',
 )
