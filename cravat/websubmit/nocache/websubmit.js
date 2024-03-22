@@ -3,7 +3,7 @@ import {
     getTn, addEl, getEl, changePage, PubSub, OC, titleCase, emptyElement, checkVisible
 } from './core.js'
 import {
-    connectWebSocket, checkConnection, getBaseModuleNames, toggleChatBox
+    checkConnection, getBaseModuleNames, toggleChatBox
 } from '../../store/nocache/webstore.js';
 import {
     populateAnnotators, makeModuleDetailDialog
@@ -2127,7 +2127,7 @@ function websubmit_run () {
     var urlParams = new URLSearchParams(window.location.search);
     OC.username = urlParams.get('username');
     getServermode();
-    connectWebSocket();
+    // connectWebSocket();
     checkConnection();
     populatePackageVersions();
     getBaseModuleNames();

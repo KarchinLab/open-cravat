@@ -328,7 +328,7 @@ async def unqueue_install (request):
     install_state['message'] = msg_bak
     return web.json_response('done')
 
-async def get_tag_desc (request):
+def get_tag_desc (request):
     return constants.module_tag_desc
 
 async def update_remote (request):

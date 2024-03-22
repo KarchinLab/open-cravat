@@ -194,9 +194,11 @@ def run(args):
 
 
 def run_flask(args):
-    from . import gui
+    from cravat import gui
     server_config = get_server()
-    gui.start_server(server_config['host'], server_config['port'])
+    gui.start_server(server_config['host'],
+                     server_config['port'],
+                     args.servermode)
 
 
 def run_aiohttp(args):
