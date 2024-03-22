@@ -1506,26 +1506,23 @@ function checkConnection(failures) {
     if (failures >= 3) {
         setServerStatus(false);
     }
-    var protocol = window.location.protocol;
-    var ws = null;
-    if (protocol == 'http:') {
-        ws = new WebSocket('ws://' + host + '/heartbeat');
-    } else if (protocol == 'https:') {
-        ws = new WebSocket('wss://' + host + '/heartbeat');
-    }
-    ws.onopen = function(evt) {
-        setServerStatus(true);
-        failures = 0;
-    }
-    ws.onclose = function(evt) {
+
+    // TODO: consider replacing this poll with a webworker.
+    // websockets are not easily done with the backend
+    $.get('/heartbeat',
+        () => {
+            setServerStatus(true);
+            setTimeout(function() {
+                checkConnection(0);
+            }, 60*1000)
+        }
+    ).fail(() => {
         failures += 1;
         var waitTime = 2000 * failures;
         setTimeout(function() {
             checkConnection(failures);
         }, waitTime)
-    }
-    ws.onerror = function(evt) {}
-    ws.onmessage = function(evt) {}
+    });
 }
 
 function connectWebSocket() {
@@ -1540,7 +1537,7 @@ function connectWebSocket() {
     ws.onopen = function(evt) {}
     ws.onclose = function(evt) {
         console.log('Re-establishing websocket');
-        connectWebSocket();
+        // connectWebSocket();
     }
     ws.onmessage = function(evt) {
         var data = JSON.parse(evt.data);
@@ -1865,7 +1862,7 @@ function webstore_run() {
             }
         }
     });
-    connectWebSocket();
+    // connectWebSocket();
     getBaseModuleNames();
     getRemote();
 }
@@ -1907,7 +1904,7 @@ $(document).ready(() => {
 
 export {
     addWebstoreEventHandlers,
-    connectWebSocket,
+    // connectWebSocket,
     checkConnection,
     getBaseModuleNames,
     toggleChatBox
