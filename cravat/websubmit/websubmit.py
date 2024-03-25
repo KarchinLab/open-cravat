@@ -209,6 +209,16 @@ class FileRouter(object):
         else:
             log_path = None
         return log_path
+    
+    async def job_err (self, request, job_id):
+        run_path = await self.job_run_path(request, job_id)
+        if run_path is not None:
+            err_path = run_path + '.err'
+            if os.path.exists(err_path) == False:
+                err_path = None
+        else:
+            err_path = None
+        return err_path
 
 class WebJob(object):
     def __init__(self, job_dir, job_status_fpath):
@@ -702,6 +712,19 @@ async def get_job_log (request):
     if log_path is not None:
         with open(log_path) as f:
             return web.Response(text=f.read())
+    else:
+        return web.Response(text='log file does not exist.')
+
+async def get_job_err (request):
+    global filerouter
+    job_id = request.match_info['job_id']
+    err_path = await filerouter.job_err(request, job_id)
+    if err_path is not None:
+        if os.stat(err_path).st_size == 0:
+            return web.Response(text='No errors')
+        else:
+            with open(err_path) as f:
+                return web.Response(text=f.read())
     else:
         return web.Response(text='log file does not exist.')
 
@@ -1278,6 +1301,7 @@ routes.append(['GET','/submit/jobs/{job_id}/reports', get_available_report_types
 routes.append(['POST','/submit/jobs/{job_id}/reports/{report_type}',generate_report])
 routes.append(['GET','/submit/jobs/{job_id}/reports/{report_type}',download_report])
 routes.append(['GET','/submit/jobs/{job_id}/log',get_job_log])
+routes.append(['GET','/submit/jobs/{job_id}/err',get_job_err])
 routes.append(['GET', '/submit/getjobsdir', get_jobs_dir])
 routes.append(['GET', '/submit/setjobsdir', set_jobs_dir])
 routes.append(['GET', '/submit/getsystemconfinfo', get_system_conf_info])
