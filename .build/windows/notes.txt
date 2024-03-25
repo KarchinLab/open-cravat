@@ -1,0 +1,9 @@
+https://bootstrap.pypa.io/get-pip.py
+
+https://docs.python.org/3/using/windows.html#the-embeddable-package
+
+https://dev.to/fpim/setting-up-python-s-windows-embeddable-distribution-properly-1081
+
+Important to open python310._pth and uncomment the line `#import site`
+
+First run of oc will generate C:\open-cravat

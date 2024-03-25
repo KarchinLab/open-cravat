@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+#install_dir=`dirname $0`
+#unzip $install_dir/OpenCRAVAT.app.zip
+#mv $install_dir/OpenCRAVAT.app /Applications/
+
+chgrp wheel /Applications/OpenCRAVAT.app
+
+# Adds OpenCRAVAT path.
+BASHFILE="$HOME/.bash_profile"
+echo "" >>$BASHFILE
+if [ -f "$BASHFILE" ]; then
+    echo "yes"
+else
+    touch $BASHFILE
+fi
+BASHCONTENT=`cat $BASHFILE`
+if [[ $BASHCONTENT =~ "export PATH=/Applications/OpenCRAVAT.app/Contents/Resources/launchers:" && ! $BASHCONTENT =~ "^#" ]]; then
+    echo "### OC FOUND ###"
+else
+    cp $BASHFILE $BASHFILE.opencravat.bak
+    echo 'export PATH=/Applications/OpenCRAVAT.app/Contents/Resources/launchers:$PATH' >>$BASHFILE
+    chown $USER $BASHFILE
+fi
+ZSHFILE="$HOME/.zshrc"
+echo "" >>$ZSHFILE
+if [ -f "$ZSHFILE" ]; then
+    echo "yes"
+else
+    touch $ZSHFILE
+fi
+ZSHCONTENT=`cat $ZSHFILE`
+if [[ $ZSHCONTENT =~ "export PATH=/Applications/OpenCRAVAT.app/Contents/Resources/launchers:" && ! $ZSHCONTENT =~ "^#" ]]; then
+    echo "### OC FOUND ###"
+else
+    cp $ZSHFILE $ZSHFILE.opencravat.bak
+    echo 'export PATH=/Applications/OpenCRAVAT.app/Contents/Resources/launchers:$PATH' >>$ZSHFILE
+    chown $USER $ZSHFILE
+fi
