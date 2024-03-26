@@ -2,6 +2,9 @@
 # ideally anything imported or declared here should be replaced
 
 # Re-exports
-from cravat.websubmit.websubmit import FileRouter
+from cravat.websubmit import websubmit
 
+FileRouter = websubmit.FileRouter
+def get_job():
+    websubmit.get_job()
 
