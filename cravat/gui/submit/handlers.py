@@ -1,9 +1,12 @@
+import json
 import os
+import traceback
+
 from distutils.version import LooseVersion
 
 from flask import jsonify, request
 from cravat import admin_util as au
-from cravat.gui.cravat_request import is_multiuser_server
+from cravat.gui.cravat_request import is_multiuser_server, request_user
 from cravat.gui.legacy import FileRouter
 
 def server_mode():
@@ -48,11 +51,8 @@ def get_package_versions():
     }
     return jsonify(d)
 
-def get_jobs():
-    if not is_multiuser_server():
-        username = 'default'
-    else:
-        username = 'admin' # TODO: pull the username from request context
+def list_jobs():
+    username = request_user()
 
     filerouter = FileRouter()
     jobs_dirs = filerouter.job_dirs_for_user(username)
@@ -74,3 +74,31 @@ def get_jobs():
     all_jobs.sort(reverse=True)
 
     return jsonify(all_jobs)
+
+
+def get_jobs():
+    username = request_user()
+
+    filerouter = FileRouter()
+    jobs_dirs = filerouter.job_dirs_for_user(username)
+
+    jobs_dir = jobs_dirs[0]
+    if jobs_dir is None:
+        return jsonify([])
+
+    if not os.path.exists(jobs_dir):
+        os.makedirs(jobs_dir)
+
+    queries = request.query_string
+    ids = json.loads(queries['ids'])
+    jobs = []
+    for job_id in ids:
+        try:
+            job = await get_job(request, job_id)
+            if job is not None:
+                jobs.append(job)
+        except:
+            traceback.print_exc()
+            continue
+
+    return jsonify([job.get_info_dict() for job in jobs])

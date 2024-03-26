@@ -9,4 +9,4 @@ def load(application):
     submit_router("/getsystemconfinfo", None, get_system_conf_info)
     submit_router("/lastassembly", None, get_last_assembly)
     submit_router("/packageversions", None, get_package_versions)
-    submit_router("/jobs", None, get_jobs)
+    submit_router("/jobs", None, list_jobs)
