@@ -8,4 +8,6 @@ def load(application):
     router('/getbasemodules', None, get_base_modules)
     router('/remote', None, get_remote_manifest)
     router('/local', None, get_local_manifest)
+    router('/localasremote', None, get_remote_manifest_from_local)
+    router('/updates', None, get_module_updates)
 

@@ -599,6 +599,9 @@ migrate_checkpoints.sort()
 max_version_supported_for_migration = LooseVersion("1.7.0")
 
 
+def can_migrate_result(result_version):
+    return LooseVersion(result_version) < max_version_supported_for_migration
+
 def migrate_result(args):
     def get_dbpaths(dbpaths, path):
         for fn in os.listdir(path):

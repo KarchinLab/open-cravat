@@ -1,3 +1,5 @@
+import datetime
+import os
 import traceback
 
 from flask import request, current_app, jsonify
@@ -61,3 +63,75 @@ def get_local_manifest():
     for k, v in au.mic.local.items():
         content[k] = v.serialize()
     return jsonify(content)
+
+
+def get_remote_manifest_from_local():
+    queries = request.values
+    module = queries.get('module', None)
+
+    if module is None:
+        return jsonify([])
+
+    module_info = au.mic.local[module]
+    module_conf = module_info.conf
+    response = {}
+    module_dir = module_info.directory
+    response['code_size'] = os.path.getsize(module_dir)
+    response['commercial_warning'] = module_conf.get('commercial_warning', None)
+
+    if not os.path.exists(module_info.data_dir):
+        response['data_size'] = 0
+    else:
+        response['data_size'] = os.path.getsize(module_info.data_dir)
+
+    version = module_conf.get('version', '')
+    response['data_sources'] = {version: module_info.datasource}
+    response['data_versions'] = {version: version}
+    response['downloads'] = 0
+    response['groups'] = module_info.groups
+    response['has_logo'] = os.path.exists(os.path.join(module_dir, 'logo.png'))
+    response['hidden'] = module_conf.get('hidden', False)
+    response['latest_version'] = version
+    response['publish_time'] = str(datetime.datetime.now())
+    response['requires'] = module_conf.get('requires', [])
+    response['size'] = response['code_size'] + response['data_size']
+    response['tags'] = module_conf.get('tags', [])
+    response['title'] = module_conf.get('title', '')
+    response['type'] = module_conf.get('type', '')
+    response['version'] = version
+    response['versions'] = [version]
+    response['private'] = module_conf.get('private', False)
+    response['uselocalonstore'] = module_conf.get('uselocalonstore', False)
+    return jsonify(response)
+
+
+def get_module_updates():
+    # TODO: Handle with store change
+    # handle_modules_changed()
+
+    smodules = request.values.get('modules','')
+    if smodules:
+        modules = smodules.split(',')
+    else:
+        modules = []
+
+    ret = au.get_updatable(modules=modules)
+    [updates, _, conflicts] = ret
+    sconflicts = {}
+    for mname, reqd in conflicts.items():
+        sconflicts[mname] = {}
+        for req_name, req in reqd.items():
+            sconflicts[mname][req_name] = str(req)
+
+    updatesd = {
+        mname: {
+            'version': info.version,
+            'size': info.size
+        }
+        for mname, info
+        in updates.items()
+    }
+
+    out = {'updates': updatesd, 'conflicts': sconflicts}
+    return jsonify(out)
+

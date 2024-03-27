@@ -6,17 +6,16 @@ from distutils.version import LooseVersion
 
 from flask import jsonify, request
 from cravat import admin_util as au
-from cravat.gui.cravat_request import is_multiuser_server, request_user
-from cravat.gui.legacy import FileRouter
+from cravat.gui.cravat_request import is_multiuser_server, request_user, file_router
+from cravat.gui import metadata
+
 
 def server_mode():
     return jsonify({'servermode': is_multiuser_server()})
 
 
 def get_report_types():
-    reporter_infos = au.get_local_module_infos(types=['reporter'])
-    valid_report_types = [x.name.split('reporter')[0] for x in reporter_infos]
-    valid_report_types = [v for v in valid_report_types if not v in ['text', 'pandas', 'stdout', 'example']]
+    valid_report_types = metadata.supported_report_types()
     return jsonify({'valid': valid_report_types})
 
 
@@ -52,10 +51,8 @@ def get_package_versions():
     return jsonify(d)
 
 def list_jobs():
-    username = request_user()
-
-    filerouter = FileRouter()
-    jobs_dirs = filerouter.job_dirs_for_user(username)
+    filerouter = file_router()
+    jobs_dirs = filerouter.job_dirs
 
     if jobs_dirs is None:
         return jsonify([])
@@ -77,24 +74,16 @@ def list_jobs():
 
 
 def get_jobs():
-    username = request_user()
+    filerouter = file_router()
 
-    filerouter = FileRouter()
-    jobs_dirs = filerouter.job_dirs_for_user(username)
-
-    jobs_dir = jobs_dirs[0]
-    if jobs_dir is None:
+    if not filerouter.job_dirs:
         return jsonify([])
 
-    if not os.path.exists(jobs_dir):
-        os.makedirs(jobs_dir)
-
-    queries = request.query_string
-    ids = json.loads(queries['ids'])
+    ids = json.loads(request.values['ids'])
     jobs = []
     for job_id in ids:
         try:
-            job = await get_job(request, job_id)
+            job =filerouter.load_job(job_id)
             if job is not None:
                 jobs.append(job)
         except:
@@ -102,3 +91,29 @@ def get_jobs():
             continue
 
     return jsonify([job.get_info_dict() for job in jobs])
+
+
+def get_annotators():
+    out = _filtered_module_list('annotator')
+    return jsonify(out)
+
+
+def get_packages():
+    out = _filtered_module_list('package')
+    return jsonify(out)
+
+
+def _filtered_module_list(type):
+    out = {
+        local_info.name: {
+            'name': local_info.name,
+            'version': local_info.version,
+            'type': local_info.type,
+            'title': local_info.title,
+            'description': local_info.description,
+            'developer': local_info.developer
+        }
+        for local_info
+        in au.get_local_module_infos(types=[type])
+        if local_info.type == type}
+    return out
