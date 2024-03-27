@@ -3,10 +3,13 @@ from cravat.gui.routing import relative_router
 
 
 def load(application):
-    submit_router = relative_router("/submit", application)
-    submit_router("/servermode", None, server_mode)
-    submit_router("/reports", None, get_report_types)
-    submit_router("/getsystemconfinfo", None, get_system_conf_info)
-    submit_router("/lastassembly", None, get_last_assembly)
-    submit_router("/packageversions", None, get_package_versions)
-    submit_router("/jobs", None, list_jobs)
+    router = relative_router("/submit", application)
+    router("/servermode", None, server_mode)
+    router("/reports", None, get_report_types)
+    router("/getsystemconfinfo", None, get_system_conf_info)
+    router("/lastassembly", None, get_last_assembly)
+    router("/packageversions", None, get_package_versions)
+    router("/jobs", None, list_jobs)
+    router("/getjobs", None, get_jobs)
+    router("/annotators", None, get_annotators)
+    router("/packages", None, get_packages)
