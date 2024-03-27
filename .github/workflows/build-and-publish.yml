@@ -6,15 +6,15 @@ on:
       - "*.*.*"
     branches:
       - 'release/*'
-      
+
 env:
   # Workaround for no ternary operator, use short-circuiting
   VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'DEV' }}
-  MAC_PACKAGE: OpenCRAVAT.${{env.VERSION}}.pkg
-  WINDOWS_INSTALLER: OpenCRAVAT-${{env.VERSION}}.exe
-  DOCKER_TAG: ${{ secrets.DOCKER_USERNAME }}/opencravat:${{env.VERSION }}
-  DOCKER_ARCHIVE: opencravat-docker-${{ env.VERSION }}.tgz
-  PYPI_SDIST: open-cravat-${{ env.VERSION }}.tar.gz
+  MAC_PACKAGE: OpenCRAVAT.${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'DEV' }}.pkg
+  WINDOWS_INSTALLER: OpenCRAVAT-${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'DEV' }}.exe
+  DOCKER_TAG: ${{ secrets.DOCKER_USERNAME }}/opencravat:${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'DEV' }}
+  DOCKER_ARCHIVE: opencravat-docker-${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'DEV' }}.tgz
+  PYPI_SDIST: open-cravat-${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'DEV' }}.tar.gz
 
 jobs:
   pypi:
