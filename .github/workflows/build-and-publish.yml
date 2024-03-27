@@ -32,7 +32,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PYPI_SDIST }}
-          path: ./dist/${{ env.PYPI_SDIST }}
+          path: ./dist/**
 
   docker:
     runs-on: ubuntu-latest
