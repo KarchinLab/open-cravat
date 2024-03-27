@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "*.*.*"
+    branches:
+      - 'release/*'
+      
 env:
   # Workaround for no ternary operator, use short-circuiting
   VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'DEV' }}
