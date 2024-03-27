@@ -9,6 +9,7 @@ on:
 
 env:
   # Workaround for no ternary operator, use short-circuiting
+  # I'd love to not repeat the version string, but env can't be recursive
   VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'DEV' }}
   MAC_PACKAGE: OpenCRAVAT.${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'DEV' }}.pkg
   WINDOWS_INSTALLER: OpenCRAVAT-${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'DEV' }}.exe
@@ -35,8 +36,6 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
-    env:
-      image_tag: ${{ secrets.DOCKER_USERNAME }}/opencravat:${{ VERSION }}
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
