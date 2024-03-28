@@ -121,7 +121,6 @@ jobs:
       - pypi
       - docker
     environment: Published
-    if: startsWith(github.ref, 'refs/tags/')
     steps:
       # Downloads all the artifacts from above, and extract them into
       # a directory named after the artifact itself, but since the
@@ -132,12 +131,9 @@ jobs:
       # OpenCravat-2.5.0.exe
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v4
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Load Docker Image
         run: |
+          ls -lR
           docker load -i ${{ env.DOCKER_ARCHIVE }}/${{ env.DOCKER_ARCHIVE }}
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -146,14 +142,17 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       # this should only push since the tagged image was loaded above
       - name: Publish Docker image
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           docker push ${{ env.DOCKER_TAG }}
       - name: Publish to PyPi
+        if: startsWith(github.ref, 'refs/tags/')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: ${{ env.PYPI_SDIST }}
           password: ${{ secrets.PYPI_API_TOKEN }}
       - name: Release Images
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           draft: true
