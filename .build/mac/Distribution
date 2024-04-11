@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<installer-gui-script minSpecVersion="1">
+    <title>OpenCRAVAT</title>
+    <background file="installer_bg.png" mime-type="image/png" scaling="none" alignment="topleft"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <pkg-ref id="org.karchinlab.open-cravat">
+        <bundle-version>
+            <bundle CFBundleShortVersionString="2.2.9" CFBundleVersion="1" id="org.karchinlab.open-cravat" path="Contents"/>
+        </bundle-version>
+    </pkg-ref>
+    <options customize="never" require-scripts="false"/>
+    <choices-outline>
+        <line choice="default">
+            <line choice="org.karchinlab.open-cravat"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="org.karchinlab.open-cravat" visible="false">
+        <pkg-ref id="org.karchinlab.open-cravat"/>
+    </choice>
+    <pkg-ref id="org.karchinlab.open-cravat" onConclusion="none" version="2.2.9" installKBytes="351613">#OpenCRAVAT.pkgbuild.pkg</pkg-ref>
+    <product version="2.2.9"/>
+</installer-gui-script>

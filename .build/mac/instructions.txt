@@ -1,0 +1,32 @@
+Scripts / files used from existing application:
+1.	Script – executable script that launches oc
+2.	Postinstall – executable script that writes to the user’s .bash_profile etc.
+3.	AppIcon.icns - for the app image.
+4.	Resources/installer_bg.png - for the image in the installer window
+5.	Distribution – to insert the image into the installer ( productbuild would make a generic one if no file supplied)
+Creating the APP
+1.	Make OpenCRAVAT.app from https://github.com/sveinbjornt/Platypus/releases/tag/5.3
+2.	input "OpenCRAVAT" as App Name
+3.	load "script" into Script Path that launches OpenCRAVAT
+4.	Identifier is org.karchinlab.open-cravat
+5.	Author is Karchin Lab
+6.	version is version of OC installer
+7.	click Create App
+Setting up conda environment 
+8.	Create conda environment "py3"
+9.	Setup environment by running “conda install pip” in py3
+10.	It created folders for python3.10 and python3.1 – removed python3.1
+11.	There was an issue with setuptools / pyvcf:
+12.	pip install "setuptools<58" --upgrade
+13.	pip uninstall pyvcf
+14.	pip install pyvcf
+Installing oc into the app 
+15.	Run make.sh <version>
+16.	make.sh uninstalls open-cravat and pip installs new version into the py3 environment
+17.	The py3 environment is copied over into the app folder /Contents/Resources
+18.	Need to add the folder “launchers” it with oc script in /Contents/Resources
+19.	 Run package.sh <version>
+Building the installer
+20.	package.sh uses pkgbuild to package up the app into the component package called “OpenCRAVAT.pkgbuild.pkg” and attaches the post install script and install location of /Applications/OpenCRAVAT.app.
+21.	The Distribution file is edited 
+22.	Next it uses productbuild to build the distribution package using the “Distribution” file and image in /Resources to OpenCRAVAT<version>.pkg. This is the final installer.
