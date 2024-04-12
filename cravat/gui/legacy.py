@@ -102,10 +102,13 @@ class UserFileRouter(object):
         job.read_info_file()
 
         if 'status' not in job.info:
-            #TODO: Update from Celery
-            job.info['status'] = 'Aborted'
-        elif not job.ended and job.queued:
-            job.info['status'] = 'Aborted'
+            if job.task:
+                job.info['status'] = job.task.cravat_status
+            else:
+                job.info['status'] = 'Aborted'
+        elif not job.ended:
+            if job.task and job.task.aborted:
+                job.info['status'] = 'Aborted'
 
         db_files = glob(f"{job_dir}/*.sqlite")
         if len(db_files) > 0:
@@ -118,7 +121,6 @@ class UserFileRouter(object):
             db_path=db_path,
             status=job.info['status'],
             username=self.username,
-
         )
 
         existing_reports = []

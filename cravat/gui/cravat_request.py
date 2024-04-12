@@ -1,4 +1,6 @@
-from flask import request
+from flask import request, current_app
+
+from cravat.gui.job_manager import Task
 
 import cravat.gui.legacy
 
@@ -31,3 +33,7 @@ def jobid_and_db_path():
             return None, None
 
     return job_id, db_path
+
+
+
+HTTP_NO_CONTENT = ('', 204)

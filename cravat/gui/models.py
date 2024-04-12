@@ -1,9 +1,12 @@
+import imp
 import os
 import yaml
 
+from datetime import datetime
 from functools import cached_property
 from glob import glob
 
+from .job_manager import Task
 
 class Job(object):
     DB_EXTENSION = ".sqlite"
@@ -28,6 +31,10 @@ class Job(object):
             'reports_being_generated': []
         }
 
+    @staticmethod
+    def next_id():
+        return datetime.now().strftime(r'%y%m%d-%H%M%S')
+
     @property
     def id(self):
         return self.info['id']
@@ -42,8 +49,24 @@ class Job(object):
 
     @property
     def queued(self):
-        # TODO: Check Celery
-        return True
+        if not self.task_id:
+            return False
+
+        if self.task.result.queued:
+            return True
+
+        return False
+
+    @property
+    def task_id(self):
+        return self.info.get('celery_id', None)
+
+    @property
+    def task(self):
+        if self.task_id is None:
+            return None
+
+        return Task(self.task_id)
 
     @cached_property
     def run_name(self):
