@@ -100,6 +100,7 @@ setup(
         'whitenoise',
         'Flask-Session',
         'cachelib',
+        'celery'
         ],
     python_requires='>=3.8',
 )

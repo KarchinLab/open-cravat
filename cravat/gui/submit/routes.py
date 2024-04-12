@@ -13,3 +13,5 @@ def load(application):
     router("/getjobs", None, get_jobs)
     router("/annotators", None, get_annotators)
     router("/packages", None, get_packages)
+    router("/submit", None, submit, methods=['POST'])
+    router("/jobs/<job_id>", None, delete_job, methods=['DELETE'])

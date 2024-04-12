@@ -193,13 +193,24 @@ def run(args):
         run_flask(args)
 
 
+def celery_worker():
+    from cravat.gui import celery
+
+    worker = celery.Worker()
+    worker.start()
+
 def run_flask(args):
     from cravat import gui
+
+    if not args.servermode:
+        from multiprocessing import Process
+        p = Process(target=celery_worker)
+        p.start()
+
     server_config = get_server()
     gui.start_server(server_config['host'],
                      server_config['port'],
                      args.servermode)
-
 
 def run_aiohttp(args):
     log_handler = logging.handlers.TimedRotatingFileHandler(
