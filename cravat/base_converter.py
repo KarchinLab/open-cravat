@@ -1,3 +1,6 @@
+from cravat.config_loader import ConfigLoader
+
+
 class BaseConverter(object):
     IGNORE = "converter_ignore"
 
@@ -6,6 +9,9 @@ class BaseConverter(object):
         self.output_dir = None
         self.run_name = None
         self.input_assembly = None
+        self.module_name = self.__class__.__module__
+        config_loader = ConfigLoader()
+        self.conf = config_loader.get_module_conf(self.module_name)
 
     def check_format(self, *args, **kwargs):
         err_msg = (
