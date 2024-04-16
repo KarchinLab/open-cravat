@@ -260,6 +260,7 @@ class MasterCravatConverter(object):
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             converter = module.CravatConverter()
+            converter.input_assembly = self.input_assembly
             if converter.format_name not in self.converters:
                 self.converters[converter.format_name] = converter
             else:
