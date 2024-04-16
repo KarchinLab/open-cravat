@@ -391,6 +391,7 @@ async def get_local_module_logo (request):
     logo_path = os.path.join(module_dir, 'logo.png')
     return web.FileResponse(logo_path)
 
+
 async def get_module_dependencies (request):
     queries = request.rel_url.query
     module = queries.get('module')
@@ -400,24 +401,14 @@ async def get_module_dependencies (request):
     return web.json_response(deps)
 
 routes = []
-routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/installwidgetsformodule', install_widgets_for_module])
-routes.append(['GET', '/store/getstoreurl', get_storeurl])
-routes.append(['GET', '/store/local', get_local_manifest])
 routes.append(['GET', '/store/uninstall', uninstall_module])
 routes.append(['GET', '/store/connectwebsocket', connect_websocket])
-routes.append(['GET', '/store/queueinstall', queue_install])
 routes.append(['GET', '/store/modules/{module}/{version}/readme', get_module_readme])
-routes.append(['GET', '/store/getbasemodules', get_base_modules])
 routes.append(['GET', '/store/installbasemodules', install_base_modules])
 routes.append(['GET', '/store/remotemoduleconfig', get_remote_module_config])
 routes.append(['GET', '/store/getmd', get_md])
-routes.append(['GET', '/store/updates', get_module_updates])
-routes.append(['GET', '/store/freemodulesspace', get_free_modules_space])
 routes.append(['GET', '/store/killinstall', kill_install])
 routes.append(['GET', '/store/unqueue', unqueue_install])
 routes.append(['GET', '/store/tagdesc', get_tag_desc])
 routes.append(['GET', '/store/updateremote', update_remote])
-routes.append(['GET', '/store/localasremote', get_remote_manifest_from_local])
-routes.append(['GET', '/store/locallogo', get_local_module_logo])
-routes.append(['GET', '/store/moduledependencies', get_module_dependencies])
