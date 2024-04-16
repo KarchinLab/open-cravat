@@ -193,19 +193,30 @@ def run(args):
         run_flask(args)
 
 
-def celery_worker():
+def default_celery_worker():
     from cravat.gui import celery
 
-    worker = celery.Worker()
+    worker = celery.Worker(queue='default')
     worker.start()
+
+
+def store_worker():
+    from cravat.gui import celery
+
+    worker = celery.Worker(queue="module_install", concurrency=1)
+    worker.start()
+
 
 def run_flask(args):
     from cravat import gui
 
     if not args.servermode:
         from multiprocessing import Process
-        p = Process(target=celery_worker)
+        p = Process(target=default_celery_worker)
         p.start()
+
+        p2 = Process(target=store_worker)
+        p2.start()
 
     server_config = get_server()
     gui.start_server(server_config['host'],

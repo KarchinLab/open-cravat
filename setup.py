@@ -99,6 +99,7 @@ setup(
         'waitress',
         'whitenoise',
         'Flask-Session',
+        'Flask-Caching',
         'cachelib',
         'celery'
         ],

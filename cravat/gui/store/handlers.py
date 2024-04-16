@@ -1,10 +1,15 @@
 import datetime
 import os
+import shutil
 import traceback
 
 from flask import request, current_app, jsonify
 from cravat import constants, admin_util as au
-
+from cravat.gui.models import Module
+from cravat.gui.admin import is_admin_loggedin
+from cravat.gui.cache import cache
+from cravat.gui.cravat_request import is_multiuser_server, HTTP_BAD_REQUEST
+from cravat.gui.tasks import install_module
 
 def get_storeurl():
     conf = current_app.config['CRAVAT_SYSCONF']
@@ -56,11 +61,8 @@ def get_remote_manifest():
 
 
 def get_local_manifest():
-    # TODO: store rework, this is absolutely not threadsafe
-    # handle_modules_changed()
-
     content = {}
-    for k, v in au.mic.local.items():
+    for k, v in Module.local().items():
         content[k] = v.serialize()
     return jsonify(content)
 
@@ -135,3 +137,44 @@ def get_module_updates():
     out = {'updates': updatesd, 'conflicts': sconflicts}
     return jsonify(out)
 
+def get_free_modules_space():
+    modules_dir = au.get_modules_dir()
+    free_space = shutil.disk_usage(modules_dir).free
+    return jsonify(free_space)
+
+
+def get_local_module_logo():
+    queries = request.values
+    module = queries.get('module', None)
+
+    module_info = au.mic.local[module]
+    module_dir = module_info.directory
+    logo_path = os.path.join(module_dir, 'logo.png')
+
+    return jsonify(logo_path)
+
+
+def get_module_dependencies():
+    queries = request.values
+    module = queries.get('module')
+    if module is None:
+        return HTTP_BAD_REQUEST
+
+    deps = au.get_install_deps(module)
+    return jsonify(deps)
+
+def queue_install():
+    if is_multiuser_server():
+        if not is_admin_loggedin():
+            return 'notadmin'
+
+    queries = request.values
+    module_version = queries.get('version', None)
+    module_name = queries['module']
+    install_module.delay(module_name, module_version)
+
+    deps = au.get_install_deps(module_name, module_version)
+    for dep_name, dep_version in deps.items():
+        install_module.delay(dep_name, dep_version)
+
+    return f'queued {module_version}'
