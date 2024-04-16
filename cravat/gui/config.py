@@ -1,17 +1,23 @@
 from cravat import admin_util
 from cachelib import FileSystemCache
+from kombu import Exchange, Queue
 
 from flask_session import Session
 SESSION_TYPE = 'cachelib'
 SESSION_CACHELIB = FileSystemCache(cache_dir='flask_session', threshold=500)
 SESSION_COOKIE_SECURE = False   # TODO: Make this follow ssl setting
 
-CACHE_TYPE = FileSystemCache(cache_dir='request_cache')
+CACHE_TYPE = 'FileSystemCache'
 CACHE_DEFAULT_TIMEOUT = 300
-
+CACHE_DIR = '.cache'
+CACHE_THRESHOLD = 500
+CACHE_SOURCE_CHECK = True
 
 ## WHere is this used can we use system conf
 CRAVAT_SYSCONF = admin_util.get_system_conf()
+
+default_exchange = Exchange('default', type='direct')
+management_exchange = Exchange('management', type='direct')
 
 CELERY = dict(
     broker_url='filesystem://',
@@ -20,5 +26,12 @@ CELERY = dict(
         'data_folder_out': './.data/broker/'
     },
     result_backend='file://./.data/results',
-    include=['cravat.gui.tasks']
+    include=['cravat.gui.tasks'],
+    task_queues=(
+        Queue('default', default_exchange, routing_key='default'),
+        Queue('module_install', management_exchange, routing_key='module_install'),
+    ),
+    task_default_queue='default',
+    task_default_exchange='default',
+    task_default_routing_key='default'
 )

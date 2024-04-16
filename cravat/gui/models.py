@@ -6,6 +6,8 @@ from datetime import datetime
 from functools import cached_property
 from glob import glob
 
+from cravat import constants, admin_util as au
+from .cache import cache
 from .job_manager import Task
 
 class Job(object):
@@ -103,3 +105,30 @@ class Job(object):
 
     def set_values(self, **kwargs):
         self.info.update(kwargs)
+
+
+class Module(object):
+    @staticmethod
+    @cache.cached(key_prefix='runtime/model/Module', timeout=60*60*24)
+    def local():
+        mic = au.ModuleInfoCache()
+        mic.update_local()
+        return {k: v for k, v in mic.local.items()}
+
+
+    @staticmethod
+    def _get_modules_dir():
+        """
+        Get the current modules directory
+        """
+        if constants.custom_modules_dir is not None:
+            modules_dir = constants.custom_modules_dir
+        else:
+            modules_dir = os.environ.get(constants.modules_dir_env_key, None)
+            if modules_dir is not None and modules_dir != "":
+                modules_dir = os.environ.get(constants.modules_dir_env_key)
+            else:
+                conf = au.get_system_conf()
+                modules_dir = conf[constants.modules_dir_key]
+        modules_dir = os.path.abspath(modules_dir)
+        return modules_dir

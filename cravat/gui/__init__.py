@@ -1,10 +1,12 @@
 from flask import Flask
+
 from whitenoise import WhiteNoise
 
 from cravat import admin_util as au
 from cravat import constants
 
 from . import submit, store, config, routing, job_manager
+from .cache import cache
 
 # Create the Flask application and our configuration
 app = Flask(__name__)
@@ -13,14 +15,17 @@ app.config.from_object(config)
 # Create the WhiteNoise wrapper.  This will serve static files.
 static_server = WhiteNoise(app)
 
+# Cravat settings
 sysconf = au.get_system_conf()
 log_dir = sysconf[constants.log_dir_key]
 
+# Celery
 celery = job_manager.celery_init_app(app)
 celery.set_default()
 
+# Application Initialization
 routing.load(app, static_server)
-
+cache.init_app(app)
 
 def multiuser_middleware(app, multiuser):
     # TODO: Rework cravat_multiuser, this is just the variable,
