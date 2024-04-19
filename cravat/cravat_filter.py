@@ -564,10 +564,7 @@ class CravatFilter:
             ftable = level
         else:
             ftable = level + "_filtered"
-        q = "select count(*) from " + ftable
-        await cursor.execute(q)
-        for row in await cursor.fetchone():
-            n = row
+        n = await self.exec_db(self.get_filtered_count, level=level)
         if self.stdout == True:
             print("#" + level)
             print(str(n))
@@ -702,6 +699,37 @@ class CravatFilter:
         rows = await cursor.fetchall()
 
         return cols, rows
+    
+    async def get_filtered_count(self, level="variant", conn=None, cursor=None):
+
+        if level == 'variant' and self.filter and 'samplefilter' in self.filter and len(self.filter['samplefilter']['rules']) > 0:
+            sql = await self.build_base_sql(cursor, level)
+            sample_filter = self.filter['samplefilter']
+            variant_columns = await self.level_column_definitions(cursor, 'variant')
+
+            reaggregated_columns = [self.reaggregate_column('v', meta) for col, meta in variant_columns.items()]
+            sample_filters = self.build_sample_exclusions()
+            filter_group = await self.make_sample_filter_group(cursor, sample_filter)
+
+            sql = """
+                with base_variant as ({}),
+                scoped_sample as (
+                    select * 
+                    from sample 
+                    where 1=1
+                    {}
+                )
+                select count(distinct v.base__uid)
+                from base_variant v
+                join scoped_sample sample on sample.base__uid = v.base__uid
+                where {}
+            """.format(sql, sample_filters, filter_group.get_sql())
+        else:
+            sql = await self.build_base_sql(cursor, level, count=True)
+        await cursor.execute(sql)
+        rows = await cursor.fetchall()
+
+        return rows[0][0]
 
     def build_sample_exclusions(self):
         # this is needed because joining back to the sample table causes
@@ -716,7 +744,7 @@ class CravatFilter:
                 ", ".join(["'{}'".format(sid) for sid in rej]))
         return sample_filters
 
-    async def build_base_sql(self, cursor, level):
+    async def build_base_sql(self, cursor, level, count=False):
         bypassfilter = not (self.filter or self.filtersql or self.includesample or self.excludesample)
         if level == "variant":
             kcol = "base__uid"
@@ -753,7 +781,10 @@ class CravatFilter:
                     ", ".join(colnames)
                 )
             else:
-                sql = "select v.* from " + table + " as v"
+                if not count:
+                    sql = "select v.* from " + table + " as v"
+                else:
+                    sql = "select count(v.base__uid) from " + table + " as v"
                 if bypassfilter == False:
                     sql += " inner join " + ftable + " as f on v." + kcol + "=f." + kcol
 

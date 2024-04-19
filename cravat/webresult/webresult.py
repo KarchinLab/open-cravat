@@ -446,6 +446,8 @@ async def get_variant_cols (request):
         data['columns']['variant'] = get_colmodel('variant', colinfo)
     if 'gene' in colinfo:
         data['columns']['gene'] = get_colmodel('gene', colinfo)
+    if 'sample' in colinfo:
+        data['columns']['sample'] = get_colmodel('sample', colinfo)
     content = data
     return web.json_response(content)
 

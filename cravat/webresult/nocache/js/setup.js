@@ -661,12 +661,10 @@ class FilterManager {
 	addQbUI (outerDiv, filter, QbType) {
 		filter = new CravatFilter(filter);
         if (QbType === 'sample') {
-        } else {
-            outerDiv.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
-        }
-        if (QbType === 'sample') {
+            outerDiv.append($(getEl('div')).text('Variants are returned if any sample matches the criteria'));
             var qbDiv = makeFilterGroupDiv(filter.samplefilter, true);
         } else {
+            outerDiv.append($(getEl('div')).text('Use the query builder to create a set of filter rules'));
             var qbDiv = makeFilterGroupDiv(filter.variant);
         }
 		qbDiv.children('.filter-element-control-div').remove()
@@ -676,7 +674,6 @@ class FilterManager {
         let divId = QbType==='sample' ? this.qbSampRootId : this.qbVarRootId
 		qbDiv.attr('id', divId);
 		outerDiv.append(qbDiv);
-        //addFilterElement(qbDiv, 'rule', undefined)
 	}
 
 	updateVpropUI (filter) {
@@ -1212,7 +1209,6 @@ function makeFilterJson () {
     let spropRoot = $('#'+filterMgr.qbSampRootId);
     fjs.samplefilter = makeGroupFilter(spropRoot);
     for (let rule of fjs.samplefilter.rules) {
-        console.log(rule);
         rule.column = rule.column.replace('vcfinfo__','base__')
     }
 
