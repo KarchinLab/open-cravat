@@ -1091,25 +1091,21 @@ function afterGetResultLevels () {
     });
     jobDataLoadingDiv = drawingRetrievingDataDiv(currentTab);
     $.get('/result/service/variantcols', {job_id: jobId, username: username, dbpath: dbPath, confpath: confPath, filter: JSON.stringify(filterJson)}).done(function (jsonResponseData) {
-        allVarCols = JSON.parse(JSON.stringify(jsonResponseData['columns']['variant']));
-        filterCols = [];
-        for (let colGroup of allVarCols) {
-            // if (colGroup.name === 'vcfinfo') {
-            //     let filterableCols = [];
-            //     for (let col of colGroup.colModel) {
-            //         if (col.filterable) {
-            //             filterableCols.push(col);
-            //         }
-            //     }
-            //     if (filterableCols.length > 0) {
-            //         filterCols.push(colGroup);
-            //         filterCols.slice(-1)[0].colModel = filterableCols;
-            //     }
-            // } else {
-            //     filterCols.push(colGroup)
-            // }
-            filterCols.push(colGroup);
-            
+        filterCols = JSON.parse(JSON.stringify(jsonResponseData['columns']['variant']));
+        let vcfInfoTypes = {}
+        for (let colGroup of jsonResponseData['columns']['sample']) {
+            for (let col of colGroup.colModel) {
+                vcfInfoTypes[col.col] = col.type;
+            }
+        }
+        for (let colGroup of filterCols) {
+            if (colGroup.name === 'vcfinfo') {
+                for (let col of colGroup.colModel) {
+                    colNameToks = col.col.split('__');
+                    baseColName = `base__${colNameToks[1]}`
+                    col.type = vcfInfoTypes[baseColName];
+                }
+            }
         }
         usedAnnotators = {};
         var cols = jsonResponseData['columns']['variant'];
