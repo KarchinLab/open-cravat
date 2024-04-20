@@ -7,7 +7,6 @@ from flask import request, current_app, jsonify
 from cravat import constants, admin_util as au
 from cravat.gui.models import Module
 from cravat.gui.admin import is_admin_loggedin
-from cravat.gui.cache import cache
 from cravat.gui.cravat_request import is_multiuser_server, HTTP_BAD_REQUEST
 from cravat.gui.tasks import install_module
 
@@ -25,6 +24,7 @@ def get_base_modules():
     base_modules = conf['base_modules']
     return jsonify(base_modules)
 
+
 def get_remote_manifest():
     content = {'data': {}, 'tagdesc': {}}
     try:
@@ -33,18 +33,9 @@ def get_remote_manifest():
         traceback.print_exc()
         content = {'data': {}, 'tagdesc': {}}
 
-    # TODO: Rework with the store, this lists the contents of the global
-    # install queue by.... removing it from the queue, adding it to the list
-    # then pushing it back
-
-    # global install_queue
-    # temp_q = []
-    # while install_queue.empty() == False:
-    #     q = install_queue.get()
-    #     temp_q.append([q['module'], q['version']])
-    # for module, version in temp_q:
-    #     content['data'][module]['queued'] = True
-    #     install_queue.put({'module': module, 'version': version})
+    install_queue = Module.install_queue()
+    for module, _ in install_queue:
+        content['data'][module]['queued'] = True
 
     try:
         counts = au.get_download_counts()
@@ -108,9 +99,6 @@ def get_remote_manifest_from_local():
 
 
 def get_module_updates():
-    # TODO: Handle with store change
-    # handle_modules_changed()
-
     smodules = request.values.get('modules','')
     if smodules:
         modules = smodules.split(',')

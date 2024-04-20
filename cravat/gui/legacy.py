@@ -140,7 +140,9 @@ class UserFileRouter(object):
                 if report_exist:
                     existing_reports.append(report_type)
                 else:
-                    if True:  # TODO: Check Celery
+                    # TODO: Check Celery, requires an intermediate state store for
+                    # running report task id, probably the .report_being_generated.type file
+                    if True:
                         pass
 
         job.set_info_values(reports=existing_reports,

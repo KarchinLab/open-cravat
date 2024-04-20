@@ -8,7 +8,7 @@ from glob import glob
 
 from cravat import constants, admin_util as au
 from .cache import cache
-from .job_manager import Task
+from .job_manager import Task, queue_messages
 
 class Job(object):
     DB_EXTENSION = ".sqlite"
@@ -109,11 +109,26 @@ class Job(object):
 
 class Module(object):
     @staticmethod
-    @cache.cached(key_prefix='runtime/model/Module', timeout=60*60*24)
+    @cache.cached(key_prefix='runtime/models/Module/local', timeout=60*60*24)
     def local():
         mic = au.ModuleInfoCache()
         mic.update_local()
         return {k: v for k, v in mic.local.items()}
+
+
+    @staticmethod
+    def install_queue():
+        install_queue = queue_messages('manage.module')
+
+        # message.payload is a array of arguments and metadata about the message, structured as:
+        # [
+        #   [args],
+        #   {kwargs},
+        #   {callbacks, errbacks, chain, chord}
+        # ]
+        # so the following just pulls the arguments passed to the `install_module` task
+        # as a tuple
+        return [m.payload[0] for m in install_queue]
 
 
     @staticmethod

@@ -15,6 +15,27 @@ def celery_init_app(flask_app):
     return celery_app
 
 
+def queue_messages(queue_name, filter=None):
+    cnn = current_app.connection()
+    q = cnn.SimpleQueue(queue_name)
+    queue_size = q.qsize()
+    messages = []
+    try:
+        for i in range(queue_size):
+            message = q.get(block=False)
+            if filter and filter(message):
+                messages.append(message)
+            else:
+                messages.append(message)
+    except q.Empty:
+        # it is empty or we read everything left
+        pass
+    finally:
+        cnn.close()
+
+    return messages
+
+
 class Task(object):
     def __init__(self, task_id):
         self.id = task_id
