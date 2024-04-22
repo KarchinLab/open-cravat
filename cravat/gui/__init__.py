@@ -36,6 +36,12 @@ def multiuser_middleware(app, multiuser):
 
     return wsgi_middleware
 
+###
+# Requests are layered through the WSGI Applications as such:
+#  -> Waitress (Generic webserver)
+#  |-> Multiuser WSGI Middleware (Sets CRAVAT_MULTIUSER)
+#  |-> WhiteNoise (Static files)
+#  |-> Flask
 
 def start_server(interface, port, multiuser):
     from waitress import serve
