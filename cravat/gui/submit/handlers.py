@@ -304,3 +304,17 @@ def _filtered_module_list(type):
         in au.get_local_module_infos(types=[type])
         if local_info.type == type}
     return out
+
+def get_job_log(job_id):
+    filerouter = file_router()
+    job = filerouter.load_job(job_id)
+
+    if job.log is not None:
+        def file_stream():
+            with open(job.log) as f:
+                for line in f:
+                    yield line
+
+        return file_stream(), {"Content-Type": "text/plain"}
+    else:
+        return 'log file does not exist.', {"Content-Type": "text/plain"}
