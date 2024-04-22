@@ -82,8 +82,20 @@ class Job(object):
         return run_name
 
     @property
+    def run_path(self):
+        return os.path.join(self.job_dir, self.run_name)
+
+    @property
     def db_path(self):
-        return os.path.join(self.job_dir, self.run_name) + Job.DB_EXTENSION
+        return self.run_path + Job.DB_EXTENSION
+
+    @property
+    def log(self):
+        log_path = self.run_path + '.log'
+        if not os.path.exists(log_path):
+            log_path = None
+
+        return log_path
 
     def save_options(self, job_options):
         self.set_values(**job_options)
