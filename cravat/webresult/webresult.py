@@ -628,6 +628,7 @@ async def serve_webapp_runwidget (request):
     return web.json_response(content)
 
 async def serve_runwidget_post (request):
+    # NOTE: This method seems to not be called either in the OpenCravat or OpenCravat modules code
     path = 'wg' + request.match_info['module']
     job_id, dbpath = await get_jobid_dbpath(request)
     queries = await request.post()
