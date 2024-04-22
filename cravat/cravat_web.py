@@ -7,7 +7,6 @@ import urllib.parse
 import json
 import sys
 import argparse
-import imp
 import oyaml as yaml
 import re
 from cravat import admin_util as au
