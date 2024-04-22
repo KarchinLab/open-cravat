@@ -1950,8 +1950,17 @@ function addMediatorListeners() {
     OC.mediator.subscribe('navigate', changePage);
     OC.mediator.subscribe('populateJobs', populateJobs);
     OC.mediator.subscribe('moduleinfo.annotators', buildAnnotatorsSelector);
-
     OC.mediator.subscribe('setupJobs', handleSetupJobsTab);
+    OC.mediator.subscribe('moduleinfo.local', setVariantReportURL)
+}
+
+function setVariantReportURL() {
+    let url = '/webapps/variantreport/index.html'
+    if (!('variantreport' in OC.localModuleInfo)) {
+        url = 'https://run.opencravat.org'+url
+    }
+    let anchor = document.querySelector('#singlevar-link');
+    anchor.href = url;
 }
 
 function setLastAssembly () {
