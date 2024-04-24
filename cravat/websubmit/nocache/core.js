@@ -24,7 +24,7 @@ function changePage (selectedPageId) {
         const pageIdDiv = pageIdDivs[i];
         const pageId = pageIdDiv.getAttribute('value');
         const page = document.getElementById(pageId);
-        if (page && page.id === selectedPageId) {
+        if (page.id === selectedPageId) {
             page.style.display = 'block';
             pageIdDiv.setAttribute('selval', 't');
             if (selectedPageId === 'storediv') {
@@ -33,10 +33,8 @@ function changePage (selectedPageId) {
                 OC.currentTab = 'submit';
             }
         } else {
-            if (page) {
-                page.style.display = 'none';
-                pageIdDiv.setAttribute('selval', 'f');
-            }
+            page.style.display = 'none';
+            pageIdDiv.setAttribute('selval', 'f');
         }
     }
 }
