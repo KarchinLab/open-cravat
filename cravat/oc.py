@@ -4,7 +4,6 @@ from cravat.cravat_class import cravat_cmd_parser
 from cravat.cravat_test import parser as test_parser
 from cravat.cravat_web import parser as gui_parser
 from cravat.cravat_report import parser as report_parser
-from cravat.vcfanno import vcfanno
 import sys
 
 root_p = argparse.ArgumentParser(
@@ -226,13 +225,6 @@ feedback_p = root_sp.add_parser(
     help="Send feedback to the developers",
 )
 
-# vcfanno
-vcfanno_p = root_sp.add_parser(
-    'vcfanno',
-    help = 'annotate a vcf',
-)
-vcfanno_p.add_argument('input_path')
-vcfanno_p.set_defaults(func=vcfanno)
 
 def main():
     try:
