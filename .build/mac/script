@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-ocdir="/Applications/OpenCRAVAT.app/Contents/Resources/bin"
-export PATH=/Applications/OpenCRAVAT.app/Contents/Resources/bin:$PATH
-echo "###############################"
-echo "#                             #"
-echo "# Welcome to open-cravat!     #"
-echo "#                             #"
-echo "###############################"
-$ocdir/python -I $ocdir/oc gui

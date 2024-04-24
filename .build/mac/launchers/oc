@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-ocdir="/Applications/OpenCRAVAT.app/Contents/Resources/bin"
-export PATH=/Applications/OpenCRAVAT.app/Contents/Resources/bin:$PATH
-
-"$(dirname $0)"/../bin/oc $@
