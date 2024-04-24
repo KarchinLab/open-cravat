@@ -30,7 +30,6 @@ class VCFLineProcessor(object):
         [r'\n', r'%0A'],
         [r'\t', r'%09'],
         [r'\r', r'%0D'],
-        [r' ', r'%20']
     ]
 
     valid_alt_bases = set('ATGC')
@@ -43,9 +42,6 @@ class VCFLineProcessor(object):
         'float':'Float',
     }
     
-    oc_base_headers = [
-        '##INFO=<ID=OC_ERROR,Number=1,Type=String,Description="Error message for failed OpenCRAVAT annotation"'
-    ]
 
     def __init__(self, annotator_names = []):
         self._buffer = StringIO()
@@ -56,7 +52,7 @@ class VCFLineProcessor(object):
         for aname in annotator_names:
             self._annotators[aname] = cravat.get_live_annotator(aname)
 
-        self.oc_headers = []+self.oc_base_headers
+        self.oc_headers = []
         for column in cravat.constants.crx_def:
             if column['name'] in self.skip_cnames:
                 continue
@@ -88,10 +84,10 @@ class VCFLineProcessor(object):
         self._buffer.write(nsl+'\n')
         self._buffer.seek(0)
         variant = next(self._reader)
-        annots, successful = self.get_oc_info_annotations(variant)
+        annots = self.get_oc_info_annotations(variant)
         info = ';'.join([info]+annots)
         wtoks = toks[:7]+[info]+toks[8:]
-        return '\t'.join(wtoks)+'\n', successful
+        return '\t'.join(wtoks)+'\n'
 
     def get_oc_infoname(self, modname, colname):
         toks = ['OC']
@@ -135,11 +131,9 @@ class VCFLineProcessor(object):
         try:
             alt = variant.ALT[0].sequence
         except:
-            info_toks.append(f'OC_ERROR=Cannot annotate ALT "{variant.ALT[0]}"')
-            return info_toks, False
+            return info_toks
         if not(set(alt.upper()) <= self.valid_alt_bases):
-            info_toks.append(f'OC_ERROR=Cannot annotate ALT "{alt}"')
-            return info_toks, False
+            return info_toks
         crv = {'chrom':chrom,'pos':pos,'ref_base':ref,'alt_base':alt}
         mapping = self._mapper.map(crv)
         for cname, value in mapping.items():
@@ -166,7 +160,7 @@ class VCFLineProcessor(object):
                     continue
                 info_entry = self.make_info_entry(aname, cname, value)
                 info_toks.append(info_entry)
-        return info_toks, True
+        return info_toks
 
 class VCFAnnotator(object):
     """Annotate a VCF using the VCFLineProcessor to output.
@@ -240,28 +234,24 @@ class VCFAnnotator(object):
     def _process_chunk(self, data, identifier):
         """Annotate a chunk of lines and output to a temporary file"""
         out_path = os.path.join(self.temp_dir, identifier)
-        error_count = 0
         try:
             with bgzf.open(filename=out_path, mode='wt') as out:
                 for line in data:
                     try:
-                        annotated, successful = self.line_processor.annotate_line(line)
-                        if not successful:
-                            error_count += 1
+                        annotated = self.line_processor.annotate_line(line)
                         out.write(annotated)
                     except Exception as e:
                         out.write(line)
-                        self.logger.error(f'Uncaught exception annotating line. \n  {line}\n  {e.args}')
+                        self.logger.error(f'Exception occurred annotating line. \n  {line}\n  {e.args}')
                         import traceback
                         traceback.print_exc(e)
         except IOError:
-            return False, error_count
+            return False
 
-        return True, error_count
+        return True
 
     def _worker(self, in_queue, out_queue, file_complete):
         """Worker process function to wait for an item in the in_queue, then process it and pass it to out_queue when complete"""
-        total_errors = 0
         while True:
             time.sleep(.01)
             params = None
@@ -270,14 +260,10 @@ class VCFAnnotator(object):
             except queue.Empty:
                 pass
             if params is None and file_complete.value:
-                break
+                return
             elif params is not None:
-                result, error_count = self._process_chunk(**params)
-                total_errors += error_count
+                result = self._process_chunk(**params)
                 out_queue.put(result)
-        if total_errors > 0:
-            self.logger.info(f'Annotation errors: {total_errors}')
-        return total_errors
 
     def multi_process_data(self, file):
         """Create worker processes and feed batches of data to each until the given file is read"""
