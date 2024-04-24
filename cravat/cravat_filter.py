@@ -564,10 +564,7 @@ class CravatFilter:
             ftable = level
         else:
             ftable = level + "_filtered"
-        q = "select count(*) from " + ftable
-        await cursor.execute(q)
-        for row in await cursor.fetchone():
-            n = row
+        n = await self.exec_db(self.get_filtered_count, level=level)
         if self.stdout == True:
             print("#" + level)
             print(str(n))
@@ -645,8 +642,110 @@ class CravatFilter:
         it = await cursor.fetchall()
         return it
 
+    @staticmethod
+    def reaggregate_column(base_alias, meta):
+        column = meta['name']
+        function = meta.get('filter_reagg_function', None)
+        reagg_args = meta.get('filter_reagg_function_args', [])
+        reagg_source = meta.get('filter_reagg_source_column', None)
+
+        if not function:
+            return "{}.{}".format(base_alias, column)
+
+        reagg_template = "{}({}{}) OVER (PARTITION BY {}.base__uid ORDER BY sample.base__sample_id ROWS BETWEEN UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING) {}"
+        quoted_args = ["'{}'".format(x) for x in reagg_args]
+        formatted_args = ",{}".format(",".join(quoted_args)) if reagg_args else ""
+        return reagg_template.format(function, reagg_source, formatted_args, base_alias, column)
+
+    @staticmethod
+    async def level_column_definitions(cursor, level):
+        await cursor.execute("select col_name, col_def from {}_header".format(level))
+        return {k: json.loads(v) for k, v in await cursor.fetchall()}
+
+    async def make_sample_filter_group(self, cursor, sample_filter):
+        sample_columns = await self.level_column_definitions(cursor, 'sample')
+        prefixes = {k: 'sample' for k in sample_columns.keys()}
+        filter_group = FilterGroup(sample_filter)
+        filter_group.add_prefixes(prefixes)
+        return filter_group
+
     async def get_filtered_iterator(self, level="variant", conn=None, cursor=None):
-        bypassfilter = not(self.filter or self.filtersql or self.includesample or self.excludesample)
+        sql = await self.build_base_sql(cursor, level)
+
+        if level == 'variant' and self.filter and 'samplefilter' in self.filter and len(self.filter['samplefilter']['rules']) > 0:
+            sample_filter = self.filter['samplefilter']
+            variant_columns = await self.level_column_definitions(cursor, 'variant')
+
+            reaggregated_columns = [self.reaggregate_column('v', meta) for col, meta in variant_columns.items()]
+            sample_filters = self.build_sample_exclusions()
+            filter_group = await self.make_sample_filter_group(cursor, sample_filter)
+
+            sql = """
+                with base_variant as ({}),
+                scoped_sample as (
+                    select * 
+                    from sample 
+                    where 1=1
+                    {}
+                )
+                select distinct {}
+                from base_variant v
+                join scoped_sample sample on sample.base__uid = v.base__uid
+                where {}
+            """.format(sql, sample_filters, ",".join(reaggregated_columns), filter_group.get_sql())
+
+        await cursor.execute(sql)
+        cols = [v[0] for v in cursor.description]
+        rows = await cursor.fetchall()
+
+        return cols, rows
+    
+    async def get_filtered_count(self, level="variant", conn=None, cursor=None):
+
+        if level == 'variant' and self.filter and 'samplefilter' in self.filter and len(self.filter['samplefilter']['rules']) > 0:
+            sql = await self.build_base_sql(cursor, level)
+            sample_filter = self.filter['samplefilter']
+            variant_columns = await self.level_column_definitions(cursor, 'variant')
+
+            reaggregated_columns = [self.reaggregate_column('v', meta) for col, meta in variant_columns.items()]
+            sample_filters = self.build_sample_exclusions()
+            filter_group = await self.make_sample_filter_group(cursor, sample_filter)
+
+            sql = """
+                with base_variant as ({}),
+                scoped_sample as (
+                    select * 
+                    from sample 
+                    where 1=1
+                    {}
+                )
+                select count(distinct v.base__uid)
+                from base_variant v
+                join scoped_sample sample on sample.base__uid = v.base__uid
+                where {}
+            """.format(sql, sample_filters, filter_group.get_sql())
+        else:
+            sql = await self.build_base_sql(cursor, level, count=True)
+        await cursor.execute(sql)
+        rows = await cursor.fetchall()
+
+        return rows[0][0]
+
+    def build_sample_exclusions(self):
+        # this is needed because joining back to the sample table causes
+        # re-inclusion of sample data that was excluded at the variant level.
+        sample_filters = ""
+        req, rej = self.required_and_rejected_samples()
+        if req:
+            sample_filters += "and base__sample_id in ({})".format(
+                ", ".join(["'{}'".format(sid) for sid in req]))
+        if rej:
+            sample_filters += "and base__sample_id not in ({})".format(
+                ", ".join(["'{}'".format(sid) for sid in rej]))
+        return sample_filters
+
+    async def build_base_sql(self, cursor, level, count=False):
+        bypassfilter = not (self.filter or self.filtersql or self.includesample or self.excludesample)
         if level == "variant":
             kcol = "base__uid"
             if bypassfilter:
@@ -682,29 +781,20 @@ class CravatFilter:
                     ", ".join(colnames)
                 )
             else:
-                sql = "select v.* from " + table + " as v"
+                if not count:
+                    sql = "select v.* from " + table + " as v"
+                else:
+                    sql = "select count(v.base__uid) from " + table + " as v"
                 if bypassfilter == False:
                     sql += " inner join " + ftable + " as f on v." + kcol + "=f." + kcol
-        await cursor.execute(sql)
-        cols = [v[0] for v in cursor.description]
-        rows = await cursor.fetchall()
-        return cols, rows
+
+        return sql
 
     async def make_filtered_sample_table(self, conn=None, cursor=None):
         q = "drop table if exists fsample"
         await cursor.execute(q)
         await conn.commit()
-        req = []
-        rej = []
-        if "sample" in self.filter:
-            if "require" in self.filter["sample"]:
-                req = self.filter["sample"]["require"]
-            if "reject" in self.filter["sample"]:
-                rej = self.filter["sample"]["reject"]
-        if self.includesample is not None:
-            req = self.includesample
-        if self.excludesample is not None:
-            rej = self.excludesample
+        req, rej = self.required_and_rejected_samples()
         if len(req) > 0 or len(rej) > 0:
             q = "create table fsample as select distinct base__uid from sample"
             if req:
@@ -720,6 +810,13 @@ class CravatFilter:
             return True
         else:
             return False
+
+    def required_and_rejected_samples(self):
+        sample = self.filter.get("sample", {})
+        req = sample.get("require", self.includesample or [])
+        rej = sample.get("reject",  self.excludesample or [])
+
+        return req, rej
 
     async def make_filter_where(self, conn=None, cursor=None):
         q = ""

@@ -615,6 +615,9 @@ class CravatReport:
         level = "gene"
         if await self.exec_db(self.table_exists, level):
             await self.exec_db(self.make_col_info, level)
+        level = "sample"
+        if await self.exec_db(self.table_exists, level):
+            await self.exec_db(self.make_col_info, level)
         return self.colinfo
 
     def setup(self):

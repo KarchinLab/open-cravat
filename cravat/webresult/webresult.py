@@ -3,7 +3,8 @@ import aiosqlite
 import sqlite3
 import json
 import sys
-import imp
+import importlib
+from importlib import util as importlib_util
 from cravat import admin_util as au
 from cravat import CravatFilter
 from cravat.constants import base_smartfilters
@@ -330,10 +331,10 @@ async def get_result (request):
     else:
         confpath = None
     reporter_name = 'jsonreporter'
-    f, fn, d = imp.find_module(
-        reporter_name, 
-        [os.path.join(os.path.dirname(__file__),)])
-    m = imp.load_module(reporter_name, f, fn, d)
+    fp = os.path.join(os.path.dirname(__file__), f'{reporter_name}.py')
+    spec = importlib_util.spec_from_file_location(reporter_name, fp)
+    m = importlib_util.module_from_spec(spec)
+    spec.loader.exec_module(m)
     arg_dict = {'dbpath': dbpath, 'module_name': reporter_name}
     if confpath != None:
         arg_dict['confpath'] = confpath
@@ -445,6 +446,8 @@ async def get_variant_cols (request):
         data['columns']['variant'] = get_colmodel('variant', colinfo)
     if 'gene' in colinfo:
         data['columns']['gene'] = get_colmodel('gene', colinfo)
+    if 'sample' in colinfo:
+        data['columns']['sample'] = get_colmodel('sample', colinfo)
     content = data
     return web.json_response(content)
 
@@ -546,10 +549,10 @@ def get_colmodel (tab, colinfo):
 
 async def get_colinfo (dbpath, confpath, filterstring):
     reporter_name = 'jsonreporter'
-    f, fn, d = imp.find_module(
-        reporter_name, 
-        [os.path.join(os.path.dirname(__file__),)])
-    m = imp.load_module(reporter_name, f, fn, d)
+    fp = os.path.join(os.path.dirname(__file__), f'{reporter_name}.py')
+    spec = importlib_util.spec_from_file_location(reporter_name, fp)
+    m = importlib_util.module_from_spec(spec)
+    spec.loader.exec_module(m)
     arg_dict = {'dbpath': dbpath, 'module_name': reporter_name}
     if confpath != None:
         arg_dict['confpath'] = confpath
@@ -603,10 +606,10 @@ async def serve_runwidget (request):
             if key != 'dbpath':
                 new_queries[key] = queries[key]
         queries = new_queries
-    f, fn, d = imp.find_module(path, 
-        [os.path.join(au.get_modules_dir(), 
-                      'webviewerwidgets', path)])
-    m = imp.load_module(path, f, fn, d)
+    info = au.get_local_module_info(path)
+    spec = importlib_util.spec_from_file_location(path, info.script_path)
+    m = importlib_util.module_from_spec(spec)
+    spec.loader.exec_module(m)
     content = await m.get_data(queries)
     return web.json_response(content)
 
@@ -618,15 +621,16 @@ async def serve_webapp_runwidget (request):
     for key in queries:
         tmp_queries[key] = queries[key]
     queries = tmp_queries
-    f, fn, d = imp.find_module(
-        'wg' + widget_name,
-        [os.path.join(au.get_modules_dir(), 'webapps', module_name, 'widgets', 'wg' + widget_name)]
-    )
-    m = imp.load_module(widget_name, f, fn, d)
+    name = f'wg{widget_name}'
+    widget_path = os.path.join(au.get_modules_dir(), 'webapps', module_name, 'widgets', name, f'{name}.py')
+    spec = importlib_util.spec_from_file_location(name, widget_path)
+    m = importlib_util.module_from_spec(spec)
+    spec.loader.exec_module(m)
     content = await m.get_data(queries)
     return web.json_response(content)
 
 async def serve_runwidget_post (request):
+    # NOTE: This method seems to not be called either in the OpenCravat or OpenCravat modules code
     path = 'wg' + request.match_info['module']
     job_id, dbpath = await get_jobid_dbpath(request)
     queries = await request.post()
@@ -653,10 +657,10 @@ async def serve_runwidget_post (request):
             if key != 'dbpath':
                 new_queries[key] = queries[key]
         queries = new_queries
-    f, fn, d = imp.find_module(path, 
-        [os.path.join(au.get_modules_dir(), 
-                      'webviewerwidgets', path)])
-    m = imp.load_module(path, f, fn, d)
+    info = au.get_local_module_info(path)
+    spec = importlib_util.spec_from_file_location(path, info.script_path)
+    m = importlib_util.module_from_spec(spec)
+    spec.loader.exec_module(m)
     content = await m.get_data(queries)
     return web.json_response(content)
 

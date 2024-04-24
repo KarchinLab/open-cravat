@@ -6,7 +6,7 @@ from cravat.cravat_web import parser as gui_parser
 from cravat.cravat_report import parser as report_parser
 from cravat.vcfanno import vcfanno
 import sys
-from pathlib import Path
+import pathlib
 
 root_p = argparse.ArgumentParser(
     description="Open-CRAVAT genomic variant interpreter. https://github.com/KarchinLab/open-cravat"
@@ -240,9 +240,16 @@ vcfanno_p.add_argument('-t','--threads',
                        type = int,
                        help = 'Number of CPU threads to use')
 vcfanno_p.add_argument('--temp-dir',
-                       type = Path,
-                       default = Path('temp-vcfanno'),
+                       type = pathlib.Path,
+                       default = pathlib.Path('temp-vcfanno'),
                        help = 'Temporary directory for working files')
+vcfanno_p.add_argument('-o','--output-path',
+                       type = pathlib.Path,
+                       help = 'Output vcf path (gzipped). Defaults to input_path.oc.vcf.gz')
+vcfanno_p.add_argument('--chunk-size',
+                       type = int,
+                       default = 10**4,
+                       help = 'Number of lines to annotate in each thread before syncing to disk. Affects performance.')
 vcfanno_p.set_defaults(func=vcfanno)
 
 def main():
