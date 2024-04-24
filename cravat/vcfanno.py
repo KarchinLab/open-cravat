@@ -383,7 +383,7 @@ def vcfanno(args):
         input_path=str(input_path),
         output_path=str(output_path),
         temp_dir='temp',
-        processors=mp.cpu_count(),
+        processors=4,
         chunk_size=10**4,
         chunk_log_frequency=50,
         annotators=args.annotators)
