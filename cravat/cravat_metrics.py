@@ -35,11 +35,7 @@ class cravatMetrics:
         self.machinedata['amountRAM'] = psutil.virtual_memory().total
         self.machinedata['swapMemory'] = psutil.swap_memory().total
         self.machinedata['numCPU'] = os.cpu_count()
-        partitions = psutil.disk_partitions()
-        if len(partitions) > 0:
-            self.machinedata['fileSystem'] = psutil.disk_partitions()[0].fstype
-        else:
-            self.machinedata['fileSystem'] = 'unknown'
+        self.machinedata['fileSystem'] = psutil.disk_partitions()[0].fstype
         self.machinedata['machineId'] = hex(uuid.getnode())
         self.machinedata['pythonVersion'] = platform.python_version()
 
