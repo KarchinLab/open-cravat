@@ -397,7 +397,10 @@ class VCFAnnotator(object):
 
 def vcfanno(args):
     input_path = pathlib.Path(args.input_path)
-    output_path = pathlib.Path(str(input_path)+'.oc.vcf.gz')
+    if args.output_path is not None:
+        output_path = args.output_path
+    else:
+        output_path = pathlib.Path(str(input_path)+'.oc.vcf.gz')
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -413,7 +416,8 @@ def vcfanno(args):
         output_path = str(output_path),
         temp_dir = args.temp_dir,
         processors = args.threads if args.threads else mp.cpu_count(),
-        chunk_size=10**4,
-        chunk_log_frequency=50,
-        annotators=args.annotators)
+        chunk_size= args.chunk_size,
+        chunk_log_frequency = 50,
+        annotators = args.annotators,
+        )
     anno.process()
