@@ -402,18 +402,37 @@ def vcfanno(args):
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
-    nthreads = args.threads if args.threads else mp.cpu_count()
     logging.basicConfig(
         level=logging.DEBUG,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[handler]
     )
     anno = VCFAnnotator(
-        input_path = str(input_path),
-        output_path = str(output_path),
-        temp_dir = args.temp_dir,
-        processors = args.threads if args.threads else mp.cpu_count(),
+        input_path=str(input_path),
+        output_path=str(output_path),
+        temp_dir='temp',
+        processors=mp.cpu_count(),
         chunk_size=10**4,
         chunk_log_frequency=50,
         annotators=args.annotators)
     anno.process()
+
+# if __name__ == '__main__':
+#     handler = logging.StreamHandler(sys.stdout)
+#     handler.setLevel(logging.DEBUG)
+#     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#     handler.setFormatter(formatter)
+#     logging.basicConfig(
+#         level=logging.DEBUG,
+#         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#         handlers=[handler]
+#     )
+#     anno = VCFAnnotator(
+#         input_path='/home/ska/data/gnomad.1.vcf.bgz',
+#         output_path='gnomad.1.out.vcf.gz',
+#         temp_dir='temp',
+#         processors=16,
+#         chunk_size=10**4,
+#         chunk_log_frequency=50,
+#         annotators=['clinvar','dbsnp_common'])
+#     anno.process()
