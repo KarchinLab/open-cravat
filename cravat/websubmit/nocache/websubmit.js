@@ -562,24 +562,12 @@ function populateJobTr (job) {
     logLink.setAttribute('href','/submit/jobs/' + job.id + '/log');
     logLink.setAttribute('target', '_blank');
     logLink.setAttribute('title', 'Click to download.');
-    var logButton = getEl('button');
-    logButton.classList.add('butn');
-    logButton.classList.add('active-download-button');
-    addEl(logButton, getTn('Log'));
-    addEl(logLink, logButton);
+    var button = getEl('button');
+    button.classList.add('butn');
+    button.classList.add('active-download-button');
+    addEl(button, getTn('Log'));
+    addEl(logLink, button);
     addEl(dbTd, logLink);
-    addEl(jobTr, dbTd);
-    // Err
-    var errLink = getEl('a');
-    errLink.setAttribute('href','/submit/jobs/' + job.id + '/err');
-    errLink.setAttribute('target', '_blank');
-    errLink.setAttribute('title', 'Check for per-variant errors.');
-    var errButton = getEl('button');
-    errButton.classList.add('butn');
-    errButton.classList.add('active-download-button');
-    addEl(errButton, getTn('Errors'));
-    addEl(errLink, errButton);
-    addEl(dbTd, errLink);
     addEl(jobTr, dbTd);
     // + button
     var btn = getEl('button');
