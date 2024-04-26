@@ -305,6 +305,7 @@ def _filtered_module_list(type):
         if local_info.type == type}
     return out
 
+
 def get_job_log(job_id):
     filerouter = file_router()
     job = filerouter.load_job(job_id)
