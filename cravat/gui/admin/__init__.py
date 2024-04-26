@@ -1,10 +1,8 @@
-from flask import current_app
-
-from cravat.gui.cravat_request import request_user
+from flask import current_app, g
 
 
 def is_admin_loggedin():
-    user = request_user()
+    user = g.username
     if not user:
         return False
     system_conf = current_app.config['CRAVAT_SYSCONF']

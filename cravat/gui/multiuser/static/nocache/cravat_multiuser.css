@@ -1,0 +1,212 @@
+#loginsignupdialog {
+    /*position: fixed;
+    background-color: #ffffff;
+    left: 0px;
+    top: 0px;
+    width: calc(100% - 0px);
+    height: calc(100% - 0px);
+    font-size: 13px;
+    margin: 0px;
+    padding: 0px;
+    z-index: 201;*/
+    flex-grow: 1;
+    background-image: url('nocache/oc.png');
+}
+
+#wrapdiv button {
+    font-size: 16px;
+}
+
+#wrapdiv img {
+    width: 130px;
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#wrapdiv {
+    display: block; 
+    background-color: #3c5788; 
+    border-radius: 17px; 
+    padding: 3rem;
+    width: 260px; 
+    font-size: 23px; 
+    color: white; 
+    font-weight: bold;
+    position: absolute;
+    top: calc(50% - 200px);
+    left: calc(50% - 180px);
+    text-align: center;
+}
+
+#wrapdiv input {
+    width: 100%; 
+    border-style: none; 
+    height: 30px; 
+    margin-top: 12px;
+}
+
+#wrapdiv button {
+    width: 100%; 
+    border-style: none; 
+    height: 30px; 
+    margin-top: 12px; 
+    background-color: #a3e3ff;
+}
+
+#changepassworddiv {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 2rem;
+    right: 3rem;
+    padding: 10px;
+    background-color: white;
+    border: 1px solid black;
+}
+
+#admindiv {
+    position: relative;
+    top: 100px;
+    height: calc(100% - 100px);
+}
+
+.adminsection-title {
+    text-decoration: underline;
+}
+
+.adminsection-div {
+    /*border: 1px solid black;*/
+    padding: 10px;
+}
+
+.adminsection-div table {
+    margin: 20px;
+}
+
+#accountdiv {
+    position: absolute;
+    right: 132px;
+    top: 4px;
+    display: flex;
+    align-items: center;
+}
+
+#accountdiv span {
+    font-size: 12px;
+}
+
+#logdiv {
+    display: inline-block;
+}
+
+#logdiv img {
+    height: 18px;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+body * {
+    font-family: 'roboto-light';
+}
+
+@font-face {
+    font-family: 'roboto-medium';
+    src: url('/result/fonts/roboto-medium-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-medium-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'roboto-light';
+    src: url('/result/fonts/roboto-light-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-light-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'roboto-bold';
+    src: url('/result/fonts/roboto-bold-webfont.woff') format('woff'),
+         url('/result/fonts/roboto-bold-webfont.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'sourcesanspro-bold';
+    src: url('/result/fonts/sourcesanspro-bold-webfont.woff') format('woff'),
+         url('/result/fonts/sourcesanspro-bold-webfont.woff2') format('woff2');
+}
+
+#yesnodialog {
+    z-index: 202;
+}
+
+#guest_warn_div {
+    display: none;
+    position: absolute;
+    top: 2rem;
+    left: 0;
+    background-color: white;
+    padding: 1rem;
+    box-shadow: 0.5rem 0.5rem 0.5rem gray;
+    border: 1px solid gray;
+}
+
+.disabled {
+    color: gray;
+    pointer-events: none;
+    background-color: #dadada;
+    border: 0px;
+}
+
+#sidenav {
+  display: flex;
+  flex-direction: column;
+  width: 12rem;
+  background-color: #3c5788;
+  color: white;
+  overflow: auto;
+  align-items: center;
+  padding-top: 2rem;
+}
+
+#sidenav ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+#sidenav ul li {
+  padding-top: 2rem;
+}
+
+#sidenav a {
+  color: white;
+  text-decoration: none;
+}
+
+#container {
+  display: flex;
+  flex-direction: row;
+  width: 100vw;
+  height: 100vh;
+}
+
+body {
+  margin: 0;
+}
+
+#logindiv {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#guestdiv {
+    display: none;
+}
+
+#guestdiv.show {
+    display: block
+}
+

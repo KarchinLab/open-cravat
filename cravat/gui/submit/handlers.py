@@ -6,7 +6,7 @@ import traceback
 from datetime import datetime
 from distutils.version import LooseVersion
 
-from flask import jsonify, request, abort
+from flask import jsonify, request, abort, g
 from werkzeug.utils import secure_filename
 
 from cravat import admin_util as au
@@ -18,7 +18,7 @@ from cravat.gui import tasks
 
 
 def server_mode():
-    return jsonify({'servermode': is_multiuser_server()})
+    return jsonify({'servermode': g.is_multiuser})
 
 
 def get_report_types():
@@ -33,7 +33,7 @@ def get_system_conf_info():
 
 def get_last_assembly():
     default_assembly = au.get_default_assembly()
-    if is_multiuser_server() and default_assembly is not None:
+    if g.is_multiuser and default_assembly is not None:
         assembly = default_assembly
     else:
         last_assembly = au.get_last_assembly()
@@ -126,7 +126,7 @@ def submit():
             'msg': f'Input is too big. Limit is {size_cutoff}MB.'
         }), 413
 
-    if request_user() is None:
+    if g.username is None:
         return jsonify({'status': 'notloggedin'})
 
     filerouter = file_router()
@@ -209,7 +209,7 @@ def submit():
     else:
         assembly = constants.default_assembly
     run_args.append(assembly)
-    if is_multiuser_server():
+    if g.is_multiuser:
         # TODO: User settings
         # await cravat_multiuser.update_user_settings(request, {'lastAssembly': assembly})
         pass
@@ -232,7 +232,7 @@ def submit():
         run_args.append('--input-format')
         run_args.append(job_options['forcedinputformat'])
 
-    if is_multiuser_server():
+    if g.is_multiuser:
         run_args.append('--writeadmindb')
         run_args.extend(['--jobid', job_id])
 
@@ -245,10 +245,10 @@ def submit():
     status = {'status': 'Submitted'}
     job.set_info_values(status=status)
 
-    if is_multiuser_server():
+    if g.is_multiuser:
         import cravat_multiuser.sync
         admindb = cravat_multiuser.sync.ServerAdminDb()
-        admindb.add_job_info(request_user(), job)
+        admindb.add_job_info(g.username, job)
 
     # makes temporary status.json
     status_json = {}

@@ -30,27 +30,3 @@ def get_result_levels():
         conn.close()
 
     return jsonify(content)
-
-def get_variant_cols():
-    queries = request.values
-    job_id, dbpath = jobid_and_db_path()
-
-    confpath = queries.get('confpath', None)
-    filterstring = queries.get('filter', None)
-
-    data = {
-        'data': {},
-        'stat': {},
-        'status': {},
-        'columns': {}
-    }
-
-    colinfo = get_colinfo(dbpath, confpath, filterstring)
-
-    if 'variant' in colinfo:
-        data['columns']['variant'] = get_colmodel('variant', colinfo)
-
-    if 'gene' in colinfo:
-        data['columns']['gene'] = get_colmodel('gene', colinfo)
-
-    return jsonify(data)

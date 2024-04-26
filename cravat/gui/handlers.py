@@ -1,9 +1,12 @@
-from flask import redirect, jsonify
+from flask import redirect, jsonify, g
 from cravat import admin_util as au
 
 
 def redirect_to_index():
-    return redirect('/submit/nocache/index.html')
+    if g.is_multiuser and g.username is None:
+        return redirect('/server/nocache/login.html')
+    else:
+        return redirect('/submit/nocache/index.html')
 
 
 def heartbeat():
