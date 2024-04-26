@@ -1,6 +1,11 @@
+import imp
+import mimetypes
+import os
+
 from flask import request, current_app, jsonify
 from sqlite3 import connect
 
+from cravat import admin_util as au
 from cravat.gui.cravat_request import file_router, jobid_and_db_path
 
 
@@ -30,3 +35,31 @@ def get_result_levels():
         conn.close()
 
     return jsonify(content)
+
+
+def serve_widgetfile(module, filename):
+    filepath = os.path.join(
+        au.get_modules_dir(),
+        'webviewerwidgets',
+         module,
+         filename
+        )
+
+    if os.path.exists(filepath):
+        ct, encoding = mimetypes.guess_type(str(filepath))
+        if not ct:
+            ct = "application/octet-stream"
+
+        def file_stream():
+            with open(filepath) as f:
+                for line in f:
+                    yield line
+        headers = {
+            "Content-Type": ct,
+            "Cache-Control": "no-cache"
+        }
+
+        if encoding:
+            headers['Content-Encoding'] = encoding
+
+        return file_stream(), headers
