@@ -11,12 +11,15 @@ def relative_router(base, application):
     return add_relative_route
 
 
-def load(application, static_router):
-    from . import submit, store, result
+def load(application, static_router, is_multiuser):
+    from . import submit, store, result, multiuser
 
     submit.initialize(application)
     store.initialize(application)
     result.initialize(application)
+
+    if is_multiuser:
+        multiuser.initialize(application)
 
     sysconf = au.get_system_conf()
     modules_dir = sysconf[constants.modules_dir_key]
@@ -26,6 +29,7 @@ def load(application, static_router):
     static_router.add_files(os.path.join(source_dir, "websubmit"), prefix="/submit")
     static_router.add_files(os.path.join(source_dir, "webresult"), prefix="/result")
     static_router.add_files(os.path.join(modules_dir, "webapps"), prefix="/webapps")
+    static_router.add_files(os.path.join(source_dir, "gui", "multiuser", "static"), prefix="/server")
 
     root_route = relative_router("/", application)
     root_route('/', None, redirect_to_index)

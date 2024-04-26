@@ -3,11 +3,11 @@ import os
 import shutil
 import traceback
 
-from flask import request, current_app, jsonify
+from flask import request, current_app, jsonify, g
 from cravat import constants, admin_util as au
 from cravat.gui.models import Module
 from cravat.gui.admin import is_admin_loggedin
-from cravat.gui.cravat_request import is_multiuser_server, HTTP_BAD_REQUEST
+from cravat.gui.cravat_request import HTTP_BAD_REQUEST
 from cravat.gui.tasks import install_module
 
 def get_storeurl():
@@ -152,7 +152,7 @@ def get_module_dependencies():
     return jsonify(deps)
 
 def queue_install():
-    if is_multiuser_server():
+    if g.is_multiuser:
         if not is_admin_loggedin():
             return 'notadmin'
 

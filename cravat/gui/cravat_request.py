@@ -1,21 +1,10 @@
-from flask import request, current_app
+from flask import request, g
 
 import cravat.gui.legacy
 
 
-def is_multiuser_server():
-    return request.environ.get('CRAVAT_MULTIUSER', False)
-
-
-def request_user():
-    if not is_multiuser_server():
-        return 'default'
-    else:
-        return request.environ.get('CRAVAT_USER', None)
-
-
 def file_router():
-    return cravat.gui.legacy.UserFileRouter(request_user(), is_multiuser_server())
+    return cravat.gui.legacy.UserFileRouter(g.username, g.is_multiuser)
 
 
 def jobid_and_db_path():
@@ -35,3 +24,4 @@ def jobid_and_db_path():
 
 HTTP_NO_CONTENT = ('', 204)
 HTTP_BAD_REQUEST = ('', 400)
+HTTP_UNAUTHORIZED = ('fail', 401, {'Content-Type': 'text/plain'})
