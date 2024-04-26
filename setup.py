@@ -53,6 +53,9 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'webstore')):
 for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
+for root, dirs, files in os.walk(os.path.join('cravat', 'gui', 'multiuser')):
+    root_files = [os.path.join('..', root, f) for f in files]
+    data_files.extend(root_files)
 
 setup(
     name='open-cravat',
@@ -98,7 +101,6 @@ setup(
         'flask',
         'waitress',
         'whitenoise',
-        'Flask-Session',
         'Flask-Caching',
         'cachelib',
         'celery'

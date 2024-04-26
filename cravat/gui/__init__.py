@@ -23,18 +23,22 @@ log_dir = sysconf[constants.log_dir_key]
 celery = job_manager.celery_init_app(app)
 celery.set_default()
 
-# Application Initialization
-routing.load(app, static_server)
-cache.init_app(app)
-
 def multiuser_middleware(app, multiuser):
-    # TODO: Rework cravat_multiuser, this is just the variable,
-    # we also need the features/routes
     def wsgi_middleware(environ, start_response):
         environ['CRAVAT_MULTIUSER'] = multiuser
         return app(environ, start_response)
 
     return wsgi_middleware
+
+@app.before_request
+def setup_app_context():
+    from flask import session, g, request
+    g.is_multiuser = request.environ.get('CRAVAT_MULTIUSER', False)
+
+    if not g.is_multiuser:
+        g.username = 'default'
+    else:
+        g.username = session.get('user', None)
 
 ###
 # Requests are layered through the WSGI Applications as such:
@@ -45,5 +49,10 @@ def multiuser_middleware(app, multiuser):
 
 def start_server(interface, port, multiuser):
     from waitress import serve
+
+    # Application Initialization
+    routing.load(app, static_server, multiuser)
+    cache.init_app(app)
+
     wrapped_app = multiuser_middleware(static_server, multiuser)
     serve(wrapped_app, host=interface, port=port)
