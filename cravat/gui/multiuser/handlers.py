@@ -88,6 +88,16 @@ def check_logged():
     return jsonify(response)
 
 
+def logout():
+    if g.is_multiuser:
+        session.pop('user', None)
+        response = 'success'
+    else:
+        response = 'no multiuser mode'
+
+    return jsonify(response)
+
+
 def _create_user_dir_if_not_exist(username):
     root_jobs_dir = au.get_jobs_dir()
     user_job_dir = os.path.join(root_jobs_dir, username)
