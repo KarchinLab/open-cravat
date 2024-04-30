@@ -18,9 +18,6 @@ def load(application, static_router, is_multiuser):
     store.initialize(application)
     result.initialize(application)
 
-    if is_multiuser:
-        multiuser.initialize(application)
-
     sysconf = au.get_system_conf()
     modules_dir = sysconf[constants.modules_dir_key]
     source_dir = os.path.dirname(au.__file__)
@@ -29,7 +26,10 @@ def load(application, static_router, is_multiuser):
     static_router.add_files(os.path.join(source_dir, "websubmit"), prefix="/submit")
     static_router.add_files(os.path.join(source_dir, "webresult"), prefix="/result")
     static_router.add_files(os.path.join(modules_dir, "webapps"), prefix="/webapps")
-    static_router.add_files(os.path.join(source_dir, "gui", "multiuser", "static"), prefix="/server")
+
+    if is_multiuser:
+        multiuser.initialize(application)
+        static_router.add_files(os.path.join(source_dir, "gui", "multiuser", "static"), prefix="/server")
 
     root_route = relative_router("/", application)
     root_route('/', None, redirect_to_index)
