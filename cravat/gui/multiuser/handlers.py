@@ -47,8 +47,12 @@ def signup():
 
             if admindb.register_user(username, password, question, answer):
                 _create_user_dir_if_not_exist(username)
-                session['user'] = User.authenticate(username, password)
-                response = 'Signup successful'
+                if User.authenticate(username, password):
+                    session['user'] = username
+                    response = 'Signup successful'
+                else:
+                    # check for a bug in registration, are they actually there?
+                    response = 'Signup failed'
             else:
                 response = 'Already registered'
     else:
