@@ -98,6 +98,7 @@ setup(
         'mpmath',
         'PyVCF3',
         'flask',
+        'paste',
         'waitress',
         'whitenoise',
         'Flask-Caching',

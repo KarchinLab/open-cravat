@@ -1,3 +1,4 @@
+import logging
 import os
 
 from flask import Flask
@@ -8,7 +9,7 @@ from whitenoise import WhiteNoise
 from cravat import admin_util as au
 from cravat import constants
 
-from . import submit, store, config, routing, job_manager, multiuser
+from . import submit, store, config, routing, job_manager, multiuser, logging as cl
 from .cache import cache
 
 # Create the Flask application and our configuration
@@ -20,7 +21,7 @@ static_server = WhiteNoise(app)
 
 # Cravat settings
 sysconf = au.get_system_conf()
-log_dir = sysconf[constants.log_dir_key]
+logging.basicConfig(level=logging.DEBUG)
 
 # Celery
 celery = job_manager.celery_init_app(app)
@@ -50,9 +51,11 @@ def setup_app_context():
 #  |-> WhiteNoise (Static files)
 #  |-> Flask
 
+
 def _ensure_path_exists(*args):
     path = Path(os.path.join(*args))
     path.mkdir(parents=True, exist_ok=True)
+
 
 def ensure_workspace_exists():
     # bootstrap cache and celery by creating work directories
@@ -61,12 +64,14 @@ def ensure_workspace_exists():
     _ensure_path_exists(workdir, 'celery', 'results')
     _ensure_path_exists(workdir, 'cache')
 
+
 def start_server(interface, port, multiuser):
     from waitress import serve
+    from paste.translogger import TransLogger
 
     # Application Initialization
     routing.load(app, static_server, multiuser)
     cache.init_app(app)
 
     wrapped_app = multiuser_middleware(static_server, multiuser)
-    serve(wrapped_app, host=interface, port=port)
+    serve(TransLogger(wrapped_app, setup_console_handler=True), host=interface, port=port)
