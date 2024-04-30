@@ -46,6 +46,17 @@ metrics_dir_name = "metrics"
 default_metrics_dir = os.path.join(oc_root_dir, metrics_dir_name)
 if os.path.exists(default_metrics_dir) == False:
     os.mkdir(default_metrics_dir)
+# work dir
+work_dir_key = "work_dir"
+work_dir_name = "workspace"
+if not work_dir_key in conf:
+    default_work_dir = os.path.join(oc_root_dir, work_dir_name)
+    if os.path.exists(default_work_dir) == False:
+        os.mkdir(default_work_dir)
+    conf[work_dir_key] = default_work_dir
+    wf = open(system_conf_path, "w")
+    yaml.dump(conf, wf, default_flow_style=False)
+    wf.close()
 # modules dir
 modules_dir_key = "modules_dir"
 modules_dir_name = "modules"

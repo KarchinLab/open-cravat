@@ -1,11 +1,14 @@
+import os
+
 from flask import Flask
+from pathlib import Path
 
 from whitenoise import WhiteNoise
 
 from cravat import admin_util as au
 from cravat import constants
 
-from . import submit, store, config, routing, job_manager
+from . import submit, store, config, routing, job_manager, multiuser
 from .cache import cache
 
 # Create the Flask application and our configuration
@@ -46,6 +49,17 @@ def setup_app_context():
 #  |-> Multiuser WSGI Middleware (Sets CRAVAT_MULTIUSER)
 #  |-> WhiteNoise (Static files)
 #  |-> Flask
+
+def _ensure_path_exists(*args):
+    path = Path(os.path.join(*args))
+    path.mkdir(parents=True, exist_ok=True)
+
+def ensure_workspace_exists():
+    # bootstrap cache and celery by creating work directories
+    workdir = app.config['CRAVAT_SYSCONF'][constants.work_dir_key]
+    _ensure_path_exists(workdir, 'celery', 'broker')
+    _ensure_path_exists(workdir, 'celery', 'results')
+    _ensure_path_exists(workdir, 'cache')
 
 def start_server(interface, port, multiuser):
     from waitress import serve
