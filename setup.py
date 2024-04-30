@@ -99,6 +99,7 @@ setup(
         'PyVCF3',
 		'pandas',
         'flask',
+        'paste',
         'waitress',
         'whitenoise',
         'Flask-Caching',
