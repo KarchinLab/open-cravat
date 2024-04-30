@@ -893,6 +893,8 @@ def get_system_conf(file_only=False):
 
         if constants.modules_dir_key not in conf:
             conf[constants.modules_dir_key] = constants.default_modules_dir
+        if constants.work_dir_key not in conf:
+            conf[constants.work_dir_key] = constants.default_work_dir
         if constants.conf_dir_key not in conf:
             conf[constants.conf_dir_key] = constants.default_conf_dir
         if constants.jobs_dir_key not in conf:

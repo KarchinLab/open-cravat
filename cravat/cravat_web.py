@@ -210,6 +210,8 @@ def store_worker():
 def run_flask(args):
     from cravat import gui
 
+    gui.ensure_workspace_exists()
+
     if not args.servermode:
         from multiprocessing import Process
         p = Process(target=default_celery_worker)
