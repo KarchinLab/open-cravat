@@ -72,57 +72,48 @@
     <div id='submitcontentdiv'>
         <div id="submit-form">
             <div id='submit-variant-div' class='container'>
+                <div class='divbanner'></div>
                 <span class='divtitle'>Variants</span>
-                <table>
-                    <tr>
-                        <td>
+                <div class="flexcol">
+                    <label for="assembly-select" class="input-label">Genome:</label>
                             <div id='assembly-select-div'>
-                                Genome:
                                 <select id="assembly-select">
                                     <option value="hg38">hg38/GRCh38</option>
                                     <option value="hg19" selected=true>hg19/GRCh37</option>
                                     <option value="hg18">hg18/GRCh36</option>
                                 </select>
                             </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td valign='top' class='variant-input-border-bottom' title="Upload file(s). Select multiple files using ctrl and shift keys">
-                                <br />
-                            <input type="file" name="input-file" id="input-file" multiple/>
-                            <label for="input-file">Add input files</label>
-                            <button id='clear_inputfilelist_button' class='butn' style='display: none;'>Clear file(s)</button>
+                        <span class='variant-input-border-bottom' title="Upload file(s). Select multiple files using ctrl and shift keys">
+                            <div class="flexrow">
+                                <input type="file" name="input-file" id="input-file" multiple/>
+                                <label for="input-file">Add input files</label>
+                                <button id='clear_inputfilelist_button' class='butn' style='display: none;'>Clear file(s)</button>
+                            </div>
                             <div id="mult-inputs-message" style="display: none; margin-top: 4px;">
                                 <div id="mult-inputs-list"></div>
                             </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td valign='top' class='variant-input-border-bottom' style='text-align: left;'>
-                            <br />
-                            <div style='text-align: left;'>
-                                <textarea rows="3" id="input-text" style='' placeholder="Enter variants in a supported input format such as VCF or TSV, or type a list of the paths to input files in the server."></textarea>
+                        </span>
+                            <div class='or input-label'>OR</div>
+                            <div>
+                                <textarea rows="3" id="input-text" placeholder="Enter variants in a supported input format such as VCF or TSV, or type a list of the paths to input files in the server."></textarea>
                             </div>
                             <select id='submit-input-format-select' disabled style='display: none;'>
                                 <option value=''>Detect</option>
                             </select>
-                            <span style='font-size: 13px;'>Example:</span>
-                            <button value="vcf" class='butn input-example-button'>VCF</button>
-                            <button value="cravat" class='butn input-example-button'>TSV</button>
-                            <div class='or'>OR</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div style='margin-top: 14px;'>
-                                <span style='vertical-align: top;'>Note: </span>
+                            <div class="flexrow">
+                                <span class="input-label">Example:</span>
+                            </div>
+                            <div class="flexrow">
+                                <button value="vcf" class='butn input-example-button'>VCF</button>
+                                <button value="cravat" class='butn input-example-button'>TSV</button>
+                                <button value="hgvs" class='butn input-example-button'>HGVS</button>
+                            </div>
+                            <div class="flexcol">
+                                <span class="input-label">Note: </span>
                                 <textarea id='jobnoteinput' rows='1' placeholder='Enter a note for the analysis (optional)'></textarea>
                             </div>
-                        </td>
-                    </tr>
-                </table>
-                <div class='divbanner'></div>
-                <div class='chevrondiv'><div class='chevron chevron1to2'></div></div>
+                </div>
+                <div class='chevrondiv flexrow'>&nbsp;<div class='chevron chevron1to2'></div></div>
             </div>
   
             <div id='modchoose' class='container'>
@@ -147,10 +138,10 @@
                 <span class='divtitle'>Additional Analysis</span>
                 <div id='addtl-analysis-content'></div>
                 <div class='divbanner'></div>
+                <div class='chevrondiv'><div class='chevron chevron2to3'></div></div>
             </div>
+            <div class="annotate-container"><button id="submit-job-button" class='butn submit-annotate-button'>ANNOTATE</button></div>
         </div>
-        <div class='chevrondiv'><div class='chevron chevron2to3'></div></div>
-        <div style='text-align: center;'><button id="submit-job-button" class='butn submit-annotate-button'>ANNOTATE</button></div>
     </div>
 
     </td><td valign='top' style='padding-left: 5px; width: 100%;'>
