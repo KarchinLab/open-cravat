@@ -109,6 +109,10 @@ code {
     font-size: 13px;
 }
 
+.annotate-container {
+    margin-right: 10px;
+}
+
 .divtitle {
     font-family: sourcesanspro-bold;
     font-size: 22px;
@@ -119,11 +123,6 @@ code {
 }
 
 .or {
-    position: absolute;
-    top: -17px;
-    left: 30px;
-    padding-top: 5px;
-    padding-bottom: 5px;
     width: 26px;
     color: #4b4b4b;
 }
@@ -242,7 +241,17 @@ button {
 .variant-input-border-bottom {
     position: relative;
     border-bottom: 1px dotted #cbcbcb;
-    padding-bottom: 20px;
+    padding-top: 1em;
+}
+
+.flexcol {
+    display: flex;
+    flex-direction: column;
+}
+
+.flexrow {
+    display: flex;
+    flex-direction: row;
 }
 
 #submitcontentdiv {
@@ -250,11 +259,19 @@ button {
 }
 
 #jobnoteinput {
-    width: calc(100% - 44px);
+    width: calc(100% - 8px);
+    resize: vertical;
 }
 
 #input-text {
-    width: calc(100% + 40px);
+    width: calc(100% - 8px);
+    height: 4em;
+    transition: all ease .2s;
+    resize: vertical;
+}
+
+#input-text.input-text-selected {
+    height: 15em;
 }
 
 #refresh-jobs-table-btn {
@@ -517,19 +534,24 @@ input:checked + .slider:before {
 }
 
 .input-example-button {
-    width: 35px;
-    height: 23px;
+    min-width: 35px;
     font-size: 11px;
     background-color: #6e593a;
+    padding: 3px 6px;
+}
+
+.input-label {
+    font-size: 13px;
+    margin-top: 0.3em;
 }
 
 .submit-annotate-button {
     font-size: 24px; 
-    width: 391px;
+    width: 100%;
     padding: 9px;
     background-color: #de6342;
-    position: absolute;
-    left: 1px;
+    margin-left: 0;
+    margin-top: 1em;
 }
 
 .launch-button {
@@ -766,9 +788,6 @@ input:checked + .slider:before {
 }
 
 .chevron2to3 {
-  position: relative;
-  top: -30px;
-  left: 329px;
 }
 
 .chevron2to3:before {
@@ -908,8 +927,11 @@ input:checked + .slider:before {
 }
 
 #assembly-select-div {
-    width: fit-content;
-    padding: 2px;
+    width: 100%;
+}
+
+#assembly-select {
+    width: 100%;
 }
 
 .fileaddbutn {
