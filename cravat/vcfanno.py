@@ -14,8 +14,12 @@ from collections import OrderedDict
 import cravat
 import vcf
 import json
-from Bio import bgzf
 from cravat.inout import AllMappingsParser
+try:
+    from Bio import bgzf
+except ModuleNotFoundError:
+    bgzf = None
+    pass
 
 # from vcf_line_processor import VCFLineProcessor
 
@@ -396,6 +400,10 @@ class VCFAnnotator(object):
         self.merge_output()
 
 def vcfanno(args):
+    try:
+        from Bio import bgzf
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError('vcfanno requires biopython. Try running "pip install biopython".')
     input_path = pathlib.Path(args.input_path)
     if args.output_path is not None:
         output_path = args.output_path
