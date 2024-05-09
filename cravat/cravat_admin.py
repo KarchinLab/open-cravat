@@ -408,9 +408,7 @@ def publish_module (args):
     au.publish_module(args.module, args.user, args.password, overwrite=args.overwrite, include_data=args.data)
 
 def install_base (args):
-    sys_conf = au.get_system_conf()
-    base_modules = sys_conf.get(constants.base_modules_key,[])
-    args = SimpleNamespace(modules=base_modules,
+    args = SimpleNamespace(modules=constants.base_modules,
         force_data=args.force_data,
         version=None,
         yes=True,

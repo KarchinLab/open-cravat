@@ -76,12 +76,39 @@ if not log_dir_key in conf:
 # Live conf
 live_conf_fname = "live.yml"
 
-base_modules_key = "base_modules"
 main_conf_fname = "cravat.yml"
 main_conf_path = os.path.join(default_conf_dir, main_conf_fname)
 if os.path.exists(main_conf_path) == False:
     shutil.copyfile(os.path.join(packagedir, main_conf_fname), main_conf_path)
 
+# Base modules
+base_modules = [
+    'cravat-converter',
+    'vcf-converter',
+    'oldcravat-converter',
+    'hgvs-converter',
+    'textreporter',
+    'excelreporter',
+    'tagsampler',
+    'vcfinfo',
+    'hg38',
+    'casecontrol',
+    'wgbase',
+    'wghg19',
+    'wgncrna',
+    'wglollipop',
+    'wgndex',
+    'wgcircossummary',
+    'wgcodingvsnoncodingsummary',
+    'wggosummary',
+    'wgsosamplesummary',
+    'wgsosummary',
+    'wgnote',
+    'wgvcfinfo',
+    'hg38wgs',
+    'varmeta',
+    'wgrankscore',
+]
 
 # metrics
 save_metrics_key = 'save_metrics'

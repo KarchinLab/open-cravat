@@ -250,9 +250,7 @@ async def queue_install (request):
     return web.Response(text = 'queued ' + queries['module'])
 
 async def get_base_modules (request):
-    global system_conf
-    base_modules = system_conf['base_modules']
-    return web.json_response(base_modules)
+    return web.json_response(constants.base_modules)
 
 async def install_base_modules (request):
     global servermode
@@ -261,8 +259,7 @@ async def install_base_modules (request):
         if r == False:
             response = 'failed'
             return web.json_response(response)
-    base_modules = system_conf.get(constants.base_modules_key,[])
-    for module in base_modules:
+    for module in constants.base_modules:
         install_queue.put({'module': module, 'version': None})
     response = 'queued'
     return web.json_response(response)
