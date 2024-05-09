@@ -1778,12 +1778,12 @@ function populatePackageVersions () {
 
 function onClickInputTextArea () {
     let input = document.getElementById('input-text');
-    input.classList.add('input-text-selected')
+    input.rows = 20;
 }
 
 function onBlurInputTextArea () {
     let input = document.getElementById('input-text');
-    input.classList.remove('input-text-selected')
+    input.rows = 1;
 }
 
 function resizePage () {
