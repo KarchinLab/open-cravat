@@ -26,44 +26,47 @@
 
 <body>
 
-<div id='pageselect'>
-    <div id='submitdiv_tabhead' class='tabhead' selval='t' value='submitdiv'>
-        JOBS
-    </div>
-    <div id='storediv_tabhead' class='tabhead' value='storediv' disabled='t'>
-        STORE
-    </div>
-    <a target="_blank" id='singlevar-link'>
-    <div id='singlevar_tabhead' class='tabhead' value='singlevardiv' disabled='t' style="background-color: #94d1eb;">
-        SINGLE VARIANT
-    </div>
-    </a>
-    <div id='admindiv_tabhead' class='tabhead' value='admindiv' disabled='t' style='display: none;'>
-        ADMIN
-    </div>
+<div id='main-logo' style='position: fixed; left: calc(50% - 65px); top: 2px; z-index: 201'>
+    <img src='/submit/logo.png' alt='Open Cravat Logo' class='logo' />
 </div>
-
-<div id='store-systemmoduleupdate-announce-div'>
-    System update available
-    <button id='store-systemmoduleupdate-button' class='butn'>Update</button>
-</div>
-
-<div id='verdiv' >
-    Version: <span class="curverspan" style="font-family: monospace;"></span>
-</div>
-
 <div class='headerdiv'>
-    <div style='position: absolute; left: calc(50% - 65px); top: 2px;'>
-        <img src='/submit/logo.png' alt='Open Cravat Logo' class='logo' />
+    <div id='pageselect'>
+        <div id='submitdiv_tabhead' class='tabhead' selval='t' value='submitdiv'>
+            JOBS
+        </div>
+        <div id='storediv_tabhead' class='tabhead' value='storediv' disabled='t'>
+            STORE
+        </div>
+        <!-- onclick for the link in the html markup instead of js prevents popup warning -->
+        <div id='singlevar_tabhead' class='tabhead' value='singlevardiv' disabled='t' onclick="window.open('/webapps/variantreport/index.html', '_blank')">
+            SINGLE VARIANT
+        </div>
+        <div id='admindiv_tabhead' class='tabhead' value='admindiv' disabled='t' style='display: none;'>
+            ADMIN
+        </div>
     </div>
-    <a href='https://opencravat.org' target='_blank'><img src='/submit/house-solid.svg' class='house-icon' /></a>
-    <a href='https://open-cravat.readthedocs.io/en/latest/Home.html' target='_blank'><img src='/result/images/question.png' class='question-icon'/></a>
-    <a href='mailto:support@opencravat.org?Subject=open-cravat%20feedback'><img src='/result/images/mail.png' class='email-icon'/></a>
-    <div style='position: absolute; right: 0px; top: 0px; padding-right: 10px; cursor: pointer;' class='threedotsdiv'>
-        <img src='/submit/setting.png' class='threedots' />
+    <div id='header-right'>
+        <div id='top-menu'>
+            <div class="menu-icon-container" title='Open CRAVAT Home Page'><a href='https://opencravat.org' target='_blank'><img src='/submit/house-solid.svg' class='menu-icon' /></a> </div>
+            <div id='help-menu-button' class="menu-icon-container" ><img src='/result/images/question.png' class='menu-icon' title='Help and Contact' /></div>
+            <div class='threedotsdiv menu-icon-container'>
+                <img src='/submit/setting.png' class='threedots menu-icon' title='Settings' />
+            </div>
+            <div id='nointernetdiv' class='menu-icon-container'>
+                <img src='/submit/nointernet.png' class='menu-icon' />
+            </div>
+        </div>
+
+        <div id='version-announcements'>
+            <div id='store-systemmoduleupdate-announce-div'>
+        System update available
+        <button id='store-systemmoduleupdate-button' class='butn'>Update</button>
     </div>
-    <div id='nointernetdiv' style='position: absolute; right: 87px; top: 6px; padding-right: 10px; display: none;'>
-        <img src='/submit/nointernet.png' style='width: 19px;' />
+
+            <div id='verdiv' >
+        Version: <span class="curverspan" style="font-family: monospace;"></span>
+    </div>
+    </div>
     </div>
 </div>
 
@@ -293,7 +296,7 @@
     </div>
 </div> <!-- systemmodule-div -->
 
-<div id='settingsdiv' >
+<div id='settingsdiv' class='menu-dropdown'>
     <span class="settingsdiv-elem">System configuration file:</span>
     <br />
     <input id='sysconfpathspan' class="settingsdiv-elem" type='text' size='60' disabled />
@@ -320,6 +323,37 @@
     <button id="system-conf-save-button" class="settingsdiv-elem butn">Save</button>
     <button id="system-conf-reset-button" class="settingsdiv-elem butn">Reset</button>
 </div> <!-- settingsdiv -->
+
+<div id='helpdiv' class='menu-dropdown'>
+    <a href='https://github.com/KarchinLab/open-cravat/discussions' target='_blank' title='Discussions' class='help-link'>
+        <div class='help-menu-icon'><img src='/store/images/comments-regular.svg' class='menu-icon-large'/></div>
+        <div class='help-right'>
+            <div class='help-menu-title'>Discussions</div>
+            <div class='help-menu-description'>Ask questions and provide feedback on our discussion board.</div>
+        </div>
+    </a>
+    <a href='https://open-cravat.readthedocs.io/en/latest/Home.html' target='_blank' title='Documentation' class='help-link'>
+        <div class='help-menu-icon'><img src='/store/images/book-solid.svg' class='menu-icon-large'/></div>
+        <div class='help-right'>
+            <div class='help-menu-title'>Documentation</div>
+            <div class='help-menu-description'>Learn basic and advanced usage of OpenCRAVAT through our documenatation.</div>
+        </div>
+    </a>
+    <a href='https://github.com/KarchinLab/open-cravat/issues' target='_blank' title='Report an Issue' class='help-link'>
+        <div class='help-menu-icon'><img src='/store/images/triangle-exclamation-solid.svg' class='menu-icon-large'/></div>
+        <div class='help-right'>
+            <div class='help-menu-title'>Report an Issue</div>
+            <div class='help-menu-description'>Technical and scientific problems can be reported to our GitHub repository.</div>
+        </div>
+    </a>
+    <a href='mailto:support@opencravat.org?Subject=open-cravat%20feedback' target='_blank' title='Contact Us' class='help-link'>
+        <div class='help-menu-icon'><img src='/result/images/mail.png' class='menu-icon'/></div>
+        <div class='help-right'>
+            <div class='help-menu-title'>Contact Us</div>
+            <div class='help-menu-description'>Send an email to the OpenCRAVAT team.</div>
+        </div>
+    </a>
+</div> <!-- helpdiv -->
 
 <div id='store-noconnect-div'>
     <div id='store-noconnect-msg-div'>

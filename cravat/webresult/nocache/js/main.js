@@ -1016,6 +1016,16 @@ function doNothing () {
 	alert('saved');
 }
 
+function onClickHelpMenu(evt) {
+    const helpDiv = document.getElementById('helpdiv');
+    if (helpDiv.style.display === 'flex') {
+        helpDiv.style.display = 'none';
+    } else {
+        helpDiv.style.display = 'flex';
+    }
+    evt.stopPropagation();
+}
+
 function quicksave () {
     filterJson = filterArmed;
     saveLayoutSetting(quickSaveName, 'quicksave');
@@ -1023,7 +1033,8 @@ function quicksave () {
 }
 
 function invokePackage () {
-	document.getElementById('packageSubmit').style.display = ''
+	document.getElementById('packageSubmit').style.display = '';
+    document.getElementById('helpdiv').style.display = 'none';
 }
 
 function cancelPackage () {

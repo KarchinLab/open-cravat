@@ -1896,6 +1896,12 @@ function addListeners () {
                 div.style.display = 'none';
             }
         }
+        if (evt.target.id != 'help-menu-button' && evt.target.id != 'helpdiv' && evt.target.classList.contains('help-link') === false) {
+            let helpDiv = document.getElementById('helpdiv');
+            if (helpDiv) {
+                helpDiv.style.display = 'none';
+            }
+        }
         if (evt.target.id == 'report_generation_generate_button') {
             createJobReport(evt);
         } else if (evt.target.id == 'report_generation_close_button') {

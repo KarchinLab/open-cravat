@@ -39,6 +39,7 @@ body * {
   margin-left: 1px;
   margin-right: 1px;
   cursor: pointer;
+	padding: 3px 10px;
 }
 
 .butn:hover:enabled {
@@ -63,6 +64,115 @@ body * {
 	width: 100%;
 	height: calc(100% - 0px);
 	overflow: auto;
+}
+
+#top-menu {
+	position: absolute;
+	top: 5px;
+	right: 5px;
+	display:flex;
+}
+
+.top-menu-item {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	margin-left: 2px;
+	transition: .3s;
+	border-radius: 20px;
+	cursor: pointer;
+}
+
+.top-menu-item:hover {
+	background-color: lightgrey;
+}
+
+.top-menu-icon {
+	height: 15px;
+}
+
+#save-pkg-btn {
+	height: 17px;
+}
+
+#quick-save-btn {
+	height: 18px;
+}
+
+#tabledetailmaxbuttondiv {
+	display: flex;
+	align-items: center;
+}
+
+#helpdiv {
+	display: none;
+	right: 87px;
+	flex-direction: column;
+	border-bottom: 1px solid lightgrey;
+	max-width: 30em;
+}
+
+.help-link {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	text-decoration: none;
+	cursor: pointer;
+	color: #4a87bd;
+	border-right: 3px solid white;
+	border-left: 3px solid white;
+	border-bottom: 1px solid lightgrey;
+	padding: 5px
+}
+
+.help-link:hover {
+	border-right: 3px solid #4a87bd;
+	border-left: 3px solid #4a87bd;
+	transition: .5s ease;
+}
+
+.help-menu-icon {
+	height: 20px;
+	width: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.help-right {
+	display: flex;
+	flex-direction: column;
+	margin-left: 10px
+}
+
+.help-menu-title {
+	font-size: 18px;
+	font-weight: 900;
+}
+
+.help-menu-description {
+	color: black;
+}
+
+.menu-dropdown {
+	position: fixed;
+	top: 40px;
+	background-color: white;
+	z-index: 202;
+	box-shadow: 2px 2px 2px gray;
+	border: 1px solid #a2a2a2;
+	padding: 14px;
+	font-size: 13px;
+}
+
+.menu-icon {
+	height: 15px;
+}
+
+.menu-icon-large {
+	height: 20px;
 }
 
 .menu1_container {
@@ -488,27 +598,6 @@ button {
 	width: 12px;
     height: 12px;
 	cursor: pointer;
-}
-
-.email-icon {
-    height: 15px;
-    top: 5px;
-    position: relative;
-    right: 5px;
-}
-
-.house-icon {
-	height: 15px;
-	top: 4px;
-	position: absolute;
-	right: 100px;
-}
-
-.question-icon {
-    height: 17px;
-    top: 4px;
-    position: relative;
-    right: 10px;
 }
 
 div.pq-select-button {

@@ -32,13 +32,11 @@ code {
 }
 
 #pageselect {
-    position: fixed; 
-    top: 21px; 
-    left: 10px; 
-    font-size: 15px; 
+    font-size: 15px;
     color: #ffffff;
     z-index: 201;
     outline: none;
+    align-self: end;
 }
 
 #pageselect div {
@@ -214,22 +212,106 @@ button {
 }
 
 .headerdiv {
-    position: fixed; 
-    top: 0px; 
-    width: 100%; 
+    width: 100%;
+    position: fixed;
+    left: 0;
+    top: 0;
     z-index: 200; 
-    height: 62px; 
+    min-height: 62px;
     background-color: white; 
-    left: 0px; 
-    right: 0px;
     border-bottom: 1px solid #dfdfdf;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
 }
+
+#header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    justify-content: space-between;
+    min-height: 62px;
+}
+
+#top-menu {
+    display: flex;
+    align-items: center;
+}
+
+.menu-icon-container {
+    border-radius: 20px;
+    transition: .3s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: 2px;
+}
+
+.menu-icon-container:hover {
+    background: lightgrey;
+}
+
 
 #settingsdiv {
     display: none;
-    position: fixed;
-    top: 27px;
     right: 6px;
+}
+
+#helpdiv {
+    display: none;
+    right: 52px;
+    flex-direction: column;
+    border-bottom: 1px solid lightgrey;
+    max-width: 30em;
+}
+
+.help-link {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    text-decoration: none;
+    cursor: pointer;
+    color: #4a87bd;
+    border-right: 3px solid white;
+    border-left: 3px solid white;
+    border-bottom: 1px solid lightgrey;
+    padding: 5px
+}
+
+.help-link:hover {
+    border-right: 3px solid #4a87bd;
+    border-left: 3px solid #4a87bd;
+    transition: .5s ease;
+}
+
+.help-menu-icon {
+    height: 20px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.help-right {
+    display: flex;
+    flex-direction: column;
+    margin-left: 10px
+}
+
+.help-menu-title {
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.help-menu-description {
+    color: black;
+}
+
+.menu-dropdown {
+    position: fixed;
+    top: 40px;
     background-color: white;
     z-index: 202;
     box-shadow: 2px 2px 2px gray;
@@ -284,32 +366,22 @@ button {
     background-color: transparent;
 }
 
+.menu-icon {
+    height: 15px;
+}
+
+.menu-icon-large {
+    height: 20px;
+}
+
 .threedots {
     height: 20px;
-    top: 7px;
-    position: absolute;
-    right: 10px;
+    cursor: pointer;
+    margin-top: -2px; /* help center the larger icon */
 }
 
-.email-icon {
-    height: 15px;
-    top: 9px;
-    position: absolute;
-    right: 40px;
-}
-
-.house-icon {
-    height: 15px;
-    top: 9px;
-    position: absolute;
-    right: 100px;
-}
-
-.question-icon {
-    height: 15px;
-    top: 9px;
-    position: absolute;
-    right: 77px;
+#nointernetdiv {
+    display: none;
 }
 
 .checkbox-group-all-none-div {

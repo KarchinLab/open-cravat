@@ -17,9 +17,16 @@ def test_websubmit(page: Page):
 
 def test_websubmit_config_menu_is_visible(page: Page):
     page.goto("http://localhost:8080/submit/nocache/index.html")
-    page.get_by_role("img").nth(3).click()
+    page.get_by_role("img", name="Settings").click()
     refresh_btn = page.get_by_role("button", name="Refresh store")
     expect(refresh_btn).to_be_visible()
+
+
+def test_websubmit_help_button_shows_links(page: Page):
+    page.goto('http://localhost:8080/submit/nocache/index.html')
+    page.get_by_role("img", name="Help and Contact").click()
+    discussion_link = page.get_by_role("link", name="Discussions Ask questions and provide feedback on our discussion board.")
+    expect(discussion_link).to_be_visible()
 
 
 def test_websubmit_existing_job_is_displayed(page: Page):
