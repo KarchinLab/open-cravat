@@ -1299,7 +1299,7 @@ function changeTableDetailMaxButtonText () {
         div.style.display = 'none';
         return;
     } else {
-        div.style.display = 'block';
+        div.style.display = '';
     }
     var stat = tableDetailDivSizes[currentTab]['status'];
     var text = null;

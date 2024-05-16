@@ -13,6 +13,7 @@ function addHeaderEventHandlers() {
     document.getElementById('store-systemmoduleupdate-button').addEventListener('click', () => OC.mediator.publish('system.update'));
 
     document.getElementsByClassName('threedotsdiv')[0].addEventListener('click', onClickThreeDots);
+    document.getElementById('help-menu-button').addEventListener('click', onHelpMenuClick);
 
     document.getElementById('system-conf-save-button').addEventListener('click', onClickSaveSystemConf);
     document.getElementById('system-conf-reset-button').addEventListener('click', resetSystemConf);
@@ -44,6 +45,20 @@ function onClickThreeDots (evt) {
         display = 'block';
     }
     div.style.display = display;
+    document.getElementById('helpdiv').style.display = 'none';
+    evt.stopPropagation();
+}
+
+function onHelpMenuClick(evt) {
+    const helpDiv = document.getElementById('helpdiv');
+    let display = helpDiv.style.display;
+    if (display === 'flex') {
+        display = 'none';
+    } else {
+        display = 'flex';
+    }
+    helpDiv.style.display = display;
+    document.getElementById('settingsdiv').style.display = 'none';
     evt.stopPropagation();
 }
 

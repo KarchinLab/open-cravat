@@ -90,15 +90,14 @@
             &nbsp;&nbsp;&nbsp;&nbsp;
         </div>
     </div>
-    <div id='tabledetailmaxbuttondiv' style='position: absolute; top: 2px; right: 120px;'>
-        <button id='tabledetailmaxbutton' class='butn' onclick='onClickTableDetailMinMaxButton();'>View table</button>
-    </div>
-    <div style='position: absolute; top: 0px; right: 0px; display:flex;'>
-        <div><a href='https://opencravat.org' target='_blank'><img src='/submit/house-solid.svg' alt='Open Cravat Home' class='house-icon' /></a></div>
-        <div><a href='https://open-cravat.readthedocs.io/en/latest/index.html' target='_blank' title='Help Wiki'><img src='/result/images/question.png' class='question-icon' /></a></div>
-        <div><a href='mailto:support@opencravat.org?Subject=open-cravat%20feedback'><img src='/result/images/mail.png' title='Email for support' class='email-icon' onclick='mailto:support@opencravat.org' /></a></div>
-        <input type='image' onclick='invokePackage();' src='images/package.png' title='Save job as Package' style='width: 21px; padding: 2px;' id="save-pkg-btn" />    
-        <input type='image' onclick='quicksave();' src='images/save_new.png' title='Save current filters and layout as default' style='width: 21px; padding: 2px;' />
+    <div id='top-menu'>
+        <div id='tabledetailmaxbuttondiv'>
+            <button id='tabledetailmaxbutton' class='butn' onclick='onClickTableDetailMinMaxButton();'>View table</button>
+        </div>
+        <div class='top-menu-item'><a href='https://opencravat.org' target='_blank'><img src='/submit/house-solid.svg' alt='Open Cravat Home' class='top-menu-icon' /></a></div>
+        <div class='top-menu-item'><img src='/result/images/question.png' alt='Help Icon' onclick='onClickHelpMenu(event);' class='top-menu-icon' title='Help and Contact' /></div>
+        <div class='top-menu-item'><input type='image' onclick='invokePackage();' src='images/package.png' title='Save job as Package' id="save-pkg-btn"  class='top-menu-icon' /></div>
+        <div class='top-menu-item'><input type='image' onclick='quicksave();' src='images/save_new.png' title='Save current filters and layout as default' id='quick-save-btn' class='top-menu-icon' /></div>
      </div>
     <div id='packageSubmit' style="position: absolute; top: 2px; right: 0px;width: 305px;background-color:white;display:none">
 	    <label for="packageName" style='font-size: 14px;'><b>Package Name:</b></label>
@@ -110,6 +109,37 @@
 
 <div id="log_div" style="position:absolute; bottom:0px; left:0px; font-size: 13px;">
 </div>
+
+<div id='helpdiv' class='menu-dropdown'>
+    <a href='https://github.com/KarchinLab/open-cravat/discussions' target='_blank' title='Discussions' class='help-link'>
+        <div class='help-menu-icon'><img src='/store/images/comments-regular.svg' class='menu-icon-large'/></div>
+        <div class='help-right'>
+            <div class='help-menu-title'>Discussions</div>
+            <div class='help-menu-description'>Ask questions and provide feedback on our discussion board.</div>
+        </div>
+    </a>
+    <a href='https://open-cravat.readthedocs.io/en/latest/Home.html' target='_blank' title='Documentation' class='help-link'>
+        <div class='help-menu-icon'><img src='/store/images/book-solid.svg' class='menu-icon-large'/></div>
+        <div class='help-right'>
+            <div class='help-menu-title'>Documentation</div>
+            <div class='help-menu-description'>Learn basic and advanced usage of OpenCRAVAT through our documenatation.</div>
+        </div>
+    </a>
+    <a href='https://github.com/KarchinLab/open-cravat/issues' target='_blank' title='Report an Issue' class='help-link'>
+        <div class='help-menu-icon'><img src='/store/images/triangle-exclamation-solid.svg' class='menu-icon-large'/></div>
+        <div class='help-right'>
+            <div class='help-menu-title'>Report an Issue</div>
+            <div class='help-menu-description'>Technical and scientific problems can be reported to our GitHub repository.</div>
+        </div>
+    </a>
+    <a href='mailto:support@opencravat.org?Subject=open-cravat%20feedback' target='_blank' title='Contact Us' class='help-link'>
+        <div class='help-menu-icon'><img src='/result/images/mail.png' class='menu-icon'/></div>
+        <div class='help-right'>
+            <div class='help-menu-title'>Contact Us</div>
+            <div class='help-menu-description'>Send an email to the OpenCRAVAT team.</div>
+        </div>
+    </a>
+</div> <!-- helpdiv -->
 
 <script>
 $(document).ready(function() {
