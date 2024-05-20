@@ -550,13 +550,29 @@ function populateJobTr (job) {
                 addEl(btn, getTn(reportType.toUpperCase()));
                 btn.classList.add('active-download-button');
                 btn.addEventListener('click', function (evt) {jobReportDownloadButtonHandler(evt);});
-                btn.title = 'Click to download.';
+                btn.title = 'View log';
                 if (job.status == 'Finished') {
                     addEl(dbTd, btn);
                 }
             }
         }
     }
+    // DB
+    var dbLink = getEl('a');
+    addEl(dbTd, dbLink);
+    var dbButton = getEl('button');
+    addEl(dbLink, dbButton);
+    dbButton.classList.add('butn');
+    dbLink.setAttribute('title', 'Download output database.');
+    addEl(dbButton, getTn('DB'));
+    if (job.status === 'Finished') {
+        dbLink.setAttribute('href','/submit/jobs/' + job.id + '/db');
+        dbLink.setAttribute('target', '_blank');
+        dbButton.classList.add('active-download-button');
+    } else {
+        dbButton.classList.add('inactive-download-button');
+    }
+    addEl(jobTr, dbTd);
     // Log
     var logLink = getEl('a');
     logLink.setAttribute('href','/submit/jobs/' + job.id + '/log');
@@ -737,22 +753,6 @@ function populateJobDetailTr (job) {
             }
             td.textContent = t.getFullYear() + '.' + month + '.' + d + ' ' + h + ':' + m + ':' + s;
         }
-        addEl(tr, td);
-        addEl(tbody, tr);
-    }
-    if (job.db_path != undefined && job.db_path != '') {
-        var tr = getEl('tr');
-        var td = getEl('td');
-        td.textContent = 'Result DB';
-        addEl(tr, td);
-        var td = getEl('td');
-        var button = getEl('button');
-        button.textContent = 'DB';
-        button.setAttribute('db', job.id);
-        button.addEventListener('click', function (evt) {
-            window.open('/submit/jobs/' + evt.target.getAttribute('db') + '/db');
-        });
-        addEl(td, button);
         addEl(tr, td);
         addEl(tbody, tr);
     }
