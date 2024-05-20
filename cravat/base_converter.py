@@ -12,6 +12,7 @@ class BaseConverter(object):
         self.module_name = self.__class__.__module__
         config_loader = ConfigLoader()
         self.conf = config_loader.get_module_conf(self.module_name)
+        self.variant_type = 'genomic_variant'
 
     def check_format(self, *args, **kwargs):
         err_msg = (

@@ -345,9 +345,9 @@ class MasterCravatConverter(object):
         # Setup CravatWriter
         self.wpath = os.path.join(self.output_dir, self.output_base_fname + ".crv")
         self.crv_writer = CravatWriter(self.wpath)
-        self.crv_writer.add_columns(constants.crv_def)
+        self.crv_writer.add_columns(constants.crf_def)
         self.crv_writer.write_definition()
-        for index_columns in constants.crv_idx:
+        for index_columns in constants.crf_idx:
             self.crv_writer.add_index(index_columns)
         self.crv_writer.wf.write(
             "#input_format={}\n".format(self.primary_converter.format_name)

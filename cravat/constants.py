@@ -279,6 +279,45 @@ crl_def = [
     {"name": "ref_base", "title": "Reference allele", "type": "string", "width": 80},
     {"name": "alt_base", "title": "Alternate allele", "type": "string", "width": 80},
 ]
+# Fusion genes
+crf_def = [
+    {
+        "name": "uid",
+        "title": "UID",
+        "type": "int",
+    },
+    {
+        "name": "left_chrom",
+        "title": "Left Chrom",
+        "type": "string",
+    },
+    {
+        'name': 'left_break_pos',
+        'title': 'Left Break Position',
+        'type': 'int',
+    },
+    {
+        'name': 'left_breakstrand',
+        'title': 'Left Break Strand',
+        'type': 'string',
+    },
+    {
+        "name": "right_chrom",
+        "title": "Right Chrom",
+        "type": "string",
+    },
+    {
+        'name': 'right_break_pos',
+        'title': 'Right Break Position',
+        'type': 'int',
+    },
+    {
+        'name': 'right_break_strand',
+        'title': 'Right Break Strand',
+        'type': 'string',
+    },
+]
+crf_idx = ['uid']
 
 exit_codes = {"alreadycrv": 2, 2: "alreadycrv"}
 
