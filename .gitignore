@@ -16,3 +16,5 @@ cravat/modules/**
 __dummy__*
 /cravat/jobs
 build
+e2e/test_jobs
+e2e/test_modules
