@@ -38,6 +38,16 @@ def test_websubmit_existing_job_is_displayed(page: Page):
     # page.get_by_role("cell", name="2023.10.04 11:25:36", exact=True).click()
     # page.get_by_role("cell", name="test one line", exact=True).click()
 
+def test_websubmit_db_download_is_displayed(page: Page):
+    with page.expect_response('http://0.0.0.0:8080/submit/jobs') as jobs_response:
+        page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
+
+    jobs_table = page.locator("#jobs-table")
+    first_row = jobs_table.locator('tbody').locator('tr').nth(0)
+    download_cell = first_row.locator('td').nth(7)
+    download_btn = download_cell.get_by_text('DB', exact=True)
+    expect(download_btn).to_be_visible()
+    expect(download_btn).to_have_class('butn active-download-button')
 
 def test_websubmit_new_job_is_displayed(page: Page):
     with page.expect_response('http://0.0.0.0:8080/submit/jobs') as jobs_response:
