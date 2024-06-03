@@ -1965,8 +1965,9 @@ function setVariantReportURL() {
     if (!('variantreport' in OC.localModuleInfo)) {
         url = 'https://run.opencravat.org'+url
     }
-    let anchor = document.querySelector('#singlevar-link');
-    anchor.href = url;
+    let tabhead = document.querySelector('#singlevar_tabhead');
+    tabhead.setAttribute("onclick", `window.open('${url}', '_blank')`);
+    tabhead.setAttribute("disabled","f");
 }
 
 function setLastAssembly () {
