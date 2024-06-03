@@ -3,6 +3,8 @@ from cravat.config_loader import ConfigLoader
 
 class BaseConverter(object):
     IGNORE = "converter_ignore"
+    GENOMIC_VARIANT_TYPE = 'genomic_variant'
+    GENE_FUSION_VARIANT_TYPE = 'gene_fusion'
 
     def __init__(self):
         self.format_name = None
@@ -12,7 +14,7 @@ class BaseConverter(object):
         self.module_name = self.__class__.__module__
         config_loader = ConfigLoader()
         self.conf = config_loader.get_module_conf(self.module_name)
-        self.variant_type = 'genomic_variant'
+        self.variant_type = self.GENOMIC_VARIANT_TYPE
 
     def check_format(self, *args, **kwargs):
         err_msg = (

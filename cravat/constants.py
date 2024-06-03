@@ -297,7 +297,7 @@ crf_def = [
         'type': 'int',
     },
     {
-        'name': 'left_breakstrand',
+        'name': 'left_break_strand',
         'title': 'Left Break Strand',
         'type': 'string',
     },
