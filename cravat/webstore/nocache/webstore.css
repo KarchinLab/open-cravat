@@ -743,6 +743,29 @@ input:checked + .store-switch-slider:before {
     transform: rotate(45deg);
 }
 
+#suggestion-text {
+    font-size: 16px;
+    margin-left: 7px;
+}
+
+#suggestion-logo {
+    width: 20px;
+    margin-left: 2px;
+}
+
+#suggestion-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    cursor: pointer;
+    color: black;
+}
+
+#suggestion-link:hover{
+    background-color: #888888;
+    color: #ffffff;
+}
+
 .back-arrow {
     position: absolute;
     width: 40px;
