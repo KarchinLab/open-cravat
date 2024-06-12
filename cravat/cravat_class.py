@@ -7,6 +7,7 @@ from cravat import admin_util as au
 from cravat import util
 from cravat.config_loader import ConfigLoader
 from cravat.util import write_log_msg
+from cravat import BaseConverter
 import aiosqlite
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -541,6 +542,9 @@ class Cravat(object):
                         print(msg)
                     self.logger.info(msg)
                     exit()
+                #TODO: very very temporary, just trying to make annotators run
+                if self.converter_variant_format != BaseConverter.GENOMIC_VARIANT_TYPE:
+                    self.args.skip.append('mapper')
             self.mapper_ran = False
             if (
                 self.endlevel >= self.runlevels["mapper"]
@@ -1099,9 +1103,11 @@ class Cravat(object):
             self.reports = au.get_local_module_infos_by_names(self.reporter_names)
 
     def set_and_check_input_files(self):
+        #TODO: the suffixes need to be centralized/standardized. see also not in cravat_convert.py
         self.crvinput = os.path.join(self.output_dir, self.run_name + ".crv")
         self.crxinput = os.path.join(self.output_dir, self.run_name + ".crx")
         self.crginput = os.path.join(self.output_dir, self.run_name + ".crg")
+        self.crfinput = os.path.join(self.output_dir, self.run_name + ".crf")
         if os.path.exists(self.crvinput):
             self.crv_present = True
         else:
@@ -1114,6 +1120,10 @@ class Cravat(object):
             self.crg_present = True
         else:
             self.crg_present = False
+        if os.path.exists(self.crfinput):
+            self.crf_present = True
+        else:
+            self.crf_present = False
 
         if self.append_mode:
             self.regenerate_from_db()
@@ -1202,6 +1212,8 @@ class Cravat(object):
             postfix = ".var"
         elif module.level == "gene":
             postfix = ".gen"
+        elif module.level == 'gene_fusion':
+            postfix = '.var'
         else:
             return None
         path = os.path.join(
@@ -1259,7 +1271,7 @@ class Cravat(object):
         arg_dict["status_writer"] = self.status_writer
         converter_class = util.load_class(module.script_path, "MasterCravatConverter")
         converter = converter_class(arg_dict)
-        self.numinput, self.converter_format = converter.run()
+        self.numinput, self.converter_format, self.converter_variant_format = converter.run()
 
     def run_genemapper(self):
         module = au.get_local_module_info(self.cravat_conf["genemapper"])
@@ -1729,6 +1741,8 @@ class Cravat(object):
                     inputpath = self.crvinput
             elif module.level == "gene":
                 inputpath = self.crginput
+            elif module.level == 'gene_fusion':
+                inputpath = self.crfinput
             # Assign secondary inputs from sub-annotators
             secondary_inputs = []
             if "secondary_inputs" in module.conf:

@@ -344,7 +344,13 @@ class MasterCravatConverter(object):
         correspond to which lines in output.
         """
         # Setup CravatWriter
-        self.wpath = os.path.join(self.output_dir, self.output_base_fname + ".crv")
+        #TODO: Move suffix definitions and assignment to a standard/central place
+        if self.primary_converter.variant_type == BaseConverter.GENOMIC_VARIANT_TYPE:
+            suffix = '.crv'
+        elif self.primary_converter.variant_type == BaseConverter.GENE_FUSION_VARIANT_TYPE:
+            suffix = '.crf'
+        self.wpath = os.path.join(self.output_dir, self.output_base_fname + suffix)
+        #TODO: rename crv_writer to a generic name
         self.crv_writer = CravatWriter(self.wpath)
         self.crv_writer.add_columns(constants.crf_def)
         self.crv_writer.write_definition()
@@ -584,7 +590,7 @@ class MasterCravatConverter(object):
             "status",
             "Finished {} ({})".format("Converter", self.primary_converter.format_name),
         )
-        return total_lnum, self.primary_converter.format_name
+        return total_lnum, self.primary_converter.format_name, self.primary_converter.variant_type
 
     def liftover(self, chrom, pos, ref, alt):
         reflen = len(ref)

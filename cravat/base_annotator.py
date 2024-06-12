@@ -11,6 +11,7 @@ import sys
 from .constants import crv_def
 from .constants import crx_def
 from .constants import crg_def
+from .constants import crf_def
 from .constants import all_mappings_col_name
 from .constants import mapping_parser_name
 from .exceptions import InvalidData
@@ -28,13 +29,14 @@ from cravat.constants import cannonical_chroms
 
 class BaseAnnotator(object):
 
-    valid_levels = ["variant", "gene"]
-    valid_input_formats = ["crv", "crx", "crg"]
-    id_col_defs = {"variant": crv_def[0], "gene": crg_def[0]}
+    valid_levels = ["variant", "gene", "gene_fusion"]
+    valid_input_formats = ["crv", "crx", "crg", "crf"]
+    id_col_defs = {"variant": crv_def[0], "gene": crg_def[0], "gene_fusion":crf_def[0]}
     default_input_columns = {
         "crv": [x["name"] for x in crv_def],
         "crx": [x["name"] for x in crx_def],
         "crg": [x["name"] for x in crg_def],
+        "crf": [x["name"] for x in crf_def],
     }
     required_conf_keys = ["level", "output_columns"]
 
@@ -126,6 +128,8 @@ class BaseAnnotator(object):
                     self.conf["input_format"] = "crv"
                 elif self.conf["level"] == "gene":
                     self.conf["input_format"] = "crg"
+                elif self.conf["level"] == "gene_fusion":
+                    self.conf["input_format"] = "crf"
             if "input_columns" in self.conf:
                 id_col_name = self.id_col_defs[self.conf["level"]]["name"]
                 if id_col_name not in self.conf["input_columns"]:
