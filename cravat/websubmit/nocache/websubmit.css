@@ -1086,3 +1086,73 @@ input:checked + .slider:before {
 #divbanner-pkg {
     background-color: red;
 } */
+
+.modal-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 250;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(.5, .5, .5, .5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    width: auto;
+    height: fit-content;
+    min-width: 25vw;
+    max-width: 45vw;
+}
+
+.modal-body {
+    padding: 10px 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-body * {
+    margin-bottom: 1em;
+}
+
+.modal-title {
+    padding: 5px;
+    background: #3175b0;
+    border-radius: 3px 3px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-input {
+    font-size: 18px;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.modal-butn {
+    font-size: 18px;
+    height: 2em;
+    background: #3175b0;
+}
+
+.modal-checkbox-label {
+    font-size: 14px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.modal-checkmark {
+    top: 5px;
+    left: 4px;
+    outline: 1px solid gray;
+}
+
+.modal-checkbox-text {
+    padding-left: .5em;
+}

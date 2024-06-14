@@ -116,6 +116,12 @@ default_save_metrics = True
 metrics_url_key = 'metrics_url'
 default_metrics_url = 'https://metrics.opencravat.org'
 
+# user email
+user_email_key = 'user_email'
+user_email_opt_out_key = 'user_email_opt_out'
+default_user_email = ''
+default_user_email_opt_out = False
+
 # liftover
 liftover_chains_dir = os.path.join(packagedir, "liftover")
 liftover_chain_paths = {

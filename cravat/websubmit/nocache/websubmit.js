@@ -1850,6 +1850,14 @@ function populateMultInputsMessage() {
     document.querySelector('#input-file').value = '';
 }
 
+function closeUserEmailRequestModal() {
+    document.getElementById('user-email-request-div').style.display = 'none';
+}
+
+function submitUserEmailRequest() {
+    
+}
+
 //TODO: change the event listeners that talk between pages to use the mediator
 function addListeners () {
     addMediatorListeners();
@@ -1874,6 +1882,10 @@ function addListeners () {
     $('#refresh-jobs-table-btn').click(refreshJobsTable);
     $('.jobsdirinput').change(setJobsDir);
     $('#chaticondiv').click(toggleChatBox)
+
+    // User Request Modal
+    requestUserEmail();
+    document.getElementById('user-email-request-modal-close').addEventListener('click', closeUserEmailRequestModal);
     document.addEventListener('click', function (evt) {
         if (evt.target.classList.contains('moduledetaildiv-submit-elem') == false && evt.target.closest('.moduledetailbutton') == null ) {
             var div = document.getElementById('moduledetaildiv_submit');
@@ -1958,6 +1970,10 @@ function addMediatorListeners() {
     OC.mediator.subscribe('moduleinfo.annotators', buildAnnotatorsSelector);
     OC.mediator.subscribe('setupJobs', handleSetupJobsTab);
     OC.mediator.subscribe('moduleinfo.local', setVariantReportURL)
+}
+
+function requestUserEmail() {
+    document.getElementById('user-email-request-div').style.display = 'flex';
 }
 
 function setVariantReportURL() {
@@ -2047,6 +2063,7 @@ function websubmit_run () {
     addListeners();
     loadSystemConf();
     populateMultInputsMessage();
+    requestUserEmail();
 };
 
 function importJob() {
