@@ -916,6 +916,10 @@ def get_system_conf(file_only=False):
             conf[constants.save_metrics_key] = constants.default_save_metrics
         if constants.metrics_url_key not in conf:
             conf[constants.metrics_url_key] = constants.default_metrics_url
+        if constants.user_email_key not in conf:
+            conf[constants.user_email_key] = constants.default_user_email
+        if constants.user_email_opt_out_key not in conf:
+            conf[constants.user_email_opt_out_key] = constants.default_user_email_opt_out
         if "custom_system_conf" in globals():
             global custom_system_conf
             for k, v in custom_system_conf.items():
