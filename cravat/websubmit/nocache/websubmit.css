@@ -93,6 +93,7 @@ code {
 }
 
 .container {
+    font-size: 13px;
     position: relative;
     border: 0.5px solid #939393; 
     border-radius: 4px 4px 0px 0px; 
@@ -100,15 +101,6 @@ code {
     padding-right: 30px; 
     padding-top: 18px; 
     padding-bottom: 14px; 
-    margin-right: 10px;
-}
-
-.container * {
-    font-size: 13px;
-}
-
-.annotate-container {
-    margin-right: 10px;
 }
 
 .divtitle {
@@ -334,10 +326,6 @@ button {
 .flexrow {
     display: flex;
     flex-direction: row;
-}
-
-#submitcontentdiv {
-    width: 390px;
 }
 
 #jobnoteinput {
@@ -736,9 +724,16 @@ input:checked + .slider:before {
 }
 
 #submitdiv {
-    position: absolute;
+    display: grid;
+    grid-template-columns: 390px 1fr;
+    gap: 10px;
+    position: fixed;
     top: 70px;
-    width: calc(100% - 10px);
+    left: 0px;
+    width: calc(100% - 20px);
+    height: calc(100% - 80px);
+    margin: 0px 10px 0px 10px;
+    overflow: auto;
 }
 
 #jobdiv {
