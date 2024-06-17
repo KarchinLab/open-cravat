@@ -356,14 +356,12 @@ button {
     height: 15em;
 }
 
-#refresh-jobs-table-btn {
-    width: 14px; 
-    height: 17px;
-    position: absolute; 
-    top: 8px; 
-    left: 8px;
-    padding: 0px;
-    background-color: transparent;
+#jobs-table-footer {
+    display: flex;
+}
+
+#jobs-table-pagination-div {
+    margin-left: auto;
 }
 
 .menu-icon {

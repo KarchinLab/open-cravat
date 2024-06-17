@@ -150,9 +150,6 @@
     </td><td valign='top' style='padding-left: 5px; width: 100%;'>
     <div id="jobdiv">
         <div id="jobdivspinnerdiv" class="spinnerdiv"><img src="/submit/nocache/broken_wheel.gif"></img></div>
-        <div style='width: 100%; text-align: right;'>
-            <button id='refresh-jobs-table-btn' class='butn'>&#x21ba;</button>
-        </div>
         <table id="jobs-table">
             <thead>
             <tr>
@@ -170,9 +167,20 @@
             <tbody>
             </tbody>
         </table>
-        <div id='jobs-table-pagination-div' style='float: right;'>
-            <button id='jobs-table-pagination-prev-button' class='butn inactive-download-button'><</button>
-            <button id='jobs-table-pagination-next-button' class='butn inactive-download-button'>></button>
+        <div id="jobs-table-footer">
+            <div id="jobs-table-refresh-div">
+                <button id='refresh-jobs-table-btn' class='butn'>Refresh Table</button>
+            </div>
+            <div id="jobs-table-import-div">
+                <button id='job-import' class='butn' onclick="document.getElementById('job-import-file').click()">
+                    Import Job
+                    <input type="file" id="job-import-file" style='display:none;'>
+                </button>
+            </div>
+            <div id='jobs-table-pagination-div'>
+                <button id='jobs-table-pagination-prev-button' class='butn' title="Previous page"><</button>
+                <button id='jobs-table-pagination-next-button' class='butn' title="Next page">></button>
+            </div>
         </div>
         <br />
     </div>  
@@ -320,12 +328,8 @@
     <span class="settingsdiv-elem">Allow collection of CRAVAT metrics: </span><input type="checkbox" id="settings_save_metrics" onclick='event.stopPropagation();'>
     <br />
     <button id="store-update-remote-button" class="settingdsiv-elem butn">Refresh store</button>
-    <p>
-        <button id='job-import' class='butn' onclick="document.getElementById('job-import-file').click()">
-            Import Job
-            <input type="file" id="job-import-file" style='display:none;'>
-        </button>
-    </p>
+    <br />
+    <br />
     <button id="system-conf-save-button" class="settingsdiv-elem butn">Save</button>
     <button id="system-conf-reset-button" class="settingsdiv-elem butn">Reset</button>
 </div> <!-- settingsdiv -->
