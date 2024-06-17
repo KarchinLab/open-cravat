@@ -12,11 +12,6 @@
     <link rel="stylesheet" href="/store/nocache/webstore.css">
     <script type='text/javascript' src='/submit/pqselect.dev.customforsubmit.js'></script>
     <link rel='stylesheet' href='/result/css/pqselect.min.css' />
-<!--    <script src='/submit/nocache/moduleinfo.js'></script>-->
-<!--    <script src="/submit/nocache/core.js"></script>-->
-<!--    <script src="/submit/nocache/websubmit.js"></script>-->
-<!--    <script src='/store/nocache/webstore.js'></script>-->
-<!--    <script src='/submit/nocache/header.js'></script>-->
     <script src='/submit/Chart.bundle.min.js'></script>
     <script src='/store/js/showdown-1.9.1.min.js'></script>
     <script src='/submit/nocache/main.js' type='module' />
@@ -71,7 +66,6 @@
 </div>
 
 <div id='submitdiv' class='appdiv'>
-    <table><tr><td valign='top' style=''>
     <div id='submitcontentdiv'>
         <div id="submit-form">
             <div id='submit-variant-div' class='container'>
@@ -82,7 +76,7 @@
                             <div id='assembly-select-div'>
                                 <select id="assembly-select">
                                     <option value="hg38">hg38/GRCh38</option>
-                                    <option value="hg19" selected=true>hg19/GRCh37</option>
+                                    <option value="hg19">hg19/GRCh37</option>
                                     <option value="hg18">hg18/GRCh36</option>
                                 </select>
                             </div>
@@ -143,11 +137,10 @@
                 <div class='divbanner'></div>
                 <div class='chevrondiv'><div class='chevron chevron2to3'></div></div>
             </div>
-            <div class="annotate-container"><button id="submit-job-button" class='butn submit-annotate-button'>ANNOTATE</button></div>
+            <button id="submit-job-button" class='butn submit-annotate-button'>ANNOTATE</button>
         </div>
     </div>
 
-    </td><td valign='top' style='padding-left: 5px; width: 100%;'>
     <div id="jobdiv">
         <div id="jobdivspinnerdiv" class="spinnerdiv"><img src="/submit/nocache/broken_wheel.gif"></img></div>
         <table id="jobs-table">
@@ -182,9 +175,7 @@
                 <button id='jobs-table-pagination-next-button' class='butn' title="Next page">></button>
             </div>
         </div>
-        <br />
     </div>  
-    </td></tr></table>
 
     <iframe id="download-area" style="display:none;"></iframe>
 

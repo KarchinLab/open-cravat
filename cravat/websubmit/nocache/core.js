@@ -25,7 +25,7 @@ function changePage (selectedPageId) {
         const pageId = pageIdDiv.getAttribute('value');
         const page = document.getElementById(pageId);
         if (page && page.id === selectedPageId) {
-            page.style.display = 'block';
+            page.style.display = '';
             pageIdDiv.setAttribute('selval', 't');
             if (selectedPageId === 'storediv') {
                 OC.currentTab = 'store';
