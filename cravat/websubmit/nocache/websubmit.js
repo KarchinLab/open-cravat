@@ -1854,8 +1854,68 @@ function closeUserEmailRequestModal() {
     document.getElementById('user-email-request-div').style.display = 'none';
 }
 
+function handleUserEmailOptOutClick() {
+    const optOut = document.getElementById('user-email-opt-out').checked;
+    if (optOut) {
+        document.getElementById('user-email').value = '';
+        document.getElementById('user-email').disabled = true;
+        document.getElementById('user-email-error').style.display = 'none';
+    } else {
+        document.getElementById('user-email').disabled = false;
+    }
+}
+
 function submitUserEmailRequest() {
-    
+    const email = document.getElementById('user-email').value;
+    const emailOptOut = document.getElementById('user-email-opt-out').checked;
+    // validate
+    if (!emailOptOut) {
+        if (!email || email.indexOf('@') < 0) {
+            document.getElementById('user-email-error').style.display = 'flex';
+            return;
+        }
+    }
+
+    // TODO: refactor to combine with header.js > updateSystemConf()
+     $.get('/submit/getsystemconfinfo').done(function (response) {
+        var optout = response['content']['save_metrics'];
+
+        response['content']['user_email'] = email;
+        response['content']['user_email_opt_out'] = emailOptOut;
+        $.ajax({
+            url:'/submit/updatesystemconf',
+            data: {'sysconf': JSON.stringify(response['content']), 'optout': optout},
+            type: 'GET',
+            success: function (response) {
+                closeUserEmailRequestModal();
+                if (response['success'] == true) {
+                    const mdiv = getEl('div');
+                    const span = getEl('span');
+                    span.textContent = 'User Email configuration has been updated.';
+                    addEl(mdiv, span);
+                    addEl(mdiv, getEl('br'));
+                    addEl(mdiv, getEl('br'));
+                    const justOk = true;
+                    OC.mediator.publish('showyesnodialog', mdiv, null, false, justOk);
+                } else {
+                    const mdiv = getEl('div');
+                    const span = getEl('span');
+                    span.textContent = 'User Email configuration was not successful';
+                    addEl(mdiv, span);
+                    addEl(mdiv, getEl('br'));
+                    addEl(mdiv, getEl('br'));
+                    const msg = getEl('span');
+                    msg.textContent = response['msg'];
+                    addEl(mdiv, msg);
+                    addEl(mdiv, getEl('br'));
+                    addEl(mdiv, getEl('br'));
+                    const justOk = true;
+                    OC.mediator.publish('showyesnodialog', mdiv, null, false, justOk);
+                    return;
+                }
+            }
+        });
+    });
 }
 
 //TODO: change the event listeners that talk between pages to use the mediator
@@ -1884,6 +1944,8 @@ function addListeners () {
     $('#chaticondiv').click(toggleChatBox)
 
     // User Request Modal
+    $('#user-email-opt-out').change(handleUserEmailOptOutClick);
+    $('#submit-user-email-request').click(submitUserEmailRequest);
     requestUserEmail();
     document.getElementById('user-email-request-modal-close').addEventListener('click', closeUserEmailRequestModal);
     document.addEventListener('click', function (evt) {
@@ -1973,7 +2035,14 @@ function addMediatorListeners() {
 }
 
 function requestUserEmail() {
-    document.getElementById('user-email-request-div').style.display = 'flex';
+    $.get('/submit/getsystemconfinfo').done(function (response) {
+        const emailOptOut = response['content']['user_email_opt_out'];
+        const email= response['content']['user_email'];
+        console.log('request user email; email', email, 'opt-out', emailOptOut);
+        if (!emailOptOut && !email) {
+            document.getElementById('user-email-request-div').style.display = 'flex';
+        }
+    });
 }
 
 function setVariantReportURL() {

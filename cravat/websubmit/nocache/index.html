@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
     <title>open-cravat submit</title>
     <script src="/submit/jquery-3.3.1.min.js"></script>
     <script src="/result/js/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
@@ -393,16 +394,18 @@
         </div>
         <div id='user-email-request-modal-body' class='modal-body'>
             <div class='modal-text'>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc pharetra iaculis semper. Curabitur eros purus, hendrerit a iaculis ac, consectetur quis metus. Maecenas condimentum ullamcorper finibus. Interdum et malesuada fames ac ante ipsum primis in faucibus. Mauris vel congue tortor, et rhoncus nibh. Maecenas sit amet magna condimentum, maximus lacus sed, hendrerit tellus. Ut odio lacus, sollicitudin feugiat lacus sit amet, porta consectetur mi. Praesent facilisis ullamcorper dolor sed finibus.
+                To better understand our users, we are asking you to provide an email addres. This will only be used in collecting usage metrics. We will not share your email address with any third party, and will not sign you up for any mailing lists without your permission.
             </div>
-    <!--        <label for='user-email'>Email</label>-->
-            <input id='user-email' class='modal-input' type='email' placeholder="Email" />
             <label for='user-email-opt-out' class='checkbox-container modal-checkbox-label'>
                 <input id='user-email-opt-out' type='checkbox' />
                 <span class='modal-checkbox-text'>Opt-Out</span>
                 <span class='checkmark modal-checkmark'></span>
             </label>
-            <button class='butn modal-butn' id='submit-user-email-request'>Confirm Email</button>
+            <input id='user-email' class='modal-input' type='email' placeholder="Email" />
+            <div id='user-email-error' class='modal-text modal-error'>
+                Please enter a valid email address.
+            </div>
+            <button class='butn modal-butn' id='submit-user-email-request'>Confirm</button>
         </div>
     </div>
 </div>
