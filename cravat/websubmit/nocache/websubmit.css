@@ -1107,7 +1107,16 @@ input:checked + .slider:before {
     width: auto;
     height: fit-content;
     min-width: 25vw;
-    max-width: 45vw;
+    max-width: 35vw;
+    max-height: 100vh;
+}
+
+@media screen and (max-width: 992px) {
+    .modal {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+    }
 }
 
 .modal-body {
@@ -1137,7 +1146,7 @@ input:checked + .slider:before {
 
 .modal-butn {
     font-size: 18px;
-    height: 2em;
+    height: 2.5em;
     background: #3175b0;
 }
 
@@ -1155,4 +1164,11 @@ input:checked + .slider:before {
 
 .modal-checkbox-text {
     padding-left: .5em;
+}
+.modal-error {
+    color: darkred;
+}
+
+#user-email-error {
+    display: none;
 }
