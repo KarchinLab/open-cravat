@@ -2035,10 +2035,10 @@ function addMediatorListeners() {
 }
 
 function requestUserEmail() {
+    if (OC.servermode) { return; }
     $.get('/submit/getsystemconfinfo').done(function (response) {
         const emailOptOut = response['content']['user_email_opt_out'];
         const email= response['content']['user_email'];
-        console.log('request user email; email', email, 'opt-out', emailOptOut);
         if (!emailOptOut && !email) {
             document.getElementById('user-email-request-div').style.display = 'flex';
         }
