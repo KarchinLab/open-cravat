@@ -736,6 +736,10 @@ input:checked + .slider:before {
     overflow: auto;
 }
 
+#submitdiv .admin-mode {
+    grid-template-columns: 1fr;
+}
+
 #jobdiv {
     position: relative;
     overflow: auto;

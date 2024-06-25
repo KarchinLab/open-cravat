@@ -1720,6 +1720,9 @@ function getServermode () {
             } else {
                 setupServerMode();
             }
+        },
+        complete: function(response) {
+            requestUserEmail();
         }
     });
 }
@@ -1946,7 +1949,6 @@ function addListeners () {
     // User Request Modal
     $('#user-email-opt-out').change(handleUserEmailOptOutClick);
     $('#submit-user-email-request').click(submitUserEmailRequest);
-    requestUserEmail();
     document.getElementById('user-email-request-modal-close').addEventListener('click', closeUserEmailRequestModal);
     document.addEventListener('click', function (evt) {
         if (evt.target.classList.contains('moduledetaildiv-submit-elem') == false && evt.target.closest('.moduledetailbutton') == null ) {
@@ -2132,7 +2134,6 @@ function websubmit_run () {
     addListeners();
     loadSystemConf();
     populateMultInputsMessage();
-    requestUserEmail();
 };
 
 function importJob() {
