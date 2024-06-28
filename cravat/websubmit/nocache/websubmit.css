@@ -1142,6 +1142,16 @@ input:checked + .slider:before {
     justify-content: space-between;
 }
 
+.modal-text {
+    line-height: .6em;
+    font-size: larger;
+    margin-bottom: .6em;
+}
+
+.modal-text > ul {
+    margin-left: -.5em;
+}
+
 .modal-input {
     font-size: 18px;
     margin-left: 3px;
