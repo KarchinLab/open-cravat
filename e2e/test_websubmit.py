@@ -29,6 +29,14 @@ def test_websubmit_help_button_shows_links(page: Page):
     expect(discussion_link).to_be_visible()
 
 
+def test_websubmit_right_click_annotator_shows_info(page: Page):
+    page.goto('http://localhost:8080/submit/nocache/index.html')
+    page.get_by_role("button", name="All").click()  # make sure annotators are visible
+    page.get_by_title("Right-click to see details.").click(button="right")  # right click only annotator (GO)
+    info_div = page.get_by_role("cell", name="Gene Ontology annotator |").locator("div")
+    expect(info_div).to_be_visible()
+
+
 def test_websubmit_existing_job_is_displayed(page: Page):
     with page.expect_response('http://0.0.0.0:8080/submit/jobs') as jobs_response:
         page.goto("http://0.0.0.0:8080/submit/nocache/index.html")
