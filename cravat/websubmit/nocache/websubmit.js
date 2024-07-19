@@ -6,7 +6,7 @@ import {
     connectWebSocket, checkConnection, getBaseModuleNames, toggleChatBox
 } from '../../store/nocache/webstore.js';
 import {
-    populateAnnotators,
+    populateAnnotators, makeModuleDetailDialog
 } from './moduleinfo.js';
 import { loadSystemConf } from './header.js'
 
@@ -1930,7 +1930,7 @@ function addListeners () {
             var moduleDiv = document.getElementById('moduledetaildiv_store');
             var moduleListName = moduleDiv.getAttribute('modulelistname');
             var moduleListPos = moduleDiv.getAttribute('modulelistpos');
-            var moduleList = moduleLists[moduleListName];
+            var moduleList = OC.moduleLists[moduleListName];
             if (k == 'ArrowRight') {
                 moduleListPos++;
                 if (moduleListPos >= moduleList.length) {
