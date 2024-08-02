@@ -270,6 +270,18 @@ cravat_cmd_parser.add_argument(
     help="System option in key=value syntax. For example, --system-option modules_dir=/home/user/open-cravat/modules",
 )
 cravat_cmd_parser.add_argument(
+    "--user-email",
+    dest="user_email",
+    help="User email for OpenCravat metrics",
+)
+cravat_cmd_parser.add_argument(
+    "--user-email-opt-out",
+    dest="user_email_opt_out",
+    default=False,
+    action="store_true",
+    help="Opt out of providing an email for OpenCravat metrics",
+)
+cravat_cmd_parser.add_argument(
     "--silent", dest="silent", action="store_true", default=None, help="Runs silently."
 )
 cravat_cmd_parser.add_argument(
@@ -294,6 +306,7 @@ cravat_cmd_parser.add_argument("-p", nargs="+", dest="postaggregators", default=
 def run(cmd_args):
     au.ready_resolution_console()
     module = Cravat(**vars(cmd_args))
+    au.request_user_email(module.args)
     loop = asyncio.get_event_loop()
     response = loop.run_until_complete(module.main())
     return response
