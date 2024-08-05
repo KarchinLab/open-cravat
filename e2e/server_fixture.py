@@ -100,6 +100,11 @@ def test_server(xprocess):
     with open(test_job_file, 'w') as f:
         f.write(test_job_json)
 
+    # store email settings and opt-out to avoid pop-up
+    email = admin_config['user_email']
+    email_opt_out = admin_config['user_email_opt_out']
+    admin_config['user_email'] = ''
+    admin_config['user_email_opt_out'] = True
     # change the config to new test jobs dir
     admin_config['jobs_dir'] = test_jobs_dir
     au.update_system_conf_file(admin_config)
@@ -109,6 +114,7 @@ def test_server(xprocess):
     modules = str(subprocess.getoutput(f'oc module ls'))
     if 'hg38' not in modules:
         subprocess.run(['oc', 'module', 'install-base'])
+
 
     # ensure process is running and return its logfile
     logfile = xprocess.ensure("test_server", Starter)
@@ -125,5 +131,7 @@ def test_server(xprocess):
     subprocess.run(['oc', 'config', 'md', module_dir])
 
     admin_config['jobs_dir'] = orig_jobs_dir
+    admin_config['user_email'] = email
+    admin_config['user_email_opt_out'] = email_opt_out
     au.update_system_conf_file(admin_config)
 
