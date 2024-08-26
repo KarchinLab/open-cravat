@@ -916,6 +916,10 @@ def get_system_conf(file_only=False):
             conf[constants.save_metrics_key] = constants.default_save_metrics
         if constants.metrics_url_key not in conf:
             conf[constants.metrics_url_key] = constants.default_metrics_url
+        if constants.user_email_key not in conf:
+            conf[constants.user_email_key] = constants.default_user_email
+        if constants.user_email_opt_out_key not in conf:
+            conf[constants.user_email_opt_out_key] = constants.default_user_email_opt_out
         if "custom_system_conf" in globals():
             global custom_system_conf
             for k, v in custom_system_conf.items():
@@ -1614,6 +1618,60 @@ def set_modules_dir(path, overwrite=False):
         else:
             overwrite_conf_path = get_main_default_path()
         shutil.copy(overwrite_conf_path, get_main_conf_path())
+
+
+def request_user_email(args):
+    if not sys.stdin.isatty():
+        return
+
+    conf = get_system_conf()
+    if constants.user_email_opt_out_key in conf and conf[constants.user_email_opt_out_key] is True:
+        return
+    if constants.user_email_key in conf and conf[constants.user_email_key] is not None and conf[constants.user_email_key] != constants.default_user_email:
+        return
+    if args.user_email_opt_out is True:
+        update = {
+            constants.user_email_key: constants.default_user_email,
+            constants.user_email_opt_out_key: True
+        }
+        update_system_conf_file(update)
+        return
+    # if publish_username is stored, copy it for the user email
+    if 'publish_username' in conf:
+        update = {
+            constants.user_email_key: conf['publish_username'],
+            constants.user_email_opt_out_key: False
+        }
+        update_system_conf_file(update)
+        return
+    if args.user_email is not None and args.user_email != constants.default_user_email:
+        update = {
+            constants.user_email_key: args.user_email,
+            constants.user_email_opt_out_key: False
+        }
+        update_system_conf_file(update)
+        return
+
+    email = input('Please provide your email to support our funding.\n'
+                  '\t* Used only for usage metrics.\n'
+                  '\t* No third-party sharing.\n'
+                  '\t* No mailing lists without consent\n'
+                  "Enter 'No' or 'Opt Out' to opt out of providing an email address.\n> ")
+    opt_outs = ('n', 'no', 'optout', 'opt out', 'opt_out', 'opt-out')
+    if email.lower() in opt_outs:
+        update = {
+            constants.user_email_key: constants.default_user_email,
+            constants.user_email_opt_out_key: True
+        }
+        update_system_conf_file(update)
+        print('You can update your email preferences by editing the OpenCravat system configuration.')
+        return
+    update = {
+        constants.user_email_key: email,
+        constants.user_email_opt_out_key: False
+    }
+    update_system_conf_file(update)
+    print('You can update your email preferences by editing the OpenCravat system configuration.')
 
 def set_metrics_config(value, overwrite=False):
     """

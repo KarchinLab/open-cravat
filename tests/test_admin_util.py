@@ -1,8 +1,10 @@
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
 from cravat.admin_util import get_install_deps
+from cravat.admin_util import request_user_email
 
 # package configurations for test use
 no_dependencies_package = {"name": "a", "requires": []}
@@ -143,6 +145,107 @@ class TestAdminUtil(unittest.TestCase):
                 'pin_b': '1.0',
                 'pin_c': '1.1',
             }, deps)
+
+    @patch('cravat.admin_util.update_system_conf_file')
+    def test_request_user_email_skip_if_not_interactive(self, mock_update_system_conf_file):
+        # sys.stdin.isatty = False when run in a test runner, we're testing that request_user_email does nothing
+        args = {}
+        request_user_email(args)
+        mock_update_system_conf_file.assert_not_called()
+
+    @patch('sys.stdin.isatty')
+    @patch('cravat.admin_util.get_system_conf')
+    @patch('cravat.admin_util.update_system_conf_file')
+    def test_request_user_email_skip_if_opt_out(self, mock_update_system_conf_file, mock_get_system_conf, mock_isatty):
+        mock_isatty.return_value = True
+        mock_get_system_conf.return_value = {
+            'user_email': '',
+            'user_email_opt_out': True
+        }
+        args = {}
+        request_user_email(args)
+        mock_update_system_conf_file.assert_not_called()
+
+    @patch('sys.stdin.isatty')
+    @patch('cravat.admin_util.get_system_conf')
+    @patch('cravat.admin_util.update_system_conf_file')
+    def test_request_user_email_skip_if_email_set(self, mock_update_system_conf_file, mock_get_system_conf, mock_isatty):
+        mock_isatty.return_value = True
+        mock_get_system_conf.return_value = {
+            'user_email': 'test@config',
+            'user_email_opt_out': False
+        }
+        args = {}
+        request_user_email(args)
+        mock_update_system_conf_file.assert_not_called()
+
+    @patch('sys.stdin.isatty')
+    @patch('builtins.input')
+    @patch('cravat.admin_util.get_system_conf')
+    @patch('cravat.admin_util.update_system_conf_file')
+    def test_request_user_email_set_email_from_input(self, mock_update_system_conf_file, mock_get_system_conf, mock_input, mock_isatty):
+        mock_isatty.return_value = True
+        mock_input.return_value = 'test@input'
+        mock_get_system_conf.return_value = {
+            'user_email': '',
+            'user_email_opt_out': False
+        }
+        args = SimpleNamespace(
+            user_email='',
+            user_email_opt_out=False
+        )
+        request_user_email(args)
+        mock_update_system_conf_file.assert_called_once_with({'user_email': 'test@input', 'user_email_opt_out': False})
+
+    @patch('sys.stdin.isatty')
+    @patch('builtins.input')
+    @patch('cravat.admin_util.get_system_conf')
+    @patch('cravat.admin_util.update_system_conf_file')
+    def test_request_user_email_set_opt_out_from_input(self, mock_update_system_conf_file, mock_get_system_conf, mock_input, mock_isatty):
+        mock_isatty.return_value = True
+        mock_input.return_value = 'No'
+        mock_get_system_conf.return_value = {
+            'user_email': '',
+            'user_email_opt_out': False
+        }
+        args = SimpleNamespace(
+            user_email='',
+            user_email_opt_out=True
+        )
+        request_user_email(args)
+        mock_update_system_conf_file.assert_called_once_with({'user_email': '', 'user_email_opt_out': True})
+
+    @patch('sys.stdin.isatty')
+    @patch('cravat.admin_util.get_system_conf')
+    @patch('cravat.admin_util.update_system_conf_file')
+    def test_request_user_email_set_email_from_argument(self, mock_update_system_conf_file, mock_get_system_conf, mock_isatty):
+        mock_isatty.return_value = True
+        mock_get_system_conf.return_value = {
+            'user_email': '',
+            'user_email_opt_out': False
+        }
+        args = SimpleNamespace(
+            user_email='test@argument',
+            user_email_opt_out=False
+        )
+        request_user_email(args)
+        mock_update_system_conf_file.assert_called_once_with({'user_email': 'test@argument', 'user_email_opt_out': False})
+
+    @patch('sys.stdin.isatty')
+    @patch('cravat.admin_util.get_system_conf')
+    @patch('cravat.admin_util.update_system_conf_file')
+    def test_request_user_email_set_opt_out_from_argument(self, mock_update_system_conf_file, mock_get_system_conf, mock_isatty):
+        mock_isatty.return_value = True
+        mock_get_system_conf.return_value = {
+            'user_email': '',
+            'user_email_opt_out': False
+        }
+        args = SimpleNamespace(
+            user_email='',
+            user_email_opt_out=True
+        )
+        request_user_email(args)
+        mock_update_system_conf_file.assert_called_once_with({'user_email': '', 'user_email_opt_out': True})
 
 
 if __name__ == '__main__':

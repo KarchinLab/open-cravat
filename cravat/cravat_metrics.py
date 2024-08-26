@@ -27,6 +27,9 @@ class cravatMetrics:
         self.gather_machine_data()
 
     def gather_machine_data(self):
+        sys_conf = au.get_system_conf()
+        self.machinedata['userEmail'] = sys_conf.get(constants.user_email_key)
+        self.machinedata['userEmailOptOut'] = sys_conf.get(constants.user_email_opt_out_key)
         self.machinedata['OS'] = platform.system()
         self.machinedata['OSVersion'] = platform.release()
         self.machinedata['totalMemory'] = psutil.virtual_memory().total

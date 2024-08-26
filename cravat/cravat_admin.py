@@ -407,6 +407,8 @@ def publish_module (args):
             args.password = getpass()
     au.publish_module(args.module, args.user, args.password, overwrite=args.overwrite, include_data=args.data)
 
+
+
 def install_base (args):
     args = SimpleNamespace(modules=constants.base_modules,
         force_data=args.force_data,
@@ -417,8 +419,11 @@ def install_base (args):
         force=args.force,
         skip_data=False,
         install_pypi_dependency=args.install_pypi_dependency,
-        md=args.md
+        md=args.md,
+        user_email=args.user_email,
+        user_email_opt_out=args.user_email_opt_out
     )
+    au.request_user_email(args)
     install_modules(args)
 
 def create_account (args):
@@ -535,119 +540,128 @@ parser_install_base.add_argument('--md',
     default=None,
     help='Specify the root directory of OpenCRAVAT modules'
 )
+parser_install_base.add_argument('--user-email',
+    dest='user_email',
+    help='User email for OpenCravat metrics'
+)
+parser_install_base.add_argument('--user-email-opt-out',
+    dest='user_email_opt_out',
+    action='store_true',
+    help='Opt out of providing a user email for OpenCravat metrics'
+)
 parser_install_base.set_defaults(func=install_base)
 
 # install
 parser_install = subparsers.add_parser('install',
-                                        help='installs modules.',
-                                        description='installs modules.')
+                                    help='installs modules.',
+                                    description='installs modules.')
 parser_install.add_argument('modules',
-    nargs='+',
-    help='Modules to install. May be regular expressions.'
+nargs='+',
+help='Modules to install. May be regular expressions.'
 )
 parser_install.add_argument('-v','--version',
-    help='Install a specific version'
+help='Install a specific version'
 )
 parser_install.add_argument('-f','--force',
-    action='store_true',
-    help='Install module even if latest version is already installed',
+action='store_true',
+help='Install module even if latest version is already installed',
 )
 parser_install.add_argument('-d', '--force-data',
-    action='store_true',
-    help='Download data even if latest data is already installed'
+action='store_true',
+help='Download data even if latest data is already installed'
 )
 parser_install.add_argument('-y','--yes',
-    action='store_true',
-    help='Proceed without prompt'
+action='store_true',
+help='Proceed without prompt'
 )
 parser_install.add_argument('--skip-dependencies',
-    action='store_true',
-    help='Skip installing dependencies'
+action='store_true',
+help='Skip installing dependencies'
 )
 parser_install.add_argument('-p','--private',
-    action='store_true',
-    help='Install a private module'
+action='store_true',
+help='Install a private module'
 )
 parser_install.add_argument('--skip-data',
-    action='store_true',
-    help='Skip installing data'
+action='store_true',
+help='Skip installing data'
 )
 parser_install.add_argument('--install-pypi-dependency',
-    action='store_true',
-    default=True,
-    help='Try to install non-OpenCRAVAT package dependency with pip'
+action='store_true',
+default=True,
+help='Try to install non-OpenCRAVAT package dependency with pip'
 )
 parser_install.add_argument('--md',
-    default=None,
-    help='Specify the root directory of OpenCRAVAT modules'
+default=None,
+help='Specify the root directory of OpenCRAVAT modules'
 )
 parser_install.set_defaults(func=install_modules)
 
 # update
 update_examples = ExampleCommandsFormatter(prefix='cravat-admin update')
 update_examples.add_example('', 
-                            '''Enter an interactive update process. Cravat 
-                                will check to see which modules need to
-                                be updated, and will ask you if you wish to update them.''')
+                        '''Enter an interactive update process. Cravat 
+                            will check to see which modules need to
+                            be updated, and will ask you if you wish to update them.''')
 update_examples.add_example('hg38 aggregator vcf-converter',
-                            '''Only attempt update on the hg38, aggregator,
-                                and vcf-converter modules.''')
+                        '''Only attempt update on the hg38, aggregator,
+                            and vcf-converter modules.''')
 parser_update = subparsers.add_parser('update',
-                                        help='updates modules.',
-                                        description='updates modules.',
-                                        epilog=str(update_examples),
-                                        formatter_class=argparse.RawDescriptionHelpFormatter)
+                                    help='updates modules.',
+                                    description='updates modules.',
+                                    epilog=str(update_examples),
+                                    formatter_class=argparse.RawDescriptionHelpFormatter)
 parser_update.add_argument('modules',
-                            nargs='*',
-                            help='Modules to update.')
+                        nargs='*',
+                        help='Modules to update.')
 parser_update.add_argument('-y',
-                            action='store_true',
-                            help='Proceed without prompt'
-                            )
+                        action='store_true',
+                        help='Proceed without prompt'
+                        )
 parser_update.add_argument('--strategy',
-                            help='Dependency resolution strategy. "consensus" will attemp to resolve dependencies. "force" will install the highest available version. "skip" will skip modules with constraints.',
-                            default='consensus',
-                            type=str,
-                            choices=('consensus','force','skip')
-                            )
+                        help='Dependency resolution strategy. "consensus" will attemp to resolve dependencies. "force" will install the highest available version. "skip" will skip modules with constraints.',
+                        default='consensus',
+                        type=str,
+                        choices=('consensus','force','skip')
+                        )
 parser_update.add_argument('--install-pypi-dependency',
-    action='store_true',
-    default=True,
-    help='Try to install non-OpenCRAVAT package dependency with pip'
+action='store_true',
+default=True,
+help='Try to install non-OpenCRAVAT package dependency with pip'
 )
 parser_update.add_argument('--md',
-    default=None,
-    help='Specify the root directory of OpenCRAVAT modules'
+default=None,
+help='Specify the root directory of OpenCRAVAT modules'
 )
 parser_update.set_defaults(func=update_modules)
 
 # uninstall
 parser_uninstall = subparsers.add_parser('uninstall',
-                                        help='uninstalls modules.')
+                                    help='uninstalls modules.')
 parser_uninstall.add_argument('modules',
-                            nargs='+',
-                            help='Modules to uninstall')
+                        nargs='+',
+                        help='Modules to uninstall')
 parser_uninstall.add_argument('-y','--yes',
-                                action='store_true',
-                                help='Proceed without prompt')
+                            action='store_true',
+                            help='Proceed without prompt')
 parser_uninstall.add_argument('--md',
-    default=None,
-    help='Specify the root directory of OpenCRAVAT modules'
+default=None,
+help='Specify the root directory of OpenCRAVAT modules'
 )
 parser_uninstall.set_defaults(func=uninstall_modules)
 
 # info
 parser_info = subparsers.add_parser('info',
-                                    help='shows module information.')
+                                help='shows module information.')
 parser_info.add_argument('module',
-                            help='Module to get info about')
+                        help='Module to get info about')
 parser_info.add_argument('-l','--local',
-                            dest='local',
-                            help='Include local info',
-                            action='store_true')
+                        dest='local',
+                        help='Include local info',
+                        action='store_true')
 parser_info.add_argument('--md',
-    default=None,
-    help='Specify the root directory of OpenCRAVAT modules'
+default=None,
+help='Specify the root directory of OpenCRAVAT modules'
 )
 parser_info.set_defaults(func=print_info)
 
@@ -658,35 +672,35 @@ ls_examples.add_example('-t annotator', 'List installed annotators')
 ls_examples.add_example('-a', 'List all modules available on the store')
 ls_examples.add_example('-a -t mapper', 'List all mappers available on the store')
 parser_ls = subparsers.add_parser('ls',
-                                    help='lists modules.',
-                                    description='lists modules.',
-                                    epilog=str(ls_examples),
-                                    formatter_class=argparse.RawDescriptionHelpFormatter)
+                                help='lists modules.',
+                                description='lists modules.',
+                                epilog=str(ls_examples),
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
 parser_ls.add_argument('pattern',
-                        nargs='?',
-                        default=r'.*',
-                        help='Regular expression for module names')
+                    nargs='?',
+                    default=r'.*',
+                    help='Regular expression for module names')
 parser_ls.add_argument('-a','--available',
-                        action='store_true',
-                        help='Include available modules')
+                    action='store_true',
+                    help='Include available modules')
 parser_ls.add_argument('-t','--types',
-                        nargs='+',
-                        default=[],
-                        help='Only list modules of certain types')
+                    nargs='+',
+                    default=[],
+                    help='Only list modules of certain types')
 parser_ls.add_argument('-i','--include-hidden',
-                        action='store_true',
-                        help='Include hidden modules')
+                    action='store_true',
+                    help='Include hidden modules')
 parser_ls.add_argument('--tags',
-    nargs='+',
-    default=[],
-    help='Only list modules of given tag(s)'
+nargs='+',
+default=[],
+help='Only list modules of given tag(s)'
 )
 parser_ls.add_argument('-q','--quiet',
-                        action='store_true',
-                        help='Only list module names')
+                    action='store_true',
+                    help='Only list module names')
 parser_ls.add_argument('--bytes',
-    action='store_true',
-    dest='raw_bytes',
+action='store_true',
+dest='raw_bytes',
     help='Machine readable data sizes'
     )
 parser_ls.add_argument('--md',

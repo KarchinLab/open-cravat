@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
     <title>open-cravat submit</title>
     <script src="/submit/jquery-3.3.1.min.js"></script>
     <script src="/result/js/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
@@ -383,6 +384,35 @@
     <br />
     <br />
     <button id='report_generation_generate_button'>Generate</button><button id='report_generation_close_button'>Cancel</button>
+</div>
+
+<div id='user-email-request-div' class='modal-container'>
+    <div id='user-email-request-modal' class='modal'>
+        <div id='user-email-request-modal-title' class='divtitle modal-title'>
+            User Email
+            <span id='user-email-request-modal-close' class='checkbox-group-none-button' title='Close'></span>
+        </div>
+        <div id='user-email-request-modal-body' class='modal-body'>
+            <div class='modal-text'>
+                Please provide your email to support our funding.
+                <ul>
+                    <li>Used only for usage metrics.</li>
+                    <li>No third-party sharing.</li>
+                    <li>No mailing lists without consent.</li>
+                </ul>
+            </div>
+            <label for='user-email-opt-out' class='checkbox-container modal-checkbox-label'>
+                <input id='user-email-opt-out' type='checkbox' />
+                <span class='modal-checkbox-text'>Opt-Out</span>
+                <span class='checkmark modal-checkmark'></span>
+            </label>
+            <input id='user-email' class='modal-input' type='email' placeholder="Email" />
+            <div id='user-email-error' class='modal-text modal-error'>
+                Please enter a valid email address.
+            </div>
+            <button class='butn modal-butn' id='submit-user-email-request'>Confirm</button>
+        </div>
+    </div>
 </div>
 
 </body>
