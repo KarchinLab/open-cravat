@@ -94,6 +94,7 @@ setup(
         'psutil',
         'mpmath',
         'PyVCF3',
+        'pandas',
         ],
     python_requires='>=3.9',
 )
