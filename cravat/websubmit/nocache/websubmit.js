@@ -956,6 +956,7 @@ function deleteJob (jobId) {
 function inputExampleChangeHandler (event) {
     var elem = $(event.target);
     var format = elem.val();
+    if (format === 'clear') { return; }
     var assembly = 'hg38';
     var formatAssembly = format + '.' + assembly;
     var getExampleText = new Promise((resolve, reject) => {
@@ -979,10 +980,19 @@ function inputExampleChangeHandler (event) {
     });
     getExampleText.then((text) => {
         var inputArea = $('#input-text');
+        $('.input-example-button').removeClass('selected');
         inputArea.val(text);
         inputArea.change();
         $('#assembly-select').val(assembly);
+        elem.addClass('selected');
     })
+}
+
+function inputExampleClearHandler (event) {
+    $('.input-example-button').removeClass('selected');
+    let input = $('#input-text');
+    input.val('');
+    input.change();
 }
 
 function allNoAnnotatorsHandler (event) {
@@ -1010,6 +1020,7 @@ function inputChangeHandler (event) {
         elem.wrap('<form>').closest('form').get(0).reset();
         elem.unwrap();
     }
+    $('.input-example-button').removeClass('selected');
     populateMultInputsMessage();
 }
 
@@ -1941,7 +1952,8 @@ function addListeners () {
     $('#input-file').change(inputChangeHandler);
     $('#all-annotators-button').click(allNoAnnotatorsHandler);
     $('#no-annotators-button').click(allNoAnnotatorsHandler);
-    $('.input-example-button').click(inputExampleChangeHandler)
+    $('.input-example-button').click(inputExampleChangeHandler);
+    $('.input-example-button.clear-button').click(inputExampleClearHandler);
     $('#refresh-jobs-table-btn').click(refreshJobsTable);
     $('.jobsdirinput').change(setJobsDir);
     $('#chaticondiv').click(toggleChatBox)
