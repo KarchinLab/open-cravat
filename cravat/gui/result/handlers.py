@@ -119,3 +119,21 @@ def get_smartfilters():
     conn.close()
 
     return jsonify(sfs)
+
+def get_samples():
+    job_id, dbpath = jobid_and_db_path()
+
+    conn = connect(dbpath)
+    cursor = conn.cursor()
+
+    sample_table = 'sample'
+    samples = []
+    if table_exists(cursor, sample_table):
+        q = f'select distinct base__sample_id from {sample_table};'
+        cursor.execute(q)
+        rows = cursor.fetchall()
+        samples = [r[0] for r in rows]
+    cursor.close()
+    conn.close()
+
+    return jsonify(samples)
