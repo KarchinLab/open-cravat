@@ -5,6 +5,8 @@ import os
 from flask import request, current_app, jsonify
 from sqlite3 import connect
 
+from numpy.f2py.crackfortran import endifs
+
 from cravat import admin_util as au
 from cravat.constants import base_smartfilters
 from cravat.gui.cravat_request import jobid_and_db_path
@@ -137,3 +139,27 @@ def get_samples():
     conn.close()
 
     return jsonify(samples)
+
+def load_filter_setting():
+    job_id, dbpath = jobid_and_db_path()
+    queries = request.values
+
+    name = queries['name']
+    conn = connect(dbpath)
+    cursor = conn.cursor()
+
+    table = 'viewersetup'
+    content = {"filterSet": []}
+
+    if table_exists(cursor, table):
+        q = 'select viewersetup from ' + table + ' where datatype="filter" and name="' + name + '"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is not None:
+            data = r[0]
+            content = json.loads(data)
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(content)
