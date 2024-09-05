@@ -12,6 +12,7 @@ from cravat.gui.models import Job
 ###
 # Re-exports
 from cravat.websubmit import websubmit
+from cravat.webresult import webresult
 
 ###
 # Wrappers

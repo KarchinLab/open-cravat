@@ -1,4 +1,3 @@
-import imp
 import mimetypes
 import os
 
@@ -6,8 +5,10 @@ from flask import request, current_app, jsonify
 from sqlite3 import connect
 
 from cravat import admin_util as au
-from cravat.gui.cravat_request import file_router, jobid_and_db_path
+from cravat.gui.cravat_request import jobid_and_db_path
+from cravat.gui.legacy import webresult
 
+from .db import get_colinfo
 
 def get_result_levels():
     job_id, dbpath = jobid_and_db_path()
@@ -63,3 +64,23 @@ def serve_widgetfile(module, filename):
             headers['Content-Encoding'] = encoding
 
         return file_stream(), headers
+
+def get_variant_cols():
+    job_id, dbpath = jobid_and_db_path()
+    queries = request.values
+
+    confpath = queries.get('confpath', None)
+    filterstring = queries.get('filter', None)
+
+    data = {'data': {}, 'stat': {}, 'status': {}, 'columns': {}}
+
+    colinfo = get_colinfo(dbpath, confpath, filterstring)
+
+    if 'variant' in colinfo:
+        data['columns']['variant'] = webresult.get_colmodel('variant', colinfo)
+    if 'gene' in colinfo:
+        data['columns']['gene'] = webresult.get_colmodel('gene', colinfo)
+    if 'sample' in colinfo:
+        data['columns']['sample'] = webresult.get_colmodel('sample', colinfo)
+
+    return jsonify(data)
