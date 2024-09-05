@@ -84,3 +84,15 @@ def get_variant_cols():
         data['columns']['sample'] = webresult.get_colmodel('sample', colinfo)
 
     return jsonify(data)
+
+def get_widgets():
+    content = []
+    modules = au.get_local_module_infos_of_type('webviewerwidget')
+    content = [{'name': module_name,
+                'title': modules[module_name].title,
+                'required_annotator': modules[module_name].conf.get('required_annotator', module_name[2:]),
+                'helphtml_exists': modules[module_name].helphtml_exists}
+               for module_name
+               in modules]
+
+    return jsonify(content)
