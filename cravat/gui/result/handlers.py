@@ -174,6 +174,27 @@ def load_layout_setting():
     conn.close()
     return jsonify(content)
 
+def get_filter_save_names():
+    job_id, dbpath = jobid_and_db_path()
+
+    conn = connect(dbpath)
+    cursor = conn.cursor()
+    content = []
+
+    try:
+        if table_exists(cursor, 'viewersetup'):
+            q = 'select distinct name from viewersetup where datatype="filter"'
+            cursor.execute(q)
+            rs = cursor.fetchall()
+            content = [r[0] for r in rs]
+    except:
+        raise
+    finally:
+        cursor.close()
+        conn.close()
+
+    return jsonify(content)
+
 def _first_result_if_table_exists(connection, table, query):
     cursor = connection.cursor()
     if table_exists(cursor, table):
