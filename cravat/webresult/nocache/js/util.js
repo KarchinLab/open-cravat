@@ -880,33 +880,26 @@ function setServerStatus (connected) {
 
 function checkConnection(failures) {
 	failures = failures !== undefined ? failures : 0;
-    var host = window.location.host;
     if (failures>=3) {
         setServerStatus(false);
     }
-    var wsprotocol = null;
-    var protocol = window.location.protocol;
-    if (protocol == 'http:') {
-        wsprotocol = 'ws:'
-    } else if (protocol == 'https:') {
-        wsprotocol = 'wss:'
-    }
-    ws = new WebSocket(wsprotocol + '//' + host + '/heartbeat');
-    ws.onopen = function (evt) {
-        setServerStatus(true);
-        failures=0;
-    }
-    ws.onclose = function (evt) {
+
+    // TODO: consider replacing this poll with a webworker.
+    // websockets are not easily done with the backend
+    $.get('/heartbeat',
+        () => {
+            setServerStatus(true);
+            setTimeout(function() {
+                checkConnection(0);
+            }, 60*1000)
+        }
+    ).fail(() => {
         failures += 1;
-        var waitTime = 2000*failures;
+        var waitTime = 2000 * failures;
         setTimeout(function() {
             checkConnection(failures);
         }, waitTime)
-    }
-    ws.onerror = function(evt) {
-    }
-    ws.onmessage = function (evt) {
-    }
+    });
 }
 
 function showYesNoDialog(content, yescallback, noSpace, justOk) {
