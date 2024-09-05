@@ -1,3 +1,4 @@
+import json
 import mimetypes
 import os
 
@@ -5,8 +6,10 @@ from flask import request, current_app, jsonify
 from sqlite3 import connect
 
 from cravat import admin_util as au
+from cravat.constants import base_smartfilters
 from cravat.gui.cravat_request import jobid_and_db_path
 from cravat.gui.legacy import webresult
+from cravat.gui.db import table_exists
 
 from .db import get_colinfo
 
@@ -96,3 +99,23 @@ def get_widgets():
                in modules]
 
     return jsonify(content)
+
+def get_smartfilters():
+    job_id, dbpath = jobid_and_db_path()
+
+    sfs = {'base': base_smartfilters}
+    conn = connect(dbpath)
+    cursor = conn.cursor()
+
+    sf_table = 'smartfilters'
+
+    if table_exists(cursor, sf_table):
+        q = 'select name, definition from {};'.format(sf_table)
+        cursor.execute(q)
+        r = cursor.fetchall()
+        sfs = {**sfs, **{ k:json.loads(v) for (k,v) in r }}
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(sfs)
