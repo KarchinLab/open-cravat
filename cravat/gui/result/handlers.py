@@ -143,23 +143,42 @@ def get_samples():
 def load_filter_setting():
     job_id, dbpath = jobid_and_db_path()
     queries = request.values
-
     name = queries['name']
+
     conn = connect(dbpath)
-    cursor = conn.cursor()
+    q = 'select viewersetup from viewersetup where datatype="filter" and name="' + name + '"'
+    r = _first_result_if_table_exists(conn, 'filterSet', q)
 
-    table = 'viewersetup'
-    content = {"filterSet": []}
+    content = {"filterSet": {}}
+    if r is not None:
+        data = r[0]
+        content = json.loads(data)
 
+    conn.close()
+    return jsonify(content)
+
+def load_layout_setting():
+    job_id, dbpath = jobid_and_db_path()
+    queries = request.values
+    name = queries['name']
+
+    conn = connect(dbpath)
+    q = 'select viewersetup from viewersetup where datatype="layout" and name="' + name + '"'
+    r = _first_result_if_table_exists(conn, 'viewersetup', q)
+
+    content = {"widgetSettings": {}}
+    if r is not None:
+        data = r[0]
+        content = json.loads(data)
+
+    conn.close()
+    return jsonify(content)
+
+def _first_result_if_table_exists(connection, table, query):
+    cursor = connection.cursor()
     if table_exists(cursor, table):
-        q = 'select viewersetup from ' + table + ' where datatype="filter" and name="' + name + '"'
-        cursor.execute(q)
-        r = cursor.fetchone()
-        if r is not None:
-            data = r[0]
-            content = json.loads(data)
+        cursor.execute(query)
+        return cursor.fetchone()
 
     cursor.close()
-    conn.close()
-
-    return jsonify(content)
+    return None

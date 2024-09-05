@@ -1,6 +1,7 @@
 from .handlers import *
 from cravat.gui.routing import relative_router
 
+
 def load(application):
     router = relative_router("/result", application)
     service_router = relative_router("/result/service", application)
@@ -11,5 +12,7 @@ def load(application):
     service_router('/smartfilters', None, get_smartfilters)
     service_router('/samples', None, get_samples)
     service_router('/loadfiltersetting', None, load_filter_setting)
+    service_router('/loadlayoutsetting', None, load_layout_setting)
+
 
     router('/widgetfile/<module>/<filename>', None, serve_widgetfile)
