@@ -13,6 +13,6 @@ def load(application):
     service_router('/samples', None, get_samples)
     service_router('/loadfiltersetting', None, load_filter_setting)
     service_router('/loadlayoutsetting', None, load_layout_setting)
-
+    service_router('/getfiltersavenames', None, get_filter_save_names)
 
     router('/widgetfile/<module>/<filename>', None, serve_widgetfile)
