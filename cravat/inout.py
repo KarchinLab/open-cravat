@@ -572,7 +572,7 @@ class ColumnDefinition(object):
             self.link_format = None
 
     def from_json(self, sjson):
-        self._load_dict(json.loads(sjson))
+        return self._load_dict(json.loads(sjson))
 
     def get_json(self):
         return json.dumps(self.__dict__)
