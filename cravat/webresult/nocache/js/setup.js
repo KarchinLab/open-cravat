@@ -1669,27 +1669,7 @@ function populateWgNoticeDiv (noWgAnnotModules) {
 	addEl(contentDiv, getEl('br'));
 	addEl(contentDiv, getEl('br'));
 	var div = getEl('div');
-	var moduleKeys = Object.keys(noWgAnnotModules);
-	for (var i = 0; i < moduleKeys.length; i++) {
-		var moduleKey = moduleKeys[i];
-		var moduleTitle = noWgAnnotModules[moduleKey];
-		var button = getEl('button');
-        button.setAttribute('module', moduleKey);
-		button.style.marginRight = '20px';
-		button.style.marginBottom = '10px';
-		button.textContent = moduleTitle;
-        button.addEventListener('click', function (evt) {
-            installWidgetsForModule(evt.target.getAttribute('module'));
-        });
-		addEl(div, button);
-	}
 	addEl(contentDiv, div);
-}
-
-function installWidgetsForModule (moduleKey) {
-    $.get('/store/installwidgetsformodule', {'name': moduleKey}).done(function () {
-        checkWidgets();
-    });
 }
 
 function populateInfoDiv (infoDiv) {

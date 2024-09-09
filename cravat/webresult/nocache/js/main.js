@@ -865,7 +865,6 @@ var afterLoadDefaultWidgetSetting = function (args) {
         'info', 
         function () {
             populateInfoDiv(document.getElementById('info_div'));
-            checkWidgets();
             loadData(false, showTab('info'));
         }, 
         null, 
@@ -876,18 +875,6 @@ var afterLoadDefaultWidgetSetting = function (args) {
 
 var afterLoadDefaultFilter = function (args) {
     loadLayoutSetting(quickSaveName, afterLoadDefaultWidgetSetting, true);
-}
-
-function checkWidgets () {
-	$.ajax({
-        url: '/result/service/getnowgannotmodules', 
-        data: {'username': username, 'job_id': jobId, dbpath: dbPath},
-        async: true,
-        success: function (jsonResponseData) {
-            var noWgAnnotModules = jsonResponseData;
-            populateWgNoticeDiv(noWgAnnotModules);
-        },
-	});
 }
 
 function drawingRetrievingDataDiv (currentTab) {
