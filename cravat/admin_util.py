@@ -23,6 +23,7 @@ import traceback
 import signal
 import subprocess
 from urllib.error import HTTPError
+from pathlib import Path
 
 class InstallProgressHandler(object):
     def __init__(self, module_name, module_version):
@@ -1334,12 +1335,21 @@ def load_yml_conf(yml_conf_path):
     return conf
 
 
-def make_example_input(d):
-    fn = "example_input"
-    ifn = os.path.join(constants.packagedir, fn)
-    ofn = os.path.join(d, fn)
-    shutil.copyfile(ifn, ofn)
-    print(fn + " has been created at " + os.path.abspath(d))
+def make_example_input(out_directory, type='cravat'):
+    if type == 'cravat':
+        out_fn = 'example_input'
+    elif type == 'vcf':
+        out_fn = 'example_input.vcf'
+    elif type == 'hgvs':
+        out_fn = 'example_input.hgvs.txt'
+    else:
+        raise ValueError(f'Invalid example input type: {type}')
+    out_path = Path(out_directory)/out_fn
+    in_path = constants.example_input_paths.get(type)
+    if in_path is None:
+        raise ValueError(f'Invalid example input type: {type}')
+    shutil.copyfile(in_path, out_path)
+    print(out_path)
 
 
 def module_exists_local(module_name):

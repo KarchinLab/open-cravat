@@ -441,8 +441,8 @@ def send_verify_email (args):
 def check_login (args):
     au.check_login(args.username, args.password)
 
-def make_example_input (arg):
-    au.make_example_input(arg.directory)
+def make_example_input (args):
+    au.make_example_input(args.directory, type=args.type)
 
 def new_annotator (args):
     if args.md is not None:
@@ -793,8 +793,15 @@ parser_check_login.set_defaults(func=check_login)
 # test input file
 parser_make_example_input = subparsers.add_parser('make-example-input',
                                                     help='makes a file with example input variants.')
-parser_make_example_input.add_argument('directory', default='',
-                                        help='Directory to make the example input file in')
+parser_make_example_input.add_argument('directory',
+                                       default=os.getcwd(),
+                                       nargs='?',
+                                       help='Directory to make the example input file in')
+parser_make_example_input.add_argument('--type','-t',
+                                       choices=list(constants.example_input_paths.keys()),
+                                       default='cravat',
+                                       required=False,
+                                       help='Type of example input')
 parser_make_example_input.set_defaults(func=make_example_input)
 
 # new-annotator
