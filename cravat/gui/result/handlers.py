@@ -1,13 +1,13 @@
 import json
 import mimetypes
 import os
+import time
 
 from flask import request, current_app, jsonify
 from sqlite3 import connect
 
-from numpy.f2py.crackfortran import endifs
-
 from cravat import admin_util as au
+from cravat.cravat_filter import CravatFilter
 from cravat.constants import base_smartfilters
 from cravat.gui.cravat_request import jobid_and_db_path
 from cravat.gui.legacy import webresult
@@ -210,6 +210,26 @@ def get_status():
     cursor.close()
     conn.close()
 
+    return jsonify(content)
+
+def get_count():
+    job_id, dbpath = jobid_and_db_path()
+    queries = request.values
+
+    tab = queries['tab']
+    filterstring = queries.get('filter', None)
+
+    cf = CravatFilter.create(dbpath=dbpath,
+                             mode='sub',
+                             filterstring=filterstring)
+    dbbasename = os.path.basename(dbpath)
+    print('calling count for {}'.format(dbbasename))
+    t = time.time()
+    n = cf.exec_db(cf.getcount, level=tab)
+    cf.close_db()
+    t = round(time.time() - t, 3)
+    print('count obtained from {} in {}s'.format(dbbasename, t))
+    content = {'n': n}
     return jsonify(content)
 
 def _first_result_if_table_exists(connection, table, query):
