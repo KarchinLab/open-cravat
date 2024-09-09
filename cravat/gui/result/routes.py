@@ -16,5 +16,6 @@ def load(application):
     service_router('/getfiltersavenames', None, get_filter_save_names)
     service_router('/status', None, get_status)
     service_router('/count', None, get_count, methods=['POST'])
+    service_router('/result', None, get_result, methods=['POST'])
 
     router('/widgetfile/<module>/<filename>', None, serve_widgetfile)

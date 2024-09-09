@@ -232,6 +232,54 @@ def get_count():
     content = {'n': n}
     return jsonify(content)
 
+def get_result():
+    from cravat.gui.legacy import jsonreporter
+
+    queries = request.values
+    job_id, dbpath = jobid_and_db_path()
+
+    dbname = os.path.basename(dbpath)
+    tab = queries['tab']
+
+    print('(Getting result of [{}]:[{}]...)'.format(dbname, tab))
+    start_time = time.time()
+    filterstring = queries.get('filter', None)
+    confpath = queries.get('confpath', None)
+
+    arg_dict = {'dbpath': dbpath,
+                'module_name': 'jsonreporter',
+                'nogenelevelonvariantlevel': True,
+                'reporttypes': ['text']}
+    if confpath is not None:
+        arg_dict['confpath'] = confpath
+    if filterstring is not None:
+        arg_dict['filterstring'] = filterstring
+    separatesample = queries.get('separatesample', False)
+    separatesample = separatesample == 'true' # boolean coercion
+    if separatesample:
+        arg_dict['separatesample'] = True
+    reporter = jsonreporter.Reporter(arg_dict)
+
+    reporter.prep()
+    data = reporter.run(tab=tab)
+    data['modules_info'] = _get_modules_info()
+
+    content = {}
+    content['stat'] = {'rowsreturned': True,
+                   'wherestr':'',
+                   'filtered': True,
+                   'filteredresultmessage': '',
+                   'maxnorows': 100000,
+                   'norows': data['info']['norows']}
+    content['columns'] = _get_colmodel(tab, data['colinfo'])
+    content["data"] = _get_datamodel(data[tab])
+    content["status"] = "normal"
+    content['modules_info'] = data['modules_info']
+    content['warning_msgs'] = data['warning_msgs']
+    t = round(time.time() - start_time, 3)
+    print('Done getting result of [{}][{}] in {}s'.format(dbname, tab, t))
+    return jsonify(content)
+
 def _first_result_if_table_exists(connection, table, query):
     cursor = connection.cursor()
     if table_exists(cursor, table):
@@ -240,3 +288,122 @@ def _first_result_if_table_exists(connection, table, query):
 
     cursor.close()
     return None
+
+def _get_modules_info():
+    job_id, dbpath = jobid_and_db_path()
+
+    conn = connect(dbpath)
+    cursor = conn.cursor()
+
+    q = 'select colval from info where colkey="_annotator_desc"'
+    cursor.execute(q)
+    r = cursor.fetchone()
+
+    if r is None or r[0] == '{}':
+        content = {}
+    else:
+        s = r[0].strip('{').strip('}')
+        toks = s.split("', '")
+        d = {}
+        for tok in toks:
+            t2 = tok.split(':')
+            k = t2[0].strip().strip("'").replace("'", "\'")
+            v = t2[1].strip().strip("'").replace("'", "\'")
+            d[k] = v
+        content = d
+
+    cursor.close()
+    conn.close()
+    return content
+
+def _get_colmodel(tab, colinfo):
+    colModel = []
+    groupkeys_ordered = []
+    groupnames = {}
+    for d in colinfo[tab]['colgroups']:
+        groupnames[d['name']] = [d['displayname'], d['count']]
+        groupkeys_ordered.append(d['name'])
+    dataindx = 0
+    for groupkey in groupkeys_ordered:
+        [grouptitle, col_count] = groupnames[groupkey]
+        columngroupdef = {'name': groupkey, 'title': grouptitle, 'colModel': []}
+        startidx = dataindx
+        endidx = startidx + col_count
+        genesummary_present = False
+        for d in colinfo[tab]['columns'][startidx:endidx]:
+            cats = d['col_cats']
+            column = {
+                "col": d['col_name'],
+                'colgroupkey': groupkey,
+                'colgroup': grouptitle,
+                "title": d['col_title'],
+                "align":"center",
+                "dataIndx": dataindx,
+                "retfilt":False,
+                "retfilttype":"None",
+                "multiseloptions":[],
+                'reportsub': d['reportsub'] if 'reportsub' in d else {},
+                'categories': cats,
+                'width': d['col_width'],
+                'desc': d['col_desc'],
+                'type': d['col_type'],
+                'hidden': d['col_hidden'],
+                'default_hidden': d['col_hidden'],
+                'ctg': d['col_ctg'],
+                'filterable': d['col_filterable'],
+                'link_format': d.get('link_format'),
+                }
+            if d['col_type'] == 'string':
+                column['align'] = 'left'
+                if d['col_ctg'] == 'single':
+                    column['filter'] = {
+                        'type': 'select',
+                        'attr': 'multiple',
+                        'condition': 'equal',
+                        'options': cats,
+                        'listeners': ['change']}
+                    column['retfilt'] = True
+                    column['retfilttype'] = 'select'
+                    column['multiseloptions'] = cats
+                elif d['col_ctg'] == 'multi':
+                    column['filter'] = {
+                        'type': 'select',
+                        'attr': 'multiple',
+                        'condition': 'contain',
+                        'options': cats,
+                        'listeners': ['change']}
+                    column['retfilt'] = True
+                    column['retfilttype'] = 'select'
+                    column['multiseloptions'] = cats
+                else:
+                    column['filter'] = {
+                        "type":"textbox",
+                        "condition":"contain",
+                        "listeners":["keyup"]}
+                    column['retfilt'] = True
+                    column['retfilttype'] = 'regexp'
+                    column['multiseloptions'] = []
+            elif d['col_type'] == 'float' or d['col_type'] == 'int':
+                column['align'] = 'right'
+                column['filter'] = {
+                    "type":"textbox",
+                    "condition":"between",
+                    "listeners":["keyup"]}
+                column['retfilt'] = True
+                column['retfilttype'] = 'between'
+                column['dataType'] = 'float'
+                column['multiseloptions'] = []
+            if 'col_genesummary' in d and d['col_genesummary'] == True:
+                genesummary_present = True
+            columngroupdef['colModel'].append(column)
+            dataindx += 1
+        if genesummary_present:
+            columngroupdef['genesummary'] = True
+        colModel.append(columngroupdef)
+    return colModel
+
+def _get_datamodel(data):
+    ret = []
+    for row in data:
+        ret.append(list(row))
+    return ret

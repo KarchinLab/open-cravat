@@ -363,10 +363,10 @@ class BaseMapper(object):
         # if not(isinstance(e, InvalidData)):
         #     raise e
 
-    async def get_gene_summary_data(self, cf):
+    def get_gene_summary_data(self, cf):
         # print('            {}: started getting gene summary data'.format(self.module_name))
         t = time.time()
-        hugos = await cf.exec_db(cf.get_filtered_hugo_list)
+        hugos = cf.exec_db(cf.get_filtered_hugo_list)
         # Below is to fix opening oc 1.8.0 jobs with oc 1.8.1.
         # TODO: Remove it after a while and add 1.8.0 to the db update chain in cravat_util.
         cols = [
@@ -375,11 +375,11 @@ class BaseMapper(object):
             if coldef["name"] != "cchange"
         ]
         cols.extend(["tagsampler__numsample"])
-        async def get_database_version(conn=None, cursor=None):
+        def get_database_version(conn=None, cursor=None):
             q = 'select colval from info where colkey="open-cravat"'
-            await cursor.execute(q)
-            return await cursor.fetchone()
-        result = await cf.exec_db(get_database_version)
+            cursor.execute(q)
+            return cursor.fetchone()
+        result = cf.exec_db(get_database_version)
         dbver = result[0]
         if au.compare_version(dbver, '2.3.0') <= 0:
             tmp = []
@@ -398,7 +398,7 @@ class BaseMapper(object):
             cols = tmp
         data = {}
         t = time.time()
-        rows = await cf.exec_db(cf.get_variant_data_for_cols, cols)
+        rows = cf.exec_db(cf.get_variant_data_for_cols, cols)
         rows_by_hugo = {}
         t = time.time()
         for row in rows:

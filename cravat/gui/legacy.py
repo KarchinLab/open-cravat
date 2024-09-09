@@ -14,6 +14,7 @@ from . import async_utils
 # Re-exports
 from cravat.websubmit import websubmit
 from cravat.webresult import webresult
+from cravat.webresult import jsonreporter
 
 ###
 # Wrappers
