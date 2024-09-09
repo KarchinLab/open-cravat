@@ -14,5 +14,6 @@ def load(application):
     service_router('/loadfiltersetting', None, load_filter_setting)
     service_router('/loadlayoutsetting', None, load_layout_setting)
     service_router('/getfiltersavenames', None, get_filter_save_names)
+    service_router('/status', None, get_status)
 
     router('/widgetfile/<module>/<filename>', None, serve_widgetfile)
