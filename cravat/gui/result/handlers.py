@@ -195,6 +195,23 @@ def get_filter_save_names():
 
     return jsonify(content)
 
+def get_status():
+    job_id, dbpath = jobid_and_db_path()
+
+    conn = connect(dbpath)
+    cursor = conn.cursor()
+
+    q = 'select * from info where colkey not like "\_%" escape "\\"'
+    cursor.execute(q)
+    content = {}
+    for row in cursor.fetchall():
+        content[row[0]] = row[1]
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(content)
+
 def _first_result_if_table_exists(connection, table, query):
     cursor = connection.cursor()
     if table_exists(cursor, table):
