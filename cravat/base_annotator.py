@@ -332,12 +332,12 @@ class BaseAnnotator(object):
     def postprocess(self):
         pass
 
-    async def get_gene_summary_data(self, cf):
+    def get_gene_summary_data(self, cf):
         # print('            {}: getting gene summary data'.format(self.module_name))
         t = time.time()
-        module_ver = await cf.exec_db(cf.get_module_version_in_job, self.module_name)
-        hugos = await cf.exec_db(cf.get_filtered_hugo_list)
-        output_columns = await cf.exec_db(
+        module_ver = cf.exec_db(cf.get_module_version_in_job, self.module_name)
+        hugos = cf.exec_db(cf.get_filtered_hugo_list)
+        output_columns = cf.exec_db(
             cf.get_stored_output_columns, self.module_name
         )
         cols = [
@@ -347,7 +347,7 @@ class BaseAnnotator(object):
         ]
         data = {}
         t = time.time()
-        rows = await cf.exec_db(cf.get_variant_data_for_cols, cols)
+        rows = cf.exec_db(cf.get_variant_data_for_cols, cols)
         rows_by_hugo = {}
         t = time.time()
         for row in rows:
