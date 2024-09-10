@@ -1,9 +1,11 @@
 import json
 import mimetypes
 import os
+import sys
 import time
 
 from flask import request, current_app, jsonify
+from importlib import util as importlib_util
 from sqlite3 import connect
 
 from cravat import admin_util as au
@@ -14,6 +16,8 @@ from cravat.gui.legacy import webresult
 from cravat.gui.db import table_exists
 
 from .db import get_colinfo
+from ..async_utils import run_coroutine_sync
+
 
 def get_result_levels():
     job_id, dbpath = jobid_and_db_path()
@@ -279,6 +283,63 @@ def get_result():
     t = round(time.time() - start_time, 3)
     print('Done getting result of [{}][{}] in {}s'.format(dbname, tab, t))
     return jsonify(content)
+
+def serve_runwidget(widget_module):
+    queries = request.values
+    job_id, dbpath = jobid_and_db_path()
+    path = 'wg' + widget_module
+
+    if ('dbpath' not in queries or queries['dbpath'] == '') and dbpath is not None:
+        new_queries = queries.copy()
+        new_queries['dbpath'] = dbpath
+        queries = new_queries
+
+    m = _load_cravat_module(path)
+
+    content = run_coroutine_sync(m.get_data(queries))
+    return jsonify(content)
+
+def serve_runwidget_post(widget_module):
+    # NOTE: This method seems to not be called either in the OpenCravat or OpenCravat modules code
+    queries = request.values
+    job_id, dbpath = jobid_and_db_path()
+    path = 'wg' + widget_module
+
+    new_queries = {}
+    for k in queries:
+        val = queries[k]
+        if val == '':
+            val = '""'
+        elif val.startswith('{') and val.endswith('}') or \
+             val.startswith('[') and val.endswith(']'):
+            pass
+        else:
+            val = '"' + val + '"'
+        if sys.platform == 'win32':
+            val = val.replace('\\', '\\\\')
+        val = json.loads(val)
+        new_queries[k] = val
+
+    queries = new_queries
+
+    if ('dbpath' not in queries or queries['dbpath'] == '') and dbpath is not None:
+        new_queries = queries.copy()
+        new_queries['dbpath'] = dbpath
+        queries = new_queries
+
+    m = _load_cravat_module(path)
+
+    content = run_coroutine_sync(m.get_data(queries))
+    return jsonify(content)
+
+
+def _load_cravat_module(path):
+    info = au.get_local_module_info(path)
+    spec = importlib_util.spec_from_file_location(path, info.script_path)
+    m = importlib_util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
 
 def _first_result_if_table_exists(connection, table, query):
     cursor = connection.cursor()
