@@ -345,6 +345,7 @@ class Cravat(object):
         self.annotators = {}
         self.append_mode = False
         self.pipeinput = False
+        self.samples = set()
         try:
             self.metricObj = metrics.cravatMetrics()
             self.make_args_namespace(kwargs)
@@ -658,6 +659,7 @@ class Cravat(object):
                     print("Check {}".format(self.log_path))
                 self.update_status("Error", force=True)
             self.metricObj.set_job_data('success',success)
+            self.metricObj.set_job_data('sampleCount', len(self.samples))
             self.metricObj.do_job_metrics(self)
             self.close_logger()
             if self.args.do_not_change_status != True:
@@ -1273,6 +1275,7 @@ class Cravat(object):
         converter_class = util.load_class(module.script_path, "MasterCravatConverter")
         converter = converter_class(arg_dict)
         self.numinput, self.converter_format = converter.run()
+        self.samples = converter.samples
 
     def run_genemapper(self):
         module = au.get_local_module_info(self.cravat_conf["genemapper"])
