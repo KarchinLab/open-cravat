@@ -598,6 +598,12 @@ input:checked + .slider:before {
     padding: 3px 6px;
 }
 
+.input-example-button.disabled {
+    background: gray;
+    border: 1px dotted;
+    cursor: default;
+}
+
 .input-label {
     font-size: 13px;
     margin-top: 0.3em;
