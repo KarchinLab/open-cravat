@@ -2028,12 +2028,25 @@ function addListeners () {
     });
 }
 
+function checkDbSNPInput() {
+    if ('dbsnp-converter' in OC.localModuleInfo) {
+        document.getElementById('dbsnp-input').classList.remove('disabled');
+        document.getElementById('dbsnp-input').removeAttribute('title');
+        document.getElementById('dbsnp-input').removeAttribute('disabled');
+    } else {
+        document.getElementById('dbsnp-input').title = 'Install dbsnp-converter to use';
+        document.getElementById('dbsnp-input').disabled = 'true';
+        document.getElementById('dbsnp-input').classList.add('disabled');
+    }
+}
+
 function addMediatorListeners() {
     OC.mediator.subscribe('navigate', changePage);
     OC.mediator.subscribe('populateJobs', populateJobs);
     OC.mediator.subscribe('moduleinfo.annotators', buildAnnotatorsSelector);
     OC.mediator.subscribe('setupJobs', handleSetupJobsTab);
     OC.mediator.subscribe('moduleinfo.local', setVariantReportURL)
+    OC.mediator.subscribe('moduleinfo.local', checkDbSNPInput);
 }
 
 function requestUserEmail() {
