@@ -27,6 +27,9 @@ logging.basicConfig(level=logging.DEBUG)
 celery = job_manager.celery_init_app(app)
 celery.set_default()
 
+# Cache
+cache.init_app(app)
+
 def multiuser_middleware(app, multiuser):
     def wsgi_middleware(environ, start_response):
         environ['CRAVAT_MULTIUSER'] = multiuser
@@ -71,7 +74,6 @@ def start_server(interface, port, multiuser):
 
     # Application Initialization
     routing.load(app, static_server, multiuser)
-    cache.init_app(app)
 
     wrapped_app = multiuser_middleware(static_server, multiuser)
     serve(TransLogger(wrapped_app, setup_console_handler=True), host=interface, port=port)
