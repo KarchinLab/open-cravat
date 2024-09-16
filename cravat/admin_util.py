@@ -1342,6 +1342,8 @@ def make_example_input(out_directory, type='cravat'):
         out_fn = 'example_input.vcf'
     elif type == 'hgvs':
         out_fn = 'example_input.hgvs.txt'
+    elif type == 'dbsnp':
+        out_fn = 'example_input.rsid.txt'
     else:
         raise ValueError(f'Invalid example input type: {type}')
     out_path = Path(out_directory)/out_fn
@@ -1349,7 +1351,7 @@ def make_example_input(out_directory, type='cravat'):
     if in_path is None:
         raise ValueError(f'Invalid example input type: {type}')
     shutil.copyfile(in_path, out_path)
-    print(out_path)
+    return out_path
 
 
 def module_exists_local(module_name):
