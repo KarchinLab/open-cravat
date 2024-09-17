@@ -639,11 +639,11 @@ function loadData (alertFlag, finalcallback) {
                 return;
             }
             if (filterJson.length != 0) {
-                infomgr.count(dbPath, 'variant', function (numvar) {
-                	if (numvar.includes('Error')){
+                infomgr.count(dbPath, 'variant', function (msg, data) {
+                	if (msg.includes('Error')){
                 		removeLoadingDiv();
-                		alert(numvar);
-                	} else if (numvar > NUMVAR_LIMIT) {
+                		alert(msg);
+                	} else if (parseInt(data['n']) > NUMVAR_LIMIT) {
                         lockTabs();
                         flagNotifyToUseFilter = true;
                         if (document.getElementById('infonoticediv')) {
