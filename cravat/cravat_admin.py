@@ -442,7 +442,11 @@ def check_login (args):
     au.check_login(args.username, args.password)
 
 def make_example_input (args):
-    au.make_example_input(args.directory, type=args.type)
+    if args.type == 'dbsnp' and au.get_local_module_info('dbsnp-converter') is None:
+        print('Must install dbsnp-converter.')
+        exit(1)
+    out_path = au.make_example_input(args.directory, type=args.type)
+    print(out_path)
 
 def new_annotator (args):
     if args.md is not None:
