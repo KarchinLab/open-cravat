@@ -332,6 +332,68 @@ def serve_runwidget_post(widget_module):
     content = run_coroutine_sync(m.get_data(queries))
     return jsonify(content)
 
+def save_layout_setting():
+    queries = request.values
+    job_id, dbpath = jobid_and_db_path()
+
+    name = queries['name']
+    savedata = queries['savedata']
+
+    conn = connect(dbpath)
+    cursor = conn.cursor()
+
+    table = 'viewersetup'
+    exists = table_exists(cursor, table)
+    if not exists:
+        q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
+        cursor.execute(q)
+
+    try:
+        q = 'replace into ' + table + ' values ("layout", "' + name + '", \'' + savedata + '\')'
+        cursor.execute(q)
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+    content = 'saved'
+    return jsonify(content)
+
+def save_filter_setting():
+    queries = request.values
+    job_id, dbpath = jobid_and_db_path()
+
+    name = queries['name']
+    savedata = queries['savedata']
+
+    conn = connect(dbpath)
+    cursor = conn.cursor()
+
+    table = 'viewersetup'
+    r = table_exists(cursor, table)
+    if not r:
+        q = 'create table ' + table + ' (datatype text, name text, viewersetup text, unique (datatype, name))'
+        cursor.execute(q)
+
+    try:
+        q = 'select * from viewersetup where datatype="filter" and name=?'
+        cursor.execute(q, (name,))
+
+        r = cursor.fetchone()
+        if r is not None:
+            q = 'delete from viewersetup where datatype="filter" and name=?'
+            cursor.execute(q, (name,))
+            conn.commit()
+
+        q = 'replace into viewersetup values ("filter", ?, ?)'
+        cursor.execute(q, (name, savedata))
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
+
+    content = 'saved'
+    return jsonify(content)
 
 def _load_cravat_module(path):
     info = au.get_local_module_info(path)
