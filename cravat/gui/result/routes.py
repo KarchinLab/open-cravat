@@ -17,6 +17,8 @@ def load(application):
     service_router('/status', None, get_status)
     service_router('/count', None, get_count, methods=['POST'])
     service_router('/result', None, get_result, methods=['POST'])
+    service_router('/savelayoutsetting', None, save_layout_setting, methods=['POST'])
+    service_router('/savefiltersetting', None, save_filter_setting)
 
     router('/runwidget/<widget_module>', None, serve_runwidget)
     router('/runwidget/<widget_module>', None, serve_runwidget_post, methods=['POST'])
