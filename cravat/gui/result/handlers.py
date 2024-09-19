@@ -151,7 +151,7 @@ def load_filter_setting():
 
     conn = connect(dbpath)
     q = 'select viewersetup from viewersetup where datatype="filter" and name="' + name + '"'
-    r = _first_result_if_table_exists(conn, 'filterSet', q)
+    r = _first_result_if_table_exists(conn, 'viewersetup', q)
 
     content = {"filterSet": {}}
     if r is not None:
