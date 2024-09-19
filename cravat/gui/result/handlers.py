@@ -14,19 +14,18 @@ from cravat.constants import base_smartfilters
 from cravat.gui.cravat_request import jobid_and_db_path
 from cravat.gui.legacy import webresult
 from cravat.gui.db import table_exists
+from cravat.gui.decorators import with_job_id_and_path, with_job_database
 
 from .db import get_colinfo
 from ..async_utils import run_coroutine_sync
 
 
-def get_result_levels():
-    job_id, dbpath = jobid_and_db_path()
-
-    if dbpath is None:
+@with_job_database
+def get_result_levels(db):
+    if db is None:
         content = ['NODB']
     else:
-        conn = connect(dbpath)
-        cursor = conn.cursor()
+        cursor = db.cursor()
         sql = 'select name from sqlite_master where type="table" and ' +\
             'name like "%_header"'
         cursor.execute(sql)
@@ -42,7 +41,6 @@ def get_result_levels():
         content.remove('sample')
         content.remove('mapping')
         cursor.close()
-        conn.close()
 
     return jsonify(content)
 
@@ -74,8 +72,8 @@ def serve_widgetfile(module, filename):
 
         return file_stream(), headers
 
-def get_variant_cols():
-    job_id, dbpath = jobid_and_db_path()
+@with_job_id_and_path
+def get_variant_cols(job_id, dbpath):
     queries = request.values
 
     confpath = queries.get('confpath', None)
@@ -106,12 +104,10 @@ def get_widgets():
 
     return jsonify(content)
 
-def get_smartfilters():
-    job_id, dbpath = jobid_and_db_path()
-
+@with_job_database
+def get_smartfilters(db):
+    cursor = db.cursor()
     sfs = {'base': base_smartfilters}
-    conn = connect(dbpath)
-    cursor = conn.cursor()
 
     sf_table = 'smartfilters'
 
@@ -122,15 +118,12 @@ def get_smartfilters():
         sfs = {**sfs, **{ k:json.loads(v) for (k,v) in r }}
 
     cursor.close()
-    conn.close()
 
     return jsonify(sfs)
 
-def get_samples():
-    job_id, dbpath = jobid_and_db_path()
-
-    conn = connect(dbpath)
-    cursor = conn.cursor()
+@with_job_database
+def get_samples(db):
+    cursor = db.cursor()
 
     sample_table = 'sample'
     samples = []
@@ -140,49 +133,42 @@ def get_samples():
         rows = cursor.fetchall()
         samples = [r[0] for r in rows]
     cursor.close()
-    conn.close()
 
     return jsonify(samples)
 
-def load_filter_setting():
-    job_id, dbpath = jobid_and_db_path()
+@with_job_database
+def load_filter_setting(db):
     queries = request.values
     name = queries['name']
 
-    conn = connect(dbpath)
     q = 'select viewersetup from viewersetup where datatype="filter" and name="' + name + '"'
-    r = _first_result_if_table_exists(conn, 'viewersetup', q)
+    r = _first_result_if_table_exists(db, 'viewersetup', q)
 
     content = {"filterSet": {}}
     if r is not None:
         data = r[0]
         content = json.loads(data)
 
-    conn.close()
     return jsonify(content)
 
-def load_layout_setting():
-    job_id, dbpath = jobid_and_db_path()
+@with_job_database
+def load_layout_setting(db):
     queries = request.values
     name = queries['name']
 
-    conn = connect(dbpath)
     q = 'select viewersetup from viewersetup where datatype="layout" and name="' + name + '"'
-    r = _first_result_if_table_exists(conn, 'viewersetup', q)
+    r = _first_result_if_table_exists(db, 'viewersetup', q)
 
     content = {"widgetSettings": {}}
     if r is not None:
         data = r[0]
         content = json.loads(data)
 
-    conn.close()
     return jsonify(content)
 
-def get_filter_save_names():
-    job_id, dbpath = jobid_and_db_path()
-
-    conn = connect(dbpath)
-    cursor = conn.cursor()
+@with_job_database
+def get_filter_save_names(db):
+    cursor = db.cursor()
     content = []
 
     try:
@@ -195,15 +181,12 @@ def get_filter_save_names():
         raise
     finally:
         cursor.close()
-        conn.close()
 
     return jsonify(content)
 
-def get_status():
-    job_id, dbpath = jobid_and_db_path()
-
-    conn = connect(dbpath)
-    cursor = conn.cursor()
+@with_job_database
+def get_status(db):
+    cursor = db.cursor()
 
     q = 'select * from info where colkey not like "\_%" escape "\\"'
     cursor.execute(q)
@@ -212,12 +195,11 @@ def get_status():
         content[row[0]] = row[1]
 
     cursor.close()
-    conn.close()
 
     return jsonify(content)
 
-def get_count():
-    job_id, dbpath = jobid_and_db_path()
+@with_job_id_and_path
+def get_count(job_id, dbpath):
     queries = request.values
 
     tab = queries['tab']
@@ -236,11 +218,11 @@ def get_count():
     content = {'n': n}
     return jsonify(content)
 
-def get_result():
+@with_job_id_and_path
+def get_result(job_id, dbpath):
     from cravat.gui.legacy import jsonreporter
 
     queries = request.values
-    job_id, dbpath = jobid_and_db_path()
 
     dbname = os.path.basename(dbpath)
     tab = queries['tab']
@@ -284,9 +266,9 @@ def get_result():
     print('Done getting result of [{}][{}] in {}s'.format(dbname, tab, t))
     return jsonify(content)
 
-def serve_runwidget(widget_module):
+@with_job_id_and_path
+def serve_runwidget(widget_module, job_id, dbpath):
     queries = request.values
-    job_id, dbpath = jobid_and_db_path()
     path = 'wg' + widget_module
 
     if ('dbpath' not in queries or queries['dbpath'] == '') and dbpath is not None:
@@ -299,10 +281,10 @@ def serve_runwidget(widget_module):
     content = run_coroutine_sync(m.get_data(queries))
     return jsonify(content)
 
-def serve_runwidget_post(widget_module):
+@with_job_id_and_path
+def serve_runwidget_post(widget_module, job_id, dbpath):
     # NOTE: This method seems to not be called either in the OpenCravat or OpenCravat modules code
     queries = request.values
-    job_id, dbpath = jobid_and_db_path()
     path = 'wg' + widget_module
 
     new_queries = {}
@@ -332,15 +314,14 @@ def serve_runwidget_post(widget_module):
     content = run_coroutine_sync(m.get_data(queries))
     return jsonify(content)
 
-def save_layout_setting():
+@with_job_database
+def save_layout_setting(db):
     queries = request.values
-    job_id, dbpath = jobid_and_db_path()
 
     name = queries['name']
     savedata = queries['savedata']
 
-    conn = connect(dbpath)
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
     table = 'viewersetup'
     exists = table_exists(cursor, table)
@@ -351,23 +332,22 @@ def save_layout_setting():
     try:
         q = 'replace into ' + table + ' values ("layout", "' + name + '", \'' + savedata + '\')'
         cursor.execute(q)
-        conn.commit()
+        db.commit()
     finally:
         cursor.close()
-        conn.close()
 
     content = 'saved'
     return jsonify(content)
 
-def save_filter_setting():
+@with_job_database
+def save_filter_setting(db):
     queries = request.values
-    job_id, dbpath = jobid_and_db_path()
 
     name = queries['name']
     savedata = queries['savedata']
 
-    conn = connect(dbpath)
-    cursor = conn.cursor()
+
+    cursor = db.cursor()
 
     table = 'viewersetup'
     r = table_exists(cursor, table)
@@ -383,17 +363,91 @@ def save_filter_setting():
         if r is not None:
             q = 'delete from viewersetup where datatype="filter" and name=?'
             cursor.execute(q, (name,))
-            conn.commit()
+            db.commit()
 
         q = 'replace into viewersetup values ("filter", ?, ?)'
         cursor.execute(q, (name, savedata))
-        conn.commit()
+        db.commit()
     finally:
         cursor.close()
-        conn.close()
 
     content = 'saved'
     return jsonify(content)
+
+
+# def jobpackage():
+#     try:
+#         queries = request.rel_url.query
+#         job_id, dbpath = get_jobid_dbpath(request)
+#
+#         packageName = queries['packagename']
+#         db = sqlite3.connect(dbpath)
+#         cursor = db.cursor()
+#
+#         # check for overwrite setting
+#         overwrite = True
+#
+#         q = 'select colval from info where colkey = "_annotators"'
+#         cursor.execute(q)
+#         r = cursor.fetchone()
+#         annots = r[0]
+#
+#         annotators = []
+#         for a in annots.split(','):
+#             if a.startswith('extra_vcf_info') or a.startswith('original_input'):
+#                 continue
+#             # Currently throwing away version number - preserve it??
+#             annotators.append(a.split(':')[0])
+#
+#         reports = []
+#         q = 'select colval from info where colkey = "_reports"'
+#         cursor.execute(q)
+#         r = cursor.fetchone()
+#         if r is not None:
+#             for rep in r[0].split(','):
+#                 reports.append(rep)
+#
+#         filter = ""
+#         q = 'select viewersetup from viewersetup where datatype = "filter" and name = "quicksave-name-internal-use"'
+#         cursor.execute(q)
+#         r = cursor.fetchone()
+#         if r is not None:
+#             filter = r[0]
+#
+#         viewer = ""
+#         q = 'select viewersetup from viewersetup where datatype = "layout" and name = "quicksave-name-internal-use"'
+#         cursor.execute(q)
+#         r = cursor.fetchone()
+#         if r is not None:
+#             viewer = r[0]
+#
+#         name = packageName
+#         package_conf = {}
+#         package_conf['type'] = 'package'
+#         package_conf['description'] = 'Package ' + name + " created from user job with --saveaspackage"
+#         package_conf['title'] = name
+#         package_conf['version'] = '1.0'
+#         package_conf['requires'] = annotators.copy()
+#
+#         run = {}
+#         run['annotators'] = annotators.copy()
+#         run['reports'] = reports
+#         if filter != "":
+#             run['filter'] = filter
+#         if viewer != "":
+#             run['viewer'] = viewer
+#
+#         package_conf['run'] = run
+#
+#         au.create_package(name, package_conf, overwrite)
+#
+#         print(
+#             "Successfully created package " + name + ".  Package can now be used to run jobs or published for other users.")
+#
+#     except (Exception, ValueError) as e:
+#         print("Error - " + str(e))
+#     content = 'saved'
+#     return web.json_response(content)
 
 def _load_cravat_module(path):
     info = au.get_local_module_info(path)
