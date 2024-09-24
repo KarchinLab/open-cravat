@@ -6,7 +6,7 @@ from typing import Coroutine, Any, TypeVar
 
 T = TypeVar('T')
 
-def run_coroutine_sync(coroutine: Coroutine[Any, Any, T], timeout: float = 30) -> T:
+def run_coroutine_sync(coroutine: Coroutine[Any, Any, T], timeout: float = 90) -> T:
     def run_in_new_loop():
         new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(new_loop)
