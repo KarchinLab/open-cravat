@@ -1,5 +1,6 @@
 from .handlers import *
 from cravat.gui.routing import relative_router
+from ...webresult.webresult import get_layout_save_names
 
 
 def load(application):
@@ -19,6 +20,9 @@ def load(application):
     service_router('/result', None, get_result, methods=['POST'])
     service_router('/savelayoutsetting', None, save_layout_setting, methods=['POST'])
     service_router('/savefiltersetting', None, save_filter_setting)
+    service_router('/jobpackage', None, jobpackage)
+    service_router('/deletelayoutsetting', None, delete_layout_setting)
+    service_router('/getlayoutsavename', None, get_layout_save_names)
 
     router('/runwidget/<widget_module>', None, serve_runwidget)
     router('/runwidget/<widget_module>', None, serve_runwidget_post, methods=['POST'])

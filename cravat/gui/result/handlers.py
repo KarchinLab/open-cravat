@@ -374,80 +374,111 @@ def save_filter_setting(db):
     content = 'saved'
     return jsonify(content)
 
+@with_job_database
+def jobpackage(db):
+    try:
+        queries = request.values
 
-# def jobpackage():
-#     try:
-#         queries = request.rel_url.query
-#         job_id, dbpath = get_jobid_dbpath(request)
-#
-#         packageName = queries['packagename']
-#         db = sqlite3.connect(dbpath)
-#         cursor = db.cursor()
-#
-#         # check for overwrite setting
-#         overwrite = True
-#
-#         q = 'select colval from info where colkey = "_annotators"'
-#         cursor.execute(q)
-#         r = cursor.fetchone()
-#         annots = r[0]
-#
-#         annotators = []
-#         for a in annots.split(','):
-#             if a.startswith('extra_vcf_info') or a.startswith('original_input'):
-#                 continue
-#             # Currently throwing away version number - preserve it??
-#             annotators.append(a.split(':')[0])
-#
-#         reports = []
-#         q = 'select colval from info where colkey = "_reports"'
-#         cursor.execute(q)
-#         r = cursor.fetchone()
-#         if r is not None:
-#             for rep in r[0].split(','):
-#                 reports.append(rep)
-#
-#         filter = ""
-#         q = 'select viewersetup from viewersetup where datatype = "filter" and name = "quicksave-name-internal-use"'
-#         cursor.execute(q)
-#         r = cursor.fetchone()
-#         if r is not None:
-#             filter = r[0]
-#
-#         viewer = ""
-#         q = 'select viewersetup from viewersetup where datatype = "layout" and name = "quicksave-name-internal-use"'
-#         cursor.execute(q)
-#         r = cursor.fetchone()
-#         if r is not None:
-#             viewer = r[0]
-#
-#         name = packageName
-#         package_conf = {}
-#         package_conf['type'] = 'package'
-#         package_conf['description'] = 'Package ' + name + " created from user job with --saveaspackage"
-#         package_conf['title'] = name
-#         package_conf['version'] = '1.0'
-#         package_conf['requires'] = annotators.copy()
-#
-#         run = {}
-#         run['annotators'] = annotators.copy()
-#         run['reports'] = reports
-#         if filter != "":
-#             run['filter'] = filter
-#         if viewer != "":
-#             run['viewer'] = viewer
-#
-#         package_conf['run'] = run
-#
-#         au.create_package(name, package_conf, overwrite)
-#
-#         print(
-#             "Successfully created package " + name + ".  Package can now be used to run jobs or published for other users.")
-#
-#     except (Exception, ValueError) as e:
-#         print("Error - " + str(e))
-#     content = 'saved'
-#     return web.json_response(content)
+        packageName = queries['packagename']
+        cursor = db.cursor()
+
+        # check for overwrite setting
+        overwrite = True
+
+        q = 'select colval from info where colkey = "_annotators"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        annots = r[0]
+
+        annotators = []
+        for a in annots.split(','):
+            if a.startswith('extra_vcf_info') or a.startswith('original_input'):
+                continue
+            # Currently throwing away version number - preserve it??
+            annotators.append(a.split(':')[0])
+
+        reports = []
+        q = 'select colval from info where colkey = "_reports"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is not None:
+            for rep in r[0].split(','):
+                reports.append(rep)
+
+        filter = ""
+        q = 'select viewersetup from viewersetup where datatype = "filter" and name = "quicksave-name-internal-use"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is not None:
+            filter = r[0]
+
+        viewer = ""
+        q = 'select viewersetup from viewersetup where datatype = "layout" and name = "quicksave-name-internal-use"'
+        cursor.execute(q)
+        r = cursor.fetchone()
+        if r is not None:
+            viewer = r[0]
+
+        name = packageName
+        package_conf = {}
+        package_conf['type'] = 'package'
+        package_conf['description'] = 'Package ' + name + " created from user job with --saveaspackage"
+        package_conf['title'] = name
+        package_conf['version'] = '1.0'
+        package_conf['requires'] = annotators.copy()
+
+        run = {}
+        run['annotators'] = annotators.copy()
+        run['reports'] = reports
+        if filter != "":
+            run['filter'] = filter
+        if viewer != "":
+            run['viewer'] = viewer
+
+        package_conf['run'] = run
+
+        au.create_package(name, package_conf, overwrite)
+
+        print(
+            "Successfully created package " + name + ".  Package can now be used to run jobs or published for other users.")
+
+    except (Exception, ValueError) as e:
+        print("Error - " + str(e))
+
+    content = 'saved'
+    return jsonify(content)
+
+@with_job_database
+def delete_layout_setting(db):
+    queries = request.values
+    name = queries['name']
+
+    cursor = db.cursor()
+    if table_exists(cursor, 'viewersetup'):
+        q = 'DELETE FROM viewersetup WHERE datatype="layout" and name=?'
+        cursor.execute(q, (name,))
+
+    db.commit()
+    cursor.close()
+
+    content = {}
+    return jsonify(content)
+
+@with_job_database
+def get_layout_save_names(db):
+    queries = request.values
+    cursor = db.cursor()
+
+    table = 'viewersetup'
+    content = []
+    r = table_exists(cursor, table)
+    if r:
+        q = 'select distinct name from viewersetup where datatype="layout"'
+        cursor.execute(q)
+        rs = cursor.fetchall()
+        content = [r[0] for r in rs]
+    cursor.close()
+    return jsonify(content)
 
 def _load_cravat_module(path):
     info = au.get_local_module_info(path)
