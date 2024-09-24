@@ -466,7 +466,6 @@ def delete_layout_setting(db):
 
 @with_job_database
 def get_layout_save_names(db):
-    queries = request.values
     cursor = db.cursor()
 
     table = 'viewersetup'
@@ -478,6 +477,25 @@ def get_layout_save_names(db):
         rs = cursor.fetchall()
         content = [r[0] for r in rs]
     cursor.close()
+    return jsonify(content)
+
+@with_job_database
+def rename_layout_setting(db):
+    queries = request.values
+
+    name = queries['name']
+    new_name = queries['newname']
+
+    cursor = db.cursor()
+    table = 'viewersetup'
+    r = table_exists(cursor, table)
+    if r:
+        q = 'update viewersetup set name=? where datatype="layout" and name=?'
+        cursor.execute(q, (new_name, name))
+    db.commit()
+    cursor.close()
+
+    content = {}
     return jsonify(content)
 
 def _load_cravat_module(path):
