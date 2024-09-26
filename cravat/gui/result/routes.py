@@ -23,6 +23,7 @@ def load(application):
     service_router('/deletelayoutsetting', None, delete_layout_setting)
     service_router('/getlayoutsavenames', None, get_layout_save_names)
     service_router('/renamelayoutsetting', None, rename_layout_setting)
+    service_router('/deletefiltersetting', None, delete_filter_setting)
 
     router('/runwidget/<widget_module>', None, serve_runwidget)
     router('/runwidget/<widget_module>', None, serve_runwidget_post, methods=['POST'])
