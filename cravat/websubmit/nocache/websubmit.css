@@ -326,6 +326,7 @@ button {
 .flexrow {
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
 }
 
 #jobnoteinput {
@@ -596,6 +597,24 @@ input:checked + .slider:before {
     font-size: 11px;
     background-color: #6e593a;
     padding: 3px 6px;
+}
+
+.input-example-button.disabled {
+    background: gray;
+    border: 1px dotted;
+    cursor: default;
+}
+
+.input-example-button.clear-button {
+    background-color: #8c8780;
+}
+
+.input-example-button.clear-button:hover {
+    background-color: #5cb5e5;
+}
+
+.input-example-button.selected {
+    text-decoration: underline;
 }
 
 .input-label {

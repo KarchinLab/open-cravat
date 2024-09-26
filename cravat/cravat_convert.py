@@ -85,6 +85,7 @@ class MasterCravatConverter(object):
         self.crl_writer = None
         self.primary_converter = None
         self.converters = {}
+        self.samples = set()
         self.possible_formats = []
         self.ready_to_convert = False
         self.chromdict = {
@@ -457,6 +458,8 @@ class MasterCravatConverter(object):
                                         )
                                     else:
                                         wdict["sample_id"] = samp_prefix
+                                # keep track of samples
+                                self.samples.add(wdict.get("sample_id", ""))
                                 if "ref_base" not in wdict or wdict["ref_base"] == "":
                                     wdict["ref_base"] = self.wgsreader.get_bases(
                                         chrom, int(wdict["pos"])

@@ -5,6 +5,7 @@ import shutil
 import sys
 import platform
 import yaml
+from pathlib import Path
 
 # Directories
 custom_modules_dir = None
@@ -80,6 +81,14 @@ main_conf_fname = "cravat.yml"
 main_conf_path = os.path.join(default_conf_dir, main_conf_fname)
 if os.path.exists(main_conf_path) == False:
     shutil.copyfile(os.path.join(packagedir, main_conf_fname), main_conf_path)
+
+# Example inputs
+example_input_paths = {
+    'cravat': Path(packagedir)/'websubmit'/'input-examples'/'cravat.hg38.txt',
+    'vcf': Path(packagedir)/'websubmit'/'input-examples'/'vcf.hg38.txt',
+    'hgvs': Path(packagedir)/'websubmit'/'input-examples'/'hgvs.hg38.txt',
+    'dbsnp': Path(packagedir)/'websubmit'/'input-examples'/'dbsnp.hg38.txt',
+}
 
 # Base modules
 base_modules = [
