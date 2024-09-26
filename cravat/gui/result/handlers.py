@@ -498,6 +498,26 @@ def rename_layout_setting(db):
     content = {}
     return jsonify(content)
 
+@with_job_database
+def delete_filter_setting(db):
+    queries = request.values
+
+    name = queries['name']
+    cursor = db.cursor()
+
+    table = 'viewersetup'
+    r = table_exists(cursor, table)
+    if r:
+        q = 'delete from viewersetup where name=? and datatype="filter"'
+        cursor.execute(q, (name, ))
+        db.commit()
+        content = 'deleted'
+    else:
+        content = 'no such table'
+    cursor.close()
+
+    return jsonify(content)
+
 def _load_cravat_module(path):
     info = au.get_local_module_info(path)
     spec = importlib_util.spec_from_file_location(path, info.script_path)
