@@ -12,11 +12,12 @@ def relative_router(base, application):
 
 
 def load(application, static_router, is_multiuser):
-    from . import submit, store, result, multiuser
+    from . import submit, store, result, multiuser, webapps
 
     submit.initialize(application)
     store.initialize(application)
     result.initialize(application)
+    webapps.initialize(application)
 
     sysconf = au.get_system_conf()
     modules_dir = sysconf[constants.modules_dir_key]
