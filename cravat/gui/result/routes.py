@@ -27,4 +27,6 @@ def load(application):
 
     router('/runwidget/<widget_module>', None, serve_runwidget)
     router('/runwidget/<widget_module>', None, serve_runwidget_post, methods=['POST'])
+    router('/webapps/{module_name}/widgets/{widget}', None, serve_webapp_runwidget)
+
     router('/widgetfile/<module>/<filename>', None, serve_widgetfile)
