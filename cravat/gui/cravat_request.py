@@ -24,4 +24,5 @@ def jobid_and_db_path():
 
 HTTP_NO_CONTENT = ('', 204)
 HTTP_BAD_REQUEST = ('', 400)
+HTTP_NOT_FOUND = ('Not Found', 404)
 HTTP_UNAUTHORIZED = ('fail', 401, {'Content-Type': 'text/plain'})

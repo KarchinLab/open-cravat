@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-from flask import request, current_app, jsonify
+from flask import request, jsonify
 from importlib import util as importlib_util
 from sqlite3 import connect
 
@@ -517,26 +517,6 @@ def delete_filter_setting(db):
     cursor.close()
 
     return jsonify(content)
-
-def serve_webapp_runwidget(module_name, widget):
-    queries = request.values
-
-    mutable_queries_dict = { k: queries[k] for k in queries }
-    queries = mutable_queries_dict
-    widget_name = f'wg{widget}'
-
-    m = _load_widget_module(module_name, widget_name)
-    content = run_coroutine_sync(m.get_data(queries))
-
-    return jsonify(content)
-
-
-def _load_widget_module(module_name, name):
-    widget_path = os.path.join(au.get_modules_dir(), 'webapps', module_name, 'widgets', name, f'{name}.py')
-    spec = importlib_util.spec_from_file_location(name, widget_path)
-    m = importlib_util.module_from_spec(spec)
-    spec.loader.exec_module(m)
-    return m
 
 
 def _load_cravat_module(path):
