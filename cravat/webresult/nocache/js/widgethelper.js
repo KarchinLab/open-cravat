@@ -693,3 +693,25 @@ function addGradientStopBarComponent (outerDiv, row, header, col, tabName, color
     }
     addEl(outerDiv, div);
 }
+
+function getCalibrationGradientColor(pathogenicity) {
+	let color = ""
+	if (pathogenicity === "Indeterminate") {
+		color = "#fffff"
+	} else if (pathogenicity === "BP4 Very Strong") {
+		color = "#03045e"
+	} else if (pathogenicity === "BP4 Strong") {
+		color = "#023e8a"
+	} else if (pathogenicity === "BP4 Moderate") {
+		color = "#48cae4"
+	} else if (pathogenicity === "BP4 Supporting") {
+		color = "#ade8f4"
+	} else if (pathogenicity === "PP3 Supporting") {
+		color = "#ffcbd1"
+	} else if (pathogenicity === "PP3 Moderate") {
+		color = "#f94449"
+	} else if (pathogenicity === "PP3 Strong") {
+		color = "#c30010"
+	}
+	return color
+}
