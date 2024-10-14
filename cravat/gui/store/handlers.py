@@ -3,9 +3,11 @@ import os
 import shutil
 import traceback
 
+from celery import current_app as celery_app
 from flask import request, current_app, jsonify, g
 from cravat import constants, admin_util as au
 from cravat.gui.models import Module
+from cravat.gui.job_manager import queue_messages
 from cravat.gui.admin import is_admin_loggedin
 from cravat.gui.cravat_request import HTTP_BAD_REQUEST
 from cravat.gui.tasks import install_module
@@ -197,3 +199,19 @@ def get_remote_module_config():
         conf['tags'] = []
     response = conf
     return jsonify(response)
+
+def kill_install():
+    module = request.values.get('module', None)
+
+    # payload[0] is the job arguments, payload[0][0] is the first argument
+    install_jobs = queue_messages('module_install', lambda m: m.payload[0][0] == module)
+
+    # there should only be one, but if we happen to somehow have multiples
+    # in the queue, kill them all.
+    for job in install_jobs:
+        task_id = job.properties.get('correlation_id')
+        res = celery_app.AsyncResult(task_id)
+        if not res.ready():
+            res.revoke()
+
+    return jsonify('done')
