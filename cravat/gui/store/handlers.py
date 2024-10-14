@@ -182,3 +182,18 @@ def uninstall_module():
     cache.cache.delete(Module.local.make_cache_key())
 
     return f'uninstalled {module_name}'
+
+def get_module_readme(module_name, version):
+    if version == 'latest':
+        version=None
+    readme_md = au.get_readme(module_name, version=version)
+    return readme_md
+
+def get_remote_module_config():
+    queries = request.values
+    module = queries['module']
+    conf = au.get_remote_module_config(module)
+    if 'tags' not in conf:
+        conf['tags'] = []
+    response = conf
+    return jsonify(response)
