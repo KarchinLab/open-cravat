@@ -15,4 +15,6 @@ def load(application):
     router("/queueinstall", None, queue_install)
     router("/moduledependencies", None, get_module_dependencies)
     router("/uninstall", None, uninstall_module)
+    router("/modules/<module_name>/<version>/readme", None, get_module_readme)
+    router("/remotemoduleconfig", None, get_remote_module_config)
 
