@@ -9,6 +9,8 @@ from cravat.gui.models import Module
 from cravat.gui.admin import is_admin_loggedin
 from cravat.gui.cravat_request import HTTP_BAD_REQUEST
 from cravat.gui.tasks import install_module
+from cravat.gui import cache
+
 
 def get_storeurl():
     conf = current_app.config['CRAVAT_SYSCONF']
@@ -166,3 +168,17 @@ def queue_install():
         install_module.delay(dep_name, dep_version)
 
     return f'queued {module_version}'
+
+
+def uninstall_module():
+    if g.is_multiuser:
+        if not is_admin_loggedin():
+            return 'notadmin'
+
+    queries = request.values
+    module_name = queries['name']
+
+    au.uninstall_module(module_name)
+    cache.cache.delete(Module.local.make_cache_key())
+
+    return f'uninstalled {module_name}'

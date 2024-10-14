@@ -14,4 +14,5 @@ def load(application):
     router("/locallogo", None, get_local_module_logo)
     router("/queueinstall", None, queue_install)
     router("/moduledependencies", None, get_module_dependencies)
+    router("/uninstall", None, uninstall_module)
 
