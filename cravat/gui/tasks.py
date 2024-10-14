@@ -14,3 +14,4 @@ def run_job(run_args):
 def install_module(module_name, version):
     admin_util.install_module(module_name, version=version)
     cache.cache.delete(Module.local.make_cache_key())
+
