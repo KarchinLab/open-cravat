@@ -246,8 +246,8 @@ def submit():
     job.set_info_values(status=status)
 
     if g.is_multiuser:
-        import cravat_multiuser.sync
-        admindb = cravat_multiuser.sync.ServerAdminDb()
+        from cravat.gui.multiuser.db import AdminDb
+        admindb = AdminDb()
         admindb.add_job_info(g.username, job)
 
     # makes temporary status.json

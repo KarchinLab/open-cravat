@@ -1,11 +1,14 @@
 import datetime
+import hashlib
+import json
 import os
 
-from flask import session, request, jsonify, g, current_app
+from flask import session, request, jsonify, g, current_app, redirect, send_file
 from cravat import admin_util as au
 from cravat.gui.cravat_request import HTTP_UNAUTHORIZED
-from .db import AdminDb
 from .models import User
+from .decorators import with_admin_db
+from ..decorators import require_multiuser, require_admin
 
 
 def login():
@@ -21,18 +24,66 @@ def login():
 
     return HTTP_UNAUTHORIZED
 
+@require_multiuser(multiuser_error=json.dumps({'status':'fail', 'msg':'no multiuser mode'}))
+@with_admin_db
+def get_password_question(admin_db):
+    queries = request.values
+    email = queries['email']
+    question = admin_db.get_password_question(email)
+    if question is None:
+        response = {'status':'fail', 'msg':'No such email'}
+    else:
+        response = {'status':'success', 'msg': question}
 
-def get_user_settings():
-    admindb = AdminDb()
-    response = admindb.get_user_settings(g.username)
     return jsonify(response)
 
 
-def signup():
+@require_multiuser(multiuser_error=json.dumps({'success': False, 'msg': 'no multiuser mode'}))
+@with_admin_db
+def check_password_answer(admin_db):
+    queries = request.values
+    email = queries['email']
+    answer = queries['answer']
+
+    m = hashlib.sha256()
+    m.update(answer.encode('utf-16be'))
+    answerhash = m.hexdigest()
+
+    if admin_db.check_password_answer(email, answerhash):
+        temppassword = admin_db.set_temp_password(email)
+        response = {'success': True, 'msg': temppassword}
+    else:
+        response = {'success': False, 'msg': 'Wrong answer'}
+
+    return jsonify(response)
+
+def show_login_page():
+    logger = current_app.logger
+    if not g.is_multiuser:
+        logger.info('Login page requested but no multiuser mode. Redirecting to submit index...')
+        return redirect('/submit/nocache/index.html')
+
+    if not g.username:
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'nocache', 'login.html')
+        return send_file(p)
+    else:
+        logger.info('Login page requested but already logged in. Redirecting to submit index...')
+        return redirect('/submit/nocache/index.html')
+
+@with_admin_db
+def get_user_settings(admin_db):
+    response = admin_db.get_user_settings(g.username)
+    return jsonify(response)
+
+def get_noguest():
+    system_conf = current_app.config['CRAVAT_SYSCONF']
+    return jsonify(system_conf.get('noguest', False))
+
+@with_admin_db
+def signup(admin_db):
     system_conf = current_app.config['CRAVAT_SYSCONF']
     enable_remote_user_header = system_conf.get('enable_remote_user_header', False)
     noguest = system_conf.get('noguest', False)
-    admindb = AdminDb()
 
     if not enable_remote_user_header:
         queries = request.values
@@ -45,7 +96,7 @@ def signup():
             answer = queries['answer']
             question = queries['question']
 
-            if admindb.register_user(username, password, question, answer):
+            if admin_db.register_user(username, password, question, answer):
                 _create_user_dir_if_not_exist(username)
                 if User.authenticate(username, password):
                     session['user'] = username
@@ -60,6 +111,47 @@ def signup():
 
     return jsonify(response)
 
+@with_admin_db
+@require_multiuser()
+def change_password(admin_db):
+    queries = request.values
+    newemail = queries['newemail']
+    oldpassword = queries['oldpassword']
+    newpassword = queries['newpassword']
+
+    username = g.username
+    if not username:
+        response = 'Not logged in'
+        return response
+
+    m = hashlib.sha256()
+    m.update(oldpassword.encode('utf-16be'))
+    oldpasswordhash = m.hexdigest()
+
+    if username.startswith('guest_') == False and '@' not in username:
+        r = admin_db.check_password(username, oldpasswordhash)
+    else:
+        r = True
+
+    if not r:
+        response = 'User authentication failed.'
+    else:
+        if newemail != '':
+            r = admin_db.set_username(username, newemail)
+            if r != '':
+                return r
+            else:
+                username = newemail
+
+        if newpassword != '':
+            m = hashlib.sha256()
+            m.update(newpassword.encode('utf-16be'))
+            newpasswordhash = m.hexdigest()
+            admin_db.set_password(username, newpasswordhash)
+
+        response = 'success'
+
+    return response
 
 def check_logged():
     sysconf = current_app.config['CRAVAT_SYSCONF']
@@ -92,15 +184,72 @@ def check_logged():
     return jsonify(response)
 
 
+@require_multiuser
 def logout():
-    if g.is_multiuser:
-        session.pop('user', None)
-        response = 'success'
-    else:
-        response = 'no multiuser mode'
-
+    session.pop('user', None)
+    response = 'success'
     return jsonify(response)
 
+
+@require_multiuser()
+@require_admin
+@with_admin_db
+def get_input_stat(admin_db):
+    queries = request.values
+    start_date = queries['start_date']
+    end_date = queries['end_date']
+    rows = admin_db.get_input_stat(start_date, end_date)
+    return jsonify(rows)
+
+@require_multiuser()
+@require_admin
+@with_admin_db
+def get_user_stat(admin_db):
+    queries = request.values
+    start_date = queries['start_date']
+    end_date = queries['end_date']
+    rows = admin_db.get_user_stat(start_date, end_date)
+    return jsonify(rows)
+
+@require_multiuser()
+@require_admin
+@with_admin_db
+def get_job_stat(admin_db):
+    queries = request.values
+    start_date = queries['start_date']
+    end_date = queries['end_date']
+    response = admin_db.get_job_stat(start_date, end_date)
+    return jsonify(response)
+
+@require_multiuser()
+@require_admin
+@with_admin_db
+def get_api_stat(admin_db):
+    queries = request.values
+    start_date = queries['start_date']
+    end_date = queries['end_date']
+    response = admin_db.get_api_stat(start_date, end_date)
+    return jsonify(response)
+
+@require_multiuser()
+@require_admin
+@with_admin_db
+def get_annot_stat(admin_db):
+    queries = request.values
+    start_date = queries['start_date']
+    end_date = queries['end_date']
+    response = admin_db.get_annot_stat(start_date, end_date)
+    return jsonify(response)
+
+@require_multiuser()
+@require_admin
+@with_admin_db
+def get_assembly_stat(admin_db):
+    queries = request.values
+    start_date = queries['start_date']
+    end_date = queries['end_date']
+    response = admin_db.get_assembly_stat(start_date, end_date)
+    return jsonify(response)
 
 def _create_user_dir_if_not_exist(username):
     root_jobs_dir = au.get_jobs_dir()

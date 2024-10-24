@@ -2,13 +2,15 @@ import base64
 import hashlib
 import json
 import os
+import random
 
 from cryptography import fernet
 from sqlite3 import connect
 
+from cravat import admin_util as au
 from cravat.constants import admindb_path
 
-class AdminDb ():
+class AdminDb():
     def __init__ (self):
         initdb = not os.path.exists(admindb_path)
         conn = connect(admindb_path)
@@ -97,6 +99,92 @@ class AdminDb ():
             self._add_user(conn, username, passwordhash, question, answerhash)
 
         return True
+
+    def get_password_question(self, email):
+        with self._connect() as conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute('select question from users where email=?', (email, ))
+                r = cursor.fetchone()
+                cursor.close()
+                return r[0] if r is not None else None
+            finally:
+                cursor.close()
+
+    def check_password_answer(self, email, answerhash):
+        with self._connect() as conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute('select * from users where email=? and answerhash=?', (email, answerhash))
+                r = cursor.fetchone()
+                if r is None:
+                    return False
+                else:
+                    return True
+            finally:
+                cursor.close()
+
+    def set_temp_password(self, email):
+        with self._connect() as conn:
+            temppassword = ''.join([chr(random.randint(97, 122)) for v in range(8)])
+            m = hashlib.sha256()
+            m.update(temppassword.encode('utf-16be'))
+            temppasswordhash = m.hexdigest()
+
+            try:
+                cursor = conn.cursor()
+                cursor.execute('update users set passwordhash=? where email=?', temppasswordhash, email)
+                return temppassword
+            finally:
+                cursor.close()
+
+    def set_username(self, email, newemail):
+        with self._connect() as conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(f'select * from users where email=?', (newemail, ))
+                r = cursor.fetchone()
+                if r is not None:
+                    return 'Duplicate username'
+
+                q = f'update users set email=? where email=?'
+                cursor.execute(q, (newemail, email))
+
+                q = f'update jobs set username=? where username=?'
+                cursor.execute(q, (newemail, email))
+
+            finally:
+                cursor.close()
+
+        root_jobs_dir = au.get_jobs_dir()
+        old_job_dir = os.path.join(root_jobs_dir, email)
+        new_job_dir = os.path.join(root_jobs_dir, newemail)
+        os.rename(old_job_dir, new_job_dir)
+
+        return ''
+
+    def set_password(self, email, passwordhash):
+        with self._connect() as conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute('update users set passwordhash=? where email=?', (passwordhash, email))
+            finally:
+                cursor.close()
+
+    def add_job_info(self, username, job):
+        with self._connect() as conn:
+            try:
+                cursor = conn.cursor()
+                q = 'insert into jobs values (?, ?, ?, ?, ?, ?, ?)'
+                cursor.execute(q, (job.info['id'],
+                                   username,
+                                   job.info['submission_time'],
+                                   -1,
+                                   -1,
+                                   ','.join(job.info['annotators']),
+                                   job.info['assembly']))
+            finally:
+                cursor.close()
 
     def _connect(self):
         return connect(admindb_path)

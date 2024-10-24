@@ -4,6 +4,10 @@ import {
 	getTn, addEl, getEl, PubSub, OC
 } from '/submit/nocache/core.js'
 
+import {
+    showYesNoDialog
+} from '/submit/nocache/header.js'
+
 OC.adminMode = false;
 OC.noRemDays = null;
 OC.noguest = false
@@ -42,7 +46,7 @@ function login () {
                 */
                 openSubmitPage();
             } else if (response == 'success') {
-                username = response['email'];
+                var username = response['email'];
                 openSubmitPage();
             } else if (response == 'fail') {
                 msgAccountDiv('Login failed');
@@ -313,7 +317,7 @@ function doAfterLogin (username) {
 
 function setupAdminMode () {
     document.getElementById('settingsdiv').style.display = 'none';
-    document.querySelector('.threedotsdiv').style.display = 'block';
+    document.querySelector('.threedotsdiv').style.display = '';
     $('#storediv_tabhead[value=storediv]')[0].style.display = 'inline-block';
     $('#admindiv_tabhead[value=admindiv]')[0].style.display = 'inline-block';
     document.getElementById('admindiv_tabhead').setAttribute('disabled', 'f');
@@ -455,7 +459,7 @@ function populateAdminTab () {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
         xhr.send();
-        location.href = 'login.html';
+        location.href = '/server/nocache/login.html';
     });
     addEl(sdiv, btn);
     addEl(div, getEl('br'));
@@ -783,23 +787,31 @@ function addAccountDiv (username) {
     var logoutDiv = getEl('div');
     logoutDiv.id = 'logdiv';
     addEl(div, logoutDiv);
+    let chngpwdContainer = getEl('div');
+    chngpwdContainer.classList.add('menu-icon-container');
     var btn = getEl('img');
     btn.src = '/server/pwchng.png';
     btn.addEventListener('click', function (evt) {
         changePassword();
     });
     btn.title = 'Change password';
-    addEl(logoutDiv, btn);
+    btn.classList.add('menu-icon');
+    addEl(chngpwdContainer, btn);
+    addEl(logoutDiv, chngpwdContainer);
     var span = getEl('span');
     span.textContent = '\xa0\xa0';
     addEl(logoutDiv, span);
+    let logoutContainer = getEl('div');
+    logoutContainer.classList.add('menu-icon-container');
     var btn = getEl('img');
-    btn.src = '/server/logout.png';
+    btn.src = '/server/sign-out.svg';
     btn.addEventListener('click', function (evt) {
         logout();
     });
     btn.title = 'Logout';
-    addEl(logoutDiv, btn);
+    btn.classList.add('menu-icon');
+    addEl(logoutContainer, btn);
+    addEl(logoutDiv, logoutContainer);
     var sdiv = getEl('div');
     sdiv.id = 'changepassworddiv';
     var span = getEl('span');
@@ -842,21 +854,25 @@ function addAccountDiv (username) {
     btn.textContent = 'Submit';
     addEl(sdiv, btn);
     addEl(div, sdiv);
-    var headerDiv = document.querySelector('.headerdiv');
-    addEl(headerDiv, div);
+    var headerDiv = document.getElementById('top-menu');
+    headerDiv.insertBefore(div, headerDiv.firstChild);
+    // addEl(headerDiv, div);
     if (isGuestAccount(username)) {
         document.querySelector('#changepassworddiv input:nth-child(2)').style.display = 'none';
         document.querySelector('#changepassworddiv span:first-child').style.display = 'none';
         var sdiv = getEl('div');
         sdiv.id = 'guest_warn_div';
-        var span = getEl('span');
-        span.textContent = 'This guest account will be deleted after ' + noRemDays + (noRemDays > 1? ' days': ' day') + '. To keep your jobs, click the change account information icon to the right of user name and enter your email address and a new password.';
-        addEl(sdiv, span);
+        var p1 = getEl('p');
+        p1.textContent = `This guest account will be deleted in ${OC.noRemDays} ${(OC.noRemDays > 1) ? 'days' : 'day'}.`;
+        addEl(sdiv, p1);
+        var p2 = getEl('p');
+        p2.textContent = 'To keep your jobs, click the change password icon to the right of user name.';
+        addEl(sdiv, p2);
         addEl(div, sdiv);
         var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.style.marginRight = '0.2rem';
         svg.addEventListener('mouseover', function (evt) {
-            document.querySelector('#guest_warn_div').style.display = 'flex';
+            document.querySelector('#guest_warn_div').style.display = 'block';
         });
         svg.addEventListener('mouseout', function (evt) {
             document.querySelector('#guest_warn_div').style.display = 'none';
@@ -949,6 +965,7 @@ function exportContentAdminPanel (tabName) {
 }
 
 function multiuser_run () {
+    console.log('multiuser_run');
     var submitBtn = document.querySelector('#login_button');
     var el = document.querySelector('#login_username');
     el.addEventListener('keyup', function (evt) {
@@ -962,6 +979,15 @@ function multiuser_run () {
             login();
         }
     });
+    document.querySelector('#login_button').addEventListener('click',()=>{login()});
+    document.querySelector('#forgot-pw-span').addEventListener('click',()=>{forgotPassword()});
+    document.querySelector('#signup-btn').addEventListener('click',()=>{showSignupDiv()});
+    document.querySelector('#forgotpasswordgetquestionbutton').addEventListener('click',()=>{getPasswordQuestion()});
+    document.querySelector('#show-login-span').addEventListener('click',()=>{showLoginDiv()});
+    document.querySelector('#forgotpasswordsubmitbutton').addEventListener('click',()=>{submitForgotPasswordAnswer()});
+    document.querySelector('#signupbutton').addEventListener('click',()=>{signupSubmit()});
+    document.querySelector('#show-login-div-btn').addEventListener('click',()=>{showLoginDiv()});
+    document.querySelector('#guest_button').addEventListener('click',()=>{tryAsGuest()});
 }
 
 window.onload = function(evt) {
@@ -972,11 +998,12 @@ window.onload = function(evt) {
             return response.json()
         }
     }).then(function(response) {
-        noguest = response
-        if (!noguest) {
+        OC.noguest = response
+        if (!OC.noguest) {
             document.querySelector('#guestdiv').classList.add('show')
         }
     })
+    $(document).ready(() => multiuser_run());
 }
 
 export {

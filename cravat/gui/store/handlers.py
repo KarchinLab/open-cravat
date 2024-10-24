@@ -215,3 +215,13 @@ def kill_install():
             res.revoke()
 
     return jsonify('done')
+
+def update_remote():
+    if g.is_multiuser:
+        if not is_admin_loggedin():
+            return 'notadmin'
+
+    au.mic.update_remote(force=True)
+    au.mic.update_local()
+
+    return jsonify('done')
