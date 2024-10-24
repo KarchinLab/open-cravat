@@ -10,7 +10,7 @@
     padding: 0px;
     z-index: 201;*/
     flex-grow: 1;
-    background-image: url('nocache/oc.png');
+    background-image: url('oc.png');
 }
 
 #wrapdiv button {
@@ -26,13 +26,13 @@
 }
 
 #wrapdiv {
-    display: block; 
-    background-color: #3c5788; 
-    border-radius: 17px; 
+    display: block;
+    background-color: #3c5788;
+    border-radius: 17px;
     padding: 3rem;
-    width: 260px; 
-    font-size: 23px; 
-    color: white; 
+    width: 260px;
+    font-size: 23px;
+    color: white;
     font-weight: bold;
     position: absolute;
     top: calc(50% - 200px);
@@ -41,17 +41,17 @@
 }
 
 #wrapdiv input {
-    width: 100%; 
-    border-style: none; 
-    height: 30px; 
+    width: 100%;
+    border-style: none;
+    height: 30px;
     margin-top: 12px;
 }
 
 #wrapdiv button {
-    width: 100%; 
-    border-style: none; 
-    height: 30px; 
-    margin-top: 12px; 
+    width: 100%;
+    border-style: none;
+    height: 30px;
+    margin-top: 12px;
     background-color: #a3e3ff;
 }
 
@@ -64,6 +64,7 @@
     padding: 10px;
     background-color: white;
     border: 1px solid black;
+    z-index: 202;
 }
 
 #admindiv {
@@ -86,9 +87,6 @@
 }
 
 #accountdiv {
-    position: absolute;
-    right: 132px;
-    top: 4px;
     display: flex;
     align-items: center;
 }
@@ -98,7 +96,7 @@
 }
 
 #logdiv {
-    display: inline-block;
+    display: inline-flex;
 }
 
 #logdiv img {
@@ -143,11 +141,12 @@ body * {
     display: none;
     position: absolute;
     top: 2rem;
-    left: 0;
+    right: 1rem;
     background-color: white;
     padding: 1rem;
     box-shadow: 0.5rem 0.5rem 0.5rem gray;
     border: 1px solid gray;
+    z-index: 203;
 }
 
 .disabled {
