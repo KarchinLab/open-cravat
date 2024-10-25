@@ -1,4 +1,4 @@
-import imp
+import json
 import os
 import yaml
 
@@ -20,6 +20,7 @@ class Job(object):
         self.info = {
             'id': job_id,
             'orig_input_fname': '',
+            'orig_input_path': '',
             'assembly': '',
             'note': '',
             'db_path': '',
@@ -30,7 +31,8 @@ class Job(object):
             'open_cravat_version': '',
             'num_input_var': '',
             'submission_time': '',
-            'reports_being_generated': []
+            'reports_being_generated': [],
+            'cc_cohorts_path': ''
         }
 
     @staticmethod
@@ -48,6 +50,10 @@ class Job(object):
     @property
     def ended(self):
         return self.info['status'] in ['Finished', 'Error']
+
+    @property
+    def submitted(self):
+        return self.info['status'] == 'Submitted'
 
     @property
     def queued(self):
@@ -70,9 +76,15 @@ class Job(object):
 
         return Task(self.task_id)
 
+    def __getattr__(self, item):
+        if item in self.info:
+            return self.info[item]
+        else:
+            raise AttributeError
+
     @cached_property
     def run_name(self):
-        run_name = self.info['run_name']
+        run_name = self.info.get('run_name', None)
         if run_name is None:
             fns = glob(f"{self.job_dir}/*.crv")
             for fn in fns:
@@ -97,11 +109,15 @@ class Job(object):
 
         return log_path
 
+    @property
+    def status_file_exists(self):
+        return os.path.exists(self.job_status_fpath)
+
     def save_options(self, job_options):
         self.set_values(**job_options)
 
     def read_info_file(self):
-        if not os.path.exists(self.job_status_fpath):
+        if not self.status_file_exists:
             info_dict = {'status': 'Error'}
         else:
             with open(self.job_status_fpath) as f:
@@ -117,6 +133,10 @@ class Job(object):
 
     def set_values(self, **kwargs):
         self.info.update(kwargs)
+
+    def save_status(self):
+        with open(self.job_status_fpath, 'w') as f:
+            json.dump(self.info, f, indent=2, sort_keys=True)
 
 
 class Module(object):
