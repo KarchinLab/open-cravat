@@ -13,6 +13,7 @@ from cravat import admin_util as au
 from cravat import constants
 from cravat.gui.cravat_request import *
 from cravat.gui import metadata
+from cravat.gui.decorators import with_job_id_and_path
 from cravat.gui.models import Job
 from cravat.gui import tasks
 
@@ -108,6 +109,60 @@ def get_annotators():
 def get_packages():
     out = _filtered_module_list('package')
     return jsonify(out)
+
+
+@with_job_id_and_path
+def resubmit(job_id, dbpath):
+    if g.is_multiuser:
+        if g.username is None:
+            return jsonify({'status': 'notloggedin'})
+
+    router = file_router()
+    job = router.load_job(job_id)
+    if not job.status_file_exists:
+        return jsonify({'status': 'error', 'msg': 'no status file exists in job folder.'})
+
+    assembly = job.assembly
+    input_fpaths = job.orig_input_path
+    note = job.note
+    annotators = job.annotators
+
+    if "original_input" in annotators:
+        annotators.remove("original_input")
+
+    cc_cohorts_path = job.info.get('cc_cohorts_path', '')
+
+    # Subprocess arguments
+    run_args = ['oc', 'run']
+    for fn in input_fpaths:
+        run_args.append(fn)
+
+    # Annotators
+    if len(annotators) > 0 and annotators[0] != '':
+        run_args.append('-a')
+        run_args.extend(annotators)
+    else:
+        run_args.append('-e')
+        run_args.append('all')
+
+    # Liftover assembly
+    run_args.append('-l')
+    run_args.append(assembly)
+
+    # Note
+    if note != '':
+        run_args.append('--note')
+        run_args.append(note)
+    run_args.append('--keep-status')
+    if cc_cohorts_path != '':
+        run_args.extend(['--module-option',f'casecontrol.cohorts={cc_cohorts_path}'])
+
+    task = tasks.run_job.s(run_args).apply_async(countdown=1)
+    job.info['status'] = 'Submitted'
+    job.info['celery_id'] = task.id
+    job.save_status()
+
+    return jsonify({'status': 'resubmitted'})
 
 
 def submit():
@@ -210,9 +265,10 @@ def submit():
         assembly = constants.default_assembly
     run_args.append(assembly)
     if g.is_multiuser:
-        # TODO: User settings
-        # await cravat_multiuser.update_user_settings(request, {'lastAssembly': assembly})
-        pass
+        from cravat.gui.multiuser.db import AdminDb
+
+        admindb = AdminDb()
+        admindb.update_user_settings(g.username, {'lastAssembly': assembly})
     else:
         au.set_cravat_conf_prop('last_assembly', assembly)
 
@@ -319,3 +375,4 @@ def get_job_log(job_id):
         return file_stream(), {"Content-Type": "text/plain"}
     else:
         return 'log file does not exist.', {"Content-Type": "text/plain"}
+

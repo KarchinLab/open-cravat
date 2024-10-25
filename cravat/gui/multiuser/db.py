@@ -10,6 +10,30 @@ from sqlite3 import connect
 from cravat import admin_util as au
 from cravat.constants import admindb_path
 
+
+def _connect():
+    return connect(admindb_path)
+
+
+def _check_username_presence(conn, username):
+    cursor = conn.cursor()
+    cursor.execute('select * from users where email=?', (username,))
+    r = cursor.fetchone()
+    cursor.close()
+
+    if r is None:
+        return False
+    else:
+        return True
+
+
+def _add_user(conn, username, passwordhash, question, answer):
+    cursor = conn.cursor()
+    default_settings = {'lastAssembly': None}
+    cursor.execute('insert into users values (?, ?, ?, ?, ?)',
+                   [username, passwordhash, question, answer, json.dumps(default_settings)])
+
+
 class AdminDb():
     def __init__ (self):
         initdb = not os.path.exists(admindb_path)
@@ -38,7 +62,7 @@ class AdminDb():
             cursor.close()
 
     def check_password(self, username, passwordhash):
-        conn = self._connect()
+        conn = _connect()
         with conn:
             q = 'select * from users where email=? and passwordhash=?'
             for row in conn.execute(q, (username, passwordhash)):
@@ -48,7 +72,7 @@ class AdminDb():
         return False
 
     def find_user(self, username):
-        conn = self._connect()
+        conn = _connect()
         with conn:
             q = 'select * from users where email=?'
             for row in conn.execute(q, (username,)):
@@ -58,13 +82,13 @@ class AdminDb():
         return False
 
     def delete_user(self, username):
-        conn = self._connect()
+        conn = _connect()
         with conn:
             q = f'delete from users where email=?'
             conn.execute(q, (username,))
 
     def get_user_settings(self, username):
-        conn = self._connect()
+        conn = _connect()
         with conn:
             q = 'select settings from users where email=?'
             cursor = conn.cursor()
@@ -90,18 +114,18 @@ class AdminDb():
         m.update(answer.encode('utf-16be'))
         answerhash = m.hexdigest()
 
-        conn = self._connect()
+        conn = _connect()
         with conn:
-            user_exists = self._check_username_presence(conn, username)
+            user_exists = _check_username_presence(conn, username)
             if user_exists:
                 return False
 
-            self._add_user(conn, username, passwordhash, question, answerhash)
+            _add_user(conn, username, passwordhash, question, answerhash)
 
         return True
 
     def get_password_question(self, email):
-        with self._connect() as conn:
+        with _connect() as conn:
             try:
                 cursor = conn.cursor()
                 cursor.execute('select question from users where email=?', (email, ))
@@ -112,7 +136,7 @@ class AdminDb():
                 cursor.close()
 
     def check_password_answer(self, email, answerhash):
-        with self._connect() as conn:
+        with _connect() as conn:
             try:
                 cursor = conn.cursor()
                 cursor.execute('select * from users where email=? and answerhash=?', (email, answerhash))
@@ -125,7 +149,7 @@ class AdminDb():
                 cursor.close()
 
     def set_temp_password(self, email):
-        with self._connect() as conn:
+        with _connect() as conn:
             temppassword = ''.join([chr(random.randint(97, 122)) for v in range(8)])
             m = hashlib.sha256()
             m.update(temppassword.encode('utf-16be'))
@@ -139,7 +163,7 @@ class AdminDb():
                 cursor.close()
 
     def set_username(self, email, newemail):
-        with self._connect() as conn:
+        with _connect() as conn:
             try:
                 cursor = conn.cursor()
                 cursor.execute(f'select * from users where email=?', (newemail, ))
@@ -164,7 +188,7 @@ class AdminDb():
         return ''
 
     def set_password(self, email, passwordhash):
-        with self._connect() as conn:
+        with _connect() as conn:
             try:
                 cursor = conn.cursor()
                 cursor.execute('update users set passwordhash=? where email=?', (passwordhash, email))
@@ -172,7 +196,7 @@ class AdminDb():
                 cursor.close()
 
     def add_job_info(self, username, job):
-        with self._connect() as conn:
+        with _connect() as conn:
             try:
                 cursor = conn.cursor()
                 q = 'insert into jobs values (?, ?, ?, ?, ?, ?, ?)'
@@ -186,22 +210,13 @@ class AdminDb():
             finally:
                 cursor.close()
 
-    def _connect(self):
-        return connect(admindb_path)
-
-    def _check_username_presence(self, conn, username):
-        cursor = conn.cursor()
-        cursor.execute('select * from users where email=?', (username,))
-        r = cursor.fetchone()
-        cursor.close()
-
-        if r is None:
-            return False
-        else:
-            return True
-
-    def _add_user(self, conn, username, passwordhash, question, answer):
-        cursor = conn.cursor()
-        default_settings = {'lastAssembly': None}
-        cursor.execute('insert into users values (?, ?, ?, ?, ?)',
-                       [username, passwordhash, question, answer, json.dumps(default_settings)])
+    def update_user_settings(self, username, d):
+        with _connect() as conn:
+            newsettings = self.get_user_settings(username)
+            newsettings.update(d)
+            try:
+                cursor = conn.cursor()
+                cursor.execute('update users set settings=? where email=?',
+                               [json.dumps(newsettings), username])
+            finally:
+                cursor.close()
