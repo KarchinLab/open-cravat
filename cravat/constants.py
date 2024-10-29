@@ -88,6 +88,7 @@ example_input_paths = {
     'vcf': Path(packagedir)/'websubmit'/'input-examples'/'vcf.hg38.txt',
     'hgvs': Path(packagedir)/'websubmit'/'input-examples'/'hgvs.hg38.txt',
     'dbsnp': Path(packagedir)/'websubmit'/'input-examples'/'dbsnp.hg38.txt',
+    'clingen': Path(packagedir) / 'websubmit' / 'input-examples' / 'clingen.hg38.txt',
 }
 
 # Base modules
