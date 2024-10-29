@@ -1344,6 +1344,8 @@ def make_example_input(out_directory, type='cravat'):
         out_fn = 'example_input.hgvs.txt'
     elif type == 'dbsnp':
         out_fn = 'example_input.rsid.txt'
+    elif type == 'clingen':
+        out_fn = 'example_input.clingen.txt'
     else:
         raise ValueError(f'Invalid example input type: {type}')
     out_path = Path(out_directory)/out_fn
