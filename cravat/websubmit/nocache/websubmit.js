@@ -2040,16 +2040,26 @@ function addListeners () {
     });
 }
 
-function checkDbSNPInput() {
-    if ('dbsnp-converter' in OC.localModuleInfo) {
-        document.getElementById('dbsnp-input').classList.remove('disabled');
-        document.getElementById('dbsnp-input').removeAttribute('title');
-        document.getElementById('dbsnp-input').removeAttribute('disabled');
+function checkConverterInstalled(name) {
+    const converterName = `${name}-converter`;
+    const inputName = `${name}-input`;
+    if (converterName in OC.localModuleInfo) {
+        document.getElementById(inputName).classList.remove('disabled');
+        document.getElementById(inputName).removeAttribute('title');
+        document.getElementById(inputName).removeAttribute('disabled');
     } else {
-        document.getElementById('dbsnp-input').title = 'Install dbsnp-converter to use';
-        document.getElementById('dbsnp-input').disabled = 'true';
-        document.getElementById('dbsnp-input').classList.add('disabled');
+        document.getElementById(inputName).title = `Install ${converterName} to use`;
+        document.getElementById(inputName).disabled = 'true';
+        document.getElementById(inputName).classList.add('disabled');
     }
+}
+
+function checkDbSNPInput() {
+    checkConverterInstalled('dbsnp');
+}
+
+function checkClingenInput() {
+    checkConverterInstalled('clingen');
 }
 
 function addMediatorListeners() {
@@ -2059,6 +2069,7 @@ function addMediatorListeners() {
     OC.mediator.subscribe('setupJobs', handleSetupJobsTab);
     OC.mediator.subscribe('moduleinfo.local', setVariantReportURL)
     OC.mediator.subscribe('moduleinfo.local', checkDbSNPInput);
+    OC.mediator.subscribe('moduleinfo.local', checkClingenInput);
 }
 
 function requestUserEmail() {
