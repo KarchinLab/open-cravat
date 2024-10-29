@@ -97,6 +97,7 @@ base_modules = [
     'vcf-converter',
     'oldcravat-converter',
     'hgvs-converter',
+    'clingen-converter',
     'textreporter',
     'excelreporter',
     'tagsampler',
