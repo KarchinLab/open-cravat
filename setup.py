@@ -34,7 +34,8 @@ data_files = ['cravat.yml',
               'cravat-system.template.yml', 
               'modules/cravat.yml', 
               'example_input',
-              'wincravat.pyw']
+              'wincravat.pyw',
+              'uwsgi.ini']
 for root, dirs, files in os.walk(os.path.join('cravat', 'webviewer')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
@@ -53,7 +54,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'webstore')):
 for root, dirs, files in os.walk(os.path.join('cravat', 'websubmit')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
-for root, dirs, files in os.walk(os.path.join('cravat', 'gui', 'multiuser')):
+for root, dirs, files in os.walk(os.path.join('cravat', 'gui')):
     root_files = [os.path.join('..', root, f) for f in files]
     data_files.extend(root_files)
 
@@ -104,7 +105,8 @@ setup(
         'whitenoise',
         'Flask-Caching',
         'cachelib',
-        'celery'
+        'celery',
+        'cryptography',
         ],
     python_requires='>=3.8',
 )

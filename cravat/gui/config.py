@@ -31,13 +31,15 @@ SESSION_COOKIE_HTTPONLY = True
 # again, an excellent candidate for configuration via environment variable.
 SESSION_COOKIE_SECURE = False
 
+CELERY_RESULTS_PATH = f'/{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/results'
+
 CELERY = dict(
     broker_url='filesystem://',
     broker_transport_options={
         'data_folder_in': f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/broker',
         'data_folder_out': f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/broker/'
     },
-    result_backend=f'file://{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/results',
+    result_backend=f'file:/{CELERY_RESULTS_PATH}',
     include=['cravat.gui.tasks'],
     task_queues=(
         Queue('default', default_exchange, routing_key='default'),

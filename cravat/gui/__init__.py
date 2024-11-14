@@ -60,6 +60,20 @@ def _ensure_path_exists(*args):
     path.mkdir(parents=True, exist_ok=True)
 
 
+def build_app_instance(is_multiuser):
+    from paste.translogger import TransLogger
+
+    # Application Initialization
+    routing.load(app, static_server, is_multiuser)
+    wrapped_app = multiuser_middleware(static_server, is_multiuser)
+
+    app_with_logger = TransLogger(wrapped_app, setup_console_handler=True)
+
+    return app_with_logger
+
+def build_multiuser_app():
+    return build_app_instance(True)
+
 def ensure_workspace_exists():
     # bootstrap cache and celery by creating work directories
     workdir = app.config['CRAVAT_SYSCONF'][constants.work_dir_key]
@@ -70,10 +84,7 @@ def ensure_workspace_exists():
 
 def start_server(interface, port, multiuser):
     from waitress import serve
-    from paste.translogger import TransLogger
 
-    # Application Initialization
-    routing.load(app, static_server, multiuser)
+    app_with_logger = build_app_instance(multiuser)
+    serve(app_with_logger, host=interface, port=port, threads=12)
 
-    wrapped_app = multiuser_middleware(static_server, multiuser)
-    serve(TransLogger(wrapped_app, setup_console_handler=True), host=interface, port=port)
