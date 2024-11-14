@@ -59,7 +59,7 @@ def serve_widgetfile(module, filename):
             ct = "application/octet-stream"
 
         def file_stream():
-            with open(filepath) as f:
+            with open(filepath, 'rb') as f:
                 for line in f:
                     yield line
         headers = {

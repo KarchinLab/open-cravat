@@ -37,6 +37,9 @@ def _add_user(conn, username, passwordhash, question, answer):
 class AdminDb():
     def __init__ (self):
         initdb = not os.path.exists(admindb_path)
+        if initdb:
+            os.makedirs(os.path.dirname(admindb_path), exist_ok=True)
+
         conn = connect(admindb_path)
         with conn:
             cursor = conn.cursor()

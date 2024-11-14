@@ -1,6 +1,7 @@
+import os
+
 import celery
 from celery import current_app, states
-
 
 def celery_init_app(flask_app):
     class FlaskTask(celery.Task):
@@ -8,8 +9,15 @@ def celery_init_app(flask_app):
             with flask_app.app_context():
                 return self.run(*args, **kwargs)
 
+    celery_config = flask_app.config["CELERY"]
+
+    os.makedirs(flask_app.config["CACHE_DIR"], exist_ok=True)
+    os.makedirs(celery_config['broker_transport_options']['data_folder_in'], exist_ok=True)
+    os.makedirs(celery_config['broker_transport_options']['data_folder_out'], exist_ok=True)
+    os.makedirs(flask_app.config["CELERY_RESULTS_PATH"], exist_ok=True)
+
     celery_app = celery.Celery(flask_app.name, task_cls=FlaskTask)
-    celery_app.config_from_object(flask_app.config["CELERY"])
+    celery_app.config_from_object(celery_config)
     celery_app.set_default()
     flask_app.extensions["celery"] = celery_app
     return celery_app

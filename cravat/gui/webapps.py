@@ -12,11 +12,10 @@ from .async_utils import run_coroutine_sync
 def webapp_proxy_handler():
     webapps_dir = os.path.join(au.get_modules_dir(), "webapps")
     module_handlers = {}
+    module_names = []
 
-    if not os.path.exists(webapps_dir):
-        os.mkdir(webapps_dir)
-
-    module_names = os.listdir(webapps_dir)
+    if os.path.exists(webapps_dir):
+        module_names = os.listdir(webapps_dir)
 
     for module_name in module_names:
         module_dir = os.path.join(webapps_dir, module_name)

@@ -165,7 +165,7 @@ def check_logged():
         email = ''
         user = None
 
-    if g.username.startswith('guest_'):
+    if logged and g.username.startswith('guest_'):
         datestr = g.username.split('_')[2]
         creation_date = datetime.datetime(
             int(datestr[:4]),
