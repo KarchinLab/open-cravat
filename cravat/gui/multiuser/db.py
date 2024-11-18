@@ -223,3 +223,126 @@ class AdminDb():
                                [json.dumps(newsettings), username])
             finally:
                 cursor.close()
+
+    def get_assembly_stat(self, start_date, end_date):
+        with _connect() as conn:
+            try:
+                cursor = conn.cursor()
+                q = 'select assembly, count(*) as c from jobs where submit>="{}" and submit<="{}T23:59:59" group by assembly order by c desc'.format(start_date, end_date)
+                cursor.execute(q)
+
+                rows = cursor.fetchall()
+                assembly_count = []
+
+                for row in rows:
+                    (assembly, count) = row
+                    assembly_count.append([assembly, count])
+
+                return assembly_count
+            finally:
+                cursor.close()
+
+    def get_annot_stat(self, start_date, end_date):
+        with _connect() as conn:
+            try:
+                cursor = conn.cursor()
+                q = 'select annotators from jobs where submit>="{}" and submit<="{}T23:59:59"'.format(start_date, end_date)
+                cursor.execute(q)
+                rows = cursor.fetchall()
+
+                annot_count = {}
+                for row in rows:
+                    annots = row[0].split(',')
+                    for annot in annots:
+                        if not annot in annot_count:
+                            annot_count[annot] = 0
+                        annot_count[annot] += 1
+                return {'annot_count': annot_count}
+            finally:
+                cursor.close()
+
+    def get_user_stat(self, start_date, end_date):
+        with _connect() as conn:
+            try:
+                cursor = conn.cursor()
+
+                q = 'select count(distinct username) from jobs where submit>="{}" and submit<="{}T23:59:59"'.format(
+                    start_date,
+                    end_date)
+                cursor.execute(q)
+                row = cursor.fetchone()
+                if row is None:
+                    num_unique_users = 0
+                else:
+                    num_unique_users = row[0]
+
+                q = 'select username, count(*) as c from jobs where submit>="{}" and submit<="{}T23:59:59" group by username order by c desc limit 1'.format(
+                    start_date, end_date)
+                cursor.execute(q)
+                row = cursor.fetchone()
+                if row is None:
+                    (frequent_user, frequent_user_num_jobs) = (0, 0)
+                else:
+                    (frequent_user, frequent_user_num_jobs) = row
+
+                q = 'select username, sum(numinput) s from jobs where submit>="{}" and submit<="{}T23:59:59" group by username order by s desc limit 1'.format(
+                    start_date, end_date)
+                cursor.execute(q)
+                row = cursor.fetchone()
+                if row is None:
+                    (heaviest_user, heaviest_user_num_input) = (0, 0)
+                else:
+                    (heaviest_user, heaviest_user_num_input) = row
+
+                response = {'num_uniq_user': num_unique_users, 'frequent': [frequent_user, frequent_user_num_jobs],
+                            'heaviest': [heaviest_user, heaviest_user_num_input]}
+            finally:
+                cursor.close()
+
+        return response
+
+    def get_input_stat (self, start_date, end_date):
+        with _connect() as conn:
+            try:
+                cursor = conn.cursor()
+                q = 'select sum(numinput), max(numinput), avg(numinput) from jobs where submit>="{}" and submit<="{}T23:59:59" and numinput!=-1'.format(start_date, end_date)
+                cursor.execute(q)
+                row = cursor.fetchall()
+                row = row[0]
+
+                s = row[0] if row[0] is not None else 0
+                m = row[1] if row[1] is not None else 0
+                a = row[2] if row[2] is not None else 0
+                response = [s, m, a]
+            finally:
+                cursor.close()
+
+        return response
+
+    def get_job_stat(self, start_date, end_date):
+        with _connect() as conn:
+            try:
+                cursor = conn.cursor()
+                q = 'select count(*) from jobs where submit>="{}" and submit<="{}T23:59:59"'.format(start_date, end_date)
+                cursor.execute(q)
+                row = cursor.fetchone()
+                if row is None:
+                    num_jobs = 0
+                else:
+                    num_jobs = row[0]
+
+                q = 'select date(submit) as d, count(*) as c from jobs where submit>="{}" and submit<="{}T23:59:59" group by d order by d asc'.format(
+                    start_date, end_date)
+                cursor.execute(q)
+                rows = cursor.fetchall()
+                submits = []
+                counts = []
+                for row in rows:
+                    submits.append(row[0])
+                    counts.append(row[1])
+
+                response = {'num_jobs': num_jobs, 'chartdata': [submits, counts]}
+            finally:
+                cursor.close()
+
+        return response

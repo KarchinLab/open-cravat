@@ -21,7 +21,6 @@ static_server = WhiteNoise(app)
 
 # Cravat settings
 sysconf = au.get_system_conf()
-logging.basicConfig(level=logging.DEBUG)
 
 # Celery
 celery = job_manager.celery_init_app(app)
