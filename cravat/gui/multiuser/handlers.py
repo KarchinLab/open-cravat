@@ -184,7 +184,7 @@ def check_logged():
     return jsonify(response)
 
 
-@require_multiuser
+@require_multiuser()
 def logout():
     session.pop('user', None)
     response = 'success'
