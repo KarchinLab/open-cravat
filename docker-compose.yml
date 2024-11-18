@@ -1,0 +1,14 @@
+services:
+  oc:
+    build:
+      dockerfile: Dockerfile.nginx
+      context: .
+    command: supervisord
+    ports:
+      - 80:80
+    volumes:
+      - "../../workdir/conf:/mnt/conf"
+      - "../../workdir/modules:/mnt/modules"
+      - "../../workdir/jobs:/mnt/jobs"
+      - "../../workdir/logs:/mnt/logs"
+      - "../../workdir/workspace:/mnt/workspace"
