@@ -311,17 +311,14 @@ function getMostDownloadedModuleNames() {
         if (moduleName == 'base') {
             continue;
         }
+        if (OC.remoteModuleInfo[moduleName].type !== 'annotator') {
+            continue;
+        }
         if (OC.baseModuleNames.indexOf(moduleName) >= 0) {
             continue;
         }
         if (OC.remoteModuleInfo[moduleName].hidden == true) {
             continue;
-        }
-        if (OC.remoteModuleInfo[moduleName].type == 'webviewerwidget' && OC.defaultWidgetNames.includes(moduleName)) {
-            continue;
-        }
-        if (OC.remoteModuleInfo[moduleName].type == 'group') {
-            continue
         }
         if (OC.baseModuleNames.indexOf(moduleName) >= 0) {
             continue
