@@ -147,6 +147,9 @@ class Module(object):
         mic.update_local()
         return {k: v for k, v in mic.local.items()}
 
+    @staticmethod
+    def invalidate_cache():
+        cache.cache.delete(Module.local.make_cache_key())
 
     @staticmethod
     def install_queue():
