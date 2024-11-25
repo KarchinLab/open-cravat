@@ -321,6 +321,7 @@ function setupAdminMode () {
     $('#storediv_tabhead[value=storediv]')[0].style.display = 'inline-block';
     $('#admindiv_tabhead[value=admindiv]')[0].style.display = 'inline-block';
     document.getElementById('admindiv_tabhead').setAttribute('disabled', 'f');
+    document.getElementById('submitdiv').style.gridTemplateColumns = '1fr';
     document.getElementById('submitcontentdiv').style.display = 'none';
     populateAdminTab();
 }
