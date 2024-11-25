@@ -14,6 +14,7 @@ import copy
 from getpass import getpass
 from distutils.version import LooseVersion
 from cravat import util
+from cravat.gui.models import Module
 
 
 class ExampleCommandsFormatter(object,):
@@ -334,6 +335,9 @@ def install_modules(args):
                 install_pypi_dependency=args.install_pypi_dependency
             )
 
+        Module.invalidate_cache()
+
+
 def update_modules(args):
     if args.md is not None:
         constants.custom_modules_dir = args.md
@@ -387,6 +391,7 @@ def uninstall_modules (args):
                     print('Response \'{:}\' not one of (y/n).'.format(resp))
         for module_name in matching_names:
             au.uninstall_module(module_name)
+            Module.invalidate_cache()
             print('Uninstalled %s' %module_name)
     else:
         print('No modules to uninstall found')
