@@ -449,7 +449,7 @@ function populateAdminTab () {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
         xhr.send();
-        location.href = 'login.html';
+        location.href = '/server/nocache/login.html';
     });
     addEl(sdiv, btn);
     addEl(div, getEl('br'));
