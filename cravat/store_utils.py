@@ -99,6 +99,9 @@ class PathBuilder(object):
     def download_counts(self):
         return self._build_path(self.base(), "download-counts.yml")
 
+    def featured_module_list(self):
+        return self._build_path(self.base(), "store.json")
+
 
 def blank_stage_handler(*args, **kwargs):
     pass
@@ -196,6 +199,19 @@ def get_file_to_string(url):
     r = requests.get(url, timeout=(3, None))
     if r.status_code == 200:
         return r.text
+    else:
+        raise HTTPError(url, r.status_code, "", None, None)
+
+
+def get_file_to_json(url):
+    """
+    Sends a GET request to the given url and returns the response body as a dict
+
+    Errors during the GET request are unhandled by this method
+    """
+    r = requests.get(url, timeout=(3, None))
+    if r.status_code == 200:
+        return r.json()
     else:
         raise HTTPError(url, r.status_code, "", None, None)
 

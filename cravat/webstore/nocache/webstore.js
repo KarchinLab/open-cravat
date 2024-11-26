@@ -335,7 +335,33 @@ function getMostDownloadedModuleNames() {
     return top10ModuleNames;
 }
 
+function fetchCuratedStoreList() {
+    // fetch('/store/nocache/store.json')
+    fetch('/store/lists')
+        .then(response => {
+            if (!response.ok) {
+                console.warn('Could not load OpenCRAVAT store featured list.', response);
+                return null;
+            }
+            return response.json();
+        })
+        .then(data => {
+            OC.storeModuleList = data;
+        })
+        .catch(function() {
+                console.warn('Could not load OpenCRAVAT store featured list.');
+                OC.storeModuleList = null;
+        });
+}
+
 function getNewestModuleNames() {
+    // if we have a curated list, return the list of module names
+    if (OC.storeModuleList && OC.storeModuleList?.latest) {
+        return OC.storeModuleList.latest
+            .map(m => m.module)
+            .filter(name => Object.hasOwn(OC.remoteModuleInfo, name));
+    }
+    // else fall back to returning the 10 most recently published
     var moduleNames = Object.keys(OC.remoteModuleInfo);
     for (var i = 0; i < moduleNames.length; i++) {
         for (var j = i + 1; j < moduleNames.length - 1; j++) {
@@ -382,6 +408,30 @@ function getNewestModuleNames() {
     return top10ModuleNames;
 }
 
+function getModuleListByCategory(category) {
+    // if we have a curated list, return the list of module names
+    if (OC.storeModuleList && OC.storeModuleList[category]) {
+        return OC.storeModuleList[category]
+            .map(m => m.module)
+            .filter(name => Object.hasOwn(OC.remoteModuleInfo, name));
+    }
+
+    // fallback to searching for remote modules with 'category' as a tag
+    var modules = [];
+    var remoteModuleNames = Object.keys(OC.remoteModuleInfo);
+    for (var i = 0; i < remoteModuleNames.length; i++) {
+        var remoteModuleName = remoteModuleNames[i];
+        var remoteModule = OC.remoteModuleInfo[remoteModuleName];
+        if (remoteModule['groups'].length > 0) {
+            continue;
+        }
+        if (remoteModule['tags'].includes(category)) {
+            modules.push(remoteModuleName);
+        }
+    }
+    return modules;
+}
+
 function getHomeCarouselContent (modules, type) {
     var sdiv = getEl('div');
     sdiv.style.width = (Math.ceil(modules.length / OC.numModulesInHomeSectionRow) * OC.storeTileWidthStep) + 'px'
@@ -420,39 +470,13 @@ function populateStoreHome() {
     var div = document.getElementById('store-home-cancerdiv');
     $(div).empty();
     var sdiv = getEl('div');
-    var cancerModules = [];
-    var remoteModuleNames = Object.keys(OC.remoteModuleInfo);
-    for (var i = 0; i < remoteModuleNames.length; i++) {
-        var remoteModuleName = remoteModuleNames[i];
-        var remoteModule = OC.remoteModuleInfo[remoteModuleName];
-        if (remoteModule['groups'].length > 0) {
-            continue;
-        }
-        if (remoteModule['tags'].includes('cancer')) {
-            cancerModules.push(remoteModuleName);
-        }
-    }
-    OC.moduleLists['cancer'] = cancerModules;
-    var sdiv = getHomeCarouselContent(cancerModules, 'cancer')
+    OC.moduleLists['cancer'] = getModuleListByCategory('cancer');
+    var sdiv = getHomeCarouselContent(OC.moduleLists['cancer'], 'cancer')
     addEl(div, sdiv);
     // Clinical Relevance
     var div = document.getElementById('store-home-clinicaldiv');
-    $(div).empty();
-    var sdiv = getEl('div');
-    var clinicalModules = [];
-    var remoteModuleNames = Object.keys(OC.remoteModuleInfo);
-    for (var i = 0; i < remoteModuleNames.length; i++) {
-        var remoteModuleName = remoteModuleNames[i];
-        var remoteModule = OC.remoteModuleInfo[remoteModuleName];
-        if (remoteModule['groups'].length > 0) {
-            continue;
-        }
-        if (remoteModule['tags'].includes('clinical relevance')) {
-            clinicalModules.push(remoteModuleName);
-        }
-    }
-    OC.moduleLists['clinical'] = clinicalModules;
-    var sdiv = getHomeCarouselContent(clinicalModules, 'clinical')
+    OC.moduleLists['clinical'] = getModuleListByCategory('clinical');
+    var sdiv = getHomeCarouselContent(OC.moduleLists['clinical'], 'clinical');
     addEl(div, sdiv);
 }
 
@@ -1875,7 +1899,10 @@ function addWebstoreEventHandlers() {
 
 }
 
-$(document).ready(() => addWebstoreEventHandlers());
+$(document).ready(() => {
+    addWebstoreEventHandlers();
+    fetchCuratedStoreList();
+});
 
 export {
     addWebstoreEventHandlers,
