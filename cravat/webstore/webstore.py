@@ -399,6 +399,13 @@ async def get_module_dependencies (request):
     deps = au.get_install_deps(module)
     return web.json_response(deps)
 
+async def get_featured_module_lists(request):
+    pb = su.PathBuilder(au.get_system_conf()['store_url'], "url")
+    list_url = pb.featured_module_list()
+    featured_list = su.get_file_to_json(list_url)
+    return web.json_response(featured_list)
+
+
 routes = []
 routes.append(['GET', '/store/remote', get_remote_manifest])
 routes.append(['GET', '/store/installwidgetsformodule', install_widgets_for_module])
@@ -421,3 +428,4 @@ routes.append(['GET', '/store/updateremote', update_remote])
 routes.append(['GET', '/store/localasremote', get_remote_manifest_from_local])
 routes.append(['GET', '/store/locallogo', get_local_module_logo])
 routes.append(['GET', '/store/moduledependencies', get_module_dependencies])
+routes.append(['GET', '/store/lists', get_featured_module_lists])
