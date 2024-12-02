@@ -290,6 +290,7 @@ async def resubmit (request):
     input_fpaths = status_json['orig_input_path']
     note = status_json['note']
     annotators = status_json['annotators']
+    annotators = status_json.get('annotators',[])
     if "original_input" in annotators:
         annotators.remove("original_input")
     cc_cohorts_path = status_json.get('cc_cohorts_path', '')
@@ -412,6 +413,7 @@ async def submit (request):
         packs = job_options['packages'] 
         run_args.append('--package')
         run_args.append(packs)
+        annotators = []
     else:
         if 'annotators' in job_options and len(job_options['annotators']) > 0 and job_options['annotators'][0] != '':
             annotators = job_options['annotators']
@@ -482,7 +484,7 @@ async def submit (request):
     status_json['reports'] = []
     pkg_ver = au.get_current_package_version()
     status_json['open_cravat_version'] = pkg_ver
-#    status_json['annotators'] = annotators
+    status_json['annotators'] = annotators
     if cc_cohorts_path is not None:
         status_json['cc_cohorts_path'] = cc_cohorts_path
     else:
