@@ -1,6 +1,6 @@
 'use strict';
 import {
-    addClassRecursive, getSizeText, getEl, addEl,
+    addClassRecursive, getSizeText, getEl, addEl, emptyElement,
     OC,
 } from './core.js'
 
