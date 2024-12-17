@@ -484,7 +484,7 @@ class FilterManager {
         outerDiv.attr('id', this.geneContId);
 		outerDiv.append($(getEl('div'))
 			.text('Type a list of gene names to include. One per line. Or, load a gene list from a file.')
-		)
+		).append($(getEl('div')).text('Gene names are case-sensitive.'))
 		let geneTextArea = $(getEl('textarea'))
 			.attr('id', this.geneTextId)
 			.change(this.onGeneListSelectorChange.bind(this));
@@ -1171,7 +1171,6 @@ function makeFilterJson () {
 	let geneListString = $('#'+filterMgr.geneTextId).val();
 	let geneList = geneListString.split('\n')
         .map(s=>s.trim())
-        .map(s=>s.toUpperCase())
         .filter(s=>s);
 	fjs.genes = geneList;
 	// Variant properties
