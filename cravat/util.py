@@ -141,12 +141,12 @@ def aa_abbv_to_let(abbvs):
 
 
 tmap_re = re.compile(
-    "\*?(?P<transcript>[A-Z_]+\d+\.\d+):"
-    + "(?P<ref>[A-Z_\*]+)"
-    + "(?P<pos>\d+|NA)"
-    + "(?P<alt>[A-Z_\*]+)"
-    + "\((?P<so>\w+)\)"
-    + "\((?P<hugo>\w+)\)"
+    r"\*?(?P<transcript>[A-Z_]+\d+\.\d+):"
+    + r"(?P<ref>[A-Z_\*]+)"
+    + r"(?P<pos>\d+|NA)"
+    + r"(?P<alt>[A-Z_\*]+)"
+    + r"\((?P<so>\w+)\)"
+    + r"\((?P<hugo>\w+)\)"
 )
 
 codon_table = {
@@ -473,6 +473,7 @@ def humanize_bytes(num, binary=False):
         quot_str = quot_str.rstrip("0").rstrip(".")
     return "{quotient} {unit}".format(quotient=quot_str, unit=unit)
 
+
 def write_log_msg(logger, e):
     if hasattr(e, "msg"):
         if type(e.msg) == list:
@@ -485,4 +486,3 @@ def write_log_msg(logger, e):
     else:
         logger.info(e)
         print(e)
-

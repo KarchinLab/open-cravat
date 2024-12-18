@@ -559,7 +559,7 @@ def main(url=None, host=None, port=None):
         except requests.exceptions.ConnectionError:
             pass
         print(
-            """
+            r"""
    ____                   __________  ___ _    _____  ______
   / __ \____  ___  ____  / ____/ __ \/   | |  / /   |/_  __/
  / / / / __ \/ _ \/ __ \/ /   / /_/ / /| | | / / /| | / /   
