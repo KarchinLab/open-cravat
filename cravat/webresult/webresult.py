@@ -418,7 +418,7 @@ async def get_jobid_dbpath (request):
     else:
         dbpath = ''
     if dbpath == '':
-        if 'job_id' != '':
+        if job_id != '':
             global wu
             dbpath = await wu.filerouter.job_db(request, job_id, given_username=given_username)
         else:
