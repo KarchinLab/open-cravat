@@ -1355,9 +1355,13 @@ function onClickModuleDetailUpdateButton(evt) {
     var btn = evt.target;
     var btnModuleName = btn.getAttribute('module');
     var installSize = OC.updates[btnModuleName].size;
+    btn.disabled = true;
     $.ajax({
         url: '/store/freemodulesspace',
         ajax: true,
+        always: function (response) {
+            btn.disabled = false;
+        },
         success: function(response) {
             var freeSpace = response;
             var noSpace = false;
