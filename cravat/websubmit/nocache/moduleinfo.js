@@ -291,7 +291,7 @@ function getModuleDetailInstallButton(moduleName, td, buttonDiv) {
     } else {
         buttonText = 'Install';
         button.style.backgroundColor = '#beeaff';
-        button.addEventListener('click', () => OC.mediator.publish('moduleinfo.install'));
+        button.addEventListener('click', (evt) => OC.mediator.publish('moduleinfo.install', evt));
     }
     button.textContent = buttonText;
     button.style.padding = '8px';
@@ -321,7 +321,7 @@ function getModuleDetailUpdateButton(moduleName) {
         var titleText = 'Update blocked by: ' + blockString + '. Uninstall blocking modules to update.';
         button.setAttribute('title', titleText);
     }
-    button.addEventListener('click', () => OC.mediator.publish('moduleinfo.update'));
+    button.addEventListener('click', (evt) => OC.mediator.publish('moduleinfo.update', evt));
     return button;
 }
 
@@ -408,6 +408,7 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         sdiv.style.marginTop = '10px';
         sdiv.style.fontSize = '12px';
         if (OC.installInfo[moduleName] != undefined) {
+            button.disabled = true;
             sdiv.textContent = OC.installInfo[moduleName]['msg'];
         }
         addEl(td, sdiv);
@@ -619,6 +620,9 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
                 addEl(d, span);
                 var button = getModuleDetailUpdateButton(moduleName);
                 addEl(buttonDiv, button);
+                if (OC.installInfo[moduleName] !== undefined) {
+                    button.disabled = true;
+                }
             }
         }
     }
