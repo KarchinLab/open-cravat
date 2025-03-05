@@ -2016,6 +2016,7 @@ function addListeners () {
         if (OC.storeModuleDivClicked) {
             var k = evt.key;
             var moduleDiv = document.getElementById('moduledetaildiv_store');
+            if (!moduleDiv) { return; }
             var moduleListName = moduleDiv.getAttribute('modulelistname');
             var moduleListPos = moduleDiv.getAttribute('modulelistpos');
             var moduleList = OC.moduleLists[moduleListName];
