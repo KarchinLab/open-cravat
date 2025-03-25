@@ -133,6 +133,10 @@ user_email_opt_out_key = 'user_email_opt_out'
 default_user_email = ''
 default_user_email_opt_out = False
 
+# user survey
+user_survey_key = 'show_user_survey'
+default_user_survey = True
+
 # liftover
 liftover_chains_dir = os.path.join(packagedir, "liftover")
 liftover_chain_paths = {
