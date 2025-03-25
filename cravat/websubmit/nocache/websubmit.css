@@ -250,6 +250,75 @@ button {
     right: 6px;
 }
 
+#pageselect #survey-button {
+    display: none;
+    background: none;
+    color: black;
+    font-family: roboto-light, sans;
+    vertical-align: middle;
+    align-items: center;
+    border: 1px solid rgb(74, 135, 189);
+    border-radius: 10px;
+    align-content: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+#pageselect #survey-button:hover {
+    display: inline-flex;
+    background: linear-gradient(-45deg, rgb(74, 135, 189), #5cb5e5, #006bff);
+    color: white;
+    font-family: roboto-light, sans;
+    vertical-align: middle;
+    align-items: center;
+    border: 1px solid rgb(74, 135, 189);
+    border-radius: 10px;
+    align-content: center;
+    justify-content: center;
+    font-size: 14px;
+    animation: gradient 10s ease infinite;
+    background-size: 200% 200%;
+}
+
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+#pageselect #survey-button #survey-button-icon {
+    width: 18px;
+    background-color: transparent;
+    border: none;
+    height: 24px;
+    padding: 0;
+    background: url('/submit/clipboard-check-solid.svg');
+}
+
+/* pre-load alternate image */
+#pageselect #survey-button #survey-button-icon::after {
+    width: 0;
+    height: 0;
+    content: '';
+    background: url('/submit/clipboard-check-solid-white.svg');
+}
+
+#pageselect #survey-button:hover #survey-button-icon {
+    background: url('/submit/clipboard-check-solid-white.svg');
+}
+
+.button-icon {
+    height: 25px;
+    margin-top: -1px;
+    margin-right: 5px;
+}
+
 #helpdiv {
     display: none;
     right: 52px;
