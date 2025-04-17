@@ -1733,7 +1733,7 @@ function getServermode () {
             }
         },
         complete: function(response) {
-            requestUserEmail();
+            requestUserEmailAndSurvey();
         }
     });
 }
@@ -2016,6 +2016,7 @@ function addListeners () {
         if (OC.storeModuleDivClicked) {
             var k = evt.key;
             var moduleDiv = document.getElementById('moduledetaildiv_store');
+            if (!moduleDiv) { return; }
             var moduleListName = moduleDiv.getAttribute('modulelistname');
             var moduleListPos = moduleDiv.getAttribute('modulelistpos');
             var moduleList = OC.moduleLists[moduleListName];
@@ -2072,13 +2073,18 @@ function addMediatorListeners() {
     OC.mediator.subscribe('moduleinfo.local', checkClingenInput);
 }
 
-function requestUserEmail() {
+function requestUserEmailAndSurvey() {
     if (OC.servermode) { return; }
     $.get('/submit/getsystemconfinfo').done(function (response) {
         const emailOptOut = response['content']['user_email_opt_out'];
         const email= response['content']['user_email'];
         if (!emailOptOut && !email) {
             document.getElementById('user-email-request-div').style.display = 'flex';
+        }
+
+        const userSurvey = response['content']['show_user_survey'];
+        if (userSurvey) {
+            document.getElementById('survey-button').style.display = 'inline-flex';
         }
     });
 }

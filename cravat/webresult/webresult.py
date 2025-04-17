@@ -268,7 +268,7 @@ async def get_status (request):
     job_id, dbpath = await get_jobid_dbpath(request)
     conn = await get_db_conn(dbpath)
     cursor = await conn.cursor()
-    q = 'select * from info where colkey not like "\_%" escape "\\"'
+    q = r'select * from info where colkey not like "\_%" escape "\\"'
     await cursor.execute(q)
     content = {}
     for row in await cursor.fetchall():
@@ -418,7 +418,7 @@ async def get_jobid_dbpath (request):
     else:
         dbpath = ''
     if dbpath == '':
-        if 'job_id' != '':
+        if job_id != '':
             global wu
             dbpath = await wu.filerouter.job_db(request, job_id, given_username=given_username)
         else:

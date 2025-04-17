@@ -18,6 +18,24 @@ from types import SimpleNamespace
 import math
 
 
+def discretize_scalar(score, cutoffs):
+    """Locate the location of `score` in a list[tuple(float, str)] of
+    `cutoffs`, where the float cutoff is the maximum value, inclusive
+    of the value, for that label. The last tuple should typically have
+    `float("inf")` as the cutoff, otherwise the function may retun
+    `None`
+
+    The cutoffs must be sorted in increasing value.
+    """
+    prev_cutoff = None
+    for cutoff, label in cutoffs:
+        if score <= cutoff:
+            return label
+        if prev_cutoff is not None and prev_cutoff > cutoff:
+            raise ValueError("cutoffs are not sorted")
+        prev_cutoff = cutoff
+
+
 def get_ucsc_bins(start, stop=None):
     if stop is None:
         stop = start + 1
@@ -141,12 +159,12 @@ def aa_abbv_to_let(abbvs):
 
 
 tmap_re = re.compile(
-    "\*?(?P<transcript>[A-Z_]+\d+\.\d+):"
-    + "(?P<ref>[A-Z_\*]+)"
-    + "(?P<pos>\d+|NA)"
-    + "(?P<alt>[A-Z_\*]+)"
-    + "\((?P<so>\w+)\)"
-    + "\((?P<hugo>\w+)\)"
+    r"\*?(?P<transcript>[A-Z_]+\d+\.\d+):"
+    + r"(?P<ref>[A-Z_\*]+)"
+    + r"(?P<pos>\d+|NA)"
+    + r"(?P<alt>[A-Z_\*]+)"
+    + r"\((?P<so>\w+)\)"
+    + r"\((?P<hugo>\w+)\)"
 )
 
 codon_table = {
@@ -473,6 +491,7 @@ def humanize_bytes(num, binary=False):
         quot_str = quot_str.rstrip("0").rstrip(".")
     return "{quotient} {unit}".format(quotient=quot_str, unit=unit)
 
+
 def write_log_msg(logger, e):
     if hasattr(e, "msg"):
         if type(e.msg) == list:
@@ -485,4 +504,3 @@ def write_log_msg(logger, e):
     else:
         logger.info(e)
         print(e)
-
