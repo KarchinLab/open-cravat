@@ -2173,21 +2173,7 @@ function makeGrid (columns, data, tabName) {
     var footer = $grid.find('.pq-grid-footer')[0];
     var span = getEl('span');
     span.id = 'footertext_' + tabName;
-    var button = getEl('button');
-    button.id = 'exportbutton_' + tabName;
-    button.onclick = function(event) {
-        var a = getEl('a');
-        var tsvContent = getExportContent(tabName);
-        a.href = window.URL.createObjectURL(
-                new Blob([tsvContent], {type: 'text/tsv'}));
-        a.download = jobId + '_export_' + tabName + '.tsv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    };
-    addEl(button, getTn('Export'));
     addEl(footer, span);
-    addEl(footer, button);
     var lenStr = dataLengths[tabName] + ' total rows';
     document.getElementById('footertext_' + tabName).textContent = lenStr;
 }
