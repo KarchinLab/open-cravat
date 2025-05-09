@@ -21,3 +21,4 @@ def load(application):
     router("/jobs/<job_id>/reports/<report_type>", None, generate_report, methods=['POST'])
     router("/jobs/<job_id>/reports/<report_type>", None, download_report, methods=['GET'])
     router("/resubmit", None, resubmit)
+    router("/annotate", None, live_annotate, methods=['GET', 'POST'])
