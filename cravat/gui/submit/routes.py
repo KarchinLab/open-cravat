@@ -18,4 +18,6 @@ def load(application):
     router("/jobs/<job_id>/log", None, get_job_log)
     router("/jobs/<job_id>/err", None, get_job_err)
     router("/jobs/<job_id>/db", None, get_job_db)
+    router("/jobs/<job_id>/reports/<report_type>", None, generate_report, methods=['POST'])
+    router("/jobs/<job_id>/reports/<report_type>", None, download_report, methods=['GET'])
     router("/resubmit", None, resubmit)

@@ -5,13 +5,22 @@ import yaml
 from datetime import datetime
 from functools import cached_property
 from glob import glob
+from pathlib import Path
 
 from cravat import constants, admin_util as au
+from cravat.gui import metadata
 from .cache import cache
 from .job_manager import Task, queue_messages
 
 class Job(object):
     DB_EXTENSION = ".sqlite"
+    report_extensions = {
+            'text': '.tsv',
+            'excel': '.xlsx',
+            'vcf': '.vcf',
+            'csv': '.variant.csv',
+            'tsv': '.variant.tsv',
+        }
 
     def __init__(self, job_dir, job_status_fpath):
         self.job_status_fpath = job_status_fpath
@@ -145,6 +154,19 @@ class Job(object):
     def save_status(self):
         with open(self.job_status_fpath, 'w') as f:
             json.dump(self.info, f, indent=2, sort_keys=True)
+
+    def reports(self):
+        valid_report_types = metadata.supported_report_types()
+        out = {}
+        for report_type in valid_report_types:
+            report_ext = self.report_extensions.get(report_type, '.'+report_type)
+            report_path = self.run_path+report_ext
+            if Path(report_path).is_file():
+                out[report_type] = report_path
+        return out
+    
+    def fill_reports(self):
+        self.info['reports'] = list(self.reports().keys())
 
 
 class Module(object):

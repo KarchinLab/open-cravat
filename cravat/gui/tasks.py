@@ -14,3 +14,6 @@ def install_module(module_name, version):
     admin_util.install_module(module_name, version=version)
     Module.invalidate_cache()
 
+@shared_task()
+def run_report(run_args):
+    subprocess.run(run_args)

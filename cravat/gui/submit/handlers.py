@@ -92,9 +92,11 @@ def get_jobs():
     jobs = []
     for job_id in ids:
         try:
-            job =filerouter.load_job(job_id)
-            if job is not None:
-                jobs.append(job)
+            job = filerouter.load_job(job_id)
+            if job is None:
+                continue
+            job.fill_reports()
+            jobs.append(job)
         except:
             traceback.print_exc()
             continue
@@ -403,4 +405,27 @@ def get_job_db(job_id):
             download_name = db_path.name,
         )
     else:
-        abort(404, description='database does not exist.')
+        abort(404, description='Database does not exist.')
+
+def generate_report(job_id, report_type):
+    filerouter = file_router()
+    job = filerouter.load_job(job_id)
+    db_path = job.db_path
+    report_args = ['oc', 'report', db_path, '-t', report_type]
+    tasks.run_report.delay(report_args)
+    return 'done', {'Content-type': 'text/plain'}
+
+def download_report(job_id, report_type):
+    print(job_id, report_type)
+    filerouter = file_router()
+    job = filerouter.load_job(job_id)
+    report_paths = job.reports()
+    if report_type in report_paths:
+        report_path = report_paths[report_type]
+        return send_file(
+            report_path,
+            as_attachment = True,
+            download_name = Path(report_path).name,
+        )
+    else:
+        abort(404, description=f'Report of type {report_type} does not exist for job {job_id}.')

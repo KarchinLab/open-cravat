@@ -1104,7 +1104,6 @@ def run_reporter(*inargs, **inkwargs):
             v = toks[1]
             module_options[module_name][key] = v
     del args.module_option
-    loop = asyncio.get_event_loop()
     response = {}
     for report_type in report_types:
         module_info = au.get_local_module_info(report_type + "reporter")
@@ -1127,8 +1126,8 @@ def run_reporter(*inargs, **inkwargs):
         reporter = module.Reporter(args)
         response_t = None
         try:
-            loop.run_until_complete(reporter.prep())
-            response_t = loop.run_until_complete(reporter.run())
+            reporter.prep()
+            response_t = reporter.run()
             output_fns = None
             if args.silent == False:
                 if type(response_t) == list:
@@ -1139,7 +1138,7 @@ def run_reporter(*inargs, **inkwargs):
                     print(f"report created: {output_fns}")
         except Exception as e:
             if hasattr(reporter, "cf"):
-                loop.run_until_complete(reporter.cf.close_db())
+                reporter.cf.close_db()
             if hasattr(e, "handled") and e.handled == True:
                 if not hasattr(e, "notraceback") or e.notraceback != True:
                     import traceback
