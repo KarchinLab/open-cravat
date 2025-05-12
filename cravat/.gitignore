@@ -10,3 +10,4 @@ req.cnf
 logs
 /temp/
 metrics
+workspace/
