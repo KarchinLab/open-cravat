@@ -375,4 +375,17 @@ def get_job_log(job_id):
         return file_stream(), {"Content-Type": "text/plain"}
     else:
         return 'log file does not exist.', {"Content-Type": "text/plain"}
+    
+def get_job_err(job_id):
+    filerouter = file_router()
+    job = filerouter.load_job(job_id)
 
+    if job.err is not None:
+        def file_stream():
+            with open(job.err) as f:
+                for line in f:
+                    yield line
+
+        return file_stream(), {"Content-Type": "text/plain"}
+    else:
+        return 'err file does not exist.', {"Content-Type": "text/plain"}

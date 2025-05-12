@@ -110,6 +110,14 @@ class Job(object):
         return log_path
 
     @property
+    def err(self):
+        err_path = self.run_path + '.err'
+        if not os.path.exists(err_path):
+            err_path = None
+
+        return err_path
+
+    @property
     def status_file_exists(self):
         return os.path.exists(self.job_status_fpath)
 
