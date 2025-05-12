@@ -17,4 +17,5 @@ def load(application):
     router("/jobs/<job_id>", None, delete_job, methods=['DELETE'])
     router("/jobs/<job_id>/log", None, get_job_log)
     router("/jobs/<job_id>/err", None, get_job_err)
+    router("/jobs/<job_id>/db", None, get_job_db)
     router("/resubmit", None, resubmit)

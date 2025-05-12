@@ -6,7 +6,7 @@ import traceback
 from datetime import datetime
 from distutils.version import LooseVersion
 
-from flask import jsonify, request, abort, g
+from flask import jsonify, request, abort, g, send_file
 from werkzeug.utils import secure_filename
 
 from cravat import admin_util as au
@@ -16,6 +16,7 @@ from cravat.gui import metadata
 from cravat.gui.decorators import with_job_id_and_path
 from cravat.gui.models import Job
 from cravat.gui import tasks
+from pathlib import Path
 
 
 def server_mode():
@@ -389,3 +390,17 @@ def get_job_err(job_id):
         return file_stream(), {"Content-Type": "text/plain"}
     else:
         return 'err file does not exist.', {"Content-Type": "text/plain"}
+    
+def get_job_db(job_id):
+    filerouter = file_router()
+    job = filerouter.load_job(job_id)
+    db_path = Path(job.db_path)
+    if db_path.is_file():
+        return send_file(
+            db_path,
+            mimetype = 'application/x-sqlite3',
+            as_attachment = True,
+            download_name = db_path.name,
+        )
+    else:
+        abort(404, description='database does not exist.')
