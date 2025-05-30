@@ -207,18 +207,27 @@ def store_worker():
     worker.start()
 
 
+def live_annotation_worker():
+    from cravat.gui import celery
+
+    worker = celery.Worker(queue="live_annotate", concurrency=1)
+    worker.start()
+
+
 def run_flask(args):
     from cravat import gui
 
     gui.ensure_workspace_exists()
 
-    if not args.servermode:
-        from multiprocessing import Process
-        p = Process(target=default_celery_worker)
-        p.start()
+    from multiprocessing import Process
+    p = Process(target=default_celery_worker)
+    p.start()
 
-        p2 = Process(target=store_worker)
-        p2.start()
+    p2 = Process(target=store_worker)
+    p2.start()
+
+    p3 = Process(target=live_annotation_worker)
+    p3.start()
 
     server_config = get_server()
     gui.start_server(server_config['host'],

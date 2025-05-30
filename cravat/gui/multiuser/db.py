@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import random
+import time
 
 from cryptography import fernet
 from sqlite3 import connect
@@ -346,3 +347,13 @@ class AdminDb():
                 cursor.close()
 
         return response
+
+    def write_single_api_access_count_to_db (self, t, count):
+        with _connect() as conn:
+            try:
+                cursor = conn.cursor()
+                ts = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t))
+                q = f'insert into apilog values ("{ts}", {count})'
+                cursor.execute(q)
+            finally:
+                cursor.close()

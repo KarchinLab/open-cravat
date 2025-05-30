@@ -6,6 +6,7 @@ CRAVAT_SYSCONF = admin_util.get_system_conf()
 
 default_exchange = Exchange('default', type='direct')
 management_exchange = Exchange('management', type='direct')
+live_annotate_exchange = Exchange('live_annotate', type='direct')
 
 # COOKIE CONFIGURATION (https://flask.palletsprojects.com/en/2.3.x/config/)
 
@@ -44,6 +45,7 @@ CELERY = dict(
     task_queues=(
         Queue('default', default_exchange, routing_key='default'),
         Queue('module_install', management_exchange, routing_key='module_install'),
+        Queue('live_annotate', live_annotate_exchange, routing_key='live_annotate'),
     ),
     task_default_queue='default',
     task_default_exchange='default',

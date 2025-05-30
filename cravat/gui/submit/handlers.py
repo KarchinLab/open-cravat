@@ -11,7 +11,7 @@ import requests
 from flask import jsonify, request, abort, g
 from werkzeug.utils import secure_filename
 
-from cravat import admin_util as au, InvalidData, ConfigLoader, get_module
+from cravat import admin_util as au, InvalidData, ConfigLoader, get_module, get_live_mapper, get_live_annotator
 from cravat import constants
 from cravat.gui.cravat_request import *
 from cravat.gui import metadata
@@ -555,18 +555,10 @@ def get_coordinates_from_request_params(queries):
 def get_live_annotation(coordinates):
     return coordinates
 
-def live_annotate ():
+def legacy_api_live_annotate():
     queries = request.values if request.values else request.json
-    annotators = request.values.get('annotators', None)
-    try:
-        coords, original_input, alternate_alleles = get_coordinates_from_request_params(queries)
-    except Exception as e:
-        text = str(e)
-        q = {key: value for key, value in queries.items()}
-        return jsonify(data={'error': text, 'originalInput': q})
-    response = get_live_annotation(coords)
-    # live_modules = LiveModules()
-    # response = live_modules.live_annotate(coords)
-    response['originalInput'] = original_input
-    response['alternateAlleles'] = alternate_alleles
-    return jsonify(response)
+    annotators = queries.get('annotators', None)
+    is_multiuser = g.is_multiuser
+    result = tasks.api_live_annotate.apply_async(kwargs={"queries":queries, "annotators":annotators, "is_multiuser": is_multiuser})
+    resp = result.get()
+    return resp
