@@ -925,6 +925,10 @@ def get_system_conf(file_only=False):
             conf[constants.user_email_opt_out_key] = constants.default_user_email_opt_out
         if constants.user_survey_key not in conf:
             conf[constants.user_survey_key] = constants.default_user_survey
+        if constants.clingen_api_key not in conf:
+            conf[constants.clingen_api_key] = constants.default_clingen_url
+        if constants.hgvs_api_key not in conf:
+            conf[constants.hgvs_api_key] = constants.hgvs_api_key
         if "custom_system_conf" in globals():
             global custom_system_conf
             for k, v in custom_system_conf.items():

@@ -2,9 +2,10 @@ import json
 import time
 
 import requests
-from flask import abort, jsonify, g
+from flask import abort, jsonify
 
-from cravat import InvalidData, ConfigLoader, get_module
+from cravat import admin_util as au
+from cravat import InvalidData, get_module
 from cravat.gui.api.live_module_cache import LiveModuleCache
 
 from . import routes
@@ -12,6 +13,7 @@ from . import routes
 def initialize(application):
     routes.load(application)
 
+sysconf = au.get_system_conf()
 count_single_api_access = 0
 time_of_log_single_api_access = time.time()
 interval_log_single_api_access = 60
@@ -28,14 +30,12 @@ def format_hgvs_string(hgvs_input):
     return f'{hgvs_parts[0]}:{prefix}{end}'
 
 def get_coordinates_from_hgvs_api(queries):
-    confloader = ConfigLoader()
-    variant_report_config = confloader.get_module_conf('variantreport')
-    if 'hgvs_api_url' not in variant_report_config:
-        raise abort(500, description='"hgvs_api_url" not found in variantreport configuration.')
+    if 'hgvs_api_url' not in sysconf:
+        raise abort(500, description='"hgvs_api_url" not found in open cravat configuration.')
     hgvs_input = format_hgvs_string(queries.get('hgvs'))
     data = {'hgvs': hgvs_input}
     headers = {'Content-Type': 'application/json'}
-    resp = requests.post(variant_report_config['hgvs_api_url'], data=json.dumps(data), headers=headers, timeout=20)
+    resp = requests.post(sysconf['hgvs_api_url'], data=json.dumps(data), headers=headers, timeout=20)
     try:
         resp.raise_for_status()
     except Exception as e:
@@ -71,13 +71,11 @@ def coordinates_from_clingen_json(ca_id, data):
 
 
 def get_coordinates_from_clingen_id(queries):
-    confloader = ConfigLoader()
-    VARIANT_REPORT_CONFIG = confloader.get_module_conf('variantreport')
-    if 'clingen_api_url' not in VARIANT_REPORT_CONFIG:
-        raise abort(500, description='"clingen_api_url" not found in variantreport configuration.')
+    if 'clingen_api_url' not in sysconf:
+        raise abort(500, description='"clingen_api_url" not found in open cravat configuration.')
     ca_id = queries['clingen'].strip().upper()
     headers = {'Content-Type': 'application/json'}
-    request_url = f"{VARIANT_REPORT_CONFIG['clingen_api_url']}/{ca_id}"
+    request_url = f"{sysconf['clingen_api_url']}/{ca_id}"
     resp = requests.get(request_url, headers=headers, timeout=20)
     try:
         resp.raise_for_status()
@@ -115,6 +113,10 @@ def get_coordinates_from_request_params(queries):
             x: queries[x] for x in required_coordinate_params
         }
         parameters['chrom'] = parameters['chrom'].lower()
+        try:
+            parameters['pos'] = int(parameters['pos'])
+        except ValueError as e:
+            raise(abort(400, description="'pos' parameter could not be parsed to int."))
         original_input = {'type': 'coordinates', 'input': f'{queries["assembly"]} {queries["chrom"]} {queries["pos"]} {queries["ref_base"]} {queries["alt_base"]}'}
     elif 'hgvs' in queries.keys() and queries['hgvs'] and 'assembly' in queries.keys():
         # make hgvs api call

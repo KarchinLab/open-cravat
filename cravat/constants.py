@@ -148,6 +148,12 @@ default_user_email_opt_out = False
 user_survey_key = 'show_user_survey'
 default_user_survey = True
 
+# api
+clingen_api_key = 'clingen_api_url'
+default_clingen_url = 'http://reg.genome.network/allele'
+hgvs_api_key = 'hgvs_api_url'
+default_hgvs_url = 'https://hgvs.opencravat.org/coordinates'
+
 # liftover
 liftover_chains_dir = os.path.join(packagedir, "liftover")
 liftover_chain_paths = {
