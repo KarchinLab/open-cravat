@@ -928,7 +928,7 @@ def get_system_conf(file_only=False):
         if constants.clingen_api_key not in conf:
             conf[constants.clingen_api_key] = constants.default_clingen_url
         if constants.hgvs_api_key not in conf:
-            conf[constants.hgvs_api_key] = constants.hgvs_api_key
+            conf[constants.hgvs_api_key] = constants.default_hgvs_url
         if "custom_system_conf" in globals():
             global custom_system_conf
             for k, v in custom_system_conf.items():
