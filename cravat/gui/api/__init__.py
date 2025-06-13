@@ -161,6 +161,10 @@ def live_annotate_worker (queries, annotators, is_multiuser):
         q = {key: value for key, value in queries.items()}
         return jsonify(data={'error': text, 'originalInput': q})
     live_mapper = LiveModuleCache()
+    assembly = queries.get('assembly', 'hg38')
+    if assembly != 'hg38':
+        live_mapper.load_lifter(assembly)
+        coords = live_mapper.liftover(coords, assembly)
     live_mapper.load_live_mapper()
     live_mapper.load_live_annotators(annotators)
     response = live_mapper.get_live_annotation(coords, annotators)

@@ -1,4 +1,9 @@
-from cravat import admin_util as au, get_live_mapper, get_live_annotator
+from pyliftover import LiftOver
+
+import cravat
+from cravat import LiftoverFailure
+from cravat import admin_util as au, get_live_mapper, get_live_annotator, constants
+
 
 def clean_annot_dict (d):
     keys = d.keys()
@@ -22,11 +27,104 @@ class LiveModuleCache:
     _instance = None
     mapper = None
     annotators = {}
+    lifters = {}
+    wgsreader = cravat.get_wgs_reader(assembly="hg38")
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(LiveModuleCache, cls).__new__(cls)
         return cls._instance
+
+    def load_lifter(self, assembly):
+        print(f'loading {assembly} lifter')
+        if assembly not in self.lifters.keys():
+            if not constants.liftover_chain_paths[assembly]:
+                raise LiftoverFailure(f'Assembly "{assembly}" not supported.')
+            self.lifters[assembly] = LiftOver(constants.liftover_chain_paths[assembly])
+        print('done loading lifter')
+
+    # TODO: This is borrowed from cravat_convert.MasterCravatConverter
+    # this should be refactored into a separate, reusable module
+    def liftover(self, coords, assembly):
+        chrom = coords.get('chrom')
+        pos = coords.get('pos')
+        ref = coords.get('ref_base')
+        alt = coords.get('alt_base')
+        reflen = len(ref)
+        altlen = len(alt)
+        if chrom == "chrMT":
+            newchrom = "chrM"
+            newpos = pos
+        elif reflen == 1 and altlen == 1:
+            res = self.lifters[assembly].convert_coordinate(chrom, pos - 1)
+            if res is None or len(res) == 0:
+                raise LiftoverFailure("Liftover failure")
+            if len(res) > 1:
+                raise LiftoverFailure("Liftover failure")
+            try:
+                el = res[0]
+            except:
+                raise LiftoverFailure("Liftover failure")
+            newchrom = el[0]
+            newpos = el[1] + 1
+        elif reflen >= 1 and altlen == 0:  # del
+            pos1 = pos
+            pos2 = pos + reflen - 1
+            res1 = self.lifters[assembly].convert_coordinate(chrom, pos1 - 1)
+            res2 = self.lifters[assembly].convert_coordinate(chrom, pos2 - 1)
+            if res1 is None or res2 is None or len(res1) == 0 or len(res2) == 0:
+                raise LiftoverFailure("Liftover failure")
+            if len(res1) > 1 or len(res2) > 1:
+                raise LiftoverFailure("Liftover failure")
+            el1 = res1[0]
+            el2 = res2[0]
+            newchrom1 = el1[0]
+            newpos1 = el1[1] + 1
+            newchrom2 = el2[0]
+            newpos2 = el2[1] + 1
+            newchrom = newchrom1
+            newpos = newpos1
+            newpos = min(newpos1, newpos2)
+        elif reflen == 0 and altlen >= 1:  # ins
+            res = self.lifters[assembly].convert_coordinate(chrom, pos - 1)
+            if res is None or len(res) == 0:
+                raise LiftoverFailure("Liftover failure")
+            if len(res) > 1:
+                raise LiftoverFailure("Liftover failure")
+            el = res[0]
+            newchrom = el[0]
+            newpos = el[1] + 1
+        else:
+            pos1 = pos
+            pos2 = pos + reflen - 1
+            res1 = self.lifters[assembly].convert_coordinate(chrom, pos1 - 1)
+            res2 = self.lifters[assembly].convert_coordinate(chrom, pos2 - 1)
+            if res1 is None or res2 is None or len(res1) == 0 or len(res2) == 0:
+                raise LiftoverFailure("Liftover failure")
+            if len(res1) > 1 or len(res2) > 1:
+                raise LiftoverFailure("Liftover failure")
+            el1 = res1[0]
+            el2 = res2[0]
+            newchrom1 = el1[0]
+            newpos1 = el1[1] + 1
+            newchrom2 = el2[0]
+            newpos2 = el2[1] + 1
+            newchrom = newchrom1
+            newpos = min(newpos1, newpos2)
+        hg38_ref = self.wgsreader.get_bases(newchrom, newpos)
+        if hg38_ref == cravat.util.reverse_complement(ref):
+            newref = hg38_ref
+            newalt = cravat.util.reverse_complement(alt)
+        else:
+            newref = ref
+            newalt = alt
+        return {
+            'chrom': newchrom,
+            'pos': newpos,
+            'ref_base': newref,
+            'alt_base': newalt
+        }
+
 
     def load_live_mapper(self):
         if self.mapper is None:
