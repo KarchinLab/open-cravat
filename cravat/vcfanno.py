@@ -21,8 +21,7 @@ except ModuleNotFoundError:
     bgzf = None
     pass
 
-# from vcf_line_processor import VCFLineProcessor
-
+mp.set_start_method('spawn', force=True)
 class VCFLineProcessor(object):
 
     perc_encode = [
@@ -241,19 +240,18 @@ class VCFAnnotator(object):
         self.logger = logging.getLogger(__name__)
         self.chunk_size = chunk_size
         self.chunk_log_frequency = chunk_log_frequency
-        self.temp_file_name_gen = self._next_temp_file_name()
+        self._temp_file_counter = 0
 
-    def _next_temp_file_name(self):
-        """Generator for a numbered sequence of filenames for temporary output"""
-        c = 0
-        while True:
-            yield f'{c}.{self.output_path}'
-            c += 1
+    def _get_next_temp_file_name(self):
+        """Returns sequentially numbered filenames for temporary output files"""
+        temp_fn = f'{self._temp_file_counter}.{self.output_path}'
+        self._temp_file_counter += 1
+        return temp_fn
 
     def process_header(self, file):
         """Read the file to find out where the data starts, return the line number of the first data"""
         header_path = pathlib.Path(self.temp_dir)
-        header_file_name = header_path / next(self.temp_file_name_gen)
+        header_file_name = header_path / self._get_next_temp_file_name()
         header_path.mkdir(exist_ok=True)
         with bgzf.open(filename=header_file_name, mode='wt') as header_file:
             for line in file:
@@ -326,7 +324,7 @@ class VCFAnnotator(object):
 
         # seed the input queue
         for _ in range(0, self.processors):
-            in_queue.put(obj={'data': next(chunks_iter), 'identifier': next(self.temp_file_name_gen)})
+            in_queue.put(obj={'data': next(chunks_iter), 'identifier': self._get_next_temp_file_name()})
             chunk_count += 1
 
         # start the worker processes
@@ -342,7 +340,7 @@ class VCFAnnotator(object):
             done = out_queue.get(block=True)
             try:
                 chunk = next(chunks_iter)
-                work = {'data': chunk, 'identifier': next(self.temp_file_name_gen)}
+                work = {'data': chunk, 'identifier': self._get_next_temp_file_name()}
                 in_queue.put(work)
                 chunk_count += 1
                 if chunk_count % self.chunk_log_frequency == 0:
