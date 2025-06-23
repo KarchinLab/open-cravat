@@ -413,8 +413,11 @@ def generate_report(job_id, report_type):
     filerouter = file_router()
     job = filerouter.load_job(job_id)
     db_path = job.db_path
-    report_args = ['oc', 'report', db_path, '-t', report_type]
-    tasks.run_report.delay(report_args)
+    tmp_flag_path = os.path.join(os.path.dirname(db_path), job_id + '.report_being_generated.' + report_type)
+    wf = open(tmp_flag_path, 'w')
+    wf.write(report_type)
+    wf.close()
+    tasks.run_report.delay(db_path, report_type, tmp_flag_path)
     return 'done', {'Content-type': 'text/plain'}
 
 def download_report(job_id, report_type):
