@@ -89,6 +89,8 @@ class BaseAnnotator(object):
                 self.annotator_version = self.conf["version"]
             else:
                 self.annotator_version = ""
+            self.batch_size = self.conf.get('batch_size', 1)
+            self.logger.info(f'{self.annotator_name} - batch size: {self.batch_size}')
         except Exception as e:
             self._log_exception(e)
 
@@ -273,29 +275,26 @@ class BaseAnnotator(object):
             self.last_status_update_time = time.time()
             self.output_columns = self.conf["output_columns"]
             self.make_json_colnames()
-            for lnum, line, input_data, secondary_data in self._get_input():
-                try:
+            for batch in self.get_batched_input():
+                annotations = self.annotate_batch(batch)
+                for lnum, line, input_data, secondary_data, out in annotations:
                     self.log_progress(lnum)
-                    # * allele and undefined non-canonical chroms are skipped.
-                    if self.is_star_allele(input_data) or self.should_skip_chrom(input_data):
+                    if 'error' in out:
+                        self._log_runtime_exception(lnum, line, input_data, out['error'])
                         continue
-                    if secondary_data == {}:
-                        output_dict = self.annotate(input_data)
-                    else:
-                        output_dict = self.annotate(input_data, secondary_data)
+
                     # This enables summarizing without writing for now.
-                    if output_dict is None:
+                    if out is None:
                         continue
                     # Handles empty table-format column data.
-                    output_dict = self.handle_jsondata(output_dict)
+                    out = self.handle_jsondata(out)
                     # Preserves the first column
-                    output_dict[self._id_col_name] = input_data[self._id_col_name]
+                    out[self._id_col_name] = input_data[self._id_col_name]
                     # Fill absent columns with empty strings
-                    output_dict = self.fill_empty_output(output_dict)
+                    out = self.fill_empty_output(out)
                     # Writes output.
-                    self.output_writer.write_data(output_dict)
-                except Exception as e:
-                    self._log_runtime_exception(lnum, line, input_data, e)
+                    self.output_writer.write_data(out)
+
             # This does summarizing.
             self.postprocess()
             self.base_cleanup()
@@ -615,6 +614,49 @@ class BaseAnnotator(object):
             except Exception as e:
                 self._log_runtime_error(lnum, e)
                 continue
+
+    def _filter_input(self, lnum, line, input_data, secondary_data):
+        # * allele and undefined non-canonical chroms are skipped.
+        if self.is_star_allele(input_data) or self.should_skip_chrom(input_data):
+            return None
+        # This enables summarizing without writing for now.
+        # if output_dict is None:
+        #     return None
+        return lnum, line, input_data, secondary_data
+
+    def get_batched_input(self):
+        batch = []
+        batch_count = 0
+        for lnum, line, input_data, secondary_data in self._get_input():
+            # add input lines line by line if they are valid to be annotated
+            if self._filter_input(lnum, line, input_data, secondary_data):
+                batch.append((lnum, line, input_data, secondary_data))
+                batch_count += 1
+
+            # if we have filled a batch, yield then clear the batch
+            if batch_count == self.batch_size:
+                yield batch
+                batch = []
+                batch_count = 0
+
+        # after the last input, yield the partial batch
+        yield batch
+        return
+
+    def annotate_batch(self, batch_input):
+        """Annotate a batch of variants all at once, returns an iterator of annotated wdicts
+
+        By default, this will return a generator that annotates one by one. This
+        should be overridden for annotators that can efficiently annotate many lines at once,
+        for example using an API. See clingen-allele-registry annotator.
+        """
+        for lnum, line, input_data, secondary_data in batch_input:
+            out = {}
+            if secondary_data:
+                out = self.annotate(input_data, secondary_data)
+            else:
+                out = self.annotate(input_data)
+            yield lnum, line, input_data, secondary_data, out
 
     def annotate(self, input_data):
         sys.stdout.write(

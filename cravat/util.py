@@ -2,6 +2,8 @@ import re
 import os
 import importlib
 import sys
+from itertools import chain, islice
+
 import oyaml as yaml
 import chardet
 import gzip
@@ -17,6 +19,19 @@ import argparse
 from types import SimpleNamespace
 import math
 
+
+def batched(iterable, n):
+    """
+    group the iterator into a new iterator of batches of size n.
+
+    backfill for python 3.12 itertools.batched. borrowed from python.org discussion
+    https://discuss.python.org/t/add-batching-function-to-itertools-module/19357/19?page=2
+    """
+    it = iter(iterable)
+    for first in it:
+        batch = chain((first,), islice(it, n - 1))
+        yield batch
+        next(islice(batch, n, n), None)
 
 def discretize_scalar(score, cutoffs):
     """Locate the location of `score` in a list[tuple(float, str)] of
