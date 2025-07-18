@@ -1312,7 +1312,7 @@ function buildPackagesSelector () {
 		addEl(packageDropdown, el);
   	}
     var labelDiv = getEl('div');
-    labelDiv.innerText = 'Available Packages (beta)';
+    labelDiv.innerText = 'Available Packages';
     labelDiv.style['font-size'] = '1.2em';
     labelDiv.style['font-weight'] = 'bold';
     addEl(packageDiv, space);
