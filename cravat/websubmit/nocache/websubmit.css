@@ -452,6 +452,8 @@ button {
 .checkbox-group-element {
     width: 50%;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .checkbox-group-element label {
