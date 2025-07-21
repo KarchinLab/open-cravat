@@ -90,7 +90,6 @@ class BaseAnnotator(object):
             else:
                 self.annotator_version = ""
             self.batch_size = self.conf.get('batch_size', 1)
-            self.logger.info(f'{self.annotator_name} - batch size: {self.batch_size}')
         except Exception as e:
             self._log_exception(e)
 
