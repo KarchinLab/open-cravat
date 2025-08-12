@@ -1312,7 +1312,7 @@ function buildPackagesSelector () {
 		addEl(packageDropdown, el);
   	}
     var labelDiv = getEl('div');
-    labelDiv.innerText = 'Available Packages (beta)';
+    labelDiv.innerText = 'Available Packages';
     labelDiv.style['font-size'] = '1.2em';
     labelDiv.style['font-weight'] = 'bold';
     addEl(packageDiv, space);
@@ -2074,12 +2074,13 @@ function addMediatorListeners() {
 }
 
 function requestUserEmailAndSurvey() {
-    if (OC.servermode) { return; }
     $.get('/submit/getsystemconfinfo').done(function (response) {
-        const emailOptOut = response['content']['user_email_opt_out'];
-        const email= response['content']['user_email'];
-        if (!emailOptOut && !email) {
-            document.getElementById('user-email-request-div').style.display = 'flex';
+        if (!OC.servermode) {
+            const emailOptOut = response['content']['user_email_opt_out'];
+            const email = response['content']['user_email'];
+            if (!emailOptOut && !email) {
+                document.getElementById('user-email-request-div').style.display = 'flex';
+            }
         }
 
         const userSurvey = response['content']['show_user_survey'];
