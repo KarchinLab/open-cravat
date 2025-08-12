@@ -10,8 +10,7 @@ import {
 
 OC.adminMode = false;
 OC.noRemDays = null;
-OC.noguest = false;
-OC.publicStorePageMode = false;
+OC.noguest = false
 
 function openSubmitPage () {
     location.href = location.protocol + '//' + window.location.host + '/submit/nocache/index.html';
@@ -304,21 +303,8 @@ function showLoggedControl (username) {
     addAccountDiv(username);
 }
 
-function isStorePage() {
-    return window.location.href.indexOf("store") > -1;
-}
-
-function enablePublicStore() {
-    OC.publicStorePageMode = true;
-    OC.mediator.publish('navigate', 'storediv');
-}
-
 function showUnloggedControl () {
-    if (isStorePage()) {
-        enablePublicStore();
-    } else {
-        openLoginPage();
-    }
+    openLoginPage();
 }
 
 function doAfterLogin (username) {

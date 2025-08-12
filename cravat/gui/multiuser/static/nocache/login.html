@@ -3,36 +3,31 @@
 <head>
     <title>OpenCRAVAT Server</title>
     <link rel="shortcut icon" href='#'>
-    <link rel="icon" href="/submit/logo_transparent.png" />
-    <link rel="stylesheet" href="/submit/nocache/websubmit.css?ver=1.6.0">
-    <link rel="stylesheet" href="/store/nocache/webstore.css?ver=1.6.0">
-    <link rel="stylesheet" href="/server/nocache/cravat_multiuser.css?ver=1.6.0">
+    <link rel="icon" type="image/png" href="/submit/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/submit/favicon.svg" />
+    <link rel="shortcut icon"  href="/submit/favicon.ico" />
+    <link rel="stylesheet" href="/submit/nocache/websubmit.css?ver=2.5.0">
+    <link rel="stylesheet" href="/store/nocache/webstore.css?ver=2.5.0">
+    <link rel="stylesheet" href="/server/nocache/cravat_multiuser.css?ver=2.5.0">
     <script src="/submit/jquery-3.3.1.min.js"></script>
-    <script src='/store/nocache/webstore.js?ver=1.6.0'></script>
-    <script src='/server/nocache/cravat_multiuser_module.js?ver=1.7.0' type="module"></script>
-    <script>
-        $(document).ready(function() {
-            multiuser_run();
-        });
-    </script> 
+    <script src='/server/nocache/cravat_multiuser_module.js?ver=2.5.0' type="module"></script>
 </head>
 
 <body>
 
 <div id='container'>
   <div id='sidenav'>
-    <img src='/server/nocache/logo.png' style='width: 6rem;'/>
+    <img src='/server/nocache/OC_LOGO_WHITE.svg' style='width: 10rem;'/>
     <ul>
       <li><a href='https://opencravat.org' target='_blank'>Home</a></li>
-      <li><a href='https://opencravat.org/about.html' target='_blank'>About us</a></li>
-      <li><a href='https://opencravat.org/resources.html' target='_blank'>Resources</a></li>
+      <li><a href='https://opencravat.org/what-is-opencravat/' target='_blank'>About us</a></li>
       <li><a href='https://www.youtube.com/channel/UC37B3Fx6aplDeNrLlpHg6cw' target='_blank'>
         YouTube </a></li>
-      <li><a href='https://opencravat.org/events.html' target='_blank'>Events</a></li>
-      <li><a href='https://opencravat.org/store.html' target='_blank'>Annotations</a></li>
-      <li><a href='https://opencravat.org/faqs.html' target='_blank'>FAQs</a></li>
-      <li><a href='https://opencravat.org/contact.html' target='_blank'>Contact Us</a></li>
-      <li><a href='https://open-cravat.readthedocs.io/en/latest/' target='_blank'>
+      <!-- TODO: re-add store link once the store update has been made -->
+      <!--<li><a href='https://opencravat.org/store.html' target='_blank'>Annotations</a></li>-->
+      <li><a href='https://opencravat.org/faq/' target='_blank'>FAQ</a></li>
+      <li><a href='https://opencravat.org/social-media/' target='_blank'>Contact Us</a></li>
+      <li><a href='https://docs.opencravat.org/en/latest/' target='_blank'>
         Documentation</a></li>
     </ul>
   </div>
@@ -42,23 +37,23 @@
               <span>OpenCRAVAT Server</span>
               <input type='text' id='login_username' placeholder='Email' />
               <input type='password' id='login_password' placeholder='Password' />
-              <button id='login_button' onclick='login();' >Login</button>
-              <span style='cursor: pointer; font-size: 12px;'>
+              <button id='login_button'>Login</button>
+              <span style='cursor: pointer; font-size: 12px;' id='forgot-pw-span'>
                 Forgot password?</span>
               <span style='font-size: 12px;'>or</span>
-              <button onclick='showSignupDiv();'>Sign up</button>
-              <div id='guestdiv'
+              <button id='signup-btn'>Sign up</button>
+              <div id='guestdiv'>
                   <span style='font-size: 12px;'>or</span>
-                  <button id='guest_button' onclick='tryAsGuest();' >Try as Guest</button>
+                  <button id='guest_button'>Try as Guest</button>
               </div>
               <a href='https://open-cravat.readthedocs.io/en/latest/' target='_blank' style='font-size: 11px; color: white; text-decoration: none; cursor: pointer;'>Help</a>
           </div>
           <div id='forgotpassworddiv' style='display: none; margin-top: 15px;'>
               <div id='forgotpasswordgetquestiondiv'>
                   <input type='text' id='forgotpasswordemail' placeholder='Email' />
-                  <button id='forgotpasswordgetquestionbutton' onclick='getPasswordQuestion();'>Get password question</button>
+                  <button id='forgotpasswordgetquestionbutton'>Get password question</button>
                   <br />
-                  <span style='cursor: pointer; font-size: 22px;' onclick='showLoginDiv();'>&#x21e6;</span>
+                  <span style='cursor: pointer; font-size: 22px;' id='show-login-span'>&#x21e6;</span>
               </div>
               <div id='forgotpasswordquestionanswerdiv' style='font-weight: normal;' >
                   <div style='font-size: 16px;'>
@@ -66,7 +61,7 @@
                   </div>
                   <input type='text' id='forgotpasswordanswer' placeholder='Answer' />
               <br />
-              <button id='forgotpasswordsubmitbutton' onclick='submitForgotPasswordAnswer();'>Submit</button>
+              <button id='forgotpasswordsubmitbutton'>Submit</button>
               </div>
           </div>
           <div id='signupdiv' style='display: none;'>
@@ -80,9 +75,9 @@
               <br />
               <input type='text' id='signupanswer' placeholder='Password retrieval answer' />
               <br />
-              <button id='signupbutton' onclick='signupSubmit();'>Create account</button>
+              <button id='signupbutton'>Create account</button>
               <br />
-              <span style='cursor: pointer; font-size: 22px;' onclick='showLoginDiv();'>&#x21e6;</span>
+              <span style='cursor: pointer; font-size: 22px;' id='show-login-div-btn'>&#x21e6;</span>
           </div>
       </div>
   </div>

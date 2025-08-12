@@ -26,13 +26,13 @@
 }
 
 #wrapdiv {
-    display: block;
-    background-color: #3c5788;
-    border-radius: 17px;
+    display: block; 
+    background-color: #3c5788; 
+    border-radius: 17px; 
     padding: 3rem;
-    width: 260px;
-    font-size: 23px;
-    color: white;
+    width: 260px; 
+    font-size: 23px; 
+    color: white; 
     font-weight: bold;
     position: absolute;
     top: calc(50% - 200px);
@@ -41,17 +41,17 @@
 }
 
 #wrapdiv input {
-    width: 100%;
-    border-style: none;
-    height: 30px;
+    width: 100%; 
+    border-style: none; 
+    height: 30px; 
     margin-top: 12px;
 }
 
 #wrapdiv button {
-    width: 100%;
-    border-style: none;
-    height: 30px;
-    margin-top: 12px;
+    width: 100%; 
+    border-style: none; 
+    height: 30px; 
+    margin-top: 12px; 
     background-color: #a3e3ff;
 }
 
@@ -181,6 +181,10 @@ body * {
 #sidenav a {
   color: white;
   text-decoration: none;
+}
+
+#sidenav a:hover {
+    text-decoration: underline;
 }
 
 #container {
