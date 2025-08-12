@@ -83,6 +83,9 @@ function hidePageselect() {
 }
 
 function showPageselect() {
+    if (OC && OC.publicStorePageMode) {
+        return;
+    }
     document.getElementById('pageselect').style.display = 'block';
 }
 

@@ -92,6 +92,26 @@ code {
     padding: 10px;
 }
 
+#login_tabhead {
+    display: inline-block;
+    text-align: center;
+    padding: 6px;
+    height: 30px;
+    width: 128px;
+    vertical-align: bottom;
+    cursor: pointer;
+    background-color: #94d1eb;
+    border-radius: 2px 2px 0px 0px;
+    border: 1px solid #939393;
+    border-bottom: 0px;
+    margin-left: 2px;
+    font-family: roboto-medium;
+}
+
+#login_tabhead:hover {
+    background-color: #5cb5e5;
+}
+
 .container {
     font-size: 13px;
     position: relative;

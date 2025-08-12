@@ -1749,6 +1749,7 @@ function setupServerMode () {
     });
     document.getElementById('settingsdiv').style.display = 'none';
     document.querySelector('.threedotsdiv').style.display = 'none';
+    if (!OC || !OC.username) { return; }
     $.ajax({
         url: '/server/usersettings',
         type: 'get',
@@ -2111,7 +2112,7 @@ function setLastAssembly () {
             },
         });
     } else {
-        if (OC.GLOBALS.usersettings.hasOwnProperty('lastAssembly')) {
+        if (OC && OC.GLOBALS && OC.GLOBALS.usersettings && OC.GLOBALS.usersettings.hasOwnProperty('lastAssembly')) {
             sel.value = OC.GLOBALS.usersettings.lastAssembly;
         } else {
             sel.value = null;

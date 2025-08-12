@@ -20,6 +20,9 @@ function addEl(pelem, child) {
 function changePage (selectedPageId) {
     const pageSelect = document.getElementById('pageselect');
     const pageIdDivs = pageSelect.children;
+    if (OC && OC.publicStorePageMode) {
+        selectedPageId = 'storediv'; // force store page
+    }
     for (let i = 0; i < pageIdDivs.length; i++) {
         const pageIdDiv = pageIdDivs[i];
         const pageId = pageIdDiv.getAttribute('value');
@@ -39,6 +42,26 @@ function changePage (selectedPageId) {
             }
         }
     }
+
+    if (OC && OC.publicStorePageMode) {
+        enablePublicStoreMode();
+    }
+}
+
+function enablePublicStoreMode() {
+    // hide navigation
+    const pageSelect = document.getElementById('pageselect');
+    const publicStoreHeader = document.getElementById('public-store-header');
+    pageSelect.style.display = 'none';
+    publicStoreHeader.style.display = 'block';
+}
+
+function disablePublicStoreMode() {
+    // show navigation
+    const pageSelect = document.getElementById('pageselect');
+    const publicStoreHeader = document.getElementById('public-store-header');
+    pageSelect.style.display = 'block';
+    publicStoreHeader.style.display = 'none';
 }
 
 /************** Mediator / PubSub ****************/
@@ -119,7 +142,7 @@ function prettyBytes(num, precision = 3, addSpace = true) {
     const exponent = Math.min(Math.floor(Math.log10(num < 0 ? -num : num) / 3), UNITS.length - 1);
     const n = Number(((num < 0 ? -num : num) / 1000 ** exponent).toPrecision(precision));
     return (num < 0 ? '-' : '') + n + (addSpace ? ' ' : '') + UNITS[exponent];
-};
+}
 
 function getTimestamp() {
     var d = new Date()

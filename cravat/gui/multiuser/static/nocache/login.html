@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/server/nocache/cravat_multiuser.css?ver=1.6.0">
     <script src="/submit/jquery-3.3.1.min.js"></script>
     <script src='/store/nocache/webstore.js?ver=1.6.0'></script>
-    <script src='/server/nocache/cravat_multiuser.js?ver=1.6.0'></script>
+    <script src='/server/nocache/cravat_multiuser_module.js?ver=1.7.0' type="module"></script>
     <script>
         $(document).ready(function() {
             multiuser_run();
@@ -43,7 +43,7 @@
               <input type='text' id='login_username' placeholder='Email' />
               <input type='password' id='login_password' placeholder='Password' />
               <button id='login_button' onclick='login();' >Login</button>
-              <span style='cursor: pointer; font-size: 12px;' onclick='forgotPassword();'>
+              <span style='cursor: pointer; font-size: 12px;'>
                 Forgot password?</span>
               <span style='font-size: 12px;'>or</span>
               <button onclick='showSignupDiv();'>Sign up</button>
