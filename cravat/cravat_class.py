@@ -1681,9 +1681,9 @@ class Cravat(object):
                 arg_dict["filterpath"] = self.args.filterpath
                 Reporter = util.load_class(module.script_path, "Reporter")
                 reporter = Reporter(arg_dict)
-                await reporter.prep()
+                reporter.prep()
                 stime = time.time()
-                response_t = await reporter.run()
+                response_t = reporter.run()
                 output_fns = None
                 if self.args.silent == False:
                     response_type = type(response_t)
@@ -1710,7 +1710,7 @@ class Cravat(object):
                         if hasattr(self, "logger"):
                             write_log_msg(self.logger, e)
                     if "reporter" in locals() and hasattr(reporter, 'close_db'):
-                        await reporter.close_db()
+                        reporter.close_db()
                 all_reporters_ran_well = False
         return all_reporters_ran_well, response
 
