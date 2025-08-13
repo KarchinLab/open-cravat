@@ -8,6 +8,7 @@ function addHeaderEventHandlers() {
     document.getElementById('submitdiv_tabhead').addEventListener('click', () => OC.mediator.publish('navigate', 'submitdiv'));
     document.getElementById('storediv_tabhead').addEventListener('click', () => OC.mediator.publish('navigate', 'storediv'));
     document.getElementById('admindiv_tabhead').addEventListener('click', () => OC.mediator.publish('navigate', 'admindiv'));
+    document.getElementById('login_tabhead').addEventListener('click', () => OC.mediator.publish('navigate', 'logindiv'));
 
     // system update button
     document.getElementById('store-systemmoduleupdate-button').addEventListener('click', () => OC.mediator.publish('system.update'));

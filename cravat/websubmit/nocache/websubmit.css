@@ -106,6 +106,7 @@ code {
     border-bottom: 0px;
     margin-left: 2px;
     font-family: roboto-medium;
+    color: white;
 }
 
 #login_tabhead:hover {

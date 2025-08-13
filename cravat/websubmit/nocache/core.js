@@ -18,6 +18,9 @@ function addEl(pelem, child) {
  * @param selectedPageId - the name of the page to change to. valid options are 'storediv', 'submitdiv'
  */
 function changePage (selectedPageId) {
+    if (selectedPageId === 'logindiv') {
+        window.location.href = '/server/nocache/login.html';
+    }
     const pageSelect = document.getElementById('pageselect');
     const pageIdDivs = pageSelect.children;
     if (OC && OC.publicStorePageMode) {
