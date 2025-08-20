@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-from flask import request, jsonify
+from flask import request, jsonify, send_file, abort
 from importlib import util as importlib_util
 from sqlite3 import connect
 
@@ -52,25 +52,9 @@ def serve_widgetfile(module, filename):
          module,
          filename
         )
-
-    if os.path.exists(filepath):
-        ct, encoding = mimetypes.guess_type(str(filepath))
-        if not ct:
-            ct = "application/octet-stream"
-
-        def file_stream():
-            with open(filepath, 'rb') as f:
-                for line in f:
-                    yield line
-        headers = {
-            "Content-Type": ct,
-            "Cache-Control": "no-cache"
-        }
-
-        if encoding:
-            headers['Content-Encoding'] = encoding
-
-        return file_stream(), headers
+    if not os.path.exists(filepath):
+        abort(404)
+    return send_file(filepath, conditional=True)
 
 @with_job_id_and_path
 def get_variant_cols(job_id, dbpath):
