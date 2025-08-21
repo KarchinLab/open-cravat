@@ -29,6 +29,7 @@ import gzip
 from cravat.cravat_util import max_version_supported_for_migration, status_from_db
 import cravat.util
 import logging
+from collections import OrderedDict
 try:
     import cravat_multiuser
 except ImportError:
@@ -51,7 +52,9 @@ class FileRouter(object):
         self.db_extension = '.sqlite'
         self.log_extension = '.log'
         self.status_extension = '.status.json'
-        self.job_statuses = {}
+        # FIX: Use OrderedDict with max size limit to prevent memory leak
+        self.job_statuses = OrderedDict()
+        self.max_cached_statuses = 100  # Keep only last 100 job statuses
 
     async def get_jobs_dirs (self, request, given_username=None):
         root_jobs_dir = au.get_jobs_dir()
@@ -193,7 +196,13 @@ class FileRouter(object):
                         statusjson = yaml.safe_load(f)
                         break
             if statusjson != {}:
+                # FIX: Implement LRU eviction to prevent unbounded memory growth
+                if len(self.job_statuses) >= self.max_cached_statuses:
+                    # Remove oldest entry (FIFO)
+                    self.job_statuses.popitem(last=False)
                 self.job_statuses[job_id] = statusjson
+                # Move to end (most recently used)
+                self.job_statuses.move_to_end(job_id)
         except Exception as e:
             traceback.print_exc()
             job_dir = None
@@ -754,21 +763,28 @@ async def generate_report(request):
         report_generation_ps[job_id] = {}
     report_generation_ps[job_id][report_type] = True
     tmp_flag_path = os.path.join(os.path.dirname(job_db_path), job_id + '.report_being_generated.' + report_type)
-    wf = open(tmp_flag_path, 'w')
-    wf.write(report_type)
-    wf.close()
-    p = await asyncio.create_subprocess_exec('oc', *run_args, stderr=asyncio.subprocess.PIPE)
-    out, err = await p.communicate()
-    os.remove(tmp_flag_path)
-    if report_type in report_generation_ps[job_id]:
-        del report_generation_ps[job_id][report_type]
-    if job_id in report_generation_ps and len(report_generation_ps[job_id]) == 0:
-        del report_generation_ps[job_id]
-    response = 'done'
-    if len(err) > 0:
-        logger = logging.getLogger()
-        logger.error(err.decode('utf-8'))
-        response = 'fail'
+    
+    # FIX: Use try-finally to ensure cleanup even on errors
+    try:
+        wf = open(tmp_flag_path, 'w')
+        wf.write(report_type)
+        wf.close()
+        p = await asyncio.create_subprocess_exec('oc', *run_args, stderr=asyncio.subprocess.PIPE)
+        out, err = await p.communicate()
+        response = 'done'
+        if len(err) > 0:
+            logger = logging.getLogger()
+            logger.error(err.decode('utf-8'))
+            response = 'fail'
+    finally:
+        # Ensure cleanup happens even if an error occurs
+        if os.path.exists(tmp_flag_path):
+            os.remove(tmp_flag_path)
+        if job_id in report_generation_ps and report_type in report_generation_ps[job_id]:
+            del report_generation_ps[job_id][report_type]
+        if job_id in report_generation_ps and len(report_generation_ps[job_id]) == 0:
+            del report_generation_ps[job_id]
+    
     return web.json_response(response)
 
 async def download_report(request):

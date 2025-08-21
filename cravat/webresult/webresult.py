@@ -10,10 +10,16 @@ from cravat import CravatFilter
 from cravat.constants import base_smartfilters
 from aiohttp import web
 import time
+import asyncio
+from weakref import WeakValueDictionary
 try:
     import cravat_multiuser
 except ImportError:
     pass
+
+# FIX: Connection pooling to prevent SQLite connection leaks
+_db_connections = WeakValueDictionary()  # Automatically cleans up dead connections
+_connection_locks = {}  # Prevent race conditions when creating connections
 
 def get_filepath (path):
     filepath = os.sep.join(path.split('/'))
@@ -128,11 +134,62 @@ async def rename_layout_setting (request):
     content = {}
     return web.json_response(content)
 
-async def get_db_conn (dbpath):
+async def get_db_conn(dbpath):
+    """Get a pooled database connection with proper cleanup"""
     if dbpath is None:
         return None
-    conn = await aiosqlite.connect(dbpath)
-    return conn
+    
+    # Check if we have an existing connection
+    if dbpath in _db_connections:
+        conn = _db_connections[dbpath]
+        # Verify connection is still alive
+        try:
+            await conn.execute("SELECT 1")
+            return conn
+        except:
+            # Connection is dead, remove it
+            del _db_connections[dbpath]
+    
+    # Create lock for this dbpath if doesn't exist
+    if dbpath not in _connection_locks:
+        _connection_locks[dbpath] = asyncio.Lock()
+    
+    # Acquire lock to prevent race condition
+    async with _connection_locks[dbpath]:
+        # Double-check after acquiring lock
+        if dbpath in _db_connections:
+            return _db_connections[dbpath]
+        
+        # Create new connection
+        conn = await aiosqlite.connect(dbpath)
+        # Enable WAL mode for better concurrency
+        await conn.execute("PRAGMA journal_mode=WAL")
+        await conn.execute("PRAGMA cache_size=10000")  # 10MB cache
+        _db_connections[dbpath] = conn
+        return conn
+
+# Add cleanup function to be called periodically
+async def cleanup_connections():
+    """Clean up stale connections - call this periodically"""
+    stale_paths = []
+    for dbpath, conn in list(_db_connections.items()):
+        try:
+            await conn.execute("SELECT 1")
+        except:
+            stale_paths.append(dbpath)
+    
+    for dbpath in stale_paths:
+        if dbpath in _db_connections:
+            try:
+                await _db_connections[dbpath].close()
+            except:
+                pass
+            del _db_connections[dbpath]
+    
+    # Clean up locks for non-existent connections
+    for dbpath in list(_connection_locks.keys()):
+        if dbpath not in _db_connections:
+            del _connection_locks[dbpath]
 
 async def delete_layout_setting (request):
     queries = request.rel_url.query
