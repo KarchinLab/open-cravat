@@ -1,6 +1,6 @@
-FROM python:3.11
+FROM python:3.13
 
-ARG PACKAGEDIR=/usr/local/lib/python3.11/site-packages/cravat
+ARG PACKAGEDIR=/usr/local/lib/python3.13/site-packages/cravat
 
 # Install utilities
 RUN apt update && \
@@ -10,9 +10,8 @@ RUN mkdir -p /var/log/supervisor
 
 # Needed for gds-converter module
 # Install latest R, following docs at https://cloud.r-project.org/bin/linux/debian/
-RUN apt install -y --no-install-recommends software-properties-common dirmngr && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-key '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7' && \
-    apt update && apt install -y r-base && \
+RUN apt update && \
+	apt install -y r-base r-base-dev && \
     pip install rpy2 uwsgi
 # Install R packages
 RUN R -e 'options(Ncpus = parallel::detectCores()); install.packages("BiocManager"); BiocManager::install("SeqArray");'
