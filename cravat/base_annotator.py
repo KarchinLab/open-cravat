@@ -278,13 +278,14 @@ class BaseAnnotator(object):
                 annotations = self.annotate_batch(batch)
                 for lnum, line, input_data, secondary_data, out in annotations:
                     self.log_progress(lnum)
-                    if 'error' in out:
-                        self._log_runtime_exception(lnum, line, input_data, out['error'])
-                        continue
-
                     # This enables summarizing without writing for now.
                     if out is None:
                         continue
+
+                    if isinstance(out, dict) and 'error' in out:
+                        self._log_runtime_exception(lnum, line, input_data, out['error'])
+                        continue
+
                     # Handles empty table-format column data.
                     out = self.handle_jsondata(out)
                     # Preserves the first column
