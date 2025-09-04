@@ -13,7 +13,7 @@ def format_response(response, version):
 
 def live_annotate(version=None):
     queries = dict(request.values) if request.values else request.json
-    annotators = queries.get('annotators', None)
+    annotators = queries.get('annotators', [])
     is_multiuser = g.is_multiuser
     result = tasks.api_live_annotate.apply_async(kwargs={"queries":queries, "annotators":annotators, "is_multiuser": is_multiuser})
     resp = result.get()
