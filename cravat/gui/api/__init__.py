@@ -117,7 +117,7 @@ def get_coordinates_from_request_params(queries):
             parameters['pos'] = int(parameters['pos'])
         except ValueError as e:
             raise(abort(400, description="'pos' parameter could not be parsed to int."))
-        original_input = {'type': 'coordinates', 'input': f'{queries["chrom"]} {queries["pos"]} {queries["ref_base"]} {queries["alt_base"]} {queries.get('assembly')}'}
+        original_input = {'type': 'coordinates', 'input': f'{queries["chrom"]} {queries["pos"]} {queries["ref_base"]} {queries["alt_base"]} {queries.get("assembly")}'}
     elif 'hgvs' in queries.keys() and queries['hgvs'] and 'assembly' in queries.keys():
         # make hgvs api call
         original_input = {'type': 'hgvs', 'input': queries['hgvs']}
