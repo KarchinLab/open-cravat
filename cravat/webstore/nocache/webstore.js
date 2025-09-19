@@ -1403,7 +1403,27 @@ function writeInstallationMsg(msg) {
     }
 }
 
+function handleInstallationProgress() {
+    //TODO
+}
 
+function installationProgressMessage(messsage, error) {
+    if (message) {
+        label = document.getElementById('update-all-status');
+        label.innerText = messsage;
+    }
+    if (error) {
+        errorContainer = document.getElementById('update-all-errors');
+        errorCapsule = getErrorCapsule(error);
+        errorContainer.appendChild(errorCapsule);
+    }
+}
+
+function getErrorCapsule(error) {
+    const c = document.createElement('span');
+    c.innerText = error;
+    return c;
+}
 
 function getHighestVersionForRemoteModule(module) {
     var versions = OC.remoteModuleInfo[module].versions;
@@ -1826,14 +1846,21 @@ function onClickStoreUpdateAllButton() {
     });
 }
 
+function setUpdateStatus(text) {
+    let statusSpan = document.getElementById('update-all-status');
+    statusSpan.innerText = text;
+}
+
 function announceStoreUpdatingAll() {
-    var button = document.getElementById('store-update-all-button');
-    button.style.display = 'none';
+    // var button = document.getElementById('store-update-all-button');
+    // button.style.display = 'none';
+    setUpdateStatus(`Updating ${Object.keys(OC.updates).length} modules.`);
 }
 
 function announceStoreUpdateAllAvailable() {
     //var span = document.getElementById('store-update-all-span');
     //span.textContent = 'Updates to your installed modules are available!';
+    setUpdateStatus(`${Object.keys(OC.updates).length} modules have available updates`);
     var button = document.getElementById('store-update-all-button');
     button.style.display = 'inline';
     var div = document.getElementById('update-available-div')
