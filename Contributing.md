@@ -1,6 +1,8 @@
-````markdown
----
-# Contributing to OpenCRAVAT
+````
+````
+
+#Contributing to OpenCRAVAT
+
 
 Thank you for considering contributing to OpenCRAVAT!
 
@@ -11,7 +13,7 @@ This document provides guidelines and expectations to make contributing clear an
 
 ---
 
-## Table of Contents
+##Table of Contents
 
 - [Code of Conduct](#code-of-conduct)  
 - [Ways to Contribute](#ways-to-contribute)  
@@ -25,14 +27,14 @@ This document provides guidelines and expectations to make contributing clear an
 
 ---
 
-## Code of Conduct
+##Code of Conduct
 
 By participating in this project, you agree to uphold our [Code of Conduct](CODE_OF_CONDUCT.md).  
 Please help us foster a positive and respectful environment for everyone.
 
 ---
 
-## Ways to Contribute
+##Ways to Contribute
 
 There are many ways to help:
 
@@ -44,16 +46,18 @@ There are many ways to help:
 - **Community support**: Answer questions on GitHub Discussions, BioStars, or other forums.
 
 No contribution is too small — all efforts help the community.
-
 ---
 
-## Getting Started
+##Getting Started
 
 1. **Fork the repository**: Start by making your own copy.  
 2. **Clone your fork**:  
    ```bash
    git clone https://github.com/<your-username>/open-cravat.git
    cd open-cravat
+
+````
+
 ````
 
 3. **Set up your environment**:
@@ -154,7 +158,6 @@ This guide was adapted from:
 * [Atom’s Contributing Guide](https://github.com/atom/atom/blob/master/CONTRIBUTING.md)
 
 ---
-
 Thank you for contributing to OpenCRAVAT!
-
 ```
+````
