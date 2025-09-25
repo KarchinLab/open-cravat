@@ -1,7 +1,7 @@
 ````
 ````
 
-#Contributing to OpenCRAVAT
+# Contributing to OpenCRAVAT
 
 
 Thank you for considering contributing to OpenCRAVAT!
