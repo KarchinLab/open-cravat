@@ -24,14 +24,14 @@ This document provides guidelines and expectations to make contributing clear an
 
 ---
 
-##Code of Conduct
+## Code of Conduct
 
 By participating in this project, you agree to uphold our [Code of Conduct](CODE_OF_CONDUCT.md).  
 Please help us foster a positive and respectful environment for everyone.
 
 ---
 
-##Ways to Contribute
+## Ways to Contribute
 
 There are many ways to help:
 
@@ -45,7 +45,7 @@ There are many ways to help:
 No contribution is too small — all efforts help the community.
 ---
 
-##Getting Started
+## Getting Started
 
 1. **Fork the repository**: Start by making your own copy.  
 2. **Clone your fork**:  
