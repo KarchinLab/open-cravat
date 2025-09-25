@@ -1,5 +1,3 @@
-````
-````
 # Contributing to OpenCRAVAT
 
 
