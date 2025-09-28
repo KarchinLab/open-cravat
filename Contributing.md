@@ -10,16 +10,16 @@ This document provides guidelines and expectations to make contributing clear an
 
 ---
 
-##Table of Contents
+## Table of Contents
 
-- [Code of Conduct](#code-of-conduct)  
-- [Ways to Contribute](#ways-to-contribute)  
-- [Getting Started](#getting-started)  
-- [Development Workflow](#development-workflow)  
-- [Coding Guidelines](#coding-guidelines)  
-- [Module Development](#module-development)  
-- [Reporting Issues](#reporting-issues)  
-- [Pull Requests](#pull-requests)  
+- [Code of Conduct](#code-of-conduct)
+- [Ways to Contribute](#ways-to-contribute)
+- [Getting Started](#getting-started)
+- [Development Workflow](#development-workflow)
+- [Coding Guidelines](#coding-guidelines)
+- [Module Development](#module-development)
+- [Reporting Issues](#reporting-issues)
+- [Pull Requests](#pull-requests)
 - [Community and Support](#community-and-support)
 
 ---
@@ -53,14 +53,12 @@ No contribution is too small — all efforts help the community.
    git clone https://github.com/<your-username>/open-cravat.git
    cd open-cravat
 
-````
-
-````
-
-3. **Set up your environment**:
+3. **Set up your environment**: (this example uses [uv](https://docs.astral.sh/uv/getting-started/installation/))
 
    ```bash
-   pip install -r requirements.txt
+   uv --python 3.11 venv
+   source .venv/bin/activate
+   uv pip install -e . pytest playwright pytest-xprocess
    ```
 4. **Run the test suite**:
 
@@ -90,7 +88,7 @@ We follow a simple GitHub flow:
 
 ## Coding Guidelines
 
-* Follow **PEP8** style for Python.
+* Follow **PEP8** style for Python. A formatter such as `ruff` can assist.
 * Keep functions modular and documented.
 * Write clear commit messages (e.g., `fix: correct variant position parsing`).
 * Add docstrings for public functions and classes.
@@ -156,5 +154,3 @@ This guide was adapted from:
 
 ---
 Thank you for contributing to OpenCRAVAT!
-```
-````
