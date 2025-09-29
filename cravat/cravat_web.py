@@ -517,6 +517,7 @@ loop = None
 
 
 def main(url=None, host=None, port=None):
+    import pdb; pdb.set_trace()
     global args
     try:
         global loop
