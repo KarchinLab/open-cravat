@@ -23,7 +23,6 @@ function addHeaderEventHandlers() {
 
 $(document).ready(function() {
     addHeaderEventHandlers();
-    OC.mediator.subscribe('showyesnodialog', showYesNoDialog);
 });
 
 function onClickStoreUpdateRemoteButton() {
@@ -165,61 +164,7 @@ function onClickSaveSystemConf () {
     updateSystemConf();
 }
 
-/**
- * YesNoDialog
- */
-function showYesNoDialog(content, yescallback, noSpace, justOk) {
-    var div = document.getElementById('yesnodialog');
-    if (div != undefined) {
-        $(div).remove();
-    }
-    var div = getEl('div');
-    div.id = 'yesnodialog';
-    if (typeof content === 'string') {
-        content = getTn(content);
-    }
-    content.id = 'yesnodialog-contentdiv'
-    addEl(div, content);
-    addEl(div, getEl('br'));
-    var btnDiv = getEl('div');
-    if (justOk) {
-        btnDiv.className = 'buttondiv';
-        var btn = getEl('button');
-        btn.textContent = 'Ok';
-        btn.addEventListener('click', function(evt) {
-            if (yescallback == undefined || yescallback == null) {
-                $('#yesnodialog').remove();
-            } else {
-                $('#yesnodialog').remove();
-                yescallback();
-            }
-        });
-        addEl(btnDiv, btn);
-    } else {
-        btnDiv.className = 'buttondiv';
-        var btn = getEl('button');
-        btn.textContent = 'Yes';
-        btn.addEventListener('click', function(evt) {
-            $('#yesnodialog').remove();
-            yescallback(true);
-        });
-        if (noSpace) {
-            btn.disabled = true;
-            btn.style.backgroundColor = '#e0e0e0';
-        }
-        addEl(btnDiv, btn);
-        var btn = getEl('button');
-        btn.textContent = 'No';
-        btn.addEventListener('click', function(evt) {
-            $('#yesnodialog').remove();
-            yescallback(false);
-        });
-        addEl(btnDiv, btn);
-    }
-    addEl(div, btnDiv);
-    addEl(document.body, div);
-}
 
 $(document).ready(() => addHeaderEventHandlers());
 
-export { addHeaderEventHandlers, loadSystemConf, showYesNoDialog };
+export { addHeaderEventHandlers, loadSystemConf };

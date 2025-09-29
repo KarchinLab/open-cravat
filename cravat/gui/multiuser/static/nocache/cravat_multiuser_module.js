@@ -4,10 +4,6 @@ import {
 	getTn, addEl, getEl, PubSub, OC
 } from '/submit/nocache/core.js'
 
-import {
-    showYesNoDialog
-} from '/submit/nocache/header.js'
-
 OC.adminMode = false;
 OC.noRemDays = null;
 OC.noguest = false;
@@ -52,6 +48,9 @@ function login () {
             } else if (response == 'fail') {
                 msgAccountDiv('Login failed');
             }
+        },
+        error: function(response) {
+            msgAccountDiv('Login failed');
         }
     });
 }
@@ -777,7 +776,8 @@ function msgAccountDiv (msg, callback) {
     } else if (typeof msg == 'object') {
         addEl(div, msg);
     }
-    showYesNoDialog(div, callback, false, true);
+    OC.mediator.publish('showyesnodialog', div, callback, false, true);
+    // showYesNoDialog(div, callback, false, true);
 }
 
 function isGuestAccount (username) {
