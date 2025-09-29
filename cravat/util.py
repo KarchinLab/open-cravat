@@ -10,7 +10,7 @@ import gzip
 import types
 import inspect
 import logging
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 from cravat.cravat_util import max_version_supported_for_migration
 import sqlite3
 import importlib.metadata

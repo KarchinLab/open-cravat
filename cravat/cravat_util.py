@@ -13,7 +13,7 @@ from pathlib import Path
 import datetime
 from . import admin_util as au
 from . import cravat_filter
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 from cravat import util
 import asyncio
 

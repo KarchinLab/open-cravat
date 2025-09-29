@@ -11,14 +11,14 @@ from . import util
 import requests
 import traceback
 import re
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 from collections import defaultdict
 from types import SimpleNamespace
 from . import exceptions
 from collections.abc import MutableMapping
 import multiprocessing
 import importlib.metadata
-import packaging
+import packaging.requirements
 import traceback
 import signal
 import subprocess

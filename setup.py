@@ -76,6 +76,8 @@ setup(
               'install':InstallCommand,
               },
     install_requires=[
+        'looseversion',
+        'packaging',
         'pyyaml',
         'requests',
         'requests-toolbelt',

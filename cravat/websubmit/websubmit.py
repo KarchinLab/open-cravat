@@ -13,7 +13,7 @@ import traceback
 import shutil
 from aiohttp import web
 import hashlib
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 import glob
 import platform
 import signal
