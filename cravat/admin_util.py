@@ -523,7 +523,7 @@ def __get_highest_matching_version(requirement: packaging.requirements.Requireme
     lvers = [LooseVersion(v) for v in versions]
     lvers.sort(reverse=True)
     for lv in lvers:
-        if lv.vstring in requirement:
+        if requirement.specifier.contains(lv.vstring):
             return lv.vstring
     # no matching version found
     return None
