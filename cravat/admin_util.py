@@ -518,7 +518,7 @@ def get_download_counts():
     return counts
 
 
-def __get_highest_matching_version(requirement: packaging.Requirement, versions: list) -> str:
+def __get_highest_matching_version(requirement: packaging.requirements.Requirement, versions: list) -> str:
     """Return the highest matching version in 'versions' that satisfies the 'requirement'"""
     lvers = [LooseVersion(v) for v in versions]
     lvers.sort(reverse=True)
@@ -534,7 +534,7 @@ def __remove_locally_installed_deps(deps: dict) -> None:
     # find locally installed packages that match version requirements
     for name, version in deps.items():
         v_string = f"{name}>={version}"
-        req = packaging.Requirement(v_string)
+        req = packaging.requirements.Requirement(v_string)
         local_info = get_local_module_info(name)
         if local_info and local_info.version in req:
             to_delete.append(name)
@@ -557,7 +557,7 @@ def get_install_deps(module_name, version=None, skip_installed=True):
             continue
 
         checked.append(req_string)
-        req = packaging.Requirement(req_string)
+        req = packaging.requirements.Requirement(req_string)
         parent = req.name
         rem_info = get_remote_module_info(req.name)
         # Skip if module does not exist
@@ -588,7 +588,7 @@ def get_install_deps(module_name, version=None, skip_installed=True):
     for name, spec_list in reqs_to_install.items():
         rem_info = get_remote_module_info(name)
         full_req_string = f"{name}{','.join(spec_list)}"
-        r = packaging.Requirement(full_req_string)
+        r = packaging.requirements.Requirement(full_req_string)
         version = __get_highest_matching_version(r, rem_info.versions)
         if version is None:
             raise ValueError(f"Could not find appropriate version for module [{name}]")
@@ -969,7 +969,7 @@ def get_updatable(modules=[], strategy="consensus"):
         if remote_info:
             all_versions[mname] = sorted(remote_info.versions, key=LooseVersion)
         req_strings = local_info.conf.get("requires", [])
-        reqs = [packaging.Requirement(s) for s in req_strings]
+        reqs = [packaging.requirements.Requirement(s) for s in req_strings]
         for req in reqs:
             dep = req.name
             reqs_by_dep[dep][mname] = req
