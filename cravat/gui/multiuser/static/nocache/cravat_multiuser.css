@@ -187,6 +187,15 @@ body * {
     text-decoration: underline;
 }
 
+#beta-info .additional-info {
+    font-size: small;
+    text-decoration: none;
+}
+
+#beta-info .additional-info:hover {
+    text-decoration: none;
+}
+
 #container {
   display: flex;
   flex-direction: row;

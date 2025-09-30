@@ -1772,9 +1772,24 @@ function populatePackageVersions () {
             for (var i = 0; i < curverspans.length; i++) {
                 var curverspan = curverspans[i];
                 var s = getEl('span');
-                s.textContent = data.current;
+                // TODO: replace actual version when beta is over
+                s.textContent = '3.0.0 (BETA)';
+                // s.textContent = data.current;
                 addEl(curverspan, s);
-                if (data.update) {
+                // TODO: Remove this disclaimer block when flask beta is over
+                if (true) {
+                    s.textContent = s.textContent + '\xa0';
+                    var a = getEl('a');
+                    a.href = 'https://github.com/KarchinLab/open-cravat/discussions/361';
+                    a.target = '_blank';
+                    //a.textContent = '(' + data.latest + ')';
+                    a.textContent = 'BETA Info \xa0';
+                    a.style.color = 'red';
+                    addEl(curverspan, a);
+                }
+                // TODO re-enable update text after beta
+                if (false) {
+                // if (data.update) {
                     s.textContent = s.textContent + '\xa0';
                     var a = getEl('a');
                     a.href = 'https://open-cravat.readthedocs.io/en/latest/Update-Instructions.html';
