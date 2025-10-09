@@ -110,50 +110,50 @@ def setup(args):
                 global server_ready
                 server_ready = True
         
-        # FIX: Add periodic cleanup task to prevent memory accumulation
-        async def periodic_cleanup():
-            """Periodic cleanup of caches and connections"""
-            import gc
-            while True:
-                await asyncio.sleep(3600)  # Run every hour
+                # FIX: Add periodic cleanup task to prevent memory accumulation
+                async def periodic_cleanup():
+                    """Periodic cleanup of caches and connections"""
+                    import gc
+                    while True:
+                        await asyncio.sleep(3600)  # Run every hour
+                        
+                        # Clean up old job statuses
+                        if hasattr(wu.filerouter, 'job_statuses'):
+                            current_size = len(wu.filerouter.job_statuses)
+                            if current_size > 100:
+                                # Keep only last 100 entries
+                                items_to_remove = current_size - 100
+                                for _ in range(items_to_remove):
+                                    wu.filerouter.job_statuses.popitem(last=False)
+                        
+                        # Clean up database connections
+                        if 'webresult' in sys.modules:
+                            try:
+                                await sys.modules['webresult'].cleanup_connections()
+                            except:
+                                pass
+                        
+                        # Clean up report generation tracking
+                        if hasattr(wu, 'report_generation_ps'):
+                            # Remove completed report generations
+                            for job_id in list(wu.report_generation_ps.keys()):
+                                if len(wu.report_generation_ps[job_id]) == 0:
+                                    del wu.report_generation_ps[job_id]
+                        
+                        # Force garbage collection
+                        gc.collect()
+                        
+                        # Log memory usage if psutil available
+                        try:
+                            import psutil
+                            process = psutil.Process()
+                            mem_info = process.memory_info()
+                            print(f"[Memory] RSS={mem_info.rss/1024/1024:.1f}MB after cleanup")
+                        except ImportError:
+                            pass
                 
-                # Clean up old job statuses
-                if hasattr(wu.filerouter, 'job_statuses'):
-                    current_size = len(wu.filerouter.job_statuses)
-                    if current_size > 100:
-                        # Keep only last 100 entries
-                        items_to_remove = current_size - 100
-                        for _ in range(items_to_remove):
-                            wu.filerouter.job_statuses.popitem(last=False)
-                
-                # Clean up database connections
-                if 'webresult' in sys.modules:
-                    try:
-                        await sys.modules['webresult'].cleanup_connections()
-                    except:
-                        pass
-                
-                # Clean up report generation tracking
-                if hasattr(wu, 'report_generation_ps'):
-                    # Remove completed report generations
-                    for job_id in list(wu.report_generation_ps.keys()):
-                        if len(wu.report_generation_ps[job_id]) == 0:
-                            del wu.report_generation_ps[job_id]
-                
-                # Force garbage collection
-                gc.collect()
-                
-                # Log memory usage if psutil available
-                try:
-                    import psutil
-                    process = psutil.Process()
-                    mem_info = process.memory_info()
-                    print(f"[Memory] RSS={mem_info.rss/1024/1024:.1f}MB after cleanup")
-                except ImportError:
-                    pass
-        
-        # Start cleanup task
-        loop.create_task(periodic_cleanup())
+                # Start cleanup task
+                loop.create_task(periodic_cleanup())
             except Exception as e:
                 logger.exception(e)
                 logger.info("Exiting...")
