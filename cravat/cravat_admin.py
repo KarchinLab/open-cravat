@@ -12,7 +12,7 @@ import re
 import textwrap
 import copy
 from getpass import getpass
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 from cravat import util
 
 

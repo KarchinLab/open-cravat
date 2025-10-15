@@ -10,7 +10,7 @@ import hashlib
 import zipfile
 from . import exceptions
 import json
-import pkg_resources
+import importlib.metadata
 from urllib.error import HTTPError
 import types
 
@@ -89,7 +89,7 @@ class PathBuilder(object):
 
     def manifest(self, version=None):
         if version is None:
-            version = pkg_resources.get_distribution("open-cravat").version
+            version = importlib.metadata.distribution("open-cravat").version
         fname = "manifest-{}.yml".format(version)
         return self._build_path(self.base(), fname)
 

@@ -22,7 +22,7 @@ import cravat.admin_util as au
 import re
 from types import SimpleNamespace
 import cravat.util
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 from cravat.constants import cannonical_chroms
 
 

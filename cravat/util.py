@@ -10,10 +10,10 @@ import gzip
 import types
 import inspect
 import logging
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 from cravat.cravat_util import max_version_supported_for_migration
 import sqlite3
-import pkg_resources
+import importlib.metadata
 import datetime
 import argparse
 from types import SimpleNamespace
@@ -419,7 +419,7 @@ def detect_encoding(path):
 def is_compatible_version(dbpath):
     db = sqlite3.connect(dbpath)
     c = db.cursor()
-    oc_version = LooseVersion(pkg_resources.get_distribution("open-cravat").version)
+    oc_version = LooseVersion(importlib.metadata.distribution("open-cravat").version)
     sql = 'select colval from info where colkey="open-cravat"'
     c.execute(sql)
     r = c.fetchone()
