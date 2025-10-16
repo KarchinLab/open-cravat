@@ -992,7 +992,7 @@ def fetch_job_queue (job_queue, run_jobs_info):
             # Always initialize Slurm-related variables (remain empty if not used)
             self.slurm_job_ids = {}  # Mapping from OpenCRAVAT job_id to Slurm job_id
             
-            # Slurmオプションの読み込み
+            # Load Slurm options
             self.slurm_options = system_conf.get('slurm_options', {})
 
         def add_job(self, qitem):
@@ -1008,7 +1008,7 @@ def fetch_job_queue (job_queue, run_jobs_info):
                 if len(run_args) > 0 and os.path.exists(run_args[-1]):
                     self.job_dirs[qitem['job_id']] = run_args[-1]
                 else:
-                    # fallbackとしてjob_idをベースにしたディレクトリを使用
+                    # Use a fallback directory based on job_id
                     import cravat.admin_util as au
                     jobs_dirs = au.get_jobs_dirs()
                     if jobs_dirs:
@@ -1070,18 +1070,18 @@ def fetch_job_queue (job_queue, run_jobs_info):
                     p.kill()
 
         def clean_jobs(self, uid):
-            # 完了したジョブをクリーンアップ
+            # Clean up completed jobs
             if self.use_slurm:
                 self._clean_slurm_jobs()
             else:
                 self._clean_local_jobs()
         
         def _clean_slurm_jobs(self):
-            # Slurmジョブの状態を確認して完了したジョブをクリーンアップ
+            # Check the status of Slurm jobs and clean up completed jobs
             to_del = []
             for oc_job_id, slurm_job_id in self.slurm_job_ids.items():
                 try:
-                    # squeueでジョブ状態を確認
+                    # Check job status with squeue
                     result = subprocess.run(['squeue', '-j', str(slurm_job_id), '--noheader', '--format=%T'], 
                                            capture_output=True, text=True, timeout=10)
                     
@@ -1109,7 +1109,7 @@ def fetch_job_queue (job_queue, run_jobs_info):
                     self.run_jobs_info['job_ids'] = job_ids
         
         def _clean_local_jobs(self):
-            # ローカルプロセスの状態を確認して完了したジョブをクリーンアップ
+            # Check the status of local processes and clean up completed jobs
             to_del = []
             for uid, p in self.running_jobs.items():
                 if p.poll() is not None:
@@ -1126,14 +1126,14 @@ def fetch_job_queue (job_queue, run_jobs_info):
             return list(self.running_jobs.keys())
 
         def run_available_jobs (self):
-            # 利用可能なスロットでジョブを実行
+            # Run jobs in available slots
             if self.use_slurm:
                 self._run_slurm_jobs()
             else:
                 self._run_local_jobs()
         
         def _run_slurm_jobs(self):
-            # Slurmでジョブを実行
+            # Execute jobs with Slurm
             num_available_slot = self.max_num_concurrent_jobs - len(self.running_jobs)
             if num_available_slot > 0 and len(self.queue) > 0:
                 for i in range(num_available_slot):
@@ -1141,7 +1141,7 @@ def fetch_job_queue (job_queue, run_jobs_info):
                         job_id = self.queue.pop(0)
                         run_args = self.run_args[job_id]
                         
-                        # job_dirが存在しない場合はスキップ
+                        # Skip if job_dir does not exist
                         if job_id not in self.job_dirs:
                             print(f'Warning: Job directory not found for job {job_id}, skipping Slurm execution')
                             del self.run_args[job_id]
@@ -1151,49 +1151,48 @@ def fetch_job_queue (job_queue, run_jobs_info):
                         del self.run_args[job_id]
                         del self.job_dirs[job_id]
                         
-                        # Slurm sbatch用のシェルスクリプトを生成
+                        # Generate shell script for Slurm sbatch
                         batch_script_path = os.path.join(job_dir, 'OC_batch.sh')
                         oc_command = ' '.join(run_args)
                         
-                        # Slurmバッチスクリプトのヘッダ・フッタをsystem_conf['slurm_script_header'], ['slurm_script_footer']で取得
+                        # Get Slurm batch script header and footer from system_conf['slurm_script_header'] and ['slurm_script_footer']
                         script_header = system_conf.get('slurm_script_header', '#!/bin/bash\n')
                         script_footer = system_conf.get('slurm_script_footer', 'deactivate\n')
-                        # ヘッダ・コマンド・フッタを連結
+                        # Concatenate header, command, and footer
                         script_content = f"{script_header}{oc_command}\n{script_footer}"
                         
                         with open(batch_script_path, 'w') as f:
                             f.write(script_content)
                         
-                        # スクリプトに実行権限を付与
+                        # Grant execute permission to the script
                         os.chmod(batch_script_path, 0o755)
-                        
-                        # sbatchでスクリプトを実行し、Slurm JOBIDを取得
+                        # Execute the script with sbatch and obtain the Slurm JOBID
                         try:
-                            # sbatchコマンドの構築
+                            # Construct sbatch command
                             sbatch_cmd = ['sbatch']
                             
-                            # Slurm設定オプションを追加
+                            # Add Slurm configuration options
                             if hasattr(self, 'slurm_options') and self.slurm_options:
                                 for option, value in self.slurm_options.items():
                                     if value is not None and value != '':
                                         if option.startswith('--'):
-                                            # 既に--で始まっている場合
+                                            # If the option already starts with '--'
                                             sbatch_cmd.extend([option, str(value)])
                                         else:
-                                            # --を付けて追加
+                                            # Add '--' prefix to the option
                                             sbatch_cmd.extend([f'--{option}', str(value)])
                             
-                            # スクリプトパスを追加
+                            # Add script path
                             sbatch_cmd.append(batch_script_path)
                             
                             result = subprocess.run(sbatch_cmd, 
                                                    capture_output=True, text=True)
                             if result.returncode == 0:
-                                # sbatchの出力からJOBIDを抜き出し ("Submitted batch job 12345")
+                                # Extract JOBID from sbatch output ("Submitted batch job 12345")
                                 output = result.stdout.strip()
-                                slurm_job_id = output.split()[-1]  # 最後の数字がJOBID
+                                slurm_job_id = output.split()[-1]  # The last number is the JOBID
                                 
-                                self.running_jobs[job_id] = True  # 実行中フラグ
+                                self.running_jobs[job_id] = True  # Running flag
                                 self.slurm_job_ids[job_id] = slurm_job_id
                                 print(f'Submitted OpenCRAVAT job {job_id} as Slurm job {slurm_job_id} with options: {sbatch_cmd[1:-1]}')
                             else:
@@ -1202,7 +1201,7 @@ def fetch_job_queue (job_queue, run_jobs_info):
                             print(f'Error submitting job {job_id}: {e}')
         
         def _run_local_jobs(self):
-            # ローカルでジョブを実行
+            # Run jobs locally
             num_available_slot = self.max_num_concurrent_jobs - len(self.running_jobs)
             if num_available_slot > 0 and len(self.queue) > 0:
                 for i in range(num_available_slot):
