@@ -37,4 +37,4 @@ cp $APPDIR/Contents/Info.plist $RESDIR/Info.plist.bak
 plutil -replace CFBundleShortVersionString -string $1 $APPDIR/Contents/Info.plist
 
 cd $RESDIR/bin
-sed -i '' e '1s=^.*python=#!/usr/bin/env python=' -e '1s/$/ -I/' oc
+sed -i '' -e '1s=^.*python=#!/usr/bin/env python=' -e '1s/$/ -I/' oc
