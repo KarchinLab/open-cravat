@@ -262,6 +262,21 @@ class AdminDb():
             finally:
                 cursor.close()
 
+    def get_api_stat (self, start_date, end_date):
+        with _connect() as conn:
+            try:
+                cursor = conn.cursor()
+                q = f'select sum(count) from apilog where writetime>="{start_date}" and writetime<="{end_date}T23:59:59"'
+                cursor.execute(q)
+                row = cursor.fetchone()
+                if row[0] is None:
+                    num_api_access = 0
+                else:
+                    num_api_access = row[0]
+                return {'num_api_access': num_api_access}
+            finally:
+                cursor.close()
+
     def get_user_stat(self, start_date, end_date):
         with _connect() as conn:
             try:
