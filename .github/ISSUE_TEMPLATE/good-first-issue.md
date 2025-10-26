@@ -7,21 +7,7 @@ assignees: ''
 
 ---
 
----
-name: "Good First Issue"
-about: "A small, well-defined issue that’s ideal for new contributors"
-title: "[Good First Issue]: <short descriptive title>"
-labels: ["good first issue", "help wanted"]
-assignees: ""
----
-
-#  Good First Issue
-
 👋 **Welcome to OpenCRAVAT!**  
-Thank you for your interest in contributing to our open-source genomic variant annotation platform.  
-This template will help you describe beginner-friendly issues clearly so contributors can get started quickly.
-
----
 
 ## 📝 Summary
 **Provide a short and descriptive title for the issue.**  
