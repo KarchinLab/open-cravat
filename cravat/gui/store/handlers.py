@@ -5,7 +5,7 @@ import traceback
 
 from celery import current_app as celery_app
 from flask import request, current_app, jsonify, g
-from cravat import constants, admin_util as au
+from cravat import constants, admin_util as au, store_utils as su
 from cravat.gui.models import Module
 from cravat.gui.job_manager import queue_messages
 from cravat.gui.admin import is_admin_loggedin
@@ -225,3 +225,9 @@ def update_remote():
     au.mic.update_local()
 
     return jsonify('done')
+
+def get_featured_module_lists():
+    pb = su.PathBuilder(au.get_system_conf()['store_url'], "url")
+    list_url = pb.featured_module_list()
+    featured_list = su.get_file_to_json(list_url)
+    return jsonify(featured_list)

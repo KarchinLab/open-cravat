@@ -18,6 +18,7 @@ def load(application):
     router("/modules/<module_name>/<version>/readme", None, get_module_readme)
     router("/remotemoduleconfig", None, get_remote_module_config)
     router("/updateremote", None, update_remote)
+    router("/lists", None, get_featured_module_lists)
 
     # With celery, these are the same, just drop the job
     router("/killinstall", None, kill_install)
