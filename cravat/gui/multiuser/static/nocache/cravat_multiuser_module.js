@@ -326,6 +326,9 @@ function doAfterLogin (username) {
         setupAdminMode();
     }
     OC.mediator.publish('populateJobs');
+    if (isStorePage()) {
+        OC.mediator.publish('navigate', 'storediv');
+    }
 }
 
 function setupAdminMode () {
