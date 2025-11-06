@@ -466,18 +466,6 @@ function populateStoreHome() {
     OC.moduleLists['newest'] = newestModules;
     var sdiv = getHomeCarouselContent(newestModules, 'newest')
     addEl(div, sdiv);
-    // Cancer 
-    var div = document.getElementById('store-home-cancerdiv');
-    $(div).empty();
-    var sdiv = getEl('div');
-    OC.moduleLists['cancer'] = getModuleListByCategory('cancer');
-    var sdiv = getHomeCarouselContent(OC.moduleLists['cancer'], 'cancer')
-    addEl(div, sdiv);
-    // Clinical Relevance
-    var div = document.getElementById('store-home-clinicaldiv');
-    OC.moduleLists['clinical'] = getModuleListByCategory('clinical');
-    var sdiv = getHomeCarouselContent(OC.moduleLists['clinical'], 'clinical');
-    addEl(div, sdiv);
 }
 
 function getCarouselScrollStep (d) {
