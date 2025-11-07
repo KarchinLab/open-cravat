@@ -26,6 +26,7 @@ function populateAnnotators () {
 }
 
 function getRemote() {
+    showUpdateRemoteSpinner();
     $.ajax({
         url: '/store/remote',
         async: true,
@@ -52,11 +53,23 @@ function getRemote() {
                 }
             }
             checkSystemReady();
+            hideUpdateRemoteSpinner();
         }
     });
 }
 
+function showUpdateRemoteSpinner () {
+    document.querySelector('#update-remote-spinner-div').classList.remove('hide');
+    document.querySelector('#update-remote-spinner-div').classList.add('show');
+}
+
+function hideUpdateRemoteSpinner () {
+    document.querySelector('#update-remote-spinner-div').classList.remove('show');
+    document.querySelector('#update-remote-spinner-div').classList.add('hide');
+}
+
 function getLocal() {
+    showUpdateRemoteSpinner();
     $.get('/store/local').done(function(data) {
         OC.localModuleInfo = data;
         updateModuleGroupInfo();
@@ -67,6 +80,7 @@ function getLocal() {
             disableStoreTabHead();
         }
 		OC.mediator.publish('moduleinfo.local');
+        hideUpdateRemoteSpinner();
         $.get('/store/updates').done(function(data) {
             OC.updates = data.updates;
             OC.updateConflicts = data.conflicts;

@@ -1092,7 +1092,8 @@ input:checked + .slider:before {
     height: calc(100% - 63px);
     z-index: 9;
     text-align: center;
-    background-color: rgba(100, 100, 100, 0.77);
+    /*background-color: rgba(100, 100, 100, 0.77);*/
+    background-color: white;
 }
 
 #update-remote-spinner-div-text {
@@ -1100,9 +1101,18 @@ input:checked + .slider:before {
     top: calc(50% - 40px);
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
-    width: 200px;
+    width: 400px;
     height: 30px;
-    color: white;
+    background: linear-gradient(-45deg, rgb(74, 135, 189), #5cb5e5, #006bff);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-fill-color: transparent;
+    font-size: larger;
+    font-weight: bolder;
+    font-family: 'roboto-medium';
+    animation: gradient 10s ease infinite;
+    background-size: 200% 200%;
 }
 
 #assembly-select-div {

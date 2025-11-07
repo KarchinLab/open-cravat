@@ -2181,8 +2181,8 @@ function populateInputFormats () {
 }
 
 function websubmit_run () {
+    showUpdateRemoteSpinner();
     hideSpinner();
-    hideUpdateRemoteSpinner();
     var urlParams = new URLSearchParams(window.location.search);
     OC.username = urlParams.get('username');
     getServermode();
