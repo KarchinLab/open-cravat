@@ -1,0 +1,64 @@
+# OpenCRAVAT Slurm configuration example
+#
+# Add the following settings to your cravat-system.yml
+
+# Enable Slurm usage
+use_slurm: true
+
+# Set the number of workers for WebUI execution.
+# Ensures OpenCRAVAT uses only the CPUs allocated by Slurm,
+# preventing overuse of node resources and optimizing chunk size.
+webui_max_workers: 4  # Recommended: 4-8 (adjust according to your environment)
+
+# Slurm sbatch option settings
+# The following settings are passed as arguments to the sbatch command when executed.
+# example: sbatch --account=your_account_name --partition=cpu ...
+slurm_options:
+  # Specify account (often required)
+  account: "your_account_name"
+  
+  # Specify partition
+  partition: "cpu"
+  # Additional Slurm options can be added similarly
+  # Example:
+  # nodes: "1"
+  # ntasks: "1"
+  # gres: "gpu:1"
+
+# Slurm batch script customization
+# Script header section (shebang, environment setup, etc.)
+# The following script is prepended to the Slurm job script.
+# Script will save "OC_batch.sh" in the job's directory.
+# slurm_script_header and slurm_script_footer sandwiches oc run command. 
+# shebang is necessary.
+slurm_script_header: |
+  #!/bin/bash
+  #SBATCH --job-name=opencravat
+  #SBATCH --output=opencravat-%j.out
+  #SBATCH --error=opencravat-%j.err
+  
+  # Environment setup
+  # Activate OpenCRAVAT environment.
+  # Replace the following line with the appropriate command for your system:
+  # - For virtualenv: source "$HOME/oc/bin/activate"
+  # - For module system: module load opencravat
+  # - For conda: conda activate opencravat
+  # - Or use export PATH/other setup as needed
+  source "$HOME/oc/bin/activate"
+  
+  # Job start log
+  echo "Job started at $(date)"
+  echo "Running on node: $(hostname)"
+  echo "Working directory: $(pwd)"
+
+# Script footer section (post-processing, log output, etc.)
+# slurm_script_footer is optional.
+slurm_script_footer: |
+  
+  # Job end log
+  echo "Job finished at $(date)"
+  
+  # Deactivate virtual environment
+  deactivate
+
+
