@@ -175,10 +175,17 @@ class LiveModuleCache:
         crx_data = self.mapper.map(input_data)
         crx_data = self.mapper.live_report_substitute(crx_data)
         crx_data[mapping_parser_name] = AllMappingsParser(crx_data[all_mappings_col_name])
+        module_versions = {}
         for k, v in self.annotators.items():
             if annotators is not None and k not in annotators:
                 continue
             try:
+                datasource = v.conf.get('datasource')
+                version = v.conf.get('version')
+                module_versions[k] = {
+                    'datasource': datasource,
+                    'version': version
+                }
                 annot_data = v.annotate(input_data=crx_data)
                 annot_data = v.live_report_substitute(annot_data)
                 if annot_data == '' or annot_data == {}:
@@ -192,4 +199,5 @@ class LiveModuleCache:
                 response[k] = None
         del crx_data[mapping_parser_name]
         response['crx'] = crx_data
+        response['module_versions'] = module_versions
         return response
