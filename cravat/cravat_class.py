@@ -1369,6 +1369,7 @@ class Cravat(object):
             for job in jobs:
                 job.get()
         pool.close()
+        pool.join()
         # collects crx.
         crx_path = os.path.join(self.output_dir, f"{self.run_name}.crx")
         wf = open(crx_path, "w")
