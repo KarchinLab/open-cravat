@@ -1369,9 +1369,7 @@ class Cravat(object):
             for job in jobs:
                 job.get()
         pool.close()
-        self.logger.info("about to join where I did not used to do so:")
         pool.join()
-        self.logger.info("I joined where I did not used to do so: that wasn't so bad")
         # collects crx.
         crx_path = os.path.join(self.output_dir, f"{self.run_name}.crx")
         wf = open(crx_path, "w")
