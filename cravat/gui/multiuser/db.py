@@ -161,7 +161,7 @@ class AdminDb():
 
             try:
                 cursor = conn.cursor()
-                cursor.execute('update users set passwordhash=? where email=?', temppasswordhash, email)
+                cursor.execute('update users set passwordhash=? where email=?', (temppasswordhash, email))
                 return temppassword
             finally:
                 cursor.close()
