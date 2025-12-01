@@ -138,7 +138,7 @@ def get_coordinates_from_request_params(queries):
     return parameters, original_input, alternate_alleles
 
 
-def live_annotate_worker (queries, annotators, is_multiuser):
+def live_annotate_worker (queries, annotators, is_multiuser, live_mapper):
     if is_multiuser:
         from cravat.gui.multiuser.db import AdminDb
         global count_single_api_access
@@ -161,7 +161,6 @@ def live_annotate_worker (queries, annotators, is_multiuser):
         print(text)
         q = {key: value for key, value in queries.items()}
         return jsonify(data={'error': text, 'originalInput': q})
-    live_mapper = LiveModuleCache()
     assembly = queries.get('assembly', 'hg38')
     if assembly != 'hg38':
         live_mapper.load_lifter(assembly)

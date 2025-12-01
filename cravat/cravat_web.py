@@ -209,7 +209,6 @@ def store_worker():
 
 def live_annotation_worker():
     from cravat.gui import celery
-
     worker = celery.Worker(queue="live_annotate", concurrency=1)
     worker.start()
 
