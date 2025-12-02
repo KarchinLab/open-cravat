@@ -15,6 +15,8 @@ def jobid_and_db_path():
         if job_id:
             router = file_router()
             job = router.load_job(job_id)
+            if job.error:
+                return None, None
             db_path = job.db_path
         else:
             return None, None

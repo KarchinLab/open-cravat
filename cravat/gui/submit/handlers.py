@@ -398,6 +398,9 @@ def get_job_err(job_id):
 def get_job_db(job_id):
     filerouter = file_router()
     job = filerouter.load_job(job_id)
+    if job.error:
+        abort(404, description='Database does not exist.')
+
     db_path = Path(job.db_path)
     if db_path.is_file():
         return send_file(
