@@ -253,6 +253,7 @@ function showStoreHome() {
     document.getElementById('store-home-div').style.display = 'block';
     document.getElementById('store-allmodule-div').style.display = 'none';
     document.getElementById('store-modulegroup-div').style.display = 'none';
+    document.getElementById('storebodydiv').style.display = 'block';
 }
 
 function hideStoreHome() {
