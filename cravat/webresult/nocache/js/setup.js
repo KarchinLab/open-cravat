@@ -592,6 +592,14 @@ class FilterManager {
 			.css('display','none')
 			.change(this.vPropSelectChange.bind(this));
 		fTypeDiv.append(vPropSel);
+
+        let qbHeader = $(getEl('span'))
+            .addClass('vprop-option')
+            .text('Query Builder')
+            .addClass('title')
+            .click(this.vPropOptionClick)
+            .attr('value','qb');
+        fTypeDiv.append(qbHeader);
 		let sfHeader = $(getEl('span'))
 			.addClass('vprop-option')
 			.text('Smart Filters')
@@ -599,13 +607,7 @@ class FilterManager {
 			.click(this.vPropOptionClick)
 			.attr('value','sf');
 		fTypeDiv.append(sfHeader);
-		let qbHeader = $(getEl('span'))
-			.addClass('vprop-option')
-			.text('Query Builder')
-			.addClass('title')
-			.click(this.vPropOptionClick)
-			.attr('value','qb');
-		fTypeDiv.append(qbHeader);
+
 		let sfContent = $(getEl('div'))
 			.attr('id', this.vpropSfId);
 		vPropCont.append(sfContent);
@@ -616,15 +618,9 @@ class FilterManager {
 		this.addQbUI(qbContent, filter);
 
 		// Activate the correct vProp type
-		let sfValued = Object.keys(filter.smartfilter).length !== 0;
-		let qbValued = filter.variant.rules!==undefined && filter.variant.rules.length>0;
-		if (sfValued || !qbValued) {
-			vPropSel.val('sf');
-			sfHeader.addClass('active');
-		} else {
-			vPropSel.val('qb');
-			qbHeader.addClass('active');
-		}
+        // OC-616: Make query builder the default always
+        vPropSel.val('qb');
+        qbHeader.addClass('active');
 		vPropSel.change();
 	}
 
