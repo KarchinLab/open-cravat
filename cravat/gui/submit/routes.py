@@ -1,5 +1,6 @@
 from cravat.gui.submit.handlers import *
 from cravat.gui.routing import relative_router
+from cravat.gui.api.handlers import live_annotate
 
 
 def load(application):
@@ -21,4 +22,4 @@ def load(application):
     router("/jobs/<job_id>/reports/<report_type>", None, generate_report, methods=['POST'])
     router("/jobs/<job_id>/reports/<report_type>", None, download_report, methods=['GET'])
     router("/resubmit", None, resubmit)
-    router("/annotate", None, legacy_api_live_annotate, methods=['GET', 'POST'])
+    router("/annotate", None, live_annotate, methods=['GET', 'POST'])
