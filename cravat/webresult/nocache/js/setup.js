@@ -1596,6 +1596,9 @@ function makeVariantGeneTab (tabName, rightDiv) {
         detailDiv.id = detailDivId;
         detailDiv.classList.add('detaildiv');
         detailDiv.classList.add('resultviewer');
+        var detailControlDivId = 'detailcontroldiv_' + tabName;
+        detailControlDiv = getEl('div');
+        addEl(detailDiv, detailControlDiv);
         var detailContainerWrapDiv = getEl('div');
         detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
         var h = loadedHeightSettings['detail_' + tabName];
@@ -1604,6 +1607,16 @@ function makeVariantGeneTab (tabName, rightDiv) {
         }
         addEl(detailDiv, detailContainerWrapDiv);
     }
+    
+    // Detail control div
+    detailControlDiv.id = detailControlDivId;
+    detailControlDiv.className = 'detailcontroldiv';
+    // Redraw button
+    var redrawButton = getEl('button');
+    redrawButton.id = 'detailredrawbutton_' + tabName;
+    redrawButton.textContent = 'Redraw widgets';
+    redrawButton.addEventListener('click', onClickDetailRedraw);
+    addEl(detailControlDiv, redrawButton);
 
 	// Detail content div
     var detailContainerDivId = 'detailcontainerdiv_' + tabName;
@@ -1967,6 +1980,19 @@ function showHideWidget (tabName, widgetName, state, repack) {
     if (repack == true) {
         $detailContainerDiv.packery('fit', widget);
         onClickDetailReset();
+    }
+}
+
+function hideAllWidget(tabName) {
+    var widgetNames = Object.keys(widgetGenerators);
+    console.log(widgetNames);
+    for (let widgetName of widgetNames) {
+        if (widgetName === 'base') {
+            continue;
+        }
+        if (widgetGenerators[widgetName][tabName] != undefined) {
+            showHideWidget(tabName, widgetName, false, false);
+        }
     }
 }
 
