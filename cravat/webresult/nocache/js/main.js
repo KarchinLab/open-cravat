@@ -1003,6 +1003,17 @@ function onClickWidgetsMenu (evt) {
     evt.stopPropagation();
 }
 
+var asdffIsPopulated = false;
+function toggleWidgetSel (evt) {
+    var div = document.getElementById('new_widgets_showhide_select_div');
+    div.style.display = div.style.display === 'none' ? 'block' : 'none';
+    if (!asdffIsPopulated) {
+        populateNewWidgetSelectorPanel();
+        asdffIsPopulated = true;
+    }
+    evt.stopPropagation();
+}
+
 function doNothing () {
 	alert('saved');
 }
