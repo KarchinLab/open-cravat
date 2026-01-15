@@ -1612,11 +1612,20 @@ function makeVariantGeneTab (tabName, rightDiv) {
     detailControlDiv.id = detailControlDivId;
     detailControlDiv.className = 'detailcontroldiv';
     // Redraw button
-    var redrawButton = getEl('button');
-    redrawButton.id = 'detailredrawbutton_' + tabName;
-    redrawButton.textContent = 'Redraw widgets';
-    redrawButton.addEventListener('click', onClickDetailRedraw);
-    addEl(detailControlDiv, redrawButton);
+    var widgetSelButton = getEl('button');
+    widgetSelButton.id = 'widgetselect' + tabName;
+    widgetSelButton.textContent = 'Pick widgets';
+    widgetSelButton.addEventListener('click', toggleWidgetSel);
+    addEl(detailControlDiv, widgetSelButton);
+    // WidgetSel div
+    var widgetSelDiv = getEl('div');
+    widgetSelDiv.id = 'new_widgets_showhide_select_div';
+    widgetSelDiv.style.display = 'none';
+    widgetSelDiv.style['z-index'] = '100';
+    widgetSelDiv.style.position = 'absolute';
+    widgetSelDiv.style['background-color'] = '#d1d3d4';
+    addEl(detailControlDiv, widgetSelDiv);
+    
 
 	// Detail content div
     var detailContainerDivId = 'detailcontainerdiv_' + tabName;
@@ -1746,6 +1755,97 @@ function populateInfoDiv (infoDiv) {
 function populateWidgetSelectorPanel () {
 	var tabName = currentTab;
 	var panelDiv = document.getElementById('widgets_showhide_select_div');
+	panelDiv.innerHTML = '';
+	panelDiv.style.width = '300px';
+	panelDiv.style.maxHeight = '400px';
+	panelDiv.style.overflow = 'auto';
+    panelDiv.style.cursor = 'auto';
+
+	var button = getEl('button');
+    button.classList.add('butn');
+	button.textContent = 'Redraw';
+	button.addEventListener('click', function (evt, ui) {
+		onClickDetailRedraw();
+	});
+	addEl(panelDiv, button);
+
+	var button = getEl('button');
+    button.classList.add('butn');
+	button.textContent = 'Reset';
+	button.addEventListener('click', function (evt, ui) {
+		onClickDetailReset();
+	});
+	addEl(panelDiv, button);
+
+	var button = getEl('button');
+    button.classList.add('butn');
+	button.textContent = 'Hide all';
+	button.addEventListener('click', function (evt, ui) {
+		changeWidgetShowHideAll(false);
+	});
+	addEl(panelDiv, button);
+
+	var button = getEl('button');
+    button.classList.add('butn');
+	button.textContent = 'Show all';
+	button.addEventListener('click', function (evt, ui) {
+		changeWidgetShowHideAll(true);
+	});
+	addEl(panelDiv, button);
+
+	var widgetNames = Object.keys(widgetGenerators);
+	for (var i = 0; i < widgetNames.length; i++) {
+		var widgetName = widgetNames[i];
+        var generator = widgetGenerators[widgetName][tabName];
+		if (generator != undefined &&
+			generator['function'] != undefined &&
+			usedAnnotators[tabName].includes(infomgr.widgetReq[widgetName])) {
+			var div = getEl('div');
+			div.style.padding = '4px';
+            var label = getEl('label');
+            label.classList.add('checkbox-container');
+            label.textContent = infomgr.colgroupkeytotitle[widgetName];
+			var input = getEl('input');
+			input.id = 'widgettogglecheckbox_' + tabName + '_' + widgetName;
+			input.type = 'checkbox';
+            var span = getEl('span');
+            span.classList.add('checkmark');
+            addEl(label, input);
+            addEl(label, span);
+            var vwsT = viewerWidgetSettings[tabName];
+            if (vwsT == undefined) {
+                vwsT = [];
+                viewerWidgetSettings[tabName] = vwsT;
+            }
+            var vws = getViewerWidgetSettingByWidgetkey(tabName, widgetName);
+            if (vws == null) {
+                input.checked = true;
+            } else {
+                var display = vws['display'];
+                if (display != 'none') {
+                    input.checked = true;
+                } else {
+                    input.checked = false;
+                }
+            }
+            input.setAttribute('widgetname', widgetName);
+            input.addEventListener('click', function (evt) {
+                onClickWidgetSelectorCheckbox(tabName, evt);
+            });
+            addEl(div, label);
+            if (generator['variables'] != undefined &&
+                generator['variables']['shoulddraw'] == false) {
+                input.disabled = 'disabled';
+                span.style.color = 'gray';
+            }
+            addEl(panelDiv, div);
+        }
+    }
+}
+
+function populateNewWidgetSelectorPanel () {
+	var tabName = currentTab;
+	var panelDiv = document.getElementById('new_widgets_showhide_select_div');
 	panelDiv.innerHTML = '';
 	panelDiv.style.width = '300px';
 	panelDiv.style.maxHeight = '400px';
@@ -1985,7 +2085,7 @@ function showHideWidget (tabName, widgetName, state, repack) {
 
 function hideAllWidget(tabName) {
     var widgetNames = Object.keys(widgetGenerators);
-    console.log(widgetNames);
+    // console.log(widgetNames);
     for (let widgetName of widgetNames) {
         if (widgetName === 'base') {
             continue;
