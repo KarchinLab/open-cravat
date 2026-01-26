@@ -107,6 +107,8 @@ setup(
         'cachelib',
         'celery',
         'cryptography',
+        'pywin32; platform_system=="Windows"',
+        'gevent; platform_system=="Windows"',
         ],
     python_requires='>=3.8',
 )

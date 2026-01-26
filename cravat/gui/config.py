@@ -1,5 +1,7 @@
 from cravat import admin_util, constants
 from kombu import Exchange, Queue
+from pathlib import Path
+import platform
 
 ## WHere is this used can we use system conf
 CRAVAT_SYSCONF = admin_util.get_system_conf()
@@ -32,15 +34,23 @@ SESSION_COOKIE_HTTPONLY = True
 # again, an excellent candidate for configuration via environment variable.
 SESSION_COOKIE_SECURE = False
 
-CELERY_RESULTS_PATH = f'/{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/results'
+CRAVAT_WORKDIR = Path(CRAVAT_SYSCONF[constants.work_dir_key])
+
+CELERY_RESULTS_PATH = CRAVAT_WORKDIR/'celery'/'results'
+CELERY_RESULTS_WEIRD = f'file:////?/C:/open-cravat/workspace/celery/results'
+
+if platform.system() == 'Windows':
+    WORKER_POOL_TYPE = 'gevent'
+else:
+    WORKER_POOL_TYPE = 'fork'
 
 CELERY = dict(
     broker_url='filesystem://',
     broker_transport_options={
-        'data_folder_in': f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/broker',
-        'data_folder_out': f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/broker/'
+        'data_folder_in': str(CELERY_RESULTS_PATH/'celery'/'broker'),
+        'data_folder_out': str(CELERY_RESULTS_PATH/'celery'/'broker'),
     },
-    result_backend=f'file:/{CELERY_RESULTS_PATH}',
+    result_backend=f'file:///{CELERY_RESULTS_PATH}',
     include=['cravat.gui.tasks'],
     task_queues=(
         Queue('default', default_exchange, routing_key='default'),
@@ -49,11 +59,13 @@ CELERY = dict(
     ),
     task_default_queue='default',
     task_default_exchange='default',
-    task_default_routing_key='default'
+    task_default_routing_key='default',
+    worker_pool= WORKER_POOL_TYPE,
 )
+print('===== CELERY CONFIG:', CELERY)
 
 CACHE_TYPE = 'FileSystemCache'
 CACHE_DEFAULT_TIMEOUT = 300
-CACHE_DIR = f'{CRAVAT_SYSCONF[constants.work_dir_key]}/cache'
+CACHE_DIR = str(CRAVAT_WORKDIR/'cache')
 CACHE_THRESHOLD = 500
 CACHE_SOURCE_CHECK = False
