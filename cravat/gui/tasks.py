@@ -13,8 +13,8 @@ def run_job(run_args):
 
 
 @shared_task(queue="module_install")
-def install_module(module_name, version):
-    admin_util.install_module(module_name, version=version)
+def install_module(module_name, version, use_json_handler=None):
+    admin_util.install_module(module_name, version=version, use_json_handler=use_json_handler)
     Module.invalidate_cache()
 
 @shared_task()

@@ -78,6 +78,28 @@ class InstallProgressHandler(object):
             raise ValueError(stage)
 
 
+class InstallProgressJson(InstallProgressHandler):
+    def __init__ (self, module_name, module_version):
+        super().__init__(module_name, module_version)
+        modules_dir = get_modules_dir()
+        module_dir = os.path.join(modules_dir, "status")
+        if not os.path.isdir(module_dir):
+            os.mkdir(module_dir)
+        version = module_version if module_version else 'latest'
+        self.status_file = os.path.join(module_dir, f"{module_name}:{version}.json")
+
+    def stage_start(self, stage):
+        self.cur_stage = stage
+        text = f'{{"msg":" {self.cur_stage}"}}'
+        with open(self.status_file, 'w') as f:
+            f.write(text)
+
+    def stage_progress(self, cur_chunk, total_chunks, cur_size, total_size):
+        perc = cur_size/total_size*100
+        text = f'{{"msg": "{self.cur_stage} - {cur_size} / {total_size} ({perc:.0f}%)"}}'
+        with open(self.status_file, 'w') as f:
+            f.write(text)
+
 class LocalInfoCache(MutableMapping):
     """
     LocalInfoCache will initially store the paths to modules. When a module info
@@ -1073,6 +1095,7 @@ def install_module(
     force_data=False,
     skip_data=False,
     stage_handler=None,
+    use_json_handler=False,
     install_pypi_dependency=False,
     **kwargs,
 ):
@@ -1091,7 +1114,10 @@ def install_module(
             raise KeyboardInterrupt
         original_sigint = signal.signal(signal.SIGINT, raise_kbi)
         if stage_handler is None:
-            stage_handler = InstallProgressHandler(module_name, version)
+            if use_json_handler:
+                stage_handler = InstallProgressJson(module_name, version)
+            else:
+                stage_handler = InstallProgressHandler(module_name, version)
         if version is None:
             version = get_remote_latest_version(module_name)
             stage_handler.set_module_version(version)
@@ -1311,6 +1337,17 @@ def install_widgets_for_module(module_name):
     widget_name = "wg" + module_name
     install_module(widget_name)
 
+
+def check_install_status(module_name, module_version):
+    modules_dir = get_modules_dir()
+    module_dir = os.path.join(modules_dir, "status")
+    if not os.path.isdir(module_dir):
+        os.mkdir(module_dir)
+    version = module_version if module_version else 'latest'
+    status_file = os.path.join(module_dir, f"{module_name}:{version}.json")
+    with open(status_file, 'r') as f:
+        content = f.read()
+    return content
 
 def list_local():
     """

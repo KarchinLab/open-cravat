@@ -4,6 +4,7 @@ import shutil
 import traceback
 
 from celery import current_app as celery_app
+from cravat.admin_util import InstallProgressJson
 from flask import request, current_app, jsonify, g
 from cravat import constants, admin_util as au, store_utils as su
 from cravat.gui.models import Module
@@ -161,14 +162,23 @@ def queue_install():
     queries = request.values
     module_version = queries.get('version', None)
     module_name = queries['module']
-    install_module.delay(module_name, module_version)
+    install_module.delay(module_name, module_version, use_json_handler=True)
 
     deps = au.get_install_deps(module_name, module_version)
     for dep_name, dep_version in deps.items():
-        install_module.delay(dep_name, dep_version)
+        install_module.delay(dep_name, dep_version, use_json_handler=True)
 
     return f'queued {module_version}'
 
+def check_install_status():
+    if g.is_multiuser:
+        if not is_admin_loggedin():
+            return 'notadmin'
+
+    queries = request.values
+    module_version = queries.get('version', 'latest')
+    module_name = queries.get('module')
+    return au.check_install_status(module_name, module_version)
 
 def uninstall_module():
     if g.is_multiuser:

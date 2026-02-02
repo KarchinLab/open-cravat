@@ -41,6 +41,7 @@ OC.tagDesc = {};
 OC.numModulesInHomeSectionCol = 3
 OC.numModulesInHomeSectionRow = 2
 OC.numModulesInHomeSectionPage = 3
+OC.statusTimeouts = {}
 $.get('/store/getstoreurl').done(function(response) {
     OC.storeUrl = response;
 });
@@ -1480,6 +1481,7 @@ function queueInstall(moduleName, version) {
                 };
             }
             OC.installQueue.push(moduleName);
+            OC.statusTimeouts[moduleName] = setInterval(pollInstallStatus, 250, moduleName, version);
             if (OC.baseInstalled) {
                 populateAllModulesDiv();
             }
@@ -1560,6 +1562,72 @@ function checkConnection(failures) {
             checkConnection(failures);
         }, waitTime)
     });
+}
+
+function pollInstallStatus(module, version) {
+    $.get('/store/installstatus', {
+        'module': module,
+        'version': version
+    }).done((response) => {
+        updateStatus(module, version, response);
+    }).fail(() => clearInterval(OC.statusTimeouts[module]));
+}
+
+function updateStatus(module, version, response) {
+    console.log('update status', module, version, response);
+    var data = JSON.parse(response);
+    var msg = data['msg'];
+    if (OC.installInfo[module] == undefined) {
+        OC.installInfo[module] = {};
+    }
+    OC.installInfo[module]['msg'] = msg;
+    var installstatdiv = null;
+    if (OC.baseToInstall.length > 0 || OC.baseInstalled == false) {
+        installstatdiv = document.getElementById('store-systemmodule-msg-div');
+    } else {
+        var divModuleName = module;
+        installstatdiv = document.getElementById('installstatdiv_' + divModuleName);
+    }
+    if (installstatdiv != null) {
+        installstatdiv.textContent = msg;
+    }
+    //var sdivs = $('div.moduletile[module=' + module + '] .panelinstallprogressspan');
+    //for (var i1 = 0; i1 < sdivs.length; i1++) {
+    //    var sdiv = sdivs[i1];
+    //    sdiv.style.color = 'black';
+    //    sdiv.textContent = msg;
+    //}
+    writeInstallationMsg(msg)
+    if (msg.search('Finished installation of') > 0) {
+        clearInterval(OC.statusTimeouts[module]);
+        delete OC.installInfo[module];
+        //installQueue = installQueue.filter(e => e != module);
+        unqueue(module);
+        moduleChange(null);
+        populateAnnotators();
+        if (OC.installQueue.length > 0) {
+            var module = OC.installQueue.shift();
+            OC.installInfo[module] = {
+                'msg': 'installing'
+            };
+        }
+    } else if (msg.search('Aborted') > 0) {
+        delete OC.installInfo[module];
+        clearInterval(OC.statusTimeouts[module]);
+        unqueue(module);
+        setModuleTileInstallButton(module);
+    } else if (msg.search('Unqueued') > 0) {
+        delete OC.installInfo[module];
+        clearInterval(OC.statusTimeouts[module]);
+        unqueue(module);
+        setModuleTileInstallButton(module);
+    } else {
+        var idx = OC.uninstalledModules.indexOf(module);
+        if (idx >= 0) {
+            setModuleTileAbortButton(module);
+            OC.uninstalledModules.splice(idx, 1);
+        }
+    }
 }
 
 function connectWebSocket() {
