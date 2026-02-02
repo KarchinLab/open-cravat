@@ -13,6 +13,7 @@ def load(application):
     router("/freemodulesspace", None, get_free_modules_space)
     router("/locallogo", None, get_local_module_logo)
     router("/queueinstall", None, queue_install)
+    router("/installstatus", None, check_install_status)
     router("/moduledependencies", None, get_module_dependencies)
     router("/uninstall", None, uninstall_module)
     router("/modules/<module_name>/<version>/readme", None, get_module_readme)

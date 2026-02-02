@@ -54,7 +54,7 @@ class InstallProgressStdout(au.InstallProgressHandler):
         rem_chunks = total_chunks - cur_chunk
         perc = cur_size/total_size*100
         # trailing spaces needed to avoid leftover characters on resize
-        out = '\r[{cur_prog}{rem_prog}] {cur_size} / {total_size} ({perc:.0f}%)  '\
+        out = '\r[{cur_prog}{rem_prog}] {cur_size} / {total_size} ({perc:.0f}%)  ' \
             .format(cur_prog='*'*cur_chunk,
                     rem_prog=' '*rem_chunks,
                     cur_size = util.humanize_bytes(cur_size),
