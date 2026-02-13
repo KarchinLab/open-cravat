@@ -85,17 +85,17 @@ class InstallProgressJson(InstallProgressHandler):
         if not os.path.isdir(module_dir):
             os.mkdir(module_dir)
         version = module_version if module_version else 'latest'
-        self.status_file = os.path.join(module_dir, f"{module_name}:{version}.json")
+        self.status_file = os.path.join(module_dir, f"{module_name}__{version}.json")
 
     def stage_start(self, stage):
         self.cur_stage = stage
-        text = f'{{"msg":" {self.cur_stage}"}}'
+        text = f'{{ "msg":"{self._stage_msg(self.cur_stage)}" }}'
         with open(self.status_file, 'w') as f:
             f.write(text)
 
     def stage_progress(self, cur_chunk, total_chunks, cur_size, total_size):
         perc = cur_size/total_size*100
-        text = f'{{"msg": "{self.cur_stage} - {cur_size} / {total_size} ({perc:.0f}%)"}}'
+        text = f'{{"msg": "{self._stage_msg(self.cur_stage)} {cur_size} / {total_size} ({perc:.0f}%)"}}'
         with open(self.status_file, 'w') as f:
             f.write(text)
 
@@ -985,6 +985,9 @@ async def get_updatable_async(modules=[], strategy="consensus"):
     return [update_vers, resolution_applied, resolution_failed]
 
 def get_updatable(modules=[], strategy="consensus"):
+    # TODO see if these are needed
+    # mic.update_local()
+    # mic.update_remote(force=True)
     if strategy not in ("consensus", "force", "skip"):
         raise ValueError('Unknown strategy "{}"'.format(strategy))
     if not modules:
@@ -1344,7 +1347,9 @@ def check_install_status(module_name, module_version):
     if not os.path.isdir(module_dir):
         os.mkdir(module_dir)
     version = module_version if module_version else 'latest'
-    status_file = os.path.join(module_dir, f"{module_name}:{version}.json")
+    status_file = os.path.join(module_dir, f"{module_name}__{version}.json")
+    if not os.path.isfile(status_file):
+        return f'{{"msg": "not found"}}'
     with open(status_file, 'r') as f:
         content = f.read()
     return content
