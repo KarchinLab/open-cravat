@@ -215,8 +215,12 @@ def live_annotation_worker():
 
 def run_flask(args):
     from cravat import gui
+    from cravat.gui.models import Module
 
     gui.ensure_workspace_exists()
+
+    # Invalidate cached local module manifest
+    Module.invalidate_cache()
 
     from multiprocessing import Process
     p = Process(target=default_celery_worker)
