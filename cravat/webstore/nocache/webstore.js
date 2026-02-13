@@ -65,6 +65,7 @@ function onClickStoreTagResetButton() {
     });
     updateFilter();
     document.getElementById('store-tag-checkbox-home').checked = false;
+    document.getElementById('store-tag-checkbox-newavailable').checked = false;
     document.getElementById('store-tag-checkbox-viewall').checked = true;
 }
 
@@ -1481,6 +1482,7 @@ function queueInstall(moduleName, version) {
                 };
             }
             OC.installQueue.push(moduleName);
+            setUpdateStatus(getUpdateMessage());
             OC.statusTimeouts[moduleName] = setInterval(pollInstallStatus, 250, moduleName, version);
             if (OC.baseInstalled) {
                 populateAllModulesDiv();
@@ -1511,7 +1513,7 @@ function uninstallModule(moduleName) {
 }
 
 function moduleChange(data) {
-    getLocal();
+    getLocal(true);
 }
 
 function setServerStatus(connected) {
@@ -1537,6 +1539,7 @@ function unqueue(moduleName) {
     if (idx >= 0) {
         OC.installQueue.splice(idx, 1);
     }
+    setUpdateStatus(getUpdateMessage());
 }
 
 function checkConnection(failures) {
@@ -1574,7 +1577,6 @@ function pollInstallStatus(module, version) {
 }
 
 function updateStatus(module, version, response) {
-    console.log('update status', module, version, response);
     var data = JSON.parse(response);
     var msg = data['msg'];
     if (OC.installInfo[module] == undefined) {
@@ -1603,7 +1605,7 @@ function updateStatus(module, version, response) {
         delete OC.installInfo[module];
         //installQueue = installQueue.filter(e => e != module);
         unqueue(module);
-        moduleChange(null);
+        moduleChange(true);
         populateAnnotators();
         if (OC.installQueue.length > 0) {
             var module = OC.installQueue.shift();
@@ -1947,13 +1949,19 @@ function setUpdateStatus(text) {
 function announceStoreUpdatingAll() {
     // var button = document.getElementById('store-update-all-button');
     // button.style.display = 'none';
-    setUpdateStatus(`Updating ${Object.keys(OC.updates).length} modules.`);
+    setUpdateStatus(getUpdateMessage());
+}
+
+function getUpdateMessage() {
+    if (OC.installInfo && Object.keys(OC.installInfo).length > 0) { return `Installing ${Object.keys(OC.installInfo).length} modules...`; }
+    if (OC.updates) { return `${Object.keys(OC.updates).length} modules have available updates`; }
+    return '';
 }
 
 function announceStoreUpdateAllAvailable() {
     //var span = document.getElementById('store-update-all-span');
     //span.textContent = 'Updates to your installed modules are available!';
-    setUpdateStatus(`${Object.keys(OC.updates).length} modules have available updates`);
+    setUpdateStatus(getUpdateMessage());
     var button = document.getElementById('store-update-all-button');
     button.style.display = 'inline';
     var div = document.getElementById('update-available-div')
