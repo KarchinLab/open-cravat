@@ -536,7 +536,7 @@ def __remove_locally_installed_deps(deps: dict) -> None:
         v_string = f"{name}>={version}"
         req = packaging.requirements.Requirement(v_string)
         local_info = get_local_module_info(name)
-        if local_info and local_info.version in req:
+        if local_info and local_info.version in req.specifier:
             to_delete.append(name)
     
     # remove those matches

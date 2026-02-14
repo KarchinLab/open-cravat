@@ -521,6 +521,10 @@ class BaseAnnotator(object):
         for db_dir in db_dirs:
             db_path = os.path.join(db_dir, self.module_name + ".sqlite")
             if os.path.exists(db_path):
+                # benchmarking on a non-warmed disk shows trivial benefit (6h30m --> 5h18m)
+                # unclear if warmed might matter, but that isn't currently my typical use case
+                # connect_uri = f"file:{db_path}?immutable=1"
+                # self.dbconn = sqlite3.connect(connect_uri, uri=True)
                 self.dbconn = sqlite3.connect(db_path)
                 self.cursor = self.dbconn.cursor()
 
