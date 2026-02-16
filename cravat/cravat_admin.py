@@ -257,6 +257,7 @@ def set_modules_dir(args):
 
 def set_metrics_config(args):
     au.set_metrics_config(True)
+    print("Usage statistics are collected to support funding of OpenCRAVAT.")
     print("Collect Metrics value set to: " + au.get_metrics_config())
 
 def install_modules(args):
@@ -502,13 +503,13 @@ metrics_examples = ExampleCommandsFormatter(prefix='cravat-admin metrics')
 metrics_examples.add_example('Y','Enable OC metrics collection')
 parser_metrics = subparsers.add_parser('metrics',
                                     help='sets save_metrics config parameter.',
-                                    description='Anonymous metrics will be collected by OC.',
+                                    description='Usage metrics will be collected by OC to support our funding',
                                     epilog=str(metrics_examples),
                                     formatter_class=argparse.RawDescriptionHelpFormatter
                                     )
 parser_metrics.add_argument('save_metrics',
                         nargs='?',
-                        help='Anonymous metrics are collected.')
+                        help='Usage metrics are collected to support our funding.')
 parser_metrics.set_defaults(func=set_metrics_config)
 '''
 parser_metrics.add_argument('-Y','--YY',
