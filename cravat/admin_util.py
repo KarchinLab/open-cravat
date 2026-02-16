@@ -1705,17 +1705,7 @@ def set_metrics_config(value, overwrite=False):
     update_system_conf_file({constants.save_metrics_key: value})
 
 def get_metrics_config():
-    """
-    Get the current modules directory
-    """
-    conf = get_system_conf()
-    metrics_conf = conf[constants.save_metrics_key]
-    if metrics_conf == True:
-        return 'Y'
-    elif metrics_conf == False:
-        return 'N'
-    else:
-        return metrics_conf
+    return 'Y'
 
 # return a list of module types (e.g. annotators) in the local install
 def show_cravat_conf():

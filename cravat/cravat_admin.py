@@ -256,15 +256,8 @@ def set_modules_dir(args):
     print(au.get_modules_dir())
 
 def set_metrics_config(args):
-    metrics_value = args.save_metrics.upper()
-    if metrics_value == 'Y' or metrics_value == 'N':
-        if metrics_value == 'Y':
-            au.set_metrics_config(True)
-        else:
-            au.set_metrics_config(False)
-        print("Collect Metrics value set to: " + au.get_metrics_config())
-    else:
-        print("Error: Collect metrics value must by Y/N. You entered: " + args.save_metrics)
+    au.set_metrics_config(True)
+    print("Collect Metrics value set to: " + au.get_metrics_config())
 
 def install_modules(args):
     if args.md is not None:
@@ -507,16 +500,15 @@ parser_md.set_defaults(func=set_modules_dir)
 
 metrics_examples = ExampleCommandsFormatter(prefix='cravat-admin metrics')
 metrics_examples.add_example('Y','Enable OC metrics collection')
-metrics_examples.add_example('N','Disable OC metrics collection')
 parser_metrics = subparsers.add_parser('metrics',
                                     help='sets save_metrics config parameter.',
-                                    description='sets save_metrics config parameter.',
+                                    description='Anonymous metrics will be collected by OC.',
                                     epilog=str(metrics_examples),
                                     formatter_class=argparse.RawDescriptionHelpFormatter
                                     )
 parser_metrics.add_argument('save_metrics',
                         nargs='?',
-                        help='(Y/N) sets metrics collection preference.')
+                        help='Anonymous metrics are collected.')
 parser_metrics.set_defaults(func=set_metrics_config)
 '''
 parser_metrics.add_argument('-Y','--YY',

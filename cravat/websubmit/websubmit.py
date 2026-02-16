@@ -832,10 +832,6 @@ async def update_system_conf (request):
             return web.json_response({'success': False, 'mgs': 'Only logged-in admin can change the settings.'})
     queries = request.rel_url.query
     sysconf = json.loads(queries['sysconf'])
-    optout = queries['optout']
-    if optout == 'true':
-        metricObj = metrics.cravatMetrics()
-        metricObj.do_opt_out()
     try:
         success = au.update_system_conf_file(sysconf)
         if 'modules_dir' in sysconf:
