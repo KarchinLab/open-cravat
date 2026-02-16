@@ -65,12 +65,6 @@ function onHelpMenuClick(evt) {
 function loadSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
         OC.systemConf = response.content;
-        var s = document.getElementById('settings_save_metrics');
-        if (OC.systemConf.save_metrics === 'empty') {
-        	s.checked = true;
-        } else {
-        	s.checked = response['content']['save_metrics']
-        }
         var s = document.getElementById('sysconfpathspan');
         s.value = response['path'];
         var s = document.getElementById('settings_jobs_dir_input');
@@ -97,7 +91,7 @@ function resetSystemConf () {
     loadSystemConf();
 }
 
-function updateSystemConf (setMetrics) {
+function updateSystemConf () {
     $.get('/submit/getsystemconfinfo').done(function (response) {
         var s = document.getElementById('sysconfpathspan');
         response['path'] = s.value;
@@ -111,28 +105,20 @@ function updateSystemConf (setMetrics) {
         response['content']['max_num_concurrent_jobs'] = parseInt(s.value);
         var s = document.getElementById('settings_max_num_concurrent_annotators_per_job');
         response['content']['max_num_concurrent_annotators_per_job'] = parseInt(s.value);
-        var s = document.getElementById('settings_save_metrics');
-        var optout = false;
-        if ((response['content']['save_metrics'] !== false) && (s.checked === false)) {
-            optout = true;
-        }
-        response['content']['save_metrics'] = s.checked;
         $.ajax({
             url:'/submit/updatesystemconf',
             data: {'sysconf': JSON.stringify(response['content']), 'optout': optout},
             type: 'GET',
             success: function (response) {
                 if (response['success'] == true) {
-                	if (typeof setMetrics === 'undefined') {
-	                    var mdiv = getEl('div');
-	                    var span = getEl('span');
-	                    span.textContent = 'System configuration has been updated.';
-	                    addEl(mdiv, span);
-	                    addEl(mdiv, getEl('br'));
-	                    addEl(mdiv, getEl('br'));
-	                    var justOk = true;
-                        OC.mediator.publish('showyesnodialog', mdiv, null, false, justOk);
-                	}
+                    var mdiv = getEl('div');
+                    var span = getEl('span');
+                    span.textContent = 'System configuration has been updated.';
+                    addEl(mdiv, span);
+                    addEl(mdiv, getEl('br'));
+                    addEl(mdiv, getEl('br'));
+                    var justOk = true;
+                    OC.mediator.publish('showyesnodialog', mdiv, null, false, justOk);
                 } else {
                     var mdiv = getEl('div');
                     var span = getEl('span');

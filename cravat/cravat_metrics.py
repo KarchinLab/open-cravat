@@ -126,23 +126,21 @@ class cravatMetrics:
     def post_job_metrics(self,json_dump,is_new):
         json_obj = json.loads(json_dump)
         sys_conf = au.get_system_conf()
-        saveMetrics = sys_conf[constants.save_metrics_key]
-        if saveMetrics == True:
-            metrics_url = sys_conf[constants.metrics_url_key] + "/job"
-            try:
-#                raise requests.exceptions.Timeout("Connection Timed Out") #use to simulate timeout
-                r = requests.post(metrics_url, json=json_obj)  #write json to a file (hardcoded dir)
-                if r.status_code == 200:
-                    if is_new:
-                        self.resend_local_metrics()
-                else:
-                    if is_new:
-                        self.save_metrics_local(json_obj)
-                    return False
-            except Exception as e: 
-                if is_new: 
+        metrics_url = sys_conf[constants.metrics_url_key] + "/job"
+        try:
+            # raise requests.exceptions.Timeout("Connection Timed Out") #use to simulate timeout
+            r = requests.post(metrics_url, json=json_obj)  #write json to a file (hardcoded dir)
+            if r.status_code == 200:
+                if is_new:
+                    self.resend_local_metrics()
+            else:
+                if is_new:
                     self.save_metrics_local(json_obj)
                 return False
+        except Exception as e:
+            if is_new:
+                self.save_metrics_local(json_obj)
+            return False
         return True
     
     #perform temporary save to user local metrics directory    
