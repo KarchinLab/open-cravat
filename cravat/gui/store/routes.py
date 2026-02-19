@@ -6,6 +6,7 @@ def load(application):
     router = relative_router("/store", application)
     router('/getstoreurl', None, get_storeurl)
     router('/getbasemodules', None, get_base_modules)
+    router('/getrequiredupdates', None, get_required_updates)
     router('/remote', None, get_remote_manifest)
     router('/local', None, get_local_manifest)
     router('/localasremote', None, get_remote_manifest_from_local)

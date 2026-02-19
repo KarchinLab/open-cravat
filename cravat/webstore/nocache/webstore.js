@@ -183,38 +183,63 @@ function setBaseInstalled() {
 }
 
 function populateStorePages() {
-    if (OC.baseInstalled) {
-        showPageselect();
-        hideSystemModulePage();
-        trimRemote();
-        var div = document.getElementById('messagediv');
-        div.style.display = 'none';
-        div = document.getElementById('remotemodulepanels');
-        var input = document.getElementById('store-namefilter');
-        input.disabled = false;
-        var div = document.getElementById('moduledetaildiv_store');
-        if (div != null) {
-            if (div.style.display != 'none') {
-                makeModuleDetailDialog(OC.currentDetailModule, null, null);
+    fetch('/store/getrequiredupdates')
+    .then(response => response.json())
+    .then(requiredModuleUpdates => {
+        OC.requiredModuleUpdates = requiredModuleUpdates;
+        if (OC.baseInstalled && OC.requiredModuleUpdates.length === 0) {
+            showPageselect();
+            hideSystemModulePage();
+            trimRemote();
+            var div = document.getElementById('messagediv');
+            div.style.display = 'none';
+            div = document.getElementById('remotemodulepanels');
+            var input = document.getElementById('store-namefilter');
+            input.disabled = false;
+            var div = document.getElementById('moduledetaildiv_store');
+            if (div != null) {
+                if (div.style.display != 'none') {
+                    makeModuleDetailDialog(OC.currentDetailModule, null, null);
+                }
             }
+            populateStoreHome();
+            populateAllModulesDiv();
+            var mg = document.getElementById('store-modulegroup-div').getAttribute('modulegroup');
+            if (mg != undefined && mg != '') {
+                populateModuleGroupDiv(mg);
+            }
+            if (OC.storeFirstOpen) {
+                showStoreHome();
+            }
+            OC.storeFirstOpen = false;
+        } else if (!OC.baseInstalled) {
+            hidePageselect();
+            showSystemModulePage();
+        } else {
+            hidePageselect();
+            showReqUpdatePage();
         }
-        populateStoreHome();
-        populateAllModulesDiv();
-        var mg = document.getElementById('store-modulegroup-div').getAttribute('modulegroup');
-        if (mg != undefined && mg != '') {
-            populateModuleGroupDiv(mg);
-        }
-        if (OC.storeFirstOpen) {
-            showStoreHome();
-        }
-        OC.storeFirstOpen = false;
-    } else {
-        hidePageselect();
-        showSystemModulePage();
-    }
+    })
 }
 
+function showReqUpdatePage() {
+    document.getElementById('store-systemmodule-div').style.display = 'block';
+    document.getElementById('store-requpdate-div').style.display = 'block';
+}
 
+function onClickRequiredUpdatesButton() {
+    document.getElementById('store-systemmodule-msg-div').textContent = '';
+    var btn = document.getElementById('store-requpdate-button');
+    btn.classList.add('disabled');
+    installRequiredUpdates();
+    document.getElementById('messagediv').style.display = 'none';
+}
+
+function installRequiredUpdates () {
+    for (let moduleName of OC.requiredModuleUpdates) {
+        queueInstall(moduleName);
+    }
+}
 
 function showOrHideSystemModuleUpdateButton() {
     if (OC.servermode == false || (OC.logged == true && OC.username == 'admin')) {
@@ -1886,6 +1911,7 @@ function addWebstoreEventHandlers() {
     $('#store-update-all-button').on('click', onClickStoreUpdateAllButton);
     $('#module-group-back-arrow').on('click', onClickModuleGroupDivBackArrow);
     $('#store-systemmodule-install-button').on('click', onClickInstallBaseComponents);
+    $('#store-requpdate-button').on('click', onClickRequiredUpdatesButton);
 
 }
 

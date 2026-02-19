@@ -597,6 +597,16 @@ input:checked + .store-switch-slider:before {
     background-color: #e6e7e8;
 }
 
+#store-requpdate-div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    color: black;
+    padding: 20px;
+    background-color: #e6e7e8;
+}
+
 #store-systemmoduleupdate-announce-div {
     font-size: 12px;
     color: #f7684b;

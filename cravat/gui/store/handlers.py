@@ -24,9 +24,7 @@ def get_storeurl():
 
 
 def get_base_modules():
-    conf = current_app.config['CRAVAT_SYSCONF']
-    base_modules = conf['base_modules']
-    return jsonify(base_modules)
+    return jsonify(constants.base_modules)
 
 
 def get_remote_manifest():
@@ -231,3 +229,20 @@ def get_featured_module_lists():
     list_url = pb.featured_module_list()
     featured_list = su.get_file_to_json(list_url)
     return jsonify(featured_list)
+
+def get_required_updates():
+    need_update = au.check_required_updates()
+    # try:
+    #     r = requests.get('https://store.opencravat.org/required-updates.json')
+    #     r.raise_for_status()
+    # except:
+    #     pass
+    # required = constants.required_updates
+    # need_update = []
+    # for mname in required:
+    #     linfo = au.get_local_module_info(mname)
+    #     if linfo is None:
+    #         continue
+    #     if Version(linfo.version) < Version(required[mname]):
+    #         need_update.append(mname)
+    return jsonify(need_update)

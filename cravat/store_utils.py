@@ -102,6 +102,8 @@ class PathBuilder(object):
     def featured_module_list(self):
         return self._build_path(self.base(), "store.json")
 
+    def required_updates(self):
+        return self._build_path(self.bae(), 'required-updates.json')
 
 def blank_stage_handler(*args, **kwargs):
     pass

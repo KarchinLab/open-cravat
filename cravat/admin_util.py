@@ -13,6 +13,7 @@ import traceback
 import re
 from distutils.version import LooseVersion
 import pkg_resources
+import importlib.metadata
 from collections import defaultdict
 from types import SimpleNamespace
 from . import exceptions
@@ -24,6 +25,7 @@ import signal
 import subprocess
 from urllib.error import HTTPError
 from pathlib import Path
+from packaging.version import Version
 
 class InstallProgressHandler(object):
     def __init__(self, module_name, module_version):
@@ -492,7 +494,7 @@ def get_cravat_conf_info():
 
 
 def get_current_package_version():
-    version = pkg_resources.get_distribution("open-cravat").version
+    version = importlib.metadata.version('open-cravat')
     return version
 
 
@@ -766,7 +768,6 @@ def get_package_versions():
     try:
         r = requests.get("https://pypi.org/pypi/open-cravat/json", timeout=(3, None))
     except requests.exceptions.ConnectionError:
-        print("Internet connection is not available.")
         return None
     if r.status_code == 200:
         d = json.loads(r.text)
@@ -1813,3 +1814,26 @@ def create_package(name, pkg_details, overwrite):
         wf.write(yaml.dump(pkg_details, default_flow_style=False))
     mic.update_local()
 
+def check_required_updates():
+    try:
+        sys_conf = get_system_conf()
+        path_builder = su.PathBuilder(sys_conf["store_url"], "url")
+        url = path_builder.required_updates()
+        r = requests.get(url)
+        r.raise_for_status()
+    except:
+        pass
+    required = constants.required_updates
+    need_update = []
+    mic.update_local()
+    for mname in required:
+        linfo = get_local_module_info(mname)
+        if linfo is None:
+            continue
+        if Version(linfo.version) < Version(required[mname]):
+            need_update.append(mname)
+    return need_update
+
+def install_required_updates():
+    for mname in check_required_updates:
+        install_module(mname)
