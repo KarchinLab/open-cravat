@@ -1509,6 +1509,9 @@ def read_system_conf_template():
 
 
 def ready_resolution_console():
+    if len(check_required_updates()) > 0:
+        input('Some module updates are required. Press enter to install.')
+        install_required_updates()
     rs = system_ready()
     if rs:
         return
@@ -1819,7 +1822,7 @@ def check_required_updates():
         sys_conf = get_system_conf()
         path_builder = su.PathBuilder(sys_conf["store_url"], "url")
         url = path_builder.required_updates()
-        r = requests.get(url)
+        r = requests.get(url, timeout=(3,None))
         r.raise_for_status()
     except:
         pass
@@ -1835,5 +1838,5 @@ def check_required_updates():
     return need_update
 
 def install_required_updates():
-    for mname in check_required_updates:
+    for mname in check_required_updates():
         install_module(mname)
