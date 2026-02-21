@@ -17,6 +17,7 @@ OC.updateConflicts = null;
 OC.filter = {};
 OC.installQueue = [];
 OC.installInfo = {};
+OC.moduleStatus = {}
 OC.baseModuleNames = [];
 OC.storeUrl = null;
 OC.newModuleAvailable = false;
@@ -1133,7 +1134,8 @@ function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
             installStatus = 'Installing...';
         }
     } else {
-        if (OC.localModuleInfo[moduleName] != undefined && OC.localModuleInfo[moduleName]['exists']) {
+        if ((OC.localModuleInfo[moduleName] != undefined && OC.localModuleInfo[moduleName]['exists'])
+            || OC.moduleStatus[moduleName] && OC.moduleStatus[moduleName]['status'] === 'finished') {
             installStatus = 'Installed';
         } else {
             installStatus = '';
@@ -1157,7 +1159,7 @@ function getRemoteModulePanel(moduleName, moduleListName, moduleListPos) {
             var button = getModuleTileAbortButton(moduleName);
             addEl(div, button);
         } else if (installStatus == 'Installed') {
-            if (OC.remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0) {
+            if (OC.remoteModuleInfo[moduleName].tags.indexOf('newavailable') >= 0 && !(OC.moduleStatus[moduleName] && OC.moduleStatus[moduleName]['status'] === 'finished')) {
                 var button = getModuleTileUpdateButton(moduleName);
                 addEl(div, button);
             } else {
@@ -1466,6 +1468,11 @@ function getHighestVersionForRemoteModule(module) {
 }
 
 function queueInstall(moduleName, version) {
+    let v = version ? version : '';
+    OC.moduleStatus[moduleName] = {
+        'msg': `Queued ${v}`,
+        'status': 'queued',
+    }
     $.get('/store/queueinstall', {
         'module': moduleName,
         'version': version
@@ -1482,8 +1489,12 @@ function queueInstall(moduleName, version) {
                 };
             }
             OC.installQueue.push(moduleName);
+            OC.moduleStatus[moduleName] = {
+                'msg': `Installing ${v}`,
+                'status': 'installing',
+            }
             setUpdateStatus(getUpdateMessage());
-            OC.statusTimeouts[moduleName] = setInterval(pollInstallStatus, 250, moduleName, version);
+            OC.statusTimeouts[moduleName] = setInterval(pollInstallStatus, 1000, moduleName, version);
             if (OC.baseInstalled) {
                 populateAllModulesDiv();
             }
@@ -1495,6 +1506,10 @@ function uninstallModule(moduleName) {
     OC.installInfo[moduleName] = {
         'msg': 'uninstalling'
     };
+    OC.moduleStatus[moduleName] = {
+        'msg': 'Uninstalling',
+        'status': 'uninstalling',
+    }
     populateAllModulesDiv();
     writeInstallationMsg(getTimestamp() + " Uninstalling " + moduleName)
     $.ajax({
@@ -1505,6 +1520,10 @@ function uninstallModule(moduleName) {
         },
         complete: function(response) {
             delete OC.installInfo[moduleName];
+            OC.moduleStatus[moduleName] = {
+                'msg': 'Uninstalled',
+                'status': 'Uninstalled',
+            }
             moduleChange(response);
             populateAnnotators();
             writeInstallationMsg(getTimestamp() + " Uninstalled " + moduleName)
@@ -1573,7 +1592,10 @@ function pollInstallStatus(module, version) {
         'version': version
     }).done((response) => {
         updateStatus(module, version, response);
-    }).fail(() => clearInterval(OC.statusTimeouts[module]));
+    }).fail(() =>  {
+        addUpdateErrorMessage(module);
+        clearInterval(OC.statusTimeouts[module]);
+    });
 }
 
 function updateStatus(module, version, response) {
@@ -1593,16 +1615,20 @@ function updateStatus(module, version, response) {
     if (installstatdiv != null) {
         installstatdiv.textContent = msg;
     }
-    //var sdivs = $('div.moduletile[module=' + module + '] .panelinstallprogressspan');
-    //for (var i1 = 0; i1 < sdivs.length; i1++) {
-    //    var sdiv = sdivs[i1];
-    //    sdiv.style.color = 'black';
-    //    sdiv.textContent = msg;
-    //}
+    var sdivs = $('div.moduletile[module=' + module + '] .panelinstallprogressspan');
+    for (var i1 = 0; i1 < sdivs.length; i1++) {
+       var sdiv = sdivs[i1];
+       sdiv.style.color = 'black';
+       sdiv.textContent = msg;
+    }
     writeInstallationMsg(msg)
     if (msg.search('Finished installation of') > 0) {
         clearInterval(OC.statusTimeouts[module]);
         delete OC.installInfo[module];
+        OC.moduleStatus[module] = {
+            'msg': 'Finished Installation',
+            'status': 'finished',
+        }
         //installQueue = installQueue.filter(e => e != module);
         unqueue(module);
         moduleChange(true);
@@ -1616,11 +1642,19 @@ function updateStatus(module, version, response) {
     } else if (msg.search('Aborted') > 0) {
         delete OC.installInfo[module];
         clearInterval(OC.statusTimeouts[module]);
+        OC.moduleStatus[module] = {
+            'msg': 'Cancelled',
+            'status': 'cancelled',
+        }
         unqueue(module);
         setModuleTileInstallButton(module);
     } else if (msg.search('Unqueued') > 0) {
         delete OC.installInfo[module];
         clearInterval(OC.statusTimeouts[module]);
+        OC.moduleStatus[module] = {
+            'msg': 'Cancelled',
+            'status': 'cancelled',
+        }
         unqueue(module);
         setModuleTileInstallButton(module);
     } else {
@@ -1632,74 +1666,27 @@ function updateStatus(module, version, response) {
     }
 }
 
-function connectWebSocket() {
-    var host = window.location.host;
-    var protocol = window.location.protocol;
-    var ws = null;
-    if (protocol == 'http:') {
-        ws = new WebSocket('ws://' + host + '/store/connectwebsocket');
-    } else if (protocol == 'https:') {
-        ws = new WebSocket('wss://' + host + '/store/connectwebsocket');
+function addUpdateErrorMessage(module) {
+    console.log(`Error installing ${module}`);
+    if (OC.moduleStatus && OC.moduleStatus[module] && OC.moduleStatus[module]['status'] === 'error') return;
+    const errorContainer = $('#update-all-errors');
+    const message = $('<span />')
+        .addClass('update-module-error')
+        .text(`Error installing ${module}  X`)
+        .attr('title', module)
+        .on('click', (evt) => {
+            console.log(`remove ${module}`);
+            let self = $(evt.target);
+            self.remove();
+            delete OC.moduleStatus[module];
+            setUpdateStatus(getUpdateMessage());
+        });
+    errorContainer.append(message);
+    OC.moduleStatus[module] = {
+        'msg': `Error installing ${module}`,
+        'status': 'error'
     }
-    ws.onopen = function(evt) {}
-    ws.onclose = function(evt) {
-        console.log('Re-establishing websocket');
-        // connectWebSocket();
-    }
-    ws.onmessage = function(evt) {
-        var data = JSON.parse(evt.data);
-        var module = data['module'];
-        var msg = data['msg'];
-        var isbase = data['isbase'];
-        if (OC.installInfo[module] == undefined) {
-            OC.installInfo[module] = {};
-        }
-        OC.installInfo[module]['msg'] = msg;
-        var installstatdiv = null;
-        if (OC.baseToInstall.length > 0 || OC.baseInstalled == false) {
-            installstatdiv = document.getElementById('store-systemmodule-msg-div');
-        } else {
-            var divModuleName = module;
-            installstatdiv = document.getElementById('installstatdiv_' + divModuleName);
-        }
-        if (installstatdiv != null) {
-            installstatdiv.textContent = msg;
-        }
-        //var sdivs = $('div.moduletile[module=' + module + '] .panelinstallprogressspan');
-        //for (var i1 = 0; i1 < sdivs.length; i1++) {
-        //    var sdiv = sdivs[i1];
-        //    sdiv.style.color = 'black';
-        //    sdiv.textContent = msg;
-        //}
-        writeInstallationMsg(msg)
-        if (msg.search('Finished installation of') > 0) {
-            delete OC.installInfo[module];
-            //installQueue = installQueue.filter(e => e != module);
-            unqueue(module);
-            moduleChange(null);
-            populateAnnotators();
-            if (OC.installQueue.length > 0) {
-                var module = OC.installQueue.shift();
-                OC.installInfo[module] = {
-                    'msg': 'installing'
-                };
-            }
-        } else if (msg.search('Aborted') > 0) {
-            delete OC.installInfo[module];
-            unqueue(module);
-            setModuleTileInstallButton(module);
-        } else if (msg.search('Unqueued') > 0) {
-            delete OC.installInfo[module];
-            unqueue(module);
-            setModuleTileInstallButton(module);
-        } else {
-            var idx = OC.uninstalledModules.indexOf(module);
-            if (idx >= 0) {
-                setModuleTileAbortButton(module);
-                OC.uninstalledModules.splice(idx, 1);
-            }
-        }
-    }
+    setUpdateStatus(getUpdateMessage());
 }
 
 function setModuleTileAbortButton(module) {
@@ -1941,9 +1928,10 @@ function onClickStoreUpdateAllButton() {
     });
 }
 
-function setUpdateStatus(text) {
+function setUpdateStatus(info) {
     let statusSpan = document.getElementById('update-all-status');
-    statusSpan.innerText = text;
+    statusSpan.innerText = info.text;
+    statusSpan.title = info.title;
 }
 
 function announceStoreUpdatingAll() {
@@ -1953,9 +1941,34 @@ function announceStoreUpdatingAll() {
 }
 
 function getUpdateMessage() {
-    if (OC.installInfo && Object.keys(OC.installInfo).length > 0) { return `Installing ${Object.keys(OC.installInfo).length} modules...`; }
-    if (OC.updates) { return `${Object.keys(OC.updates).length} modules have available updates`; }
-    return '';
+    if (OC.moduleStatus && Object.keys(OC.moduleStatus).length > 0) {
+        // installing modules
+        let installing = Object.keys(OC.moduleStatus).reduce(function (filtered, key) {
+            if (OC.moduleStatus[key]['status'] === 'installing' || OC.moduleStatus[key]['status'] === 'queued') filtered[key] = OC.moduleStatus[key];
+            return filtered;
+        }, {});
+        const installCount = Object.keys(installing).length;
+        if (installCount > 1) {
+            return { 'text': `Installing ${installCount} modules...`, 'title': Object.keys(installing).join(",")};
+        } else if (installCount == 1) {
+            const name = Object.keys(installing)[0];
+            return { 'text': `Installing ${name}`, 'title': name };
+        }
+    }
+    // modules needing updates
+    if (OC.updates)
+    {
+        const updateList = Object.keys(OC.updates);
+        const statusList = Object.keys(OC.moduleStatus);
+        const unhandledUpdates = updateList.filter(m => !(statusList.includes(m)) || "finished" !== OC.moduleStatus[m]['status']);
+        const handledUpdates = statusList.filter(m => OC.moduleStatus[m]['status'] === 'finished');
+        if (unhandledUpdates && unhandledUpdates.length > 0) {
+            return { 'text': `${Object.keys(unhandledUpdates).length} modules have available updates`, 'title': unhandledUpdates.join(',')};
+        } else if (handledUpdates) {
+            return { 'text': `${handledUpdates.length} updates complete`, 'title': handledUpdates.join(',') };
+        }
+    }
+    return {'text': '', 'title': ''};
 }
 
 function announceStoreUpdateAllAvailable() {
