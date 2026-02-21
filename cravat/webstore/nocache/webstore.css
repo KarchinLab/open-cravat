@@ -840,14 +840,12 @@ input:checked + .store-switch-slider:before {
 }
 
 #installationprogressmsgdiv {
-    position: fixed;
+    position: absolute;
     z-index: 1;
     overflow: auto;
     font-size: 13px;
     width: 430px;
     height: 200px;
-    left: 10px;
-    bottom: 10px;
     border: 1px solid #bfbdc1;
     background-color: white;
     padding: 10px;
@@ -869,14 +867,21 @@ input:checked + .store-switch-slider:before {
 }
 
 #chaticondiv {
-    position: fixed;
-    z-index: 2;
-    bottom: 0px;
-    left: 6px;
+    font-family: 'roboto-medium';
+    font-size: small;
+    border: 1px solid;
+    cursor: pointer;
+    padding: 0px 5px;
+}
+
+#chaticondiv:hover {
+    border-bottom: 2px solid;
+    border-right: 2px solid;
+    margin-bottom: -1px;
 }
 
 #chaticondiv.hide {
-    display: none;
+    /*display: none;*/
 }
 
 #chaticon {
@@ -887,6 +892,6 @@ input:checked + .store-switch-slider:before {
 }
 
 #chaticondiv.new #chaticon {
-    content:url("/store/images/chat-left-text-fill.svg");
+    /*content:url("/store/images/chat-left-text-fill.svg");*/
 }
 

@@ -1326,13 +1326,10 @@ function onClickProgressDivCloseIcon() {
 function toggleChatBox() {
     var progdiv = document.querySelector('#installationprogressmsgdiv')
     var chatdiv = document.querySelector('#chaticondiv')
-    if (chatdiv.classList.contains('hide')) {
-        chatdiv.classList.remove('hide')
-        progdiv.classList.remove('show')
-    } else {
-        chatdiv.classList.add('hide')
-        chatdiv.classList.remove('new')
+    if (!progdiv.classList.contains('show')) {
         progdiv.classList.add('show')
+    } else {
+        progdiv.classList.remove('show')
     }
 }
 
@@ -1407,9 +1404,6 @@ function writeInstallationMsg(msg) {
     }
 }
 
-function handleInstallationProgress() {
-    //TODO
-}
 
 function installationProgressMessage(messsage, error) {
     if (message) {
