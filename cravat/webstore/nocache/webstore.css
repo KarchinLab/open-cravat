@@ -658,6 +658,29 @@ input:checked + .store-switch-slider:before {
     top: 16px;
 }
 
+#update-all-status {
+    font-size: small;
+    font-family: 'roboto-medium';
+    border: 1px solid #4a87bd;
+    padding: 0px 5px;
+    color: #4a87bd;
+}
+
+.update-module-error {
+    font-size: small;
+    font-family: 'roboto-medium';
+    border: 1px solid #9d2a2a;
+    padding: 0px 5px;
+    color: #9d2a2a;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.update-module-error:hover {
+    background: #9d2a2a;
+    color: white;
+}
+
 
 #version-announcements {
     display: flex;
