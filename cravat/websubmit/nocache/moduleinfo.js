@@ -68,9 +68,9 @@ function hideUpdateRemoteSpinner () {
     document.querySelector('#update-remote-spinner-div').classList.add('hide');
 }
 
-function getLocal(refresh = false) {
+function getLocal() {
     showUpdateRemoteSpinner();
-    $.get('/store/local', {"refresh": refresh}).done(function(data) {
+    $.get('/store/local').done(function(data) {
         OC.localModuleInfo = data;
         updateModuleGroupInfo();
         makeInstalledGroup();
@@ -246,7 +246,7 @@ function checkSystemReady() {
                 if (OC.servermode == false) {
                     OC.mediator.publish('populateJobs');
                 }
-                getLocal(true);
+                getLocal();
             } else {
                 hidePageselect();
                 showSystemModulePage();

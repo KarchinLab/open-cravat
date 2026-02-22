@@ -13,6 +13,7 @@ from cravat import admin_util as au
 from cravat.webresult import webresult as wr
 from cravat.webstore import webstore as ws
 from cravat.websubmit import websubmit as wu
+from cravat.gui import cache
 import websockets
 from aiohttp import web, web_runner
 import socket
@@ -221,6 +222,8 @@ def run_flask(args):
 
     # Invalidate cached local module manifest
     Module.invalidate_cache()
+    # Clear flask cache on startup
+    cache.cache.clear()
 
     from multiprocessing import Process
     p = Process(target=default_celery_worker)
