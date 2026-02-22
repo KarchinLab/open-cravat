@@ -985,9 +985,6 @@ async def get_updatable_async(modules=[], strategy="consensus"):
     return [update_vers, resolution_applied, resolution_failed]
 
 def get_updatable(modules=[], strategy="consensus"):
-    # TODO see if these are needed
-    # mic.update_local()
-    # mic.update_remote(force=True)
     if strategy not in ("consensus", "force", "skip"):
         raise ValueError('Unknown strategy "{}"'.format(strategy))
     if not modules:

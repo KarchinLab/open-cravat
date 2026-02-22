@@ -1526,7 +1526,7 @@ function uninstallModule(moduleName) {
 }
 
 function moduleChange(data) {
-    getLocal(true);
+    getLocal();
 }
 
 function setServerStatus(connected) {

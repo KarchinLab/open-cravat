@@ -12,7 +12,6 @@ from cravat.gui.job_manager import queue_messages
 from cravat.gui.admin import is_admin_loggedin
 from cravat.gui.cravat_request import HTTP_BAD_REQUEST
 from cravat.gui.tasks import install_module
-from cravat.gui import cache
 
 
 def get_storeurl():
@@ -55,11 +54,6 @@ def get_remote_manifest():
 
 
 def get_local_manifest():
-    queries = request.values
-    refresh = queries.get('refresh', False)
-    if refresh:
-        Module.invalidate_cache()
-
     content = {}
     for k, v in Module.local().items():
         content[k] = v.serialize()
@@ -113,7 +107,6 @@ def get_module_updates():
     else:
         modules = []
 
-    cache.cache.clear()
     ret = au.get_updatable(modules=modules)
     [updates, _, conflicts] = ret
     sconflicts = {}
