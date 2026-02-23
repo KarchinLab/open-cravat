@@ -22,16 +22,17 @@ def run_report(db_path, report_type, tmp_flag_path):
     run_args = ['oc', 'report', db_path, '-t', report_type]
     subprocess.run(run_args)
     Path(tmp_flag_path).unlink()
-                  
+
 live_mapper = None
+enable_variant_api = admin_util.get_system_conf().get('enable_variant_api', False)
+if enable_variant_api:
+    @signals.worker_process_init.connect
+    def _init_worker_state(**_):
+        print(_)
+        global live_mapper
+        live_mapper = LiveModuleCache()
 
-@signals.worker_process_init.connect
-def _init_worker_state(**_):
-    print(_)
-    global live_mapper
-    live_mapper = LiveModuleCache()
-
-@shared_task(queue="live_annotate")
-def api_live_annotate(queries, annotators, is_multiuser=False):
-    global live_mapper
-    return live_annotate_worker(queries, annotators, is_multiuser, live_mapper)
+    @shared_task(queue="live_annotate")
+    def api_live_annotate(queries, annotators, is_multiuser=False):
+        global live_mapper
+        return live_annotate_worker(queries, annotators, is_multiuser, live_mapper)

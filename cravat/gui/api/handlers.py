@@ -1,6 +1,6 @@
-from flask import request, g
-
+from flask import request, g, abort
 from cravat.gui import tasks
+import cravat.admin_util as au
 
 ## LIVE ANNOTATION
 def format_response(response, version):
@@ -12,6 +12,9 @@ def format_response(response, version):
         return response
 
 def live_annotate(version=None):
+    enable_variant_api = au.get_system_conf().get('enable_variant_api',False)
+    if not enable_variant_api:
+        return abort(404)
     queries = dict(request.values) if request.values else request.json
     annotators = queries.get('annotators', [])
     is_multiuser = g.is_multiuser
