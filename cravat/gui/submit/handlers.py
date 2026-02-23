@@ -4,7 +4,7 @@ import shutil
 import traceback
 
 from datetime import datetime
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 
 from flask import jsonify, request, abort, g, send_file
 import requests
