@@ -13,6 +13,7 @@ from werkzeug.utils import secure_filename
 
 from cravat import admin_util as au, InvalidData, ConfigLoader, get_module, get_live_mapper, get_live_annotator
 from cravat import constants
+from cravat.cravat_util import status_from_db
 from cravat.gui.cravat_request import *
 from cravat.gui import metadata
 from cravat.gui.decorators import with_job_id_and_path
@@ -568,3 +569,22 @@ def legacy_api_live_annotate():
     result = tasks.api_live_annotate.apply_async(kwargs={"queries":queries, "annotators":annotators, "is_multiuser": is_multiuser})
     resp = result.get()
     return resp
+
+def import_job_from_db():
+    filerouter = file_router()
+    jobs_dirs = filerouter.job_dirs
+    jobs_dir = jobs_dirs[0]
+    job_id = Job.next_id()
+    job_dir = os.path.join(jobs_dir, job_id)
+    os.makedirs(job_dir, exist_ok=True)
+    fn = request.headers['Content-Disposition'].split('filename=')[1]
+    dbpath = os.path.join(job_dir,fn)
+    chunk_size = 8192
+    with open(dbpath, 'wb') as wf:
+        while chunk := request.stream.read(chunk_size):
+            wf.write(chunk)
+    status_d = status_from_db(dbpath)
+    status_path = dbpath + '.status.json'
+    with open(status_path,'w') as wf:
+        json.dump(status_d,wf)
+    return ''
