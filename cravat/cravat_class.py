@@ -812,6 +812,11 @@ class Cravat(object):
         annos_pkg = full_args['annotators']
         annos_add = supplied_args_no_none.get('annotators')
         annos_repl = supplied_args_no_none.get('annotators_replace')
+        # primary_transcript
+        if supplied_args_no_none.get('primary_transcript') != full_args.get('primary_transcript'):
+            full_args['primary_transcript'] = \
+                full_args['primary_transcript'] \
+                + supplied_args_no_none['primary_transcript']
         if len(annos_pkg) > 0:
             if len(annos_repl) > 0:
                 full_args['annotators'] = annos_repl
@@ -824,7 +829,7 @@ class Cravat(object):
                 full_args['annotators'] = annos_add
         # other command-line arguments
         for k, v in supplied_args_no_none.items():
-            if k in ['annotators', 'annotators_replace']:
+            if k in ['annotators', 'annotators_replace', 'primary_transcript']:
                 continue
             if full_args.get(k, None) is not None:
                 fv = full_args[k]

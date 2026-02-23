@@ -2,21 +2,36 @@ import re
 import os
 import importlib
 import sys
+from itertools import chain, islice
+
 import oyaml as yaml
 import chardet
 import gzip
 import types
 import inspect
 import logging
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 from cravat.cravat_util import max_version_supported_for_migration
 import sqlite3
-import pkg_resources
+import importlib.metadata
 import datetime
 import argparse
 from types import SimpleNamespace
 import math
 
+
+def batched(iterable, n):
+    """
+    group the iterator into a new iterator of batches of size n.
+
+    backfill for python 3.12 itertools.batched. borrowed from python.org discussion
+    https://discuss.python.org/t/add-batching-function-to-itertools-module/19357/19?page=2
+    """
+    it = iter(iterable)
+    for first in it:
+        batch = chain((first,), islice(it, n - 1))
+        yield batch
+        next(islice(batch, n, n), None)
 
 def discretize_scalar(score, cutoffs):
     """Locate the location of `score` in a list[tuple(float, str)] of
@@ -404,7 +419,7 @@ def detect_encoding(path):
 def is_compatible_version(dbpath):
     db = sqlite3.connect(dbpath)
     c = db.cursor()
-    oc_version = LooseVersion(pkg_resources.get_distribution("open-cravat").version)
+    oc_version = LooseVersion(importlib.metadata.distribution("open-cravat").version)
     sql = 'select colval from info where colkey="open-cravat"'
     c.execute(sql)
     r = c.fetchone()

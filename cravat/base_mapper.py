@@ -11,16 +11,10 @@ from .constants import (
     crg_idx,
     crt_def,
     crt_idx,
-    gene_level_so_exclude,
 )
-from .exceptions import InvalidData, NoVariantError
 from cravat.config_loader import ConfigLoader
-import sys
-import pkg_resources
+import importlib.metadata
 import json
-import cravat.cravat_util as cu
-from types import SimpleNamespace
-import multiprocessing as mp
 import cravat.admin_util as au
 import time
 import cravat.util
@@ -77,7 +71,7 @@ class BaseMapper(object):
         self._setup_logger()
         config_loader = ConfigLoader()
         self.conf = config_loader.get_module_conf(self.module_name)
-        self.cravat_version = pkg_resources.get_distribution("open-cravat").version
+        self.cravat_version = importlib.metadata.distribution("open-cravat").version
 
     def _define_main_cmd_args(self):
         self.cmd_parser = argparse.ArgumentParser()

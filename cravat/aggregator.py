@@ -11,7 +11,7 @@ import cravat.admin_util as au
 import json
 from .exceptions import BadFormatError
 import traceback
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 from collections import OrderedDict
 
 

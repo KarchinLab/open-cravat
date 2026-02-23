@@ -61,10 +61,10 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'gui')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='2.13.0',
+    version='2.17.0',
     description='OpenCRAVAT - variant analysis toolkit',
     long_description=readme(),
-    author='Kyle Moad, Kyle Anderson, Madison Larsen, Jeltje van Baren, and Rachel Karchin',
+    author='Kyle Moad, Kyle Anderson, Charlie Vaske, Jasmine Baker, and Rachel Karchin',
     author_email='support@opencravat.org',
     url='https://www.opencravat.org',
     license='',
@@ -80,6 +80,8 @@ setup(
               'install':InstallCommand,
               },
     install_requires=[
+        'looseversion',
+        'packaging',
         'pyyaml',
         'requests',
         'requests-toolbelt',
