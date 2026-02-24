@@ -574,17 +574,30 @@ def import_job_from_db():
     filerouter = file_router()
     jobs_dirs = filerouter.job_dirs
     jobs_dir = jobs_dirs[0]
-    job_id = Job.next_id()
-    job_dir = os.path.join(jobs_dir, job_id)
-    os.makedirs(job_dir, exist_ok=True)
+
+    chunk_index = int(request.headers.get('X-Chunk-Index', 0))
+    total_chunks = int(request.headers.get('X-Total-Chunks', 1))
     fn = request.headers['Content-Disposition'].split('filename=')[1]
-    dbpath = os.path.join(job_dir,fn)
-    chunk_size = 8192
-    with open(dbpath, 'wb') as wf:
-        while chunk := request.stream.read(chunk_size):
-            wf.write(chunk)
-    status_d = status_from_db(dbpath)
-    status_path = dbpath + '.status.json'
-    with open(status_path,'w') as wf:
-        json.dump(status_d,wf)
-    return ''
+
+    if chunk_index == 0:
+        job_id = Job.next_id()
+        job_dir = os.path.join(jobs_dir, job_id)
+        os.makedirs(job_dir, exist_ok=True)
+    else:
+        job_id = request.headers['X-Job-Id']
+        job_dir = os.path.join(jobs_dir, job_id)
+
+    dbpath = os.path.join(job_dir, fn)
+    mode = 'ab' if chunk_index > 0 else 'wb'
+
+    with open(dbpath, mode) as wf:
+        wf.write(request.data)
+
+    if chunk_index == total_chunks - 1:
+        status_d = status_from_db(dbpath)
+        status_path = dbpath + '.status.json'
+        with open(status_path, 'w') as wf:
+            json.dump(status_d, wf)
+        return ''
+
+    return job_id
