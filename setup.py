@@ -61,7 +61,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'gui')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='2.17.0',
+    version='3.0.0',
     description='OpenCRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Kyle Moad, Kyle Anderson, Charlie Vaske, Jasmine Baker, and Rachel Karchin',
