@@ -2181,23 +2181,55 @@ function websubmit_run () {
     populateMultInputsMessage();
 };
 
-function importJob() {
-    let fileSel = document.querySelector('#job-import-file');
+async function importJob() {
+    const fileSel = document.querySelector('#job-import-file');
     if (fileSel.files.length === 0) return;
-    var req = new XMLHttpRequest();
-    req.open('POST', '/submit/import');
-    req.setRequestHeader('Content-Disposition', `attachment; filename=${fileSel.files[0].name}`);
-    req.upload.onprogress = function (evt) {
-        var uploadPerc = evt.loaded / evt.total * 100;
-        document.querySelector('#spinner-div-progress-bar').style.width = uploadPerc + '%';
-        document.querySelector('#spinner-div-progress-num').textContent = uploadPerc.toFixed(0) + '%';
-    };
-    req.onloadend  = function (evt) {
-        hideSpinner();
-        refreshJobsTable();
-    };
+    
+    const file = fileSel.files[0];
+    const CHUNK_SIZE = 64 * 1024 * 1024;
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    let jobId = null;
+    
     showSpinner();
-    req.send(fileSel.files[0]);
+
+    try {
+        for (let i = 0; i < totalChunks; i++) {
+            const start = i * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunk = file.slice(start, end);
+
+            await new Promise((resolve, reject) => {
+                const req = new XMLHttpRequest();
+                req.open('POST', '/submit/import');
+                req.setRequestHeader('Content-Disposition', `attachment; filename=${file.name}`);
+                req.setRequestHeader('X-Chunk-Index', i);
+                req.setRequestHeader('X-Total-Chunks', totalChunks);
+                if (jobId) req.setRequestHeader('X-Job-Id', jobId);
+
+                req.upload.onprogress = function(evt) {
+                    const overallProgress = ((i + evt.loaded / evt.total) / totalChunks) * 100;
+                    document.querySelector('#spinner-div-progress-bar').style.width = overallProgress + '%';
+                    document.querySelector('#spinner-div-progress-num').textContent = overallProgress.toFixed(0) + '%';
+                };
+
+                req.onloadend = function() {
+                    if (req.status >= 200 && req.status < 300) {
+                        if (i === 0) jobId = req.responseText;
+                        resolve();
+                    } else {
+                        reject(new Error(`Chunk ${i} failed: ${req.status}`));
+                    }
+                };
+
+                req.send(chunk);
+            });
+        }
+    } catch (err) {
+        console.error('Upload failed:', err);
+    }
+
+    hideSpinner();
+    refreshJobsTable();
 }
 
 // Additional analysis stuff. Currently just casecontrol. Design expected to change when more added.
