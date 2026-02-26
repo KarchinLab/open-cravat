@@ -38,7 +38,8 @@ CELERY = dict(
     broker_url='filesystem://',
     broker_transport_options={
         'data_folder_in': f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/broker',
-        'data_folder_out': f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/broker/'
+        'data_folder_out': f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/broker/',
+		'control_folder': f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/control/',
     },
     result_backend=f'file:/{CELERY_RESULTS_PATH}',
     include=['cravat.gui.tasks'],
