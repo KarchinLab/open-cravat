@@ -19,6 +19,7 @@ from cravat.gui import metadata
 from cravat.gui.decorators import with_job_id_and_path
 from cravat.gui.models import Job
 from cravat.gui import tasks
+from cravat.gui.admin import is_admin_loggedin
 from pathlib import Path
 
 
@@ -601,3 +602,17 @@ def import_job_from_db():
         return ''
 
     return job_id
+
+# TODO change to use the require_admin decorator
+def update_system_conf():
+    if g.is_multiuser:
+        if not is_admin_loggedin():
+            return abort(403)
+    queries = request.values if request.values else request.json
+    sysconf = json.loads(queries['sysconf'])
+    success = au.update_system_conf_file(sysconf)
+    # Set modules dir if needed
+    modules_dir = sysconf.get('modules_dir',None)
+    if modules_dir:
+        au.set_modules_dir(modules_dir)
+    return jsonify({'success': success, 'sysconf': sysconf})

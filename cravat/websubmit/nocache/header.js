@@ -107,7 +107,7 @@ function updateSystemConf () {
         response['content']['max_num_concurrent_annotators_per_job'] = parseInt(s.value);
         $.ajax({
             url:'/submit/updatesystemconf',
-            data: {'sysconf': JSON.stringify(response['content']), 'optout': optout},
+            data: {'sysconf': JSON.stringify(response['content'])},
             type: 'GET',
             success: function (response) {
                 if (response['success'] == true) {

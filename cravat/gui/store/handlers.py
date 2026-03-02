@@ -241,17 +241,4 @@ def get_featured_module_lists():
 
 def get_required_updates():
     need_update = au.check_required_updates()
-    # try:
-    #     r = requests.get('https://store.opencravat.org/required-updates.json')
-    #     r.raise_for_status()
-    # except:
-    #     pass
-    # required = constants.required_updates
-    # need_update = []
-    # for mname in required:
-    #     linfo = au.get_local_module_info(mname)
-    #     if linfo is None:
-    #         continue
-    #     if Version(linfo.version) < Version(required[mname]):
-    #         need_update.append(mname)
     return jsonify(need_update)

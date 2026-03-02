@@ -24,3 +24,4 @@ def load(application):
     router("/resubmit", None, resubmit)
     router("/annotate", None, live_annotate, methods=['GET', 'POST'])
     router("/import", None, import_job_from_db, methods=['POST'])
+    router("/updatesystemconf", None, update_system_conf, methods=['GET','POST'])
