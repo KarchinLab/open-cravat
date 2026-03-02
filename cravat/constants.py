@@ -454,6 +454,6 @@ install_tempdir_name = "temp"
 cannonical_chroms = ["chr" + str(n) for n in range(1, 23)] + ["chrX", "chrY"]
 default_postaggregator_names = ["tagsampler", "casecontrol", "varmeta", "vcfinfo"]
 
-required_updates = {
+minimum_module_versions = {
     'vcfreporter': '3.3.0', # Flask changes
 }

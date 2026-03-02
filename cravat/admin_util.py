@@ -1548,7 +1548,7 @@ def read_system_conf_template():
 
 def ready_resolution_console():
     if len(check_required_updates()) > 0:
-        input('Some module updates are required. Press enter to install.')
+        print('Installing required module updates')
         install_required_updates()
     rs = system_ready()
     if rs:
@@ -1849,12 +1849,12 @@ def check_required_updates():
     try:
         sys_conf = get_system_conf()
         path_builder = su.PathBuilder(sys_conf["store_url"], "url")
-        url = path_builder.required_updates()
+        url = path_builder.minimum_module_versions()
         r = requests.get(url, timeout=(3,None))
         r.raise_for_status()
+        required = r.json()
     except:
-        pass
-    required = constants.required_updates
+        required = constants.minimum_module_versions
     need_update = []
     mic.update_local()
     for mname in required:
