@@ -31,6 +31,8 @@ import logging
 from cravat import constants
 import time
 import cravat.util
+import threading
+
 
 SERVER_ALREADY_RUNNING = -1
 
@@ -258,6 +260,14 @@ def live_annotation_worker():
     worker = celery.Worker(queue="live_annotate", concurrency=16)
     worker.start()
 
+def open_browser(url, delay=1):
+    def _open():
+        time.sleep(delay)
+        try:
+            webbrowser.open(url)
+        except:
+            pass
+    threading.Thread(target=_open, daemon=True).start()
 
 def run_flask(args):
     from cravat import gui
@@ -281,6 +291,9 @@ def run_flask(args):
     p3.start()
 
     server_config = get_server()
+    if not args.headless:
+        open_browser('http://localhost:8080')
+
     gui.start_server(server_config['host'],
                      server_config['port'],
                      args.servermode)
