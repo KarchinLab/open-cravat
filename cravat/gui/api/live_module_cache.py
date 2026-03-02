@@ -28,12 +28,14 @@ class LiveModuleCache:
     mapper = None
     annotators = {}
     lifters = {}
-    wgsreader = cravat.get_wgs_reader(assembly="hg38")
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(LiveModuleCache, cls).__new__(cls)
         return cls._instance
+    
+    def __init__(self):
+        self.wgsreader = cravat.get_wgs_reader(assembly="hg38")
 
     def load_lifter(self, assembly):
         print(f'loading {assembly} lifter')
