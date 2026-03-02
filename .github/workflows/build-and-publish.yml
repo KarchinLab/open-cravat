@@ -124,7 +124,7 @@ jobs:
       - pypi
       # - docker
     environment: Published
-    if: startsWith(github.ref, 'refs/tags/')
+    # if: startsWith(github.ref, 'refs/tags/')
     steps:
       # Downloads all the artifacts from above, and extract them into
       # a directory named after the artifact itself, but since the
