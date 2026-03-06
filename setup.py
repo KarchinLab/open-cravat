@@ -89,7 +89,7 @@ setup(
         'websockets',
         'markdown',
         'aiohttp<4.0.0',
-        'chardet>=3.0.4',
+        'chardet>=3.0.4,<6.0.0',
         'aiosqlite',
         'oyaml',
         'intervaltree',
