@@ -61,7 +61,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'gui')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='3.0.0',
+    version='3.1.0',
     description='OpenCRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Kyle Moad, Kyle Anderson, Charlie Vaske, Jasmine Baker, and Rachel Karchin',
@@ -81,7 +81,7 @@ setup(
               },
     install_requires=[
         'looseversion',
-        'packaging',
+        'packaging>=25.0.0',
         'pyyaml',
         'requests',
         'requests-toolbelt',
@@ -89,7 +89,7 @@ setup(
         'websockets',
         'markdown',
         'aiohttp<4.0.0',
-        'chardet>=3.0.4',
+        'chardet>=3.0.4,<6.0.0',
         'aiosqlite',
         'oyaml',
         'intervaltree',
