@@ -81,7 +81,7 @@ setup(
               },
     install_requires=[
         'looseversion',
-        'packaging',
+        'packaging>=25.0.0',
         'pyyaml',
         'requests',
         'requests-toolbelt',
