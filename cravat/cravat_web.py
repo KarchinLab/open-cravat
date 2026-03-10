@@ -32,6 +32,7 @@ from cravat import constants
 import time
 import cravat.util
 import threading
+from pathlib import Path
 
 
 SERVER_ALREADY_RUNNING = -1
@@ -266,7 +267,8 @@ def open_browser(url, delay=1):
         try:
             webbrowser.open(url)
         except:
-            pass
+            import traceback
+            traceback.print_exc()
     threading.Thread(target=_open, daemon=True).start()
 
 def run_flask(args):
@@ -292,7 +294,11 @@ def run_flask(args):
 
     server_config = get_server()
     if not args.headless:
-        open_browser('http://localhost:8080')
+        url = f'http://{server_config['host']}:{server_config['port']}'
+        if args.result is not None:
+            dbpath = Path(args.result).resolve()
+            url += f'/result/index.html?dbpath={dbpath}'
+        open_browser(url)
 
     gui.start_server(server_config['host'],
                      server_config['port'],
