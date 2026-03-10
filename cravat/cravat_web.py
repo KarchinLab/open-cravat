@@ -294,7 +294,9 @@ def run_flask(args):
 
     server_config = get_server()
     if not args.headless:
-        url = f'http://{server_config['host']}:{server_config['port']}'
+        gui_host = server_config['host']
+        gui_port = server_config['port']
+        url = f'http://{gui_host}:{gui_port}'
         if args.result is not None:
             dbpath = Path(args.result).resolve()
             url += f'/result/index.html?dbpath={dbpath}'
