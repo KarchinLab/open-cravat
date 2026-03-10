@@ -1031,7 +1031,7 @@ def get_updatable(modules=[], strategy="consensus"):
                 for version in versions:
                     version_passes = True
                     for requester, requirement in reqs.items():
-                        version_passes = version in requirement
+                        version_passes = version in requirement.specifier
                         if not version_passes:
                             break
                     if version_passes:
