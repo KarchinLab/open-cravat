@@ -444,7 +444,7 @@ def make_example_input (args):
     if args.type == 'dbsnp' and au.get_local_module_info('dbsnp-converter') is None:
         print('Must install dbsnp-converter.')
         exit(1)
-    if args.type == 'clingen' and au.get_local_module_info('clingen-converter') is None:
+    if args.type == 'clingen' or args.type == 'caid' and au.get_local_module_info('clingen-converter') is None:
         print('Must install clingen-converter.')
         exit(1)
     out_path = au.make_example_input(args.directory, type=args.type)
