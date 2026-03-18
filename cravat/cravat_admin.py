@@ -184,6 +184,40 @@ def freeze_modules(args):
         })
     print(json.dumps(modules, indent=2))
 
+def install_freeze_modules(args):
+    import json, sys
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
+    src = sys.stdin if args.freeze_file == '-' else open(args.freeze_file)
+    with src:
+        modules = json.load(src)
+    to_install = {entry['name']: entry['version'] for entry in modules}
+    if not to_install:
+        print('No modules in freeze file')
+        return
+    print('Installing: {}'.format(
+        ', '.join(f"{n}:{v}" for n, v in sorted(to_install.items()))
+    ))
+    if not args.yes:
+        while True:
+            resp = input('Proceed? ([y]/n) > ')
+            if resp in ('y', ''):
+                break
+            if resp == 'n':
+                return
+    for module_name, module_version in sorted(to_install.items()):
+        stage_handler = InstallProgressStdout(module_name, module_version)
+        au.install_module(
+            module_name,
+            version=module_version,
+            force_data=False,
+            stage_handler=stage_handler,
+            force=args.force,
+            skip_data=False,
+            install_pypi_dependency=True,
+        )
+    Module.invalidate_cache()
+
 def yaml_string(x):
     s = yaml.dump(x, default_flow_style = False)
     s = re.sub('!!.*', '', s)
@@ -741,6 +775,26 @@ parser_freeze.add_argument('--md',
     default=None,
     help='Specify the root directory of OpenCRAVAT modules')
 parser_freeze.set_defaults(func=freeze_modules)
+
+# install-freeze
+parser_install_freeze = subparsers.add_parser('install-freeze',
+    help='Install modules from a freeze file.',
+    description='Install modules from a freeze file (JSON output of the freeze command).')
+parser_install_freeze.add_argument('freeze_file',
+    help='Path to freeze JSON file, or - to read from stdin')
+parser_install_freeze.add_argument('-f', '--force',
+    action='store_true',
+    help='Reinstall even if the correct version is already installed')
+parser_install_freeze.add_argument('-y', '--yes',
+    action='store_true',
+    help='Proceed without prompt')
+parser_install_freeze.add_argument('--skip-dependencies',
+    action='store_true',
+    help='Skip installing dependencies')
+parser_install_freeze.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules')
+parser_install_freeze.set_defaults(func=install_freeze_modules)
 
 # publish
 parser_publish = subparsers.add_parser('publish',
