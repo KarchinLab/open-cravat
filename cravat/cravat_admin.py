@@ -168,6 +168,22 @@ def list_modules(args):
     else:
         list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet, raw_bytes=args.raw_bytes)
 
+def freeze_modules(args):
+    import json
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
+    modules = []
+    for module_name in au.search_local(r'.*'):
+        module_info = au.get_local_module_info(module_name)
+        if module_info.hidden and not args.include_hidden:
+            continue
+        modules.append({
+            'name': module_info.name,
+            'version': module_info.version,
+            'type': module_info.type,
+        })
+    print(json.dumps(modules, indent=2))
+
 def yaml_string(x):
     s = yaml.dump(x, default_flow_style = False)
     s = re.sub('!!.*', '', s)
@@ -713,6 +729,18 @@ parser_ls.add_argument('--md',
     help='Specify the root directory of OpenCRAVAT modules'
 )
 parser_ls.set_defaults(func=list_modules)
+
+# freeze
+parser_freeze = subparsers.add_parser('freeze',
+    help='Output installed modules as JSON.',
+    description='Output installed modules as JSON.')
+parser_freeze.add_argument('-i', '--include-hidden',
+    action='store_true',
+    help='Include hidden modules')
+parser_freeze.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules')
+parser_freeze.set_defaults(func=freeze_modules)
 
 # publish
 parser_publish = subparsers.add_parser('publish',
