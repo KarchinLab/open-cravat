@@ -79,6 +79,13 @@ module_freeze_p = module_sp.add_parser(
     help="Output installed modules as JSON",
 )
 
+module_install_freeze_p = module_sp.add_parser(
+    "install-freeze",
+    parents=[cravat_admin.parser_install_freeze],
+    add_help=False,
+    help="Install modules from a freeze file",
+)
+
 
 # config
 config_p = root_sp.add_parser(
