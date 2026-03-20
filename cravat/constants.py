@@ -106,7 +106,6 @@ example_input_paths = {
 base_modules = [
     'cravat-converter',
     'vcf-converter',
-    'oldcravat-converter',
     'hgvs-converter',
     'clingen-converter',
     'textreporter',
