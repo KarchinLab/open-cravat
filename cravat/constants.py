@@ -115,10 +115,8 @@ base_modules = [
     'hg38',
     'casecontrol',
     'wgbase',
-    'wghg19',
     'wgncrna',
     'wglollipop',
-    'wgndex',
     'wgcircossummary',
     'wgcodingvsnoncodingsummary',
     'wggosummary',
@@ -128,7 +126,6 @@ base_modules = [
     'wgvcfinfo',
     'hg38wgs',
     'varmeta',
-    'wgrankscore',
 ]
 
 # metrics
