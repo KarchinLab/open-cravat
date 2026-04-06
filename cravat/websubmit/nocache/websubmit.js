@@ -790,6 +790,7 @@ function populateJobDetailTr (job) {
 }
 
 function buildJobsTable () {
+    addJobDeletionReminder();
     var allJobs = OC.GLOBALS.jobs;
     var i = OC.submittedJobs.length - 1;
     while (i >= 0) {
@@ -833,6 +834,19 @@ function buildJobsTable () {
     var jobsTable = document.querySelector('#jobs-table tbody');
     $(jobsTable).empty();
     fillJobTable(allJobs, OC.jobsListCurStart, OC.jobsListCurEnd, jobsTable);
+}
+
+function addJobDeletionReminder (force) {
+    const deletionActive = 
+        Object.hasOwn(OC.systemConf, 'gui_job_deletion')
+        && OC.systemConf.gui_job_deletion.active === true;
+    const displayActive = OC.servermode || force;
+    if (displayActive && deletionActive) {
+        const jobDownloadHeader = document.querySelector('#jobs-table-download-header');
+        const windowUnit = OC.systemConf.gui_job_deletion.unit;
+        const windowValue = OC.systemConf.gui_job_deletion.value;
+        jobDownloadHeader.textContent += ` (jobs deleted after ${windowValue} ${windowUnit}s)`;
+    }
 }
 
 function fillJobTable (allJobs, start, end, jobsTable) {
