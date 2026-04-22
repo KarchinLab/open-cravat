@@ -8,6 +8,7 @@ from cravat.admin_util import InstallProgressJson
 from flask import request, current_app, jsonify, g
 from cravat import constants, admin_util as au, store_utils as su
 from cravat.gui.models import Module
+from cravat.gui.config import QUEUE_MODULE_INSTALL
 from cravat.gui.job_manager import queue_messages
 from cravat.gui.admin import is_admin_loggedin
 from cravat.gui.cravat_request import HTTP_BAD_REQUEST
@@ -211,7 +212,7 @@ def kill_install():
     module = request.values.get('module', None)
 
     # payload[0] is the job arguments, payload[0][0] is the first argument
-    install_jobs = queue_messages('module_install', lambda m: m.payload[0][0] == module)
+    install_jobs = queue_messages(QUEUE_MODULE_INSTALL, lambda m: m.payload[0][0] == module)
 
     # there should only be one, but if we happen to somehow have multiples
     # in the queue, kill them all.

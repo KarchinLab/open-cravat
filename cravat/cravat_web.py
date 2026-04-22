@@ -33,6 +33,11 @@ import time
 import cravat.util
 import threading
 from pathlib import Path
+from cravat.gui.workers import (
+    default_worker,
+    store_worker,
+    live_annotation_worker,
+)
 
 
 SERVER_ALREADY_RUNNING = -1
@@ -241,26 +246,6 @@ def run(args):
     else:
         run_flask(args)
 
-
-def default_celery_worker():
-    from cravat.gui import celery
-
-    worker = celery.Worker(queue='default')
-    worker.start()
-
-
-def store_worker():
-    from cravat.gui import celery
-
-    worker = celery.Worker(queue="module_install", concurrency=1)
-    worker.start()
-
-
-def live_annotation_worker():
-    from cravat.gui import celery
-    worker = celery.Worker(queue="live_annotate", concurrency=16)
-    worker.start()
-
 def open_browser(url, delay=1):
     def _open():
         time.sleep(delay)
@@ -283,7 +268,7 @@ def run_flask(args):
     cache.cache.clear()
 
     from multiprocessing import Process
-    p = Process(target=default_celery_worker)
+    p = Process(target=default_worker)
     p.start()
 
     p2 = Process(target=store_worker)
