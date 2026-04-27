@@ -409,12 +409,11 @@ def publish_module (args):
 
 def install_base (args):
     args = SimpleNamespace(modules=constants.base_modules,
-        force_data=args.force_data,
+        force_data=args.force,
         version=None,
         yes=True,
         private=False,
         skip_dependencies=False,
-        force=args.force,
         skip_data=False,
         install_pypi_dependency=args.install_pypi_dependency,
         md=args.md,
@@ -529,11 +528,7 @@ parser_install_base = subparsers.add_parser('install-base',
 )
 parser_install_base.add_argument('-f','--force',
     action='store_true',
-    help='Overwrite existing modules',
-)
-parser_install_base.add_argument('-d', '--force-data',
-    action='store_true',
-    help='Download data even if latest data is already installed'
+    help='Overwrite existing modules and re-download data',
 )
 parser_install_base.add_argument('--install-pypi-dependency',
     action='store_true',
