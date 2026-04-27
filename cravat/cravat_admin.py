@@ -322,9 +322,8 @@ def install_modules(args):
             au.install_module(
                 module_name,
                 version=module_version,
-                force_data=args.force_data,
+                force_data=args.force,
                 stage_handler=stage_handler,
-                force=args.force,
                 skip_data=args.skip_data,
                 install_pypi_dependency=args.install_pypi_dependency
             )
@@ -569,11 +568,7 @@ help='Install a specific version'
 )
 parser_install.add_argument('-f','--force',
 action='store_true',
-help='Install module even if latest version is already installed',
-)
-parser_install.add_argument('-d', '--force-data',
-action='store_true',
-help='Download data even if latest data is already installed'
+help='Install module even if latest version is already installed. Forces a re-download of data even if latest is already installed. Use --skip-data to not re-download.',
 )
 parser_install.add_argument('-y','--yes',
 action='store_true',
