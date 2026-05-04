@@ -44,7 +44,7 @@ RUN mv $PACKAGEDIR/conf         /mnt/conf         && ln -s /mnt/conf         $PA
     mv $PACKAGEDIR/logs         /mnt/logs         && ln -s /mnt/logs         $PACKAGEDIR/logs    && \
     mv $PACKAGEDIR/workspace    /mnt/workspace    && ln -s /mnt/workspace    $PACKAGEDIR/workspace
 
-ENV CRAVAT_HOME $PACKAGEDIR
+ENV CRAVAT_HOME=$PACKAGEDIR
 
 VOLUME /mnt/conf
 VOLUME /mnt/modules
@@ -54,4 +54,3 @@ VOLUME /mnt/workspace
 
 VOLUME /tmp/job
 WORKDIR /tmp/job
-
