@@ -4,9 +4,32 @@ from kombu import Exchange, Queue
 ## WHere is this used can we use system conf
 CRAVAT_SYSCONF = admin_util.get_system_conf()
 
-default_exchange = Exchange('default', type='direct')
-management_exchange = Exchange('management', type='direct')
-live_annotate_exchange = Exchange('live_annotate', type='direct')
+# Celery queue names used by the GUI
+QUEUE_DEFAULT = 'default'
+QUEUE_MODULE_INSTALL = 'module_install'
+QUEUE_LIVE_ANNOTATE = 'live_annotate'
+
+def celery_settings():
+    user = CRAVAT_SYSCONF.get('celery') or {}
+    # Configurable value defaults
+    queue_defaults = {
+        QUEUE_DEFAULT: {'concurrency': 4},
+        QUEUE_LIVE_ANNOTATE: {'enabled': False, 'concurrency': 4},
+    }
+    # Module install queue not user configurable
+    merged = {
+        QUEUE_MODULE_INSTALL: {'concurrency': 1},
+    }
+    for queue, defaults in queue_defaults.items():
+        q = dict(defaults)
+        q.update(user.get(queue) or {})
+        merged[queue] = q
+    return merged
+
+# Celery exchanges exist per-queue
+default_exchange = Exchange(QUEUE_DEFAULT, type='direct')
+module_install_exchange = Exchange(QUEUE_MODULE_INSTALL, type='direct')
+live_annotate_exchange = Exchange(QUEUE_LIVE_ANNOTATE, type='direct')
 
 # COOKIE CONFIGURATION (https://flask.palletsprojects.com/en/2.3.x/config/)
 
@@ -44,13 +67,13 @@ CELERY = dict(
     result_backend=f'file:/{CELERY_RESULTS_PATH}',
     include=['cravat.gui.tasks'],
     task_queues=(
-        Queue('default', default_exchange, routing_key='default'),
-        Queue('module_install', management_exchange, routing_key='module_install'),
-        Queue('live_annotate', live_annotate_exchange, routing_key='live_annotate'),
+        Queue(QUEUE_DEFAULT, default_exchange, routing_key=QUEUE_DEFAULT),
+        Queue(QUEUE_MODULE_INSTALL, module_install_exchange, routing_key=QUEUE_MODULE_INSTALL),
+        Queue(QUEUE_LIVE_ANNOTATE, live_annotate_exchange, routing_key=QUEUE_LIVE_ANNOTATE),
     ),
-    task_default_queue='default',
-    task_default_exchange='default',
-    task_default_routing_key='default'
+    task_default_queue=QUEUE_DEFAULT,
+    task_default_exchange=QUEUE_DEFAULT,
+    task_default_routing_key=QUEUE_DEFAULT,
 )
 
 CACHE_TYPE = 'FileSystemCache'
