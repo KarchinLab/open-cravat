@@ -684,25 +684,31 @@ def migrate_result(args):
 def result2gui(args):
     dbpath = args.path
     user = args.user
+    job_id = args.jobid
     jobs_dir = Path(au.get_jobs_dir())
     user_dir = jobs_dir / user
     if not user_dir.is_dir():
         exit(f"User {user} not found")
     attempts = 0
-    while (
-        True
-    ):  # TODO this will currently overwrite if called in parallel. is_dir check and creation is not atomic
-        job_id = datetime.datetime.now().strftime(r"%y%m%d-%H%M%S")
+    if job_id is None:
+        while (
+            True
+        ):  # TODO this will currently overwrite if called in parallel. is_dir check and creation is not atomic
+            job_id = datetime.datetime.now().strftime(r"%y%m%d-%H%M%S")
+            job_dir = user_dir / job_id
+            if not job_dir.is_dir():
+                break
+            else:
+                attempts += 1
+                time.sleep(1)
+            if attempts >= 5:
+                exit(
+                    "Could not acquire a job id. Too many concurrent job submissions. Wait, or reduce submission frequency."
+                )
+    else:
         job_dir = user_dir / job_id
-        if not job_dir.is_dir():
-            break
-        else:
-            attempts += 1
-            time.sleep(1)
-        if attempts >= 5:
-            exit(
-                "Could not acquire a job id. Too many concurrent job submissions. Wait, or reduce submission frequency."
-            )
+        if job_dir.is_dir():
+            exit(f"Job id {job_id} you selected already exists. Please select another one.")
     job_dir.mkdir()
     new_dbpath = job_dir / dbpath.name
     shutil.copyfile(dbpath, new_dbpath)
@@ -1187,6 +1193,13 @@ parser_result2gui.add_argument(
     help="User who will own the job. Defaults to single user default user.",
     type=str,
     default="default",
+)
+parser_result2gui.add_argument(
+    "-j",
+    "--jobid",
+    help="Optional job ID. Defaults to current timestamp",
+    type=str,
+    default=None,
 )
 parser_result2gui.set_defaults(func=result2gui)
 # Merge SQLite files
