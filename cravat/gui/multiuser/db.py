@@ -53,6 +53,7 @@ class AdminDb():
                 cursor.execute('insert into users values ("admin", ?, "", "", null)', (adminpasswordhash,))
                 conn.commit()
                 cursor.execute('create table jobs (jobid text, username text, submit date, runtime integer, numinput integer, annotators text, assembly text)')
+                cursor.execute('create table apilog (writetime text, count integer)')
                 cursor.execute('create table config (key text, value text)')
                 fernet_key = fernet.Fernet.generate_key()
                 cursor.execute('insert into config (key, value) values ("fernet_key",?)',[fernet_key])
