@@ -28,6 +28,7 @@ body * {
 }
 
 .detaildiv {
+    display: flex;
 	overflow: auto;
 	position: absolute;
     font-family: monospace;
@@ -37,6 +38,18 @@ body * {
 	width: calc(100% - 8px);
 	bottom: 10px;
 	height: 350px;
+}
+
+.widgetSidebar{
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.widgetCategorySelector{
+    border: 1px solid black;
+    border-radius: 0.25rem;
+    padding-inline: 0.25rem;
 }
 
 .detailcontainerdiv {
