@@ -1596,9 +1596,8 @@ function makeVariantGeneTab (tabName, rightDiv) {
         detailDiv.id = detailDivId;
         detailDiv.classList.add('detaildiv');
         detailDiv.classList.add('resultviewer');
-        var detailControlDivId = 'detailcontroldiv_' + tabName;
-        detailControlDiv = getEl('div');
-        addEl(detailDiv, detailControlDiv);
+        const sidebar = createWidgetCategorySidebar();
+        addEl(detailDiv, sidebar);
         var detailContainerWrapDiv = getEl('div');
         detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
         var h = loadedHeightSettings['detail_' + tabName];
@@ -1606,26 +1605,7 @@ function makeVariantGeneTab (tabName, rightDiv) {
             detailDiv.style.height = h;
         }
         addEl(detailDiv, detailContainerWrapDiv);
-    }
-    
-    // Detail control div
-    detailControlDiv.id = detailControlDivId;
-    detailControlDiv.className = 'detailcontroldiv';
-    // Redraw button
-    var widgetSelButton = getEl('button');
-    widgetSelButton.id = 'widgetselect' + tabName;
-    widgetSelButton.textContent = 'Pick widgets';
-    widgetSelButton.addEventListener('click', toggleWidgetSel);
-    addEl(detailControlDiv, widgetSelButton);
-    // WidgetSel div
-    var widgetSelDiv = getEl('div');
-    widgetSelDiv.id = 'new_widgets_showhide_select_div';
-    widgetSelDiv.style.display = 'none';
-    widgetSelDiv.style['z-index'] = '100';
-    widgetSelDiv.style.position = 'absolute';
-    widgetSelDiv.style['background-color'] = '#d1d3d4';
-    addEl(detailControlDiv, widgetSelDiv);
-    
+    } 
 
 	// Detail content div
     var detailContainerDivId = 'detailcontainerdiv_' + tabName;
@@ -1636,6 +1616,48 @@ function makeVariantGeneTab (tabName, rightDiv) {
         detailContainerDiv.className = 'detailcontainerdiv';
         addEl(detailContainerWrapDiv, detailContainerDiv);
         addEl(rightDiv, detailDiv);
+    }
+}
+
+const widgetCategories = [
+    ['home', 'Home'],
+    ['igv', 'IGV'],
+    ['allele_frequency', 'Allele Frequency'],
+    ['cancer', 'Cancer'],
+    ['mendellian_disease', 'Mendellian Disease'],
+    ['predictor', 'Predictor'],
+    ['drugs', 'Drugs'],
+]
+
+function createWidgetCategorySidebar(level) {
+    const sidebar = getEl('div');
+    sidebar.id = `widgetSidebar_${level}`;
+    sidebar.classList.add('widgetSidebar');
+    for (let [category, title] of widgetCategories) {
+        const catBox = getEl('div');
+        catBox.id = `widgetCategorySelector_${level}_${category}`;
+        catBox.classList.add('widgetCategorySelector')
+        catBox.textContent = title;
+        catBox.setAttribute('widget_category', category)
+        catBox.addEventListener('click', onClickWidgetCategory)
+        addEl(sidebar, catBox);
+    }
+    return sidebar;
+}
+
+function onClickWidgetCategory(event) {
+    const level = currentTab;
+    const category = event.target.getAttribute('widget_category');
+    console.log(level, category);
+    //changeWidgetShowHideAll
+    changeWidgetShowHideAll(false);
+    for (let [widgetName, generator] of Object.entries(widgetGenerators)) {
+        if (generator.hasOwnProperty(level) && generator[level].hasOwnProperty('categories')) {
+            if (generator[level].categories.indexOf(category) >= 0) {
+                showHideWidget(level, widgetName, true, true);
+            }
+        }
+
     }
 }
 
@@ -2917,13 +2939,13 @@ function applyTableDetailDivSizes () {
         tableDiv.style.display = 'none';
         drag.style.display = 'none';
         cell.style.display = 'none';
-        detailDiv.style.display = 'block';
+        detailDiv.style.display = '';
         detailDiv.style.height = maxHeight + 'px';
         detailDiv.style.top = '10px';
         $(detailContainerDiv).packery();
     } else if (stat == 'both') {
         tableDiv.style.display = 'block';
-        detailDiv.style.display = 'block';
+        detailDiv.style.display = '';
         drag.style.display = 'block';
         cell.style.display = 'block';
         var tableHeight = tableDetailDivSizes[tabName]['tableheight'];
