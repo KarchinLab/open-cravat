@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import time
 import traceback
 
 from datetime import datetime
@@ -348,8 +349,18 @@ def delete_job(job_id):
     if job.task_id:
         job.task.cancel()
 
-    if os.path.exists(job.job_dir):
-        shutil.rmtree(job.job_dir)
+    # canceling the task is not immediate. poll the status for a short time before removing files
+    finished_statuses = (None, 'Aborted', 'Error', 'Finished')
+    retries = 5
+    while job.task.cravat_status not in finished_statuses and retries > 0:
+        time.sleep(.2)
+        retries -= 1
+
+    # do not remove files if the status hasn't been updated, there could still be a worker using them
+    if retries:
+        # only delete files if we've confirmed cancellation; otherwise leave them be
+        if os.path.exists(job.job_dir):
+            shutil.rmtree(job.job_dir)
 
     return HTTP_NO_CONTENT
 
