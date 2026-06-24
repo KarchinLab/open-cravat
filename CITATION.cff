@@ -1,0 +1,86 @@
+cff-version: 1.2.0
+message: >-
+  If you use OpenCRAVAT, please cite both the software (via the
+  archived Zenodo record below) and the OpenCRAVAT publication
+  listed under preferred-citation.
+title: "OpenCRAVAT: Open Custom Ranked Analysis of Variants Toolkit"
+abstract: >-
+  OpenCRAVAT is a modular Python framework for the annotation,
+  interpretation, and visualization of human genetic variation.
+  It provides command-line and graphical interfaces, supports
+  germline and somatic variant analysis, and offers a store of
+  community- and lab-developed annotation, reporter, and widget
+  modules.
+type: software
+license: MIT
+repository-code: "https://github.com/KarchinLab/open-cravat"
+url: "https://www.opencravat.org"
+
+# --- Update these three at the time you cut the Zenodo-triggering release ---
+version: 3.1.1
+date-released: "2025-03-11"   # confirm against the actual release date
+doi: 10.5281/zenodo.XXXXXXX   # CONCEPT DOI (all-versions), filled in after first deposit
+# ---------------------------------------------------------------------------
+
+# Software authors (maintainer/author list).
+authors:
+  - family-names: Moad
+    given-names: Kyle
+    affiliation: "Johns Hopkins University"
+    orcid: "https://orcid.org/0009-0002-8178-2202"
+  - family-names: Anderson
+    given-names: Kyle
+    affiliation: "Johns Hopkins University"
+  - family-names: Vaske
+    given-names: Charlie
+    affiliation: "Johns Hopkins University"
+    sorcid: "https://orcid.org/0000-0001-8151-6612"
+  - family-names: Karchin
+    given-names: Rachel
+    affiliation: "Johns Hopkins University"
+    orcid: "https://orcid.org/0000-0002-5069-1239 "
+
+keywords:
+  - genomics
+  - variant annotation
+  - variant interpretation
+  - bioinformatics
+  - cancer genomics
+  - precision oncology
+
+# Grant
+identifiers:
+  - type: other
+    value: "NIH/NCI ITCR"
+    description: "Funding program (National Cancer Institute, ITCR)"
+  - type: other
+    value: "NIH/NCI U24 CA258393"   # fill in the U24 award number
+    description: "Award supporting OpenCRAVAT Advanced Development and Maintenance"
+
+# Canonical OpenCRAVAT publication.
+preferred-citation:
+  type: article
+  title: "Integrated Informatics Analysis of Cancer-Related Variants"
+  doi: 10.1200/CCI.19.00132
+  journal: "JCO Clinical Cancer Informatics"
+  year: 2020
+  volume: 4
+  start: 310
+  end: 317
+  authors:
+    - family-names: Pagel
+      given-names: Kymberleigh A.
+    - family-names: Kim
+      given-names: Ryangguk
+    - family-names: Moad
+      given-names: Kyle
+    - family-names: Busby
+      given-names: Ben
+    - family-names: Zheng
+      given-names: Lily
+    - family-names: Tokheim
+      given-names: Collin
+    - family-names: Ryan
+      given-names: Michael C.
+    - family-names: Karchin
+      given-names: Rachels
