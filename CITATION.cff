@@ -18,8 +18,8 @@ url: "https://www.opencravat.org"
 
 # --- Update these three at the time you cut the Zenodo-triggering release ---
 version: 3.1.1
-date-released: "2025-03-11"   # confirm against the actual release date
-doi: 10.5281/zenodo.XXXXXXX   # CONCEPT DOI (all-versions), filled in after first deposit
+date-released: "2025-03-11"
+doi: 10.5281/zenodo.20836050
 # ---------------------------------------------------------------------------
 
 # Software authors (maintainer/author list).
@@ -34,7 +34,7 @@ authors:
   - family-names: Vaske
     given-names: Charlie
     affiliation: "Johns Hopkins University"
-    sorcid: "https://orcid.org/0000-0001-8151-6612"
+    orcid: "https://orcid.org/0000-0001-8151-6612"
   - family-names: Karchin
     given-names: Rachel
     affiliation: "Johns Hopkins University"
