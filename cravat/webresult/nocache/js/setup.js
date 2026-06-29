@@ -1619,21 +1619,21 @@ function makeVariantGeneTab (tabName, rightDiv) {
     }
 }
 
-const widgetCategories = [
-    ['home', 'Home'],
-    ['igv', 'IGV'],
-    ['allele_frequency', 'Allele Frequency'],
-    ['cancer', 'Cancer'],
-    ['mendellian_disease', 'Mendellian Disease'],
-    ['predictor', 'Predictor'],
-    ['drugs', 'Drugs'],
-]
+// const widgetCategories = [
+//     ['home', 'Home'],
+//     ['igv', 'IGV'],
+//     ['allele_frequency', 'Allele Frequency'],
+//     ['cancer', 'Cancer'],
+//     ['mendellian_disease', 'Mendellian Disease'],
+//     ['predictor', 'Predictor'],
+//     ['drugs', 'Drugs'],
+// ]
 
 function createWidgetCategorySidebar(level) {
     const sidebar = getEl('div');
     sidebar.id = `widgetSidebar_${level}`;
     sidebar.classList.add('widgetSidebar');
-    for (let [category, title] of widgetCategories) {
+    for (let [category, title] of Object.entries(widgetCategoryTitles)) {
         const catBox = getEl('div');
         catBox.id = `widgetCategorySelector_${level}_${category}`;
         catBox.classList.add('widgetCategorySelector')
@@ -1649,11 +1649,11 @@ function onClickWidgetCategory(event) {
     const level = currentTab;
     const category = event.target.getAttribute('widget_category');
     console.log(level, category);
-    //changeWidgetShowHideAll
+    const members = widgetCategories[category];
     changeWidgetShowHideAll(false);
     for (let [widgetName, generator] of Object.entries(widgetGenerators)) {
-        if (generator.hasOwnProperty(level) && generator[level].hasOwnProperty('categories')) {
-            if (generator[level].categories.indexOf(category) >= 0) {
+        if (generator.hasOwnProperty(level)) {
+            if (members.indexOf(`wg${widgetName}`) >= 0) {
                 showHideWidget(level, widgetName, true, true);
             }
         }
@@ -3058,3 +3058,125 @@ function addTextToInfonoticediv (lines) {
     }
 }
 
+const widgetCategories = {
+  "allele_frequency": [
+    "wgabraom",
+    "wgallelefrequency",
+    "wgesp6500",
+    "wgexac_gene",
+    "wggnomad",
+    "wggnomad3",
+    "wggnomad_gene",
+    "wgthousandgenomes",
+    "wgthousandgenomes_ad_mixed_american",
+    "wgthousandgenomes_african",
+    "wgthousandgenomes_east_asian",
+    "wgthousandgenomes_european",
+    "wgthousandgenomes_south_asian",
+    "wguk10k_cohort"
+  ],
+  "cancer": [
+    "wgcancer_genome_interpreter",
+    "wgcancer_hotspots",
+    "wgcivic"
+  ],
+  "drugs": [
+    "Cancer Genome Interpreter",
+    "wgcivic",
+    "wgdgi",
+    "wgpharmgkb",
+    "wgtarget"
+  ],
+  "evolution": [
+    "wgphastcons",
+    "wgphylop"
+  ],
+  "gene": [
+    "wgintact",
+    "wgncbigene"
+  ],
+  "genes": [
+    "wgaloft",
+    "wgbiogrid",
+    "wgclingen",
+    "wggo",
+    "wghpo",
+    "wgpangalodb"
+  ],
+  "gwas": [
+    "wggrasp",
+    "wggwas_catalog"
+  ],
+  "haplotypes": [
+    "wghaploreg_afr",
+    "wghaploreg_amr",
+    "wghaploreg_asn",
+    "wghaploreg_eur",
+    "wghaplotypes"
+  ],
+  "home": [
+    "wgbase"
+  ],
+  "igv": [
+    "wgigv"
+  ],
+  "mendellian_disease": [
+    "wgcgd",
+    "wgclinvar"
+  ],
+  "non_coding_regulation": [
+    "wgencode_tfbs",
+    "wgenhancer",
+    "wggtex"
+  ],
+  "predictor": [
+    "wgalphamissense",
+    "wgbayesdel",
+    "wgcadd",
+    "wgcadd_exome",
+    "wgchasmplus",
+    "wgdann",
+    "wgdann_coding",
+    "wgditto",
+    "wgesm1b",
+    "wgfathmm",
+    "wgfathmm_mkl",
+    "wgfathmm_xf_coding",
+    "wgfunseq2",
+    "wgmutation_assessor",
+    "wgmutationtaster",
+    "wgmutpred1",
+    "wgphdsnpg",
+    "wgpolyphen2",
+    "wgprimateai",
+    "wgprovean",
+    "wgrevel",
+    "wgsift",
+    "wgsiphy",
+    "wgvarity_r",
+    "wgvest"
+  ],
+  "protein": [
+    "wginterpro",
+    "wgswissprot_binding",
+    "wgswissprot_domains",
+    "wgswissprot_ptm"
+  ]
+};
+
+const widgetCategoryTitles = {
+  "allele_frequency": "Allele Frequency",
+  "cancer": "Cancer",
+  "drugs": "Drugs",
+  "evolution": "Evolution",
+  "gene": "Gene",
+  "genes": "Genes",
+  "gwas": "GWAS",
+  "haplotypes": "Haplotypes",
+  "home": "Home",
+  "igv": "IGV",
+  "mendellian_disease": "Mendellian Disease",
+  "non_coding_regulation": "Non-Coding/Regulation",
+  "predictor": "Predictor",
+  "protein": "Protein"
+};
