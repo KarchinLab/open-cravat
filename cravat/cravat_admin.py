@@ -175,8 +175,6 @@ def freeze_modules(args):
     modules = []
     for module_name in au.search_local(r'.*'):
         module_info = au.get_local_module_info(module_name)
-        if module_info.hidden and not args.include_hidden:
-            continue
         modules.append({
             'name': module_info.name,
             'version': module_info.version,
@@ -191,12 +189,29 @@ def install_freeze_modules(args):
     src = sys.stdin if args.freeze_file == '-' else open(args.freeze_file)
     with src:
         modules = json.load(src)
-    to_install = {entry['name']: entry['version'] for entry in modules}
-    if not to_install:
+    requested = {entry['name']: entry['version'] for entry in modules}
+    if not requested:
         print('No modules in freeze file')
         return
+    # Pre-filter: skip modules already installed at the requested version
+    to_install = {}
+    skipped = []
+    for module_name, module_version in sorted(requested.items()):
+        local_info = au.get_local_module_info(module_name)
+        if (not args.force and local_info is not None
+                and LooseVersion(local_info.version) == LooseVersion(module_version)):
+            skipped.append(f'{module_name}:{module_version}')
+            continue
+        to_install[module_name] = module_version
+    if skipped:
+        print('Already installed at the requested version (skipping):')
+        for entry in skipped:
+            print(f'  {entry}')
+    if not to_install:
+        print('No modules to install')
+        return
     print('Installing: {}'.format(
-        ', '.join(f"{n}:{v}" for n, v in sorted(to_install.items()))
+        ', '.join(f'{n}:{v}' for n, v in sorted(to_install.items()))
     ))
     if not args.yes:
         while True:
@@ -205,6 +220,7 @@ def install_freeze_modules(args):
                 break
             if resp == 'n':
                 return
+            print('Response {!r} was not one of the expected responses: y, n'.format(resp))
     for module_name, module_version in sorted(to_install.items()):
         stage_handler = InstallProgressStdout(module_name, module_version)
         au.install_module(
@@ -214,7 +230,7 @@ def install_freeze_modules(args):
             stage_handler=stage_handler,
             force=args.force,
             skip_data=False,
-            install_pypi_dependency=True,
+            install_pypi_dependency=args.include_dependencies,
         )
     Module.invalidate_cache()
 
@@ -767,10 +783,7 @@ parser_ls.set_defaults(func=list_modules)
 # freeze
 parser_freeze = subparsers.add_parser('freeze',
     help='Output installed modules as JSON.',
-    description='Output installed modules as JSON.')
-parser_freeze.add_argument('-i', '--include-hidden',
-    action='store_true',
-    help='Include hidden modules')
+    description='Output installed modules as JSON (including hidden modules).')
 parser_freeze.add_argument('--md',
     default=None,
     help='Specify the root directory of OpenCRAVAT modules')
@@ -779,7 +792,7 @@ parser_freeze.set_defaults(func=freeze_modules)
 # install-freeze
 parser_install_freeze = subparsers.add_parser('install-freeze',
     help='Install modules from a freeze file.',
-    description='Install modules from a freeze file (JSON output of the freeze command).')
+    description='Install modules from a freeze file (JSON output of the freeze command). Only the modules listed in the freeze file are installed unless --include-dependencies is given.')
 parser_install_freeze.add_argument('freeze_file',
     help='Path to freeze JSON file, or - to read from stdin')
 parser_install_freeze.add_argument('-f', '--force',
@@ -788,9 +801,9 @@ parser_install_freeze.add_argument('-f', '--force',
 parser_install_freeze.add_argument('-y', '--yes',
     action='store_true',
     help='Proceed without prompt')
-parser_install_freeze.add_argument('--skip-dependencies',
+parser_install_freeze.add_argument('--include-dependencies',
     action='store_true',
-    help='Skip installing dependencies')
+    help='Also install module dependencies (pypi packages). By default only the modules in the freeze file are installed.')
 parser_install_freeze.add_argument('--md',
     default=None,
     help='Specify the root directory of OpenCRAVAT modules')
