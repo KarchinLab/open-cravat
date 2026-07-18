@@ -845,7 +845,7 @@ function addJobDeletionReminder (force) {
         const jobDownloadHeader = document.querySelector('#jobs-table-download-header');
         const windowUnit = OC.systemConf.gui_job_deletion.unit;
         const windowValue = OC.systemConf.gui_job_deletion.value;
-        jobDownloadHeader.textContent += ` (jobs deleted after ${windowValue} ${windowUnit}s)`;
+        jobDownloadHeader.textContent = `Download (jobs deleted after ${windowValue} ${windowUnit}s)`;
     }
 }
 
