@@ -1323,12 +1323,15 @@ def install_module(
             stage_handler.stage_start("finish")
     except (Exception, KeyboardInterrupt, SystemExit) as e:
         shutil.rmtree(temp_dir, ignore_errors=True)
-        if type(e) == exceptions.KillInstallException:
+        if type(e) in (exceptions.KillInstallException, KeyboardInterrupt, SystemExit):
             stage_handler.stage_start("killed")
-        elif type(e) in (KeyboardInterrupt, SystemExit):
-            pass
-        else:
-            raise e
+        # Always propagate the failure. A caller looping over multiple
+        # modules needs to know this one did not install successfully so it
+        # can report an error and exit with a non-zero status; silently
+        # swallowing KeyboardInterrupt/SystemExit/KillInstallException here
+        # made install_module() return normally even though nothing was
+        # installed.
+        raise e
     finally:
         signal.signal(signal.SIGINT, original_sigint)
 
