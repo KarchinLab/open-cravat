@@ -14,6 +14,7 @@ import copy
 from getpass import getpass
 from looseversion import LooseVersion
 from cravat import util
+from cravat.exceptions import ModuleNotFound
 from cravat.gui.models import Module
 
 
@@ -351,12 +352,19 @@ def install_modules(args):
             selected_install[module_name] = args.version
         else:
             continue
+    private_found = set()
     if args.private:
         if args.version is None:
             sys.exit('--include-private cannot be used without specifying a version using -v/--version')
         for module_name in args.modules:
             if au.module_exists_remote(module_name, version=args.version, private=True):
                 selected_install[module_name] = args.version
+                private_found.add(module_name)
+    unmatched = [module for module in args.modules
+                 if module not in private_found
+                 and not any(re.fullmatch(module, name) for name in matching_names)]
+    if unmatched:
+        raise ModuleNotFound(unmatched)
     # Add dependencies of selected modules
     dep_install = {}
     pypi_deps_install = {}
@@ -452,12 +460,14 @@ def update_modules(args):
         args.skip_data = False
         try:
             install_modules(args)
-        except SystemExit:
+        except (SystemExit, ModuleNotFound) as e:
             # install_modules() failed and already printed the reason (a
             # KeyboardInterrupt is *not* a SystemExit and is left to
             # propagate, so a real Ctrl-C still stops the whole update).
             # Keep trying the rest of the updates and report the overall
             # failure at the end.
+            if isinstance(e, ModuleNotFound):
+                print(f'ERROR: {e}', file=sys.stderr)
             failed_updates.append(mname)
     if failed_updates:
         print('ERROR: failed to update {} module(s): {}'.format(
