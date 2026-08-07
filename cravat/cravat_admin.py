@@ -383,18 +383,36 @@ def install_modules(args):
                 else:
                     print('Your response (\'{:}\') was not one of the expected responses: y, n'.format(resp))
                     continue
+        failed_installs = {}
         for module_name, module_version in sorted(to_install.items()):
             stage_handler = InstallProgressStdout(module_name, module_version)
-            au.install_module(
-                module_name,
-                version=module_version,
-                force_data=args.force,
-                stage_handler=stage_handler,
-                skip_data=args.skip_data,
-                install_pypi_dependency=args.install_pypi_dependency
-            )
+            try:
+                au.install_module(
+                    module_name,
+                    version=module_version,
+                    force_data=args.force_data,
+                    stage_handler=stage_handler,
+                    force=args.force,
+                    skip_data=args.skip_data,
+                    install_pypi_dependency=args.install_pypi_dependency
+                )
+            except (KeyboardInterrupt, SystemExit):
+                # The user (or a signal) asked us to stop. Don't keep
+                # installing the rest of the batch.
+                raise
+            except Exception as e:
+                failed_installs[module_name] = e
+                print(f'ERROR: failed to install {module_name}:{module_version}: {e}',
+                      file=sys.stderr)
 
         Module.invalidate_cache()
+
+        if failed_installs:
+            print('ERROR: failed to install {} of {} module(s): {}'.format(
+                    len(failed_installs), len(to_install),
+                    ', '.join(sorted(failed_installs))
+                ), file=sys.stderr)
+            sys.exit(1)
 
 
 def update_modules(args):
@@ -422,6 +440,7 @@ def update_modules(args):
         user_cont = input('Update the above modules? (y/n) > ')
         if user_cont.lower() not in ['y','yes']:
             exit()
+    failed_updates = []
     for mname, update_info in updates.items():
         args.modules = [mname]
         args.force_data = False
@@ -431,7 +450,20 @@ def update_modules(args):
         args.skip_dependencies = False
         args.force = False
         args.skip_data = False
-        install_modules(args)
+        try:
+            install_modules(args)
+        except SystemExit:
+            # install_modules() failed and already printed the reason (a
+            # KeyboardInterrupt is *not* a SystemExit and is left to
+            # propagate, so a real Ctrl-C still stops the whole update).
+            # Keep trying the rest of the updates and report the overall
+            # failure at the end.
+            failed_updates.append(mname)
+    if failed_updates:
+        print('ERROR: failed to update {} module(s): {}'.format(
+                len(failed_updates), ', '.join(failed_updates)
+            ), file=sys.stderr)
+        sys.exit(1)
 
 def uninstall_modules (args):
     if args.md is not None:
