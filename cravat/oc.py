@@ -272,7 +272,9 @@ def main():
             print('ERROR', file=sys.stderr)
             print(e, file=sys.stderr)
             print('Repeat command with --debug for more details', file=sys.stderr)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
