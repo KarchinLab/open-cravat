@@ -761,32 +761,92 @@ def showsqliteinfo(args):
         c.close()
         conn.close()
 
+def mergesqlite_check_info(dbpath):
+    """Collects the header columns, annotator module versions, and sample
+    ids used by a result db, for the pre-merge consistency checks in
+    mergesqlite()."""
+    conn = sqlite3.connect(dbpath)
+    c = conn.cursor()
+    info = {}
+    for table in ["variant", "gene", "sample", "mapping"]:
+        c.execute(f'select col_name from {table}_header')
+        info[table] = sorted([r[0] for r in c.fetchall()])
+    for annot_table, sql_table in [("variant_annotators", "variant_annotator"),
+                                    ("gene_annotators", "gene_annotator")]:
+        c.execute(f'select name, version from {sql_table}')
+        info[annot_table] = {r[0]: r[1] for r in c.fetchall()}
+    c.execute('select distinct base__sample_id from sample')
+    info["sample_ids"] = sorted({r[0] for r in c.fetchall()})
+    c.close()
+    conn.close()
+    return info
+
+def mergesqlite_parse_path_arg(raw):
+    """Parses a `path` or `path:label` positional arg for mergesqlite.
+    A label is only recognized when the part before the last ':' exists
+    as a file and the raw string as a whole does not (so plain paths
+    with no label, including Windows drive letters, pass through as-is).
+    Returns (path, label), label is None when no label was given."""
+    raw = str(raw)
+    if ':' in raw and not os.path.exists(raw):
+        maybe_path, maybe_label = raw.rsplit(':', 1)
+        if maybe_label and os.path.exists(maybe_path):
+            return maybe_path, maybe_label
+    return raw, None
+
 # For now, only jobs with same annotators are allowed.
 def mergesqlite(args):
-    dbpaths = args.path
-    if len(dbpaths) < 2:
+    raw_paths = args.path
+    if len(raw_paths) < 2:
         exit("Multiple sqlite file paths should be given")
+    dbpaths = []
+    labels = {}
+    for raw in raw_paths:
+        dbpath, label = mergesqlite_parse_path_arg(raw)
+        dbpaths.append(dbpath)
+        if label is not None:
+            labels[dbpath] = label
     outpath = args.outpath
     if outpath.endswith('.sqlite') == False:
         outpath = outpath + '.sqlite'
-    # Checks columns being the same.
-    conn = sqlite3.connect(dbpaths[0])
-    c = conn.cursor()
-    c.execute('select col_name from variant_header')
-    v_cols = sorted([r[0] for r in c.fetchall()])
-    c.execute('select col_name from gene_header')
-    g_cols = sorted([r[0] for r in c.fetchall()])
-    c.close()
-    conn.close()
+    # Checks columns and annotator modules being the same, and that no
+    # sample_id collides across inputs (after any :label rename).
+    all_info = {dbpath: mergesqlite_check_info(dbpath) for dbpath in dbpaths}
+    base_info = all_info[dbpaths[0]]
     for dbpath in dbpaths[1:]:
-        conn = sqlite3.connect(dbpath)
-        c = conn.cursor()
-        c.execute('select col_name from variant_header')
-        if v_cols != sorted([r[0] for r in c.fetchall()]):
-            exit("Annotation columns mismatch (variant table)")
-        c.execute('select col_name from gene_header')
-        if g_cols != sorted([r[0] for r in c.fetchall()]):
-            exit("Annotation columns mismatch (gene table)")
+        info = all_info[dbpath]
+        for table in ["variant", "gene", "sample", "mapping"]:
+            if base_info[table] != info[table]:
+                exit(
+                    f'Annotation columns mismatch ({table} table) between '
+                    f'{dbpaths[0]} and {dbpath}'
+                )
+        for annot_table in ["variant_annotators", "gene_annotators"]:
+            base_annots = base_info[annot_table]
+            annots = info[annot_table]
+            for name in sorted(set(base_annots) | set(annots)):
+                base_version = base_annots.get(name)
+                version = annots.get(name)
+                if base_version != version:
+                    exit(
+                        f'Annotator module mismatch ({annot_table.replace("_annotators", "")} '
+                        f'annotator "{name}"): version {base_version} in {dbpaths[0]} vs '
+                        f'version {version} in {dbpath}'
+                    )
+    sample_id_sources = {}
+    for dbpath in dbpaths:
+        label = labels.get(dbpath)
+        for sid in all_info[dbpath]["sample_ids"]:
+            eff_sid = f'{label}__{sid}' if label else sid
+            sample_id_sources.setdefault(eff_sid, []).append(dbpath)
+    collisions = {sid: paths for sid, paths in sample_id_sources.items() if len(paths) > 1}
+    if collisions:
+        lines = [f'  "{sid}": {", ".join(paths)}' for sid, paths in sorted(collisions.items())]
+        exit(
+            "Sample ID collision(s) across input files. Give the colliding "
+            "file(s) a path:label suffix to disambiguate (e.g. "
+            "job1.sqlite:cohortA):\n" + "\n".join(lines)
+        )
     # Copies the first db.
     print(f'Copying {dbpaths[0]} to {outpath}...')
     shutil.copy(dbpaths[0], outpath)
@@ -805,12 +865,19 @@ def mergesqlite(args):
     outc.execute('select col_name from sample_header order by rowid')
     cols = [r[0] for r in outc.fetchall()]
     s_uid_colno = cols.index('base__uid')
+    s_sampleid_colno = cols.index('base__sample_id')
     outc.execute('select col_name from mapping_header order by rowid')
     cols = [r[0] for r in outc.fetchall()]
     m_uid_colno = cols.index('base__uid')
     m_fileno_colno = cols.index('base__fileno')
     outc.execute('select max(base__uid) from variant')
     new_uid = outc.fetchone()[0] + 1
+    # Renames db 1's own sample_ids if it was given a :label.
+    if dbpaths[0] in labels:
+        outc.execute(
+            'update sample set base__sample_id = ? || base__sample_id',
+            (f'{labels[dbpaths[0]]}__',)
+        )
     # Input paths
     outc.execute('select colkey, colval from info where colkey="_input_paths"')
     input_paths = json.loads(outc.fetchone()[1].replace("'", '"'))
@@ -818,13 +885,14 @@ def mergesqlite(args):
     rev_input_paths = {}
     for fileno, filepath in input_paths.items():
         rev_input_paths[filepath] = fileno
-    # Makes initial hugo and variant id lists.
+    # Makes initial hugo and variant id -> uid lists.
     outc.execute('select base__hugo from gene')
     genes = {r[0] for r in outc.fetchall()}
-    outc.execute('select base__chrom, base__pos, base__ref_base, base__alt_base from variant')
-    variants = {variant_id(r[0], r[1], r[2] ,r[3]) for r in outc.fetchall()}
+    outc.execute('select base__uid, base__chrom, base__pos, base__ref_base, base__alt_base from variant')
+    vid_to_uid = {variant_id(r[1], r[2], r[3], r[4]): r[0] for r in outc.fetchall()}
     for dbpath in dbpaths[1:]:
         print(f'Merging {dbpath}...')
+        label = labels.get(dbpath)
         conn = sqlite3.connect(dbpath)
         c = conn.cursor()
         # Gene
@@ -841,16 +909,21 @@ def mergesqlite(args):
         c.execute('select * from variant order by rowid')
         for r in c.fetchall():
             vid = variant_id(r[v_chrom_colno], r[v_pos_colno], r[v_ref_colno], r[v_alt_colno])
-            if vid in variants:
-                continue
             old_uid = r[0]
+            if vid in vid_to_uid:
+                # Variant already present in the merged output (annotation
+                # is identical, so the redundant insert is skipped) - but
+                # the uid mapping still needs recording so this variant's
+                # sample/mapping rows get merged in below.
+                uid_dic[old_uid] = vid_to_uid[vid]
+                continue
             r = list(r)
             r[0] = new_uid
             uid_dic[old_uid] = new_uid
+            vid_to_uid[vid] = new_uid
             new_uid += 1
             q = f'insert into variant values ({",".join(["?" for v in range(len(r))])})'
             outc.execute(q, r)
-            variants.add(vid)
         # Sample
         c.execute('select * from sample order by rowid')
         for r in c.fetchall():
@@ -859,6 +932,8 @@ def mergesqlite(args):
                 new_uid = uid_dic[uid]
                 r = list(r)
                 r[s_uid_colno] = new_uid
+                if label:
+                    r[s_sampleid_colno] = f'{label}__{r[s_sampleid_colno]}'
                 q = f'insert into sample values ({",".join(["?" for v in range(len(r))])})'
                 outc.execute(q, r)
         # File numbers
@@ -887,6 +962,13 @@ def mergesqlite(args):
     q = 'update info set colval=? where colkey="Input file name"'
     v = ';'.join([input_paths[str(v)] for v in sorted(input_paths.keys(), key=lambda v: int(v))])
     outc.execute(q, [v])
+    outc.execute('select count(*) from variant')
+    n_variants = outc.fetchone()[0]
+    q = 'update info set colval=? where colkey="Number of unique input variants"'
+    outc.execute(q, [str(n_variants)])
+    modified = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    q = 'update info set colval=? where colkey="Result modified at"'
+    outc.execute(q, [modified])
     outconn.commit()
 
 
@@ -1193,7 +1275,10 @@ parser_result2gui.set_defaults(func=result2gui)
 parser_mergesqlite = subparsers.add_parser(
     "mergesqlite", help="Merge SQLite result files"
 )
-parser_mergesqlite.add_argument("path", nargs='+', help="Path to result database", type=Path)
+parser_mergesqlite.add_argument("path", nargs='+',
+    help="Path to result database. Optionally 'path:label' to rename that "
+         "db's sample_ids to 'label__sample_id' on merge, to resolve "
+         "sample_id collisions with other input dbs.")
 parser_mergesqlite.add_argument("-o", dest="outpath", 
     required=True, help="Output SQLite file path")
 parser_mergesqlite.set_defaults(func=mergesqlite)
