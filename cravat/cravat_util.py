@@ -723,7 +723,7 @@ def result2gui(args):
 
 
 def variant_id(chrom, pos, ref, alt):
-    return chrom + str(pos) + ref + alt
+    return chrom + ':' + str(pos) + ':' + ref + ':' + alt
 
 def showsqliteinfo(args):
     dbpaths = args.paths
@@ -769,8 +769,12 @@ def mergesqlite_check_info(dbpath):
     c = conn.cursor()
     info = {}
     for table in ["variant", "gene", "sample", "mapping"]:
-        c.execute(f'select col_name from {table}_header')
-        info[table] = sorted([r[0] for r in c.fetchall()])
+        # Order matters here (no sorted()): the merge loop in mergesqlite()
+        # reads and writes rows positionally, in this same rowid order, so
+        # two dbs with identical column names but a different physical
+        # order must be treated as a mismatch, not silently accepted.
+        c.execute(f'select col_name from {table}_header order by rowid')
+        info[table] = [r[0] for r in c.fetchall()]
     for annot_table, sql_table in [("variant_annotators", "variant_annotator"),
                                     ("gene_annotators", "gene_annotator")]:
         c.execute(f'select name, version from {sql_table}')
@@ -800,12 +804,14 @@ def mergesqlite(args):
     if len(raw_paths) < 2:
         exit("Multiple sqlite file paths should be given")
     dbpaths = []
-    labels = {}
+    # Parallel to dbpaths (not a dict keyed by dbpath) so that passing the
+    # same physical file twice with two different :label suffixes keeps
+    # both labels instead of the second overwriting the first.
+    labels = []
     for raw in raw_paths:
         dbpath, label = mergesqlite_parse_path_arg(raw)
         dbpaths.append(dbpath)
-        if label is not None:
-            labels[dbpath] = label
+        labels.append(label)
     outpath = args.outpath
     if outpath.endswith('.sqlite') == False:
         outpath = outpath + '.sqlite'
@@ -834,8 +840,7 @@ def mergesqlite(args):
                         f'version {version} in {dbpath}'
                     )
     sample_id_sources = {}
-    for dbpath in dbpaths:
-        label = labels.get(dbpath)
+    for dbpath, label in zip(dbpaths, labels):
         for sid in all_info[dbpath]["sample_ids"]:
             eff_sid = f'{label}__{sid}' if label else sid
             sample_id_sources.setdefault(eff_sid, []).append(dbpath)
@@ -873,10 +878,10 @@ def mergesqlite(args):
     outc.execute('select max(base__uid) from variant')
     new_uid = outc.fetchone()[0] + 1
     # Renames db 1's own sample_ids if it was given a :label.
-    if dbpaths[0] in labels:
+    if labels[0]:
         outc.execute(
             'update sample set base__sample_id = ? || base__sample_id',
-            (f'{labels[dbpaths[0]]}__',)
+            (f'{labels[0]}__',)
         )
     # Input paths
     outc.execute('select colkey, colval from info where colkey="_input_paths"')
@@ -890,9 +895,8 @@ def mergesqlite(args):
     genes = {r[0] for r in outc.fetchall()}
     outc.execute('select base__uid, base__chrom, base__pos, base__ref_base, base__alt_base from variant')
     vid_to_uid = {variant_id(r[1], r[2], r[3], r[4]): r[0] for r in outc.fetchall()}
-    for dbpath in dbpaths[1:]:
+    for dbpath, label in zip(dbpaths[1:], labels[1:]):
         print(f'Merging {dbpath}...')
-        label = labels.get(dbpath)
         conn = sqlite3.connect(dbpath)
         c = conn.cursor()
         # Gene
@@ -929,9 +933,9 @@ def mergesqlite(args):
         for r in c.fetchall():
             uid = r[s_uid_colno]
             if uid in uid_dic:
-                new_uid = uid_dic[uid]
+                mapped_uid = uid_dic[uid]
                 r = list(r)
-                r[s_uid_colno] = new_uid
+                r[s_uid_colno] = mapped_uid
                 if label:
                     r[s_sampleid_colno] = f'{label}__{r[s_sampleid_colno]}'
                 q = f'insert into sample values ({",".join(["?" for v in range(len(r))])})'
@@ -946,14 +950,19 @@ def mergesqlite(args):
                 rev_input_paths[filepath] = str(new_fileno)
                 fileno_dic[int(fileno)] = new_fileno
                 new_fileno += 1
+            else:
+                # This db's input filepath was already contributed by an
+                # earlier db (or is db 1's own) - map its fileno onto the
+                # fileno already assigned to that filepath.
+                fileno_dic[int(fileno)] = int(rev_input_paths[filepath])
         # Mapping
         c.execute('select * from mapping order by rowid')
         for r in c.fetchall():
             uid = r[m_uid_colno]
             if uid in uid_dic:
-                new_uid = uid_dic[uid]
+                mapped_uid = uid_dic[uid]
                 r = list(r)
-                r[m_uid_colno] = new_uid
+                r[m_uid_colno] = mapped_uid
                 r[m_fileno_colno] = fileno_dic[r[m_fileno_colno]]
                 q = f'insert into mapping values ({",".join(["?" for v in range(len(r))])})'
                 outc.execute(q, r)
