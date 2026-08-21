@@ -5,9 +5,15 @@ import sqlite3
 import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest import mock
 
 import cravat.admin_util as au
-from cravat.cravat_util import mergesqlite
+import cravat.constants as constants
+from cravat.cravat_util import (
+    mergesqlite,
+    mergesqlite_drop_columns,
+    mergesqlite_status_json_path,
+)
 
 try:
     import scipy.stats  # noqa: F401 - only needed for the casecontrol recompute test
@@ -183,6 +189,7 @@ class MergeSqliteTestBase(unittest.TestCase):
             skip_postaggregator=True,
             postaggregators=[],
             module_option=None,
+            md=None,
         )
         arg_defaults.update(arg_overrides)
         args = SimpleNamespace(**arg_defaults)
@@ -345,6 +352,85 @@ class TestConsistencyChecks(MergeSqliteTestBase):
         with self.assertRaises(SystemExit):
             self.run_merge([self.db1, self.db2])
         self.assertFalse(os.path.exists(self.outpath))
+
+    def test_converter_format_mismatch_errors_when_recomputing_postaggregators(self):
+        # vcfinfo/varmeta recompute would otherwise silently use db1's
+        # _converter_format alone for the whole merged sample set.
+        build_db(
+            self.db1,
+            variants=[(1, "chr1", 100, "A", "T", 0.5)],
+            samples=[(1, "sample1", "het")],
+            mappings=[(1, 0, "NM_001")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db1.vcf"},
+            extra_info={"_converter_format": "vcf"},
+        )
+        build_db(
+            self.db2,
+            variants=[(1, "chr2", 200, "C", "G", 0.7)],
+            samples=[(1, "sample2", "hom")],
+            mappings=[(1, 0, "NM_002")],
+            genes=[("GENE2", 0.3)],
+            input_paths={"0": "/in/db2.vcf"},
+            extra_info={"_converter_format": "csv"},
+        )
+
+        with self.assertRaises(SystemExit):
+            self.run_merge([self.db1, self.db2], skip_postaggregator=False)
+        self.assertFalse(os.path.exists(self.outpath))
+
+    def test_converter_format_mismatch_allowed_with_skip_postaggregator(self):
+        # With no recompute happening, a converter-format mismatch is
+        # someone else's problem (out of scope here, same as before OC-833).
+        build_db(
+            self.db1,
+            variants=[(1, "chr1", 100, "A", "T", 0.5)],
+            samples=[(1, "sample1", "het")],
+            mappings=[(1, 0, "NM_001")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db1.vcf"},
+            extra_info={"_converter_format": "vcf"},
+        )
+        build_db(
+            self.db2,
+            variants=[(1, "chr2", 200, "C", "G", 0.7)],
+            samples=[(1, "sample2", "hom")],
+            mappings=[(1, 0, "NM_002")],
+            genes=[("GENE2", 0.3)],
+            input_paths={"0": "/in/db2.vcf"},
+            extra_info={"_converter_format": "csv"},
+        )
+
+        self.run_merge([self.db1, self.db2], skip_postaggregator=True)
+        self.assertTrue(os.path.exists(self.outpath))
+
+    def test_mixed_null_and_string_sample_ids_does_not_crash(self):
+        # A stray NULL base__sample_id alongside real ones (e.g. a db that
+        # hasn't been through tagsampler's setup(), which is what normally
+        # normalizes nulls to "no-sample") must not crash the pre-merge
+        # info-gathering pass.
+        build_db(
+            self.db1,
+            variants=[(1, "chr1", 100, "A", "T", 0.5)],
+            samples=[(1, None, "het")],
+            mappings=[(1, 0, "NM_001")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db1.vcf"},
+        )
+        build_db(
+            self.db2,
+            variants=[(1, "chr2", 200, "C", "G", 0.7)],
+            samples=[(1, "sample2", "hom")],
+            mappings=[(1, 0, "NM_002")],
+            genes=[("GENE2", 0.3)],
+            input_paths={"0": "/in/db2.vcf"},
+        )
+
+        self.run_merge([self.db1, self.db2])
+
+        self.assertTrue(os.path.exists(self.outpath))
+        sample_ids = {r[0] for r in self.query("select base__sample_id from sample")}
+        self.assertEqual(sample_ids, {None, "sample2"})
 
 
 class TestMergedInfo(MergeSqliteTestBase):
@@ -728,6 +814,114 @@ def build_nonvcf_pair(db1_path, db2_path):
         mapping_cols=MAPPING_COLS_FULL,
         extra_info={"_converter_format": "csv"},
     )
+
+
+class TestDropColumnsIndexHandling(unittest.TestCase):
+    """Exercises mergesqlite_drop_columns() directly against a raw sqlite3
+    connection, rather than through mergesqlite() - no real postaggregator
+    modules needed, since this is purely a schema-surgery helper."""
+
+    def test_drops_covering_index_without_crashing_and_keeps_other_indexes(self):
+        conn = sqlite3.connect(":memory:")
+        c = conn.cursor()
+        c.execute("create table t (a text, b text, c text)")
+        c.execute("create index idx_b on t(b)")
+        c.execute("create index idx_c on t(c)")
+        c.execute("insert into t values ('a1', 'b1', 'c1')")
+
+        mergesqlite_drop_columns(conn, "t", ["b"])
+
+        c.execute("select * from t")
+        self.assertEqual(c.fetchall(), [("a1", "c1")])
+        c.execute("select name from sqlite_master where type='index'")
+        self.assertEqual(
+            {r[0] for r in c.fetchall()}, {"idx_c"},
+            "idx_b (on the dropped column) must go; idx_c (untouched) must survive",
+        )
+        conn.close()
+
+
+class TestPostaggregatorFlagValidation(MergeSqliteTestBase):
+    def test_p_nonexistent_module_errors_no_output(self):
+        build_nonvcf_pair(self.db1, self.db2)
+
+        with self.assertRaises(SystemExit):
+            self.run_merge(
+                [self.db1, self.db2],
+                skip_postaggregator=False,
+                postaggregators=["zzz_mergesqlite_test_nonexistent_module"],
+            )
+        self.assertFalse(os.path.exists(self.outpath))
+
+    def test_missing_default_postaggregator_is_silently_skipped_not_errored(self):
+        # Unlike an explicit -p name, a default (tagsampler/casecontrol/
+        # varmeta/vcfinfo) that isn't installed locally shouldn't block
+        # the merge - it's just not recomputed.
+        build_nonvcf_pair(self.db1, self.db2)
+
+        with mock.patch("cravat.cravat_util.au.module_exists_local", return_value=False):
+            self.run_merge([self.db1, self.db2], skip_postaggregator=False)
+
+        self.assertTrue(os.path.exists(self.outpath))
+
+
+class TestMdFlag(MergeSqliteTestBase):
+    def test_md_redirects_module_resolution(self):
+        # An empty --md dir has none of the default postaggregators, so if
+        # --md is actually being honored here, none of them run -
+        # regardless of what's really installed in this checkout's normal
+        # modules_dir. (Unlike oc run's gene mapper, mergesqlite does all
+        # its module resolution in the one process that parses --md, with
+        # no multiprocessing involved, so this doesn't hit the forkserver
+        # issue --md has there.)
+        build_nonvcf_pair(self.db1, self.db2)
+        fake_md = os.path.join(self.tmpdir, "empty_modules_dir")
+        os.makedirs(fake_md, exist_ok=True)
+        prior_md = constants.custom_modules_dir
+        self.addCleanup(setattr, constants, "custom_modules_dir", prior_md)
+
+        self.run_merge([self.db1, self.db2], skip_postaggregator=False, md=fake_md)
+
+        self.assertEqual(au.get_modules_dir(), fake_md)
+        postagg_cols = self.query(
+            "select col_name from variant_header where "
+            'col_name like "tagsampler__%" or col_name like "varmeta__%" or '
+            'col_name like "vcfinfo__%" or col_name like "casecontrol__%"'
+        )
+        self.assertEqual(
+            postagg_cols, [],
+            "no default postaggregator exists in the empty --md dir, so "
+            "none should have run",
+        )
+
+
+class TestPostaggregatorRecomputeFailureCleanup(MergeSqliteTestBase):
+    def test_recompute_failure_removes_incomplete_output_and_status_json(self):
+        build_nonvcf_pair(self.db1, self.db2)
+        status_json_path = mergesqlite_status_json_path(self.outpath)
+        fake_module_info = SimpleNamespace(
+            script_path="/nonexistent/path/zzz_mergesqlite_test_fake_postagg.py",
+            conf={},
+        )
+
+        with mock.patch(
+            "cravat.cravat_util.mergesqlite_is_local_postaggregator", return_value=False
+        ), mock.patch(
+            "cravat.cravat_util.au.module_exists_local", return_value=True
+        ), mock.patch(
+            "cravat.cravat_util.au.get_local_module_info", return_value=fake_module_info
+        ):
+            with self.assertRaises(Exception):
+                self.run_merge([self.db1, self.db2], skip_postaggregator=False)
+
+        self.assertFalse(
+            os.path.exists(self.outpath),
+            "a failed recompute must not leave a half-finished output file behind",
+        )
+        self.assertFalse(
+            os.path.exists(status_json_path),
+            "the .status.json the failed recompute wrote must be cleaned up too",
+        )
 
 
 @unittest.skipUnless(
