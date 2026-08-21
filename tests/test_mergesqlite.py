@@ -6,7 +6,28 @@ import tempfile
 import unittest
 from types import SimpleNamespace
 
+import cravat.admin_util as au
 from cravat.cravat_util import mergesqlite
+
+try:
+    import scipy.stats  # noqa: F401 - only needed for the casecontrol recompute test
+
+    _HAVE_SCIPY = True
+except ImportError:
+    _HAVE_SCIPY = False
+
+# The postaggregator-recompute tests below exercise the real tagsampler/
+# varmeta/vcfinfo/casecontrol module code (per PLAN-merge-postaggregators.md,
+# recompute deliberately runs the real modules rather than reimplementing
+# their logic), so they need those modules installed under
+# cravat/modules/postaggregators/ (gitignored, not part of this checkout -
+# copy them in from a `oc module install-base` module dir to run these).
+_POSTAGG_MODULES_AVAILABLE = all(
+    au.module_exists_local(name) for name in ("tagsampler", "varmeta", "vcfinfo")
+)
+_CASECONTROL_AVAILABLE = (
+    _POSTAGG_MODULES_AVAILABLE and au.module_exists_local("casecontrol") and _HAVE_SCIPY
+)
 
 # Column shapes mirror what real oc-produced result dbs carry: a handful of
 # "base__*" key columns plus one arbitrary annotator column per table, so
@@ -32,6 +53,33 @@ MAPPING_COLS = [
     ("base__transcript", "text"),
 ]
 
+# Fuller column shapes for the postaggregator-recompute tests: real
+# tagsampler/vcfinfo/casecontrol code reads base__tags and
+# base__original_line from mapping, and base__phred/filter/alt_reads/
+# tot_reads/af/hap_block/hap_strand from sample (vcfinfo only). All
+# declared "text" so inserted ints/floats round-trip as the exact strings
+# these modules' ';'-joins are asserted against, instead of picking up
+# SQLite's REAL-affinity coercion (e.g. 30 -> "30.0").
+SAMPLE_COLS_FULL = [
+    ("base__uid", "integer"),
+    ("base__sample_id", "text"),
+    ("base__zygosity", "text"),
+    ("base__phred", "text"),
+    ("base__filter", "text"),
+    ("base__alt_reads", "text"),
+    ("base__tot_reads", "text"),
+    ("base__af", "text"),
+    ("base__hap_block", "text"),
+    ("base__hap_strand", "text"),
+]
+MAPPING_COLS_FULL = [
+    ("base__uid", "integer"),
+    ("base__fileno", "integer"),
+    ("base__transcript", "text"),
+    ("base__tags", "text"),
+    ("base__original_line", "text"),
+]
+
 
 def _col_def(col_name):
     return json.dumps({"title": col_name, "type": "string"})
@@ -50,6 +98,7 @@ def build_db(
     gene_cols=GENE_COLS,
     sample_cols=SAMPLE_COLS,
     mapping_cols=MAPPING_COLS,
+    extra_info=None,
 ):
     """Builds a minimal but real-shaped cravat result sqlite db.
 
@@ -98,16 +147,16 @@ def build_db(
 
     c.execute("create table info (colkey text primary key, colval text)")
     input_paths_str = json.dumps(input_paths).replace('"', "'")
-    c.executemany(
-        "insert into info values (?, ?)",
-        [
-            ("_input_paths", input_paths_str),
-            ("Input file name", ";".join(input_paths.values())),
-            ("Number of unique input variants", str(len(variants))),
-            ("Result created at", "2026-01-01 00:00:00"),
-            ("Result modified at", "2026-01-01 00:00:00"),
-        ],
-    )
+    info_rows = [
+        ("_input_paths", input_paths_str),
+        ("Input file name", ";".join(input_paths.values())),
+        ("Number of unique input variants", str(len(variants))),
+        ("Result created at", "2026-01-01 00:00:00"),
+        ("Result modified at", "2026-01-01 00:00:00"),
+    ]
+    if extra_info:
+        info_rows.extend(extra_info.items())
+    c.executemany("insert into info values (?, ?)", info_rows)
 
     conn.commit()
     conn.close()
@@ -121,8 +170,22 @@ class MergeSqliteTestBase(unittest.TestCase):
         self.db2 = os.path.join(self.tmpdir, "db2.sqlite")
         self.outpath = os.path.join(self.tmpdir, "merged.sqlite")
 
-    def run_merge(self, paths):
-        args = SimpleNamespace(path=paths, outpath=self.outpath)
+    def run_merge(self, paths, **arg_overrides):
+        # skip_postaggregator=True by default: these structural-merge tests
+        # predate postaggregator recompute (OC-833) and use a deliberately
+        # minimal synthetic schema that real postaggregator modules aren't
+        # shaped to run against (e.g. no base__tags in mapping). The
+        # postaggregator-recompute tests below opt back in explicitly, with
+        # a fuller schema.
+        arg_defaults = dict(
+            path=paths,
+            outpath=self.outpath,
+            skip_postaggregator=True,
+            postaggregators=[],
+            module_option=None,
+        )
+        arg_defaults.update(arg_overrides)
+        args = SimpleNamespace(**arg_defaults)
         mergesqlite(args)
 
     def query(self, sql, params=()):
@@ -624,6 +687,282 @@ class TestColumnOrderMismatch(MergeSqliteTestBase):
         with self.assertRaises(SystemExit):
             self.run_merge([self.db1, self.db2])
         self.assertFalse(os.path.exists(self.outpath))
+
+
+def build_nonvcf_pair(db1_path, db2_path):
+    """A 2-variant, 3-sample merge scenario shaped for postaggregator
+    recompute: db1 and db2 share the chr1:100 variant (contributing
+    sample1/sample2 respectively), and db2 alone contributes a second,
+    unique chr2:200 variant (sample3). Non-vcf converter format, so
+    tagsampler and varmeta both run on recompute but vcfinfo doesn't
+    (mirrors real dbs: vcfinfo and varmeta are mutually exclusive, gated
+    on opposite sides of the same "_converter_format"=="vcf" check)."""
+    build_db(
+        db1_path,
+        variants=[(1, "chr1", 100, "A", "T", 0.5)],
+        samples=[(1, "sample1", "het", None, None, None, None, None, None, None)],
+        mappings=[(1, 0, "NM_001", None, "line-a")],
+        genes=[("GENE1", 0.9)],
+        input_paths={"0": "/in/db1.vcf"},
+        sample_cols=SAMPLE_COLS_FULL,
+        mapping_cols=MAPPING_COLS_FULL,
+        extra_info={"_converter_format": "csv"},
+    )
+    build_db(
+        db2_path,
+        variants=[
+            (1, "chr1", 100, "A", "T", 0.5),  # shared with db1
+            (2, "chr2", 200, "C", "G", 0.7),  # new
+        ],
+        samples=[
+            (1, "sample2", "hom", None, None, None, None, None, None, None),
+            (2, "sample3", "het", None, None, None, None, None, None, None),
+        ],
+        mappings=[
+            (1, 0, "NM_001", None, "line-b"),
+            (2, 0, "NM_002", None, "line-c"),
+        ],
+        genes=[("GENE1", 0.9), ("GENE2", 0.3)],
+        input_paths={"0": "/in/db2.vcf"},
+        sample_cols=SAMPLE_COLS_FULL,
+        mapping_cols=MAPPING_COLS_FULL,
+        extra_info={"_converter_format": "csv"},
+    )
+
+
+@unittest.skipUnless(
+    _POSTAGG_MODULES_AVAILABLE,
+    "tagsampler/varmeta/vcfinfo postaggregator modules are not installed locally",
+)
+class TestPostaggregatorRecomputeDefaultsNonVcf(MergeSqliteTestBase):
+    def test_defaults_recompute_tagsampler_and_varmeta_not_vcfinfo_or_casecontrol(self):
+        build_nonvcf_pair(self.db1, self.db2)
+
+        self.run_merge([self.db1, self.db2], skip_postaggregator=False)
+
+        uid_by_chrom = dict(self.query("select base__chrom, base__uid from variant"))
+        tagsampler_by_uid = dict(
+            self.query(
+                "select base__uid, tagsampler__numsample || ':' || tagsampler__samples "
+                "from variant"
+            )
+        )
+        self.assertEqual(
+            tagsampler_by_uid[uid_by_chrom["chr1"]],
+            "2:sample1;sample2",
+            "tagsampler__numsample/samples must reflect the merged sample "
+            "set (sample1 from db1 + sample2 from db2), not either input "
+            "db's own sample set alone",
+        )
+        self.assertEqual(tagsampler_by_uid[uid_by_chrom["chr2"]], "1:sample3")
+
+        varmeta_by_uid = dict(
+            self.query("select base__uid, varmeta__zygosity from variant")
+        )
+        self.assertEqual(varmeta_by_uid[uid_by_chrom["chr1"]], "het;hom")
+        self.assertEqual(varmeta_by_uid[uid_by_chrom["chr2"]], "het")
+
+        # vcfinfo is vcf-only (check() requires _converter_format=="vcf") and
+        # casecontrol no-ops with no cohorts conf given - neither should
+        # have run at all, so neither should have added any column.
+        for module_name in ("vcfinfo", "casecontrol"):
+            self.assertEqual(
+                self.query(
+                    f'select count(*) from variant_header where col_name like "{module_name}__%"'
+                )[0][0],
+                0,
+                f"{module_name} should not have run",
+            )
+
+
+@unittest.skipUnless(
+    _POSTAGG_MODULES_AVAILABLE,
+    "tagsampler/varmeta/vcfinfo postaggregator modules are not installed locally",
+)
+class TestPostaggregatorRecomputeDefaultsVcf(MergeSqliteTestBase):
+    def test_defaults_recompute_vcfinfo_not_varmeta_for_vcf_source(self):
+        # varmeta and vcfinfo can't both run on the same db (their check()
+        # conditions are each other's opposite on "_converter_format"), so
+        # the vcf side of "varmeta/vcfinfo columns present and correct" is
+        # covered here rather than in the non-vcf scenario above.
+        # hap_block/hap_strand are left None here: vcfinfo.yml declares
+        # them type "int", which setup() only widens for single-sample
+        # jobs, so a multi-sample join like "1;2" gets written back
+        # unquoted (base_postaggregator.write_output() only quotes
+        # col_type=="string") - a preexisting vcfinfo bug, out of scope
+        # here per the plan ("no reimplementation of module logic"), that
+        # happens to only surface on modern sqlite3's single-statement
+        # enforcement. Leaving them unset nulls the column out cleanly
+        # instead (empty-string join -> None) and sidesteps it.
+        build_db(
+            self.db1,
+            variants=[(1, "chr1", 100, "A", "T", 0.5)],
+            samples=[(1, "sample1", "het", 30, "PASS", 5, 10, 0.5, None, None)],
+            mappings=[(1, 0, "NM_001", None, "line-a")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db1.vcf"},
+            sample_cols=SAMPLE_COLS_FULL,
+            mapping_cols=MAPPING_COLS_FULL,
+            extra_info={"_converter_format": "vcf"},
+        )
+        build_db(
+            self.db2,
+            variants=[(1, "chr1", 100, "A", "T", 0.5)],  # shared with db1
+            samples=[(1, "sample2", "hom", 40, "PASS", 8, 10, 0.8, None, None)],
+            mappings=[(1, 0, "NM_001", None, "line-b")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db2.vcf"},
+            sample_cols=SAMPLE_COLS_FULL,
+            mapping_cols=MAPPING_COLS_FULL,
+            extra_info={"_converter_format": "vcf"},
+        )
+
+        self.run_merge([self.db1, self.db2], skip_postaggregator=False)
+
+        row = self.query(
+            "select vcfinfo__phred, vcfinfo__filter, vcfinfo__zygosity, "
+            "vcfinfo__alt_reads, vcfinfo__tot_reads, vcfinfo__af, "
+            "vcfinfo__hap_block, vcfinfo__hap_strand from variant"
+        )[0]
+        self.assertEqual(
+            row,
+            ("30;40", "PASS;PASS", "het;hom", "5;8", "10;10", "0.5;0.8", None, None),
+            "vcfinfo columns must reflect both merged samples (multi_sample "
+            "is recomputed from the merged sample set), not just db1's",
+        )
+
+        self.assertEqual(
+            self.query(
+                'select count(*) from variant_header where col_name like "varmeta__%"'
+            )[0][0],
+            0,
+            "varmeta should not have run (check() requires non-vcf)",
+        )
+
+
+@unittest.skipUnless(
+    _POSTAGG_MODULES_AVAILABLE,
+    "tagsampler/varmeta/vcfinfo postaggregator modules are not installed locally",
+)
+class TestSkipPostaggregatorFlag(MergeSqliteTestBase):
+    def test_skip_postaggregator_leaves_no_postaggregator_columns(self):
+        build_nonvcf_pair(self.db1, self.db2)
+
+        self.run_merge([self.db1, self.db2], skip_postaggregator=True)
+
+        postagg_cols = self.query(
+            "select col_name from variant_header where "
+            'col_name like "tagsampler__%" or col_name like "varmeta__%" or '
+            'col_name like "vcfinfo__%" or col_name like "casecontrol__%"'
+        )
+        self.assertEqual(
+            postagg_cols, [], "no postaggregator column should exist with nothing re-run"
+        )
+
+
+@unittest.skipUnless(
+    _POSTAGG_MODULES_AVAILABLE,
+    "tagsampler/varmeta/vcfinfo postaggregator modules are not installed locally",
+)
+class TestAdditivePFlag(MergeSqliteTestBase):
+    def test_p_tagsampler_redundant_with_defaults_gives_same_result(self):
+        build_nonvcf_pair(self.db1, self.db2)
+
+        self.run_merge(
+            [self.db1, self.db2],
+            skip_postaggregator=False,
+            postaggregators=["tagsampler"],
+        )
+
+        uid_by_chrom = dict(self.query("select base__chrom, base__uid from variant"))
+        tagsampler_by_uid = dict(
+            self.query(
+                "select base__uid, tagsampler__numsample || ':' || tagsampler__samples "
+                "from variant"
+            )
+        )
+        self.assertEqual(tagsampler_by_uid[uid_by_chrom["chr1"]], "2:sample1;sample2")
+        self.assertEqual(tagsampler_by_uid[uid_by_chrom["chr2"]], "1:sample3")
+
+        # -p is additive, not an override: varmeta (a default) must still
+        # have run even though only tagsampler was named explicitly.
+        self.assertEqual(
+            self.query(
+                'select count(*) from variant_header where col_name like "varmeta__%"'
+            )[0][0],
+            1,
+        )
+
+
+@unittest.skipUnless(
+    _CASECONTROL_AVAILABLE,
+    "casecontrol postaggregator module (and/or scipy) is not available locally",
+)
+class TestPostaggregatorRecomputeCasecontrolModuleOption(MergeSqliteTestBase):
+    def test_module_option_casecontrol_cohorts_runs_casecontrol(self):
+        from scipy.stats import fisher_exact
+
+        build_db(
+            self.db1,
+            variants=[(1, "chr1", 100, "A", "T", 0.5)],
+            samples=[(1, "sample1", "het", None, None, None, None, None, None, None)],
+            mappings=[(1, 0, "NM_001", None, "line-a")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db1.vcf"},
+            sample_cols=SAMPLE_COLS_FULL,
+            mapping_cols=MAPPING_COLS_FULL,
+            extra_info={"_converter_format": "csv"},
+        )
+        build_db(
+            self.db2,
+            variants=[(1, "chr1", 100, "A", "T", 0.5)],  # shared with db1
+            samples=[(1, "sample2", "hom", None, None, None, None, None, None, None)],
+            mappings=[(1, 0, "NM_001", None, "line-b")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db2.vcf"},
+            sample_cols=SAMPLE_COLS_FULL,
+            mapping_cols=MAPPING_COLS_FULL,
+            extra_info={"_converter_format": "csv"},
+        )
+
+        cohorts_path = os.path.join(self.tmpdir, "cohorts.txt")
+        with open(cohorts_path, "w") as f:
+            f.write("sample1 case\nsample2 control\n")
+
+        # contrast with the no-op case in
+        # TestPostaggregatorRecomputeDefaultsNonVcf: with cohorts conf
+        # given, casecontrol now finds it via check() and actually runs.
+        self.run_merge(
+            [self.db1, self.db2],
+            skip_postaggregator=False,
+            module_option=[f"casecontrol.cohorts={cohorts_path}"],
+        )
+
+        row = self.query(
+            "select casecontrol__dom_pvalue, casecontrol__rec_pvalue, "
+            "casecontrol__all_pvalue, casecontrol__hom_case, "
+            "casecontrol__het_case, casecontrol__ref_case, "
+            "casecontrol__hom_cont, casecontrol__het_cont, "
+            "casecontrol__ref_cont, casecontrol__multiallelic from variant"
+        )[0]
+        (
+            dom_pvalue, rec_pvalue, all_pvalue,
+            hom_case, het_case, ref_case,
+            hom_cont, het_cont, ref_cont,
+            multiallelic,
+        ) = row
+
+        # sample1 (case) is het, sample2 (control) is hom.
+        self.assertEqual((hom_case, het_case, ref_case), (0, 1, 0))
+        self.assertEqual((hom_cont, het_cont, ref_cont), (1, 0, 0))
+        self.assertAlmostEqual(dom_pvalue, fisher_exact([[1, 0], [1, 0]], "greater")[1])
+        self.assertAlmostEqual(rec_pvalue, fisher_exact([[0, 1], [1, 0]], "greater")[1])
+        self.assertAlmostEqual(all_pvalue, fisher_exact([[1, 0], [2, 0]], "greater")[1])
+        self.assertIsNone(
+            multiallelic,
+            "db1 and db2's mapping rows for the shared variant have "
+            "distinct base__original_line values, so it isn't multiallelic",
+        )
 
 
 if __name__ == "__main__":
