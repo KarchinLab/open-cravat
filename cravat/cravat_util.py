@@ -8,7 +8,9 @@ import sys
 import json
 import traceback
 import shutil
+import tempfile
 import time
+import concurrent.futures
 from pathlib import Path
 import datetime
 from . import admin_util as au
@@ -963,7 +965,14 @@ def mergesqlite_run_postaggregators(outpath, module_names, module_options):
     the same in-process mechanism the main pipeline already uses
     (cravat_class.py's run_postaggregators): util.load_class(script_path,
     "CravatPostAggregator"), instantiate with -d/-n (+ --confs), a
-    StatusWriter, call .run(). No reimplementation of module logic."""
+    StatusWriter, call .run(). No reimplementation of module logic.
+
+    For the --parallel path's vcfinfo shards, the cohort-wide multi_sample
+    override (see OC-833 production decision 5) travels through
+    `module_options["vcfinfo"]["multi_sample"]` like any other
+    --module-option - vcfinfo.py's own setup() reads it from self.confs.
+    No special-casing needed here; this function treats every
+    postaggregator identically."""
     # Deferred import: cravat_class imports cravat_util at module level
     # ("import cravat.cravat_util as cu"), so importing it back at
     # cravat_util's own module level would be circular.
@@ -992,8 +1001,13 @@ def mergesqlite_run_postaggregators(outpath, module_names, module_options):
         post_agg.run()
 
 
-# For now, only jobs with same annotators are allowed.
-def mergesqlite(args):
+def mergesqlite_validate_and_prepare(args):
+    """Runs mergesqlite()'s pre-merge validation and name resolution -
+    column/annotator-version/converter-format consistency checks,
+    sample_id collision detection, postaggregator name resolution - shared
+    by the serial and parallel merge paths so they can't drift apart on
+    what counts as a valid merge. Exits (SystemExit, same as always) on
+    any failure, before any output file is written."""
     if args.md is not None:
         constants.custom_modules_dir = args.md
     raw_paths = args.path
@@ -1084,6 +1098,50 @@ def mergesqlite(args):
         }
         postagg_names = sorted(default_names | set(args.postaggregators))
     module_options = mergesqlite_parse_module_options(args.module_option)
+    # casecontrol isn't supported with --parallel at all (OC-833 production
+    # decision 7: its Fisher's-exact denominator is a whole-cohort scalar,
+    # out of scope for per-shard recompute, and there's no requirement to
+    # support it post-parallel-merge). It's only a real problem when
+    # casecontrol would actually do something - its own check() gates on a
+    # "cohorts" module option being given, same condition checked here - so
+    # a bare default install with no cohorts conf still merges fine
+    # (casecontrol just no-ops, same as it always has).
+    if (
+        getattr(args, "parallel", False)
+        and "casecontrol" in postagg_names
+        and "cohorts" in module_options.get("casecontrol", {})
+    ):
+        exit(
+            "casecontrol is not supported with --parallel. Drop "
+            "--module-option casecontrol.cohorts=... (and -p casecontrol, "
+            "if given explicitly), or use the default serial merge."
+        )
+    return {
+        "dbpaths": dbpaths,
+        "labels": labels,
+        "outpath": outpath,
+        "all_info": all_info,
+        "postagg_names": postagg_names,
+        "module_options": module_options,
+        "sample_id_sources": sample_id_sources,
+    }
+
+
+# For now, only jobs with same annotators are allowed.
+def mergesqlite(args):
+    prep = mergesqlite_validate_and_prepare(args)
+    if getattr(args, "parallel", False):
+        mergesqlite_parallel(args, prep)
+    else:
+        mergesqlite_serial(args, prep)
+
+
+def mergesqlite_serial(args, prep):
+    dbpaths = prep["dbpaths"]
+    labels = prep["labels"]
+    outpath = prep["outpath"]
+    postagg_names = prep["postagg_names"]
+    module_options = prep["module_options"]
     # Copies the first db.
     print(f'Copying {dbpaths[0]} to {outpath}...')
     shutil.copy(dbpaths[0], outpath)
@@ -1237,6 +1295,501 @@ def mergesqlite(args):
         if os.path.exists(status_json_path):
             os.remove(status_json_path)
         raise
+
+
+def mergesqlite_chrom_row_counts(dbpaths):
+    """Sums each chromosome's variant row count across all input dbs, for
+    load-balanced bucketing (mergesqlite_bucket_chroms). Cheap - one
+    `group by` query per db, no row data actually read."""
+    weights = {}
+    for dbpath in dbpaths:
+        conn = sqlite3.connect(dbpath)
+        c = conn.cursor()
+        c.execute('select base__chrom, count(*) from variant group by base__chrom')
+        for chrom, n in c.fetchall():
+            weights[chrom] = weights.get(chrom, 0) + n
+        conn.close()
+    return weights
+
+
+def mergesqlite_bucket_chroms(chrom_weights, n_workers):
+    """Greedy longest-processing-time-first bin-packing of chromosomes
+    into at most `n_workers` balanced buckets by summed variant-row
+    weight. Returns a list of chrom-name lists, one per non-empty bucket
+    (never more buckets than distinct chromosomes, even if n_workers is
+    larger).
+
+    No special-casing of chrX/chrY: gene rows aren't bucketed by
+    chromosome at all (mergesqlite_merge_genes() merges the gene table
+    once, globally, directly from the original input dbs - see OC-833
+    production decision 2), so a pseudoautosomal-region gene referenced
+    from both X and Y dedupes correctly regardless of which buckets those
+    two chromosomes land in."""
+    items = [(weight, [chrom]) for chrom, weight in chrom_weights.items()]
+    items.sort(key=lambda item: item[0], reverse=True)
+    n_buckets = max(1, min(n_workers, len(items)))
+    bucket_weights = [0] * n_buckets
+    buckets = [[] for _ in range(n_buckets)]
+    for weight, chroms in items:
+        i = min(range(n_buckets), key=lambda i: bucket_weights[i])
+        buckets[i].extend(chroms)
+        bucket_weights[i] += weight
+    return [b for b in buckets if b]
+
+
+def mergesqlite_global_fileno_map(dbpaths, labels):
+    """Precomputes, once and serially, the same filepath -> fileno
+    numbering the serial merge loop builds incrementally as it goes
+    (visiting dbpaths in order, so db1's own filenos stay identity-mapped)
+    - not chromosome-dependent, so every contig shard must share this
+    exact map rather than each independently renumbering its own subset
+    of input files, which could disagree shard-to-shard for the same
+    filepath.
+
+    Returns (global_input_paths, fileno_remap): global_input_paths is
+    {str(fileno): filepath} for the whole merge; fileno_remap is
+    {dbpath: {local_fileno: global_fileno}} for every dbpaths[1:] entry
+    (dbpaths[0] is untouched/identity-mapped, matching today's serial
+    behavior)."""
+    conn0 = sqlite3.connect(dbpaths[0])
+    c0 = conn0.cursor()
+    c0.execute('select colval from info where colkey="_input_paths"')
+    input_paths = json.loads(c0.fetchone()[0].replace("'", '"'))
+    conn0.close()
+    new_fileno = max(int(v) for v in input_paths.keys()) + 1
+    rev_input_paths = {filepath: fileno for fileno, filepath in input_paths.items()}
+    fileno_remap = {dbpaths[0]: {int(k): int(k) for k in input_paths.keys()}}
+    for dbpath in dbpaths[1:]:
+        conn = sqlite3.connect(dbpath)
+        c = conn.cursor()
+        c.execute('select colval from info where colkey="_input_paths"')
+        ips = json.loads(c.fetchone()[0].replace("'", '"'))
+        conn.close()
+        dic = {}
+        for fileno, filepath in ips.items():
+            if filepath not in rev_input_paths:
+                input_paths[str(new_fileno)] = filepath
+                rev_input_paths[filepath] = str(new_fileno)
+                dic[int(fileno)] = new_fileno
+                new_fileno += 1
+            else:
+                dic[int(fileno)] = int(rev_input_paths[filepath])
+        fileno_remap[dbpath] = dic
+    return input_paths, fileno_remap
+
+
+def mergesqlite_variant_key_colnos(dbpath):
+    """Column indices (within a `select *`-shaped row tuple) of the
+    variant-identity and uid/fileno key columns, read once from db1's
+    header tables - safe to reuse against every input db's own `select *`
+    rows since mergesqlite_validate_and_prepare() already requires every
+    input db to share db1's exact column order."""
+    conn = sqlite3.connect(dbpath)
+    c = conn.cursor()
+    c.execute('select col_name from variant_header order by rowid')
+    cols = [r[0] for r in c.fetchall()]
+    v_chrom, v_pos = cols.index('base__chrom'), cols.index('base__pos')
+    v_ref, v_alt = cols.index('base__ref_base'), cols.index('base__alt_base')
+    c.execute('select col_name from gene_header order by rowid')
+    cols = [r[0] for r in c.fetchall()]
+    g_hugo = cols.index('base__hugo')
+    c.execute('select col_name from sample_header order by rowid')
+    cols = [r[0] for r in c.fetchall()]
+    s_uid, s_sampleid = cols.index('base__uid'), cols.index('base__sample_id')
+    c.execute('select col_name from mapping_header order by rowid')
+    cols = [r[0] for r in c.fetchall()]
+    m_uid, m_fileno = cols.index('base__uid'), cols.index('base__fileno')
+    conn.close()
+    return {
+        "v_chrom": v_chrom, "v_pos": v_pos, "v_ref": v_ref, "v_alt": v_alt,
+        "g_hugo": g_hugo, "s_uid": s_uid, "s_sampleid": s_sampleid,
+        "m_uid": m_uid, "m_fileno": m_fileno,
+    }
+
+
+def mergesqlite_prune_shard_db1(shard_outpath, db1_path, bucket, label0, colnos):
+    """Seeds one contig shard's private output file from a full copy of
+    db1, then deletes everything outside `bucket`: variant rows by
+    base__chrom, sample/mapping rows whose uid no longer has a surviving
+    variant, and every gene row. Mirrors the serial loop's db1 label
+    rename too.
+
+    Gene is emptied here (not bucketed by chrom, not carried at all): the
+    gene table has no chrom column and variant.base__hugo isn't a
+    reliable proxy for one (real result dbs were found, during OC-833
+    validation against a real 50-batch pilot dataset, to carry gene rows
+    for hugos that are never any variant's *primary* base__hugo call), so
+    there's no correct way to shard it by chromosome. It's handled by one
+    global pass instead - mergesqlite_merge_genes(), run once directly
+    against the original input dbs alongside mergesqlite_concatenate_shards()
+    rather than replicated into (and deduped out of) every shard - see
+    OC-833 production decision 2."""
+    shutil.copy(db1_path, shard_outpath)
+    conn = sqlite3.connect(shard_outpath)
+    c = conn.cursor()
+    if label0:
+        c.execute('update sample set base__sample_id = ? || base__sample_id', (f'{label0}__',))
+    placeholders = ",".join("?" for _ in bucket)
+    c.execute(f'delete from variant where base__chrom not in ({placeholders})', bucket)
+    c.execute('delete from sample where base__uid not in (select base__uid from variant)')
+    c.execute('delete from mapping where base__uid not in (select base__uid from variant)')
+    c.execute('delete from gene')
+    conn.commit()
+    conn.close()
+
+
+def mergesqlite_shard_merge(
+    shard_outpath, dbpaths, labels, bucket, uid_start,
+    fileno_remap, global_input_paths, colnos,
+):
+    """The parallel path's per-shard structural merge: the same dedup
+    algorithm as the serial loop in mergesqlite_serial(), restricted to
+    `bucket`'s chromosomes and running against `shard_outpath` (already
+    seeded by mergesqlite_prune_shard_db1), using the precomputed global
+    fileno map instead of deriving it locally.
+
+    uid_start: every shard starts allocating new variant uids from this
+    same value (not a private per-shard block) - shards run independently
+    and their new-uid ranges *do* overlap each other, which is fine: uids
+    only need to be unique within a shard here (so they never collide
+    with a db1-preserved uid this same shard also carries), because
+    mergesqlite_concatenate_shards() gives every row a fresh, globally-
+    unique uid as it copies shards into the final output anyway - see
+    OC-833 production decision 1. No overflow-checking or block sizing
+    needed as a result."""
+    outconn = sqlite3.connect(shard_outpath)
+    outc = outconn.cursor()
+    v_chrom_colno, v_pos_colno = colnos["v_chrom"], colnos["v_pos"]
+    v_ref_colno, v_alt_colno = colnos["v_ref"], colnos["v_alt"]
+    s_uid_colno, s_sampleid_colno = colnos["s_uid"], colnos["s_sampleid"]
+    m_uid_colno, m_fileno_colno = colnos["m_uid"], colnos["m_fileno"]
+
+    outc.execute(
+        'select base__uid, base__chrom, base__pos, base__ref_base, base__alt_base from variant'
+    )
+    vid_to_uid = {variant_id(r[1], r[2], r[3], r[4]): r[0] for r in outc.fetchall()}
+    new_uid = uid_start
+    placeholders = ",".join("?" for _ in bucket)
+
+    for dbpath, label in zip(dbpaths[1:], labels[1:]):
+        conn = sqlite3.connect(dbpath)
+        c = conn.cursor()
+        # Variant, restricted to this shard's chrom bucket. (Gene is
+        # handled once, globally, by mergesqlite_merge_genes() - see
+        # mergesqlite_prune_shard_db1's docstring.)
+        uid_dic = {}
+        c.execute(
+            f'select * from variant where base__chrom in ({placeholders}) order by rowid',
+            bucket,
+        )
+        for r in c.fetchall():
+            vid = variant_id(r[v_chrom_colno], r[v_pos_colno], r[v_ref_colno], r[v_alt_colno])
+            old_uid = r[0]
+            if vid in vid_to_uid:
+                uid_dic[old_uid] = vid_to_uid[vid]
+                continue
+            r = list(r)
+            r[0] = new_uid
+            uid_dic[old_uid] = new_uid
+            vid_to_uid[vid] = new_uid
+            new_uid += 1
+            q = f'insert into variant values ({",".join(["?" for v in range(len(r))])})'
+            outc.execute(q, r)
+        # Sample: uid-gated, same as the serial loop - already
+        # bucket-safe since uid_dic only holds this bucket's uids.
+        c.execute('select * from sample order by rowid')
+        for r in c.fetchall():
+            uid = r[s_uid_colno]
+            if uid in uid_dic:
+                mapped_uid = uid_dic[uid]
+                r = list(r)
+                r[s_uid_colno] = mapped_uid
+                if label:
+                    r[s_sampleid_colno] = f'{label}__{r[s_sampleid_colno]}'
+                q = f'insert into sample values ({",".join(["?" for v in range(len(r))])})'
+                outc.execute(q, r)
+        # Mapping: uid-gated, fileno remapped via the precomputed global map.
+        c.execute('select * from mapping order by rowid')
+        for r in c.fetchall():
+            uid = r[m_uid_colno]
+            if uid in uid_dic:
+                mapped_uid = uid_dic[uid]
+                r = list(r)
+                r[m_uid_colno] = mapped_uid
+                r[m_fileno_colno] = fileno_remap[dbpath][r[m_fileno_colno]]
+                q = f'insert into mapping values ({",".join(["?" for v in range(len(r))])})'
+                outc.execute(q, r)
+        conn.close()
+
+    outc.execute(
+        'update info set colval=? where colkey="_input_paths"',
+        [json.dumps(global_input_paths)],
+    )
+    v = ';'.join(
+        global_input_paths[str(k)]
+        for k in sorted(global_input_paths.keys(), key=lambda v: int(v))
+    )
+    outc.execute('update info set colval=? where colkey="Input file name"', [v])
+    outc.execute('select count(*) from variant')
+    n_variants = outc.fetchone()[0]
+    outc.execute(
+        'update info set colval=? where colkey="Number of unique input variants"',
+        [str(n_variants)],
+    )
+    modified = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    outc.execute('update info set colval=? where colkey="Result modified at"', [modified])
+    outconn.commit()
+    outconn.close()
+
+
+def mergesqlite_parallel_shard_worker(spec):
+    """Runs in its own process (ProcessPoolExecutor - sqlite3 connections
+    aren't picklable/shareable across processes, so this can't be a
+    thread pool): builds one contig shard's fully-merged, postagg-
+    recomputed output file from scratch. `spec` is a plain dict of
+    picklable values (see mergesqlite_parallel) - no shared state with
+    the parent process or other shard workers."""
+    if spec["md"] is not None:
+        constants.custom_modules_dir = spec["md"]
+    shard_outpath = spec["shard_outpath"]
+    dbpaths = spec["dbpaths"]
+    labels = spec["labels"]
+    bucket = spec["bucket"]
+    colnos = spec["colnos"]
+    print(f'[shard {spec["shard_index"]}] chrom(s) {sorted(bucket)}: pruning {dbpaths[0]}...')
+    mergesqlite_prune_shard_db1(shard_outpath, dbpaths[0], bucket, labels[0], colnos)
+    for dbpath in dbpaths[1:]:
+        print(f'[shard {spec["shard_index"]}] merging {dbpath}...')
+    mergesqlite_shard_merge(
+        shard_outpath, dbpaths, labels, bucket, spec["uid_start"],
+        spec["fileno_remap"], spec["global_input_paths"], colnos,
+    )
+    shard_conn = sqlite3.connect(shard_outpath)
+    mergesqlite_strip_postaggregator_columns(shard_conn)
+    shard_conn.close()
+    if spec["postagg_names"]:
+        print(f'[shard {spec["shard_index"]}] recomputing {", ".join(spec["postagg_names"])}...')
+        mergesqlite_run_postaggregators(
+            shard_outpath, spec["postagg_names"], spec["module_options"],
+        )
+    return {"shard_outpath": shard_outpath, "bucket": bucket}
+
+
+def mergesqlite_merge_genes(dbpaths, outconn, g_hugo_colno):
+    """Merges the gene table once, globally, directly from the original
+    input dbs - the exact same dedupe-by-first-hugo-seen algorithm
+    mergesqlite_serial() always used for its own gene loop (copy db1's
+    gene table wholesale, then add each later db's non-duplicate-hugo
+    rows), just run once here instead of once per shard.
+
+    The gene table isn't chromosome-partitionable (see
+    mergesqlite_prune_shard_db1's docstring), so this deliberately reads
+    straight from `dbpaths` - the original inputs, not any shard file -
+    and writes into `outconn`, the same connection
+    mergesqlite_concatenate_shards() is already using to build the final
+    output. See OC-833 production decision 2."""
+    outc = outconn.cursor()
+    genes = set()
+    for dbpath in dbpaths:
+        conn = sqlite3.connect(dbpath)
+        c = conn.cursor()
+        c.execute('select * from gene order by rowid')
+        for r in c.fetchall():
+            hugo = r[g_hugo_colno]
+            if hugo in genes:
+                continue
+            q = f'insert into gene values ({",".join(["?" for _ in r])})'
+            outc.execute(q, r)
+            genes.add(hugo)
+        conn.close()
+
+
+def mergesqlite_concatenate_shards(shard_paths, outpath, dbpaths, colnos):
+    """The parallel path's one deliberately-serial step: every shard
+    already carries a full, independently-valid schema (header/
+    annotator/reportsub/smartfilters/indices, identical across shards
+    since every shard ran the same strip+recompute against the same
+    module set), so shard 0's file is copied as the skeleton for
+    `outpath` - its correct, complete _input_paths/"Input file name" info
+    rows come along for free, since every shard already wrote those
+    during mergesqlite_shard_merge(). Its variant/gene/sample/mapping
+    tables are then emptied and rebuilt.
+
+    variant/sample/mapping: every shard's rows (including shard 0's own)
+    are bulk-copied back in via ATTACH DATABASE + INSERT INTO ...
+    SELECT - cheap even at scale, unlike the row-by-row Python merge
+    loop - with base__uid rewritten through a per-shard old-uid ->
+    new-uid temp table as they go. Shards allocate new uids from
+    overlapping ranges, not private blocks (see mergesqlite_shard_merge),
+    so this is where every row actually gets its final, globally-unique
+    uid: a plain running count of rows copied so far, used as each
+    shard's uid offset (OC-833 production decision 1).
+
+    gene: not copied from any shard file at all (every shard's own gene
+    table is empty - see mergesqlite_prune_shard_db1) - instead merged
+    once, directly from `dbpaths`, by mergesqlite_merge_genes()
+    (OC-833 production decision 2)."""
+    # A shard file inherits its journal_mode (WAL or not) from db1 via
+    # mergesqlite_prune_shard_db1's shutil.copy - a real oc-run output can
+    # be WAL-mode, and the many further connections each shard worker
+    # opens on top of it (prune, merge, strip, one per recomputed
+    # postaggregator) can leave data sitting in that shard's -wal sidecar
+    # rather than checkpointed into the main file. shutil.copy below is a
+    # raw byte copy, not WAL-aware, so it would silently pick up a stale
+    # (pre-checkpoint) schema/content if that sidecar isn't flushed first
+    # - force a full checkpoint on every shard file before touching any
+    # of them.
+    for shard_path in shard_paths:
+        checkpoint_conn = sqlite3.connect(shard_path)
+        checkpoint_conn.execute('pragma wal_checkpoint(truncate)')
+        checkpoint_conn.close()
+    shutil.copy(shard_paths[0], outpath)
+    outconn = sqlite3.connect(outpath)
+    outc = outconn.cursor()
+    for table in ["variant", "gene", "sample", "mapping"]:
+        outc.execute(f'delete from {table}')
+    outc.execute('create temp table uid_map (old_uid integer primary key, new_uid integer)')
+    uid_offset = 0
+    for i, shard_path in enumerate(shard_paths):
+        alias = f'mergesqlite_shard_{i}'
+        outc.execute(f'attach database ? as {alias}', (shard_path,))
+        outc.execute('delete from temp.uid_map')
+        outc.execute(
+            f'insert into temp.uid_map select base__uid, '
+            f'? + row_number() over (order by rowid) - 1 from {alias}.variant',
+            (uid_offset,),
+        )
+        for table in ["variant", "sample", "mapping"]:
+            outc.execute(f'pragma {alias}.table_info({table})')
+            cols = [r[1] for r in outc.fetchall()]
+            select_list = ", ".join(
+                'um.new_uid' if col == 'base__uid' else f't."{col}"' for col in cols
+            )
+            outc.execute(
+                f'insert into {table} select {select_list} from {alias}.{table} t '
+                f'join temp.uid_map um on t.base__uid = um.old_uid'
+            )
+        outc.execute('select count(*) from temp.uid_map')
+        uid_offset += outc.fetchone()[0]
+        # DETACH is refused while a transaction touching that database is
+        # still open - commit first.
+        outconn.commit()
+        outc.execute(f'detach database {alias}')
+    mergesqlite_merge_genes(dbpaths, outconn, colnos["g_hugo"])
+    outc.execute('select count(*) from variant')
+    n_variants = outc.fetchone()[0]
+    outc.execute(
+        'update info set colval=? where colkey="Number of unique input variants"',
+        [str(n_variants)],
+    )
+    modified = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    outc.execute('update info set colval=? where colkey="Result modified at"', [modified])
+    outconn.commit()
+    outconn.close()
+
+
+def mergesqlite_parallel(args, prep):
+    """Contig-parallel merge (OC-833): buckets chromosomes into
+    load-balanced shards (mergesqlite_bucket_chroms), merges and
+    postagg-recomputes each shard independently in its own process
+    (mergesqlite_parallel_shard_worker), then concatenates the shard
+    outputs and merges the gene table globally
+    (mergesqlite_concatenate_shards).
+
+    casecontrol is dropped entirely here, not just deferred to a final
+    serial pass - mergesqlite_validate_and_prepare() already hard-fails
+    before this function is ever called if casecontrol would actually do
+    anything (its Fisher's-exact denominator is a whole-cohort scalar,
+    out of scope for per-shard parallelization, and there's no
+    requirement to recompute it after a parallel merge - see OC-833
+    production decision 7). Any leftover "casecontrol" in
+    prep["postagg_names"] past that check is guaranteed to be a no-op
+    (no cohorts conf given), so it's simply excluded from what shards
+    recompute."""
+    dbpaths = prep["dbpaths"]
+    labels = prep["labels"]
+    outpath = prep["outpath"]
+    postagg_names = [n for n in prep["postagg_names"] if n != "casecontrol"]
+    module_options = prep["module_options"]
+    n_workers = max(1, args.workers or os.cpu_count() or 1)
+    tmpdir = tempfile.mkdtemp(prefix="mergesqlite_parallel_")
+    try:
+        print(f'Computing per-chromosome load balance across {len(dbpaths)} input db(s)...')
+        chrom_weights = mergesqlite_chrom_row_counts(dbpaths)
+        buckets = mergesqlite_bucket_chroms(chrom_weights, n_workers)
+        print(f'Bucketed {len(chrom_weights)} chromosome(s) into {len(buckets)} shard(s).')
+        global_input_paths, fileno_remap = mergesqlite_global_fileno_map(dbpaths, labels)
+        colnos = mergesqlite_variant_key_colnos(dbpaths[0])
+        conn0 = sqlite3.connect(dbpaths[0])
+        c0 = conn0.cursor()
+        c0.execute('select max(base__uid) from variant')
+        # Every shard starts allocating new variant uids from this same
+        # value - not a private per-shard block. See
+        # mergesqlite_shard_merge()'s docstring and OC-833 production
+        # decision 1: shard-local uid uniqueness is all that's needed,
+        # since mergesqlite_concatenate_shards() renumbers every row's
+        # uid globally as it copies.
+        uid_start = c0.fetchone()[0] + 1
+        conn0.close()
+        # vcfinfo's multi_sample must reflect the cohort-wide sample
+        # count, not any one shard's local subset (a shard's own sample
+        # table is restricted to its chrom bucket) - see OC-833
+        # production decision 5. Passed through as a plain
+        # --module-option-style override on vcfinfo's own confs; vcfinfo
+        # itself is responsible for honoring it in setup().
+        shard_module_options = module_options
+        if "vcfinfo" in postagg_names:
+            global_multi_sample = len(prep["sample_id_sources"]) > 1
+            shard_module_options = dict(module_options)
+            shard_module_options["vcfinfo"] = {
+                **module_options.get("vcfinfo", {}),
+                "multi_sample": global_multi_sample,
+            }
+        shard_specs = [
+            {
+                "shard_index": i,
+                "shard_outpath": os.path.join(tmpdir, f"shard_{i}.sqlite"),
+                "dbpaths": dbpaths,
+                "labels": labels,
+                "bucket": bucket,
+                "uid_start": uid_start,
+                "fileno_remap": fileno_remap,
+                "global_input_paths": global_input_paths,
+                "colnos": colnos,
+                "postagg_names": postagg_names,
+                "module_options": shard_module_options,
+                "md": args.md,
+            }
+            for i, bucket in enumerate(buckets)
+        ]
+        print(
+            f'Merging {len(shard_specs)} contig shard(s) in parallel '
+            f'(workers={min(n_workers, len(shard_specs))})...'
+        )
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=min(n_workers, len(shard_specs))
+        ) as ex:
+            futures = [ex.submit(mergesqlite_parallel_shard_worker, spec) for spec in shard_specs]
+            shard_results = [f.result() for f in futures]
+        shard_results.sort(key=lambda r: r["bucket"])
+        print(f'Concatenating {len(shard_results)} shard output(s) into {outpath}...')
+        mergesqlite_concatenate_shards(
+            [r["shard_outpath"] for r in shard_results], outpath, dbpaths, colnos,
+        )
+    except Exception:
+        print(
+            f'Parallel merge failed; removing incomplete output {outpath}.',
+            file=sys.stderr,
+        )
+        for path in (outpath, outpath + '-wal', outpath + '-shm'):
+            if os.path.exists(path):
+                os.remove(path)
+        status_json_path = mergesqlite_status_json_path(outpath)
+        if os.path.exists(status_json_path):
+            os.remove(status_json_path)
+        raise
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 def filtersqlite(args):
@@ -1566,6 +2119,20 @@ parser_mergesqlite.add_argument("--module-option", dest="module_option", nargs="
          "--module-option casecontrol.cohorts=/path/to/merged-cohort-file")
 parser_mergesqlite.add_argument("--md", dest="md", default=None,
     help="Specify the root directory of OpenCRAVAT modules (annotators, etc)")
+parser_mergesqlite.add_argument("--parallel", dest="parallel",
+    action="store_true", default=False,
+    help="Merge and recompute postaggregators in parallel, sharded by "
+         "chromosome. Structural-merge and "
+         "postaggregator-recompute output is content-equivalent to the "
+         "default serial merge, modulo uid renumbering. casecontrol is "
+         "not supported with --parallel: its case/control counts are a "
+         "whole-cohort scalar, and using --module-option "
+         "casecontrol.cohorts=... (or -p casecontrol) together with "
+         "--parallel is a hard error. Use the default serial merge "
+         "instead if you need casecontrol.")
+parser_mergesqlite.add_argument("--workers", dest="workers", type=int, default=None,
+    help="Number of parallel worker processes for --parallel. Default is "
+         "os.cpu_count(). Ignored without --parallel.")
 parser_mergesqlite.set_defaults(func=mergesqlite)
 parser_showsqliteinfo = subparsers.add_parser('showsqliteinfo', help='Show SQLite result file information')
 parser_showsqliteinfo.add_argument('paths', nargs='+', help='SQLite result file paths')
