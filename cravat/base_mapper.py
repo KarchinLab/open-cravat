@@ -254,7 +254,8 @@ class BaseMapper(object):
                     continue
             except Exception as e:
                 self._log_runtime_error(ln, line, e)
-                continue
+                crx_data = crv_data.copy()
+                crx_data["all_mappings"] = "{}"
             if crx_data is not None:
                 self.crx_writer.write_data(crx_data)
                 self._add_crx_to_gene_info(crx_data)
@@ -283,8 +284,8 @@ class BaseMapper(object):
             )
         count = 0
         last_status_update_time = time.time()
-        crx_data = None
         for ln, line, crv_data in self.reader.loop_data():
+            crx_data = None
             try:
                 count += 1
                 cur_time = time.time()
@@ -303,6 +304,8 @@ class BaseMapper(object):
                     continue
             except Exception as e:
                 self._log_runtime_error(ln, line, e)
+                crx_data = crv_data.copy()
+                crx_data["all_mappings"] = "{}"
             if crx_data is not None:
                 self.crx_writer.write_data(crx_data)
                 self._add_crx_to_gene_info(crx_data)
