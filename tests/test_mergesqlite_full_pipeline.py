@@ -257,5 +257,96 @@ class TestMergeMatchesSingleCombinedRun(unittest.TestCase):
         self.assertEqual(_gene_names(merged_path), _gene_names(all_path))
 
 
+@unittest.skipUnless(
+    _FULL_PIPELINE_AVAILABLE,
+    "vcf-converter and/or a gene mapper (hg38/gencode) aren't installed "
+    "locally - point OPENCRAVAT_MD at a module dir that has them, or run "
+    "`oc module install vcf-converter hg38`",
+)
+class TestParallelMergeMatchesSingleCombinedRun(TestMergeMatchesSingleCombinedRun):
+    """Same end-to-end comparison as TestMergeMatchesSingleCombinedRun,
+    but `mergesqlite --parallel` instead of the default serial merge -
+    real converter, mapper, and postaggregator modules throughout, not
+    just the synthetic fixtures in test_mergesqlite.py. All four input
+    files share one locus (see _INPUT_VCFS), so this exercises a single
+    contig shard end-to-end rather than the multi-shard bucketing
+    test_mergesqlite.py's synthetic tests already cover - the point here
+    is that --parallel's real-module postaggregator recompute (strip,
+    vcfinfo/tagsampler setup()+annotate(), the ATTACH-based concatenation
+    tail) produces the same result as a real 'oc run', not synthetic
+    stand-ins for those modules."""
+
+    def test_two_job_merge_matches_single_combined_run(self):
+        _run_oc(
+            ["run", self._input_path("inA.vcf"), self._input_path("inB.vcf"),
+             "-l", "hg38", "-d", self.out_dir, "-n", "resultAB"],
+            cwd=self.tmpdir,
+        )
+        _run_oc(
+            ["run", self._input_path("inC.vcf"), self._input_path("inD.vcf"),
+             "-l", "hg38", "-d", self.out_dir, "-n", "resultCD"],
+            cwd=self.tmpdir,
+        )
+        _run_oc(
+            ["run", self._input_path("inA.vcf"), self._input_path("inB.vcf"),
+             self._input_path("inC.vcf"), self._input_path("inD.vcf"),
+             "-l", "hg38", "-d", self.out_dir, "-n", "resultALL"],
+            cwd=self.tmpdir,
+        )
+        _run_oc(
+            ["util", "mergesqlite", self._out_path("resultAB"), self._out_path("resultCD"),
+             "-o", self._out_path("merged"), "--parallel", "--workers", "2"],
+            cwd=self.tmpdir,
+        )
+
+        merged_path = self._out_path("merged")
+        all_path = self._out_path("resultALL")
+
+        merged_variants, merged_cols = _variant_rows_by_key(merged_path)
+        all_variants, all_cols = _variant_rows_by_key(all_path)
+
+        expected_keys = {
+            ("chr1", 69511, "A", "G"),
+            ("chr1", 69521, "T", "C"),
+            ("chr1", 69531, "C", "T"),
+            ("chr1", 69541, "G", "A"),
+            ("chr1", 69551, "A", "T"),
+        }
+        self.assertEqual(set(merged_variants.keys()), expected_keys)
+        self.assertEqual(set(all_variants.keys()), expected_keys)
+
+        self.assertEqual(
+            set(merged_cols), set(all_cols),
+            "merged and single-run dbs must end up with the same variant columns",
+        )
+        compared_cols = [
+            col for col in merged_cols
+            if col != "base__uid" and not col.startswith(_EXCLUDED_COLUMN_PREFIXES)
+        ]
+        self.assertTrue(any(c.startswith("tagsampler__") for c in compared_cols))
+        self.assertTrue(any(c.startswith("vcfinfo__") for c in compared_cols))
+
+        for key in sorted(expected_keys):
+            merged_row = merged_variants[key]
+            all_row = all_variants[key]
+            diffs = {
+                col: (merged_row[col], all_row[col])
+                for col in compared_cols
+                if merged_row[col] != all_row[col]
+            }
+            self.assertEqual(
+                diffs, {},
+                f"variant {key}: --parallel merged vs. single-combined-run column mismatch",
+            )
+
+        self.assertEqual(
+            _sample_rows_by_variant_key(merged_path),
+            _sample_rows_by_variant_key(all_path),
+            "every (variant, sample_id, zygosity) assignment must match, "
+            "regardless of which job originally contributed the sample",
+        )
+        self.assertEqual(_gene_names(merged_path), _gene_names(all_path))
+
+
 if __name__ == "__main__":
     unittest.main()
