@@ -11,6 +11,7 @@ import shutil
 import tempfile
 import time
 import concurrent.futures
+import urllib.parse
 from pathlib import Path
 import datetime
 from . import admin_util as au
@@ -763,11 +764,30 @@ def showsqliteinfo(args):
         c.close()
         conn.close()
 
+def mergesqlite_readonly_uri(dbpath):
+    """Builds a `file:...?mode=ro` URI connection string for a connection
+    that will only ever read one of the *original* input dbs - never a
+    shard or output file this merge writes to, which are still opened
+    with a plain sqlite3.connect(path). mode=ro just enforces (and
+    documents) what every one of these call sites already only does;
+    it's not immutable=1 - that would additionally skip SQLite's own
+    locking, which assumes the file can't change out from under the
+    connection for as long as it's open, a promise this merge can't make
+    on its own (nothing stops some other process from rewriting an input
+    db mid-merge). mode=ro alone still takes the normal SHARED lock,
+    which doesn't block other concurrent readers anyway - multiple shard
+    workers legitimately do read the same input db at the same time.
+    Percent-encodes the absolute path so a real `?`/`#`/space in a
+    filename can't be misread as the start of the URI's query string or
+    fragment."""
+    return f'file:{urllib.parse.quote(os.path.abspath(dbpath))}?mode=ro'
+
+
 def mergesqlite_check_info(dbpath):
     """Collects the header columns, annotator module versions, and sample
     ids used by a result db, for the pre-merge consistency checks in
     mergesqlite()."""
-    conn = sqlite3.connect(dbpath)
+    conn = sqlite3.connect(mergesqlite_readonly_uri(dbpath), uri=True)
     c = conn.cursor()
     info = {}
     for table in ["variant", "gene", "sample", "mapping"]:
@@ -1303,7 +1323,7 @@ def mergesqlite_chrom_row_counts(dbpaths):
     `group by` query per db, no row data actually read."""
     weights = {}
     for dbpath in dbpaths:
-        conn = sqlite3.connect(dbpath)
+        conn = sqlite3.connect(mergesqlite_readonly_uri(dbpath), uri=True)
         c = conn.cursor()
         c.execute('select base__chrom, count(*) from variant group by base__chrom')
         for chrom, n in c.fetchall():
@@ -1355,7 +1375,7 @@ def mergesqlite_global_fileno_map(dbpaths, labels):
     {dbpath: {local_fileno: global_fileno}} for every dbpaths[1:] entry
     (dbpaths[0] is untouched/identity-mapped, matching today's serial
     behavior)."""
-    conn0 = sqlite3.connect(dbpaths[0])
+    conn0 = sqlite3.connect(mergesqlite_readonly_uri(dbpaths[0]), uri=True)
     c0 = conn0.cursor()
     c0.execute('select colval from info where colkey="_input_paths"')
     input_paths = json.loads(c0.fetchone()[0].replace("'", '"'))
@@ -1364,7 +1384,7 @@ def mergesqlite_global_fileno_map(dbpaths, labels):
     rev_input_paths = {filepath: fileno for fileno, filepath in input_paths.items()}
     fileno_remap = {dbpaths[0]: {int(k): int(k) for k in input_paths.keys()}}
     for dbpath in dbpaths[1:]:
-        conn = sqlite3.connect(dbpath)
+        conn = sqlite3.connect(mergesqlite_readonly_uri(dbpath), uri=True)
         c = conn.cursor()
         c.execute('select colval from info where colkey="_input_paths"')
         ips = json.loads(c.fetchone()[0].replace("'", '"'))
@@ -1388,7 +1408,7 @@ def mergesqlite_variant_key_colnos(dbpath):
     header tables - safe to reuse against every input db's own `select *`
     rows since mergesqlite_validate_and_prepare() already requires every
     input db to share db1's exact column order."""
-    conn = sqlite3.connect(dbpath)
+    conn = sqlite3.connect(mergesqlite_readonly_uri(dbpath), uri=True)
     c = conn.cursor()
     c.execute('select col_name from variant_header order by rowid')
     cols = [r[0] for r in c.fetchall()]
@@ -1476,7 +1496,7 @@ def mergesqlite_shard_merge(
     placeholders = ",".join("?" for _ in bucket)
 
     for dbpath, label in zip(dbpaths[1:], labels[1:]):
-        conn = sqlite3.connect(dbpath)
+        conn = sqlite3.connect(mergesqlite_readonly_uri(dbpath), uri=True)
         c = conn.cursor()
         # Variant, restricted to this shard's chrom bucket. (Gene is
         # handled once, globally, by mergesqlite_merge_genes() - see
@@ -1598,7 +1618,7 @@ def mergesqlite_merge_genes(dbpaths, outconn, g_hugo_colno):
     outc = outconn.cursor()
     genes = set()
     for dbpath in dbpaths:
-        conn = sqlite3.connect(dbpath)
+        conn = sqlite3.connect(mergesqlite_readonly_uri(dbpath), uri=True)
         c = conn.cursor()
         c.execute('select * from gene order by rowid')
         for r in c.fetchall():
@@ -1799,7 +1819,7 @@ def mergesqlite_parallel(args, prep):
         print(f'Bucketed {len(chrom_weights)} chromosome(s) into {len(buckets)} shard(s).')
         global_input_paths, fileno_remap = mergesqlite_global_fileno_map(dbpaths, labels)
         colnos = mergesqlite_variant_key_colnos(dbpaths[0])
-        conn0 = sqlite3.connect(dbpaths[0])
+        conn0 = sqlite3.connect(mergesqlite_readonly_uri(dbpaths[0]), uri=True)
         c0 = conn0.cursor()
         c0.execute('select max(base__uid) from variant')
         # Every shard starts allocating new variant uids from this same
