@@ -207,6 +207,7 @@ class MergeSqliteTestBase(unittest.TestCase):
             md=None,
             parallel=False,
             workers=None,
+            tmpdir=None,
         )
         arg_defaults.update(arg_overrides)
         args = SimpleNamespace(**arg_defaults)
@@ -1188,7 +1189,7 @@ class TestBucketChroms(unittest.TestCase):
 
     def test_every_chromosome_assigned_to_exactly_one_bucket(self):
         weights = {"chr1": 100, "chr2": 90, "chrX": 5, "chrY": 5}
-        buckets = mergesqlite_bucket_chroms(weights, n_workers=4)
+        buckets = mergesqlite_bucket_chroms(weights, n_buckets=4)
         self.assertEqual(
             {c for b in buckets for c in b}, set(weights.keys()),
             "every chromosome must be assigned to exactly one bucket",
@@ -1200,7 +1201,7 @@ class TestBucketChroms(unittest.TestCase):
         # 3 chromosomes even though 8 workers are requested - no point
         # spawning empty-bucket workers.
         weights = {"chr1": 10, "chr2": 10, "chr3": 1}
-        buckets = mergesqlite_bucket_chroms(weights, n_workers=8)
+        buckets = mergesqlite_bucket_chroms(weights, n_buckets=8)
         self.assertEqual(len(buckets), 3)
 
     def test_balances_by_weight_not_just_chromosome_count(self):
@@ -1208,7 +1209,7 @@ class TestBucketChroms(unittest.TestCase):
         # must not share a bucket with any of the tiny ones if a
         # single-tiny-chromosome bucket would be better balanced.
         weights = {"chr1": 1000, "chr2": 1, "chr3": 1, "chr4": 1, "chr5": 1}
-        buckets = mergesqlite_bucket_chroms(weights, n_workers=2)
+        buckets = mergesqlite_bucket_chroms(weights, n_buckets=2)
         self.assertEqual(len(buckets), 2)
         big_bucket = next(b for b in buckets if "chr1" in b)
         self.assertEqual(big_bucket, ["chr1"])
@@ -1234,6 +1235,7 @@ class ParallelMergeSqliteTestBase(MergeSqliteTestBase):
             md=None,
             parallel=False,
             workers=None,
+            tmpdir=None,
         )
         arg_defaults.update(arg_overrides)
         args = SimpleNamespace(**arg_defaults)
@@ -1516,6 +1518,76 @@ class TestParallelUidsGloballyUnique(ParallelMergeSqliteTestBase):
             "after concatenation, even though shards allocate new uids "
             "from overlapping (not private) ranges",
         )
+
+
+class TestParallelDuplicateVariantRowInDb1(ParallelMergeSqliteTestBase):
+    """Regression test for a real edge case found benchmarking a 1000-sample
+    SNP-chip density dataset (see PLAN_DUPLICATE_UID_INVESTIGATION.md): every
+    one of 50 independently-generated input dbs had exactly one exact-
+    duplicate variant row (same base__uid, same chrom/pos/ref/alt, at two
+    adjacent rowids). mergesqlite_prune_shard_db1() copies db1's rows
+    wholesale, so this duplicate reaches mergesqlite_concatenate_shards()
+    unchanged; without a dedup step there, `old_uid integer primary key`
+    makes the whole merge fail with a UNIQUE constraint violation."""
+
+    def test_exact_duplicate_row_in_db1_is_deduped_not_fatal(self):
+        build_db(
+            self.db1,
+            variants=[
+                (1, "chr1", 100, "A", "T", "GENE1", 0.5),
+                (2, "chr1", 200, "C", "G", "GENE1", 0.5),
+                (2, "chr1", 200, "C", "G", "GENE1", 0.5),  # exact duplicate of uid 2
+            ],
+            samples=[
+                (1, "sample1", "het"),
+                (2, "sample2", "het"),
+                (2, "sample3", "hom"),
+            ],
+            mappings=[(1, 0, "NM_001"), (2, 0, "NM_002")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db1.vcf"},
+            variant_cols=VARIANT_COLS_WITH_HUGO,
+        )
+        build_db(
+            self.db2,
+            variants=[(1, "chr2", 999, "G", "A", "GENE2", 0.4)],
+            samples=[(1, "sample4", "het")],
+            mappings=[(1, 0, "NM_003")],
+            genes=[("GENE2", 0.1)],
+            input_paths={"0": "/in/db2.vcf"},
+            variant_cols=VARIANT_COLS_WITH_HUGO,
+        )
+
+        self.run_merge_to(
+            [self.db1, self.db2], self.parallel_outpath, parallel=True, workers=2,
+        )
+
+        variant_rows = self.query_path(
+            self.parallel_outpath, "select base__uid, base__chrom, base__pos from variant"
+        )
+        self.assertEqual(len(variant_rows), 3, "the duplicate row must not survive concatenation")
+        uids = [r[0] for r in variant_rows]
+        self.assertEqual(len(uids), len(set(uids)))
+        self.assertEqual(
+            self.variant_keys(self.parallel_outpath),
+            {("chr1", 100, "A", "T"), ("chr1", 200, "C", "G"), ("chr2", 999, "G", "A")},
+        )
+
+        # Both samples that referenced the duplicated uid must still be
+        # attached to the single surviving variant row - dedup must not
+        # drop or duplicate unrelated rows that merely reference it.
+        uid_for_200 = dict(
+            self.query_path(self.parallel_outpath, "select base__pos, base__uid from variant")
+        )[200]
+        sample_ids = {
+            r[0]
+            for r in self.query_path(
+                self.parallel_outpath,
+                "select base__sample_id from sample where base__uid=?",
+                (uid_for_200,),
+            )
+        }
+        self.assertEqual(sample_ids, {"sample2", "sample3"})
 
 
 class TestParallelMatchesSerialStructural(ParallelMergeSqliteTestBase):
@@ -1824,6 +1896,98 @@ class TestParallelCasecontrolRejected(ParallelMergeSqliteTestBase):
             any(c.startswith("casecontrol__") for c in cols),
             "casecontrol must not contribute any columns in --parallel mode",
         )
+
+
+class TestParallelManyChromsFewWorkers(ParallelMergeSqliteTestBase):
+    """OC-833 production decision 9: mergesqlite_parallel() submits one
+    task per chromosome, not one per worker - with more chromosomes than
+    workers, ProcessPoolExecutor's own task queue must dispatch the extra
+    tasks to workers as they free up. 5 chromosomes against 2 workers
+    means at least one worker handles 3 tasks sequentially; this would
+    hang or drop data if the pool were (incorrectly) capped at
+    max_workers tasks instead of max_workers concurrent workers."""
+
+    def test_five_chromosomes_two_workers_all_merge_correctly(self):
+        chroms = ["chr1", "chr2", "chr3", "chr4", "chr5"]
+        build_db(
+            self.db1,
+            variants=[(1, "chr1", 100, "A", "T", "GENE1", 0.5)],
+            samples=[(1, "sample1", "het")],
+            mappings=[(1, 0, "NM_001")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db1.vcf"},
+            variant_cols=VARIANT_COLS_WITH_HUGO,
+        )
+        build_db(
+            self.db2,
+            variants=[
+                (i, chrom, 100 + i, "A", "T", f"GENE{i+1}", 0.1 * i)
+                for i, chrom in enumerate(chroms, start=1)
+            ],
+            samples=[(i, f"sample{i+1}", "het") for i in range(1, 6)],
+            mappings=[(i, 0, f"NM_{i:03d}") for i in range(1, 6)],
+            genes=[(f"GENE{i+1}", 0.1 * i) for i in range(1, 6)],
+            input_paths={"0": "/in/db2.vcf"},
+            variant_cols=VARIANT_COLS_WITH_HUGO,
+        )
+
+        self.run_merge_to(
+            [self.db1, self.db2], self.parallel_outpath, parallel=True, workers=2,
+        )
+
+        self.assertEqual(
+            self.variant_keys(self.parallel_outpath),
+            {("chr1", 100, "A", "T")} | {
+                (chrom, 100 + i, "A", "T") for i, chrom in enumerate(chroms, start=1)
+            },
+        )
+        uids = [
+            r[0] for r in self.query_path(self.parallel_outpath, "select base__uid from variant")
+        ]
+        self.assertEqual(len(uids), len(set(uids)))
+
+
+class TestParallelTmpdir(ParallelMergeSqliteTestBase):
+    """OC-833 production decision 8: --tmpdir must actually reach
+    tempfile.mkdtemp() as its `dir` argument, so an operator can route
+    shard scratch files away from a small default temp filesystem."""
+
+    def test_tmpdir_arg_is_passed_to_shard_scratch_dir_creation(self):
+        build_db(
+            self.db1,
+            variants=[(1, "chr1", 100, "A", "T", "GENE1", 0.5)],
+            samples=[(1, "sample1", "het")],
+            mappings=[(1, 0, "NM_001")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db1.vcf"},
+            variant_cols=VARIANT_COLS_WITH_HUGO,
+        )
+        build_db(
+            self.db2,
+            variants=[(2, "chr2", 200, "C", "G", "GENE2", 0.7)],
+            samples=[(2, "sample2", "het")],
+            mappings=[(2, 0, "NM_002")],
+            genes=[("GENE2", 0.3)],
+            input_paths={"0": "/in/db2.vcf"},
+            variant_cols=VARIANT_COLS_WITH_HUGO,
+        )
+        custom_tmpdir = os.path.join(self.tmpdir, "custom_scratch")
+        os.makedirs(custom_tmpdir)
+
+        real_mkdtemp = tempfile.mkdtemp
+        seen_dirs = []
+
+        def spying_mkdtemp(*args, **kwargs):
+            seen_dirs.append(kwargs.get("dir"))
+            return real_mkdtemp(*args, **kwargs)
+
+        with mock.patch("tempfile.mkdtemp", side_effect=spying_mkdtemp):
+            self.run_merge_to(
+                [self.db1, self.db2], self.parallel_outpath, parallel=True, workers=2,
+                tmpdir=custom_tmpdir,
+            )
+
+        self.assertEqual(seen_dirs, [custom_tmpdir])
 
 
 if __name__ == "__main__":
