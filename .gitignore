@@ -18,3 +18,4 @@ __dummy__*
 build
 e2e/test_jobs
 e2e/test_modules
+.playwright-mcp
