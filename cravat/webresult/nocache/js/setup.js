@@ -1633,7 +1633,10 @@ function createWidgetCategorySidebar(level) {
     const sidebar = getEl('div');
     sidebar.id = `widgetSidebar_${level}`;
     sidebar.classList.add('widgetSidebar');
-    for (let [category, title] of Object.entries(widgetCategoryTitles)) {
+    var categories = Object.keys(widgetCategoryTitles);
+    categories.unshift(...categories.splice(categories.indexOf('home'), 1));
+    for (let category of categories) {
+        const title = widgetCategoryTitles[category];
         const catBox = getEl('div');
         catBox.id = `widgetCategorySelector_${level}_${category}`;
         catBox.classList.add('widgetCategorySelector')
@@ -3173,7 +3176,7 @@ const widgetCategoryTitles = {
   "genes": "Genes",
   "gwas": "GWAS",
   "haplotypes": "Haplotypes",
-  "home": "Home",
+  "home": "Annotation",
   "igv": "IGV",
   "mendellian_disease": "Mendellian Disease",
   "non_coding_regulation": "Non-Coding/Regulation",
