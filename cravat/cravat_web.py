@@ -393,6 +393,8 @@ parser.set_defaults(func=run)
 def get_server():
     try:
         server = {}
+        gui_conf = dict(au.get_system_conf())
+        gui_conf.update(au.get_cravat_conf())
         pl = platform.platform()
         if pl.startswith("Windows"):
             def_host = "localhost"
@@ -406,21 +408,21 @@ def get_server():
         else:
             def_host = "localhost"
         if ssl_enabled:
-            if "gui_host_ssl" in sysconf:
-                host = sysconf["gui_host_ssl"]
-            elif "gui_host" in sysconf:
-                host = sysconf["gui_host"]
+            if "gui_host_ssl" in gui_conf:
+                host = gui_conf["gui_host_ssl"]
+            elif "gui_host" in gui_conf:
+                host = gui_conf["gui_host"]
             else:
                 host = def_host
-            if "gui_port_ssl" in sysconf:
-                port = sysconf["gui_port_ssl"]
-            elif "gui_port" in sysconf:
-                port = sysconf["gui_port"]
+            if "gui_port_ssl" in gui_conf:
+                port = gui_conf["gui_port_ssl"]
+            elif "gui_port" in gui_conf:
+                port = gui_conf["gui_port"]
             else:
                 port = 8443
         else:
-            host = au.get_system_conf().get("gui_host", def_host)
-            port = au.get_system_conf().get("gui_port", 8080)
+            host = gui_conf.get("gui_host", def_host)
+            port = gui_conf.get("gui_port", 8080)
         server["host"] = host
         server["port"] = port
         return server
