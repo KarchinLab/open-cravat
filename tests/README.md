@@ -44,5 +44,5 @@ OpenCRAVAT module `info.yaml` files can be checked using the
 To validate a single manifest, run:
 
 ```shell
-python validate_manifest.py path/to/info.yaml
+python cravat/validate_manifest.py path/to/info.yaml
 ```
