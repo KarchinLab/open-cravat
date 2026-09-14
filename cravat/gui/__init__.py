@@ -85,5 +85,9 @@ def start_server(interface, port, multiuser):
     from waitress import serve
 
     app_with_logger = build_app_instance(multiuser)
-    serve(app_with_logger, host=interface, port=port, threads=12)
-
+    upload_limit = max(
+        1 * 1024 * 1024 * 1024, 
+        int(au.get_system_conf()["gui_input_size_limit"] * 1024 * 1024),
+    )
+    serve(app_with_logger, host=interface, port=port, threads=12,
+          max_request_body_size=upload_limit)
