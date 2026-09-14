@@ -1,4 +1,4 @@
-from validate_manifest import validate_manifest
+from cravat.validate_manifest import validate_manifest
 
 
 def test_complete_manifest(tmp_path, capsys):
