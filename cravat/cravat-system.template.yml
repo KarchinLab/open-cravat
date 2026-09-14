@@ -27,3 +27,5 @@ base_modules:
 - hg38wgs
 - varmeta
 - wgrankscore
+
+store_download_connections: 8

@@ -13,6 +13,8 @@ import json
 import importlib.metadata
 from urllib.error import HTTPError
 import types
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 
 class PathBuilder(object):
@@ -164,32 +166,128 @@ def stream_multipart_post(url, fields, stage_handler=None, stages=50, **kwargs):
     return r
 
 
+class _RangeDownloadError(Exception):
+    pass
+
+
 def stream_to_file(
     url, fpath, stage_handler=None, stages=50, install_state=None, **kwargs
 ):
+    """Download archives with bounded memory and configurable HTTP connections.
+
+    Small files and servers without byte-range support use one connection.
+    A failed or unsupported ranged transfer is restarted as a regular GET.
     """
-    Stream the content at a url to a file. Optionally pass in a callback
-    function which is called when the uploaded size passes each of
-    total_size/stages.
-    """
+    from . import admin_util
+
+    connections = admin_util.get_system_conf().get("store_download_connections", 4)
+    if isinstance(connections, bool) or not isinstance(connections, int) or not 1 <= connections <= 32:
+        raise ValueError("store_download_connections must be an integer from 1 to 32")
+    callback = stage_handler or blank_stage_handler
+    headers = {"Accept-Encoding": "identity"}
+    timeout = (10, 60)
+
+    def check_cancelled():
+        if install_state is not None and install_state.get("kill_signal", False):
+            raise exceptions.KillInstallException()
+
+    def progress(total):
+        # Unknown-length responses cannot report a percentage.
+        return ProgressStager(total, total_stages=stages, stage_handler=callback) if total else None
+
+    def serial(response):
+        total = int(response.headers.get("content-length", 0))
+        stager = progress(total)
+        with open(fpath, "wb") as output:
+            for chunk in response.iter_content(256 * 1024):
+                check_cancelled()
+                output.write(chunk)
+                if stager:
+                    stager.increase_cur_size(len(chunk))
+        check_cancelled()
+
+    def parallel(response, total):
+        stager = progress(total)
+        lock = threading.Lock()
+        stop = threading.Event()
+        validator = response.headers.get("ETag")
+        if validator and validator.startswith("W/"):
+            validator = None
+        validator = validator or response.headers.get("Last-Modified")
+        with open(fpath, "wb") as output:
+            output.truncate(total)
+        count = min(connections, max(1, total // (4 * 1024 * 1024)))
+
+        def download_range(index):
+            start = total * index // count
+            end = total * (index + 1) // count - 1
+            range_headers = dict(headers, Range=f"bytes={start}-{end}")
+            if validator:
+                range_headers["If-Range"] = validator
+            try:
+                check_cancelled()
+                with requests.get(url, headers=range_headers, stream=True, timeout=timeout) as part:
+                    expected = f"bytes {start}-{end}/{total}"
+                    if (part.status_code != 206 or part.headers.get("Content-Range") != expected
+                            or part.headers.get("Content-Encoding", "identity") != "identity"):
+                        raise _RangeDownloadError("Server did not honor the requested byte range")
+                    if response.headers.get("ETag") and part.headers.get("ETag") != response.headers["ETag"]:
+                        raise _RangeDownloadError("Archive changed during download")
+                    offset = start
+                    with open(fpath, "r+b") as output:
+                        output.seek(start)
+                        for chunk in part.iter_content(256 * 1024):
+                            check_cancelled()
+                            if stop.is_set():
+                                return
+                            if offset + len(chunk) > end + 1:
+                                raise _RangeDownloadError("Byte range exceeded its expected length")
+                            output.write(chunk)
+                            offset += len(chunk)
+                            with lock:
+                                stager.increase_cur_size(len(chunk))
+                    if offset != end + 1:
+                        raise _RangeDownloadError("Incomplete byte range")
+            except BaseException:
+                stop.set()
+                raise
+
+        response.close()
+        with ThreadPoolExecutor(max_workers=count) as executor:
+            futures = [executor.submit(download_range, index) for index in range(count)]
+            for future in futures:
+                future.result()
+        check_cancelled()
+
+    check_cancelled()
     try:
-        r = requests.get(url, stream=True, timeout=(3, None))
-    except requests.exceptions.ConnectionError:
-        r = types.SimpleNamespace()
-        r.status_code = 503
-    if r.status_code == 200:
-        total_size = int(r.headers.get("content-length", 0))
-        chunk_size = 8192
-        stager = ProgressStager(
-            total_size, total_stages=stages, stage_handler=stage_handler
-        )
-        with open(fpath, "wb") as wf:
-            for chunk in r.iter_content(chunk_size):
-                if install_state is not None and install_state["kill_signal"] == True:
-                    raise exceptions.KillInstallException()
-                wf.write(chunk)
-                stager.increase_cur_size(len(chunk))
-    return r
+        try:
+            response = requests.get(url, headers=headers, stream=True, timeout=timeout)
+        except requests.exceptions.ConnectionError:
+            return types.SimpleNamespace(status_code=503)
+        with response:
+            if response.status_code != 200:
+                return response
+            total = int(response.headers.get("content-length", 0))
+            if (connections > 1 and total >= 8 * 1024 * 1024
+                    and response.headers.get("Accept-Ranges", "").lower() == "bytes"
+                    and response.headers.get("Content-Encoding", "identity") == "identity"):
+                try:
+                    parallel(response, total)
+                    return response
+                except (_RangeDownloadError, requests.RequestException):
+                    check_cancelled()
+                    # Workers have stopped before the destination is truncated.
+                    with requests.get(url, headers=headers, stream=True, timeout=timeout) as fallback:
+                        fallback.raise_for_status()
+                        serial(fallback)
+                        return fallback
+            serial(response)
+            return response
+    except BaseException:
+        if os.path.exists(fpath):
+            os.remove(fpath)
+        raise
 
 
 def get_file_to_string(url):
