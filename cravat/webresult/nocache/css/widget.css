@@ -52,6 +52,10 @@ body * {
     padding-inline: 0.25rem;
 }
 
+.widgetCategorySelector.active{
+    border: 3px solid black;
+}
+
 .detailcontainerdiv {
     /*padding-top: 8px;*/
 }
