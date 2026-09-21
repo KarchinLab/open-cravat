@@ -1619,15 +1619,7 @@ function makeVariantGeneTab (tabName, rightDiv) {
     }
 }
 
-// const widgetCategories = [
-//     ['home', 'Home'],
-//     ['igv', 'IGV'],
-//     ['allele_frequency', 'Allele Frequency'],
-//     ['cancer', 'Cancer'],
-//     ['mendellian_disease', 'Mendellian Disease'],
-//     ['predictor', 'Predictor'],
-//     ['drugs', 'Drugs'],
-// ]
+var visibleCategories = [];
 
 function createWidgetCategorySidebar(level) {
     const sidebar = getEl('div');
@@ -1650,9 +1642,19 @@ function createWidgetCategorySidebar(level) {
 
 function onClickWidgetCategory(event) {
     const level = currentTab;
-    const category = event.target.getAttribute('widget_category');
-    console.log(level, category);
-    const members = widgetCategories[category];
+    const targetCategory = event.target.getAttribute('widget_category');
+    console.log(level, targetCategory);
+    if ( visibleCategories.includes(targetCategory)) {
+        visibleCategories.splice(visibleCategories.indexOf(targetCategory), 1);
+        event.target.classList.remove('active');
+    } else {
+        visibleCategories.push(targetCategory);
+        event.target.classList.add('active');
+    }
+    var members = [];
+    for (let category of visibleCategories) {
+        members = [...members, ...widgetCategories[category]]
+    }
     changeWidgetShowHideAll(false);
     for (let [widgetName, generator] of Object.entries(widgetGenerators)) {
         if (generator.hasOwnProperty(level)) {
@@ -3096,9 +3098,7 @@ const widgetCategories = {
   ],
   "gene": [
     "wgintact",
-    "wgncbigene"
-  ],
-  "genes": [
+    "wgncbigene",
     "wgaloft",
     "wgbiogrid",
     "wgclingen",
@@ -3160,6 +3160,7 @@ const widgetCategories = {
     "wgvest"
   ],
   "protein": [
+    "wglollipop",
     "wginterpro",
     "wgswissprot_binding",
     "wgswissprot_domains",
@@ -3173,7 +3174,6 @@ const widgetCategoryTitles = {
   "drugs": "Drugs",
   "evolution": "Evolution",
   "gene": "Gene",
-  "genes": "Genes",
   "gwas": "GWAS",
   "haplotypes": "Haplotypes",
   "home": "Annotation",
