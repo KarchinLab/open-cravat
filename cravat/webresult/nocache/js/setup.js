@@ -1596,7 +1596,7 @@ function makeVariantGeneTab (tabName, rightDiv) {
         detailDiv.id = detailDivId;
         detailDiv.classList.add('detaildiv');
         detailDiv.classList.add('resultviewer');
-        const sidebar = createWidgetCategorySidebar();
+        const sidebar = createWidgetCategorySidebar(tabName);
         addEl(detailDiv, sidebar);
         var detailContainerWrapDiv = getEl('div');
         detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
@@ -1625,31 +1625,40 @@ function createWidgetCategorySidebar(level) {
     const sidebar = getEl('div');
     sidebar.id = `widgetSidebar_${level}`;
     sidebar.classList.add('widgetSidebar');
+    sidebar.setAttribute('role', 'group');
+    const heading = getEl('div');
+    heading.className = 'widgetSidebarHeading';
+    heading.textContent = 'Categories';
+    addEl(sidebar, heading);
+    const categoryList = getEl('div');
+    categoryList.className = 'widgetCategoryList';
+    addEl(sidebar, categoryList);
     var categories = Object.keys(widgetCategoryTitles);
     categories.unshift(...categories.splice(categories.indexOf('home'), 1));
     for (let category of categories) {
         const title = widgetCategoryTitles[category];
-        const catBox = getEl('div');
+        const catBox = getEl('button');
+        catBox.type = 'button';
         catBox.id = `widgetCategorySelector_${level}_${category}`;
-        catBox.classList.add('widgetCategorySelector')
+        catBox.classList.add('widgetCategorySelector');
         catBox.textContent = title;
-        catBox.setAttribute('widget_category', category)
-        catBox.addEventListener('click', onClickWidgetCategory)
-        addEl(sidebar, catBox);
+        catBox.setAttribute('widget_category', category);
+        catBox.addEventListener('click', onClickWidgetCategory);
+        addEl(categoryList, catBox);
     }
     return sidebar;
 }
 
 function onClickWidgetCategory(event) {
     const level = currentTab;
-    const targetCategory = event.target.getAttribute('widget_category');
-    console.log(level, targetCategory);
+    const selector = event.currentTarget;
+    const targetCategory = selector.getAttribute('widget_category');
     if ( visibleCategories.includes(targetCategory)) {
         visibleCategories.splice(visibleCategories.indexOf(targetCategory), 1);
-        event.target.classList.remove('active');
+        selector.classList.remove('active');
     } else {
         visibleCategories.push(targetCategory);
-        event.target.classList.add('active');
+        selector.classList.add('active');
     }
     var members = [];
     for (let category of visibleCategories) {
