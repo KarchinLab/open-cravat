@@ -1660,14 +1660,11 @@ function onClickWidgetCategory(event) {
         visibleCategories.push(targetCategory);
         selector.classList.add('active');
     }
-    var members = [];
-    for (let category of visibleCategories) {
-        members = [...members, ...widgetCategories[category]]
-    }
     changeWidgetShowHideAll(false);
     for (let [widgetName, generator] of Object.entries(widgetGenerators)) {
         if (generator.hasOwnProperty(level)) {
-            if (members.indexOf(`wg${widgetName}`) >= 0) {
+            const categories = generator[level].categories || [];
+            if (categories.some(category => visibleCategories.includes(category))) {
                 showHideWidget(level, widgetName, true, true);
             }
         }
@@ -3071,111 +3068,6 @@ function addTextToInfonoticediv (lines) {
         showInfonoticediv();
     }
 }
-
-const widgetCategories = {
-  "allele_frequency": [
-    "wgabraom",
-    "wgallelefrequency",
-    "wgesp6500",
-    "wgexac_gene",
-    "wggnomad",
-    "wggnomad3",
-    "wggnomad_gene",
-    "wgthousandgenomes",
-    "wgthousandgenomes_ad_mixed_american",
-    "wgthousandgenomes_african",
-    "wgthousandgenomes_east_asian",
-    "wgthousandgenomes_european",
-    "wgthousandgenomes_south_asian",
-    "wguk10k_cohort"
-  ],
-  "cancer": [
-    "wgcancer_genome_interpreter",
-    "wgcancer_hotspots",
-    "wgcivic"
-  ],
-  "drugs": [
-    "Cancer Genome Interpreter",
-    "wgcivic",
-    "wgdgi",
-    "wgpharmgkb",
-    "wgtarget"
-  ],
-  "evolution": [
-    "wgphastcons",
-    "wgphylop"
-  ],
-  "gene": [
-    "wgintact",
-    "wgncbigene",
-    "wgaloft",
-    "wgbiogrid",
-    "wgclingen",
-    "wggo",
-    "wghpo",
-    "wgpangalodb"
-  ],
-  "gwas": [
-    "wggrasp",
-    "wggwas_catalog"
-  ],
-  "haplotypes": [
-    "wghaploreg_afr",
-    "wghaploreg_amr",
-    "wghaploreg_asn",
-    "wghaploreg_eur",
-    "wghaplotypes"
-  ],
-  "home": [
-    "wgbase"
-  ],
-  "igv": [
-    "wgigv"
-  ],
-  "mendellian_disease": [
-    "wgcgd",
-    "wgclinvar"
-  ],
-  "non_coding_regulation": [
-    "wgencode_tfbs",
-    "wgenhancer",
-    "wggtex"
-  ],
-  "predictor": [
-    "wgalphamissense",
-    "wgbayesdel",
-    "wgcadd",
-    "wgcadd_exome",
-    "wgchasmplus",
-    "wgdann",
-    "wgdann_coding",
-    "wgditto",
-    "wgesm1b",
-    "wgfathmm",
-    "wgfathmm_mkl",
-    "wgfathmm_xf_coding",
-    "wgfunseq2",
-    "wgmutation_assessor",
-    "wgmutationtaster",
-    "wgmutpred1",
-    "wgphdsnpg",
-    "wgpolyphen2",
-    "wgprimateai",
-    "wgprovean",
-    "wgrevel",
-    "wgsift",
-    "wgsiphy",
-    "wgvarity_r",
-    "wgvest"
-  ],
-  "protein": [
-    "wglollipop",
-    "wginterpro",
-    "wgswissprot_binding",
-    "wgswissprot_domains",
-    "wgswissprot_ptm"
-  ]
-};
 
 const widgetCategoryTitles = {
   "allele_frequency": "Allele Frequency",

@@ -8,6 +8,7 @@ from importlib import util as importlib_util
 from cravat import admin_util as au
 from cravat import CravatFilter
 from cravat.constants import base_smartfilters
+from cravat.widget_categories import get_widget_categories
 from aiohttp import web
 import time
 import asyncio
@@ -348,7 +349,8 @@ def get_widgetlist (request):
         content.append({'name': module_name, 
                         'title': module.title, 
                         'required_annotator': req,
-                        'helphtml_exists': module.helphtml_exists})
+                        'helphtml_exists': module.helphtml_exists,
+                        'categories': get_widget_categories(module_name)})
     return web.json_response(content)
 
 async def get_count (request):
@@ -876,4 +878,3 @@ routes.append(['GET', '/result/service/smartfilters', load_smartfilters])
 routes.append(['GET', '/result/service/samples', get_samples])
 routes.append(['GET', '/webapps/{module}/widgets/{widget}', serve_webapp_runwidget])
 routes.append(['GET', '/result/service/jobpackage', jobpackage])
-
