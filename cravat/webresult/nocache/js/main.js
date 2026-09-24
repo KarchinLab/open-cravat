@@ -783,6 +783,9 @@ function firstLoadData () {
                             }
                             for (var j = 0; j < widgetTabs.length; j++) {
                                 var widgetTab = widgetTabs[j];
+                                if (generator[widgetTab]['categories'] == undefined) {
+                                    generator[widgetTab]['categories'] = widgetInfo[widgetName]['categories'] || [];
+                                }
                                 if (generator[widgetTab]['variables'] == undefined) {
                                     generator[widgetTab]['variables'] = {};
                                 }
