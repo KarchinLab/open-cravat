@@ -325,7 +325,8 @@ def submit():
     status_json['submission_time'] = datetime.now().isoformat()
     status_json['viewable'] = False
     status_json['note'] = note
-    status_json['status'] = 'Submitted'
+    status_json['status'] = 'Queued' if g.is_multiuser else 'Submitted'
+    status_json['annotators'] = annotators
     status_json['reports'] = []
     pkg_ver = au.get_current_package_version()
     status_json['open_cravat_version'] = pkg_ver
