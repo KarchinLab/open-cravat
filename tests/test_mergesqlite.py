@@ -14,6 +14,7 @@ from cravat.cravat_util import (
     mergesqlite_bucket_chroms,
     mergesqlite_drop_columns,
     mergesqlite_status_json_path,
+    parser_mergesqlite,
 )
 
 try:
@@ -53,7 +54,7 @@ GENE_COLS = [("base__hugo", "text"), ("test__gscore", "real")]
 # mapper's primary-gene call for that variant) - the parallel merge path's
 # gene-table bucketing keys off it (see mergesqlite_prune_shard_db1's
 # docstring), but the base VARIANT_COLS above (predating OC-833) doesn't
-# have one, so the --parallel tests below use this instead.
+# have one, so the parallel-merge tests below use this instead.
 VARIANT_COLS_WITH_HUGO = [
     ("base__uid", "integer"),
     ("base__chrom", "text"),
@@ -1178,14 +1179,10 @@ class TestPostaggregatorRecomputeCasecontrolModuleOption(MergeSqliteTestBase):
 
 
 class TestBucketChroms(unittest.TestCase):
-    """Unit tests of mergesqlite_bucket_chroms() directly, independent of
-    a full merge - the load-balancing logic the --parallel path relies
-    on. No chromosome pairing/co-location logic to test here: every
-    chromosome (including chrX/chrY) is just its own independently-
-    weighted bucketing item - gene handling doesn't depend on chromosome
-    bucketing at all (mergesqlite_merge_genes() merges the gene table
-    once, globally - see OC-833 production decision 2), so there's
-    nothing left for bucketing to coordinate around."""
+    """Unit tests of mergesqlite_bucket_chroms() directly - the
+    load-balancing logic the parallel merge relies on. Every chromosome
+    (including chrX/chrY) is just its own independently-weighted item;
+    gene handling doesn't depend on chromosome bucketing at all."""
 
     def test_every_chromosome_assigned_to_exactly_one_bucket(self):
         weights = {"chr1": 100, "chr2": 90, "chrX": 5, "chrY": 5}
@@ -1465,14 +1462,11 @@ class TestParallelFilenoConsistency(ParallelMergeSqliteTestBase):
 
 
 class TestParallelUidsGloballyUnique(ParallelMergeSqliteTestBase):
-    """OC-833 production decision 1: shards no longer allocate uids from
-    private fixed-width blocks (with a hard-fail on overflow) - each
-    shard allocates new variant uids independently, starting from the
-    same shared value, and mergesqlite_concatenate_shards() gives every
-    row a fresh, globally-unique uid as it copies. This exercises a case
-    that would have collided under local, unrenumbered shard uids: many
-    new variants (more than old prototype's hard-fail threshold in the
-    now-removed test would have allowed) split across chrom buckets."""
+    """Every shard allocates new variant uids independently from the same
+    shared starting value; mergesqlite_concatenate_one_shard() gives every
+    row a fresh, globally-unique uid on the way in. Exercises many new
+    variants split across chrom buckets, which would collide under
+    unrenumbered shard-local uids."""
 
     def test_many_new_variants_across_shards_get_unique_uids(self):
         build_db(
@@ -1526,7 +1520,7 @@ class TestParallelDuplicateVariantRowInDb1(ParallelMergeSqliteTestBase):
     one of 50 independently-generated input dbs had exactly one exact-
     duplicate variant row (same base__uid, same chrom/pos/ref/alt, at two
     adjacent rowids). mergesqlite_prune_shard_db1() copies db1's rows
-    wholesale, so this duplicate reaches mergesqlite_concatenate_shards()
+    wholesale, so this duplicate reaches mergesqlite_concatenate_one_shard()
     unchanged; without a dedup step there, `old_uid integer primary key`
     makes the whole merge fail with a UNIQUE constraint violation."""
 
@@ -1592,7 +1586,7 @@ class TestParallelDuplicateVariantRowInDb1(ParallelMergeSqliteTestBase):
 
 class TestParallelMatchesSerialStructural(ParallelMergeSqliteTestBase):
     """Structural-merge-only (skip_postaggregator=True) equivalence check
-    between --parallel and the default serial path, across several
+    between the parallel and serial (--no-parallel) paths, across several
     chromosomes (including a PAR gene) and a shared input file."""
 
     def test_parallel_output_matches_serial_modulo_uid(self):
@@ -1804,16 +1798,11 @@ class TestParallelVcfinfoGlobalMultiSample(ParallelMergeSqliteTestBase):
     "casecontrol postaggregator module is not installed locally",
 )
 class TestParallelCasecontrolRejected(ParallelMergeSqliteTestBase):
-    """OC-833 production decision 7: casecontrol is dropped entirely from
-    the --parallel path (not run per-shard, and not run serially against
-    the final output either, unlike the original prototype) - its
-    Fisher's-exact denominator is a whole-cohort scalar, out of scope for
-    per-shard parallelization, and there's no requirement to support it
-    after a parallel merge at all. mergesqlite_validate_and_prepare()
-    hard-fails before any output file is written whenever casecontrol
-    would actually do something (a "cohorts" module option given)
-    together with --parallel - these tests don't need scipy, since
-    casecontrol's own Fisher's-exact code never actually runs."""
+    """casecontrol is unsupported by the parallel merge: its Fisher's-exact
+    denominator is a whole-cohort scalar, out of scope for per-shard
+    recompute. mergesqlite_validate_and_prepare() hard-fails before any
+    output is written if casecontrol would actually run - these tests
+    don't need scipy, since its Fisher's-exact code never runs."""
 
     def _build_two_dbs_with_case_and_control(self):
         build_db(
@@ -1857,7 +1846,7 @@ class TestParallelCasecontrolRejected(ParallelMergeSqliteTestBase):
             )
         self.assertFalse(
             os.path.exists(self.parallel_outpath),
-            "casecontrol.cohorts + --parallel must be rejected before any "
+            "casecontrol.cohorts with the parallel merge must be rejected before any "
             "output file is written",
         )
 
@@ -1879,7 +1868,7 @@ class TestParallelCasecontrolRejected(ParallelMergeSqliteTestBase):
         # No cohorts conf given at all - casecontrol would no-op even in
         # the default serial merge (see
         # TestPostaggregatorRecomputeDefaultsNonVcf), so a bare
-        # --parallel run with defaults must not be rejected just because
+        # parallel run with defaults must not be rejected just because
         # casecontrol happens to be installed locally.
         paths = self._build_two_dbs_with_case_and_control()
         self.run_merge_to(
@@ -1894,18 +1883,14 @@ class TestParallelCasecontrolRejected(ParallelMergeSqliteTestBase):
         }
         self.assertFalse(
             any(c.startswith("casecontrol__") for c in cols),
-            "casecontrol must not contribute any columns in --parallel mode",
+            "casecontrol must not contribute any columns in the parallel merge",
         )
 
 
 class TestParallelManyChromsFewWorkers(ParallelMergeSqliteTestBase):
-    """OC-833 production decision 9: mergesqlite_parallel() submits one
-    task per chromosome, not one per worker - with more chromosomes than
-    workers, ProcessPoolExecutor's own task queue must dispatch the extra
-    tasks to workers as they free up. 5 chromosomes against 2 workers
-    means at least one worker handles 3 tasks sequentially; this would
-    hang or drop data if the pool were (incorrectly) capped at
-    max_workers tasks instead of max_workers concurrent workers."""
+    """mergesqlite_parallel() submits one task per chromosome, not one per
+    worker - 5 chromosomes against 2 workers means at least one worker
+    handles 3 tasks sequentially via ProcessPoolExecutor's own queue."""
 
     def test_five_chromosomes_two_workers_all_merge_correctly(self):
         chroms = ["chr1", "chr2", "chr3", "chr4", "chr5"]
@@ -1948,9 +1933,7 @@ class TestParallelManyChromsFewWorkers(ParallelMergeSqliteTestBase):
 
 
 class TestParallelTmpdir(ParallelMergeSqliteTestBase):
-    """OC-833 production decision 8: --tmpdir must actually reach
-    tempfile.mkdtemp() as its `dir` argument, so an operator can route
-    shard scratch files away from a small default temp filesystem."""
+    """--tmpdir must reach tempfile.mkdtemp() as its `dir` argument."""
 
     def test_tmpdir_arg_is_passed_to_shard_scratch_dir_creation(self):
         build_db(
@@ -1988,6 +1971,14 @@ class TestParallelTmpdir(ParallelMergeSqliteTestBase):
             )
 
         self.assertEqual(seen_dirs, [custom_tmpdir])
+
+
+
+class TestParallelIsDefault(unittest.TestCase):
+    def test_cli_defaults_to_parallel_with_no_parallel_opt_out(self):
+        base = ["a.sqlite", "b.sqlite", "-o", "out.sqlite"]
+        self.assertTrue(parser_mergesqlite.parse_args(base).parallel)
+        self.assertFalse(parser_mergesqlite.parse_args(base + ["--no-parallel"]).parallel)
 
 
 if __name__ == "__main__":
