@@ -202,7 +202,7 @@ class TestMergeMatchesSingleCombinedRun(unittest.TestCase):
         )
         _run_oc(
             ["util", "mergesqlite", self._out_path("resultAB"), self._out_path("resultCD"),
-             "-o", self._out_path("merged")],
+             "-o", self._out_path("merged"), "--no-parallel"],
             cwd=self.tmpdir,
         )
 
@@ -265,13 +265,13 @@ class TestMergeMatchesSingleCombinedRun(unittest.TestCase):
 )
 class TestParallelMergeMatchesSingleCombinedRun(TestMergeMatchesSingleCombinedRun):
     """Same end-to-end comparison as TestMergeMatchesSingleCombinedRun,
-    but `mergesqlite --parallel` instead of the default serial merge -
+    but with the parallel merge instead of `--no-parallel` -
     real converter, mapper, and postaggregator modules throughout, not
     just the synthetic fixtures in test_mergesqlite.py. All four input
     files share one locus (see _INPUT_VCFS), so this exercises a single
     contig shard end-to-end rather than the multi-shard bucketing
     test_mergesqlite.py's synthetic tests already cover - the point here
-    is that --parallel's real-module postaggregator recompute (strip,
+    is that the parallel merge's real-module postaggregator recompute (strip,
     vcfinfo/tagsampler setup()+annotate(), the ATTACH-based concatenation
     tail) produces the same result as a real 'oc run', not synthetic
     stand-ins for those modules."""
@@ -295,7 +295,7 @@ class TestParallelMergeMatchesSingleCombinedRun(TestMergeMatchesSingleCombinedRu
         )
         _run_oc(
             ["util", "mergesqlite", self._out_path("resultAB"), self._out_path("resultCD"),
-             "-o", self._out_path("merged"), "--parallel", "--workers", "2"],
+             "-o", self._out_path("merged"), "--workers", "2"],
             cwd=self.tmpdir,
         )
 
@@ -336,7 +336,7 @@ class TestParallelMergeMatchesSingleCombinedRun(TestMergeMatchesSingleCombinedRu
             }
             self.assertEqual(
                 diffs, {},
-                f"variant {key}: --parallel merged vs. single-combined-run column mismatch",
+                f"variant {key}: parallel-merged vs. single-combined-run column mismatch",
             )
 
         self.assertEqual(
