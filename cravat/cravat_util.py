@@ -780,7 +780,20 @@ def mergesqlite_check_info(dbpath):
         c.execute(f'select name, version from {sql_table}')
         info[annot_table] = {r[0]: r[1] for r in c.fetchall()}
     c.execute('select distinct base__sample_id from sample')
-    info["sample_ids"] = sorted({r[0] for r in c.fetchall()})
+    # key= tolerates a stray NULL base__sample_id mixed in with strings
+    # (plain sorted() raises TypeError comparing None to str) - possible
+    # on a db that hasn't been through tagsampler's setup(), which is
+    # what normally normalizes nulls to "no-sample".
+    info["sample_ids"] = sorted({r[0] for r in c.fetchall()}, key=lambda v: (v is None, v))
+    # _converter_format ("vcf" vs. anything else) gates whether vcfinfo or
+    # varmeta recomputes on merge (their check()s are each other's
+    # opposite on this key), so a mismatch across inputs needs to be
+    # caught pre-merge same as the checks above - not left to silently
+    # pick db1's format. Absent on pre-migration dbs (see mergesqlite's
+    # sibling upgrade-in-place code), so tolerate a missing row.
+    c.execute('select colval from info where colkey="_converter_format"')
+    r = c.fetchone()
+    info["converter_format"] = r[0] if r is not None else ""
     c.close()
     conn.close()
     return info
@@ -798,8 +811,191 @@ def mergesqlite_parse_path_arg(raw):
             return maybe_path, maybe_label
     return raw, None
 
+def mergesqlite_drop_columns(conn, table, columns):
+    """Drops `columns` from `table`. Uses ALTER TABLE ... DROP COLUMN
+    (SQLite >= 3.35.0, released March 2021) when the linked SQLite
+    supports it, and otherwise falls back to a temp-table-and-rename:
+    recreate the table from a SELECT of the columns being kept (already
+    the pattern filtersqlite_async() uses for whole-table copies), then
+    replay every index whose columns aren't among those being dropped.
+    The stdlib sqlite3 module links the system libsqlite3 on Linux, so
+    the DROP COLUMN floor isn't guaranteed merely by open-cravat's own
+    Python version requirement.
+
+    Either way, any index covering a column being dropped has to go
+    first: SQLite refuses ALTER TABLE ... DROP COLUMN on an indexed
+    column, and such an index would reference a nonexistent column
+    afterward anyway, so it's simply not recreated in the fallback path
+    either."""
+    if not columns:
+        return
+    c = conn.cursor()
+    cols_to_drop = set(columns)
+    c.execute(
+        "select name, sql from sqlite_master where type='index' and tbl_name=?",
+        (table,),
+    )
+    index_defs = [(name, sql) for name, sql in c.fetchall() if sql is not None]
+    touching_index_names = set()
+    for index_name, sql in index_defs:
+        c.execute(f'pragma index_info("{index_name}")')
+        idx_cols = {r[2] for r in c.fetchall()}
+        if (idx_cols & cols_to_drop) or None in idx_cols:
+            touching_index_names.add(index_name)  # touches a dropped column (or is an expression index)
+    if sqlite3.sqlite_version_info >= (3, 35, 0):
+        for index_name in touching_index_names:
+            c.execute(f'drop index "{index_name}"')
+        for col in columns:
+            c.execute(f'alter table {table} drop column "{col}"')
+        return
+    c.execute(f"pragma table_info({table})")
+    keep_cols = [r[1] for r in c.fetchall() if r[1] not in cols_to_drop]
+    keep_index_sqls = [sql for name, sql in index_defs if name not in touching_index_names]
+    tmp_table = f"{table}__mergesqlite_drop_tmp"
+    c.execute(f'alter table {table} rename to {tmp_table}')
+    col_list_sql = ", ".join(f'"{col}"' for col in keep_cols)
+    c.execute(f'create table {table} as select {col_list_sql} from {tmp_table}')
+    c.execute(f'drop table {tmp_table}')
+    for sql in keep_index_sqls:
+        c.execute(sql)
+
+
+def mergesqlite_is_local_postaggregator(module_name):
+    info = au.get_local_module_info(module_name)
+    return info is not None and info.type == "postaggregator"
+
+
+def mergesqlite_strip_postaggregator_columns(conn):
+    """Removes every postaggregator-authored column, and its header,
+    annotator, and reportsub rows, from a merged db - so that postagg
+    recompute (or `--skip-postaggregator`) always starts from a clean
+    slate. Only modules locally installed with type "postaggregator" are
+    touched; "base" and real annotator-authored columns are left alone.
+
+    Strip-after-copy, not never-copy: mergesqlite()'s structural merge
+    stays completely unaware that postaggregator recompute exists - it
+    copies every column the same generic way regardless of origin, and
+    this is a separate, independently testable pass run afterward."""
+    c = conn.cursor()
+    c.execute("select name from sqlite_master where type='table'")
+    existing_tables = {r[0] for r in c.fetchall()}
+    for level in ["variant", "gene", "sample", "mapping"]:
+        annot_table = f"{level}_annotator"
+        header_table = f"{level}_header"
+        if annot_table not in existing_tables or header_table not in existing_tables:
+            # Postaggregators only ever run at the variant/gene level
+            # (constants.LEVELS), so real result dbs always have
+            # sample_annotator/mapping_annotator with no postaggregator
+            # rows in them; tolerate a db that lacks those tables entirely.
+            continue
+        c.execute(f"select name from {annot_table}")
+        postagg_names = [
+            r[0] for r in c.fetchall() if mergesqlite_is_local_postaggregator(r[0])
+        ]
+        if not postagg_names:
+            continue
+        c.execute(f"select col_name from {header_table} order by rowid")
+        all_cols = [r[0] for r in c.fetchall()]
+        cols_to_drop = [
+            col for col in all_cols
+            if any(col.startswith(name + "__") for name in postagg_names)
+        ]
+        mergesqlite_drop_columns(conn, level, cols_to_drop)
+        for name in postagg_names:
+            c.execute(
+                f"delete from {header_table} where col_name like ?", (name + "__%",)
+            )
+            c.execute(f"delete from {annot_table} where name = ?", (name,))
+        if level in ("variant", "gene"):
+            reportsub_table = f"{level}_reportsub"
+            c.executemany(
+                f"delete from {reportsub_table} where module = ?",
+                [(name,) for name in postagg_names],
+            )
+    conn.commit()
+
+
+def mergesqlite_parse_module_options(opt_strs):
+    """Parses `--module-option module_name.key=value` strings into
+    {module_name: {key: value}}, standing in for the `--confs` a full
+    `Cravat` run would build. Reimplements the parsing half of
+    cravat_class.py's process_module_options() standalone (same syntax,
+    same forgiving "warn and skip" handling of a malformed entry) - this
+    tool doesn't drive a full Cravat instance, so there's no ConfigLoader
+    for `--module-option` to feed into. `-c`/`--cs` (base conf file /
+    inline config-string overrides) are deliberately not supported here:
+    this is a narrow, single-purpose recompute tool, not a full pipeline
+    run, and `--module-option` covers every case postagg recompute needs."""
+    module_options = {}
+    for opt_str in opt_strs or []:
+        toks = opt_str.split("=")
+        if len(toks) != 2:
+            print(
+                f'Ignoring invalid module option "{opt_str}". '
+                "module-option should be module_name.key=value."
+            )
+            continue
+        k, v = toks
+        if k.count(".") != 1:
+            print(
+                f'Ignoring invalid module option "{opt_str}". '
+                "module-option should be module_name.key=value."
+            )
+            continue
+        module_name, key = k.split(".")
+        module_options.setdefault(module_name, {})[key] = v
+    return module_options
+
+
+def mergesqlite_status_json_path(outpath):
+    """The .status.json path StatusWriter writes alongside `outpath` for
+    the postaggregators re-run against it - factored out so mergesqlite()
+    can find and remove it too if the recompute pass fails partway."""
+    output_dir = os.path.dirname(os.path.abspath(outpath))
+    run_name = os.path.basename(outpath)
+    if run_name.endswith(".sqlite"):
+        run_name = run_name[: -len(".sqlite")]
+    return os.path.join(output_dir, run_name + ".status.json")
+
+
+def mergesqlite_run_postaggregators(outpath, module_names, module_options):
+    """Re-runs `module_names` against the merged db at `outpath`, using
+    the same in-process mechanism the main pipeline already uses
+    (cravat_class.py's run_postaggregators): util.load_class(script_path,
+    "CravatPostAggregator"), instantiate with -d/-n (+ --confs), a
+    StatusWriter, call .run(). No reimplementation of module logic."""
+    # Deferred import: cravat_class imports cravat_util at module level
+    # ("import cravat.cravat_util as cu"), so importing it back at
+    # cravat_util's own module level would be circular.
+    from cravat.cravat_class import StatusWriter
+
+    output_dir = os.path.dirname(os.path.abspath(outpath))
+    run_name = os.path.basename(outpath)
+    if run_name.endswith(".sqlite"):
+        run_name = run_name[: -len(".sqlite")]
+    status_json_path = mergesqlite_status_json_path(outpath)
+    with open(status_json_path, "w") as f:
+        json.dump({}, f)
+    status_writer = StatusWriter(status_json_path)
+    for module_name in module_names:
+        module = au.get_local_module_info(module_name)
+        cmd = [module.script_path, "-d", output_dir, "-n", run_name]
+        conf = module_options.get(module_name)
+        if conf:
+            confs = json.dumps(conf)
+            confs = "'" + confs.replace("'", '"') + "'"
+            cmd.extend(["--confs", confs])
+        post_agg_cls = util.load_class(module.script_path, "CravatPostAggregator")
+        post_agg = post_agg_cls(cmd, status_writer)
+        if post_agg.should_run_annotate:
+            print(f'Running {module.conf.get("title", module_name)} ({module_name})...')
+        post_agg.run()
+
+
 # For now, only jobs with same annotators are allowed.
 def mergesqlite(args):
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
     raw_paths = args.path
     if len(raw_paths) < 2:
         exit("Multiple sqlite file paths should be given")
@@ -839,6 +1035,21 @@ def mergesqlite(args):
                         f'annotator "{name}"): version {base_version} in {dbpaths[0]} vs '
                         f'version {version} in {dbpath}'
                     )
+        if not args.skip_postaggregator:
+            # vcfinfo and varmeta's check()s each gate on _converter_format
+            # (vcf vs. not) being the opposite of the other, and the merge
+            # just carries db1's info table over unchanged - so mixing
+            # converter formats would silently pick db1's format for a
+            # merged sample set that isn't uniformly that format.
+            base_format = base_info["converter_format"]
+            fmt = info["converter_format"]
+            if base_format != fmt:
+                exit(
+                    "Converter format mismatch between "
+                    f'{dbpaths[0]} ("{base_format}") and {dbpath} ("{fmt}") - '
+                    "vcfinfo/varmeta recompute would be ambiguous. Use "
+                    "--skip-postaggregator to merge anyway."
+                )
     sample_id_sources = {}
     for dbpath, label in zip(dbpaths, labels):
         for sid in all_info[dbpath]["sample_ids"]:
@@ -852,6 +1063,27 @@ def mergesqlite(args):
             "file(s) a path:label suffix to disambiguate (e.g. "
             "job1.sqlite:cohortA):\n" + "\n".join(lines)
         )
+    # Resolves which postaggregators (if any) will be recomputed after
+    # merge, and validates -p module names now - before any output file
+    # is written - to match the other pre-merge consistency checks above
+    # rather than leaving a half-done output file behind on a typo.
+    if args.skip_postaggregator:
+        postagg_names = []
+    else:
+        # Defaults that aren't installed locally are silently dropped (the
+        # default set can include optional modules, e.g. casecontrol,
+        # that not every install has); anything explicitly named via -p
+        # must exist, same as any other pre-merge consistency check here,
+        # or the merge is aborted before any output file is written.
+        for name in args.postaggregators:
+            if not au.module_exists_local(name):
+                exit(f'Postaggregator module "{name}" does not exist locally.')
+        default_names = {
+            name for name in constants.default_postaggregator_names
+            if au.module_exists_local(name)
+        }
+        postagg_names = sorted(default_names | set(args.postaggregators))
+    module_options = mergesqlite_parse_module_options(args.module_option)
     # Copies the first db.
     print(f'Copying {dbpaths[0]} to {outpath}...')
     shutil.copy(dbpaths[0], outpath)
@@ -979,6 +1211,32 @@ def mergesqlite(args):
     q = 'update info set colval=? where colkey="Result modified at"'
     outc.execute(q, [modified])
     outconn.commit()
+
+    # By this point outpath already holds the fully-merged db (committed
+    # above), so a failure from here on must not leave it behind looking
+    # like a valid result: it would carry stale postaggregator columns
+    # (strip failed) or a mix of stripped-but-not-yet-recomputed columns
+    # (recompute failed), indistinguishable from a successful run by
+    # filename alone. Delete it and the .status.json postaggregators
+    # write alongside it, then re-raise so the failure is still visible.
+    print('Stripping postaggregator-authored columns for recompute...')
+    try:
+        mergesqlite_strip_postaggregator_columns(outconn)
+        outconn.close()
+        if postagg_names:
+            mergesqlite_run_postaggregators(outpath, postagg_names, module_options)
+    except Exception:
+        outconn.close()
+        print(
+            f'Postaggregator recompute failed; removing incomplete output {outpath}.',
+            file=sys.stderr,
+        )
+        if os.path.exists(outpath):
+            os.remove(outpath)
+        status_json_path = mergesqlite_status_json_path(outpath)
+        if os.path.exists(status_json_path):
+            os.remove(status_json_path)
+        raise
 
 
 def filtersqlite(args):
@@ -1288,8 +1546,26 @@ parser_mergesqlite.add_argument("path", nargs='+',
     help="Path to result database. Optionally 'path:label' to rename that "
          "db's sample_ids to 'label__sample_id' on merge, to resolve "
          "sample_id collisions with other input dbs.")
-parser_mergesqlite.add_argument("-o", dest="outpath", 
+parser_mergesqlite.add_argument("-o", dest="outpath",
     required=True, help="Output SQLite file path")
+parser_mergesqlite.add_argument("--skip-postaggregator", dest="skip_postaggregator",
+    action="store_true", default=False,
+    help="Don't recompute postaggregator columns after merge. Without this "
+         "flag, tagsampler, casecontrol, varmeta, and vcfinfo are "
+         "recomputed against the merged sample set by default (same as a "
+         "fresh 'oc run'); casecontrol still no-ops with no "
+         "casecontrol.cohorts module option given.")
+parser_mergesqlite.add_argument("-p", nargs="+", dest="postaggregators", default=[],
+    help="Additional postaggregator module(s) to recompute after merge, "
+         "on top of the defaults (tagsampler, casecontrol, varmeta, "
+         "vcfinfo). Ignored with --skip-postaggregator.")
+parser_mergesqlite.add_argument("--module-option", dest="module_option", nargs="*",
+    default=None,
+    help="Module-specific option in module_name.key=value syntax, for "
+         "postaggregators recomputed after merge. For example, "
+         "--module-option casecontrol.cohorts=/path/to/merged-cohort-file")
+parser_mergesqlite.add_argument("--md", dest="md", default=None,
+    help="Specify the root directory of OpenCRAVAT modules (annotators, etc)")
 parser_mergesqlite.set_defaults(func=mergesqlite)
 parser_showsqliteinfo = subparsers.add_parser('showsqliteinfo', help='Show SQLite result file information')
 parser_showsqliteinfo.add_argument('paths', nargs='+', help='SQLite result file paths')
