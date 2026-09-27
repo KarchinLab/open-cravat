@@ -17,13 +17,6 @@ from cravat.cravat_util import (
     parser_mergesqlite,
 )
 
-try:
-    import scipy.stats  # noqa: F401 - only needed for the casecontrol recompute test
-
-    _HAVE_SCIPY = True
-except ImportError:
-    _HAVE_SCIPY = False
-
 # The postaggregator-recompute tests below exercise the real tagsampler/
 # varmeta/vcfinfo/casecontrol module code (per PLAN-merge-postaggregators.md,
 # recompute deliberately runs the real modules rather than reimplementing
@@ -32,9 +25,6 @@ except ImportError:
 # copy them in from a `oc module install-base` module dir to run these).
 _POSTAGG_MODULES_AVAILABLE = all(
     au.module_exists_local(name) for name in ("tagsampler", "varmeta", "vcfinfo")
-)
-_CASECONTROL_AVAILABLE = (
-    _POSTAGG_MODULES_AVAILABLE and au.module_exists_local("casecontrol") and _HAVE_SCIPY
 )
 
 # Column shapes mirror what real oc-produced result dbs carry: a handful of
@@ -204,7 +194,6 @@ class MergeSqliteTestBase(unittest.TestCase):
             outpath=self.outpath,
             skip_postaggregator=True,
             postaggregators=[],
-            module_option=None,
             md=None,
             parallel=False,
             workers=None,
@@ -1107,77 +1096,6 @@ class TestAdditivePFlag(MergeSqliteTestBase):
         )
 
 
-@unittest.skipUnless(
-    _CASECONTROL_AVAILABLE,
-    "casecontrol postaggregator module (and/or scipy) is not available locally",
-)
-class TestPostaggregatorRecomputeCasecontrolModuleOption(MergeSqliteTestBase):
-    def test_module_option_casecontrol_cohorts_runs_casecontrol(self):
-        from scipy.stats import fisher_exact
-
-        build_db(
-            self.db1,
-            variants=[(1, "chr1", 100, "A", "T", 0.5)],
-            samples=[(1, "sample1", "het", None, None, None, None, None, None, None)],
-            mappings=[(1, 0, "NM_001", None, "line-a")],
-            genes=[("GENE1", 0.9)],
-            input_paths={"0": "/in/db1.vcf"},
-            sample_cols=SAMPLE_COLS_FULL,
-            mapping_cols=MAPPING_COLS_FULL,
-            extra_info={"_converter_format": "csv"},
-        )
-        build_db(
-            self.db2,
-            variants=[(1, "chr1", 100, "A", "T", 0.5)],  # shared with db1
-            samples=[(1, "sample2", "hom", None, None, None, None, None, None, None)],
-            mappings=[(1, 0, "NM_001", None, "line-b")],
-            genes=[("GENE1", 0.9)],
-            input_paths={"0": "/in/db2.vcf"},
-            sample_cols=SAMPLE_COLS_FULL,
-            mapping_cols=MAPPING_COLS_FULL,
-            extra_info={"_converter_format": "csv"},
-        )
-
-        cohorts_path = os.path.join(self.tmpdir, "cohorts.txt")
-        with open(cohorts_path, "w") as f:
-            f.write("sample1 case\nsample2 control\n")
-
-        # contrast with the no-op case in
-        # TestPostaggregatorRecomputeDefaultsNonVcf: with cohorts conf
-        # given, casecontrol now finds it via check() and actually runs.
-        self.run_merge(
-            [self.db1, self.db2],
-            skip_postaggregator=False,
-            module_option=[f"casecontrol.cohorts={cohorts_path}"],
-        )
-
-        row = self.query(
-            "select casecontrol__dom_pvalue, casecontrol__rec_pvalue, "
-            "casecontrol__all_pvalue, casecontrol__hom_case, "
-            "casecontrol__het_case, casecontrol__ref_case, "
-            "casecontrol__hom_cont, casecontrol__het_cont, "
-            "casecontrol__ref_cont, casecontrol__multiallelic from variant"
-        )[0]
-        (
-            dom_pvalue, rec_pvalue, all_pvalue,
-            hom_case, het_case, ref_case,
-            hom_cont, het_cont, ref_cont,
-            multiallelic,
-        ) = row
-
-        # sample1 (case) is het, sample2 (control) is hom.
-        self.assertEqual((hom_case, het_case, ref_case), (0, 1, 0))
-        self.assertEqual((hom_cont, het_cont, ref_cont), (1, 0, 0))
-        self.assertAlmostEqual(dom_pvalue, fisher_exact([[1, 0], [1, 0]], "greater")[1])
-        self.assertAlmostEqual(rec_pvalue, fisher_exact([[0, 1], [1, 0]], "greater")[1])
-        self.assertAlmostEqual(all_pvalue, fisher_exact([[1, 0], [2, 0]], "greater")[1])
-        self.assertIsNone(
-            multiallelic,
-            "db1 and db2's mapping rows for the shared variant have "
-            "distinct base__original_line values, so it isn't multiallelic",
-        )
-
-
 class TestBucketChroms(unittest.TestCase):
     """Unit tests of mergesqlite_bucket_chroms() directly - the
     load-balancing logic the parallel merge relies on. Every chromosome
@@ -1228,7 +1146,6 @@ class ParallelMergeSqliteTestBase(MergeSqliteTestBase):
             outpath=outpath,
             skip_postaggregator=True,
             postaggregators=[],
-            module_option=None,
             md=None,
             parallel=False,
             workers=None,
@@ -1797,12 +1714,8 @@ class TestParallelVcfinfoGlobalMultiSample(ParallelMergeSqliteTestBase):
     au.module_exists_local("casecontrol"),
     "casecontrol postaggregator module is not installed locally",
 )
-class TestParallelCasecontrolRejected(ParallelMergeSqliteTestBase):
-    """casecontrol is unsupported by the parallel merge: its Fisher's-exact
-    denominator is a whole-cohort scalar, out of scope for per-shard
-    recompute. mergesqlite_validate_and_prepare() hard-fails before any
-    output is written if casecontrol would actually run - these tests
-    don't need scipy, since its Fisher's-exact code never runs."""
+class TestParallelCasecontrolSkipped(ParallelMergeSqliteTestBase):
+    """The parallel merge never recomputes casecontrol, even when it's installed."""
 
     def _build_two_dbs_with_case_and_control(self):
         build_db(
@@ -1832,44 +1745,7 @@ class TestParallelCasecontrolRejected(ParallelMergeSqliteTestBase):
         )
         return [self.db1, db2]
 
-    def test_cohorts_option_with_parallel_hard_fails_no_output(self):
-        paths = self._build_two_dbs_with_case_and_control()
-        cohorts_path = os.path.join(self.tmpdir, "cohorts.txt")
-        with open(cohorts_path, "w") as f:
-            f.write("case1 case\ncont1 control\n")
-
-        with self.assertRaises(SystemExit):
-            self.run_merge_to(
-                paths, self.parallel_outpath, parallel=True, workers=2,
-                skip_postaggregator=False,
-                module_option=[f"casecontrol.cohorts={cohorts_path}"],
-            )
-        self.assertFalse(
-            os.path.exists(self.parallel_outpath),
-            "casecontrol.cohorts with the parallel merge must be rejected before any "
-            "output file is written",
-        )
-
-    def test_explicit_p_casecontrol_with_parallel_hard_fails_no_output(self):
-        paths = self._build_two_dbs_with_case_and_control()
-        cohorts_path = os.path.join(self.tmpdir, "cohorts.txt")
-        with open(cohorts_path, "w") as f:
-            f.write("case1 case\ncont1 control\n")
-
-        with self.assertRaises(SystemExit):
-            self.run_merge_to(
-                paths, self.parallel_outpath, parallel=True, workers=2,
-                skip_postaggregator=False, postaggregators=["casecontrol"],
-                module_option=[f"casecontrol.cohorts={cohorts_path}"],
-            )
-        self.assertFalse(os.path.exists(self.parallel_outpath))
-
-    def test_default_casecontrol_without_cohorts_still_merges_in_parallel(self):
-        # No cohorts conf given at all - casecontrol would no-op even in
-        # the default serial merge (see
-        # TestPostaggregatorRecomputeDefaultsNonVcf), so a bare
-        # parallel run with defaults must not be rejected just because
-        # casecontrol happens to be installed locally.
+    def test_installed_casecontrol_does_not_block_parallel_merge(self):
         paths = self._build_two_dbs_with_case_and_control()
         self.run_merge_to(
             paths, self.parallel_outpath, parallel=True, workers=2,
