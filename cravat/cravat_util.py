@@ -883,29 +883,6 @@ def mergesqlite_strip_postaggregator_columns(conn):
     conn.commit()
 
 
-def mergesqlite_parse_module_options(opt_strs):
-    """Parses `module_name.key=value` strings into {module_name: {key: value}}."""
-    module_options = {}
-    for opt_str in opt_strs or []:
-        toks = opt_str.split("=")
-        if len(toks) != 2:
-            print(
-                f'Ignoring invalid module option "{opt_str}". '
-                "module-option should be module_name.key=value."
-            )
-            continue
-        k, v = toks
-        if k.count(".") != 1:
-            print(
-                f'Ignoring invalid module option "{opt_str}". '
-                "module-option should be module_name.key=value."
-            )
-            continue
-        module_name, key = k.split(".")
-        module_options.setdefault(module_name, {})[key] = v
-    return module_options
-
-
 def mergesqlite_status_json_path(outpath):
     """Path of the .status.json StatusWriter writes alongside `outpath`."""
     output_dir = os.path.dirname(os.path.abspath(outpath))
@@ -1023,26 +1000,12 @@ def mergesqlite_validate_and_prepare(args):
             if au.module_exists_local(name)
         }
         postagg_names = sorted(default_names | set(args.postaggregators))
-    module_options = mergesqlite_parse_module_options(args.module_option)
-    # casecontrol's whole-cohort statistic can't be computed per shard; only an error
-    # if it would actually run (cohorts given).
-    if (
-        getattr(args, "parallel", True)
-        and "casecontrol" in postagg_names
-        and "cohorts" in module_options.get("casecontrol", {})
-    ):
-        exit(
-            "casecontrol is not supported by the parallel merge. Use "
-            "--no-parallel, or drop --module-option casecontrol.cohorts=... "
-            "(and -p casecontrol, if given explicitly)."
-        )
     return {
         "dbpaths": dbpaths,
         "labels": labels,
         "outpath": outpath,
         "all_info": all_info,
         "postagg_names": postagg_names,
-        "module_options": module_options,
         "sample_id_sources": sample_id_sources,
     }
 
@@ -1061,7 +1024,6 @@ def mergesqlite_serial(args, prep):
     labels = prep["labels"]
     outpath = prep["outpath"]
     postagg_names = prep["postagg_names"]
-    module_options = prep["module_options"]
     # Copies the first db.
     print(f'Copying {dbpaths[0]} to {outpath}...')
     shutil.copy(dbpaths[0], outpath)
@@ -1191,7 +1153,7 @@ def mergesqlite_serial(args, prep):
         mergesqlite_strip_postaggregator_columns(outconn)
         outconn.close()
         if postagg_names:
-            mergesqlite_run_postaggregators(outpath, postagg_names, module_options)
+            mergesqlite_run_postaggregators(outpath, postagg_names, {})
     except Exception:
         outconn.close()
         print(
@@ -1538,7 +1500,6 @@ def mergesqlite_parallel(args, prep):
     labels = prep["labels"]
     outpath = prep["outpath"]
     postagg_names = [n for n in prep["postagg_names"] if n != "casecontrol"]
-    module_options = prep["module_options"]
     n_workers = max(1, args.workers or os.cpu_count() or 1)
     tmpdir = tempfile.mkdtemp(prefix="mergesqlite_parallel_", dir=args.tmpdir)
     try:
@@ -1557,13 +1518,10 @@ def mergesqlite_parallel(args, prep):
         uid_start = c0.fetchone()[0] + 1
         conn0.close()
         # vcfinfo's multi_sample must reflect the whole cohort, not one shard.
-        shard_module_options = module_options
+        shard_module_options = {}
         if "vcfinfo" in postagg_names:
-            global_multi_sample = len(prep["sample_id_sources"]) > 1
-            shard_module_options = dict(module_options)
             shard_module_options["vcfinfo"] = {
-                **module_options.get("vcfinfo", {}),
-                "multi_sample": global_multi_sample,
+                "multi_sample": len(prep["sample_id_sources"]) > 1,
             }
         shard_specs = [
             {
@@ -1939,23 +1897,17 @@ parser_mergesqlite.add_argument("--skip-postaggregator", dest="skip_postaggregat
     help="Don't recompute postaggregator columns after merge. Without this "
          "flag, tagsampler, casecontrol, varmeta, and vcfinfo are "
          "recomputed against the merged sample set by default (same as a "
-         "fresh 'oc run'); casecontrol still no-ops with no "
-         "casecontrol.cohorts module option given.")
+         "fresh 'oc run'). casecontrol has no cohorts file here, so it "
+         "no-ops.")
 parser_mergesqlite.add_argument("-p", nargs="+", dest="postaggregators", default=[],
     help="Additional postaggregator module(s) to recompute after merge, "
          "on top of the defaults (tagsampler, casecontrol, varmeta, "
          "vcfinfo). Ignored with --skip-postaggregator.")
-parser_mergesqlite.add_argument("--module-option", dest="module_option", nargs="*",
-    default=None,
-    help="Module-specific option in module_name.key=value syntax, for "
-         "postaggregators recomputed after merge. For example, "
-         "--module-option casecontrol.cohorts=/path/to/merged-cohort-file")
 parser_mergesqlite.add_argument("--md", dest="md", default=None,
     help="Specify the root directory of OpenCRAVAT modules (annotators, etc)")
 parser_mergesqlite.add_argument("--no-parallel", dest="parallel",
     action="store_false",
-    help="Use the serial merge instead of the default parallel merge. "
-         "Required for casecontrol with a cohorts option.")
+    help="Use serial merge instead of the default parallel merge.")
 parser_mergesqlite.add_argument("--workers", dest="workers", type=int, default=None,
     help="Number of processes for parallel merge. Default "
          "os.cpu_count()")
