@@ -1619,7 +1619,7 @@ function makeVariantGeneTab (tabName, rightDiv) {
     }
 }
 
-var visibleCategories = [];
+var visibleCategories = {};
 
 function createWidgetCategorySidebar(level) {
     const sidebar = getEl('div');
@@ -1633,16 +1633,30 @@ function createWidgetCategorySidebar(level) {
     const categoryList = getEl('div');
     categoryList.className = 'widgetCategoryList';
     addEl(sidebar, categoryList);
-    var categories = Object.keys(widgetCategoryTitles);
+    // Annotation (home) is always shown; other categories only if they have an available widget.
+    const availableCategories = new Set(['home']);
+    for (let widgetName of Object.values(detailWidgetOrder[level] || {})) {
+        const generator = widgetGenerators[widgetName][level];
+        for (let category of generator.categories || []) {
+            availableCategories.add(category);
+        }
+    }
+    var categories = Object.keys(widgetCategoryTitles)
+        .filter(category => availableCategories.has(category));
     categories.unshift(...categories.splice(categories.indexOf('home'), 1));
+    visibleCategories[level] = ['home'];
     for (let category of categories) {
         const title = widgetCategoryTitles[category];
         const catBox = getEl('button');
         catBox.type = 'button';
         catBox.id = `widgetCategorySelector_${level}_${category}`;
         catBox.classList.add('widgetCategorySelector');
+        if (visibleCategories[level].includes(category)) {
+            catBox.classList.add('active');
+        }
         catBox.textContent = title;
         catBox.setAttribute('widget_category', category);
+        catBox.setAttribute('widget_level', level);
         catBox.addEventListener('click', onClickWidgetCategory);
         addEl(categoryList, catBox);
     }
@@ -1650,26 +1664,41 @@ function createWidgetCategorySidebar(level) {
 }
 
 function onClickWidgetCategory(event) {
-    const level = currentTab;
     const selector = event.currentTarget;
+    const level = selector.getAttribute('widget_level');
     const targetCategory = selector.getAttribute('widget_category');
-    if ( visibleCategories.includes(targetCategory)) {
-        visibleCategories.splice(visibleCategories.indexOf(targetCategory), 1);
+    const visible = visibleCategories[level];
+    if (visible.includes(targetCategory)) {
+        visible.splice(visible.indexOf(targetCategory), 1);
         selector.classList.remove('active');
     } else {
-        visibleCategories.push(targetCategory);
+        visible.push(targetCategory);
         selector.classList.add('active');
     }
-    changeWidgetShowHideAll(false);
-    for (let [widgetName, generator] of Object.entries(widgetGenerators)) {
-        if (generator.hasOwnProperty(level)) {
-            const categories = generator[level].categories || [];
-            if (categories.some(category => visibleCategories.includes(category))) {
-                showHideWidget(level, widgetName, true, true);
-            }
-        }
+    applyWidgetCategoryVisibility(level);
+    onClickDetailReset();
+}
 
+// Shows only the widgets of a level that belong to one of its selected categories.
+function applyWidgetCategoryVisibility(level) {
+    const visible = visibleCategories[level];
+    if (visible == undefined) {
+        return;
     }
+    for (let widgetName of Object.values(detailWidgetOrder[level] || {})) {
+        const generator = widgetGenerators[widgetName][level];
+        if (generator == undefined) {
+            continue;
+        }
+        const categories = generator.categories || [];
+        const state = categories.some(category => visible.includes(category));
+        showHideWidget(level, widgetName, state, false);
+        const checkbox = document.getElementById('widgettogglecheckbox_' + level + '_' + widgetName);
+        if (checkbox != null) {
+            checkbox.checked = state;
+        }
+    }
+    $(document.getElementById('detailcontainerdiv_' + level)).packery();
 }
 
 function onClickDetailRedraw () {
