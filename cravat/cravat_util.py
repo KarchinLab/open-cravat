@@ -883,6 +883,42 @@ def mergesqlite_strip_postaggregator_columns(conn):
     conn.commit()
 
 
+def mergesqlite_union_header_categories(conn, dbpaths, shard_paths=(), shard_modules=()):
+    """Sets the `categories` list of each category column in the merged variant and
+    gene headers to the sorted union of the lists in the source dbs. Each source
+    lists only its own data's values; the union is what oc run's aggregator would
+    list for the merged data. Columns of `shard_modules` (postaggregators recomputed
+    per shard) take their lists from `shard_paths`, all others from `dbpaths`."""
+    c = conn.cursor()
+    shard_prefixes = tuple(name + "__" for name in shard_modules)
+    for level in ["variant", "gene"]:
+        header_table = f"{level}_header"
+        c.execute(f"select col_name, col_def from {header_table}")
+        col_defs = {name: json.loads(col_def) for name, col_def in c.fetchall()}
+        cat_cols = {
+            name for name, col_def in col_defs.items()
+            if col_def.get("category") in ("single", "multi")
+        }
+        shard_cols = {name for name in cat_cols if name.startswith(shard_prefixes)}
+        cats = {name: set() for name in cat_cols}
+        for paths, wanted in [(dbpaths, cat_cols - shard_cols), (shard_paths, shard_cols)]:
+            if not wanted:
+                continue
+            for path in paths:
+                src = sqlite3.connect(mergesqlite_readonly_uri(path), uri=True)
+                for name, col_def in src.execute(f"select col_name, col_def from {header_table}"):
+                    if name in wanted:
+                        cats[name].update(json.loads(col_def).get("categories") or [])
+                src.close()
+        for name in cat_cols:
+            col_defs[name]["categories"] = sorted(cats[name], key=lambda v: (v is None, v))
+            c.execute(
+                f"update {header_table} set col_def=? where col_name=?",
+                (json.dumps(col_defs[name]), name),
+            )
+    conn.commit()
+
+
 def mergesqlite_status_json_path(outpath):
     """Path of the .status.json StatusWriter writes alongside `outpath`."""
     output_dir = os.path.dirname(os.path.abspath(outpath))
@@ -1146,6 +1182,9 @@ def mergesqlite_serial(args, prep):
     q = 'update info set colval=? where colkey="Result modified at"'
     outc.execute(q, [modified])
     outconn.commit()
+    # Postaggregator columns are recomputed over the whole merged db below, which
+    # rebuilds their category lists.
+    mergesqlite_union_header_categories(outconn, dbpaths)
 
     # On failure, delete the half-recomputed output and its status file, then re-raise.
     print('Stripping postaggregator-authored columns for recompute...')
@@ -1477,10 +1516,14 @@ def mergesqlite_concatenate_one_shard(outc, shard_index, n_shards, n_done, shard
     return new_uid_offset
 
 
-def mergesqlite_concatenate_finish(outconn, outc, dbpaths, colnos):
-    """Runs once, after every shard is folded in: the gene table merge
-    plus the output db's own bookkeeping columns. Commits and closes outconn."""
+def mergesqlite_concatenate_finish(outconn, outc, dbpaths, colnos, shard_paths, postagg_names):
+    """Runs once, after every shard is folded in: the gene table merge, header
+    category lists, and the output db's own bookkeeping columns. Commits and
+    closes outconn."""
     mergesqlite_merge_genes(dbpaths, outconn, colnos["g_hugo"])
+    # The output header came from one shard, so its category lists cover only
+    # db1 (annotator columns) or that shard's chromosomes (postaggregator columns).
+    mergesqlite_union_header_categories(outconn, dbpaths, shard_paths, postagg_names)
     outc.execute('select count(*) from variant')
     n_variants = outc.fetchone()[0]
     outc.execute(
@@ -1566,7 +1609,10 @@ def mergesqlite_parallel(args, prep):
                     outc, result["shard_index"], n_shards, n_done,
                     result["shard_outpath"], uid_offset,
                 )
-        mergesqlite_concatenate_finish(outconn, outc, dbpaths, colnos)
+        mergesqlite_concatenate_finish(
+            outconn, outc, dbpaths, colnos,
+            [spec["shard_outpath"] for spec in shard_specs], postagg_names,
+        )
     except Exception:
         print(
             f'Parallel merge failed; removing incomplete output {outpath}.',

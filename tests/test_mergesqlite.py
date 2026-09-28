@@ -1849,6 +1849,121 @@ class TestParallelTmpdir(ParallelMergeSqliteTestBase):
         self.assertEqual(seen_dirs, [custom_tmpdir])
 
 
+def set_header_categories(dbpath, level, col_name, category, categories):
+    """Marks one header column as a category column with the given list, the
+    way oc run's aggregator leaves it."""
+    conn = sqlite3.connect(dbpath)
+    c = conn.cursor()
+    c.execute(f"select col_def from {level}_header where col_name=?", (col_name,))
+    col_def = json.loads(c.fetchone()[0])
+    col_def["category"] = category
+    col_def["categories"] = categories
+    c.execute(
+        f"update {level}_header set col_def=? where col_name=?",
+        (json.dumps(col_def), col_name),
+    )
+    conn.commit()
+    conn.close()
+
+
+class TestHeaderCategoriesUnion(ParallelMergeSqliteTestBase):
+    """Each input's header lists only the category values in that input; the
+    merged header must list the values of the merged data, as a single oc run
+    over all inputs would."""
+
+    def build_inputs(self):
+        build_db(
+            self.db1,
+            variants=[(1, "chr1", 100, "A", "T", "GENE1", 0.5)],
+            samples=[(1, "sample1", "het")],
+            mappings=[(1, 0, "NM_001")],
+            genes=[("GENE1", 0.9)],
+            input_paths={"0": "/in/db1.vcf"},
+            variant_cols=VARIANT_COLS_WITH_HUGO,
+        )
+        build_db(
+            self.db2,
+            variants=[
+                (1, "chr1", 100, "A", "T", "GENE1", 0.5),
+                (2, "chr2", 200, "C", "G", "GENE2", 0.7),
+            ],
+            samples=[(1, "sample2", "hom"), (2, "sample2", "het")],
+            mappings=[(1, 0, "NM_001"), (2, 0, "NM_002")],
+            genes=[("GENE1", 0.9), ("GENE2", 0.3)],
+            input_paths={"0": "/in/db2.vcf"},
+            variant_cols=VARIANT_COLS_WITH_HUGO,
+        )
+        set_header_categories(self.db1, "variant", "base__chrom", "single", ["chr1"])
+        set_header_categories(self.db2, "variant", "base__chrom", "single", ["chr1", "chr2"])
+        set_header_categories(self.db1, "gene", "base__hugo", "single", ["GENE1"])
+        set_header_categories(self.db2, "gene", "base__hugo", "single", ["GENE1", "GENE2"])
+
+    def header_categories(self, dbpath, level, col_name):
+        col_def = self.query_path(
+            dbpath, f"select col_def from {level}_header where col_name=?", (col_name,)
+        )[0][0]
+        return json.loads(col_def)["categories"]
+
+    def test_merged_header_categories_are_union_of_inputs(self):
+        self.build_inputs()
+        self.run_merge_to([self.db1, self.db2], self.serial_outpath, parallel=False)
+        self.run_merge_to(
+            [self.db1, self.db2], self.parallel_outpath, parallel=True, workers=2,
+        )
+        for outpath in (self.serial_outpath, self.parallel_outpath):
+            with self.subTest(outpath=os.path.basename(outpath)):
+                self.assertEqual(
+                    self.header_categories(outpath, "variant", "base__chrom"),
+                    ["chr1", "chr2"],
+                )
+                self.assertEqual(
+                    self.header_categories(outpath, "gene", "base__hugo"),
+                    ["GENE1", "GENE2"],
+                )
+                # Non-category columns are left alone.
+                col_def = json.loads(self.query_path(
+                    outpath, 'select col_def from variant_header where col_name="test__score"'
+                )[0][0])
+                self.assertNotIn("categories", col_def)
+
+    @unittest.skipUnless(
+        _POSTAGG_MODULES_AVAILABLE,
+        "tagsampler/varmeta/vcfinfo postaggregator modules are not installed locally",
+    )
+    def test_recomputed_postaggregator_categories_cover_every_shard(self):
+        # One zygosity per chromosome, so each shard's vcfinfo recompute sees
+        # only one value; the merged header must list both.
+        for path, chrom, pos, gene, zyg in [
+            (self.db1, "chr1", 100, "GENE1", "het"),
+            (self.db2, "chr2", 200, "GENE2", "hom"),
+        ]:
+            build_db(
+                path,
+                variants=[(1, chrom, pos, "A", "T", gene, 0.5)],
+                samples=[(1, f"sample_{chrom}", zyg, 30, "PASS", 5, 10, 0.5, None, None)],
+                mappings=[(1, 0, "NM_001", None, "line")],
+                genes=[(gene, 0.9)],
+                input_paths={"0": f"/in/{chrom}.vcf"},
+                variant_cols=VARIANT_COLS_WITH_HUGO,
+                sample_cols=SAMPLE_COLS_FULL,
+                mapping_cols=MAPPING_COLS_FULL,
+                extra_info={"_converter_format": "vcf"},
+            )
+        self.run_merge_to(
+            [self.db1, self.db2], self.serial_outpath, parallel=False,
+            skip_postaggregator=False,
+        )
+        self.run_merge_to(
+            [self.db1, self.db2], self.parallel_outpath, parallel=True, workers=2,
+            skip_postaggregator=False,
+        )
+        for outpath in (self.serial_outpath, self.parallel_outpath):
+            with self.subTest(outpath=os.path.basename(outpath)):
+                self.assertEqual(
+                    self.header_categories(outpath, "variant", "vcfinfo__zygosity"),
+                    ["het", "hom"],
+                )
+
 
 class TestParallelIsDefault(unittest.TestCase):
     def test_cli_defaults_to_parallel_with_no_parallel_opt_out(self):
