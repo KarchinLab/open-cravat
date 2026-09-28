@@ -153,6 +153,7 @@ function showVariantDetail (row, tabName) {
 		$outerDiv.packery('bindUIDraggableEvents', $widgets);
 		var resizeTimeout;
 		$outerDiv.on('layoutComplete', onLayoutComplete);
+		applyWidgetCategoryVisibility(tabName);
 	}
 	for (var i = 0; i < orderNums.length; i++) {
 		var colGroupKey = detailWidgetOrder[tabName][orderNums[i]];

@@ -28,6 +28,7 @@ body * {
 }
 
 .detaildiv {
+    display: flex;
 	overflow: auto;
 	position: absolute;
     font-family: monospace;
@@ -37,6 +38,97 @@ body * {
 	width: calc(100% - 8px);
 	bottom: 10px;
 	height: 350px;
+}
+
+.widgetSidebar {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 224px;
+    min-height: 0;
+    box-sizing: border-box;
+    margin: 0 10px 14px 0;
+    border-right: 1px solid #d0d0d0;
+    background-color: white;
+    overflow: hidden;
+}
+
+.widgetSidebarHeading {
+    flex-shrink: 0;
+    padding: 8px 12px 6px;
+    color: #1a4a75;
+    font-family: roboto-medium;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.widgetCategoryList {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+.widgetCategorySelector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 9px;
+    border: none;
+    border-left: 3px solid transparent;
+    background: transparent;
+    color: black;
+    font-size: 14px;
+    white-space: nowrap;
+    line-height: 18px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.widgetCategorySelector::before {
+    content: '';
+    flex: 0 0 15px;
+    height: 15px;
+    background-color: #e5e6e7;
+    color: white;
+    font-family: roboto-bold;
+    font-size: 12px;
+    line-height: 15px;
+    text-align: center;
+}
+
+.widgetCategorySelector:hover {
+    background-color: #f5f5f5;
+}
+
+.widgetCategorySelector:hover::before {
+    background-color: #ccc;
+}
+
+.widgetCategorySelector.active {
+    border-left-color: #4a87bd;
+    background-color: #e3eef7;
+    color: #1a4a75;
+    font-family: roboto-medium;
+}
+
+.widgetCategorySelector.active::before {
+    content: '\2713';
+    background-color: #5eb4e5;
+}
+
+.widgetCategorySelector:focus-visible {
+    outline: 2px solid #5eb4e5;
+    outline-offset: -2px;
+}
+
+.widgetSidebar + .detailcontainerwrapdiv {
+    flex: 1;
+    min-width: 0;
 }
 
 .detailcontainerdiv {
@@ -162,4 +254,3 @@ body * {
 .nodata {
     color: #cccccc;
 }
-
