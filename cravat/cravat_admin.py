@@ -398,7 +398,7 @@ def install_modules(args):
                 au.install_module(
                     module_name,
                     version=module_version,
-                    force_data=args.force_data,
+                    force_data=args.force,
                     stage_handler=stage_handler,
                     force=args.force,
                     skip_data=args.skip_data,
