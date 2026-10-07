@@ -265,73 +265,64 @@ button {
     background: lightgrey;
 }
 
+#pageselect #oc-chat-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding-left: 0px;
+    padding-right: 0px;
+    background-color: rgb(197, 175, 141);
+    color: #3f2f14;
+    font-family: roboto-medium;
+    border: 1px solid rgb(163, 137, 98);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(120, 100, 70, 0.35);
+}
+
+#pageselect #oc-chat-tab:hover {
+    background-color: rgb(183, 157, 117);
+}
+
+#oc-chat-tab-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+#oc-chat-tab-link,
+#survey-button-link {
+    text-decoration: none;
+}
+
+#survey-button {
+    display: none;
+    align-items: center;
+    margin-right: 10px;
+    padding: 5px 7px;
+    border-radius: 4px;
+    color: #000000;
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+    transition: background-color .2s ease, color .2s ease;
+}
+
+#survey-button:hover {
+    background-color: #f2f2f2;
+    color: #000000;
+}
+
+#survey-button-icon {
+    width: 13px;
+    height: 17px;
+    margin-right: 4px;
+    background: url('/submit/clipboard-check-solid.svg') center / contain no-repeat;
+}
+
 
 #settingsdiv {
     display: none;
     right: 6px;
-}
-
-#pageselect #survey-button {
-    display: none;
-    background: none;
-    color: black;
-    font-family: roboto-light, sans;
-    vertical-align: middle;
-    align-items: center;
-    border: 1px solid rgb(74, 135, 189);
-    border-radius: 10px;
-    align-content: center;
-    justify-content: center;
-    font-size: 14px;
-}
-
-#pageselect #survey-button:hover {
-    display: inline-flex;
-    background: linear-gradient(-45deg, rgb(74, 135, 189), #5cb5e5, #006bff);
-    color: white;
-    font-family: roboto-light, sans;
-    vertical-align: middle;
-    align-items: center;
-    border: 1px solid rgb(74, 135, 189);
-    border-radius: 10px;
-    align-content: center;
-    justify-content: center;
-    font-size: 14px;
-    animation: gradient 10s ease infinite;
-    background-size: 200% 200%;
-}
-
-@keyframes gradient {
-	0% {
-		background-position: 0% 50%;
-	}
-	50% {
-		background-position: 100% 50%;
-	}
-	100% {
-		background-position: 0% 50%;
-	}
-}
-
-#pageselect #survey-button #survey-button-icon {
-    width: 18px;
-    background-color: transparent;
-    border: none;
-    height: 24px;
-    padding: 0;
-    background: url('/submit/clipboard-check-solid.svg');
-}
-
-/* pre-load alternate image */
-#pageselect #survey-button #survey-button-icon::after {
-    width: 0;
-    height: 0;
-    content: '';
-    background: url('/submit/clipboard-check-solid-white.svg');
-}
-
-#pageselect #survey-button:hover #survey-button-icon {
-    background: url('/submit/clipboard-check-solid-white.svg');
 }
 
 .button-icon {
