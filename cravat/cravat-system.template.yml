@@ -5,7 +5,6 @@ metrics_url: https://metrics.opencravat.org
 base_modules:
 - cravat-converter
 - vcf-converter
-- oldcravat-converter
 - textreporter
 - excelreporter
 - tagsampler
@@ -13,10 +12,8 @@ base_modules:
 - hg38
 - casecontrol
 - wgbase
-- wghg19
 - wgncrna
 - wglollipop
-- wgndex
 - wgcircossummary
 - wgcodingvsnoncodingsummary
 - wggosummary
@@ -26,4 +23,3 @@ base_modules:
 - wgvcfinfo
 - hg38wgs
 - varmeta
-- wgrankscore

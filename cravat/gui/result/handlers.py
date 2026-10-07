@@ -11,6 +11,7 @@ from sqlite3 import connect
 from cravat import admin_util as au
 from cravat.cravat_filter import CravatFilter
 from cravat.constants import base_smartfilters
+from cravat.widget_categories import get_widget_categories
 from cravat.gui.cravat_request import jobid_and_db_path
 from cravat.gui.legacy import webresult
 from cravat.gui.db import table_exists
@@ -82,7 +83,8 @@ def get_widgets():
     content = [{'name': module_name,
                 'title': modules[module_name].title,
                 'required_annotator': modules[module_name].conf.get('required_annotator', module_name[2:]),
-                'helphtml_exists': modules[module_name].helphtml_exists}
+                'helphtml_exists': modules[module_name].helphtml_exists,
+                'categories': get_widget_categories(module_name)}
                for module_name
                in modules]
 

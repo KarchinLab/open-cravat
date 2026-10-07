@@ -1,5 +1,6 @@
 from flask import request, g, abort
 from cravat.gui import tasks
+from cravat.gui.config import QUEUE_LIVE_ANNOTATE, celery_settings
 import cravat.admin_util as au
 
 ## LIVE ANNOTATION
@@ -12,8 +13,7 @@ def format_response(response, version):
         return response
 
 def live_annotate(version=None):
-    enable_variant_api = au.get_system_conf().get('enable_variant_api',False)
-    if not enable_variant_api:
+    if not celery_settings()[QUEUE_LIVE_ANNOTATE]['enabled']:
         return abort(404)
     queries = dict(request.values) if request.values else request.json
     annotators = queries.get('annotators', [])

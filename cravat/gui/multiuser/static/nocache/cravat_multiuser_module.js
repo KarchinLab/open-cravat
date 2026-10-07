@@ -873,7 +873,12 @@ function addAccountDiv (username) {
     addEl(sdiv, btn);
     addEl(div, sdiv);
     var headerDiv = document.getElementById('top-menu');
-    headerDiv.insertBefore(div, headerDiv.firstChild);
+    var aiBanner = document.getElementById('ai-banner');
+    if (aiBanner != null) {
+        headerDiv.insertBefore(div, aiBanner.nextSibling);
+    } else {
+        headerDiv.insertBefore(div, headerDiv.firstChild);
+    }
     // addEl(headerDiv, div);
     if (isGuestAccount(username)) {
         document.querySelector('#changepassworddiv input:nth-child(2)').style.display = 'none';

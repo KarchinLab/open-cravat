@@ -1323,12 +1323,15 @@ def install_module(
             stage_handler.stage_start("finish")
     except (Exception, KeyboardInterrupt, SystemExit) as e:
         shutil.rmtree(temp_dir, ignore_errors=True)
-        if type(e) == exceptions.KillInstallException:
+        if type(e) in (exceptions.KillInstallException, KeyboardInterrupt, SystemExit):
             stage_handler.stage_start("killed")
-        elif type(e) in (KeyboardInterrupt, SystemExit):
-            pass
-        else:
-            raise e
+        # Always propagate the failure. A caller looping over multiple
+        # modules needs to know this one did not install successfully so it
+        # can report an error and exit with a non-zero status; silently
+        # swallowing KeyboardInterrupt/SystemExit/KillInstallException here
+        # made install_module() return normally even though nothing was
+        # installed.
+        raise e
     finally:
         signal.signal(signal.SIGINT, original_sigint)
 
@@ -1391,8 +1394,8 @@ def make_example_input(out_directory, type='cravat'):
         out_fn = 'example_input.hgvs.txt'
     elif type == 'dbsnp':
         out_fn = 'example_input.rsid.txt'
-    elif type == 'clingen':
-        out_fn = 'example_input.clingen.txt'
+    elif type == 'clingen' or type == 'caid':
+        out_fn = 'example_input.caid.txt'
     else:
         raise ValueError(f'Invalid example input type: {type}')
     out_path = Path(out_directory)/out_fn

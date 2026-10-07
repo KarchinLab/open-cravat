@@ -1596,6 +1596,8 @@ function makeVariantGeneTab (tabName, rightDiv) {
         detailDiv.id = detailDivId;
         detailDiv.classList.add('detaildiv');
         detailDiv.classList.add('resultviewer');
+        const sidebar = createWidgetCategorySidebar(tabName);
+        addEl(detailDiv, sidebar);
         var detailContainerWrapDiv = getEl('div');
         detailContainerWrapDiv.className = 'detailcontainerwrapdiv';
         var h = loadedHeightSettings['detail_' + tabName];
@@ -1603,7 +1605,7 @@ function makeVariantGeneTab (tabName, rightDiv) {
             detailDiv.style.height = h;
         }
         addEl(detailDiv, detailContainerWrapDiv);
-    }
+    } 
 
 	// Detail content div
     var detailContainerDivId = 'detailcontainerdiv_' + tabName;
@@ -1615,6 +1617,88 @@ function makeVariantGeneTab (tabName, rightDiv) {
         addEl(detailContainerWrapDiv, detailContainerDiv);
         addEl(rightDiv, detailDiv);
     }
+}
+
+var visibleCategories = {};
+
+function createWidgetCategorySidebar(level) {
+    const sidebar = getEl('div');
+    sidebar.id = `widgetSidebar_${level}`;
+    sidebar.classList.add('widgetSidebar');
+    sidebar.setAttribute('role', 'group');
+    const heading = getEl('div');
+    heading.className = 'widgetSidebarHeading';
+    heading.textContent = 'Categories';
+    addEl(sidebar, heading);
+    const categoryList = getEl('div');
+    categoryList.className = 'widgetCategoryList';
+    addEl(sidebar, categoryList);
+    // Annotation (home) is always shown; other categories only if they have an available widget.
+    const availableCategories = new Set(['home']);
+    for (let widgetName of Object.values(detailWidgetOrder[level] || {})) {
+        const generator = widgetGenerators[widgetName][level];
+        for (let category of generator.categories || []) {
+            availableCategories.add(category);
+        }
+    }
+    var categories = Object.keys(widgetCategoryTitles)
+        .filter(category => availableCategories.has(category));
+    categories.unshift(...categories.splice(categories.indexOf('home'), 1));
+    visibleCategories[level] = ['home'];
+    for (let category of categories) {
+        const title = widgetCategoryTitles[category];
+        const catBox = getEl('button');
+        catBox.type = 'button';
+        catBox.id = `widgetCategorySelector_${level}_${category}`;
+        catBox.classList.add('widgetCategorySelector');
+        if (visibleCategories[level].includes(category)) {
+            catBox.classList.add('active');
+        }
+        catBox.textContent = title;
+        catBox.setAttribute('widget_category', category);
+        catBox.setAttribute('widget_level', level);
+        catBox.addEventListener('click', onClickWidgetCategory);
+        addEl(categoryList, catBox);
+    }
+    return sidebar;
+}
+
+function onClickWidgetCategory(event) {
+    const selector = event.currentTarget;
+    const level = selector.getAttribute('widget_level');
+    const targetCategory = selector.getAttribute('widget_category');
+    const visible = visibleCategories[level];
+    if (visible.includes(targetCategory)) {
+        visible.splice(visible.indexOf(targetCategory), 1);
+        selector.classList.remove('active');
+    } else {
+        visible.push(targetCategory);
+        selector.classList.add('active');
+    }
+    applyWidgetCategoryVisibility(level);
+    onClickDetailReset();
+}
+
+// Shows only the widgets of a level that belong to one of its selected categories.
+function applyWidgetCategoryVisibility(level) {
+    const visible = visibleCategories[level];
+    if (visible == undefined) {
+        return;
+    }
+    for (let widgetName of Object.values(detailWidgetOrder[level] || {})) {
+        const generator = widgetGenerators[widgetName][level];
+        if (generator == undefined) {
+            continue;
+        }
+        const categories = generator.categories || [];
+        const state = categories.some(category => visible.includes(category));
+        showHideWidget(level, widgetName, state, false);
+        const checkbox = document.getElementById('widgettogglecheckbox_' + level + '_' + widgetName);
+        if (checkbox != null) {
+            checkbox.checked = state;
+        }
+    }
+    $(document.getElementById('detailcontainerdiv_' + level)).packery();
 }
 
 function onClickDetailRedraw () {
@@ -1733,6 +1817,97 @@ function populateInfoDiv (infoDiv) {
 function populateWidgetSelectorPanel () {
 	var tabName = currentTab;
 	var panelDiv = document.getElementById('widgets_showhide_select_div');
+	panelDiv.innerHTML = '';
+	panelDiv.style.width = '300px';
+	panelDiv.style.maxHeight = '400px';
+	panelDiv.style.overflow = 'auto';
+    panelDiv.style.cursor = 'auto';
+
+	var button = getEl('button');
+    button.classList.add('butn');
+	button.textContent = 'Redraw';
+	button.addEventListener('click', function (evt, ui) {
+		onClickDetailRedraw();
+	});
+	addEl(panelDiv, button);
+
+	var button = getEl('button');
+    button.classList.add('butn');
+	button.textContent = 'Reset';
+	button.addEventListener('click', function (evt, ui) {
+		onClickDetailReset();
+	});
+	addEl(panelDiv, button);
+
+	var button = getEl('button');
+    button.classList.add('butn');
+	button.textContent = 'Hide all';
+	button.addEventListener('click', function (evt, ui) {
+		changeWidgetShowHideAll(false);
+	});
+	addEl(panelDiv, button);
+
+	var button = getEl('button');
+    button.classList.add('butn');
+	button.textContent = 'Show all';
+	button.addEventListener('click', function (evt, ui) {
+		changeWidgetShowHideAll(true);
+	});
+	addEl(panelDiv, button);
+
+	var widgetNames = Object.keys(widgetGenerators);
+	for (var i = 0; i < widgetNames.length; i++) {
+		var widgetName = widgetNames[i];
+        var generator = widgetGenerators[widgetName][tabName];
+		if (generator != undefined &&
+			generator['function'] != undefined &&
+			usedAnnotators[tabName].includes(infomgr.widgetReq[widgetName])) {
+			var div = getEl('div');
+			div.style.padding = '4px';
+            var label = getEl('label');
+            label.classList.add('checkbox-container');
+            label.textContent = infomgr.colgroupkeytotitle[widgetName];
+			var input = getEl('input');
+			input.id = 'widgettogglecheckbox_' + tabName + '_' + widgetName;
+			input.type = 'checkbox';
+            var span = getEl('span');
+            span.classList.add('checkmark');
+            addEl(label, input);
+            addEl(label, span);
+            var vwsT = viewerWidgetSettings[tabName];
+            if (vwsT == undefined) {
+                vwsT = [];
+                viewerWidgetSettings[tabName] = vwsT;
+            }
+            var vws = getViewerWidgetSettingByWidgetkey(tabName, widgetName);
+            if (vws == null) {
+                input.checked = true;
+            } else {
+                var display = vws['display'];
+                if (display != 'none') {
+                    input.checked = true;
+                } else {
+                    input.checked = false;
+                }
+            }
+            input.setAttribute('widgetname', widgetName);
+            input.addEventListener('click', function (evt) {
+                onClickWidgetSelectorCheckbox(tabName, evt);
+            });
+            addEl(div, label);
+            if (generator['variables'] != undefined &&
+                generator['variables']['shoulddraw'] == false) {
+                input.disabled = 'disabled';
+                span.style.color = 'gray';
+            }
+            addEl(panelDiv, div);
+        }
+    }
+}
+
+function populateNewWidgetSelectorPanel () {
+	var tabName = currentTab;
+	var panelDiv = document.getElementById('new_widgets_showhide_select_div');
 	panelDiv.innerHTML = '';
 	panelDiv.style.width = '300px';
 	panelDiv.style.maxHeight = '400px';
@@ -1967,6 +2142,19 @@ function showHideWidget (tabName, widgetName, state, repack) {
     if (repack == true) {
         $detailContainerDiv.packery('fit', widget);
         onClickDetailReset();
+    }
+}
+
+function hideAllWidget(tabName) {
+    var widgetNames = Object.keys(widgetGenerators);
+    // console.log(widgetNames);
+    for (let widgetName of widgetNames) {
+        if (widgetName === 'base') {
+            continue;
+        }
+        if (widgetGenerators[widgetName][tabName] != undefined) {
+            showHideWidget(tabName, widgetName, false, false);
+        }
     }
 }
 
@@ -2791,13 +2979,13 @@ function applyTableDetailDivSizes () {
         tableDiv.style.display = 'none';
         drag.style.display = 'none';
         cell.style.display = 'none';
-        detailDiv.style.display = 'block';
+        detailDiv.style.display = '';
         detailDiv.style.height = maxHeight + 'px';
         detailDiv.style.top = '10px';
         $(detailContainerDiv).packery();
     } else if (stat == 'both') {
         tableDiv.style.display = 'block';
-        detailDiv.style.display = 'block';
+        detailDiv.style.display = '';
         drag.style.display = 'block';
         cell.style.display = 'block';
         var tableHeight = tableDetailDivSizes[tabName]['tableheight'];
@@ -2910,3 +3098,18 @@ function addTextToInfonoticediv (lines) {
     }
 }
 
+const widgetCategoryTitles = {
+  "allele_frequency": "Allele Frequency",
+  "cancer": "Cancer",
+  "drugs": "Drugs",
+  "evolution": "Evolution",
+  "gene": "Gene",
+  "gwas": "GWAS",
+  "haplotypes": "Haplotypes",
+  "home": "Annotation",
+  "igv": "IGV",
+  "mendellian_disease": "Mendellian Disease",
+  "non_coding_regulation": "Non-Coding/Regulation",
+  "predictor": "Predictor",
+  "protein": "Protein"
+};

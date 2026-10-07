@@ -56,3 +56,12 @@ class InvalidModule(Exception):
 class NoVariantError(Exception):
     def __init__(self):
         super().__init__("Reference and alternate alleles are the same.")
+
+
+class ModuleNotFound(Exception):
+    def __init__(self, module_names):
+        self.module_names = list(module_names)
+        self.msg = "No module(s) found matching: {:}".format(", ".join(self.module_names))
+
+    def __str__(self):
+        return self.msg

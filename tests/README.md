@@ -36,3 +36,13 @@ Then once `pytest` is installed, you can run unit tests only with:
 ```shell
 pytest tests/
 ```
+## Validating Module Manifests
+
+OpenCRAVAT module `info.yaml` files can be checked using the
+`validate_manifest.py` script.
+
+To validate a single manifest, run:
+
+```shell
+python cravat/validate_manifest.py path/to/info.yaml
+```

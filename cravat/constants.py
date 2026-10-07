@@ -99,14 +99,13 @@ example_input_paths = {
     'vcf': Path(packagedir)/'websubmit'/'input-examples'/'vcf.hg38.txt',
     'hgvs': Path(packagedir)/'websubmit'/'input-examples'/'hgvs.hg38.txt',
     'dbsnp': Path(packagedir)/'websubmit'/'input-examples'/'dbsnp.hg38.txt',
-    'clingen': Path(packagedir) / 'websubmit' / 'input-examples' / 'clingen.hg38.txt',
+    'caid': Path(packagedir) / 'websubmit' / 'input-examples' / 'caid.hg38.txt',
 }
 
 # Base modules
 base_modules = [
     'cravat-converter',
     'vcf-converter',
-    'oldcravat-converter',
     'hgvs-converter',
     'clingen-converter',
     'textreporter',
@@ -116,10 +115,8 @@ base_modules = [
     'hg38',
     'casecontrol',
     'wgbase',
-    'wghg19',
     'wgncrna',
     'wglollipop',
-    'wgndex',
     'wgcircossummary',
     'wgcodingvsnoncodingsummary',
     'wggosummary',
@@ -129,7 +126,6 @@ base_modules = [
     'wgvcfinfo',
     'hg38wgs',
     'varmeta',
-    'wgrankscore',
 ]
 
 # metrics

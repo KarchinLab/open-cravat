@@ -72,6 +72,19 @@ module_install_base_base_p = module_sp.add_parser(
     add_help=False,
     help="Install base modules",
 )
+module_freeze_p = module_sp.add_parser(
+    "freeze",
+    parents=[cravat_admin.parser_freeze],
+    add_help=False,
+    help="Output installed modules as JSON",
+)
+
+module_install_freeze_p = module_sp.add_parser(
+    "install-freeze",
+    parents=[cravat_admin.parser_install_freeze],
+    add_help=False,
+    help="Install modules from a freeze file",
+)
 
 
 # config
@@ -264,6 +277,9 @@ def main():
             args.func(args)
         else:
             root_p.parse_args(sys.argv[1:] + ["--help"])
+    except KeyboardInterrupt:
+        print('Interrupted', file=sys.stderr)
+        sys.exit(130)
     except Exception as e:
         if '--debug' in sys.argv[1:]:
             import traceback
@@ -272,6 +288,11 @@ def main():
             print('ERROR', file=sys.stderr)
             print(e, file=sys.stderr)
             print('Repeat command with --debug for more details', file=sys.stderr)
+        # An uncaught exception means the requested command did not
+        # complete successfully (e.g. a module install failed). Without
+        # this, oc would print "ERROR" and still exit 0, indistinguishable
+        # from success to any caller/script checking the exit code.
+        sys.exit(1)
 
 
 if __name__ == "__main__":

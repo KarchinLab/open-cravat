@@ -14,6 +14,7 @@ import copy
 from getpass import getpass
 from looseversion import LooseVersion
 from cravat import util
+from cravat.exceptions import ModuleNotFound
 from cravat.gui.models import Module
 
 
@@ -168,6 +169,72 @@ def list_modules(args):
     else:
         list_local_modules(pattern=args.pattern, types=args.types, include_hidden=args.include_hidden, tags=args.tags, quiet=args.quiet, raw_bytes=args.raw_bytes)
 
+def freeze_modules(args):
+    import json
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
+    modules = []
+    for module_name in au.search_local(r'.*'):
+        module_info = au.get_local_module_info(module_name)
+        modules.append({
+            'name': module_info.name,
+            'version': module_info.version,
+            'type': module_info.type,
+        })
+    print(json.dumps(modules, indent=2))
+
+def install_freeze_modules(args):
+    import json, sys
+    if args.md is not None:
+        constants.custom_modules_dir = args.md
+    src = sys.stdin if args.freeze_file == '-' else open(args.freeze_file)
+    with src:
+        modules = json.load(src)
+    requested = {entry['name']: entry['version'] for entry in modules}
+    if not requested:
+        print('No modules in freeze file')
+        return
+    # Pre-filter: skip modules already installed at the requested version
+    to_install = {}
+    skipped = []
+    for module_name, module_version in sorted(requested.items()):
+        local_info = au.get_local_module_info(module_name)
+        if (not args.force and local_info is not None
+                and LooseVersion(local_info.version) == LooseVersion(module_version)):
+            skipped.append(f'{module_name}:{module_version}')
+            continue
+        to_install[module_name] = module_version
+    if skipped:
+        print('Already installed at the requested version (skipping):')
+        for entry in skipped:
+            print(f'  {entry}')
+    if not to_install:
+        print('No modules to install')
+        return
+    print('Installing: {}'.format(
+        ', '.join(f'{n}:{v}' for n, v in sorted(to_install.items()))
+    ))
+    if not args.yes:
+        while True:
+            resp = input('Proceed? ([y]/n) > ')
+            if resp in ('y', ''):
+                break
+            if resp == 'n':
+                return
+            print('Response {!r} was not one of the expected responses: y, n'.format(resp))
+    for module_name, module_version in sorted(to_install.items()):
+        stage_handler = InstallProgressStdout(module_name, module_version)
+        au.install_module(
+            module_name,
+            version=module_version,
+            force_data=False,
+            stage_handler=stage_handler,
+            force=args.force,
+            skip_data=False,
+            install_pypi_dependency=args.include_dependencies,
+        )
+    Module.invalidate_cache()
+
 def yaml_string(x):
     s = yaml.dump(x, default_flow_style = False)
     s = re.sub('!!.*', '', s)
@@ -285,12 +352,19 @@ def install_modules(args):
             selected_install[module_name] = args.version
         else:
             continue
+    private_found = set()
     if args.private:
         if args.version is None:
             sys.exit('--include-private cannot be used without specifying a version using -v/--version')
         for module_name in args.modules:
             if au.module_exists_remote(module_name, version=args.version, private=True):
                 selected_install[module_name] = args.version
+                private_found.add(module_name)
+    unmatched = [module for module in args.modules
+                 if module not in private_found
+                 and not any(re.fullmatch(module, name) for name in matching_names)]
+    if unmatched:
+        raise ModuleNotFound(unmatched)
     # Add dependencies of selected modules
     dep_install = {}
     pypi_deps_install = {}
@@ -317,19 +391,36 @@ def install_modules(args):
                 else:
                     print('Your response (\'{:}\') was not one of the expected responses: y, n'.format(resp))
                     continue
+        failed_installs = {}
         for module_name, module_version in sorted(to_install.items()):
             stage_handler = InstallProgressStdout(module_name, module_version)
-            au.install_module(
-                module_name,
-                version=module_version,
-                force_data=args.force_data,
-                stage_handler=stage_handler,
-                force=args.force,
-                skip_data=args.skip_data,
-                install_pypi_dependency=args.install_pypi_dependency
-            )
+            try:
+                au.install_module(
+                    module_name,
+                    version=module_version,
+                    force_data=args.force,
+                    stage_handler=stage_handler,
+                    force=args.force,
+                    skip_data=args.skip_data,
+                    install_pypi_dependency=args.install_pypi_dependency
+                )
+            except (KeyboardInterrupt, SystemExit):
+                # The user (or a signal) asked us to stop. Don't keep
+                # installing the rest of the batch.
+                raise
+            except Exception as e:
+                failed_installs[module_name] = e
+                print(f'ERROR: failed to install {module_name}:{module_version}: {e}',
+                      file=sys.stderr)
 
         Module.invalidate_cache()
+
+        if failed_installs:
+            print('ERROR: failed to install {} of {} module(s): {}'.format(
+                    len(failed_installs), len(to_install),
+                    ', '.join(sorted(failed_installs))
+                ), file=sys.stderr)
+            sys.exit(1)
 
 
 def update_modules(args):
@@ -357,6 +448,7 @@ def update_modules(args):
         user_cont = input('Update the above modules? (y/n) > ')
         if user_cont.lower() not in ['y','yes']:
             exit()
+    failed_updates = []
     for mname, update_info in updates.items():
         args.modules = [mname]
         args.force_data = False
@@ -366,7 +458,22 @@ def update_modules(args):
         args.skip_dependencies = False
         args.force = False
         args.skip_data = False
-        install_modules(args)
+        try:
+            install_modules(args)
+        except (SystemExit, ModuleNotFound) as e:
+            # install_modules() failed and already printed the reason (a
+            # KeyboardInterrupt is *not* a SystemExit and is left to
+            # propagate, so a real Ctrl-C still stops the whole update).
+            # Keep trying the rest of the updates and report the overall
+            # failure at the end.
+            if isinstance(e, ModuleNotFound):
+                print(f'ERROR: {e}', file=sys.stderr)
+            failed_updates.append(mname)
+    if failed_updates:
+        print('ERROR: failed to update {} module(s): {}'.format(
+                len(failed_updates), ', '.join(failed_updates)
+            ), file=sys.stderr)
+        sys.exit(1)
 
 def uninstall_modules (args):
     if args.md is not None:
@@ -410,12 +517,11 @@ def publish_module (args):
 
 def install_base (args):
     args = SimpleNamespace(modules=constants.base_modules,
-        force_data=args.force_data,
+        force_data=args.force,
         version=None,
         yes=True,
         private=False,
         skip_dependencies=False,
-        force=args.force,
         skip_data=False,
         install_pypi_dependency=args.install_pypi_dependency,
         md=args.md,
@@ -444,7 +550,7 @@ def make_example_input (args):
     if args.type == 'dbsnp' and au.get_local_module_info('dbsnp-converter') is None:
         print('Must install dbsnp-converter.')
         exit(1)
-    if args.type == 'clingen' and au.get_local_module_info('clingen-converter') is None:
+    if args.type == 'clingen' or args.type == 'caid' and au.get_local_module_info('clingen-converter') is None:
         print('Must install clingen-converter.')
         exit(1)
     out_path = au.make_example_input(args.directory, type=args.type)
@@ -530,11 +636,7 @@ parser_install_base = subparsers.add_parser('install-base',
 )
 parser_install_base.add_argument('-f','--force',
     action='store_true',
-    help='Overwrite existing modules',
-)
-parser_install_base.add_argument('-d', '--force-data',
-    action='store_true',
-    help='Download data even if latest data is already installed'
+    help='Overwrite existing modules and re-download data',
 )
 parser_install_base.add_argument('--install-pypi-dependency',
     action='store_true',
@@ -569,11 +671,7 @@ help='Install a specific version'
 )
 parser_install.add_argument('-f','--force',
 action='store_true',
-help='Install module even if latest version is already installed',
-)
-parser_install.add_argument('-d', '--force-data',
-action='store_true',
-help='Download data even if latest data is already installed'
+help='Install module even if latest version is already installed. Forces a re-download of data even if latest is already installed. Use --skip-data to not re-download.',
 )
 parser_install.add_argument('-y','--yes',
 action='store_true',
@@ -713,6 +811,35 @@ parser_ls.add_argument('--md',
     help='Specify the root directory of OpenCRAVAT modules'
 )
 parser_ls.set_defaults(func=list_modules)
+
+# freeze
+parser_freeze = subparsers.add_parser('freeze',
+    help='Output installed modules as JSON.',
+    description='Output installed modules as JSON (including hidden modules).')
+parser_freeze.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules')
+parser_freeze.set_defaults(func=freeze_modules)
+
+# install-freeze
+parser_install_freeze = subparsers.add_parser('install-freeze',
+    help='Install modules from a freeze file.',
+    description='Install modules from a freeze file (JSON output of the freeze command). Only the modules listed in the freeze file are installed unless --include-dependencies is given.')
+parser_install_freeze.add_argument('freeze_file',
+    help='Path to freeze JSON file, or - to read from stdin')
+parser_install_freeze.add_argument('-f', '--force',
+    action='store_true',
+    help='Reinstall even if the correct version is already installed')
+parser_install_freeze.add_argument('-y', '--yes',
+    action='store_true',
+    help='Proceed without prompt')
+parser_install_freeze.add_argument('--include-dependencies',
+    action='store_true',
+    help='Also install module dependencies (pypi packages). By default only the modules in the freeze file are installed.')
+parser_install_freeze.add_argument('--md',
+    default=None,
+    help='Specify the root directory of OpenCRAVAT modules')
+parser_install_freeze.set_defaults(func=install_freeze_modules)
 
 # publish
 parser_publish = subparsers.add_parser('publish',

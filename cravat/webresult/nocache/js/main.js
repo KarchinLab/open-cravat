@@ -783,6 +783,9 @@ function firstLoadData () {
                             }
                             for (var j = 0; j < widgetTabs.length; j++) {
                                 var widgetTab = widgetTabs[j];
+                                if (generator[widgetTab]['categories'] == undefined) {
+                                    generator[widgetTab]['categories'] = widgetInfo[widgetName]['categories'] || [];
+                                }
                                 if (generator[widgetTab]['variables'] == undefined) {
                                     generator[widgetTab]['variables'] = {};
                                 }
@@ -1000,6 +1003,17 @@ function onClickWidgetsMenu (evt) {
     hideAllMenu3();
     var div = document.getElementById('widgets_showhide_select_div');
     div.style.display = 'block';
+    evt.stopPropagation();
+}
+
+var asdffIsPopulated = false;
+function toggleWidgetSel (evt) {
+    var div = document.getElementById('new_widgets_showhide_select_div');
+    div.style.display = div.style.display === 'none' ? 'block' : 'none';
+    if (!asdffIsPopulated) {
+        populateNewWidgetSelectorPanel();
+        asdffIsPopulated = true;
+    }
     evt.stopPropagation();
 }
 

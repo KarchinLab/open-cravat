@@ -3,6 +3,7 @@ import subprocess
 from celery import shared_task, signals
 from cravat import admin_util
 from cravat.gui.api.live_module_cache import LiveModuleCache
+from cravat.gui.config import QUEUE_MODULE_INSTALL, QUEUE_LIVE_ANNOTATE, celery_settings
 from .api import live_annotate_worker
 from .models import Module
 from pathlib import Path
@@ -12,7 +13,7 @@ def run_job(run_args):
     subprocess.run(run_args)
 
 
-@shared_task(queue="module_install")
+@shared_task(queue=QUEUE_MODULE_INSTALL)
 def install_module(module_name, version, use_json_handler=None):
     admin_util.install_module(module_name, version=version, use_json_handler=use_json_handler)
     Module.invalidate_cache()
@@ -24,15 +25,14 @@ def run_report(db_path, report_type, tmp_flag_path):
     Path(tmp_flag_path).unlink()
 
 live_mapper = None
-enable_variant_api = admin_util.get_system_conf().get('enable_variant_api', False)
-if enable_variant_api:
+if celery_settings()[QUEUE_LIVE_ANNOTATE]['enabled']:
     @signals.worker_process_init.connect
     def _init_worker_state(**_):
         print(_)
         global live_mapper
         live_mapper = LiveModuleCache()
 
-    @shared_task(queue="live_annotate")
+    @shared_task(queue=QUEUE_LIVE_ANNOTATE)
     def api_live_annotate(queries, annotators, is_multiuser=False):
         global live_mapper
         return live_annotate_worker(queries, annotators, is_multiuser, live_mapper)
