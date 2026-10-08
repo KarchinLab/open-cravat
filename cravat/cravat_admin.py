@@ -517,7 +517,7 @@ def publish_module (args):
 
 def install_base (args):
     args = SimpleNamespace(modules=constants.base_modules,
-        force_data=args.force,
+        force=args.force,
         version=None,
         yes=True,
         private=False,
