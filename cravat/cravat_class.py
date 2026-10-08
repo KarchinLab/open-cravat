@@ -7,7 +7,11 @@ from cravat import admin_util as au
 from cravat import util
 from cravat.config_loader import ConfigLoader
 from cravat.util import write_log_msg
-import aiosqlite
+# aiosqlite was here, but for some datasets it would reproducibly get stuck
+# during aiosqlite.connect()
+# after MANY attempted solutions, swapping out aiosqlite with sqlite3 worked
+# I suspect a aiosqlite only solution would also work
+# but both together is prone to a wierd conflict
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from cravat import constants
@@ -686,15 +690,15 @@ class Cravat(object):
             if not self.args.silent:
                 print(s)
             return
-        db = await aiosqlite.connect(constants.admindb_path)
-        cursor = await db.cursor()
+        db = sqlite3.connect(constants.admindb_path)
+        cursor = db.cursor()
         q = 'update jobs set runtime={}, numinput={} where jobid="{}"'.format(
             runtime, numinput, self.args.jobid
         )
-        await cursor.execute(q)
-        await db.commit()
-        await cursor.close()
-        await db.close()
+        cursor.execute(q)
+        db.commit()
+        cursor.close()
+        db.close()
 
     def write_smartfilters(self):
         ttime = time.time()
@@ -1898,16 +1902,18 @@ class Cravat(object):
 
     async def write_job_info(self):
         dbpath = os.path.join(self.output_dir, self.run_name + ".sqlite")
-        conn = await aiosqlite.connect(dbpath)
-        cursor = await conn.cursor()
+        self.logger.info(f"@loc0001 {dbpath=}")
+        conn = sqlite3.connect(dbpath)
+        self.logger.info(f"@loc0004 {dbpath=}")
+        cursor = conn.cursor()
         dt = datetime.now(timezone.utc)
         utc_time = dt.replace(tzinfo=timezone.utc)    
         utc_dt_string = utc_time.strftime("%Y/%m/%d %H:%M:%S")
         if not self.append_mode:
             q = "drop table if exists info"
-            await cursor.execute(q)
+            cursor.execute(q)
             q = "create table info (colkey text primary key, colval text)"
-            await cursor.execute(q)
+            cursor.execute(q)
         modified = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.metricObj.set_job_data('resultModifiedAt',utc_dt_string)
         q = (
@@ -1915,26 +1921,26 @@ class Cravat(object):
             + modified
             + '")'
         )
-        await cursor.execute(q)
+        cursor.execute(q)
         if not self.append_mode:
             created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             q = 'insert into info values ("Result created at", "' + created + '")'
             self.metricObj.set_job_data('numInputFiles',len(self.inputs))
             self.metricObj.set_job_data('resultCreatedAt',utc_dt_string)
-            await cursor.execute(q)
+            cursor.execute(q)
             q = 'insert into info values ("Input file name", "{}")'.format(
                 ";".join(self.inputs)
             )
-            await cursor.execute(q)
+            cursor.execute(q)
             q = (
                 'insert into info values ("Input genome", "'
                 + self.input_assembly
                 + '")'
             )
-            await cursor.execute(q)
+            cursor.execute(q)
             q = "select count(*) from variant"
-            await cursor.execute(q)
-            r = await cursor.fetchone()
+            cursor.execute(q)
+            r = cursor.fetchone()
             no_input = r[0]
             self.metricObj.set_job_data('numVariants',no_input)
             q = (
@@ -1942,13 +1948,13 @@ class Cravat(object):
                 + str(no_input)
                 + '")'
             )
-            await cursor.execute(q)
+            cursor.execute(q)
             self.metricObj.set_job_data('ocVersion',self.pkg_ver)
             q = 'insert into info values ("open-cravat", "{}")'.format(self.pkg_ver)
-            await cursor.execute(q)
+            cursor.execute(q)
             converterFormat = await self.get_converter_format_from_crv()
             q = 'insert into info values ("_converter_format", "{}")'.format(converterFormat)
-            await cursor.execute(q)
+            cursor.execute(q)
             self.metricObj.set_job_data('converterFormat',converterFormat)
             self.metricObj.set_job_converter('name',converterFormat)
             (
@@ -1960,11 +1966,11 @@ class Cravat(object):
             self.metricObj.set_job_mapper('version',mapper_version)
             genemapper_str = "{} ({})".format(mapper_title, mapper_version)
             q = 'insert into info values ("Gene mapper", "{}")'.format(genemapper_str)
-            await cursor.execute(q)
+            cursor.execute(q)
             q = 'insert into info values ("_mapper", "{}:{}")'.format(
                 mapper_modulename, mapper_version
             )
-            await cursor.execute(q)
+            cursor.execute(q)
             f = open(os.path.join(self.output_dir, self.run_name + ".crm"))
             for line in f:
                 if line.startswith("#input_paths="):
@@ -1974,23 +1980,23 @@ class Cravat(object):
                     q = 'insert into info values ("_input_paths", "{}")'.format(
                         input_path_dict_str
                     )
-                    await cursor.execute(q)
+                    cursor.execute(q)
             q = f'insert into info values ("primary_transcript", "{",".join(self.args.primary_transcript)}")'
             self.metricObj.set_job_data('primaryTranscript',"#".join(self.args.primary_transcript))
-            await cursor.execute(q)
+            cursor.execute(q)
         q = 'select colval from info where colkey="annotators_desc"'
-        await cursor.execute(q)
-        r = await cursor.fetchone()
+        cursor.execute(q)
+        r = cursor.fetchone()
         if r is None:
             annotator_desc_dict = {}
         else:
             annotator_desc_dict = json.loads(r[0])
         q = "select name, displayname, version from variant_annotator"
-        await cursor.execute(q)
-        rows = list(await cursor.fetchall())
+        cursor.execute(q)
+        rows = list(cursor.fetchall())
         q = "select name, displayname, version from gene_annotator"
-        await cursor.execute(q)
-        tmp_rows = list(await cursor.fetchall())
+        cursor.execute(q)
+        tmp_rows = list(cursor.fetchall())
         if tmp_rows is not None:
             rows.extend(tmp_rows)
         annotators_str = ""
@@ -2013,7 +2019,7 @@ class Cravat(object):
         q = 'insert or replace into info values ("_annotator_desc", "{}")'.format(
             json.dumps(annotator_desc_dict).replace('"', "'")
         )
-        await cursor.execute(q)
+        cursor.execute(q)
         if self.args.do_not_change_status != True:
             self.status_writer.queue_status_update(
                 "annotator_version", annotator_version, force=True
@@ -2023,15 +2029,15 @@ class Cravat(object):
             + annotators_str
             + '")'
         )
-        await cursor.execute(q)
+        cursor.execute(q)
         q = 'insert or replace into info values ("_annotators", "{}")'.format(
             ",".join(annotators)
         )  
-        await cursor.execute(q)
+        cursor.execute(q)
 
-        await conn.commit()
-        await cursor.close()
-        await conn.close()
+        conn.commit()
+        cursor.close()
+        conn.close()
 
     def run_summarizers(self):
         for module in self.ordered_summarizers:
