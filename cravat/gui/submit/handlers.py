@@ -353,7 +353,7 @@ def delete_job(job_id):
     # canceling the task is not immediate. poll the status for a short time before removing files
     finished_statuses = (None, 'Aborted', 'Error', 'Finished')
     retries = 5
-    while job.task.cravat_status not in finished_statuses and retries > 0:
+    while job.task is not None and job.task.cravat_status not in finished_statuses and retries > 0:
         time.sleep(.2)
         retries -= 1
 
