@@ -1,26 +1,16 @@
-from http.server import HTTPServer, CGIHTTPRequestHandler
-from socketserver import TCPServer
 import os
 import webbrowser
-import multiprocessing
-import urllib.parse
 import json
 import sys
 import argparse
-import oyaml as yaml
-import re
 from cravat import admin_util as au
 from cravat.webresult import webresult as wr
 from cravat.webstore import webstore as ws
 from cravat.websubmit import websubmit as wu
 from cravat.gui import cache
-import websockets
 from aiohttp import web, web_runner
-import socket
-import hashlib
 import platform
 import asyncio
-import datetime as dt
 import requests
 import traceback
 import ssl
