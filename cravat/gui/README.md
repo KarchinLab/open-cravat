@@ -29,3 +29,13 @@ celery -A cravat.gui.celery worker
 You can run `celery --help` for other options like restricting
 queues.  Here `cravat.gui.celery` is the dotted Python path to our configured 
 celery `App` instance.
+
+On macOS, billiard (4.3+) starts pool processes with `spawn` rather than
+`fork`, which requires setting `FORKED_BY_MULTIPROCESSING` like this:
+
+```
+FORKED_BY_MULTIPROCESSING=1 celery -A cravat.gui.celery worker
+```
+
+Workers started through `python -m cravat.gui.workers` or by the GUI set this
+automatically.
