@@ -3,12 +3,17 @@ import os
 import celery
 from celery import current_app, states
 
-def celery_init_app(flask_app):
-    class FlaskTask(celery.Task):
-        def __call__(self, *args: object, **kwargs: object) -> object:
-            with flask_app.app_context():
-                return self.run(*args, **kwargs)
+# Defined at module level so the Celery app can be pickled
+class FlaskTask(celery.Task):
+    def __call__(self, *args: object, **kwargs: object) -> object:
+        # Since cravat.gui imports this module, a spawned
+        # worker child has to import the Flask app itself.
+        from cravat.gui import app as flask_app
+        with flask_app.app_context():
+            return self.run(*args, **kwargs)
 
+
+def celery_init_app(flask_app):
     celery_config = flask_app.config["CELERY"]
 
     os.makedirs(flask_app.config["CACHE_DIR"], exist_ok=True)
