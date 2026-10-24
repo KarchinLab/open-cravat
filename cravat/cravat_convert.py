@@ -15,6 +15,7 @@ from cravat.exceptions import (
     NoVariantError,
 )
 import cravat.admin_util as au
+from cravat.allele_orientation import orient_alleles_to_target_ref
 from pyliftover import LiftOver
 import copy
 import cravat.cravat_util as cu
@@ -486,12 +487,19 @@ class MasterCravatConverter(object):
                                         wdict["pos"],
                                         wdict["ref_base"],
                                         wdict["alt_base"],
+                                        alleles_swapped,
                                     ) = self.liftover(
                                         wdict["chrom"],
                                         int(wdict["pos"]),
                                         wdict["ref_base"],
                                         wdict["alt_base"],
                                     )
+                                    if alleles_swapped and str(
+                                        wdict.get("zygosity", "")
+                                    ).lower().startswith("hom"):
+                                        # homozygous for the old alt is homozygous
+                                        # for the new reference: not a variant
+                                        raise NoVariantError()
                                 if base_re.fullmatch(wdict["ref_base"]) is None:
                                     raise BadFormatError("Invalid reference base")
                                 if base_re.fullmatch(wdict["alt_base"]) is None:
@@ -638,13 +646,8 @@ class MasterCravatConverter(object):
             newchrom = newchrom1
             newpos = min(newpos1, newpos2)
         hg38_ref = self.wgsreader.get_bases(newchrom, newpos)
-        if hg38_ref == cravat.util.reverse_complement(ref):
-            newref = hg38_ref
-            newalt = cravat.util.reverse_complement(alt)
-        else:
-            newref = ref
-            newalt = alt
-        return [newchrom, newpos, newref, newalt]
+        newref, newalt, swapped = orient_alleles_to_target_ref(hg38_ref, ref, alt)
+        return [newchrom, newpos, newref, newalt, swapped]
 
     def _log_conversion_error(self, ln, line, e, full_line_error=True):
         """Log exceptions thrown by primary converter.
