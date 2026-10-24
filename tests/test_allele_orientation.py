@@ -1,6 +1,10 @@
 import unittest
 
-from cravat.allele_orientation import orient_alleles_to_target_ref
+from cravat.allele_orientation import (
+    orient_alleles_to_target_ref,
+    zygosity_after_liftover,
+    NOT_A_VARIANT,
+)
 
 
 class OrientAllelesToTargetRefTest(unittest.TestCase):
@@ -23,6 +27,44 @@ class OrientAllelesToTargetRefTest(unittest.TestCase):
     def test_reference_matches_neither_allele_is_unchanged(self):
         # target A is neither C, G, nor their reverse complements (G, C)
         self.assertEqual(orient_alleles_to_target_ref("A", "C", "G"), ("C", "G", False))
+
+    def test_chain_strand_resolves_ambiguity_at_at_site(self):
+        # ref A / alt T with hg38 ref T: from the bases alone this is read as a
+        # strand flip; on a "+" site it can only be a swap
+        self.assertEqual(orient_alleles_to_target_ref("T", "A", "T"), ("T", "A", False))
+        self.assertEqual(
+            orient_alleles_to_target_ref("T", "A", "T", strand="+"), ("T", "A", True)
+        )
+
+    def test_minus_strand_site_only_reverse_complements(self):
+        self.assertEqual(
+            orient_alleles_to_target_ref("A", "T", "C", strand="-"), ("A", "G", False)
+        )
+        # target equals alt's letter, but a "-" site can never be a plain swap
+        self.assertEqual(
+            orient_alleles_to_target_ref("C", "T", "C", strand="-"), ("T", "C", False)
+        )
+
+
+class ZygosityAfterLiftoverTest(unittest.TestCase):
+    def test_unswapped_calls_are_unchanged(self):
+        self.assertEqual(zygosity_after_liftover("het", False), "het")
+        self.assertEqual(zygosity_after_liftover("hom", False), "hom")
+
+    def test_het_survives_a_swap(self):
+        self.assertEqual(zygosity_after_liftover("het", True), "het")
+
+    def test_hom_alt_becomes_hom_reference_after_a_swap(self):
+        self.assertIs(zygosity_after_liftover("hom", True), NOT_A_VARIANT)
+
+    def test_ref_sentinel_is_a_variant_only_after_a_swap(self):
+        self.assertEqual(zygosity_after_liftover("ref", True), "hom")
+        self.assertIs(zygosity_after_liftover("ref", False), NOT_A_VARIANT)
+
+    def test_unknown_zygosity_is_never_dropped(self):
+        # e.g. a VCF row with no GT field has zygosity None
+        self.assertIsNone(zygosity_after_liftover(None, False))
+        self.assertIsNone(zygosity_after_liftover(None, True))
 
 
 class ConverterLiftoverTest(unittest.TestCase):

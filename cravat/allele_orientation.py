@@ -11,7 +11,7 @@ def _revcomp(bases):
     return bases.translate(_COMPLEMENT)[::-1]
 
 
-def orient_alleles_to_target_ref(target_ref, ref, alt):
+def orient_alleles_to_target_ref(target_ref, ref, alt, strand=None):
     """Return (new_ref, new_alt, swapped) for a variant lifted onto a site
     whose reference base in the destination assembly is `target_ref`.
 
@@ -26,16 +26,39 @@ def orient_alleles_to_target_ref(target_ref, ref, alt):
       above, on the opposite strand.
     - destination reference matches neither allele: returned unchanged.
 
-    For single-base A/T and C/G sites the first branch (strand flip) wins an
-    ambiguity that the bases alone cannot resolve; the liftover chain's strand
-    would be needed to decide.
+    `strand` is the liftover chain's strand for the site ("+" or "-"), when
+    known. For single-base A/T and C/G sites the bases alone cannot tell a
+    strand flip from a swap, so without it the strand flip wins; with it, only
+    the branches consistent with the chain's strand are considered.
     """
-    if target_ref == _revcomp(ref):
+    same_strand = strand != "-"
+    opposite_strand = strand != "+"
+    if opposite_strand and target_ref == _revcomp(ref):
         return target_ref, _revcomp(alt), False
-    if target_ref == ref:
+    if same_strand and target_ref == ref:
         return ref, alt, False
-    if target_ref == alt:
+    if same_strand and target_ref == alt:
         return alt, ref, True
-    if target_ref == _revcomp(alt):
+    if opposite_strand and target_ref == _revcomp(alt):
         return target_ref, _revcomp(ref), True
     return ref, alt, False
+
+
+NOT_A_VARIANT = object()
+
+
+def zygosity_after_liftover(zygosity, swapped):
+    """Reinterpret a converter-supplied zygosity once ref/alt may have swapped.
+
+    Returns the zygosity to keep (which may itself be None), or NOT_A_VARIANT if the
+    call is homozygous for the destination assembly's reference. Converters use "hom"/"het" (relative to the
+    alleles they emitted) and "ref" for a call homozygous for the input
+    assembly's reference allele, emitted with the other assembly's reference as
+    the alt so it survives a swap.
+    """
+    z = str(zygosity or "").lower()
+    if z.startswith("hom"):
+        return NOT_A_VARIANT if swapped else zygosity
+    if z == "ref":
+        return "hom" if swapped else NOT_A_VARIANT
+    return zygosity
