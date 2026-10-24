@@ -62,3 +62,20 @@ def zygosity_after_liftover(zygosity, swapped):
     if z == "ref":
         return "hom" if swapped else NOT_A_VARIANT
     return zygosity
+
+
+def alt_for_hom_ref_mismatch(ref, target_base, strand):
+    """For a call homozygous for the input assembly's reference allele `ref`,
+    return the alt allele (in the input assembly's orientation) to emit so that
+    the call survives liftover, or None if the destination assembly agrees with
+    `ref` at this site and there is nothing to report.
+
+    `target_base` is the destination assembly's plus-strand base at the lifted
+    site and `strand` is the liftover chain's strand for it.
+    """
+    base = target_base.upper()
+    if strand == "-":
+        base = _revcomp(base)
+    if len(base) == 1 and base in "ACGT" and base != ref.upper():
+        return base
+    return None

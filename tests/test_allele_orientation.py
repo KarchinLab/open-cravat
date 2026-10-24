@@ -4,6 +4,7 @@ from cravat.allele_orientation import (
     orient_alleles_to_target_ref,
     zygosity_after_liftover,
     NOT_A_VARIANT,
+    alt_for_hom_ref_mismatch,
 )
 
 
@@ -67,6 +68,23 @@ class ZygosityAfterLiftoverTest(unittest.TestCase):
         self.assertIsNone(zygosity_after_liftover(None, True))
 
 
+class AltForHomRefMismatchTest(unittest.TestCase):
+    def test_assemblies_agree_so_nothing_to_report(self):
+        self.assertIsNone(alt_for_hom_ref_mismatch("C", "C", "+"))
+
+    def test_rs6025_homozygous_hg19_reference(self):
+        # T/T at hg19 chr1:169519049; hg38 reference there is C
+        self.assertEqual(alt_for_hom_ref_mismatch("T", "C", "+"), "C")
+
+    def test_minus_strand_target_base_is_complemented_to_input_orientation(self):
+        self.assertIsNone(alt_for_hom_ref_mismatch("A", "T", "-"))
+        self.assertEqual(alt_for_hom_ref_mismatch("A", "G", "-"), "C")
+
+    def test_unusable_target_base(self):
+        self.assertIsNone(alt_for_hom_ref_mismatch("A", "N", "+"))
+        self.assertIsNone(alt_for_hom_ref_mismatch("A", "", "+"))
+
+
 class ConverterLiftoverTest(unittest.TestCase):
     """Converter.liftover() with a stub chain and a stub hg38 reference."""
 
@@ -94,6 +112,49 @@ class ConverterLiftoverTest(unittest.TestCase):
             converter.liftover("chr1", 169519049, "T", "C"),
             ["chr1", 169549811, "T", "C", False],
         )
+
+
+class HomRefMismatchRowTest(unittest.TestCase):
+    def make_converter(self, target_base, strand="+", lift_result="default"):
+        from types import SimpleNamespace
+        from cravat import BaseConverter
+
+        if lift_result == "default":
+            lift_result = [("chr1", 169549810, strand)]
+        converter = BaseConverter.__new__(BaseConverter)
+        converter.input_assembly = "hg19"
+        converter._hom_ref_mismatch_cache = {
+            "lifter": SimpleNamespace(convert_coordinate=lambda c, p: lift_result),
+            "target": SimpleNamespace(slice=lambda c, p: target_base),
+        }
+        return converter
+
+    def test_rs6025_homozygous_hg19_reference_emits_ref_sentinel_row(self):
+        row = self.make_converter("C").hom_ref_mismatch_row("chr1", 169519049, "T", "rs6025")
+        self.assertEqual(
+            row,
+            {
+                "tags": "rs6025",
+                "chrom": "chr1",
+                "pos": 169519049,
+                "ref_base": "T",
+                "alt_base": "C",
+                "sample_id": "",
+                "zygosity": "ref",
+            },
+        )
+
+    def test_nothing_emitted_when_assemblies_agree(self):
+        self.assertIsNone(self.make_converter("T").hom_ref_mismatch_row("chr1", 1, "T", "x"))
+
+    def test_nothing_emitted_when_liftover_fails(self):
+        converter = self.make_converter("C", lift_result=[])
+        self.assertIsNone(converter.hom_ref_mismatch_row("chr1", 1, "T", "x"))
+
+    def test_nothing_emitted_for_hg38_input(self):
+        converter = self.make_converter("C")
+        converter.input_assembly = "hg38"
+        self.assertIsNone(converter.hom_ref_mismatch_row("chr1", 1, "T", "x"))
 
 
 if __name__ == "__main__":
