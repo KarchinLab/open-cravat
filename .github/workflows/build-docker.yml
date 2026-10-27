@@ -1,0 +1,43 @@
+name: Build Docker
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version label for artifact names (default: tag name, or short commit hash)"
+        type: string
+        required: false
+  # Temporary trigger for testing on the branch; remove before merging
+  # push:
+  #   branches:
+  #     - 'ci/split-builds'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set version
+        shell: bash
+        env:
+          # Tag name on tags, otherwise the short commit hash
+          INPUT_VERSION: ${{ inputs.version || (startsWith(github.ref, 'refs/tags/') && github.ref_name || '') }}
+        run: echo "VERSION=${INPUT_VERSION:-${GITHUB_SHA::7}}" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/opencravat:${{ env.VERSION }}
+      - name: Save docker image
+        run: |
+          docker image save ${{ secrets.DOCKER_USERNAME }}/opencravat:${{ env.VERSION }} | gzip > opencravat-docker-${{ env.VERSION }}.tgz
+      - name: Archive image
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencravat-docker-${{ env.VERSION }}.tgz
+          path: opencravat-docker-${{ env.VERSION }}.tgz
