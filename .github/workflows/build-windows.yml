@@ -1,0 +1,44 @@
+name: Build Windows
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version label for artifact names (default: tag name, or short commit hash)"
+        type: string
+        required: false
+  # TODO remove before merging: temporary trigger for testing on the branch
+  push:
+    branches:
+      - 'ci/split-builds'
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Set version
+        shell: bash
+        env:
+          # Tag name on tags, otherwise the short commit hash
+          INPUT_VERSION: ${{ inputs.version || (startsWith(github.ref, 'refs/tags/') && github.ref_name || '') }}
+        run: echo "VERSION=${INPUT_VERSION:-${GITHUB_SHA::7}}" >> "$GITHUB_ENV"
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install build tools
+        run: |
+          choco install innosetup
+      - name: Build and Package
+        working-directory: .build\windows
+        run: |
+          .\build.ps1 ..\.. ${{ env.VERSION }} -Clean -ForceDownload -Build
+      - name: Archive installer package
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenCRAVAT-${{ env.VERSION }}.exe
+          path: .build\windows\Output\OpenCRAVAT-${{ env.VERSION }}.exe
