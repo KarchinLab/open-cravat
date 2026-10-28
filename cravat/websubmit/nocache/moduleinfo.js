@@ -750,13 +750,20 @@ function makeModuleDetailDialog(moduleName, moduleListName, moduleListPos) {
         addEl(d, span);
         addEl(infodiv, d);
         d = getEl('div');
+        d.className = 'moduledetail-publish-date';
         span = getEl('span');
         span.style.fontWeight = 'bold';
         span.textContent = 'Posted on: ';
         addEl(d, span);
-        span = getEl('span');
-        var t = new Date(mInfo['publish_time']);
-        span.textContent = t.toLocaleDateString();
+        span = getEl('time');
+        var publishTime = mInfo['publish_time'];
+        var t = new Date(publishTime);
+        if (publishTime != null && publishTime !== '' && !Number.isNaN(t.getTime())) {
+            span.dateTime = t.toISOString();
+            span.textContent = t.toLocaleDateString();
+        } else {
+            span.textContent = 'Unavailable';
+        }
         addEl(d, span);
         addEl(infodiv, d);
         d = getEl('div');
