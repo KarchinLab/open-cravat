@@ -11,7 +11,12 @@ from cravat.gui.config import (
 def _start(queue):
     from cravat.gui import celery
     n = celery_settings()[queue]['concurrency']
-    celery.Worker(queues=[queue], concurrency=n).start()
+    # the default prefork pool is unsupported on Windows (spawned children can't unpickle the app's local Task class).
+    # Tasks that install signal handlers (module install) need the main thread, so single-slot queues use solo.
+    pool = None
+    if sys.platform == 'win32':
+        pool = 'solo' if n == 1 else 'threads'
+    celery.Worker(queues=[queue], concurrency=n, pool=pool).start()
 
 
 def default_worker():
