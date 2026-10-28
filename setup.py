@@ -108,6 +108,7 @@ setup(
         'Flask-Caching',
         'cachelib',
         'celery',
+        'pywin32; sys_platform == "win32"',
         'cryptography',
         ],
     python_requires='>=3.9',
