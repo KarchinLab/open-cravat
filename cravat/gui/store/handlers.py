@@ -189,7 +189,7 @@ def uninstall_module():
     module_name = queries['name']
 
     au.uninstall_module(module_name)
-    cache.cache.delete(Module.local.make_cache_key())
+    Module.invalidate_cache()
 
     return f'uninstalled {module_name}'
 
