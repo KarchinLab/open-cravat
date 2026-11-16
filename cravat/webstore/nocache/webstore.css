@@ -534,6 +534,18 @@ input:checked + .store-switch-slider:before {
     margin-top: 12px;
 }
 
+.moduledetail-publish-date {
+    display: inline-block;
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #93b8d4;
+    border-radius: 4px;
+    background-color: #eef5fa;
+    color: #244d65;
+    overflow-wrap: anywhere;
+}
+
 #yesnodialog {
 	position: fixed;
     font-size: 14px;
