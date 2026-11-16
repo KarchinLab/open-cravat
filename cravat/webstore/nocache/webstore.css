@@ -333,7 +333,7 @@ div.modulegroup span.modulepanel-datasource-span {
     position: fixed;
     top: 63px;
     width: 300px;
-    height: calc(100% - 0px);
+    height: calc(100% - 63px);
     overflow: auto;
     font-size: 20px;
     background-color: #f5f5f7;
