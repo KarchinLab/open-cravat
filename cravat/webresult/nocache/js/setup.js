@@ -3103,6 +3103,7 @@ const widgetCategoryTitles = {
   "cancer": "Cancer",
   "drugs": "Drugs",
   "evolution": "Evolution",
+  "functional_assay": "Functional Assay",
   "gene": "Gene",
   "gwas": "GWAS",
   "haplotypes": "Haplotypes",
