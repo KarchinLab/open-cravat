@@ -355,6 +355,8 @@ async def submit (request):
         }))
     if request.content_length > size_cutoff * 1024 * 1024:
         return web.HTTPRequestEntityTooLarge(
+            max_size=size_cutoff * 1024 * 1024,
+            actual_size=request.content_length,
             text=json.dumps({
                 'status': 'fail', 
                 'msg': f'Input is too big. Limit is {size_cutoff}MB.'
@@ -382,13 +384,15 @@ async def submit (request):
             wfname = part.filename
             wpath = os.path.join(job_dir, wfname)
             with open(wpath,'wb') as wf:
-                wf.write(await part.read())
+                while chunk := await part.read_chunk(size=1024 * 1024):
+                    await asyncio.to_thread(wf.write, chunk)
         elif part.name == 'options':
             job_options = await part.json()
         elif part.name == 'casecontrol':
             cc_cohorts_path = os.path.join(job_dir, part.filename)
             with open(cc_cohorts_path,'wb') as wf:
-                wf.write(await part.read())
+                while chunk := await part.read_chunk(size=1024 * 1024):
+                    await asyncio.to_thread(wf.write, chunk)
     use_server_input_files = False
     if "inputServerFiles" in job_options and len(job_options["inputServerFiles"]) > 0:
         input_files = job_options["inputServerFiles"]
