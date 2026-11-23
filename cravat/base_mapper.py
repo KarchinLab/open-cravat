@@ -298,7 +298,11 @@ class BaseMapper(object):
                     crx_data = crv_data
                     crx_data["all_mappings"] = "{}"
                 else:
-                    crx_data = self.map(crv_data)
+                    try:
+                        crx_data = self.map(crv_data)
+                    except IndexError as e:
+                        self.logger.info(f"mapping fail during {crv_data}")
+                        crx_data = None
                 if crx_data is None:
                     continue
             except Exception as e:

@@ -15,6 +15,11 @@ from cravat.exceptions import (
     NoVariantError,
 )
 import cravat.admin_util as au
+from cravat.allele_orientation import (
+    orient_alleles_to_target_ref,
+    zygosity_after_liftover,
+    NOT_A_VARIANT,
+)
 from pyliftover import LiftOver
 import copy
 import cravat.cravat_util as cu
@@ -480,18 +485,28 @@ class MasterCravatConverter(object):
                                             chrom, int(pos)
                                         )
                                 prelift_wdict = copy.copy(wdict)
+                                alleles_swapped = False
                                 if self.do_liftover:
                                     (
                                         wdict["chrom"],
                                         wdict["pos"],
                                         wdict["ref_base"],
                                         wdict["alt_base"],
+                                        alleles_swapped,
                                     ) = self.liftover(
                                         wdict["chrom"],
                                         int(wdict["pos"]),
                                         wdict["ref_base"],
                                         wdict["alt_base"],
                                     )
+                                if "zygosity" in wdict:
+                                    new_zygosity = zygosity_after_liftover(
+                                        wdict["zygosity"], alleles_swapped
+                                    )
+                                    if new_zygosity is NOT_A_VARIANT:
+                                        # homozygous for the destination reference
+                                        raise NoVariantError()
+                                    wdict["zygosity"] = new_zygosity
                                 if base_re.fullmatch(wdict["ref_base"]) is None:
                                     raise BadFormatError("Invalid reference base")
                                 if base_re.fullmatch(wdict["alt_base"]) is None:
@@ -578,6 +593,7 @@ class MasterCravatConverter(object):
     def liftover(self, chrom, pos, ref, alt):
         reflen = len(ref)
         altlen = len(alt)
+        strand = None  # only known for single-base lifts
         if chrom == "chrMT":
             newchrom = "chrM"
             newpos = pos
@@ -593,6 +609,7 @@ class MasterCravatConverter(object):
                 raise LiftoverFailure("Liftover failure")
             newchrom = el[0]
             newpos = el[1] + 1
+            strand = el[2] if len(el) > 2 else None
         elif reflen >= 1 and altlen == 0:  # del
             pos1 = pos
             pos2 = pos + reflen - 1
@@ -638,13 +655,10 @@ class MasterCravatConverter(object):
             newchrom = newchrom1
             newpos = min(newpos1, newpos2)
         hg38_ref = self.wgsreader.get_bases(newchrom, newpos)
-        if hg38_ref == cravat.util.reverse_complement(ref):
-            newref = hg38_ref
-            newalt = cravat.util.reverse_complement(alt)
-        else:
-            newref = ref
-            newalt = alt
-        return [newchrom, newpos, newref, newalt]
+        newref, newalt, swapped = orient_alleles_to_target_ref(
+            hg38_ref, ref, alt, strand
+        )
+        return [newchrom, newpos, newref, newalt, swapped]
 
     def _log_conversion_error(self, ln, line, e, full_line_error=True):
         """Log exceptions thrown by primary converter.
