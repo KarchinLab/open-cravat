@@ -55,7 +55,7 @@ SESSION_COOKIE_HTTPONLY = True
 # again, an excellent candidate for configuration via environment variable.
 SESSION_COOKIE_SECURE = False
 
-CELERY_RESULTS_PATH = f'/{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/results'
+CELERY_RESULTS_PATH = f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/results'
 
 CELERY = dict(
     broker_url='filesystem://',
@@ -64,7 +64,8 @@ CELERY = dict(
         'data_folder_out': f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/broker/',
 		'control_folder': f'{CRAVAT_SYSCONF[constants.work_dir_key]}/celery/control/',
     },
-    result_backend=f'file:/{CELERY_RESULTS_PATH}',
+    # Celery strips the leading "file://", so an absolute POSIX path or a drive-letter path both work
+    result_backend=f'file://{CELERY_RESULTS_PATH.replace(chr(92), "/")}',
     include=['cravat.gui.tasks'],
     task_queues=(
         Queue(QUEUE_DEFAULT, default_exchange, routing_key=QUEUE_DEFAULT),

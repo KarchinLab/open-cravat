@@ -61,7 +61,7 @@ for root, dirs, files in os.walk(os.path.join('cravat', 'gui')):
 setup(
     name='open-cravat',
     packages=['cravat'],
-    version='3.2.4',
+    version='3.2.5',
     description='OpenCRAVAT - variant analysis toolkit',
     long_description=readme(),
     author='Kyle Moad, Kyle Anderson, Charlie Vaske, Jasmine Baker, and Rachel Karchin',
@@ -108,6 +108,7 @@ setup(
         'Flask-Caching',
         'cachelib',
         'celery',
+        'pywin32; sys_platform == "win32"',
         'cryptography',
         ],
     python_requires='>=3.9',
