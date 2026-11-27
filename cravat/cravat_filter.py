@@ -50,9 +50,9 @@ class FilterColumn(object):
         s = ""
         # TODO unify this to a single if/else on self.test
         if self.test == "multicategory":
-            s = '{} like "%{}%"'.format(self.column, self.value[0])
-            for v in self.value[1:]:
-                s += ' or {} like "%{}%"'.format(self.column, v)
+            s = "(" + " or ".join(
+                '{} like "%{}%"'.format(self.column, v) for v in self.value
+            ) + ")"
         elif self.test in ("select", "in"):
             ss = []
             for val in self.value:
@@ -62,35 +62,36 @@ class FilterColumn(object):
                     val = str(val)
                 ss.append(f"({self.column} = {val})")
             s = "(" + f" or ".join(ss) + ")"
+        elif self.test == "equals" and type(self.value) is list:
+            clauses = []
+            for v in self.value:
+                if type(v) is str:
+                    v = '"' + v + '"'
+                else:
+                    v = str(v)
+                clauses.append("{} == {}".format(self.column, v))
+            s = "(" + " OR ".join(clauses) + ")"
+        elif self.test == "between":
+            s = "{col} {opr} {lo} and {hi}".format(
+                col=self.column,
+                opr=self.test2sql[self.test],
+                lo=self.value[0],
+                hi=self.value[1],
+            )
         else:
             s = "{col} {opr}".format(col=self.column, opr=self.test2sql[self.test])
             sql_val = None
             if self.test == "equals":
-                if type(self.value) is list:
-                    v = self.value[0]
-                    if type(v) is str:
-                        sql_val = '"' + v + '"'
-                    else:
-                        sql_val = str(v)
-                    for v in self.value[1:]:
-                        if type(v) is str:
-                            v = '"' + v + '"'
-                        else:
-                            v = str(v)
-                        sql_val += " OR {} == {}".format(self.column, v)
+                if type(self.value) is str:
+                    sql_val = '"{}"'.format(self.value)
                 else:
-                    if type(self.value) is str:
-                        sql_val = '"{}"'.format(self.value)
-                    else:
-                        sql_val = str(self.value)
+                    sql_val = str(self.value)
             elif self.test == "stringContains":
                 sql_val = '"%{}%"'.format(self.value)
             elif self.test == "stringStarts":
                 sql_val = '"{}%"'.format(self.value)
             elif self.test == "stringEnds":
                 sql_val = '"%{}"'.format(self.value)
-            elif self.test == "between":
-                sql_val = "{} and {}".format(self.value[0], self.value[1])
             elif self.test in (
                 "lessThan",
                 "lessThanEq",
